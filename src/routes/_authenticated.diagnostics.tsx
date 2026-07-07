@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, AlertTriangle, ChevronLeft, Copy, RefreshCw } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ChevronLeft, Copy, RefreshCw, Bug, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { buildDiagnosticsSummary } from "@/lib/diagnostics-summary";
 import { useEffect, useState, useCallback } from "react";
 import { copyText } from "@/lib/share-wa";
+import { readAuthDebug, clearAuthDebug, formatAuthDebug, type AuthDebugEvent } from "@/lib/auth-debug";
 
 import reactRouterPkg from "@tanstack/react-router/package.json";
 import reactStartPkg from "@tanstack/react-start/package.json";
@@ -178,10 +179,26 @@ function DiagnosticsPage() {
   const allOk = checks.every((c) => c.ok);
 
   const [browserChecks, setBrowserChecks] = useState<Check[]>([]);
+  const [authEvents, setAuthEvents] = useState<AuthDebugEvent[]>([]);
+  const refreshAuthDebug = useCallback(() => setAuthEvents(readAuthDebug()), []);
+  useEffect(() => { refreshAuthDebug(); }, [refreshAuthDebug]);
   const refreshBrowser = useCallback(() => {
     void runBrowserChecks().then(setBrowserChecks);
   }, []);
   useEffect(() => { refreshBrowser(); }, [refreshBrowser]);
+
+  async function copyAuthDebug() {
+    const text = formatAuthDebug(readAuthDebug());
+    if (!text) { toast.message("Log auth kosong"); return; }
+    const res = await copyText(text);
+    if (res.ok) toast.success("Log auth disalin");
+    else toast.error("Gagal menyalin log");
+  }
+  function wipeAuthDebug() {
+    clearAuthDebug();
+    refreshAuthDebug();
+    toast.message("Log auth dibersihkan");
+  }
 
   async function testCopy() {
     const res = await copyText("MCM Storage clipboard test " + new Date().toISOString());
@@ -269,6 +286,50 @@ function DiagnosticsPage() {
           <p className="text-[11px] text-muted-foreground">
             Hasil dimasukkan ke "Salin ringkasan" agar mudah dikirim saat melapor.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bug className="h-4 w-4" />
+            <span>Log debug auth</span>
+            <Button size="sm" variant="ghost" className="ml-auto h-7 px-2" onClick={refreshAuthDebug} title="Muat ulang">
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[11px] text-muted-foreground">
+            Event alur login/verifikasi yang tersimpan di perangkat ini (maks 50 event). Token disamarkan otomatis.
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => void copyAuthDebug()}>
+              <Copy className="h-3.5 w-3.5" /> Salin log
+            </Button>
+            <Button size="sm" variant="outline" onClick={wipeAuthDebug}>
+              <Trash2 className="h-3.5 w-3.5" /> Bersihkan
+            </Button>
+          </div>
+          {authEvents.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Belum ada event tercatat.</div>
+          ) : (
+            <div className="max-h-72 overflow-auto rounded-md border bg-muted/30 p-2">
+              <ul className="space-y-1 font-mono text-[10.5px] leading-snug">
+                {authEvents.slice().reverse().map((e, i) => (
+                  <li key={i} className={
+                    e.level === "error" ? "text-destructive"
+                    : e.level === "warn" ? "text-amber-600 dark:text-amber-400"
+                    : "text-foreground/80"
+                  }>
+                    <span className="opacity-60">{new Date(e.ts).toLocaleTimeString()} </span>
+                    <span className="font-semibold">{e.scope}:</span> {e.msg}
+                    {e.data && <span className="opacity-70"> {JSON.stringify(e.data)}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
 

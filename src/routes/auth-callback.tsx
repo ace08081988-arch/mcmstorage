@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, MailWarning, ShieldCheck, ArrowRight, RefreshCw } from "lucide-react";
+import { CheckCircle2, Loader2, MailWarning, ShieldCheck, ArrowRight, RefreshCw, Bug, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logAuthDebug, readAuthDebug, clearAuthDebug, formatAuthDebug, type AuthDebugEvent } from "@/lib/auth-debug";
 
 const SAFE_PATH = /^\/(?!\/)[^\s\\]*$/;
 const FORBIDDEN_TARGETS = new Set(["/auth", "/auth-callback"]);
@@ -36,6 +37,8 @@ function AuthCallbackPage() {
   const [message, setMessage] = useState("Sedang memeriksa tautan verifikasi Anda…");
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugEvents, setDebugEvents] = useState<AuthDebugEvent[]>([]);
   const [target] = useState(() => {
     if (typeof window === "undefined") return "/";
     const params = new URLSearchParams(window.location.search);
@@ -45,6 +48,7 @@ function AuthCallbackPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const t0 = performance.now();
 
     const run = async () => {
       try {
@@ -59,23 +63,53 @@ function AuthCallbackPage() {
           url.searchParams.get("error_description") ??
           url.searchParams.get("error");
 
+        logAuthDebug("callback", "callback loaded", {
+          hasHash: url.hash.length > 0,
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          hasCode: !!code,
+          hasError: !!callbackError,
+          errorText: callbackError ?? null,
+          target,
+          pathname: url.pathname,
+        });
+
         if (callbackError) throw new Error(callbackError.replace(/\+/g, " "));
 
         if (accessToken && refreshToken) {
+          logAuthDebug("callback", "setSession: start");
           const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
-          if (error) throw error;
+          if (error) {
+            logAuthDebug("callback", "setSession: failed", { error: error.message }, "error");
+            throw error;
+          }
+          logAuthDebug("callback", "setSession: ok");
         } else if (code) {
+          logAuthDebug("callback", "exchangeCodeForSession: start", { codeLen: code.length });
           const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
+          if (error) {
+            logAuthDebug("callback", "exchangeCodeForSession: failed", { error: error.message }, "error");
+            throw error;
+          }
+          logAuthDebug("callback", "exchangeCodeForSession: ok");
         } else {
+          logAuthDebug("callback", "no tokens/code — fallback getSession()", undefined, "warn");
           await supabase.auth.getSession();
         }
 
         const { data, error } = await supabase.auth.getUser();
         if (cancelled) return;
+        logAuthDebug("callback", "getUser result", {
+          hasUser: !!data.user,
+          userId: data.user?.id ?? null,
+          email: data.user?.email ?? null,
+          emailConfirmedAt: data.user?.email_confirmed_at ?? null,
+          error: error?.message ?? null,
+          elapsedMs: Math.round(performance.now() - t0),
+        }, error ? "error" : "info");
 
         if (error || !data.user) {
           setStatus("manual");
@@ -91,6 +125,10 @@ function AuthCallbackPage() {
         window.history.replaceState({}, document.title, "/auth-callback");
       } catch (err) {
         if (cancelled) return;
+        logAuthDebug("callback", "unhandled error", {
+          error: err instanceof Error ? err.message : String(err),
+          elapsedMs: Math.round(performance.now() - t0),
+        }, "error");
         setStatus("error");
         setMessage("Tautan verifikasi tidak dapat diproses.");
         setErrorDetail(err instanceof Error ? err.message : "Terjadi kesalahan tidak dikenal.");
@@ -102,6 +140,28 @@ function AuthCallbackPage() {
       cancelled = true;
     };
   }, []);
+
+  // Muat ulang buffer debug tiap kali panel dibuka atau status berubah.
+  useEffect(() => {
+    if (!showDebug) return;
+    setDebugEvents(readAuthDebug());
+  }, [showDebug, status]);
+
+  const copyDebug = async () => {
+    const text = formatAuthDebug(readAuthDebug());
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Log auth disalin");
+    } catch {
+      toast.error("Gagal menyalin — salin manual dari kotak di bawah.");
+    }
+  };
+
+  const wipeDebug = () => {
+    clearAuthDebug();
+    setDebugEvents([]);
+    toast.message("Log auth dibersihkan");
+  };
 
   // Countdown & redirect after success
   useEffect(() => {
@@ -239,6 +299,65 @@ function AuthCallbackPage() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Panel debug ringkas */}
+        <div className="mt-3 rounded-xl border bg-card">
+          <button
+            type="button"
+            onClick={() => setShowDebug((s) => !s)}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+            aria-expanded={showDebug}
+          >
+            <Bug className="h-3.5 w-3.5" />
+            {showDebug ? "Sembunyikan" : "Tampilkan"} log debug auth
+            <span className="ml-auto text-[10px] opacity-70">{debugEvents.length || readAuthDebug().length} event</span>
+          </button>
+          {showDebug && (
+            <div className="border-t px-4 py-3 space-y-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => void copyDebug()}
+                  className="inline-flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium hover:bg-muted"
+                >
+                  <Copy className="h-3 w-3" /> Salin
+                </button>
+                <button
+                  type="button"
+                  onClick={wipeDebug}
+                  className="inline-flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium hover:bg-muted"
+                >
+                  Bersihkan
+                </button>
+              </div>
+              {debugEvents.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground">Belum ada event.</p>
+              ) : (
+                <div className="max-h-60 overflow-auto rounded-md border bg-muted/30 p-2">
+                  <ul className="space-y-1 font-mono text-[10.5px] leading-snug">
+                    {debugEvents.slice().reverse().map((e, i) => (
+                      <li key={i} className={
+                        e.level === "error" ? "text-destructive"
+                        : e.level === "warn" ? "text-amber-600 dark:text-amber-400"
+                        : "text-foreground/80"
+                      }>
+                        <span className="opacity-60">{new Date(e.ts).toLocaleTimeString()} </span>
+                        <span className="font-semibold">{e.scope}:</span> {e.msg}
+                        {e.data && (
+                          <span className="opacity-70"> {JSON.stringify(e.data)}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                Token disembunyikan otomatis. Log tersimpan di perangkat ini saja (localStorage), maks 50 event.
+                Dapat juga dilihat di <span className="font-mono">/diagnostics</span>.
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="mt-3 text-center text-xs text-muted-foreground">

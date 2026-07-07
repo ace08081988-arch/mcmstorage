@@ -11,6 +11,7 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
+import { logAuthDebug } from "@/lib/auth-debug";
 
 function AuthBrand() {
   const { full, logo } = useOrgName();
@@ -257,6 +258,11 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
+    logAuthDebug("signin", "signInWithPassword", {
+      email,
+      ok: !error,
+      error: error?.message ?? null,
+    }, error ? "error" : "info");
     if (error) {
       const notConfirmed = /email not confirmed|not.*confirmed/i.test(error.message);
       if (notConfirmed) setVerifyStatus("unverified");
@@ -279,6 +285,7 @@ function AuthPage() {
     }
     toast.success("Berhasil masuk");
     clearPrefs();
+    logAuthDebug("signin", "navigating to /", { target: "/" });
     navigate({ to: "/", replace: true });
   };
 
@@ -312,6 +319,12 @@ function AuthPage() {
       options: { emailRedirectTo: `${window.location.origin}/auth-callback` },
     });
     setLoading(false);
+    logAuthDebug("resend", "resend signup verification", {
+      email,
+      redirectTo: `${window.location.origin}/auth-callback`,
+      ok: !error,
+      error: error?.message ?? null,
+    }, error ? "error" : "info");
     if (error) {
       notifyError(error);
       return;
