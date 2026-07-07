@@ -35,6 +35,7 @@ import { DialogSaveStatus, useSaveStatus, useSaveStatusToast, confirmDiscardIfDi
 import { Field } from "@/components/DialogField";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
+import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -1926,8 +1927,12 @@ function PrepCard({
         {sold && (
           <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[11px] text-emerald-800 dark:text-emerald-200 space-y-0.5">
             <div className="flex items-center gap-1 font-semibold">
-              {prep.sold_payment_method === "hutang" ? <HandCoins className="h-3 w-3" /> : <Wallet className="h-3 w-3" />}
-              {prep.sold_payment_method === "hutang" ? "Piutang" : "Lunas"} · {rupiah(Number(prep.sold_total ?? 0))}
+              {prep.sold_payment_method === "kas" ? <Wallet className="h-3 w-3" /> : <HandCoins className="h-3 w-3" />}
+              {formatSoldPaymentSummary(
+                prep.sold_payment_method,
+                Number(prep.sold_total ?? 0),
+                Number(prep.sold_paid_amount ?? 0),
+              )}
             </div>
             <div className="text-emerald-900/80 dark:text-emerald-100/80">
               ke <b>{prep.sold_party_name ?? "-"}</b>
@@ -2041,16 +2046,18 @@ function SendPrepToCustomerDialog({
   }, [open, customers, prep.note]);
 
   const totalAmount = useMemo(() => {
-    const n = Number(totalStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
-    return Number.isFinite(n) ? n : 0;
+    return parsePaymentAmountInput(totalStr);
   }, [totalStr]);
 
   const paidAmount = useMemo(() => {
-    const n = Number(paidStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
-    return Number.isFinite(n) ? n : 0;
+    return parsePaymentAmountInput(paidStr);
   }, [paidStr]);
-  const remaining = Math.max(0, totalAmount - paidAmount);
-  const partialValid = payMethod !== "partial" || (paidAmount > 0 && paidAmount < totalAmount);
+  const payment = useMemo(
+    () => getPaymentBreakdown(payMethod, totalAmount, paidAmount),
+    [payMethod, totalAmount, paidAmount],
+  );
+  const remaining = payment.remaining;
+  const partialValid = payment.partialValid;
 
   const resolvedParty = useMemo(() => {
     if (mode === "link") {
@@ -2080,14 +2087,8 @@ function SendPrepToCustomerDialog({
       });
       lines.push("");
     }
-    lines.push(`Total: *${rupiah(totalAmount)}*`);
-    if (payMethod === "hutang") {
-      lines.push("Metode: *Hutang* (akan dicatat sebagai piutang)");
-    } else if (payMethod === "partial") {
-      lines.push(`Metode: *Bayar sebagian* — Dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} jadi piutang`);
-    } else {
-      lines.push("Metode: *Lunas*");
-    }
+    lines.push(`Total: *${formatPaymentRupiah(totalAmount)}*`);
+    lines.push(...buildPaymentMessageLines(payment));
     if (resolvedParty.name) lines.push(`Untuk: ${resolvedParty.name}`);
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
     if (prep.location_url) {
@@ -2125,10 +2126,10 @@ function SendPrepToCustomerDialog({
         _prep_id: prep.id,
         _customer_id: resolvedParty.id,
         _party_name: resolvedParty.name,
-        _total_amount: totalAmount,
-        _payment_method: payMethod,
+        _total_amount: payment.total,
+        _payment_method: payment.method,
         _note: note.trim() || null,
-        _paid_amount: payMethod === "partial" ? paidAmount : null,
+        _paid_amount: payment.method === "partial" ? payment.paid : null,
       });
       if (rpcErr) throw rpcErr;
 
@@ -2146,10 +2147,10 @@ function SendPrepToCustomerDialog({
       notifyShareResult(res);
 
       toast.success(
-        payMethod === "hutang"
+        payment.method === "hutang"
           ? "Terkirim — penjualan & piutang tercatat"
-          : payMethod === "partial"
-            ? `Terkirim — dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} jadi piutang`
+          : payment.method === "partial"
+            ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
             : "Terkirim — penjualan tercatat, stok gudang tersinkron",
       );
       onSent();

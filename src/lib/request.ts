@@ -43,6 +43,7 @@ export type RequestPreparation = {
   sold_customer_id?: string | null;
   sold_party_name?: string | null;
   sold_total?: number | null;
+  sold_paid_amount?: number | null;
   sold_payment_method?: string | null;
 };
 

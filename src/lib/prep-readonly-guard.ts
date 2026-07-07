@@ -8,8 +8,8 @@
  * bila tersedia — supaya user tahu paket ini sudah menjadi transaksi.
  */
 
-import { rupiah } from "@/lib/stock-format";
 import { isSentPrep } from "@/lib/prep-active-selector";
+import { formatPaymentRupiah, getPaymentBreakdown } from "@/lib/payment-summary";
 
 export type ReadOnlyAction = "delete" | "resend" | "edit";
 
@@ -63,17 +63,21 @@ export function describeSoldStatus(p: ReadOnlyPrepStatus): string | null {
   // Terkirim. Pakai SSOT (`isSentPrep`) — jangan tulis `!p.sold_at` di
   // level modul supaya definisi "sent" tetap tunggal.
   if (!isSentPrep(p)) return null;
-  const method = methodLabel(p.sold_payment_method);
   const total = toNum(p.sold_total);
   const paid = toNum(p.sold_paid_amount);
   const parts: string[] = [];
   if (p.sold_payment_method === "partial") {
-    const remain = Math.max(0, total - paid);
-    parts.push(`${method} · dibayar ${rupiah(paid)} dari ${rupiah(total)} (sisa piutang ${rupiah(remain)})`);
+    const payment = getPaymentBreakdown("partial", total, paid);
+    parts.push(
+      `${methodLabel(p.sold_payment_method)} · dibayar ${formatPaymentRupiah(payment.paid)} ` +
+        `dari ${formatPaymentRupiah(payment.total)} (sisa piutang ${formatPaymentRupiah(payment.remaining)})`,
+    );
   } else if (total > 0) {
-    parts.push(`${method} · ${rupiah(total)}`);
+    const method = p.sold_payment_method === "hutang" ? "hutang" : "kas";
+    const payment = getPaymentBreakdown(method, total, paid);
+    parts.push(`${methodLabel(p.sold_payment_method)} · ${formatPaymentRupiah(payment.total)}`);
   } else {
-    parts.push(method);
+    parts.push(methodLabel(p.sold_payment_method));
   }
   if (p.sold_party_name) parts.push(`ke ${p.sold_party_name}`);
   const when = formatWhen(p.sold_at);
