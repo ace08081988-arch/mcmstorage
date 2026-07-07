@@ -14,7 +14,7 @@ function safeTarget(value: unknown): string {
     : "/";
 }
 
-export const Route = createFileRoute("/auth/callback")({
+export const Route = createFileRoute("/auth-callback")({
   ssr: false,
   head: () => ({
     meta: [
