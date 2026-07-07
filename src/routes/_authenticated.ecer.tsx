@@ -1476,6 +1476,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     // diperluas. Owner harus menekan Lanjut agar dialog pembayaran
     // benar-benar terbuka.
     setAutoSendConfirm({ preps: activeNow });
+    autoSendPrepsRef.current = activeNow;
     // Catat baris `proposed` — id disimpan supaya nanti bisa di-finalize
     // menjadi `confirmed` (setelah RPC sukses) atau `cancelled`.
     void logAutoSendProposed({
