@@ -10,7 +10,6 @@ import { confirm as confirmDialog } from "@/lib/confirm";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { SellSelfPrepDialog, type SellSelfPrepCustomer, type SellSelfPrepWarehouseItem } from "@/components/SellSelfPrepDialog";
 import { formatSoldPaymentSummary } from "@/lib/payment-summary";
-import { rupiah } from "@/lib/stock-format";
 import { Wallet, HandCoins } from "lucide-react";
 
 const BUCKET = "self-prep-photos";
