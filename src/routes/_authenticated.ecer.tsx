@@ -1718,12 +1718,18 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           onClose={() => {
             setSendOpen(false);
             // Owner menutup dialog pembayaran tanpa mengirim — kalau ini
-            // datang dari auto-send, finalisasi baris audit sebagai
-            // `cancelled` agar jejak tidak menggantung di `proposed`.
+            // datang dari auto-send, jangan langsung finalize: buka dialog
+            // pemilihan alasan supaya baris audit menyimpan alasan +
+            // ringkasan seleksi (bukan sekadar token sumber).
             const auditId = autoSendAuditIdRef.current;
             if (auditId) {
-              autoSendAuditIdRef.current = null;
-              void finalizeAutoSend(auditId, "cancelled", "closed_send_dialog");
+              setAutoSendCancel({
+                preps: autoSendPrepsRef.current.length
+                  ? autoSendPrepsRef.current
+                  : selectedPreps,
+                auditId,
+                source: "closed_send_dialog",
+              });
             }
           }}
           onSent={() => {
@@ -1769,18 +1775,94 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         title={title}
         itemName={item.name}
         onCancel={() => {
+          const preps = autoSendConfirm?.preps ?? [];
           setAutoSendConfirm(null);
           setSelectionMode(false);
           setSelected(new Set());
           const auditId = autoSendAuditIdRef.current;
           if (auditId) {
-            autoSendAuditIdRef.current = null;
-            void finalizeAutoSend(auditId, "cancelled", "confirm_modal");
+            setAutoSendCancel({
+              preps,
+              auditId,
+              source: "confirm_modal",
+            });
           }
         }}
         onConfirm={() => {
           setAutoSendConfirm(null);
           setSendOpen(true);
+        }}
+      />
+
+      <AutoSendCancelReasonDialog
+        state={autoSendCancel}
+        title={title}
+        itemName={item.name}
+        onSubmit={(reason, detail) => {
+          const st = autoSendCancel;
+          setAutoSendCancel(null);
+          if (!st) return;
+          const unit = title.unit_label || "g";
+          const totalGrams = st.preps.reduce(
+            (acc, p) => acc + (Number(p.actual_grams) || 0),
+            0,
+          );
+          const note = JSON.stringify({
+            reason,
+            detail: detail || null,
+            source: st.source,
+            summary: {
+              count: st.preps.length,
+              grams: totalGrams,
+              unit,
+              prep_ids: st.preps.slice(0, 5).map((p) => p.id),
+            },
+          });
+          autoSendAuditIdRef.current = null;
+          void finalizeAutoSend(st.auditId, "cancelled", note);
+          setAutoSendCancelSummary({
+            count: st.preps.length,
+            grams: totalGrams,
+            unit,
+            at: new Date().toISOString(),
+            reason,
+            detail,
+            source: st.source,
+          });
+        }}
+        onDismiss={() => {
+          const st = autoSendCancel;
+          setAutoSendCancel(null);
+          if (!st) return;
+          // Owner menutup dialog tanpa memilih — finalize dengan alasan
+          // "tidak_dijelaskan" supaya baris audit tidak menggantung.
+          const unit = title.unit_label || "g";
+          const totalGrams = st.preps.reduce(
+            (acc, p) => acc + (Number(p.actual_grams) || 0),
+            0,
+          );
+          const note = JSON.stringify({
+            reason: "tidak_dijelaskan",
+            detail: null,
+            source: st.source,
+            summary: {
+              count: st.preps.length,
+              grams: totalGrams,
+              unit,
+              prep_ids: st.preps.slice(0, 5).map((p) => p.id),
+            },
+          });
+          autoSendAuditIdRef.current = null;
+          void finalizeAutoSend(st.auditId, "cancelled", note);
+          setAutoSendCancelSummary({
+            count: st.preps.length,
+            grams: totalGrams,
+            unit,
+            at: new Date().toISOString(),
+            reason: "tidak_dijelaskan",
+            detail: "",
+            source: st.source,
+          });
         }}
       />
 
