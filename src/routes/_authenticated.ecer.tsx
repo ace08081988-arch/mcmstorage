@@ -1108,6 +1108,26 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
 
   useEffect(() => { void load(); }, [title.id]);
 
+  // Auto-open dialog "Kirim ke pembeli" saat datang dari dashboard dengan
+  // flag `send=1`. Pilih semua kotak aktif untuk judul ini agar owner cukup
+  // konfirmasi metode bayar. Sekali dijalankan, konsumsi flag.
+  const autoSendFiredRef = useRef(false);
+  useEffect(() => {
+    if (!autoSend || autoSendFiredRef.current || loading) return;
+    const activeNow = filterActivePreps(preps);
+    if (activeNow.length === 0) {
+      // Tidak ada kotak aktif; batalkan flag agar user tidak "terjebak".
+      autoSendFiredRef.current = true;
+      onAutoSendConsumed?.();
+      return;
+    }
+    autoSendFiredRef.current = true;
+    setSelectionMode(true);
+    setSelected(new Set(activeNow.map((p) => p.id)));
+    setSendOpen(true);
+    onAutoSendConsumed?.();
+  }, [autoSend, loading, preps, onAutoSendConsumed]);
+
   // realtime
   useEffect(() => {
     const ch = supabase.channel(`ecer_prep_${title.id}`)
