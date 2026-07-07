@@ -34,9 +34,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle, Search } from "lucide-react";
+import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle, Search, FileSpreadsheet, FileText } from "lucide-react";
 import type { EcerTitle, EcerPreparation } from "@/lib/ecer";
 import { rupiah } from "@/lib/stock-format";
+import {
+  buildAutoSendSummaryCsv,
+  buildAutoSendSummaryPdf,
+  autoSendExportFilename,
+  downloadBlob,
+  type AutoSendExportPayload,
+} from "@/lib/auto-send-export";
+import { toast } from "sonner";
 
 /**
  * Menghitung daftar alasan mengapa satu kotak tidak valid untuk dikirim.
@@ -124,6 +132,8 @@ export function AutoSendConfirmDialog({
   // char, huruf kecil). Reset otomatis saat dialog dibuka ulang supaya
   // tidak "membekukan" filter dari sesi sebelumnya.
   const [search, setSearch] = useState<string>("");
+  // Status loading tombol ekspor supaya double-tap tidak memicu unduhan ganda.
+  const [exporting, setExporting] = useState<null | "csv" | "pdf">(null);
   useEffect(() => {
     if (state) setExpanded(true);
   }, [state]);
@@ -256,9 +266,84 @@ export function AutoSendConfirmDialog({
         >
           <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
             <span>Ringkasan per produk</span>
-            <span className="tabular-nums">
-              {productBreakdown.length} produk · {preps.length} kotak
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="tabular-nums">
+                {productBreakdown.length} produk · {preps.length} kotak
+              </span>
+              <button
+                type="button"
+                data-testid="auto-send-export-csv"
+                aria-label="Ekspor ringkasan ke CSV"
+                className="ml-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium hover:bg-muted disabled:opacity-50"
+                disabled={exporting !== null}
+                onClick={() => {
+                  setExporting("csv");
+                  try {
+                    const payload: AutoSendExportPayload = {
+                      itemName,
+                      titleName: title.name,
+                      unit,
+                      unitPrice,
+                      totalCount: preps.length,
+                      totalGrams,
+                      totalPrice,
+                      groups: productBreakdown,
+                      generatedAt: new Date(),
+                    };
+                    const csv = buildAutoSendSummaryCsv(payload);
+                    downloadBlob(
+                      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+                      autoSendExportFilename(payload, "csv"),
+                    );
+                    toast.success("CSV ringkasan diunduh");
+                  } catch (e) {
+                    toast.error("Gagal ekspor CSV: " + (e as Error).message);
+                  } finally {
+                    setExporting(null);
+                  }
+                }}
+              >
+                <FileSpreadsheet className="h-3 w-3" aria-hidden />
+                CSV
+              </button>
+              <button
+                type="button"
+                data-testid="auto-send-export-pdf"
+                aria-label="Ekspor ringkasan ke PDF"
+                className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium hover:bg-muted disabled:opacity-50"
+                disabled={exporting !== null}
+                onClick={async () => {
+                  setExporting("pdf");
+                  try {
+                    const payload: AutoSendExportPayload = {
+                      itemName,
+                      titleName: title.name,
+                      unit,
+                      unitPrice,
+                      totalCount: preps.length,
+                      totalGrams,
+                      totalPrice,
+                      groups: productBreakdown,
+                      generatedAt: new Date(),
+                    };
+                    const blob = await buildAutoSendSummaryPdf(payload);
+                    downloadBlob(blob, autoSendExportFilename(payload, "pdf"));
+                    toast.success("PDF ringkasan diunduh");
+                  } catch (e) {
+                    toast.error("Gagal ekspor PDF: " + (e as Error).message);
+                  } finally {
+                    setExporting(null);
+                  }
+                }}
+              >
+                {exporting === "pdf" ? (
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                ) : (
+                  <FileText className="h-3 w-3" aria-hidden />
+                )}
+                PDF
+              </button>
+            </div>
           </div>
           <ul className="space-y-0.5">
             {productBreakdown.map((g) => (
