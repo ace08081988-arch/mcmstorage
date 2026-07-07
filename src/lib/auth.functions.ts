@@ -5,8 +5,6 @@ import { z } from "zod";
 // Kode error yang dipakai UI untuk menampilkan pesan yang jelas ke pengguna.
 export type SecureSignUpErrorCode =
   | "invalid_input"
-  | "captcha_missing"
-  | "captcha_failed"
   | "rate_limited"
   | "email_exists"
   | "weak_password"
