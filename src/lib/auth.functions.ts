@@ -66,10 +66,15 @@ async function verifyTurnstile(token: string, ip: string, secret: string): Promi
   }
 }
 
-export const secureSignUp = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => inputSchema.parse(data))
-  .handler(async ({ data }): Promise<SecureSignUpResult> => {
-    const req = getRequest();
+/**
+ * Implementasi murni handler `secureSignUp` — diekspor terpisah agar bisa
+ * di-unit/integration-test tanpa runtime `createServerFn`/Start context.
+ * `secureSignUp` di bawah hanya membungkusnya dengan validator + RPC layer.
+ */
+export async function secureSignUpImpl(
+  data: z.infer<typeof inputSchema>,
+  req: Request,
+): Promise<SecureSignUpResult> {
     const ip = clientIpFromRequest(req);
     const userAgent = (req.headers.get("user-agent") ?? "").slice(0, 512) || null;
 
@@ -226,4 +231,10 @@ export const secureSignUp = createServerFn({ method: "POST" })
     }
 
     return { ok: true, userId: created.user!.id };
+}
+
+export const secureSignUp = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => inputSchema.parse(data))
+  .handler(async ({ data }): Promise<SecureSignUpResult> => {
+    return secureSignUpImpl(data, getRequest());
   });
