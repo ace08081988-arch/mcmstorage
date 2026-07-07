@@ -414,6 +414,62 @@ export function AutoSendConfirmDialog({
             </div>
           )}
         </div>
+        <div
+          data-testid="auto-send-location-breakdown"
+          data-group-count={locationBreakdown.length}
+          className="rounded-md border bg-muted/20 px-3 py-2 text-xs"
+        >
+          <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+            <span>Ringkasan per lokasi / link</span>
+            <span className="tabular-nums">
+              {locationBreakdown.length} lokasi · {preps.length} kotak
+            </span>
+          </div>
+          <ul className="space-y-0.5">
+            {locationBreakdown.map((g, idx) => {
+              const hasUrl = !!g.url;
+              const shortUrl = g.url
+                ? g.url.replace(/^https?:\/\//i, "").slice(0, 40)
+                : "Tanpa lokasi";
+              return (
+                <li
+                  key={g.key}
+                  data-testid="auto-send-location-breakdown-row"
+                  data-location-url={g.url ?? ""}
+                  className={`flex items-center justify-between gap-2 tabular-nums ${
+                    hasUrl ? "text-foreground" : "text-amber-600 dark:text-amber-400"
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-1">
+                    <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                    {hasUrl ? (
+                      <a
+                        href={g.url as string}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-w-0 truncate underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                        title={g.url as string}
+                      >
+                        Lokasi {idx + 1} · {shortUrl}
+                        <ExternalLink className="ml-0.5 inline h-2.5 w-2.5" aria-hidden />
+                      </a>
+                    ) : (
+                      <span className="truncate">Tanpa lokasi</span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-right font-medium">
+                    {g.count} kotak · {g.grams} {unit}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {locationBreakdown.some((g) => !g.url) && (
+            <div className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">
+              Ada kotak tanpa link lokasi — pembeli tidak akan menerima titik pengambilan untuk kotak tersebut.
+            </div>
+          )}
+        </div>
         {hasInvalid && (
           <div
             role="alert"
