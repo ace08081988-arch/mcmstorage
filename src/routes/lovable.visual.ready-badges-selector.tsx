@@ -282,7 +282,12 @@ function Surface({
                 data-testid={`send-wa-${p.id}`}
                 disabled={isSentPrep(p)}
                 onClick={() =>
-                  setPayment({ prepId: p.id, method: "kas", partialAmount: "" })
+                  setPayment({
+                    prepId: p.id,
+                    method: "kas",
+                    partialAmount: "",
+                    note: "",
+                  })
                 }
               >
                 Kirim WA
