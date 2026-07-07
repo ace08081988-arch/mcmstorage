@@ -530,6 +530,7 @@ function Surface({
                   method,
                   partialAmount: method === "partial" ? paid : null,
                   note: payment.note,
+                  locationUrl: paymentTitle?.locationUrl ?? null,
                 });
                 setLastWa(message);
                 setPreps((prev) =>
