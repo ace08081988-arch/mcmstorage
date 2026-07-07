@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { confirm } from "@/lib/confirm";
 import {
   getClientDeviceFingerprint,
   markDeviceTrustedLocal,
