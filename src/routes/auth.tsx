@@ -542,7 +542,11 @@ function AuthPage() {
           )}
           {mode === "signup" && (
             <div className="space-y-1">
-              {TURNSTILE_SITE_KEY ? (
+              {devBypass ? (
+                <p className="rounded-md border border-dashed border-amber-400/50 bg-amber-50/40 p-2 text-center text-[11px] text-amber-700 dark:bg-amber-950/20 dark:text-amber-300">
+                  Mode dev: verifikasi CAPTCHA dilewati untuk localhost.
+                </p>
+              ) : TURNSTILE_SITE_KEY ? (
                 <TurnstileWidget
                   key={widgetKey}
                   ref={turnstileRef}
@@ -595,6 +599,7 @@ function AuthPage() {
             disabled={
               loading ||
               (mode === "signup" &&
+                !devBypass &&
                 (!TURNSTILE_SITE_KEY || !turnstileToken || rateLimitedUntil > Date.now()))
             }
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
@@ -602,7 +607,7 @@ function AuthPage() {
             {loading
               ? "Memproses…"
               : mode === "signup"
-              ? turnstileToken || !TURNSTILE_SITE_KEY
+              ? devBypass || turnstileToken || !TURNSTILE_SITE_KEY
                 ? "Daftar"
                 : "Selesaikan verifikasi CAPTCHA…"
               : "Masuk"}
