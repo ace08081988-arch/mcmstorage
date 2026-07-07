@@ -1331,10 +1331,20 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [autoSendConfirm, setAutoSendConfirm] = useState<{
     preps: EcerPreparation[];
   } | null>(null);
+  // Dialog "kenapa Batal?" — dibuka setelah cancel dari confirm modal
+  // atau dari SendEcerPrepsDialog. Selama state ini terisi, baris audit
+  // masih di outcome `proposed`: finalize hanya terjadi saat owner
+  // memilih alasan (Simpan alasan) atau menutup dialog (Lewati).
+  const [autoSendCancel, setAutoSendCancel] =
+    useState<AutoSendCancelState | null>(null);
   // ID baris audit `auto_send_audit` untuk flag `send=1` yang sedang berjalan.
   // Dipakai untuk memindahkan outcome ke `confirmed`/`cancelled` setelah
   // dialog pembayaran ditutup, dan menjadi kunci ringkasan Riwayat.
   const autoSendAuditIdRef = useRef<string | null>(null);
+  // Cache preps yang tersaji di modal konfirmasi — dipakai saat cancel
+  // datang dari path "closed_send_dialog" (selectedPreps sudah berubah),
+  // dan sebagai fallback ringkasan.
+  const autoSendPrepsRef = useRef<EcerPreparation[]>([]);
   // Ringkasan auto-send terakhir yang berhasil dikonfirmasi — ditampilkan
   // sebagai banner di atas Riwayat Terkirim setelah RPC penjualan sukses.
   const [autoSendSummary, setAutoSendSummary] = useState<{
@@ -1342,6 +1352,17 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     grams: number;
     unit: string;
     at: string;
+  } | null>(null);
+  // Ringkasan pembatalan auto-send terakhir — banner terpisah supaya jejak
+  // "kenapa dibatalkan" ikut terlihat di halaman, bukan hanya di DB audit.
+  const [autoSendCancelSummary, setAutoSendCancelSummary] = useState<{
+    count: number;
+    grams: number;
+    unit: string;
+    at: string;
+    reason: string;
+    detail: string;
+    source: AutoSendCancelState["source"];
   } | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
 
