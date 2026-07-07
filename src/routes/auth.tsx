@@ -102,8 +102,6 @@ function AuthPage() {
   const [verifyStatus, setVerifyStatus] = useState<
     "unknown" | "unverified" | "awaiting-signup-verification"
   >("unknown");
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
   const secureSignUpFn = useServerFn(secureSignUp);
 
