@@ -948,14 +948,11 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
             const soldId = sellTarget.id;
             setSellTarget(null);
             await load();
-            // Auto-buka picker WA/Chat: cari row yang baru saja
-            // terjual di state terbaru (post-load) via callback state,
-            // supaya kita tidak race dengan setRows.
-            setRows((prev) => {
-              const fresh = prev.find((x) => x.id === soldId);
-              if (fresh && fresh.sold_at) setPostSalePromptRow(fresh);
-              return prev;
-            });
+            // Auto-buka picker WA/Chat. Kita re-query row langsung
+            // dari DB (bukan dari state React) supaya tidak race dengan
+            // batching setRows() di dalam load().
+            const { data } = await table().select("*").eq("id", soldId).maybeSingle();
+            if (data && (data as Row).sold_at) setPostSalePromptRow(data as Row);
           }}
         />
       )}
