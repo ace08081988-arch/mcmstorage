@@ -67,7 +67,7 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     // Cari blok useEffect autoSend. Non-tautological: cek helper resmi
     // filterActivePreps (bukan literal !p.sold_at) dan setSendOpen(true).
     const m = src.match(
-      /if\s*\(\s*!\s*autoSend[\s\S]{0,1500}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}/,
+      /if\s*\(\s*!\s*autoSend[\s\S]{0,4000}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}/,
     );
     expect(m, "Blok useEffect auto-send tidak ditemukan").not.toBeNull();
     const block = m![0];
