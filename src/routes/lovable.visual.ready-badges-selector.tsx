@@ -46,7 +46,16 @@ export const Route = createFileRoute(
 });
 
 type Title = { id: string; name: string };
-type Prep = { id: string; title_id: string; sold_at: string | null };
+type Prep = {
+  id: string;
+  title_id: string;
+  sold_at: string | null;
+  paid_amount?: number | null;
+};
+
+// Total tagihan tetap per prep di harness (Rp). Dipakai untuk validasi
+// pembayaran "Sebagian": nominal harus > 0 dan < TOTAL_PER_PREP.
+const TOTAL_PER_PREP = 10_000;
 
 const REQUEST_TITLES: Title[] = [
   { id: "r-A", name: "Paket Alpha" },
@@ -128,7 +137,19 @@ function Surface({
   const [payment, setPayment] = useState<null | {
     prepId: string;
     method: "kas" | "hutang" | "partial";
+    partialAmount: string;
   }>(null);
+
+  const partialAmountNum = payment ? Number(payment.partialAmount) : NaN;
+  const partialValid =
+    payment?.method !== "partial" ||
+    (Number.isFinite(partialAmountNum) &&
+      partialAmountNum > 0 &&
+      partialAmountNum < TOTAL_PER_PREP);
+  const partialSisa =
+    payment?.method === "partial" && Number.isFinite(partialAmountNum)
+      ? TOTAL_PER_PREP - partialAmountNum
+      : null;
 
   const active = preps.filter((p) => isActivePrep(p));
   const sent = preps.filter((p) => isSentPrep(p));
@@ -207,7 +228,9 @@ function Surface({
                 className="h-6 px-1.5 text-[10px]"
                 data-testid={`send-wa-${p.id}`}
                 disabled={isSentPrep(p)}
-                onClick={() => setPayment({ prepId: p.id, method: "kas" })}
+                onClick={() =>
+                  setPayment({ prepId: p.id, method: "kas", partialAmount: "" })
+                }
               >
                 Kirim WA
               </Button>
@@ -236,7 +259,17 @@ function Surface({
               <span className="font-mono text-muted-foreground">
                 {p.id} · {p.title_id}
               </span>
-              <span className="text-emerald-700 dark:text-emerald-300">Terkirim</span>
+              <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+                {typeof p.paid_amount === "number" ? (
+                  <span
+                    data-testid={`riwayat-paid-${scope}-${p.id}`}
+                    className="rounded bg-emerald-500/10 px-1 py-0.5 tabular-nums"
+                  >
+                    Rp{p.paid_amount.toLocaleString("id-ID")}
+                  </span>
+                ) : null}
+                <span>Terkirim</span>
+              </span>
             </div>
           ))}
           {sent.length === 0 && (
@@ -270,6 +303,65 @@ function Surface({
               </button>
             ))}
           </div>
+          {payment.method === "partial" && (
+            <div
+              className="space-y-1 rounded border border-dashed p-1.5"
+              data-testid={`payment-partial-panel-${scope}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[10px] text-muted-foreground">
+                  Total tagihan
+                </label>
+                <span
+                  className="tabular-nums"
+                  data-testid={`payment-partial-total-${scope}`}
+                >
+                  Rp{TOTAL_PER_PREP.toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  className="text-[10px] text-muted-foreground"
+                  htmlFor={`payment-partial-amount-${scope}`}
+                >
+                  Bayar sebagian
+                </label>
+                <input
+                  id={`payment-partial-amount-${scope}`}
+                  data-testid={`payment-partial-amount-${scope}`}
+                  type="number"
+                  min={1}
+                  max={TOTAL_PER_PREP - 1}
+                  value={payment.partialAmount}
+                  onChange={(e) =>
+                    setPayment((prev) =>
+                      prev ? { ...prev, partialAmount: e.target.value } : prev,
+                    )
+                  }
+                  className="w-24 rounded border px-1.5 py-0.5 text-right tabular-nums"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] text-muted-foreground">Sisa</span>
+                <span
+                  className="tabular-nums"
+                  data-testid={`payment-partial-sisa-${scope}`}
+                >
+                  {partialSisa === null
+                    ? "—"
+                    : `Rp${partialSisa.toLocaleString("id-ID")}`}
+                </span>
+              </div>
+              {!partialValid && (
+                <div
+                  className="text-[10px] text-destructive"
+                  data-testid={`payment-partial-error-${scope}`}
+                >
+                  Nominal harus di antara 1 dan {TOTAL_PER_PREP - 1}.
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex justify-end gap-1 pt-1">
             <button
               type="button"
@@ -282,21 +374,33 @@ function Surface({
             <button
               type="button"
               data-testid="payment-send-wa"
+              disabled={!partialValid}
               onClick={() => {
                 // Update sinkron: ubah sold_at seketika, tutup dialog.
                 // Tanpa reload, tanpa await — badge & Riwayat menyegar di
                 // render berikutnya.
                 const id = payment.prepId;
+                const method = payment.method;
+                const paid =
+                  method === "kas"
+                    ? TOTAL_PER_PREP
+                    : method === "hutang"
+                      ? 0
+                      : Number(payment.partialAmount);
                 setPreps((prev) =>
                   prev.map((p) =>
                     p.id === id && isActivePrep(p)
-                      ? { ...p, sold_at: new Date().toISOString() }
+                      ? {
+                          ...p,
+                          sold_at: new Date().toISOString(),
+                          paid_amount: paid,
+                        }
                       : p,
                   ),
                 );
                 setPayment(null);
               }}
-              className="rounded border border-primary bg-primary px-1.5 py-0.5 font-semibold text-primary-foreground"
+              className="rounded border border-primary bg-primary px-1.5 py-0.5 font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               Kirim WA
             </button>
