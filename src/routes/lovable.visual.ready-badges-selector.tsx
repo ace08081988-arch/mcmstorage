@@ -97,6 +97,7 @@ function formatWaMessage(input: {
   total: number;
   method: "kas" | "hutang" | "partial";
   partialAmount: number | null;
+  note: string;
 }): string {
   const rp = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
   const methodLabel =
@@ -114,6 +115,10 @@ function formatWaMessage(input: {
   if (input.method === "partial" && input.partialAmount !== null) {
     lines.push(`Dibayar: ${rp(input.partialAmount)}`);
     lines.push(`Sisa: ${rp(input.total - input.partialAmount)}`);
+  }
+  const trimmedNote = input.note.trim();
+  if (trimmedNote) {
+    lines.push(`Catatan: ${trimmedNote}`);
   }
   lines.push("Terima kasih.");
   return lines.join("\n");
@@ -171,6 +176,7 @@ function Surface({
     prepId: string;
     method: "kas" | "hutang" | "partial";
     partialAmount: string;
+    note: string;
   }>(null);
 
   // Pesan WA terakhir yang "dikirim" dari surface ini. Spec E2E membaca
