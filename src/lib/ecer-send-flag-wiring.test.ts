@@ -103,11 +103,13 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(block).toMatch(/produk lain/);
     expect(block).toMatch(/description:/);
     // Ringkasan pra-dialog: sebelum setSendOpen(true), owner harus
-    // melihat toast berisi item + judul + jumlah kotak + total gram.
-    expect(block).toMatch(/toast\.message\(/);
+    // melihat modal confirm() berisi item + judul + jumlah kotak +
+    // total gram, dan Batal harus mencegah dialog pembayaran terbuka.
+    expect(block).toMatch(/confirm\(\s*\{/);
     expect(block).toMatch(/item\.name/);
     expect(block).toMatch(/title\.name/);
     expect(block).toMatch(/totalGrams/);
+    expect(block).toMatch(/if\s*\(\s*!ok\s*\)/);
     // Dependency effect ikut menyertakan title.id & item.id supaya efek
     // dieksekusi ulang saat judul/produk berganti.
     expect(src).toMatch(/\},\s*\[\s*autoSend,\s*loading,\s*preps,\s*title\.id,\s*item\.id,\s*onAutoSendConsumed\s*\]/);
