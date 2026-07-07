@@ -183,4 +183,56 @@ test.describe("Pesan WA memuat ringkasan dialog konfirmasi", () => {
     expect(totalLine).toMatch(RUPIAH_RE);
     expect(totalLine).toBe(totalDialog);
   });
+
+  test("Catatan pelanggan di dialog muncul apa adanya di pesan WA", async ({ page }) => {
+    await page.getByTestId("send-wa-ep1").click();
+
+    const note = "Tolong antar sore ini, titip ke pos satpam.";
+    const noteInput = page.getByTestId("payment-note-ecer");
+    await noteInput.fill(note);
+    // Nilai yang tampil di dialog adalah SSOT — pesan WA harus mencerminkan
+    // apa yang user ketik sebelum menekan Kirim WA.
+    await expect(noteInput).toHaveValue(note);
+
+    await page.getByTestId("payment-method-kas").click();
+    await page.getByTestId("payment-send-wa").click();
+
+    const msg = (await page.getByTestId("last-wa-message-ecer").textContent()) ?? "";
+    expect(msg).toContain(`Catatan: ${note}`);
+  });
+
+  test("Catatan kosong: baris 'Catatan:' tidak muncul di pesan WA", async ({ page }) => {
+    await page.getByTestId("send-wa-rp1").click();
+    await expect(page.getByTestId("payment-note-request")).toHaveValue("");
+    await page.getByTestId("payment-method-hutang").click();
+    await page.getByTestId("payment-send-wa").click();
+
+    const msg = (await page.getByTestId("last-wa-message-request").textContent()) ?? "";
+    expect(msg).not.toMatch(/^Catatan:/m);
+  });
+
+  test("Whitespace-only catatan diperlakukan kosong", async ({ page }) => {
+    await page.getByTestId("send-wa-ep2").click();
+    await page.getByTestId("payment-note-ecer").fill("   \n\t  ");
+    await page.getByTestId("payment-method-kas").click();
+    await page.getByTestId("payment-send-wa").click();
+
+    const msg = (await page.getByTestId("last-wa-message-ecer").textContent()) ?? "";
+    expect(msg).not.toMatch(/^Catatan:/m);
+  });
+
+  test("Catatan digabung dengan rincian partial: keduanya muncul di pesan", async ({ page }) => {
+    await page.getByTestId("send-wa-ep4").click();
+    await page.getByTestId("payment-method-partial").click();
+    await page.getByTestId("payment-partial-amount-ecer").fill("2500");
+    const note = "Hubungi via WA sebelum antar.";
+    await page.getByTestId("payment-note-ecer").fill(note);
+
+    await page.getByTestId("payment-send-wa").click();
+
+    const msg = (await page.getByTestId("last-wa-message-ecer").textContent()) ?? "";
+    expect(msg).toContain("Dibayar: Rp2.500");
+    expect(msg).toContain("Sisa: Rp7.500");
+    expect(msg).toContain(`Catatan: ${note}`);
+  });
 });
