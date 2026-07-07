@@ -103,6 +103,9 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [chatPickTarget, setChatPickTarget] = useState<Row | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
   const [sellTarget, setSellTarget] = useState<Row | null>(null);
+  // Row yang baru saja tercatat penjualan — memicu dialog "Kirim bukti"
+  // supaya owner tidak perlu tap tombol WA/Chat lagi secara manual.
+  const [postSalePromptRow, setPostSalePromptRow] = useState<Row | null>(null);
   const [customers, setCustomers] = useState<SellSelfPrepCustomer[]>([]);
   const [warehouseItems, setWarehouseItems] = useState<SellSelfPrepWarehouseItem[]>([]);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
