@@ -3544,6 +3544,28 @@ function SendEcerPrepsDialog({
     if (!canSend) return;
     if (!party.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
     if (payMethod === "partial" && !partialValid) { toast.error("Jumlah dibayar harus > 0 dan < total"); return; }
+
+    const methodLabel =
+      payMethod === "hutang" ? "Hutang (piutang penuh)"
+      : payMethod === "partial" ? `Bayar sebagian — Rp ${paidAmount.toLocaleString("id-ID")} dibayar, sisa Rp ${remaining.toLocaleString("id-ID")} piutang`
+      : "Lunas";
+    const summary = [
+      `Pelanggan: ${party.name}${party.contact ? ` (${party.contact})` : ""}`,
+      `Kotak: ${preps.length} × dari ${title.name}`,
+      `Total: ${rupiah(totalAmount)}`,
+      `Metode: ${methodLabel}`,
+      note.trim() ? `Catatan: ${note.trim()}` : null,
+      "",
+      "Setelah dikirim, stok, penjualan, dan piutang otomatis tercatat. Foto & caption akan dibagikan ke WhatsApp.",
+    ].filter(Boolean).join("\n");
+    const ok = await confirm({
+      title: "Konfirmasi pembayaran",
+      description: summary,
+      confirmText: "Kirim WA",
+      cancelText: "Periksa lagi",
+    });
+    if (!ok) return;
+
     setBusy(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
