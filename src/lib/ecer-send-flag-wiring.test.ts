@@ -47,13 +47,16 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     // menyertakan note JSON berisi reason & summary supaya audit bisa
     // ditelusuri (bukan hanya token "confirm_modal"/"closed_send_dialog").
     expect(src).toMatch(/<AutoSendCancelReasonDialog/);
-    expect(src).toMatch(/data-testid=["']auto-send-cancel-reason["']/);
-    expect(src).toMatch(/data-testid=["']auto-send-cancel-reason-group["']/);
-    expect(src).toMatch(/data-testid=["']auto-send-cancel-detail["']/);
-    expect(src).toMatch(/data-testid=["']auto-send-cancel-submit["']/);
     expect(src).toMatch(/data-testid=["']auto-send-cancel-summary["']/);
     expect(src).toMatch(/setAutoSendCancel\(/);
     expect(src).toMatch(/setAutoSendCancelSummary\(/);
+    // Testid dialog alasan (radio + textarea + submit) tinggal di modul
+    // komponen setelah ekstraksi supaya reusable oleh harness e2e.
+    const dialogSrc = readSrc("src/components/ecer/AutoSendDialogs.tsx");
+    expect(dialogSrc).toMatch(/data-testid=["']auto-send-cancel-reason["']/);
+    expect(dialogSrc).toMatch(/data-testid=["']auto-send-cancel-reason-group["']/);
+    expect(dialogSrc).toMatch(/data-testid=["']auto-send-cancel-detail["']/);
+    expect(dialogSrc).toMatch(/data-testid=["']auto-send-cancel-submit["']/);
     // Note yang dikirim ke finalizeAutoSend WAJIB JSON berisi reason,
     // source, dan ringkasan seleksi — bukan sekadar string bebas.
     expect(src).toMatch(/JSON\.stringify\(\{[\s\S]{0,200}?reason[\s\S]{0,200}?source[\s\S]{0,200}?summary/);
