@@ -1195,6 +1195,18 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [autoSendConfirm, setAutoSendConfirm] = useState<{
     preps: EcerPreparation[];
   } | null>(null);
+  // ID baris audit `auto_send_audit` untuk flag `send=1` yang sedang berjalan.
+  // Dipakai untuk memindahkan outcome ke `confirmed`/`cancelled` setelah
+  // dialog pembayaran ditutup, dan menjadi kunci ringkasan Riwayat.
+  const autoSendAuditIdRef = useRef<string | null>(null);
+  // Ringkasan auto-send terakhir yang berhasil dikonfirmasi — ditampilkan
+  // sebagai banner di atas Riwayat Terkirim setelah RPC penjualan sukses.
+  const [autoSendSummary, setAutoSendSummary] = useState<{
+    count: number;
+    grams: number;
+    unit: string;
+    at: string;
+  } | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
 
   useEffect(() => {
