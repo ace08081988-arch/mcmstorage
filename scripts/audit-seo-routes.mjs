@@ -25,6 +25,7 @@ const ALLOWLIST_NO_SITEMAP = new Set([
   "/robots.txt",
   "/lovable",
   "/lovable/*",
+  "/email/unsubscribe",
 ]);
 
 /** Cari semua file rute *.tsx / *.ts di src/routes (rekursif). */
