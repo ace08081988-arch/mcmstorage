@@ -3352,7 +3352,6 @@ export type Database = {
         }[]
       }
       get_email_cron_secret: { Args: never; Returns: string }
-      get_turnstile_site_key: { Args: never; Returns: string }
       get_worker_portal_public_config: { Args: never; Returns: Json }
       has_active_pro: { Args: { _uid: string }; Returns: boolean }
       has_role: {
