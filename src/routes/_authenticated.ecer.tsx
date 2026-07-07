@@ -153,7 +153,7 @@ function EcerPage() {
         setLoading(false); return;
       }
       const [wi, et] = await Promise.all([
-        supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").order("name"),
+        supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base,image_path,package_type,package_size,price_per_base").order("name"),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from as any)("ecer_titles").select("*").order("position").order("created_at"),
       ]);
@@ -255,7 +255,7 @@ function EcerPage() {
   async function refetchItems() {
     const { data } = await supabase
       .from("warehouse_items")
-      .select("id,name,category,base_unit,stock_base,image_path,package_type,package_size")
+      .select("id,name,category,base_unit,stock_base,image_path,package_type,package_size,price_per_base")
       .order("name");
     if (data) setItems(data as WarehouseItem[]);
   }
@@ -3810,7 +3810,7 @@ function NewProductDialog({ onClose, onCreated }: {
       package_type: packageType,
       package_size: size,
       base_unit: baseUnit,
-    }).select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").single();
+        }).select("id,name,category,base_unit,stock_base,image_path,package_type,package_size,price_per_base").single();
     setBusy(false);
     if (error || !data) { toast.error("Gagal: " + (error?.message ?? "tidak ada data")); return; }
     toast.success("Produk gudang dibuat");
