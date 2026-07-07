@@ -2379,6 +2379,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 to="/ecer"
                 search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" }}
                 onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
                 aria-label={`Kirim ${r.prep_count} kotak ke pembeli (verifikasi bayar dulu)`}
                 title="Verifikasi pembayaran dulu, lalu kirim ke WhatsApp"
                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
@@ -2398,6 +2399,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <button
                 type="button"
                 onClick={undoSent}
+                onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Kembalikan ke aktif"
                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent"
               >
