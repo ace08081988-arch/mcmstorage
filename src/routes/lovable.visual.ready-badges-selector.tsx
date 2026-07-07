@@ -398,6 +398,20 @@ function Surface({
                 Rp{TOTAL_PER_PREP.toLocaleString("id-ID")}
               </span>
             </div>
+            {paymentTitle?.locationUrl ? (
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Lokasi</span>
+                <a
+                  href={paymentTitle.locationUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="truncate text-primary underline"
+                  data-testid={`payment-summary-location-${scope}`}
+                >
+                  {paymentTitle.locationUrl}
+                </a>
+              </div>
+            ) : null}
           </div>
           <div className="flex gap-1">
             {(["kas", "hutang", "partial"] as const).map((m) => (
