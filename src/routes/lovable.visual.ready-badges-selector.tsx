@@ -452,6 +452,29 @@ function Surface({
               )}
             </div>
           )}
+          {/* Catatan pelanggan — teks opsional yang, kalau diisi, harus
+              muncul apa adanya di pesan WA yang dikirim. */}
+          <div className="flex flex-col gap-1">
+            <label
+              className="text-[10px] text-muted-foreground"
+              htmlFor={`payment-note-${scope}`}
+            >
+              Catatan pelanggan
+            </label>
+            <textarea
+              id={`payment-note-${scope}`}
+              data-testid={`payment-note-${scope}`}
+              value={payment.note}
+              onChange={(e) =>
+                setPayment((prev) =>
+                  prev ? { ...prev, note: e.target.value } : prev,
+                )
+              }
+              rows={2}
+              className="w-full rounded border px-1.5 py-0.5 text-[11px]"
+              placeholder="mis. Tolong antar sore ini"
+            />
+          </div>
           <div className="flex justify-end gap-1 pt-1">
             <button
               type="button"
