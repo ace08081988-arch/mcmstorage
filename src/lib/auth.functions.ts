@@ -67,6 +67,33 @@ async function verifyTurnstile(token: string, ip: string, secret: string): Promi
 }
 
 /**
+ * Catat percobaan pendaftaran yang gagal SEBELUM mencapai rate-limit RPC
+ * (mis. captcha_missing / captcha_failed). Non-fatal: kegagalan logging tidak
+ * boleh mengganggu jalur error yang dilihat pengguna.
+ */
+async function logCaptchaFailureAttempt(
+  ip: string,
+  email: string,
+  userAgent: string | null,
+  code: "captcha_missing" | "captcha_failed",
+  details: string | null,
+): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("signup_attempts").insert({
+      ip,
+      email,
+      user_agent: userAgent,
+      succeeded: false,
+      // Kolom baru — cast agar type-check lulus sebelum types.ts diregenerasi.
+      ...({ failure_code: code, failure_details: details } as Record<string, unknown>),
+    } as never);
+  } catch (err) {
+    console.warn("[secureSignUp] gagal mencatat kegagalan captcha", err);
+  }
+}
+
+/**
  * Implementasi murni handler `secureSignUp` — diekspor terpisah agar bisa
  * di-unit/integration-test tanpa runtime `createServerFn`/Start context.
  * `secureSignUp` di bawah hanya membungkusnya dengan validator + RPC layer.
@@ -136,6 +163,7 @@ export async function secureSignUpImpl(
 
     // 1) Verifikasi Turnstile lebih dulu — biar bot tidak menghabiskan slot rate limit.
     if (!data.turnstileToken) {
+      await logCaptchaFailureAttempt(ip, data.email, userAgent, "captcha_missing", null);
       return {
         ok: false,
         code: "captcha_missing",
@@ -158,6 +186,13 @@ export async function secureSignUpImpl(
       : await verifyTurnstile(data.turnstileToken, ip, turnstileSecret);
     if (!captcha.ok) {
       const codes = captcha.codes.join(", ");
+      await logCaptchaFailureAttempt(
+        ip,
+        data.email,
+        userAgent,
+        "captcha_failed",
+        codes || null,
+      );
       return {
         ok: false,
         code: "captcha_failed",
