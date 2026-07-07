@@ -2939,30 +2939,6 @@ export type Database = {
         }
         Relationships: []
       }
-      turnstile_config: {
-        Row: {
-          id: number
-          secret_key: string
-          site_key: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          id?: number
-          secret_key?: string
-          site_key?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          id?: number
-          secret_key?: string
-          site_key?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
       user_devices: {
         Row: {
           created_at: string
