@@ -35,7 +35,7 @@ import { DialogSaveStatus, useSaveStatus, useSaveStatusToast, confirmDiscardIfDi
 import { Field } from "@/components/DialogField";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
-import { buildPaymentMessageLines, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
+import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -2087,7 +2087,7 @@ function SendPrepToCustomerDialog({
       });
       lines.push("");
     }
-    lines.push(`Total: *${rupiah(totalAmount)}*`);
+    lines.push(`Total: *${formatPaymentRupiah(totalAmount)}*`);
     lines.push(...buildPaymentMessageLines(payment));
     if (resolvedParty.name) lines.push(`Untuk: ${resolvedParty.name}`);
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
