@@ -297,6 +297,7 @@ function AuthPage() {
       }
 
       toast.success("Pendaftaran berhasil. Silakan masuk.", { duration: 6000 });
+      setVerifyStatus("awaiting-signup-verification");
       setMode("login");
       setPassword("");
       setConfirmPassword("");
@@ -306,7 +307,9 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      const msg = /email not confirmed|not.*confirmed/i.test(error.message)
+      const notConfirmed = /email not confirmed|not.*confirmed/i.test(error.message);
+      if (notConfirmed) setVerifyStatus("unverified");
+      const msg = notConfirmed
         ? "Email belum diverifikasi. Cek inbox untuk link verifikasi."
         : /invalid login credentials/i.test(error.message)
         ? "Email atau kata sandi salah (atau belum daftar)"
