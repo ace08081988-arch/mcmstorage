@@ -37,6 +37,7 @@ import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
+import { buildPaymentMessageLines, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -2441,11 +2442,11 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         {prep.note && <div className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">{prep.note}</div>}
         {sold && (
           <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-1 text-[10px] leading-snug text-emerald-800 dark:text-emerald-200">
-            {prep.sold_payment_method === "hutang"
-              ? <>Piutang · {rupiah(Number(prep.sold_total ?? 0))}</>
-              : prep.sold_payment_method === "partial"
-                ? <>Bayar sebagian · {rupiah(Number(prep.sold_paid_amount ?? 0))} / {rupiah(Number(prep.sold_total ?? 0))}</>
-                : <>Lunas · {rupiah(Number(prep.sold_total ?? 0))}</>}
+            {formatSoldPaymentSummary(
+              prep.sold_payment_method,
+              Number(prep.sold_total ?? 0),
+              Number(prep.sold_paid_amount ?? 0),
+            )}
             {prep.sold_at && <> · {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</>}
           </div>
         )}
@@ -3492,15 +3493,17 @@ function SendEcerPrepsDialog({
   }, [open, customers]);
 
   const totalAmount = useMemo(() => {
-    const n = Number(totalStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
-    return Number.isFinite(n) ? n : 0;
+    return parsePaymentAmountInput(totalStr);
   }, [totalStr]);
   const paidAmount = useMemo(() => {
-    const n = Number(paidStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
-    return Number.isFinite(n) ? n : 0;
+    return parsePaymentAmountInput(paidStr);
   }, [paidStr]);
-  const remaining = Math.max(0, totalAmount - paidAmount);
-  const partialValid = payMethod !== "partial" || (paidAmount > 0 && paidAmount < totalAmount);
+  const payment = useMemo(
+    () => getPaymentBreakdown(payMethod, totalAmount, paidAmount),
+    [payMethod, totalAmount, paidAmount],
+  );
+  const remaining = payment.remaining;
+  const partialValid = payment.partialValid;
 
   const party = useMemo(() => {
     if (mode === "link") {
@@ -3531,13 +3534,7 @@ function SendEcerPrepsDialog({
     });
     lines.push("");
     lines.push(`Total: *${rupiah(totalAmount)}*`);
-    if (payMethod === "hutang") {
-      lines.push("Metode: *Hutang* (piutang)");
-    } else if (payMethod === "partial") {
-      lines.push(`Metode: *Bayar sebagian* — Dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} piutang`);
-    } else {
-      lines.push("Metode: *Lunas*");
-    }
+    lines.push(...buildPaymentMessageLines(payment));
     if (party.name) lines.push(`Untuk: ${party.name}`);
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
     lines.push("");
@@ -3551,8 +3548,8 @@ function SendEcerPrepsDialog({
     if (payMethod === "partial" && !partialValid) { toast.error("Jumlah dibayar harus > 0 dan < total"); return; }
 
     const methodLabel =
-      payMethod === "hutang" ? "Hutang (piutang penuh)"
-      : payMethod === "partial" ? `Bayar sebagian — Rp ${paidAmount.toLocaleString("id-ID")} dibayar, sisa Rp ${remaining.toLocaleString("id-ID")} piutang`
+      payment.method === "hutang" ? `Hutang — sisa ${rupiah(payment.remaining)} piutang`
+      : payment.method === "partial" ? `Bayar sebagian — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} piutang`
       : "Lunas";
     const summary = [
       `Pelanggan: ${party.name}${party.contact ? ` (${party.contact})` : ""}`,
@@ -3578,18 +3575,18 @@ function SendEcerPrepsDialog({
         _prep_ids: preps.map((p) => p.id),
         _customer_id: party.id,
         _party_name: party.name,
-        _total_amount: totalAmount,
-        _paid_amount: payMethod === "partial" ? paidAmount : null,
-        _payment_method: payMethod,
+        _total_amount: payment.total,
+        _paid_amount: payment.method === "partial" ? payment.paid : null,
+        _payment_method: payment.method,
         _note: note.trim() || null,
       });
       if (rpcErr) throw rpcErr;
 
       toast.success(
-        payMethod === "hutang"
+        payment.method === "hutang"
           ? "Terkirim — penjualan & piutang tercatat"
-          : payMethod === "partial"
-            ? `Terkirim — dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} jadi piutang`
+          : payment.method === "partial"
+            ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
             : "Terkirim — penjualan tercatat",
       );
       // Segarkan UI (badge + pindah ke Riwayat Terkirim) segera setelah RPC sukses,
