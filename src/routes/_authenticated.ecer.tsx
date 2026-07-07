@@ -1531,12 +1531,35 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           itemName={item.name}
           customers={customers}
-          onClose={() => setSendOpen(false)}
+          onClose={() => {
+            setSendOpen(false);
+            // Owner menutup dialog pembayaran tanpa mengirim — kalau ini
+            // datang dari auto-send, finalisasi baris audit sebagai
+            // `cancelled` agar jejak tidak menggantung di `proposed`.
+            const auditId = autoSendAuditIdRef.current;
+            if (auditId) {
+              autoSendAuditIdRef.current = null;
+              void finalizeAutoSend(auditId, "cancelled", "closed_send_dialog");
+            }
+          }}
           onSent={() => {
             setSendOpen(false);
             exitSelection();
             void load();
             onTitleUpdated();
+            const auditId = autoSendAuditIdRef.current;
+            if (auditId) {
+              autoSendAuditIdRef.current = null;
+              void finalizeAutoSend(auditId, "confirmed").then((row) => {
+                if (!row) return;
+                setAutoSendSummary({
+                  count: row.prep_count,
+                  grams: Number(row.total_grams) || 0,
+                  unit: row.unit_label || title.unit_label || "g",
+                  at: row.finalized_at || new Date().toISOString(),
+                });
+              });
+            }
           }}
         />
       )}
@@ -1565,6 +1588,11 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           setAutoSendConfirm(null);
           setSelectionMode(false);
           setSelected(new Set());
+          const auditId = autoSendAuditIdRef.current;
+          if (auditId) {
+            autoSendAuditIdRef.current = null;
+            void finalizeAutoSend(auditId, "cancelled", "confirm_modal");
+          }
         }}
         onConfirm={() => {
           setAutoSendConfirm(null);
