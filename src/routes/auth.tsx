@@ -112,6 +112,7 @@ function AuthPage() {
   const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [widgetKey, setWidgetKey] = useState(0);
   const devBypass = isTurnstileDevBypass();
+  const { siteKey: TURNSTILE_SITE_KEY } = useTurnstileSiteKey();
   // Auto-isi token bypass ketika berjalan di localhost dev supaya alur
   // pendaftaran tidak menunggu widget Turnstile.
   useEffect(() => {
