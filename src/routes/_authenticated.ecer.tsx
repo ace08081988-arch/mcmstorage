@@ -79,6 +79,10 @@ function EcerPage() {
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(search.item);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
+  // Ambil `send=1` sekali saat mount. URL sync effect di bawah akan
+  // menghapus flag dari URL setelah render pertama, jadi kita simpan di
+  // state agar TitleDetailView bisa mengonsumsinya walau URL sudah bersih.
+  const [pendingAutoSend, setPendingAutoSend] = useState(search.send === "1");
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
   // Membuat judul lain untuk item tertentu langsung dari halaman detail.
