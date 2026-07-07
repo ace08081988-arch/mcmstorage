@@ -357,14 +357,26 @@ export async function secureSignUpImpl(
       };
     }
 
-    // 3) Buat akun via admin API. Email dianggap terkonfirmasi mengikuti kebijakan
-    // sebelumnya (auto-confirm sudah aktif di setup akun).
+    // 3) Buat akun via admin API TANPA email_confirm — user harus klik link
+    // verifikasi yang dikirim lewat auth webhook Lovable Emails sebelum bisa login.
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
-      email_confirm: true,
+      email_confirm: false,
       user_metadata: { chat_only: data.chatOnly },
     });
+    // Kirim email konfirmasi signup via generateLink → memicu auth webhook.
+    if (!error && created?.user) {
+      try {
+        await supabaseAdmin.auth.admin.generateLink({
+          type: "signup",
+          email: data.email,
+          password: data.password,
+        });
+      } catch (linkErr) {
+        console.warn("[secureSignUp] gagal memicu email verifikasi", linkErr);
+      }
+    }
     if (error) {
       const msg = error.message || "";
       if (/already|exists|registered|duplicate/i.test(msg)) {
