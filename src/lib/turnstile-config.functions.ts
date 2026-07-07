@@ -199,6 +199,7 @@ export const testTurnstileSecret = createServerFn({ method: "POST" })
     body.set("secret", secret);
     // Token dummy — pasti gagal, tapi Cloudflare akan tetap memvalidasi secret.
     body.set("response", "test-token-xxxxxxxxxxxxxxxxxxxx");
+    const startedAt = Date.now();
     try {
       const res = await fetch(
         "https://challenges.cloudflare.com/turnstile/v0/siteverify",
@@ -207,8 +208,21 @@ export const testTurnstileSecret = createServerFn({ method: "POST" })
       const json = (await res.json()) as {
         success: boolean;
         "error-codes"?: string[];
+        messages?: string[];
       };
       const codes = json["error-codes"] ?? [];
+      const durationMs = Date.now() - startedAt;
+      console.info(
+        "[turnstile.test]",
+        JSON.stringify({
+          admin_user_id: context.userId,
+          secret_source: source,
+          error_codes: codes,
+          messages: json.messages ?? null,
+          http_status: res.status,
+          duration_ms: durationMs,
+        }),
+      );
       // Secret dianggap valid selama Cloudflare TIDAK mengeluh soal secret.
       const secretRejected = codes.some((c) =>
         c === "invalid-input-secret" || c === "missing-input-secret",
