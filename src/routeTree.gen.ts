@@ -27,6 +27,7 @@ import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
 import { Route as DiagnostikPaketRouteImport } from './routes/diagnostik.paket'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiVersionRouteImport } from './routes/api/version'
 import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
 import { Route as AuthenticatedTugasDaftarRouteImport } from './routes/_authenticated.tugas-daftar'
@@ -207,6 +208,11 @@ const DiagnostikPaketRoute = DiagnostikPaketRouteImport.update({
   id: '/diagnostik/paket',
   path: '/diagnostik/paket',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
 } as any)
 const ApiVersionRoute = ApiVersionRouteImport.update({
   id: '/api/version',
@@ -723,7 +729,7 @@ const AuthenticatedGudangPesananIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
@@ -775,6 +781,7 @@ export interface FileRoutesByFullPath {
   '/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
   '/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -832,7 +839,7 @@ export interface FileRoutesByFullPath {
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRoutesByTo {
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/refund': typeof RefundRoute
@@ -882,6 +889,7 @@ export interface FileRoutesByTo {
   '/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
   '/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -942,7 +950,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
@@ -994,6 +1002,7 @@ export interface FileRoutesById {
   '/_authenticated/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
   '/_authenticated/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
@@ -1107,6 +1116,7 @@ export interface FileRouteTypes {
     | '/tugas-daftar'
     | '/undang'
     | '/api/version'
+    | '/auth/callback'
     | '/diagnostik/paket'
     | '/download/$variant'
     | '/email/unsubscribe'
@@ -1214,6 +1224,7 @@ export interface FileRouteTypes {
     | '/tugas-daftar'
     | '/undang'
     | '/api/version'
+    | '/auth/callback'
     | '/diagnostik/paket'
     | '/download/$variant'
     | '/email/unsubscribe'
@@ -1325,6 +1336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tugas-daftar'
     | '/_authenticated/undang'
     | '/api/version'
+    | '/auth/callback'
     | '/diagnostik/paket'
     | '/download/$variant'
     | '/email/unsubscribe'
@@ -1385,7 +1397,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
   PosKasirRoute: typeof PosKasirRouteWithChildren
@@ -1562,6 +1574,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/diagnostik/paket'
       preLoaderRoute: typeof DiagnostikPaketRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/api/version': {
       id: '/api/version'
@@ -2373,6 +2392,16 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 interface DownloadRouteChildren {
   DownloadVariantRoute: typeof DownloadVariantRoute
 }
@@ -2401,7 +2430,7 @@ const PosKasirRouteWithChildren = PosKasirRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
   PosKasirRoute: PosKasirRouteWithChildren,
@@ -2457,13 +2486,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
