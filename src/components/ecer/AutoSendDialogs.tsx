@@ -280,12 +280,36 @@ export function AutoSendConfirmDialog({
                   )}
                   {g.label}
                 </span>
-                <span className="shrink-0 font-medium">
-                  {g.count} kotak · {g.grams} {unit}
+                <span className="shrink-0 text-right">
+                  <span className="font-medium">
+                    {g.count} kotak · {g.grams} {unit}
+                  </span>
+                  {unitPrice > 0 && (
+                    <span
+                      data-testid="auto-send-product-breakdown-price"
+                      className={`ml-2 font-semibold ${
+                        g.isOther ? "text-destructive" : "text-foreground"
+                      }`}
+                      title={
+                        g.isOther
+                          ? "Harga estimasi memakai tarif produk utama; produk ini beda dari yang dipilih."
+                          : undefined
+                      }
+                    >
+                      {rupiah(g.grams * unitPrice)}
+                      {g.isOther && "*"}
+                    </span>
+                  )}
                 </span>
               </li>
             ))}
           </ul>
+          {unitPrice > 0 && productBreakdown.some((g) => g.isOther) && (
+            <div className="mt-1 text-[10px] text-destructive/80">
+              * Harga produk lain dihitung memakai tarif produk utama —
+              perbaiki seleksi sebelum lanjut.
+            </div>
+          )}
         </div>
         {hasInvalid && (
           <div
