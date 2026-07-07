@@ -128,7 +128,8 @@ test.describe("Status & Dibayar/Sisa selalu match data item", () => {
   });
 
   test("Toggle metode partial → hutang → kas: hanya metode terakhir yang berlaku", async ({ page }) => {
-    await page.getByTestId("send-wa-rp3").click();
+    // rp2 masih aktif (rp3 sudah `sold_at` di harness — tombolnya disabled).
+    await page.getByTestId("send-wa-rp2").click();
 
     await page.getByTestId("payment-method-partial").click();
     await page.getByTestId("payment-partial-amount-request").fill("2000");
