@@ -11,6 +11,7 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
+import { logAuthDebug } from "@/lib/auth-debug";
 
 function AuthBrand() {
   const { full, logo } = useOrgName();
