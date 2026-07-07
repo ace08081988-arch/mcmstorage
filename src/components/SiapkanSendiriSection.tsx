@@ -944,12 +944,64 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           selfPrepTitle={sellTarget.title}
           customers={customers}
           warehouseItems={warehouseItems}
-          onSold={() => {
+          onSold={async () => {
+            const soldId = sellTarget.id;
             setSellTarget(null);
-            void load();
+            await load();
+            // Auto-buka picker WA/Chat: cari row yang baru saja
+            // terjual di state terbaru (post-load) via callback state,
+            // supaya kita tidak race dengan setRows.
+            setRows((prev) => {
+              const fresh = prev.find((x) => x.id === soldId);
+              if (fresh && fresh.sold_at) setPostSalePromptRow(fresh);
+              return prev;
+            });
           }}
         />
       )}
+
+      <AlertDialog
+        open={!!postSalePromptRow}
+        onOpenChange={(o) => { if (!o) setPostSalePromptRow(null); }}
+      >
+        <AlertDialogContent className="max-w-sm" data-testid="post-sale-share-prompt">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kirim bukti ke pembeli?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1 text-sm">
+                <div>
+                  Penjualan <span className="font-semibold text-foreground">{postSalePromptRow?.title}</span> tercatat.
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Bukti pembayaran (gambar) + ringkasan penjualan akan
+                  otomatis dilampirkan.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+            <AlertDialogCancel className="sm:mr-auto">Nanti saja</AlertDialogCancel>
+            <WaShareButton
+              size="md"
+              variant="solid"
+              onClick={() => {
+                const r = postSalePromptRow;
+                setPostSalePromptRow(null);
+                if (r) void onSendWA(r);
+              }}
+            />
+            <ChatShareButton
+              size="md"
+              variant="solid"
+              onClick={() => {
+                const r = postSalePromptRow;
+                setPostSalePromptRow(null);
+                if (r) setChatPickTarget(r);
+              }}
+            />
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
