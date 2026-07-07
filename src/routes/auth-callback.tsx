@@ -74,14 +74,14 @@ function AuthCallbackPage() {
           setStatus("manual");
           setMessage("Email sudah diverifikasi. Silakan masuk dengan email dan kata sandi Anda.");
           toast.success("Email terverifikasi. Silakan masuk.");
-          window.history.replaceState({}, document.title, "/auth/callback");
+          window.history.replaceState({}, document.title, "/auth-callback");
           return;
         }
 
         setStatus("done");
         setMessage("Verifikasi berhasil. Membuka aplikasi…");
         toast.success("Verifikasi berhasil");
-        window.history.replaceState({}, document.title, "/auth/callback");
+        window.history.replaceState({}, document.title, "/auth-callback");
         navigate({ to: target, replace: true });
       } catch (err) {
         if (cancelled) return;

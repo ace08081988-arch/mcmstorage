@@ -155,7 +155,7 @@ function AuthPage() {
         window.location.hash.includes("error=") ||
         window.location.search.includes("code=");
       if (hasAuthCallback) {
-        window.location.replace(`/auth/callback${window.location.search}${window.location.hash}`);
+        window.location.replace(`/auth-callback${window.location.search}${window.location.hash}`);
         return;
       }
     }
@@ -309,7 +309,7 @@ function AuthPage() {
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${window.location.origin}/auth-callback` },
     });
     setLoading(false);
     if (error) {

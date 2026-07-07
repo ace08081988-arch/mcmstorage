@@ -141,7 +141,7 @@ export const Route = createFileRoute("/_authenticated")({
         window.location.hash.includes("error=") ||
         window.location.search.includes("code=");
       if (hasAuthCallback) {
-        window.location.replace(`/auth/callback${window.location.search}${window.location.hash}`);
+        window.location.replace(`/auth-callback${window.location.search}${window.location.hash}`);
         return;
       }
     }

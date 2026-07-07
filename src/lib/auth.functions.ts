@@ -63,13 +63,13 @@ function safeAuthCallbackUrl(req: Request): string {
         host === "127.0.0.1" ||
         host.endsWith(".lovable.app");
       if ((url.protocol === "https:" || url.protocol === "http:") && allowed) {
-        return `${url.origin}/auth/callback`;
+        return `${url.origin}/auth-callback`;
       }
     } catch {
       /* ignore malformed header */
     }
   }
-  return `${fallback}/auth/callback`;
+  return `${fallback}/auth-callback`;
 }
 
 /**
