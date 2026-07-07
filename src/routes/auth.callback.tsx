@@ -16,10 +16,6 @@ function safeTarget(value: unknown): string {
 
 export const Route = createFileRoute("/auth/callback")({
   ssr: false,
-  validateSearch: (search) => ({
-    next: safeTarget((search as { next?: unknown }).next),
-    redirect: safeTarget((search as { redirect?: unknown }).redirect),
-  }),
   head: () => ({
     meta: [
       { title: "Memproses Verifikasi — MCM Storage" },
@@ -31,10 +27,14 @@ export const Route = createFileRoute("/auth/callback")({
 
 function AuthCallbackPage() {
   const navigate = useNavigate();
-  const search = Route.useSearch();
   const [status, setStatus] = useState<"loading" | "done" | "manual" | "error">("loading");
   const [message, setMessage] = useState("Memproses verifikasi akun…");
-  const target = search.redirect !== "/" ? search.redirect : search.next;
+  const [target] = useState(() => {
+    if (typeof window === "undefined") return "/";
+    const params = new URLSearchParams(window.location.search);
+    const redirect = safeTarget(params.get("redirect"));
+    return redirect !== "/" ? redirect : safeTarget(params.get("next"));
+  });
 
   useEffect(() => {
     let cancelled = false;
