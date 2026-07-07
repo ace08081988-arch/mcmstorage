@@ -78,4 +78,26 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(src).toMatch(/const\s+autoSendFiredRef\s*=\s*useRef\(false\)/);
     expect(block).toMatch(/autoSendFiredRef\.current\s*=\s*true/);
   });
+
+  it("/ecer autoSend: pilih HANYA kotak untuk title_id + warehouse_item_id yg cocok", () => {
+    const src = readSrc("src/routes/_authenticated.ecer.tsx");
+    // Blok efek harus menyaring ulang di klien terhadap title.id DAN item.id
+    // (sabuk pengaman berlapis di atas query server-side). Ini melarang
+    // regressi ke `setSelected(new Set(filterActivePreps(preps)…))` tanpa
+    // filter title/item.
+    const m = src.match(
+      /if\s*\(\s*!\s*autoSend[\s\S]{0,3000}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}\s*\)/,
+    );
+    // Fallback: ambil sampai closing brace terakhir dari efek jika regex
+    // di atas gagal (comment/format shift).
+    const block = (m?.[0] ?? src.slice(src.indexOf("if (!autoSend"), src.indexOf("}, [autoSend"))) as string;
+    expect(block).toMatch(/p\.title_id\s*===\s*title\.id/);
+    expect(block).toMatch(/p\.warehouse_item_id[\s\S]{0,80}?item\.id/);
+    // Anomali lintas judul/produk WAJIB membatalkan auto-send, bukan diam.
+    expect(block).toMatch(/mismatched/);
+    expect(block).toMatch(/toast\.error\(/);
+    // Dependency effect ikut menyertakan title.id & item.id supaya efek
+    // dieksekusi ulang saat judul/produk berganti.
+    expect(src).toMatch(/\},\s*\[\s*autoSend,\s*loading,\s*preps,\s*title\.id,\s*item\.id,\s*onAutoSendConsumed\s*\]/);
+  });
 });
