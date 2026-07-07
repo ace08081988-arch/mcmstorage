@@ -322,6 +322,10 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
         }
       } catch { /* ignore — lanjut foto berikutnya */ }
     }
+    // Lampirkan bukti pembayaran (PNG) sebagai foto terakhir supaya
+    // pembeli menerima ringkasan yang tercetak rapih, bukan cuma teks.
+    const receipt = await buildReceiptFile(r);
+    if (receipt) collected.push(receipt);
     const files = collected.length ? collected : undefined;
 
     const result = await shareToWhatsApp({ text, files });
