@@ -135,6 +135,15 @@ export type TurnstileSecretTestResult = {
   source: "input" | "database" | "env" | "none";
   codes: string[];
   message: string;
+  http_status?: number;
+  duration_ms?: number;
+  messages?: string[];
+  request_id?: string | null;
+  cf_ray?: string | null;
+  hostname?: string | null;
+  challenge_ts?: string | null;
+  action?: string | null;
+  raw?: string;
 };
 
 export const testTurnstileSecret = createServerFn({ method: "POST" })
@@ -205,13 +214,27 @@ export const testTurnstileSecret = createServerFn({ method: "POST" })
         "https://challenges.cloudflare.com/turnstile/v0/siteverify",
         { method: "POST", body },
       );
-      const json = (await res.json()) as {
+      const rawText = await res.text();
+      let json: {
         success: boolean;
         "error-codes"?: string[];
         messages?: string[];
-      };
+        hostname?: string;
+        challenge_ts?: string;
+        action?: string;
+      } = { success: false };
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        /* keep default */
+      }
       const codes = json["error-codes"] ?? [];
       const durationMs = Date.now() - startedAt;
+      const cfRay = res.headers.get("cf-ray");
+      const requestId =
+        res.headers.get("x-request-id") ??
+        res.headers.get("cf-request-id") ??
+        null;
       console.info(
         "[turnstile.test]",
         JSON.stringify({
@@ -221,12 +244,25 @@ export const testTurnstileSecret = createServerFn({ method: "POST" })
           messages: json.messages ?? null,
           http_status: res.status,
           duration_ms: durationMs,
+          cf_ray: cfRay,
+          request_id: requestId,
         }),
       );
       // Secret dianggap valid selama Cloudflare TIDAK mengeluh soal secret.
       const secretRejected = codes.some((c) =>
         c === "invalid-input-secret" || c === "missing-input-secret",
       );
+      const common = {
+        http_status: res.status,
+        duration_ms: durationMs,
+        messages: json.messages ?? [],
+        request_id: requestId,
+        cf_ray: cfRay,
+        hostname: json.hostname ?? null,
+        challenge_ts: json.challenge_ts ?? null,
+        action: json.action ?? null,
+        raw: rawText.slice(0, 2000),
+      };
       if (secretRejected) {
         return {
           ok: false,
@@ -236,6 +272,7 @@ export const testTurnstileSecret = createServerFn({ method: "POST" })
             "Secret key ditolak Cloudflare (" +
             codes.join(", ") +
             "). Periksa kembali secret dari dashboard Turnstile.",
+          ...common,
         };
       }
       return {
@@ -246,6 +283,7 @@ export const testTurnstileSecret = createServerFn({ method: "POST" })
           "Secret key valid. Cloudflare menerima secret (token dummy ditolak seperti yang diharapkan: " +
           (codes.join(", ") || "no-codes") +
           ").",
+        ...common,
       };
     } catch (err) {
       return {
@@ -255,6 +293,7 @@ export const testTurnstileSecret = createServerFn({ method: "POST" })
         message:
           "Gagal menghubungi Cloudflare: " +
           (err instanceof Error ? err.message : String(err)),
+        duration_ms: Date.now() - startedAt,
       };
     }
   });
