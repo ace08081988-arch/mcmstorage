@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Loader2, MailWarning, ShieldCheck, ArrowRight, RefreshCw, Bug, Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +39,10 @@ function AuthCallbackPage() {
   const [countdown, setCountdown] = useState(3);
   const [showDebug, setShowDebug] = useState(false);
   const [debugEvents, setDebugEvents] = useState<AuthDebugEvent[]>([]);
+  const [resetting, setResetting] = useState(false);
+  const originalUrlRef = useRef<string>(
+    typeof window !== "undefined" ? window.location.href : "",
+  );
   const [target] = useState(() => {
     if (typeof window === "undefined") return "/";
     const params = new URLSearchParams(window.location.search);
@@ -197,6 +201,53 @@ function AuthCallbackPage() {
     window.location.reload();
   };
 
+  const resetAndRetry = async () => {
+    setResetting(true);
+    logAuthDebug("callback", "reset session & retry: start");
+    try {
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+        logAuthDebug("callback", "reset: signOut ok");
+      } catch (e) {
+        logAuthDebug(
+          "callback",
+          "reset: signOut failed (lanjut bersihkan storage)",
+          { error: e instanceof Error ? e.message : String(e) },
+          "warn",
+        );
+      }
+      // Bersihkan sisa token Supabase di storage lokal.
+      try {
+        const wipe = (store: Storage) => {
+          const keys: string[] = [];
+          for (let i = 0; i < store.length; i++) {
+            const k = store.key(i);
+            if (k && (k.startsWith("sb-") || k.includes("supabase.auth"))) keys.push(k);
+          }
+          keys.forEach((k) => store.removeItem(k));
+          return keys.length;
+        };
+        const l = wipe(window.localStorage);
+        const s = wipe(window.sessionStorage);
+        logAuthDebug("callback", "reset: storage cleared", { localStorage: l, sessionStorage: s });
+      } catch (e) {
+        logAuthDebug(
+          "callback",
+          "reset: storage clear failed",
+          { error: e instanceof Error ? e.message : String(e) },
+          "warn",
+        );
+      }
+      toast.message("Sesi dibersihkan. Mengulang verifikasi…");
+      // Ulangi dengan URL awal (hash/token asli) supaya proses verifikasi jalan lagi.
+      const url = originalUrlRef.current || window.location.href;
+      window.location.replace(url);
+    } finally {
+      // Kalau replace gagal, kembalikan tombol.
+      window.setTimeout(() => setResetting(false), 1500);
+    }
+  };
+
   const banner = {
     loading: {
       Icon: Loader2,
@@ -296,6 +347,21 @@ function AuthCallbackPage() {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
               >
                 <RefreshCw className="h-4 w-4" /> Coba lagi
+              </button>
+            )}
+            {(status === "error" || status === "manual") && (
+              <button
+                onClick={() => void resetAndRetry()}
+                disabled={resetting}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
+                title="Bersihkan sesi lokal lalu jalankan ulang verifikasi"
+              >
+                {resetting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Reset sesi & coba lagi
               </button>
             )}
           </div>
