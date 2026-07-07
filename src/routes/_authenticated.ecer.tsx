@@ -1064,9 +1064,10 @@ function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: 
 }
 
 // ---- Detail view: preparations grid ----
-function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct }: {
+function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct, autoSend, onAutoSendConsumed }: {
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
   onCreateTitle?: () => void; onCreateProduct?: () => void;
+  autoSend?: boolean; onAutoSendConsumed?: () => void;
 }) {
   void onBack;
   const [preps, setPreps] = useState<EcerPreparation[]>([]);
