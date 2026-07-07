@@ -3151,6 +3151,13 @@ function PhotoTileGrid({
   onMerge?: () => void;
 }) {
   const total = photos.length + pending.length;
+  // Lacak ubin yang <img> onError → tampilkan overlay "Foto rusak" agar
+  // pegawai tidak melihat noise dan bisa langsung hapus & foto ulang.
+  const [brokenIdx, setBrokenIdx] = useState<Set<number>>(new Set());
+  useEffect(() => {
+    // Reset saat set foto berubah (indeks bergeser setelah hapus/tambah).
+    setBrokenIdx(new Set());
+  }, [photos]);
   if (total === 0) return null;
   const loadingCount = pending.filter((p) => p.status === "loading").length;
   const errorCount = pending.filter((p) => p.status === "error").length;
@@ -3220,7 +3227,38 @@ function PhotoTileGrid({
                         : ""
               }`}
             >
-              <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
+              <img
+                src={p.dataUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={() =>
+                  setBrokenIdx((prev) => {
+                    if (prev.has(i)) return prev;
+                    const next = new Set(prev);
+                    next.add(i);
+                    return next;
+                  })
+                }
+              />
+              {brokenIdx.has(i) && (
+                <div
+                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-destructive/90 p-2 text-center text-white"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  <AlertCircle className="h-5 w-5" aria-hidden />
+                  <div className="text-[10px] font-semibold leading-tight">
+                    Foto rusak
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(i)}
+                    className="mt-0.5 inline-flex h-6 items-center gap-1 rounded bg-white/95 px-1.5 text-[10px] font-semibold text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" /> Hapus & foto ulang
+                  </button>
+                </div>
+              )}
               <div className="absolute left-1 top-1 z-10 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white shadow">
                 {p.originalFormat && p.originalFormat !== p.format
                   ? `${p.originalFormat} → ${p.format}`
