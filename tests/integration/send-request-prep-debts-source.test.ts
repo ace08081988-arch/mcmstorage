@@ -54,9 +54,24 @@ function latestRpcBody(): string | null {
   return last;
 }
 
+/** Ambil body RPC `send_ecer_preps_to_customer` versi terbaru. */
+function latestEcerRpcBody(): string | null {
+  const re =
+    /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.send_ecer_preps_to_customer[\s\S]*?\$function\$([\s\S]*?)\$function\$/gi;
+  const re2 =
+    /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.send_ecer_preps_to_customer[\s\S]*?AS\s+\$\$([\s\S]*?)\$\$/gi;
+  let last: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(allSql)) !== null) last = m[1];
+  if (last) return last;
+  while ((m = re2.exec(allSql)) !== null) last = m[1];
+  return last;
+}
+
 describe("send_request_prep_to_customer × debts_source_check", () => {
   const checkExpr = latestDebtsSourceCheck();
   const rpcBody = latestRpcBody();
+  const ecerRpcBody = latestEcerRpcBody();
 
   it("migrasi mendefinisikan `debts_source_check` yang memuat sumber request & ecer", () => {
     expect(checkExpr, "ADD CONSTRAINT debts_source_check tidak ditemukan di migrasi").toBeTruthy();
@@ -94,6 +109,17 @@ describe("send_request_prep_to_customer × debts_source_check", () => {
       "RPC harus membungkus INSERT debts di dalam IF v_debt_amount > 0 agar partial ikut tercatat",
     ).toBeTruthy();
     expect(guard![0]).toMatch(/kind\s*=?\s*['"]?piutang['"]?|'piutang'/i);
+  });
+
+  it("RPC ecer menulis piutang source='ecer_prep' berdasarkan sisa bayar", () => {
+    expect(ecerRpcBody, "Body RPC send_ecer_preps_to_customer tidak ditemukan").toBeTruthy();
+    const insertDebts = ecerRpcBody!.match(/INSERT\s+INTO\s+public\.debts[\s\S]*?;/i);
+    expect(insertDebts, "INSERT INTO public.debts tidak ada di RPC ecer").toBeTruthy();
+    expect(insertDebts![0]).toMatch(/'ecer_prep'/);
+    const guard = ecerRpcBody!.match(
+      /IF\s+v_debt_amount\s*>\s*0\s+THEN[\s\S]*?INSERT\s+INTO\s+public\.debts[\s\S]*?END\s+IF\s*;/i,
+    );
+    expect(guard, "RPC ecer harus catat piutang saat sisa bayar > 0").toBeTruthy();
   });
 
   it("RPC memvalidasi _payment_method menerima 'kas', 'hutang', dan 'partial'", () => {
