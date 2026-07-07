@@ -1059,6 +1059,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sendOpen, setSendOpen] = useState(false);
+  const [quickSendPrep, setQuickSendPrep] = useState<EcerPreparation | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
 
   useEffect(() => {
@@ -1233,6 +1234,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                       selectionMode={selectionMode}
                       selected={selected.has(p.id)}
                       onToggleSelect={() => toggleSelect(p.id)}
+                      onQuickSend={() => setQuickSendPrep(p)}
                     />
                   ))}
                 </div>
@@ -1289,6 +1291,22 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           onSent={() => {
             setSendOpen(false);
             exitSelection();
+            void load();
+            onTitleUpdated();
+          }}
+        />
+      )}
+
+      {quickSendPrep && (
+        <SendEcerPrepsDialog
+          open={!!quickSendPrep}
+          preps={[quickSendPrep]}
+          title={title}
+          itemName={item.name}
+          customers={customers}
+          onClose={() => setQuickSendPrep(null)}
+          onSent={() => {
+            setQuickSendPrep(null);
             void load();
             onTitleUpdated();
           }}
