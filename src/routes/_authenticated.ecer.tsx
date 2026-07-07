@@ -1614,6 +1614,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         state={autoSendConfirm}
         title={title}
         itemName={item.name}
+        pricePerBase={autoSendUnitPrice}
         onCancel={() => {
           const preps = autoSendConfirm?.preps ?? [];
           setAutoSendConfirm(null);
