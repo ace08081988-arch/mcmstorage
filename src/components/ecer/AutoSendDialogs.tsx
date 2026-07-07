@@ -281,8 +281,51 @@ export function AutoSendConfirmDialog({
             data-testid="auto-send-list"
             className="mt-2 max-h-56 overflow-y-auto rounded-md border"
           >
+            <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background px-2 py-1.5">
+              <Search className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+              <Input
+                type="search"
+                inputMode="search"
+                data-testid="auto-send-search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari ID pendek (misal a1b2c3d4)"
+                className="h-7 flex-1 text-xs"
+                aria-label="Cari kotak berdasarkan ID pendek"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  aria-label="Kosongkan pencarian"
+                  data-testid="auto-send-search-clear"
+                  className="rounded p-1 text-muted-foreground hover:bg-muted"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            {searchTrim && (
+              <div
+                data-testid="auto-send-search-summary"
+                data-match-count={filteredPreps.length}
+                className="border-b bg-muted/30 px-3 py-1 text-[10px] text-muted-foreground"
+              >
+                {filteredPreps.length} dari {preps.length} kotak cocok
+                {filteredInvalid > 0 && ` · ${filteredInvalid} tidak valid`}
+              </div>
+            )}
             <ul className="divide-y">
-              {preps.map((p, i) => {
+              {filteredPreps.length === 0 && (
+                <li
+                  data-testid="auto-send-search-empty"
+                  className="px-3 py-4 text-center text-[11px] text-muted-foreground"
+                >
+                  Tidak ada kotak yang cocok dengan "{search.trim()}".
+                </li>
+              )}
+              {filteredPreps.map((p) => {
+                const i = preps.findIndex((x) => x.id === p.id);
                 const isEditing = editingId === p.id;
                 const isSaving = savingId === p.id;
                 const rowReasons = invalidByPrep.get(p.id) ?? [];
