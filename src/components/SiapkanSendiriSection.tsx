@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { WaShareButton, ChatShareButton } from "@/components/share/SaleShareButtons";
+import { saleShareGate } from "@/lib/sale-share-gate";
 import { MessageCircle } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
