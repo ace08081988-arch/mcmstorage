@@ -1173,11 +1173,26 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       (acc, p) => acc + (Number(p.actual_grams) || 0),
       0,
     );
-    toast.message(`Kirim ${activeNow.length} kotak · ${item.name}`, {
-      description: `Judul: ${title.name} · Total ${totalGrams} ${title.unit_label || "g"}`,
+    // Modal konfirmasi eksplisit sebelum dialog pembayaran terbuka.
+    // Owner harus memvalidasi item + judul + jumlah kotak + total gram.
+    // Batal ⇒ tetap konsumsi flag (jangan trigger dua kali), keluar dari
+    // selection mode, dan jangan buka dialog pembayaran.
+    const unit = title.unit_label || "g";
+    void confirm({
+      title: "Konfirmasi kirim ke pembeli",
+      description: `Produk: ${item.name}\nJudul: ${title.name}\nJumlah: ${activeNow.length} kotak\nTotal: ${totalGrams} ${unit}`,
+      confirmText: "Lanjut ke pembayaran",
+      cancelText: "Batal",
+    }).then((ok) => {
+      if (!ok) {
+        setSelectionMode(false);
+        setSelected(new Set());
+        onAutoSendConsumed?.();
+        return;
+      }
+      setSendOpen(true);
+      onAutoSendConsumed?.();
     });
-    setSendOpen(true);
-    onAutoSendConsumed?.();
   }, [autoSend, loading, preps, title.id, item.id, onAutoSendConsumed]);
 
   // realtime
