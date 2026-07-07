@@ -3584,6 +3584,18 @@ function SendEcerPrepsDialog({
       });
       if (rpcErr) throw rpcErr;
 
+      // Broadcast agar semua panel (ReadyEcerSection di /index, badge produk,
+      // panel Piutang) refetch — realtime tidak dipasang di semua permukaan,
+      // jadi event ini adalah sabuk pengaman supaya UI konsisten setelah kirim
+      // batch (baik Lunas, Hutang, maupun Bayar sebagian).
+      emitDebtTx({
+        kind: "piutang",
+        wasCash: payment.method === "kas",
+        amount: payment.remaining,
+        partyId: party.id ?? null,
+        at: Date.now(),
+      });
+
       toast.success(
         payment.method === "hutang"
           ? "Terkirim — penjualan & piutang tercatat"
