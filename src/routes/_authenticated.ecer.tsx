@@ -1093,6 +1093,12 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sendOpen, setSendOpen] = useState(false);
   const [quickSendPrep, setQuickSendPrep] = useState<EcerPreparation | null>(null);
+  // Konfirmasi auto-send: memegang daftar kotak (aktif, sudah tersaring)
+  // yang akan ikut Kirim ke pembeli. Owner harus melihat & bisa memperluas
+  // daftar sebelum menekan Lanjut ke pembayaran.
+  const [autoSendConfirm, setAutoSendConfirm] = useState<{
+    preps: EcerPreparation[];
+  } | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
 
   useEffect(() => {
@@ -1181,33 +1187,12 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     autoSendFiredRef.current = true;
     setSelectionMode(true);
     setSelected(new Set(activeNow.map((p) => p.id)));
-    // Ringkasan pra-dialog: perlihatkan item + judul + jumlah kotak + total
-    // gram yang akan dikirim, supaya owner tahu persis apa yang tercakup
-    // sebelum dialog verifikasi pembayaran terbuka.
-    const totalGrams = activeNow.reduce(
-      (acc, p) => acc + (Number(p.actual_grams) || 0),
-      0,
-    );
-    // Modal konfirmasi eksplisit sebelum dialog pembayaran terbuka.
-    // Owner harus memvalidasi item + judul + jumlah kotak + total gram.
-    // Batal ⇒ tetap konsumsi flag (jangan trigger dua kali), keluar dari
-    // selection mode, dan jangan buka dialog pembayaran.
-    const unit = title.unit_label || "g";
-    void confirm({
-      title: "Konfirmasi kirim ke pembeli",
-      description: `Produk: ${item.name}\nJudul: ${title.name}\nJumlah: ${activeNow.length} kotak\nTotal: ${totalGrams} ${unit}`,
-      confirmText: "Lanjut ke pembayaran",
-      cancelText: "Batal",
-    }).then((ok) => {
-      if (!ok) {
-        setSelectionMode(false);
-        setSelected(new Set());
-        onAutoSendConsumed?.();
-        return;
-      }
-      setSendOpen(true);
-      onAutoSendConsumed?.();
-    });
+    // Buka modal konfirmasi auto-send yang menampilkan ringkasan
+    // (item, judul, jumlah, total gram) + daftar kotak yang bisa
+    // diperluas. Owner harus menekan Lanjut agar dialog pembayaran
+    // benar-benar terbuka.
+    setAutoSendConfirm({ preps: activeNow });
+    onAutoSendConsumed?.();
   }, [autoSend, loading, preps, title.id, item.id, onAutoSendConsumed]);
 
   // realtime
