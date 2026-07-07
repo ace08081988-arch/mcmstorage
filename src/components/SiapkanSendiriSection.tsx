@@ -779,6 +779,29 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                       {chatSendingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
                       Kirim MCM
                     </button>
+                    {(() => {
+                      const gate = saleShareGate({ sold_at: r.sold_at ?? null });
+                      const chatBusy = chatSendingId === r.id;
+                      return (
+                        <>
+                          <WaShareButton
+                            size="sm"
+                            variant="soft"
+                            disabled={!gate.enabled}
+                            reason={gate.enabled ? null : gate.reason}
+                            onClick={() => onSendWA(r)}
+                          />
+                          <ChatShareButton
+                            size="sm"
+                            variant="soft"
+                            disabled={!gate.enabled}
+                            busy={chatBusy}
+                            reason={gate.enabled ? null : gate.reason}
+                            onClick={() => setChatPickTarget(r)}
+                          />
+                        </>
+                      );
+                    })()}
                     <button
                       onClick={() => onRemove(r)}
                       className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] text-destructive"
