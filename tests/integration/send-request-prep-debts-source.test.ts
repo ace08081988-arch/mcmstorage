@@ -7,10 +7,10 @@
  *   1. Constraint `debts_source_check` HARUS memuat `'request_prep'` di
  *      allowlist-nya (migrasi 20260705122006).
  *   2. RPC `send_request_prep_to_customer` HARUS meng-INSERT ke `public.debts`
- *      dengan `source = 'request_prep'` (bukan literal lain), dan HANYA saat
- *      metode bayar = 'hutang' + total > 0.
+ *      dengan `source = 'request_prep'` (bukan literal lain), dan saat ada
+ *      sisa bayar (hutang penuh atau bayar sebagian).
  *
- * Bila salah satu regresi, kirim penyiapan request dengan metode hutang akan
+ * Bila salah satu regresi, kirim penyiapan request dengan metode hutang/partial akan
  * balas 23514 (check violation) dan piutang tidak tercatat — sama dengan bug
  * asli yang memaksa pelebaran constraint.
  */
@@ -58,10 +58,10 @@ describe("send_request_prep_to_customer × debts_source_check", () => {
   const checkExpr = latestDebtsSourceCheck();
   const rpcBody = latestRpcBody();
 
-  it("migrasi mendefinisikan `debts_source_check` yang memuat 'request_prep'", () => {
+  it("migrasi mendefinisikan `debts_source_check` yang memuat sumber request & ecer", () => {
     expect(checkExpr, "ADD CONSTRAINT debts_source_check tidak ditemukan di migrasi").toBeTruthy();
     // Semua sumber allowlist SSOT harus disebut di ekspresi CHECK.
-    for (const src of ["manual", "purchase", "sale", "request_prep"] as const) {
+    for (const src of ["manual", "purchase", "sale", "request_prep", "ecer_prep"] as const) {
       expect(checkExpr!).toMatch(new RegExp(`'${src}'`));
     }
   });
@@ -84,26 +84,28 @@ describe("send_request_prep_to_customer × debts_source_check", () => {
     expect(otherSources, "RPC menulis source selain 'request_prep' — regresi").toHaveLength(0);
   });
 
-  it("RPC hanya menulis piutang saat metode 'hutang' DAN total > 0", () => {
-    // Cari blok IF pembungkus INSERT debts.
+  it("RPC request menulis piutang berdasarkan sisa bayar, bukan hanya literal hutang", () => {
+    // Partial juga harus masuk piutang ketika v_debt_amount > 0.
     const guard = rpcBody!.match(
-      /IF\s+_payment_method\s*=\s*'hutang'[\s\S]*?_total_amount\s*>\s*0[\s\S]*?INSERT\s+INTO\s+public\.debts[\s\S]*?END\s+IF\s*;/i,
+      /IF\s+v_debt_amount\s*>\s*0\s+THEN[\s\S]*?INSERT\s+INTO\s+public\.debts[\s\S]*?END\s+IF\s*;/i,
     );
     expect(
       guard,
-      "RPC harus membungkus INSERT debts di dalam IF _payment_method='hutang' AND _total_amount>0",
+      "RPC harus membungkus INSERT debts di dalam IF v_debt_amount > 0 agar partial ikut tercatat",
     ).toBeTruthy();
     expect(guard![0]).toMatch(/kind\s*=?\s*['"]?piutang['"]?|'piutang'/i);
   });
 
-  it("RPC memvalidasi _payment_method hanya menerima 'kas' atau 'hutang'", () => {
-    // Cegah regresi ke enum bebas yang bisa menembus guard piutang.
-    expect(rpcBody!).toMatch(/_payment_method\s+NOT\s+IN\s*\(\s*'kas'\s*,\s*'hutang'\s*\)/i);
+  it("RPC memvalidasi _payment_method menerima 'kas', 'hutang', dan 'partial'", () => {
+    // Cegah regresi ke enum bebas, tapi partial harus valid.
+    expect(rpcBody!).toMatch(/_payment_method\s+NOT\s+IN\s*\(\s*'kas'\s*,\s*'hutang'\s*,\s*'partial'\s*\)/i);
+    expect(rpcBody!).toMatch(/_paid_amount\s+IS\s+NULL[\s\S]*?_paid_amount\s*<=\s*0[\s\S]*?_paid_amount\s*>=\s*_total_amount/i);
   });
 
   it("guard klien `assertDebtSource` menerima 'request_prep' TAPI klien memakai 'manual'", () => {
     // Sanity: SSOT konsisten — 'request_prep' valid, 'chat' tidak.
     expect(() => assertDebtSource("request_prep")).not.toThrow();
+    expect(() => assertDebtSource("ecer_prep")).not.toThrow();
     expect(() => assertDebtSource("manual")).not.toThrow();
     expect(() => assertDebtSource("chat")).toThrow(/tidak valid/i);
   });
