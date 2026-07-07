@@ -46,6 +46,10 @@ export const Route = createFileRoute("/_authenticated/ecer")({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
+    // "send=1" → auto-buka mode pilih + dialog "Kirim ke pembeli" untuk semua
+    // kotak aktif pada judul yang dituju. Dipakai oleh shortcut di dashboard
+    // supaya seluruh jalur "Kirim WA" wajib melewati verifikasi pembayaran.
+    send: typeof s.send === "string" ? s.send : undefined,
   }),
   component: EcerPage,
 });
