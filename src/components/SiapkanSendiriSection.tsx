@@ -108,6 +108,34 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [postSalePromptRow, setPostSalePromptRow] = useState<Row | null>(null);
   const [customers, setCustomers] = useState<SellSelfPrepCustomer[]>([]);
   const [warehouseItems, setWarehouseItems] = useState<SellSelfPrepWarehouseItem[]>([]);
+
+  /**
+   * Ubah Row penjualan menjadi File PNG bukti. Kembali `null` bila row
+   * belum tercatat sebagai terjual (defensif — pemanggil sudah cek).
+   */
+  const buildReceiptFile = useCallback(
+    async (r: Row): Promise<File | null> => {
+      if (!r.sold_at || !r.sold_summary) return null;
+      const cust = r.sold_customer_id
+        ? customers.find((c) => c.id === r.sold_customer_id)?.name ?? null
+        : null;
+      try {
+        return await generateSaleReceipt({
+          id: r.id,
+          title: r.title,
+          sold_at: r.sold_at,
+          sold_summary: r.sold_summary,
+          sold_total: Number(r.sold_total ?? 0),
+          sold_paid_amount: Number(r.sold_paid_amount ?? 0),
+          sold_payment_method: r.sold_payment_method ?? null,
+          customer_name: cust,
+        });
+      } catch {
+        return null;
+      }
+    },
+    [customers],
+  );
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
