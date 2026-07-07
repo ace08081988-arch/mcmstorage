@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { DEV_TURNSTILE_TOKEN, LOCAL_IPS } from "./turnstile-dev";
+import { shouldAllowTurnstileDevBypass } from "./turnstile-dev";
 
 // Kode error yang dipakai UI untuk menampilkan pesan yang jelas ke pengguna.
 export type SecureSignUpErrorCode =
@@ -112,10 +112,11 @@ export const secureSignUp = createServerFn({ method: "POST" })
     // Dev bypass: hanya jika request datang dari IP loopback DAN server
     // tidak berjalan di mode production. Ini melindungi preview/publish dari
     // menerima token "dev-bypass" secara tidak sengaja.
-    const isLocalIp = LOCAL_IPS.has(ip);
-    const isDevEnv = process.env.NODE_ENV !== "production";
-    const isDevBypass =
-      isLocalIp && isDevEnv && data.turnstileToken === DEV_TURNSTILE_TOKEN;
+    const isDevBypass = shouldAllowTurnstileDevBypass(
+      ip,
+      process.env.NODE_ENV,
+      data.turnstileToken,
+    );
     if (isDevBypass) {
       console.warn("[secureSignUp] Turnstile dev bypass aktif (localhost/dev only)");
     }
