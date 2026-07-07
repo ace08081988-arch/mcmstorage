@@ -8,6 +8,10 @@ import { PickChatConversationDialog } from "@/components/PickChatConversationDia
 import { MessageCircle } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
+import { SellSelfPrepDialog, type SellSelfPrepCustomer, type SellSelfPrepWarehouseItem } from "@/components/SellSelfPrepDialog";
+import { formatSoldPaymentSummary } from "@/lib/payment-summary";
+import { rupiah } from "@/lib/stock-format";
+import { Wallet, HandCoins } from "lucide-react";
 
 const BUCKET = "self-prep-photos";
 
@@ -48,6 +52,14 @@ type Row = {
   sent_to?: string | null;
   sent_summary?: string | null;
   created_at: string;
+  // Kolom penjualan (baru — diisi oleh SellSelfPrepDialog)
+  sold_at?: string | null;
+  sold_customer_id?: string | null;
+  sold_total?: number | null;
+  sold_paid_amount?: number | null;
+  sold_payment_method?: string | null;
+  sold_debt_id?: string | null;
+  sold_summary?: string | null;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,6 +90,9 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [gpsBusy, setGpsBusy] = useState(false);
   const [chatPickTarget, setChatPickTarget] = useState<Row | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
+  const [sellTarget, setSellTarget] = useState<Row | null>(null);
+  const [customers, setCustomers] = useState<SellSelfPrepCustomer[]>([]);
+  const [warehouseItems, setWarehouseItems] = useState<SellSelfPrepWarehouseItem[]>([]);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -156,6 +171,25 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   }, [uid]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Ambil daftar pelanggan & produk gudang sekali per uid — dipakai oleh
+  // SellSelfPrepDialog. RLS memastikan hanya milik user.
+  useEffect(() => {
+    if (!uid) { setCustomers([]); setWarehouseItems([]); return; }
+    let alive = true;
+    void (async () => {
+      const [cRes, wRes] = await Promise.all([
+        supabase.from("customers").select("id,name,contact").order("name"),
+        supabase.from("warehouse_items")
+          .select("id,name,package_type,package_size,base_unit,stock_base,avg_cost_per_base")
+          .order("name"),
+      ]);
+      if (!alive) return;
+      if (cRes.data) setCustomers(cRes.data as SellSelfPrepCustomer[]);
+      if (wRes.data) setWarehouseItems(wRes.data as SellSelfPrepWarehouseItem[]);
+    })();
+    return () => { alive = false; };
+  }, [uid]);
 
   useEffect(() => {
     if (files.length === 0) { setPreviewUrls([]); return; }
@@ -246,9 +280,14 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   }
 
   async function onSendWA(r: Row) {
+    if (!r.sold_at) {
+      toast.error("Catat penjualan dulu (tombol Jual) sebelum mengirim ke pembeli.");
+      return;
+    }
     const lines = [r.title];
     if (r.location_url) lines.push(`📍 ${r.location_url}`);
     if (r.note) lines.push(r.note);
+    if (r.sold_summary) { lines.push(""); lines.push("💰 Penjualan"); lines.push(r.sold_summary); }
     const text = lines.join("\n");
 
     const allPaths = Array.from(new Set([
@@ -296,11 +335,16 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   }
 
   async function onSendChat(r: Row, conversationId: string, convTitle: string) {
+    if (!r.sold_at) {
+      toast.error("Catat penjualan dulu (tombol Jual) sebelum mengirim ke pembeli.");
+      return;
+    }
     setChatSendingId(r.id);
     const tid = toast.loading(`Mengirim ke ${convTitle}…`);
     try {
       const lines = [r.title];
       if (r.note) lines.push(r.note);
+      if (r.sold_summary) { lines.push(""); lines.push("💰 Penjualan"); lines.push(r.sold_summary); }
       const caption = lines.join("\n");
 
       const allPaths = Array.from(new Set([

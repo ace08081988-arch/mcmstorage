@@ -2560,6 +2560,13 @@ export type Database = {
           sent_channel: string | null
           sent_summary: string | null
           sent_to: string | null
+          sold_at: string | null
+          sold_customer_id: string | null
+          sold_debt_id: string | null
+          sold_paid_amount: number | null
+          sold_payment_method: string | null
+          sold_summary: string | null
+          sold_total: number | null
           status: string
           title: string
           updated_at: string
@@ -2577,6 +2584,13 @@ export type Database = {
           sent_channel?: string | null
           sent_summary?: string | null
           sent_to?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_debt_id?: string | null
+          sold_paid_amount?: number | null
+          sold_payment_method?: string | null
+          sold_summary?: string | null
+          sold_total?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -2594,13 +2608,35 @@ export type Database = {
           sent_channel?: string | null
           sent_summary?: string | null
           sent_to?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_debt_id?: string | null
+          sold_paid_amount?: number | null
+          sold_payment_method?: string | null
+          sold_summary?: string | null
+          sold_total?: number | null
           status?: string
           title?: string
           updated_at?: string
           user_id?: string
           wa_target?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "self_prep_items_sold_customer_id_fkey"
+            columns: ["sold_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "self_prep_items_sold_debt_id_fkey"
+            columns: ["sold_debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shipment_hook_config: {
         Row: {

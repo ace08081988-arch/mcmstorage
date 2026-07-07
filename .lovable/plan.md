@@ -1,74 +1,100 @@
-## Konteks masalah (dari video + jawaban Anda)
+## Ringkasan
 
-1. **Logika penjualan belum berubah di detail** — di halaman `/ecer` dan `/request` tombol WA & Chat per-kotak masih share foto pegawai langsung ke pembeli tanpa lewat dialog Lunas/Hutang/Sebagian. Akibat: paket tetap "aktif", stok/piutang tidak dicatat. Rencana Juli 6 hanya mencabut tombol dari kartu dashboard — halaman detail terlewat. Ini akar keluhan #1.
+Di halaman `/tugas` → "Siapkan Sendiri", tambah tombol **Jual** di setiap kartu tugas (yang belum terjual). Tap Jual → dialog pilih pelanggan + pilih produk gudang & gram + metode bayar (Lunas / Hutang / Sebagian) → catat penjualan (potong stok, catat piutang bila perlu) → tandai tugas "sudah dijual". Tombol WA & Chat dikunci sampai Jual sukses. Setelah sukses, WA/Chat aktif dan kaption pengiriman otomatis menyertakan:
 
-2. **Layar tidak konsisten** — dashboard sudah pakai flow "Kirim ke pembeli" (wajib bayar), tapi detail masih flow lama (WA/Chat langsung). Dua alur berbeda untuk aksi yang sama → yang Anda maksud "tampilan gak konsisten sama sekali".
+- Foto-foto yang sudah ada di tugas
+- Link lokasi yang sudah ada
+- Ringkasan penjualan (produk + gram + total)
+- Catatan hutang bila metode = Hutang / Sebagian (sisa piutang)
 
-3. **Terima permintaan teman "diarahkan ke gak jelas"** — perlu reproduksi untuk memastikan; halaman `/kontak/permintaan` sendiri tidak melakukan navigasi setelah Terima, jadi kemungkinan besar entry-point-nya (notifikasi/banner chat/deep-link `/i/<code>`) yang meloncat aneh. Ditangani terpisah di plan berikutnya setelah Anda konfirmasi bagaimana Anda membuka layar Terima itu (dari mana → tap apa → mendarat di mana).
+## Perubahan database
 
-## Perubahan untuk plan ini (fokus #1 & #2)
+Tambah kolom di `self_prep_items` untuk merekam status penjualan (paralel dengan pola di `ecer_preparations` / `request_preparations`):
 
-Konsolidasi satu jalur "Kirim ke pembeli" — di detail juga WAJIB lewat dialog bayar dulu, baru buka WA/Chat.
+- `sold_at timestamptz` — kapan dijual
+- `sold_customer_id uuid` → `customers(id)`
+- `sold_total numeric` — total penjualan
+- `sold_paid_amount numeric` — jumlah dibayar (untuk Sebagian)
+- `sold_payment_method text` — "kas" | "hutang" | "sebagian"
+- `sold_debt_id uuid` → `debts(id)` (nullable; untuk kasus Hutang/Sebagian)
 
-### A. Angkat kanal (WA / Chat) menjadi parameter dialog
+Tidak menambah tabel baru. Item penjualan (produk × gram) tidak dipersistensi di kartu tugas — sudah tercatat penuh di tabel `sales` (rujukan silang via note "Tugas: <title>").
 
-Perluas `SendEcerPrepsDialog` dan `SendPrepToCustomerDialog` (yang sekarang ada di `_authenticated.ecer.tsx` / `_authenticated.request.tsx`):
+## Alur UI
 
-- Tambah prop `channel: "wa" | "chat"` (default `"wa"` untuk backward-compat).
-- Setelah RPC sukses (paket tercatat sebagai terkirim + piutang/pembayaran tercatat), lakukan share sesuai `channel`:
-  - `"wa"` → `shareToWA(...)` (perilaku existing).
-  - `"chat"` → buka picker percakapan singkat (Sheet), lalu `shareToChat(...)`.
-- Label CTA di footer dialog ikut kanal: "Kirim WA" / "Kirim Chat". Warna hijau tetap.
-- Toast, `markSent`, dan refresh badge tetap dipanggil sama seperti sekarang.
+### Kartu tugas (`SiapkanSendiriSection.tsx`)
 
-### B. Pindahkan dialog jadi komponen bersama
+Header kartu bertambah baris status:
 
-Sesuai plan lama yang belum dieksekusi:
+- `status === "ready" && !sold_at` → tombol **Jual** hijau primer + tombol WA & Chat dalam keadaan **disabled** dengan tooltip "Catat penjualan dulu".
+- `sold_at != null` → tampilkan chip "Terjual • Lunas/Hutang/Sebagian • Rp x.xxx" + tombol WA & Chat **aktif**.
+- `status === "sent"` → tampilan riwayat seperti sekarang, tetap terkunci.
 
-- `src/components/SendEcerPrepsDialog.tsx` (baru) — extract dari `_authenticated.ecer.tsx` beserta helper `resolvePhotoUrl`.
-- `src/components/SendPrepToCustomerDialog.tsx` (baru) — extract dari `_authenticated.request.tsx`.
-- Route lama impor dari lokasi baru; tidak ada perubahan perilaku pada halaman detail selain tombolnya (poin C).
+### Dialog Jual (`SellSelfPrepDialog.tsx`, baru)
 
-### C. Kunci semua tombol WA & Chat per-kotak agar wajib lewat dialog
+Isi form:
 
-Di `_authenticated.ecer.tsx` dan `_authenticated.request.tsx`, tempat tombol WA / Chat per-kotak (yang sekarang share langsung):
+1. Pilih pelanggan (combobox dari `customers`).
+2. Daftar baris penjualan (minimal 1 baris):
+   - Pilih produk (dari `warehouse_items` milik user)
+   - Input gram (mode base) — tampilkan sisa stok, warning kalau kurang
+   - Input harga per base (auto-fill dari `default_sale_price_per_base` bila ada)
+   - Subtotal otomatis
+3. Total keseluruhan.
+4. Metode bayar: Lunas / Hutang / Sebagian. Sebagian → input nominal dibayar.
+5. Tombol simpan: nonaktif bila stok kurang atau data tidak lengkap.
 
-- Klik WA per-kotak → **buka `SendEcerPrepsDialog` / `SendPrepToCustomerDialog`** dengan `preps = [kotak itu]` + `channel="wa"`. Dialog akan minta metode bayar, panggil RPC, baru buka WA.
-- Klik Chat per-kotak → sama, `channel="chat"`.
-- Tombol bulk WA / bulk Chat (kalau ada) juga dirouting ke dialog dengan preps terpilih.
-- Kartu yang preps `sold_at !== null` (sudah di riwayat) tetap punya tombol share "kirim ulang" — di kanal ini tidak minta bayar lagi (langsung share) karena penjualan sudah tercatat. Bedakan lewat prop `alreadySold`.
+Submit:
 
-### D. Dashboard `ReadyEcerSection` / `ReadyRequestSection`
+- Untuk setiap baris → `INSERT INTO sales(user_id, item_id, qty_base, price_per_base, total_revenue, cost_at_sale, note='Tugas Siapkan Sendiri: <title>', customer_id, payment_method)`. Trigger existing memotong stok.
+- Metode Hutang / Sebagian → `INSERT INTO debts(user_id, customer_id, amount=total, paid_amount=paid_amount, note=...)` sekali untuk total tugas, lalu simpan `debt_id` di `self_prep_items.sold_debt_id`.
+- Update `self_prep_items` set `sold_at`, `sold_customer_id`, `sold_total`, `sold_paid_amount`, `sold_payment_method`, `sold_debt_id`.
+- Toast sukses, tutup dialog, `load()` refresh.
 
-Tombol "Kirim ke pembeli" (hijau) di kartu dashboard sekarang menawarkan pilihan kanal:
+Kalau salah satu insert `sales` gagal (mis. stok kurang di baris ke-N), rollback baris-baris sebelumnya lewat delete sederhana lalu tampilkan error. (RPC transaksional bisa ditambah nanti; untuk MVP: cek stok semua baris di awal supaya rollback jarang perlu.)
 
-- Tap → dropdown kecil dua opsi: **WA** dan **Chat**. Pilih → dialog bayar dengan `channel` sesuai pilihan.
-- Ini menyamakan dashboard dengan detail: keduanya lewat dialog yang sama, konsisten.
+### WA / Chat (setelah Jual)
 
-### E. Halaman detail: teks bantuan singkat
+Fungsi `onSendWA` dan `onSendChat` yang sudah ada tetap dipakai, hanya ditambah:
 
-Di header daftar kotak siap kirim, tambah baris kecil: "Kirim ke pembeli otomatis mencatat penjualan/piutang lalu membuka WA/Chat." Menghilangkan kesan tombol WA lama "cuma buka WA".
+- Guard: `if (!r.sold_at) return toast.error("Catat penjualan dulu");` (defensive; UI sudah men-disable).
+- Kaption ditambahkan blok ringkasan penjualan setelah judul + note:
+  ```
+  <title>
+  <note>
+
+  💰 Penjualan
+  • <produk> <gram>g × Rp<price> = Rp<subtotal>
+  ...
+  Total: Rp<sold_total>
+  Pembayaran: Lunas | Hutang Rp<sisa> | Dibayar Rp<paid>, sisa Rp<sisa>
+  Pelanggan: <nama>
+
+  📍 <location_url>
+  ```
+- Untuk ambil rincian baris, dialog Jual menyimpan snapshot ke `self_prep_items.sold_summary` (kolom teks yang sudah ada tapi belum dipakai untuk ini) — atau ambil ulang dari `sales` via `note ILIKE 'Tugas Siapkan Sendiri: <title>%'` + `sold_at`. Pakai `sold_summary` untuk kesederhanaan.
 
 ## File yang disentuh
 
-- `src/components/SendEcerPrepsDialog.tsx` (baru; extract + prop `channel`, `alreadySold`)
-- `src/components/SendPrepToCustomerDialog.tsx` (baru; identik pola)
-- `src/routes/_authenticated.ecer.tsx` (hapus definisi dialog lokal; rerute klik WA/Chat per-kotak lewat dialog; untuk preps `sold_at !== null` lewat dialog dengan `alreadySold` = true / atau langsung share)
-- `src/routes/_authenticated.request.tsx` (idem)
-- `src/components/ReadyEcerSection.tsx` (tombol "Kirim ke pembeli" → pilih kanal WA/Chat, pakai dialog)
-- `src/components/ReadyRequestSection.tsx` (idem)
+- `supabase/migrations/xxxx_self_prep_sale_columns.sql` (baru) — tambah kolom & FK.
+- `src/components/SiapkanSendiriSection.tsx` — tombol Jual + gating WA/Chat + tampilan chip penjualan + kaption tambahan.
+- `src/components/SellSelfPrepDialog.tsx` (baru) — form dialog.
+- `src/integrations/supabase/types.ts` — regen otomatis pasca migrasi.
 
-Tidak menyentuh: RPC penjualan/piutang, tabel database, alur `markSent`, realtime badge.
+Tidak menyentuh: /ecer, /request, dashboard, chat, kontak.
 
 ## Verifikasi
 
-1. `/ecer` → tap ikon WA di satu kotak aktif → dialog bayar muncul (Lunas/Hutang/Sebagian) → pilih Lunas → tap "Kirim WA" → toast sukses → WA terbuka dengan foto → paket pindah ke "Riwayat Terkirim" → refresh dashboard: `prep_count` turun.
-2. Ulangi dengan Chat → picker percakapan → foto terkirim di chat in-app → paket ke Riwayat.
-3. `/request` → sama seperti #1 dan #2.
-4. Dashboard → "Kirim ke pembeli" → pilih WA → dialog → sukses.
-5. Kotak yang sudah di Riwayat → tombol share "kirim ulang" tidak minta bayar (langsung share), tidak double-catat penjualan.
-6. `bun run typecheck` hijau; guardrail test yang relevan (`ecer-send-wa-*`) tetap lulus.
+1. `/tugas` → kartu tugas siap → tombol WA/Chat disabled, tombol **Jual** hijau aktif.
+2. Tap Jual → dialog muncul → pilih pelanggan, tambah 1 baris (produk + 500g @ Rp 10.000/g) → total Rp 5.000.000 → pilih Lunas → Simpan → toast sukses → dialog tutup → kartu menampilkan chip "Terjual Lunas Rp 5.000.000" dan WA/Chat menyala.
+3. Tap WA → WhatsApp terbuka dengan foto + link lokasi + ringkasan penjualan + Total + Lunas.
+4. Tap Chat → picker percakapan → kirim → pesan terkirim dengan konten yang sama.
+5. Ulangi dengan Hutang → dialog piutang tercatat di `/kontak` (piutang), kaption WA menyertakan "Hutang Rp 5.000.000".
+6. Ulangi dengan Sebagian (dibayar Rp 2.000.000) → piutang tercatat Rp 3.000.000 sisa, kaption WA menyertakan "Dibayar Rp 2.000.000, sisa Rp 3.000.000".
+7. Stok gudang berkurang sesuai gram di setiap baris.
+8. `bun run typecheck` hijau.
 
-## Setelah plan ini disetujui & dieksekusi
+## Yang tidak dilakukan di plan ini
 
-Saya tangani keluhan #3 (Terima permintaan teman "diarahkan ke gak jelas") sebagai plan terpisah — perlu Anda beritahu: **dari mana Anda menekan "Terima"** (notifikasi push? banner di halaman /chat? dari `/i/<kode>`? dari `/kontak/permintaan`?) dan **halaman apa yang muncul setelahnya**. Tanpa reproduksi itu saya berisiko menebak lagi.
+- Refactor /ecer dan /request (sudah benar; dialog bayar sudah ada di sana).
+- Masalah "Terima permintaan teman diarahkan ke gak jelas" — plan terpisah, butuh Anda beritahu titik masuk yang bermasalah (notifikasi push? banner? deep-link `/i/<kode>`?).
