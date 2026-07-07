@@ -388,6 +388,14 @@ function RootComponent() {
             hydrateOrgBrandingFromRemote().catch(() => {});
           }).catch(() => {});
         }
+        // Ketika Supabase mencabut sesi (mis. refresh 403 session_not_found),
+        // paksa router re-run `_authenticated` gate supaya user diarahkan ke
+        // /auth. Tanpa ini, komponen mounted (mis. NotificationBell) terus
+        // memanggil serverFn yang butuh bearer → 401 "No authorization
+        // header provided" dan layar blank.
+        if (event === "SIGNED_OUT") {
+          try { router.invalidate(); } catch { /* ignore */ }
+        }
       });
       authUnsub = () => data.subscription.unsubscribe();
     }).catch(() => {});
