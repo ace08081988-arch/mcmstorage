@@ -105,6 +105,9 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [verifyStatus, setVerifyStatus] = useState<
+    "unknown" | "unverified" | "awaiting-signup-verification"
+  >("unknown");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
