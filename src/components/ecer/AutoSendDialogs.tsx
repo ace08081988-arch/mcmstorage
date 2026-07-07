@@ -34,7 +34,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle } from "lucide-react";
+import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle, Search } from "lucide-react";
 import type { EcerTitle, EcerPreparation } from "@/lib/ecer";
 import { rupiah } from "@/lib/stock-format";
 
@@ -120,6 +120,10 @@ export function AutoSendConfirmDialog({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const [savingId, setSavingId] = useState<string | null>(null);
+  // Query pencarian daftar kotak — filter menggunakan ID pendek (prefix 8
+  // char, huruf kecil). Reset otomatis saat dialog dibuka ulang supaya
+  // tidak "membekukan" filter dari sesi sebelumnya.
+  const [search, setSearch] = useState<string>("");
   useEffect(() => {
     if (state) setExpanded(true);
   }, [state]);
@@ -129,6 +133,7 @@ export function AutoSendConfirmDialog({
       setEditingId(null);
       setEditingValue("");
       setSavingId(null);
+      setSearch("");
     }
   }, [state]);
   if (!state) return null;
@@ -151,6 +156,11 @@ export function AutoSendConfirmDialog({
   }
   const invalidCount = invalidByPrep.size;
   const hasInvalid = invalidCount > 0;
+  const searchTrim = search.trim().toLowerCase();
+  const filteredPreps = searchTrim
+    ? preps.filter((p) => String(p.id).toLowerCase().includes(searchTrim))
+    : preps;
+  const filteredInvalid = filteredPreps.filter((p) => invalidByPrep.has(p.id)).length;
   const canMutate = !!onRemove || !!onUpdateGrams;
   const startEdit = (p: EcerPreparation) => {
     setEditingId(p.id);
