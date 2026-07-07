@@ -82,26 +82,24 @@ export async function secureSignUpImpl(
       };
     }
 
-    // 3) Buat akun via admin API TANPA email_confirm — user harus klik link
-    // verifikasi yang dikirim lewat auth webhook Lovable Emails sebelum bisa login.
-    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+    // 3) Buat akun via anon-client signUp — jalur ini yang memicu
+    // Send-Email-Hook Lovable Emails sehingga email verifikasi masuk ke
+    // queue `auth_emails`. `admin.createUser` + `admin.generateLink`
+    // TIDAK memicu hook (by design Supabase), sehingga email tak pernah
+    // terkirim walau user berhasil dibuat.
+    const { createClient } = await import("@supabase/supabase-js");
+    const anonUrl = process.env.SUPABASE_URL!;
+    const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY!;
+    const anon = createClient(anonUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
+    });
+    const { data: created, error } = await anon.auth.signUp({
       email: data.email,
       password: data.password,
-      email_confirm: false,
-      user_metadata: { chat_only: data.chatOnly },
+      options: {
+        data: { chat_only: data.chatOnly },
+      },
     });
-    // Kirim email konfirmasi signup via generateLink → memicu auth webhook.
-    if (!error && created?.user) {
-      try {
-        await supabaseAdmin.auth.admin.generateLink({
-          type: "signup",
-          email: data.email,
-          password: data.password,
-        });
-      } catch (linkErr) {
-        console.warn("[secureSignUp] gagal memicu email verifikasi", linkErr);
-      }
-    }
     if (error) {
       const msg = error.message || "";
       if (/already|exists|registered|duplicate/i.test(msg)) {
