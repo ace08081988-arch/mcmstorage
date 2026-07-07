@@ -36,6 +36,7 @@ import { Field } from "@/components/DialogField";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
+import { emitDebtTx } from "@/lib/debt-tx-event";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -2132,6 +2133,17 @@ function SendPrepToCustomerDialog({
         _paid_amount: payment.method === "partial" ? payment.paid : null,
       });
       if (rpcErr) throw rpcErr;
+
+      // Sabuk pengaman: broadcast agar ReadyRequestSection / ReadyEcerSection /
+      // panel Piutang di /index refetch tanpa nunggu realtime. Amount = sisa
+      // (0 kalau Lunas) — listener memakainya sebagai sinyal refresh.
+      emitDebtTx({
+        kind: "piutang",
+        wasCash: payment.method === "kas",
+        amount: payment.remaining,
+        partyId: resolvedParty.id ?? null,
+        at: Date.now(),
+      });
 
       // 2) Kirim WA dengan foto asli terlampir (bukan cuma link/teks).
       const files = await fetchPhotoFiles();

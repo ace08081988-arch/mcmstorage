@@ -38,6 +38,7 @@ import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeTogg
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
+import { emitDebtTx } from "@/lib/debt-tx-event";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -3582,6 +3583,18 @@ function SendEcerPrepsDialog({
         _note: note.trim() || null,
       });
       if (rpcErr) throw rpcErr;
+
+      // Broadcast agar semua panel (ReadyEcerSection di /index, badge produk,
+      // panel Piutang) refetch — realtime tidak dipasang di semua permukaan,
+      // jadi event ini adalah sabuk pengaman supaya UI konsisten setelah kirim
+      // batch (baik Lunas, Hutang, maupun Bayar sebagian).
+      emitDebtTx({
+        kind: "piutang",
+        wasCash: payment.method === "kas",
+        amount: payment.remaining,
+        partyId: party.id ?? null,
+        at: Date.now(),
+      });
 
       toast.success(
         payment.method === "hutang"
