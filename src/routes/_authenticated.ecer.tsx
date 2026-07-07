@@ -14,8 +14,23 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
-  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
+  Share2, ExternalLink, Loader2, ChevronLeft, ChevronDown, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
   Calendar, Clock, Hash, CheckCircle2, Boxes, Send, Wallet, HandCoins,
 } from "lucide-react";
 import {
@@ -587,6 +602,97 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
   );
 }
 
+/**
+ * Modal konfirmasi auto-send: memperlihatkan ringkasan (produk, judul,
+ * jumlah kotak, total gram) dan daftar kotak yang bisa diperluas
+ * sebelum owner menekan "Lanjut ke pembayaran". Batal ⇒ keluar tanpa
+ * membuka dialog pembayaran. Dipakai ketika navigasi `send=1` memicu
+ * seleksi otomatis.
+ */
+function AutoSendConfirmDialog({
+  state,
+  title,
+  itemName,
+  onCancel,
+  onConfirm,
+}: {
+  state: { preps: EcerPreparation[] } | null;
+  title: EcerTitle;
+  itemName: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    // Reset expand-state setiap kali dialog dibuka ulang untuk paket baru.
+    if (state) setExpanded(false);
+  }, [state]);
+  if (!state) return null;
+  const preps = state.preps;
+  const unit = title.unit_label || "g";
+  const totalGrams = preps.reduce(
+    (acc, p) => acc + (Number(p.actual_grams) || 0),
+    0,
+  );
+  return (
+    <AlertDialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
+      <AlertDialogContent className="max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Konfirmasi kirim ke pembeli</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-1 text-sm">
+              <div><span className="text-muted-foreground">Produk:</span> <span className="font-medium text-foreground">{itemName}</span></div>
+              <div><span className="text-muted-foreground">Judul:</span> <span className="font-medium text-foreground">{title.name}</span></div>
+              <div><span className="text-muted-foreground">Jumlah:</span> <span className="font-medium text-foreground">{preps.length} kotak</span></div>
+              <div><span className="text-muted-foreground">Total:</span> <span className="font-medium text-foreground">{totalGrams} {unit}</span></div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Collapsible open={expanded} onOpenChange={setExpanded}>
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              data-testid="auto-send-toggle-list"
+              className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-xs font-medium hover:bg-muted"
+            >
+              <span>Daftar kotak ({preps.length})</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+                aria-hidden
+              />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent
+            data-testid="auto-send-list"
+            className="mt-2 max-h-56 overflow-y-auto rounded-md border"
+          >
+            <ul className="divide-y">
+              {preps.map((p, i) => (
+                <li
+                  key={p.id}
+                  data-testid="auto-send-list-item"
+                  className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs"
+                >
+                  <span className="text-muted-foreground">
+                    #{i + 1} · <span className="font-mono">{String(p.id).slice(0, 8)}</span>
+                  </span>
+                  <span className="font-medium tabular-nums">
+                    {Number(p.actual_grams) || 0} {unit}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CollapsibleContent>
+        </Collapsible>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel}>Batal</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>Lanjut ke pembayaran</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 // ---- Hero: branded receipt-style header for a title ----
 // shortenUrlForToast dipindah ke src/lib/shorten-url-for-toast.ts agar
 // bisa diuji unit tanpa render route.
@@ -1078,6 +1184,12 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sendOpen, setSendOpen] = useState(false);
   const [quickSendPrep, setQuickSendPrep] = useState<EcerPreparation | null>(null);
+  // Konfirmasi auto-send: memegang daftar kotak (aktif, sudah tersaring)
+  // yang akan ikut Kirim ke pembeli. Owner harus melihat & bisa memperluas
+  // daftar sebelum menekan Lanjut ke pembayaran.
+  const [autoSendConfirm, setAutoSendConfirm] = useState<{
+    preps: EcerPreparation[];
+  } | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
 
   useEffect(() => {
@@ -1166,33 +1278,12 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     autoSendFiredRef.current = true;
     setSelectionMode(true);
     setSelected(new Set(activeNow.map((p) => p.id)));
-    // Ringkasan pra-dialog: perlihatkan item + judul + jumlah kotak + total
-    // gram yang akan dikirim, supaya owner tahu persis apa yang tercakup
-    // sebelum dialog verifikasi pembayaran terbuka.
-    const totalGrams = activeNow.reduce(
-      (acc, p) => acc + (Number(p.actual_grams) || 0),
-      0,
-    );
-    // Modal konfirmasi eksplisit sebelum dialog pembayaran terbuka.
-    // Owner harus memvalidasi item + judul + jumlah kotak + total gram.
-    // Batal ⇒ tetap konsumsi flag (jangan trigger dua kali), keluar dari
-    // selection mode, dan jangan buka dialog pembayaran.
-    const unit = title.unit_label || "g";
-    void confirm({
-      title: "Konfirmasi kirim ke pembeli",
-      description: `Produk: ${item.name}\nJudul: ${title.name}\nJumlah: ${activeNow.length} kotak\nTotal: ${totalGrams} ${unit}`,
-      confirmText: "Lanjut ke pembayaran",
-      cancelText: "Batal",
-    }).then((ok) => {
-      if (!ok) {
-        setSelectionMode(false);
-        setSelected(new Set());
-        onAutoSendConsumed?.();
-        return;
-      }
-      setSendOpen(true);
-      onAutoSendConsumed?.();
-    });
+    // Buka modal konfirmasi auto-send yang menampilkan ringkasan
+    // (item, judul, jumlah, total gram) + daftar kotak yang bisa
+    // diperluas. Owner harus menekan Lanjut agar dialog pembayaran
+    // benar-benar terbuka.
+    setAutoSendConfirm({ preps: activeNow });
+    onAutoSendConsumed?.();
   }, [autoSend, loading, preps, title.id, item.id, onAutoSendConsumed]);
 
   // realtime
@@ -1417,6 +1508,21 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           }}
         />
       )}
+
+      <AutoSendConfirmDialog
+        state={autoSendConfirm}
+        title={title}
+        itemName={item.name}
+        onCancel={() => {
+          setAutoSendConfirm(null);
+          setSelectionMode(false);
+          setSelected(new Set());
+        }}
+        onConfirm={() => {
+          setAutoSendConfirm(null);
+          setSendOpen(true);
+        }}
+      />
 
       <WorkerSubmissionsCard title={title} itemName={item.name} />
     </div>
