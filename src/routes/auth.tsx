@@ -16,6 +16,7 @@ import {
 import { explainTurnstileError } from "@/components/turnstile-error";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
+import { DEV_TURNSTILE_TOKEN, isTurnstileDevBypass } from "@/lib/turnstile-dev";
 
 function AuthBrand() {
   const { full, logo } = useOrgName();
@@ -110,6 +111,12 @@ function AuthPage() {
   const secureSignUpFn = useServerFn(secureSignUp);
   const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [widgetKey, setWidgetKey] = useState(0);
+  const devBypass = isTurnstileDevBypass();
+  // Auto-isi token bypass ketika berjalan di localhost dev supaya alur
+  // pendaftaran tidak menunggu widget Turnstile.
+  useEffect(() => {
+    if (devBypass && !turnstileToken) setTurnstileToken(DEV_TURNSTILE_TOKEN);
+  }, [devBypass, turnstileToken]);
 
   const onTurnstileToken = useCallback((t: string | null) => {
     setTurnstileToken(t);
@@ -190,13 +197,13 @@ function AuthPage() {
         toast.error("Konfirmasi kata sandi tidak cocok");
         return;
       }
-      if (!TURNSTILE_SITE_KEY) {
+      if (!TURNSTILE_SITE_KEY && !devBypass) {
         toast.error(
           "Verifikasi manusia (CAPTCHA) belum dikonfigurasi. Hubungi admin.",
         );
         return;
       }
-      if (!turnstileToken) {
+      if (!turnstileToken && !devBypass) {
         toast.error(
           "Selesaikan verifikasi CAPTCHA di bawah sebelum menekan Daftar.",
         );
@@ -214,7 +221,7 @@ function AuthPage() {
           data: {
             email,
             password,
-            turnstileToken,
+            turnstileToken: turnstileToken ?? DEV_TURNSTILE_TOKEN,
             chatOnly: intent === "chat",
           },
         });
