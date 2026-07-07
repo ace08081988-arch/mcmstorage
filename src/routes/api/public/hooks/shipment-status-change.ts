@@ -1,6 +1,6 @@
 import * as React from "react";
 import { render } from "@react-email/render";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { TEMPLATES } from "@/lib/email-templates/registry";
@@ -40,7 +40,7 @@ function normPhone(raw: string | null | undefined): string | null {
 }
 
 async function resolveEmail(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   args: {
     customerId?: string | null;
     customerPhone?: string | null;
