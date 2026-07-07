@@ -17,17 +17,11 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-const state = vi.hoisted(() => ({ ip: "127.0.0.1" }));
-
-vi.mock("@tanstack/react-start/server", () => ({
-  getRequest: () =>
-    new Request("http://localhost/", {
-      headers: {
-        "cf-connecting-ip": state.ip,
-        "user-agent": "vitest",
-      },
-    }),
-}));
+function makeRequest(ip: string): Request {
+  return new Request("http://localhost/", {
+    headers: { "cf-connecting-ip": ip, "user-agent": "vitest" },
+  });
+}
 
 function chainable(finalResult: unknown) {
   const p: Record<string, unknown> = {};
@@ -70,7 +64,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
 }));
 
 // Import setelah mock terpasang.
-import { secureSignUp } from "./auth.functions";
+import { secureSignUpImpl } from "./auth.functions";
 import { DEV_TURNSTILE_TOKEN } from "./turnstile-dev";
 
 const originalFetch = global.fetch;
@@ -107,7 +101,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   installMocks();
   process.env.TURNSTILE_SECRET_KEY = "test-secret";
-  state.ip = "127.0.0.1";
 });
 
 afterEach(() => {
@@ -148,12 +141,12 @@ const baseInput = {
 describe("secureSignUp integration: dev-bypass gating", () => {
   it("BYPASS lolos: IP loopback + NODE_ENV=development + token dev-bypass → siteverify TIDAK dipanggil, createUser sukses", async () => {
     process.env.NODE_ENV = "development";
-    state.ip = "127.0.0.1";
     const fetchSpy = spyFetch(false); // seharusnya tidak terpakai
 
-    const result = await secureSignUp({
-      data: { ...baseInput, turnstileToken: DEV_TURNSTILE_TOKEN },
-    });
+    const result = await secureSignUpImpl(
+      { ...baseInput, turnstileToken: DEV_TURNSTILE_TOKEN },
+      makeRequest("127.0.0.1"),
+    );
 
     expect(result).toEqual({ ok: true, userId: "user-id-1" });
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -165,12 +158,12 @@ describe("secureSignUp integration: dev-bypass gating", () => {
     for (const ip of ["::1", "0.0.0.0", "::ffff:127.0.0.1"]) {
       vi.clearAllMocks();
       installMocks();
-      state.ip = ip;
       const fetchSpy = spyFetch(false);
 
-      const result = await secureSignUp({
-        data: { ...baseInput, turnstileToken: DEV_TURNSTILE_TOKEN },
-      });
+      const result = await secureSignUpImpl(
+        { ...baseInput, turnstileToken: DEV_TURNSTILE_TOKEN },
+        makeRequest(ip),
+      );
 
       expect(result, `ip=${ip}`).toMatchObject({ ok: true });
       expect(fetchSpy, `ip=${ip}`).not.toHaveBeenCalled();
@@ -179,12 +172,12 @@ describe("secureSignUp integration: dev-bypass gating", () => {
 
   it("TOLAK: IP publik + dev + token dev-bypass → siteverify dipanggil, gagal → captcha_failed", async () => {
     process.env.NODE_ENV = "development";
-    state.ip = "8.8.8.8";
     const fetchSpy = spyFetch(false);
 
-    const result = await secureSignUp({
-      data: { ...baseInput, turnstileToken: DEV_TURNSTILE_TOKEN },
-    });
+    const result = await secureSignUpImpl(
+      { ...baseInput, turnstileToken: DEV_TURNSTILE_TOKEN },
+      makeRequest("8.8.8.8"),
+    );
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ ok: false, code: "captcha_failed" });
@@ -193,12 +186,12 @@ describe("secureSignUp integration: dev-bypass gating", () => {
 
   it("TOLAK: IP loopback + NODE_ENV=production + token dev-bypass → siteverify dipanggil", async () => {
     process.env.NODE_ENV = "production";
-    state.ip = "127.0.0.1";
     const fetchSpy = spyFetch(false);
 
-    const result = await secureSignUp({
-      data: { ...baseInput, turnstileToken: DEV_TURNSTILE_TOKEN },
-    });
+    const result = await secureSignUpImpl(
+      { ...baseInput, turnstileToken: DEV_TURNSTILE_TOKEN },
+      makeRequest("127.0.0.1"),
+    );
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ ok: false, code: "captcha_failed" });
@@ -207,12 +200,12 @@ describe("secureSignUp integration: dev-bypass gating", () => {
 
   it("TOLAK: IP loopback + dev + token BUKAN dev-bypass → siteverify dipanggil", async () => {
     process.env.NODE_ENV = "development";
-    state.ip = "127.0.0.1";
     const fetchSpy = spyFetch(false);
 
-    const result = await secureSignUp({
-      data: { ...baseInput, turnstileToken: "attacker-supplied-token" },
-    });
+    const result = await secureSignUpImpl(
+      { ...baseInput, turnstileToken: "attacker-supplied-token" },
+      makeRequest("127.0.0.1"),
+    );
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ ok: false, code: "captcha_failed" });
@@ -221,12 +214,12 @@ describe("secureSignUp integration: dev-bypass gating", () => {
 
   it("Token asli Turnstile dari klien tetap divalidasi ke Cloudflare (sukses → createUser jalan)", async () => {
     process.env.NODE_ENV = "production";
-    state.ip = "8.8.8.8";
     const fetchSpy = spyFetch(true);
 
-    const result = await secureSignUp({
-      data: { ...baseInput, turnstileToken: "real-cf-token-xyz" },
-    });
+    const result = await secureSignUpImpl(
+      { ...baseInput, turnstileToken: "real-cf-token-xyz" },
+      makeRequest("8.8.8.8"),
+    );
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ ok: true, userId: "user-id-1" });
@@ -245,12 +238,12 @@ describe("secureSignUp integration: dev-bypass gating", () => {
       vi.clearAllMocks();
       installMocks();
       process.env.NODE_ENV = c.env;
-      state.ip = c.ip;
       const fetchSpy = spyFetch(false);
 
-      const result = await secureSignUp({
-        data: { ...baseInput, turnstileToken: c.token },
-      });
+      const result = await secureSignUpImpl(
+        { ...baseInput, turnstileToken: c.token },
+        makeRequest(c.ip),
+      );
 
       expect(fetchSpy, JSON.stringify(c)).toHaveBeenCalledTimes(1);
       expect(result, JSON.stringify(c)).toMatchObject({
