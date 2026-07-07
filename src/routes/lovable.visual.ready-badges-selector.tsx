@@ -173,6 +173,20 @@ function Surface({
     partialAmount: string;
   }>(null);
 
+  // Pesan WA terakhir yang "dikirim" dari surface ini. Spec E2E membaca
+  // string mentahnya dari `data-testid="last-wa-message-<scope>"` untuk
+  // memverifikasi ringkasan pelanggan, total, dan jenis pembayaran.
+  const [lastWa, setLastWa] = useState<string>("");
+
+  const paymentPrep = payment
+    ? preps.find((p) => p.id === payment.prepId) ?? null
+    : null;
+  const paymentTitle = paymentPrep
+    ? titles.find((t) => t.id === paymentPrep.title_id) ?? null
+    : null;
+  const paymentCustomer = paymentPrep?.customer ?? "Pelanggan";
+  const paymentTitleName = paymentTitle?.name ?? paymentPrep?.title_id ?? "-";
+
   const partialAmountNum = payment ? Number(payment.partialAmount) : NaN;
   const partialValid =
     payment?.method !== "partial" ||
@@ -321,6 +335,38 @@ function Surface({
           className="mt-2 space-y-1 rounded-md border bg-background p-2 text-[11px]"
         >
           <div className="font-semibold">Konfirmasi pembayaran — {payment.prepId}</div>
+          {/* Ringkasan yang ditampilkan sebelum tombol Kirim — SSOT
+              tampilan; spec memverifikasi bahwa pesan WA yang dikirim
+              memuat elemen-elemen ini. */}
+          <div
+            className="rounded border bg-muted/30 p-1.5"
+            data-testid={`payment-summary-${scope}`}
+          >
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Pelanggan</span>
+              <span
+                className="font-medium"
+                data-testid={`payment-summary-customer-${scope}`}
+              >
+                {paymentCustomer}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Paket</span>
+              <span data-testid={`payment-summary-title-${scope}`}>
+                {paymentTitleName}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total</span>
+              <span
+                className="tabular-nums"
+                data-testid={`payment-summary-total-${scope}`}
+              >
+                Rp{TOTAL_PER_PREP.toLocaleString("id-ID")}
+              </span>
+            </div>
+          </div>
           <div className="flex gap-1">
             {(["kas", "hutang", "partial"] as const).map((m) => (
               <button
@@ -420,6 +466,16 @@ function Surface({
                     : method === "hutang"
                       ? 0
                       : Number(payment.partialAmount);
+                // Bangun pesan WA berdasarkan konten yang dilihat user di
+                // dialog konfirmasi — inilah invarian yang di-e2e-kan.
+                const message = formatWaMessage({
+                  customer: paymentCustomer,
+                  titleName: paymentTitleName,
+                  total: TOTAL_PER_PREP,
+                  method,
+                  partialAmount: method === "partial" ? paid : null,
+                });
+                setLastWa(message);
                 setPreps((prev) =>
                   prev.map((p) =>
                     p.id === id && isActivePrep(p)
@@ -449,6 +505,15 @@ function Surface({
         data-json={JSON.stringify(preps)}
         hidden
       />
+      {/* Pesan WA terakhir yang "dikirim" dari surface ini. Elemen
+          `<pre>` mempertahankan whitespace/newlines apa adanya sehingga
+          spec dapat menyocokkan baris tertentu. Awalnya kosong. */}
+      <pre
+        data-testid={`last-wa-message-${scope}`}
+        className="mt-2 whitespace-pre-wrap rounded border bg-muted/30 p-1.5 text-[10px]"
+      >
+        {lastWa}
+      </pre>
     </section>
   );
 }
