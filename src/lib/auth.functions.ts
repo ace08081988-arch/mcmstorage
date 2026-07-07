@@ -90,7 +90,35 @@ export async function secureSignUpImpl(
         .select("secret_key")
         .eq("id", 1)
         .maybeSingle();
-      turnstileSecret = ((cfg?.secret_key as string | undefined) ?? "").trim();
+      const stored = ((cfg?.secret_key as string | undefined) ?? "").trim();
+      if (stored) {
+        const {
+          decryptTurnstileSecret,
+          isEncryptedTurnstileSecret,
+          encryptTurnstileSecret,
+        } = await import("./turnstile-crypto.server");
+        try {
+          turnstileSecret = decryptTurnstileSecret(stored);
+        } catch (err) {
+          console.error("[secureSignUp] gagal dekripsi secret Turnstile", err);
+          turnstileSecret = "";
+        }
+        // Upgrade lazy: kalau nilai lama masih plaintext, tuliskan ulang
+        // dalam bentuk terenkripsi. Non-fatal jika update gagal.
+        if (turnstileSecret && !isEncryptedTurnstileSecret(stored)) {
+          try {
+            await adminForSecret
+              .from("turnstile_config")
+              .update({ secret_key: encryptTurnstileSecret(turnstileSecret) })
+              .eq("id", 1);
+          } catch (upgradeErr) {
+            console.warn(
+              "[secureSignUp] gagal upgrade enkripsi Turnstile",
+              upgradeErr,
+            );
+          }
+        }
+      }
     } catch {
       /* fall through to env */
     }
