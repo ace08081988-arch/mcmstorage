@@ -36,8 +36,8 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     // Terminal outcomes tanpa modal juga dicatat (mismatched + empty).
     expect(src).toMatch(/outcome:\s*["']mismatched["']/);
     expect(src).toMatch(/outcome:\s*["']empty["']/);
-    // Modal cancel → cancelled.
-    expect(src).toMatch(/finalizeAutoSend\(\s*auditId\s*,\s*["']cancelled["']/);
+    // Modal cancel → cancelled (via reason dialog, auditId dari state).
+    expect(src).toMatch(/finalizeAutoSend\(\s*st\.auditId\s*,\s*["']cancelled["']/);
     // onSent → confirmed + summary state di-set.
     expect(src).toMatch(/finalizeAutoSend\(\s*auditId\s*,\s*["']confirmed["']/);
     expect(src).toMatch(/setAutoSendSummary\(/);
