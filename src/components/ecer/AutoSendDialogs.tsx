@@ -249,6 +249,44 @@ export function AutoSendConfirmDialog({
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
+        <div
+          data-testid="auto-send-product-breakdown"
+          data-group-count={productBreakdown.length}
+          className="rounded-md border bg-muted/20 px-3 py-2 text-xs"
+        >
+          <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+            <span>Ringkasan per produk</span>
+            <span className="tabular-nums">
+              {productBreakdown.length} produk · {preps.length} kotak
+            </span>
+          </div>
+          <ul className="space-y-0.5">
+            {productBreakdown.map((g) => (
+              <li
+                key={g.key}
+                data-testid="auto-send-product-breakdown-row"
+                data-item-id={g.key}
+                data-other={g.isOther ? "true" : undefined}
+                className={`flex items-center justify-between gap-2 tabular-nums ${
+                  g.isOther ? "text-destructive" : "text-foreground"
+                }`}
+              >
+                <span className="min-w-0 truncate">
+                  {g.isOther && (
+                    <AlertTriangle
+                      className="mr-1 inline h-3 w-3"
+                      aria-hidden
+                    />
+                  )}
+                  {g.label}
+                </span>
+                <span className="shrink-0 font-medium">
+                  {g.count} kotak · {g.grams} {unit}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
         {hasInvalid && (
           <div
             role="alert"
