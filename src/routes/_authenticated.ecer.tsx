@@ -28,6 +28,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
   Share2, ExternalLink, Loader2, ChevronLeft, ChevronDown, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
@@ -698,6 +699,141 @@ function AutoSendConfirmDialog({
   );
 }
 
+/**
+ * Preset alasan pembatalan auto-send. Terurut dari umum → khusus.
+ * Value dipakai sebagai token stabil di kolom `note` (JSON) baris audit,
+ * jadi JANGAN diubah tanpa migrasi/dokumentasi — dashboard penelusuran
+ * bisa mengelompokkan berdasarkan token ini.
+ */
+const AUTO_SEND_CANCEL_REASONS: Array<{ value: string; label: string }> = [
+  { value: "salah_pilih", label: "Salah pilih paket / seleksi" },
+  { value: "belum_siap", label: "Belum siap kirim sekarang" },
+  { value: "pembeli_batal", label: "Pembeli batal / pending konfirmasi" },
+  { value: "cek_ulang", label: "Perlu cek ulang berat / harga" },
+  { value: "lainnya", label: "Lainnya (isi detail)" },
+];
+
+/**
+ * Dialog "kenapa Batal?" — muncul setelah owner menekan Batal pada modal
+ * konfirmasi auto-send, atau menutup dialog pembayaran tanpa mengirim.
+ * Menyimpan alasan (radio preset) + detail bebas + ringkasan seleksi ke
+ * kolom `note` (JSON) baris audit, supaya riwayat auto-send bisa
+ * ditelusuri. Kalau owner menutup dialog tanpa memilih, audit tetap
+ * di-finalize dengan alasan "tidak_dijelaskan" — jangan biarkan baris
+ * menggantung di `proposed`.
+ */
+type AutoSendCancelState = {
+  preps: EcerPreparation[];
+  auditId: string;
+  source: "confirm_modal" | "closed_send_dialog";
+};
+
+function AutoSendCancelReasonDialog({
+  state,
+  title,
+  itemName,
+  onSubmit,
+  onDismiss,
+}: {
+  state: AutoSendCancelState | null;
+  title: EcerTitle;
+  itemName: string;
+  onSubmit: (reason: string, detail: string) => void;
+  onDismiss: () => void;
+}) {
+  const [reason, setReason] = useState<string>("salah_pilih");
+  const [detail, setDetail] = useState<string>("");
+  useEffect(() => {
+    if (state) {
+      setReason("salah_pilih");
+      setDetail("");
+    }
+  }, [state]);
+  if (!state) return null;
+  const preps = state.preps;
+  const unit = title.unit_label || "g";
+  const totalGrams = preps.reduce(
+    (acc, p) => acc + (Number(p.actual_grams) || 0),
+    0,
+  );
+  const submit = () => onSubmit(reason, detail.trim());
+  return (
+    <AlertDialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onDismiss();
+      }}
+    >
+      <AlertDialogContent
+        className="max-w-md"
+        data-testid="auto-send-cancel-reason"
+      >
+        <AlertDialogHeader>
+          <AlertDialogTitle>Alasan pembatalan auto-Kirim</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-1 text-sm">
+              <div>
+                <span className="text-muted-foreground">Produk:</span>{" "}
+                <span className="font-medium text-foreground">{itemName}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Judul:</span>{" "}
+                <span className="font-medium text-foreground">{title.name}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Seleksi:</span>{" "}
+                <span className="font-medium text-foreground">
+                  {preps.length} kotak · {totalGrams} {unit}
+                </span>
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-3">
+          <RadioGroup
+            value={reason}
+            onValueChange={setReason}
+            data-testid="auto-send-cancel-reason-group"
+          >
+            {AUTO_SEND_CANCEL_REASONS.map((r) => (
+              <label
+                key={r.value}
+                className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted"
+              >
+                <RadioGroupItem value={r.value} />
+                <span>{r.label}</span>
+              </label>
+            ))}
+          </RadioGroup>
+          <div className="space-y-1">
+            <Label htmlFor="auto-send-cancel-detail" className="text-xs">
+              Detail (opsional)
+            </Label>
+            <Textarea
+              id="auto-send-cancel-detail"
+              data-testid="auto-send-cancel-detail"
+              value={detail}
+              onChange={(e) => setDetail(e.target.value)}
+              placeholder="Catatan singkat supaya mudah ditelusuri…"
+              rows={2}
+              maxLength={280}
+            />
+          </div>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onDismiss}>Lewati</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={submit}
+            data-testid="auto-send-cancel-submit"
+          >
+            Simpan alasan
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 // ---- Hero: branded receipt-style header for a title ----
 // shortenUrlForToast dipindah ke src/lib/shorten-url-for-toast.ts agar
 // bisa diuji unit tanpa render route.
@@ -1195,10 +1331,20 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [autoSendConfirm, setAutoSendConfirm] = useState<{
     preps: EcerPreparation[];
   } | null>(null);
+  // Dialog "kenapa Batal?" — dibuka setelah cancel dari confirm modal
+  // atau dari SendEcerPrepsDialog. Selama state ini terisi, baris audit
+  // masih di outcome `proposed`: finalize hanya terjadi saat owner
+  // memilih alasan (Simpan alasan) atau menutup dialog (Lewati).
+  const [autoSendCancel, setAutoSendCancel] =
+    useState<AutoSendCancelState | null>(null);
   // ID baris audit `auto_send_audit` untuk flag `send=1` yang sedang berjalan.
   // Dipakai untuk memindahkan outcome ke `confirmed`/`cancelled` setelah
   // dialog pembayaran ditutup, dan menjadi kunci ringkasan Riwayat.
   const autoSendAuditIdRef = useRef<string | null>(null);
+  // Cache preps yang tersaji di modal konfirmasi — dipakai saat cancel
+  // datang dari path "closed_send_dialog" (selectedPreps sudah berubah),
+  // dan sebagai fallback ringkasan.
+  const autoSendPrepsRef = useRef<EcerPreparation[]>([]);
   // Ringkasan auto-send terakhir yang berhasil dikonfirmasi — ditampilkan
   // sebagai banner di atas Riwayat Terkirim setelah RPC penjualan sukses.
   const [autoSendSummary, setAutoSendSummary] = useState<{
@@ -1206,6 +1352,17 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     grams: number;
     unit: string;
     at: string;
+  } | null>(null);
+  // Ringkasan pembatalan auto-send terakhir — banner terpisah supaya jejak
+  // "kenapa dibatalkan" ikut terlihat di halaman, bukan hanya di DB audit.
+  const [autoSendCancelSummary, setAutoSendCancelSummary] = useState<{
+    count: number;
+    grams: number;
+    unit: string;
+    at: string;
+    reason: string;
+    detail: string;
+    source: AutoSendCancelState["source"];
   } | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
 
@@ -1319,6 +1476,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     // diperluas. Owner harus menekan Lanjut agar dialog pembayaran
     // benar-benar terbuka.
     setAutoSendConfirm({ preps: activeNow });
+    autoSendPrepsRef.current = activeNow;
     // Catat baris `proposed` — id disimpan supaya nanti bisa di-finalize
     // menjadi `confirmed` (setelah RPC sukses) atau `cancelled`.
     void logAutoSendProposed({
@@ -1521,6 +1679,43 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                       </button>
                     </div>
                   )}
+                  {autoSendCancelSummary && (
+                    <div
+                      data-testid="auto-send-cancel-summary"
+                      className="mb-3 flex items-start justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold">Auto-Kirim dibatalkan</div>
+                        <div className="text-amber-800/90">
+                          {autoSendCancelSummary.count} kotak · {autoSendCancelSummary.grams} {autoSendCancelSummary.unit} ·
+                          {" "}
+                          {(
+                            AUTO_SEND_CANCEL_REASONS.find(
+                              (r) => r.value === autoSendCancelSummary.reason,
+                            )?.label
+                          ) || autoSendCancelSummary.reason}
+                          {" · "}
+                          {new Date(autoSendCancelSummary.at).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                        {autoSendCancelSummary.detail ? (
+                          <div className="mt-0.5 line-clamp-2 text-amber-800/80">
+                            “{autoSendCancelSummary.detail}”
+                          </div>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Tutup ringkasan pembatalan"
+                        onClick={() => setAutoSendCancelSummary(null)}
+                        className="rounded p-1 text-amber-800/70 hover:bg-amber-100"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {sent.map((p, idx) => (
                       <PrepBox
@@ -1560,12 +1755,18 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           onClose={() => {
             setSendOpen(false);
             // Owner menutup dialog pembayaran tanpa mengirim — kalau ini
-            // datang dari auto-send, finalisasi baris audit sebagai
-            // `cancelled` agar jejak tidak menggantung di `proposed`.
+            // datang dari auto-send, jangan langsung finalize: buka dialog
+            // pemilihan alasan supaya baris audit menyimpan alasan +
+            // ringkasan seleksi (bukan sekadar token sumber).
             const auditId = autoSendAuditIdRef.current;
             if (auditId) {
-              autoSendAuditIdRef.current = null;
-              void finalizeAutoSend(auditId, "cancelled", "closed_send_dialog");
+              setAutoSendCancel({
+                preps: autoSendPrepsRef.current.length
+                  ? autoSendPrepsRef.current
+                  : selectedPreps,
+                auditId,
+                source: "closed_send_dialog",
+              });
             }
           }}
           onSent={() => {
@@ -1611,18 +1812,94 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         title={title}
         itemName={item.name}
         onCancel={() => {
+          const preps = autoSendConfirm?.preps ?? [];
           setAutoSendConfirm(null);
           setSelectionMode(false);
           setSelected(new Set());
           const auditId = autoSendAuditIdRef.current;
           if (auditId) {
-            autoSendAuditIdRef.current = null;
-            void finalizeAutoSend(auditId, "cancelled", "confirm_modal");
+            setAutoSendCancel({
+              preps,
+              auditId,
+              source: "confirm_modal",
+            });
           }
         }}
         onConfirm={() => {
           setAutoSendConfirm(null);
           setSendOpen(true);
+        }}
+      />
+
+      <AutoSendCancelReasonDialog
+        state={autoSendCancel}
+        title={title}
+        itemName={item.name}
+        onSubmit={(reason, detail) => {
+          const st = autoSendCancel;
+          setAutoSendCancel(null);
+          if (!st) return;
+          const unit = title.unit_label || "g";
+          const totalGrams = st.preps.reduce(
+            (acc, p) => acc + (Number(p.actual_grams) || 0),
+            0,
+          );
+          const note = JSON.stringify({
+            reason,
+            detail: detail || null,
+            source: st.source,
+            summary: {
+              count: st.preps.length,
+              grams: totalGrams,
+              unit,
+              prep_ids: st.preps.slice(0, 5).map((p) => p.id),
+            },
+          });
+          autoSendAuditIdRef.current = null;
+          void finalizeAutoSend(st.auditId, "cancelled", note);
+          setAutoSendCancelSummary({
+            count: st.preps.length,
+            grams: totalGrams,
+            unit,
+            at: new Date().toISOString(),
+            reason,
+            detail,
+            source: st.source,
+          });
+        }}
+        onDismiss={() => {
+          const st = autoSendCancel;
+          setAutoSendCancel(null);
+          if (!st) return;
+          // Owner menutup dialog tanpa memilih — finalize dengan alasan
+          // "tidak_dijelaskan" supaya baris audit tidak menggantung.
+          const unit = title.unit_label || "g";
+          const totalGrams = st.preps.reduce(
+            (acc, p) => acc + (Number(p.actual_grams) || 0),
+            0,
+          );
+          const note = JSON.stringify({
+            reason: "tidak_dijelaskan",
+            detail: null,
+            source: st.source,
+            summary: {
+              count: st.preps.length,
+              grams: totalGrams,
+              unit,
+              prep_ids: st.preps.slice(0, 5).map((p) => p.id),
+            },
+          });
+          autoSendAuditIdRef.current = null;
+          void finalizeAutoSend(st.auditId, "cancelled", note);
+          setAutoSendCancelSummary({
+            count: st.preps.length,
+            grams: totalGrams,
+            unit,
+            at: new Date().toISOString(),
+            reason: "tidak_dijelaskan",
+            detail: "",
+            source: st.source,
+          });
         }}
       />
 
