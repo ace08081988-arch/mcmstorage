@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, Trash2, Pencil, Check, X, Loader2 } from "lucide-react";
 import type { EcerTitle, EcerPreparation } from "@/lib/ecer";
+import { rupiah } from "@/lib/stock-format";
 
 export function AutoSendConfirmDialog({
   state,
@@ -45,6 +46,7 @@ export function AutoSendConfirmDialog({
   onConfirm,
   onRemove,
   onUpdateGrams,
+  pricePerBase,
 }: {
   state: { preps: EcerPreparation[] } | null;
   title: EcerTitle;
@@ -63,6 +65,13 @@ export function AutoSendConfirmDialog({
    * Mengembalikan `true` jika sukses supaya inline-edit menutup dirinya.
    */
   onUpdateGrams?: (prepId: string, grams: number) => Promise<boolean>;
+  /**
+   * Harga per satuan dasar produk (Rp per `title.unit_label`). Dipakai
+   * untuk menampilkan estimasi total harga di modal konfirmasi supaya
+   * owner tahu biaya sebelum dialog verifikasi pembayaran terbuka.
+   * Bernilai `null`/`undefined`/`0` → baris estimasi disembunyikan.
+   */
+  pricePerBase?: number | null;
 }) {
   // Default terbuka: owner harus bisa memverifikasi kotak (produk,
   // judul, jumlah, berat per kotak) TANPA klik tambahan.
@@ -90,6 +99,8 @@ export function AutoSendConfirmDialog({
     (acc, p) => acc + (Number(p.actual_grams) || 0),
     0,
   );
+  const unitPrice = Number(pricePerBase) || 0;
+  const totalPrice = unitPrice > 0 ? totalGrams * unitPrice : 0;
   const canMutate = !!onRemove || !!onUpdateGrams;
   const startEdit = (p: EcerPreparation) => {
     setEditingId(p.id);
@@ -135,6 +146,22 @@ export function AutoSendConfirmDialog({
                   {totalGrams} {unit}
                 </span>
               </div>
+              {unitPrice > 0 && (
+                <div>
+                  <span className="text-muted-foreground">
+                    Estimasi harga:
+                  </span>{" "}
+                  <span
+                    className="font-semibold text-foreground"
+                    data-testid="auto-send-total-price"
+                  >
+                    {rupiah(totalPrice)}
+                  </span>{" "}
+                  <span className="text-[10px] text-muted-foreground">
+                    ({totalGrams} {unit} × {rupiah(unitPrice)}/{unit})
+                  </span>
+                </div>
+              )}
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>

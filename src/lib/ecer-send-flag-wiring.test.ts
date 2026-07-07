@@ -113,7 +113,7 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     // filterActivePreps (bukan literal !p.sold_at) dan bahwa efek
     // menyerahkan daftar aktif ke modal konfirmasi (setAutoSendConfirm).
     const m = src.match(
-      /if\s*\(\s*!\s*autoSend[\s\S]{0,4000}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}/,
+      /if\s*\(\s*!\s*autoSend[\s\S]{0,6000}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}/,
     );
     expect(m, "Blok useEffect auto-send tidak ditemukan").not.toBeNull();
     const block = m![0];
