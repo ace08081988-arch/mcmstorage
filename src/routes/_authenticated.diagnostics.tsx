@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, AlertTriangle, ChevronLeft, Copy, RefreshCw } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ChevronLeft, Copy, RefreshCw, Bug, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { buildDiagnosticsSummary } from "@/lib/diagnostics-summary";
 import { useEffect, useState, useCallback } from "react";
 import { copyText } from "@/lib/share-wa";
+import { readAuthDebug, clearAuthDebug, formatAuthDebug, type AuthDebugEvent } from "@/lib/auth-debug";
 
 import reactRouterPkg from "@tanstack/react-router/package.json";
 import reactStartPkg from "@tanstack/react-start/package.json";
