@@ -45,7 +45,7 @@ export const Route = createFileRoute(
   component: Harness,
 });
 
-type Title = { id: string; name: string };
+type Title = { id: string; name: string; locationUrl?: string };
 type Prep = {
   id: string;
   title_id: string;
@@ -59,13 +59,30 @@ type Prep = {
 const TOTAL_PER_PREP = 10_000;
 
 const REQUEST_TITLES: Title[] = [
-  { id: "r-A", name: "Paket Alpha" },
-  { id: "r-B", name: "Paket Beta" },
+  {
+    id: "r-A",
+    name: "Paket Alpha",
+    locationUrl: "https://maps.google.com/?q=-6.200000,106.816666",
+  },
+  {
+    id: "r-B",
+    name: "Paket Beta",
+    locationUrl: "https://maps.google.com/?q=-6.914744,107.609810",
+  },
+  // r-C sengaja tanpa lokasi — pesan tidak boleh berisi baris "Lokasi:".
   { id: "r-C", name: "Paket Gamma" },
 ];
 const ECER_TITLES: Title[] = [
-  { id: "e-X", name: "Kotak X" },
-  { id: "e-Y", name: "Kotak Y" },
+  {
+    id: "e-X",
+    name: "Kotak X",
+    locationUrl: "https://maps.google.com/?q=-7.257472,112.752090",
+  },
+  {
+    id: "e-Y",
+    name: "Kotak Y",
+    locationUrl: "https://maps.google.com/?q=-8.409518,115.188919",
+  },
 ];
 
 // Seed: campuran aktif & terkirim supaya angka awal ≠ 0 di semua badge yang
@@ -98,6 +115,7 @@ function formatWaMessage(input: {
   method: "kas" | "hutang" | "partial";
   partialAmount: number | null;
   note: string;
+  locationUrl: string | null;
 }): string {
   const rp = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
   const methodLabel =
@@ -119,6 +137,9 @@ function formatWaMessage(input: {
   const trimmedNote = input.note.trim();
   if (trimmedNote) {
     lines.push(`Catatan: ${trimmedNote}`);
+  }
+  if (input.locationUrl) {
+    lines.push(`Lokasi: ${input.locationUrl}`);
   }
   lines.push("Terima kasih.");
   return lines.join("\n");
@@ -377,6 +398,20 @@ function Surface({
                 Rp{TOTAL_PER_PREP.toLocaleString("id-ID")}
               </span>
             </div>
+            {paymentTitle?.locationUrl ? (
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Lokasi</span>
+                <a
+                  href={paymentTitle.locationUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="truncate text-primary underline"
+                  data-testid={`payment-summary-location-${scope}`}
+                >
+                  {paymentTitle.locationUrl}
+                </a>
+              </div>
+            ) : null}
           </div>
           <div className="flex gap-1">
             {(["kas", "hutang", "partial"] as const).map((m) => (
@@ -509,6 +544,7 @@ function Surface({
                   method,
                   partialAmount: method === "partial" ? paid : null,
                   note: payment.note,
+                  locationUrl: paymentTitle?.locationUrl ?? null,
                 });
                 setLastWa(message);
                 setPreps((prev) =>
