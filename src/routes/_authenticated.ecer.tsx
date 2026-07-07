@@ -628,10 +628,14 @@ function AutoSendConfirmDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  // Default terbuka: owner harus bisa memverifikasi kotak (produk, judul,
+  // jumlah, berat per kotak) TANPA klik tambahan. Trigger tetap disediakan
+  // supaya list bisa diciutkan kalau paketnya panjang.
+  const [expanded, setExpanded] = useState(true);
   useEffect(() => {
-    // Reset expand-state setiap kali dialog dibuka ulang untuk paket baru.
-    if (state) setExpanded(false);
+    // Reset expand-state setiap kali dialog dibuka ulang untuk paket baru
+    // — kembali ke "terbuka" supaya verifikasi tetap default behavior.
+    if (state) setExpanded(true);
   }, [state]);
   if (!state) return null;
   const preps = state.preps;
