@@ -51,6 +51,7 @@ type Prep = {
   title_id: string;
   sold_at: string | null;
   paid_amount?: number | null;
+  customer?: string;
 };
 
 // Total tagihan tetap per prep di harness (Rp). Dipakai untuk validasi
@@ -70,21 +71,53 @@ const ECER_TITLES: Title[] = [
 // Seed: campuran aktif & terkirim supaya angka awal ≠ 0 di semua badge yang
 // diuji. Spec akan menoggle status lalu memverifikasi konsistensi ulang.
 const SEED_REQUEST: Prep[] = [
-  { id: "rp1", title_id: "r-A", sold_at: null },
-  { id: "rp2", title_id: "r-A", sold_at: null },
-  { id: "rp3", title_id: "r-A", sold_at: "2026-07-01T00:00:00Z" },
-  { id: "rp4", title_id: "r-B", sold_at: null },
-  { id: "rp5", title_id: "r-B", sold_at: "2026-07-02T00:00:00Z" },
-  { id: "rp6", title_id: "r-B", sold_at: "2026-07-03T00:00:00Z" },
+  { id: "rp1", title_id: "r-A", sold_at: null, customer: "Budi Santoso" },
+  { id: "rp2", title_id: "r-A", sold_at: null, customer: "Citra Dewi" },
+  { id: "rp3", title_id: "r-A", sold_at: "2026-07-01T00:00:00Z", customer: "Andi" },
+  { id: "rp4", title_id: "r-B", sold_at: null, customer: "Dewi" },
+  { id: "rp5", title_id: "r-B", sold_at: "2026-07-02T00:00:00Z", customer: "Eka" },
+  { id: "rp6", title_id: "r-B", sold_at: "2026-07-03T00:00:00Z", customer: "Fajar" },
   // r-C sengaja tanpa prep — badge harus 0/0.
 ];
 const SEED_ECER: Prep[] = [
-  { id: "ep1", title_id: "e-X", sold_at: null },
-  { id: "ep2", title_id: "e-X", sold_at: null },
-  { id: "ep3", title_id: "e-X", sold_at: "2026-07-01T00:00:00Z" },
-  { id: "ep4", title_id: "e-Y", sold_at: null },
-  { id: "ep5", title_id: "e-Y", sold_at: "2026-07-02T00:00:00Z" },
+  { id: "ep1", title_id: "e-X", sold_at: null, customer: "Ibu Sari" },
+  { id: "ep2", title_id: "e-X", sold_at: null, customer: "Pak Joko" },
+  { id: "ep3", title_id: "e-X", sold_at: "2026-07-01T00:00:00Z", customer: "Rina" },
+  { id: "ep4", title_id: "e-Y", sold_at: null, customer: "Tuti" },
+  { id: "ep5", title_id: "e-Y", sold_at: "2026-07-02T00:00:00Z", customer: "Wati" },
 ];
+
+// Formatter WA message — SSOT untuk isi pesan yang "dikirim" ke pelanggan.
+// Spec E2E membaca hasilnya dari DOM (`data-testid="last-wa-message-<scope>"`)
+// dan memverifikasi bahwa ringkasan pelanggan, total, dan jenis pembayaran
+// yang tampil di dialog konfirmasi tercermin di pesan yang dikirim.
+function formatWaMessage(input: {
+  customer: string;
+  titleName: string;
+  total: number;
+  method: "kas" | "hutang" | "partial";
+  partialAmount: number | null;
+}): string {
+  const rp = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
+  const methodLabel =
+    input.method === "kas"
+      ? "Lunas"
+      : input.method === "hutang"
+        ? "Hutang"
+        : "Bayar sebagian";
+  const lines = [
+    `Halo ${input.customer},`,
+    `Paket: ${input.titleName}`,
+    `Total: ${rp(input.total)}`,
+    `Pembayaran: ${methodLabel}`,
+  ];
+  if (input.method === "partial" && input.partialAmount !== null) {
+    lines.push(`Dibayar: ${rp(input.partialAmount)}`);
+    lines.push(`Sisa: ${rp(input.total - input.partialAmount)}`);
+  }
+  lines.push("Terima kasih.");
+  return lines.join("\n");
+}
 
 function useSurface(seed: Prep[]) {
   const [preps, setPreps] = useState<Prep[]>(seed);
@@ -139,6 +172,20 @@ function Surface({
     method: "kas" | "hutang" | "partial";
     partialAmount: string;
   }>(null);
+
+  // Pesan WA terakhir yang "dikirim" dari surface ini. Spec E2E membaca
+  // string mentahnya dari `data-testid="last-wa-message-<scope>"` untuk
+  // memverifikasi ringkasan pelanggan, total, dan jenis pembayaran.
+  const [lastWa, setLastWa] = useState<string>("");
+
+  const paymentPrep = payment
+    ? preps.find((p) => p.id === payment.prepId) ?? null
+    : null;
+  const paymentTitle = paymentPrep
+    ? titles.find((t) => t.id === paymentPrep.title_id) ?? null
+    : null;
+  const paymentCustomer = paymentPrep?.customer ?? "Pelanggan";
+  const paymentTitleName = paymentTitle?.name ?? paymentPrep?.title_id ?? "-";
 
   const partialAmountNum = payment ? Number(payment.partialAmount) : NaN;
   const partialValid =
@@ -288,6 +335,38 @@ function Surface({
           className="mt-2 space-y-1 rounded-md border bg-background p-2 text-[11px]"
         >
           <div className="font-semibold">Konfirmasi pembayaran — {payment.prepId}</div>
+          {/* Ringkasan yang ditampilkan sebelum tombol Kirim — SSOT
+              tampilan; spec memverifikasi bahwa pesan WA yang dikirim
+              memuat elemen-elemen ini. */}
+          <div
+            className="rounded border bg-muted/30 p-1.5"
+            data-testid={`payment-summary-${scope}`}
+          >
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Pelanggan</span>
+              <span
+                className="font-medium"
+                data-testid={`payment-summary-customer-${scope}`}
+              >
+                {paymentCustomer}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Paket</span>
+              <span data-testid={`payment-summary-title-${scope}`}>
+                {paymentTitleName}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total</span>
+              <span
+                className="tabular-nums"
+                data-testid={`payment-summary-total-${scope}`}
+              >
+                Rp{TOTAL_PER_PREP.toLocaleString("id-ID")}
+              </span>
+            </div>
+          </div>
           <div className="flex gap-1">
             {(["kas", "hutang", "partial"] as const).map((m) => (
               <button
@@ -387,6 +466,16 @@ function Surface({
                     : method === "hutang"
                       ? 0
                       : Number(payment.partialAmount);
+                // Bangun pesan WA berdasarkan konten yang dilihat user di
+                // dialog konfirmasi — inilah invarian yang di-e2e-kan.
+                const message = formatWaMessage({
+                  customer: paymentCustomer,
+                  titleName: paymentTitleName,
+                  total: TOTAL_PER_PREP,
+                  method,
+                  partialAmount: method === "partial" ? paid : null,
+                });
+                setLastWa(message);
                 setPreps((prev) =>
                   prev.map((p) =>
                     p.id === id && isActivePrep(p)
@@ -416,6 +505,15 @@ function Surface({
         data-json={JSON.stringify(preps)}
         hidden
       />
+      {/* Pesan WA terakhir yang "dikirim" dari surface ini. Elemen
+          `<pre>` mempertahankan whitespace/newlines apa adanya sehingga
+          spec dapat menyocokkan baris tertentu. Awalnya kosong. */}
+      <pre
+        data-testid={`last-wa-message-${scope}`}
+        className="mt-2 whitespace-pre-wrap rounded border bg-muted/30 p-1.5 text-[10px]"
+      >
+        {lastWa}
+      </pre>
     </section>
   );
 }
