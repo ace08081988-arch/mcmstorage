@@ -1114,10 +1114,38 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const autoSendFiredRef = useRef(false);
   useEffect(() => {
     if (!autoSend || autoSendFiredRef.current || loading) return;
-    const activeNow = filterActivePreps(preps);
+    // Sabuk pengaman berlapis: walau query `preps` sudah difilter
+    // `title_id=eq.title.id` server-side dan `filterActivePreps` mengunci
+    // semantik "aktif", tetap saring ulang di klien agar `send=1` MUSTAHIL
+    // memilih kotak dari judul lain, produk lain, atau kotak yang sudah
+    // ter-sold_at. Kalau ada anomali (data lintas judul / produk), gugurkan
+    // flag dan beri toast — jangan buka dialog dengan pilihan salah.
+    const rawActive = filterActivePreps(preps);
+    const mismatched = rawActive.filter(
+      (p) =>
+        p.title_id !== title.id ||
+        (p.warehouse_item_id != null && p.warehouse_item_id !== item.id),
+    );
+    const activeNow = rawActive.filter(
+      (p) =>
+        p.title_id === title.id &&
+        (p.warehouse_item_id == null || p.warehouse_item_id === item.id),
+    );
+    if (mismatched.length > 0) {
+      // Terlihat data lintas judul / produk pada state — batal auto-send
+      // supaya owner memeriksa manual. Ini seharusnya tidak pernah terjadi
+      // (query sudah di-scope), tapi kita gagal aman.
+      autoSendFiredRef.current = true;
+      toast.error(
+        `Batal auto-Kirim: terdeteksi ${mismatched.length} kotak lintas judul/produk. Pilih manual.`,
+      );
+      onAutoSendConsumed?.();
+      return;
+    }
     if (activeNow.length === 0) {
       // Tidak ada kotak aktif; batalkan flag agar user tidak "terjebak".
       autoSendFiredRef.current = true;
+      toast.info("Tidak ada kotak aktif untuk dikirim pada judul ini.");
       onAutoSendConsumed?.();
       return;
     }
@@ -1126,7 +1154,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     setSelected(new Set(activeNow.map((p) => p.id)));
     setSendOpen(true);
     onAutoSendConsumed?.();
-  }, [autoSend, loading, preps, onAutoSendConsumed]);
+  }, [autoSend, loading, preps, title.id, item.id, onAutoSendConsumed]);
 
   // realtime
   useEffect(() => {
