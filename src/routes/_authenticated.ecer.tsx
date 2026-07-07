@@ -80,7 +80,6 @@ type WarehouseItem = {
   stock_base: number; image_path: string | null;
   package_type?: string | null;
   package_size?: number | null;
-  price_per_base?: number | null;
 };
 
 function EcerPage() {
