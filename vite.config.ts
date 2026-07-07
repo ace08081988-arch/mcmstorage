@@ -5,6 +5,11 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import { loadEnv } from "vite";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const BUILD_ID = (() => {
   const t = Date.now().toString(36);
@@ -13,7 +18,11 @@ const BUILD_ID = (() => {
 })();
 const BUILD_TIME = new Date().toISOString();
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const serverEnv = loadEnv(mode, process.cwd(), "");
+  Object.assign(process.env, serverEnv);
+
+  return {
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
@@ -21,9 +30,23 @@ export default defineConfig({
     routeFileIgnorePattern: "(?:^|/)_[^/]+\\.test\\.(?:ts|tsx)$|(?:^|/)_authenticated\\.gudang\\.strict-compute-spy\\.ts$",
   },
   vite: {
+    resolve: {
+      alias: {
+        "entities/lib/decode.js": path.resolve(
+          __dirname,
+          "node_modules/entities/lib/decode.js",
+        ),
+        "entities/lib/encode.js": path.resolve(
+          __dirname,
+          "node_modules/entities/lib/encode.js",
+        ),
+        entities: path.resolve(__dirname, "node_modules/entities"),
+      },
+    },
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
     },
   },
+  };
 });
