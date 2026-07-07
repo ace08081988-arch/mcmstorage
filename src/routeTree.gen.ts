@@ -108,6 +108,7 @@ import { Route as AuthenticatedAdminTurnstileAuditRouteImport } from './routes/_
 import { Route as AuthenticatedAdminTurnstileRouteImport } from './routes/_authenticated.admin.turnstile'
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
 import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
+import { Route as AuthenticatedAdminEmailStatusRouteImport } from './routes/_authenticated.admin.email-status'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -661,6 +662,12 @@ const AuthenticatedAdminPortalErrorLogRoute =
     path: '/admin/portal-error-log',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminEmailStatusRoute =
+  AuthenticatedAdminEmailStatusRouteImport.update({
+    id: '/admin/email-status',
+    path: '/admin/email-status',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -777,6 +784,7 @@ export interface FileRoutesByFullPath {
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/pos-kasir/': typeof PosKasirIndexRoute
+  '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/admin/turnstile': typeof AuthenticatedAdminTurnstileRoute
@@ -884,6 +892,7 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/pos-kasir': typeof PosKasirIndexRoute
+  '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/admin/turnstile': typeof AuthenticatedAdminTurnstileRoute
@@ -995,6 +1004,7 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/pos-kasir/': typeof PosKasirIndexRoute
+  '/_authenticated/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/_authenticated/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/_authenticated/admin/turnstile': typeof AuthenticatedAdminTurnstileRoute
@@ -1106,6 +1116,7 @@ export interface FileRouteTypes {
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/pos-kasir/'
+    | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
     | '/admin/turnstile'
@@ -1213,6 +1224,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/'
     | '/pos-kasir'
+    | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
     | '/admin/turnstile'
@@ -1323,6 +1335,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/_authenticated/'
     | '/pos-kasir/'
+    | '/_authenticated/admin/email-status'
     | '/_authenticated/admin/portal-error-log'
     | '/_authenticated/admin/signup-attempts'
     | '/_authenticated/admin/turnstile'
@@ -2117,6 +2130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPortalErrorLogRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/email-status': {
+      id: '/_authenticated/admin/email-status'
+      path: '/admin/email-status'
+      fullPath: '/admin/email-status'
+      preLoaderRoute: typeof AuthenticatedAdminEmailStatusRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -2278,6 +2298,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTugasDaftarRoute: typeof AuthenticatedTugasDaftarRoute
   AuthenticatedUndangRoute: typeof AuthenticatedUndangRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminEmailStatusRoute: typeof AuthenticatedAdminEmailStatusRoute
   AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
   AuthenticatedAdminSignupAttemptsRoute: typeof AuthenticatedAdminSignupAttemptsRoute
   AuthenticatedAdminTurnstileRoute: typeof AuthenticatedAdminTurnstileRoute
@@ -2339,6 +2360,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTugasDaftarRoute: AuthenticatedTugasDaftarRoute,
   AuthenticatedUndangRoute: AuthenticatedUndangRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminEmailStatusRoute: AuthenticatedAdminEmailStatusRoute,
   AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
   AuthenticatedAdminSignupAttemptsRoute: AuthenticatedAdminSignupAttemptsRoute,
   AuthenticatedAdminTurnstileRoute: AuthenticatedAdminTurnstileRoute,
