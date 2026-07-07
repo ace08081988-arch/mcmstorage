@@ -408,6 +408,76 @@ function TurnstileSettingsPage() {
               </span>
             </div>
             <div className="mt-1">{testResult.message}</div>
+            <dl className="mt-2 grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-xs font-mono">
+              {typeof testResult.http_status === "number" && (
+                <>
+                  <dt className="opacity-70">http_status</dt>
+                  <dd>{testResult.http_status}</dd>
+                </>
+              )}
+              {typeof testResult.duration_ms === "number" && (
+                <>
+                  <dt className="opacity-70">duration_ms</dt>
+                  <dd>{testResult.duration_ms} ms</dd>
+                </>
+              )}
+              <dt className="opacity-70">secret_source</dt>
+              <dd>{testResult.source}</dd>
+              {testResult.codes.length > 0 && (
+                <>
+                  <dt className="opacity-70">error_codes</dt>
+                  <dd className="break-all">{testResult.codes.join(", ")}</dd>
+                </>
+              )}
+              {testResult.messages && testResult.messages.length > 0 && (
+                <>
+                  <dt className="opacity-70">messages</dt>
+                  <dd className="break-all">
+                    {testResult.messages.join(" | ")}
+                  </dd>
+                </>
+              )}
+              {testResult.hostname && (
+                <>
+                  <dt className="opacity-70">hostname</dt>
+                  <dd className="break-all">{testResult.hostname}</dd>
+                </>
+              )}
+              {testResult.action && (
+                <>
+                  <dt className="opacity-70">action</dt>
+                  <dd className="break-all">{testResult.action}</dd>
+                </>
+              )}
+              {testResult.challenge_ts && (
+                <>
+                  <dt className="opacity-70">challenge_ts</dt>
+                  <dd className="break-all">{testResult.challenge_ts}</dd>
+                </>
+              )}
+              {testResult.cf_ray && (
+                <>
+                  <dt className="opacity-70">cf_ray</dt>
+                  <dd className="break-all">{testResult.cf_ray}</dd>
+                </>
+              )}
+              {testResult.request_id && (
+                <>
+                  <dt className="opacity-70">request_id</dt>
+                  <dd className="break-all">{testResult.request_id}</dd>
+                </>
+              )}
+            </dl>
+            {testResult.raw && (
+              <details className="mt-2 text-xs">
+                <summary className="cursor-pointer opacity-80">
+                  Raw response body
+                </summary>
+                <pre className="mt-1 whitespace-pre-wrap break-all rounded bg-background/60 p-2 font-mono">
+                  {testResult.raw}
+                </pre>
+              </details>
+            )}
           </div>
         )}
       </form>
