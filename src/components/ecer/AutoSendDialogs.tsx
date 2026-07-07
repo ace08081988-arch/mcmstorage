@@ -34,7 +34,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle, Search, FileSpreadsheet, FileText } from "lucide-react";
+import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle, Search, FileSpreadsheet, FileText, MapPin, ExternalLink } from "lucide-react";
 import type { EcerTitle, EcerPreparation } from "@/lib/ecer";
 import { rupiah } from "@/lib/stock-format";
 import {
@@ -615,6 +615,79 @@ export function AutoSendConfirmDialog({
                         {rowReasons.join(" · ")}
                       </div>
                     )}
+                    {(() => {
+                      const key = p.warehouse_item_id ?? "__unknown__";
+                      const isOtherProduct =
+                        expectedItem != null &&
+                        key !== "__unknown__" &&
+                        key !== expectedItem;
+                      const productLabel =
+                        key === "__unknown__"
+                          ? "Tanpa produk"
+                          : isOtherProduct
+                            ? `Produk lain · ${key.slice(0, 8)}`
+                            : itemName;
+                      const locUrl = p.location_url;
+                      const hasGps =
+                        typeof p.gps_lat === "number" &&
+                        typeof p.gps_lng === "number" &&
+                        Number.isFinite(p.gps_lat) &&
+                        Number.isFinite(p.gps_lng);
+                      const gpsUrl = hasGps
+                        ? `https://www.google.com/maps?q=${p.gps_lat},${p.gps_lng}`
+                        : null;
+                      const finalUrl = locUrl || gpsUrl;
+                      const locLabel = locUrl
+                        ? "Buka lokasi"
+                        : hasGps
+                          ? `${p.gps_lat!.toFixed(4)}, ${p.gps_lng!.toFixed(4)}`
+                          : "Lokasi belum diisi";
+                      return (
+                        <div
+                          data-testid="auto-send-item-meta"
+                          className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground"
+                        >
+                          <span
+                            data-testid="auto-send-item-product"
+                            data-other-product={isOtherProduct ? "true" : undefined}
+                            className={`inline-flex items-center gap-1 ${
+                              isOtherProduct ? "text-destructive font-medium" : ""
+                            }`}
+                          >
+                            {isOtherProduct && (
+                              <AlertTriangle className="h-3 w-3" aria-hidden />
+                            )}
+                            <span className="truncate max-w-[10rem]">
+                              {productLabel}
+                            </span>
+                          </span>
+                          <span aria-hidden>·</span>
+                          {finalUrl ? (
+                            <a
+                              href={finalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-testid="auto-send-item-location-link"
+                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                            >
+                              <MapPin className="h-3 w-3" aria-hidden />
+                              <span className="truncate max-w-[10rem]">
+                                {locLabel}
+                              </span>
+                              <ExternalLink className="h-2.5 w-2.5" aria-hidden />
+                            </a>
+                          ) : (
+                            <span
+                              data-testid="auto-send-item-location-missing"
+                              className="inline-flex items-center gap-1 italic"
+                            >
+                              <MapPin className="h-3 w-3" aria-hidden />
+                              {locLabel}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </li>
                 );
               })}
