@@ -1495,6 +1495,32 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                       {sent.length}
                     </span>
                   </div>
+                  {autoSendSummary && (
+                    <div
+                      data-testid="auto-send-summary"
+                      className="mb-3 flex items-start justify-between gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold">Auto-Kirim tercatat</div>
+                        <div className="text-emerald-800/90">
+                          {autoSendSummary.count} kotak · Total {autoSendSummary.grams} {autoSendSummary.unit} ·
+                          {" "}
+                          {new Date(autoSendSummary.at).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Tutup ringkasan"
+                        onClick={() => setAutoSendSummary(null)}
+                        className="rounded p-1 text-emerald-800/70 hover:bg-emerald-100"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {sent.map((p, idx) => (
                       <PrepBox
