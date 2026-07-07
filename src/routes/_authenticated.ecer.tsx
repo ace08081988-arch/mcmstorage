@@ -3480,6 +3480,7 @@ function SendEcerPrepsDialog({
   const [paidStr, setPaidStr] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
 
   useEffect(() => {
     if (!open) return;
@@ -3490,7 +3491,7 @@ function SendEcerPrepsDialog({
     setPayMethod("kas");
     setPaidStr("");
     setNote("");
-  }, [open, customers]);
+  }, [open, customers, title.id, prepIdsKey]);
 
   const totalAmount = useMemo(() => {
     return parsePaymentAmountInput(totalStr);
