@@ -1418,6 +1418,21 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         />
       )}
 
+      <AutoSendConfirmDialog
+        state={autoSendConfirm}
+        title={title}
+        itemName={item.name}
+        onCancel={() => {
+          setAutoSendConfirm(null);
+          setSelectionMode(false);
+          setSelected(new Set());
+        }}
+        onConfirm={() => {
+          setAutoSendConfirm(null);
+          setSendOpen(true);
+        }}
+      />
+
       <WorkerSubmissionsCard title={title} itemName={item.name} />
     </div>
   );
