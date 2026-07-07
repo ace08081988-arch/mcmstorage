@@ -150,18 +150,9 @@ export const Route = createFileRoute("/api/public/hooks/shipment-status-change")
           return Response.json({ success: false, reason: "email_suppressed" });
         }
 
-        // Idempotency: cek log pending/sent dengan message_id yang sama sebelumnya
-        const { data: existing } = await supabase
-          .from("email_send_log")
-          .select("id")
-          .eq("template_name", TEMPLATE_NAME)
-          .eq("recipient_email", email)
-          .filter("metadata->>idempotency_key" as never, "eq", idempotencyKey)
-          .in("status", ["pending", "sent"])
-          .maybeSingle();
-        if (existing) {
-          return Response.json({ success: false, reason: "already_enqueued" });
-        }
+        // Idempotency ditegakkan hilir oleh queue processor via idempotency_key
+        // pada payload; kalau row disimpan berulang kali dengan status yang sama
+        // trigger tidak fire (WHEN NEW.status IS DISTINCT FROM OLD.status).
 
         // Unsubscribe token
         const normalizedEmail = email.toLowerCase();
