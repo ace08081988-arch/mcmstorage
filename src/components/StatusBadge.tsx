@@ -1,4 +1,9 @@
 import { cn } from "@/lib/utils";
+import {
+  STATUS_LABEL_ID,
+  STATUS_VARIANT,
+  type LifecycleStatus,
+} from "@/lib/prep-status";
 
 /**
  * Konsisten status badge untuk semua varian pesanan/produk.
@@ -48,18 +53,24 @@ function resolveVariant(status: string): StatusVariant {
 export function StatusBadge({
   status,
   variant,
+  lifecycle,
   size = "sm",
   className,
   children,
 }: {
   status?: string;
   variant?: StatusVariant;
+  lifecycle?: LifecycleStatus;
   size?: "xs" | "sm";
   className?: string;
   children?: React.ReactNode;
 }) {
-  const v = variant ?? resolveVariant(status ?? "");
-  const label = children ?? status ?? "";
+  // `lifecycle` menang atas `status`/`variant` — SSOT untuk pipeline pesanan.
+  const v = lifecycle
+    ? STATUS_VARIANT[lifecycle]
+    : (variant ?? resolveVariant(status ?? ""));
+  const label =
+    children ?? (lifecycle ? STATUS_LABEL_ID[lifecycle] : (status ?? ""));
   return (
     <span
       className={cn(
