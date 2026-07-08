@@ -88,6 +88,7 @@ import {
 import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
 import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls";
 import { OrderSummaryCard } from "@/components/chat/OrderSummaryCard";
+import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
@@ -745,6 +746,9 @@ function ChatRoomPage() {
             <div className="truncate text-[15px] font-semibold">
               {meta.data?.kind === "dm" ? displayedPeerName : headerTitle}
             </div>
+            {meta.data?.category === "archived" || meta.data?.archived_at ? (
+              <StatusBadge lifecycle="archived" className="shrink-0" />
+            ) : null}
             {meta.data?.kind === "dm" && dmPeer ? (
               <Button
                 variant="ghost"

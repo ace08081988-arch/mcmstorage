@@ -26,6 +26,13 @@ export type ConversationListItem = ConversationRow & {
   archived_at: string | null;
   muted_until: string | null;
   cleared_at: string | null;
+  /**
+   * Kategori workflow SSOT (Slice A) — 'customer' | 'employee' | 'internal' | 'archived'.
+   * Berbeda dari `archived_at` yang berasal dari `conversation_members` (arsip per-user manual).
+   */
+  workflow_category: string | null;
+  /** Tanggal auto-archive workflow (Slice C). NULL bila belum diarsipkan otomatis. */
+  workflow_archived_at: string | null;
 };
 
 export type MessageRow = {
@@ -168,7 +175,9 @@ export function useConversations() {
 
       const { data: convs, error: cErr } = await supabase
         .from("conversations")
-        .select("id, kind, title, owner_user_id, last_message_at, updated_at")
+        .select(
+          "id, kind, title, owner_user_id, last_message_at, updated_at, category, archived_at",
+        )
         .in("id", ids)
         .order("last_message_at", { ascending: false, nullsFirst: false });
       if (cErr) throw cErr;
@@ -328,6 +337,10 @@ export function useConversations() {
           archived_at: mine?.archived_at ?? null,
           muted_until: mine?.muted_until ?? null,
           cleared_at: mine?.cleared_at ?? null,
+          workflow_category:
+            (c as { category?: string | null }).category ?? null,
+          workflow_archived_at:
+            (c as { archived_at?: string | null }).archived_at ?? null,
         };
       });
       // Hide conversations the user cleared that have no newer activity.

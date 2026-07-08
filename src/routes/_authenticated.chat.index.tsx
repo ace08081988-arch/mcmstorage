@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import { useChatLists, useAllChatListMembers } from "@/lib/chat-lists";
 import { ChatListIcon } from "@/lib/chat-list-icons";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
@@ -652,6 +653,9 @@ function ConvList({
                       {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 wa-muted" /> : null}
                       <span className="truncate">{c.display_title}</span>
                       {isMuted ? <BellOff className="h-3 w-3 shrink-0 wa-muted" /> : null}
+                      {c.workflow_category === "archived" || c.workflow_archived_at ? (
+                        <StatusBadge lifecycle="archived" className="shrink-0" />
+                      ) : null}
                     </span>
                     <span className={`shrink-0 text-[11px] ${c.unread > 0 ? "text-[var(--wa-green)] font-medium" : "wa-muted"}`}>{timeShort(c.last_at)}</span>
                   </div>
