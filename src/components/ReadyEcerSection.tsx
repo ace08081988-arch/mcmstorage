@@ -36,6 +36,7 @@ import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
 import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { confirm as confirmDialog } from "@/lib/confirm";
+import { consumeSentTabFlag, SHOW_SENT_EVENT } from "@/lib/ready-ecer-sent-nav";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
 
@@ -435,6 +436,24 @@ export function ReadyEcerSection() {
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
   const [view, setView] = useState<"active" | "sent">("active");
+  // Ref ke root section supaya kita bisa scroll ke sini saat user datang
+  // dari toast "Lihat Riwayat" di /ecer.
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // Buka tab Riwayat + scroll ke section bila datang dari toast atau bila
+  // ReadyEcerSection sudah ter-mount saat event di-dispatch.
+  useEffect(() => {
+    const openSent = () => {
+      setView("sent");
+      // Tunggu satu frame supaya konten tab Riwayat sudah render sebelum scroll.
+      requestAnimationFrame(() => {
+        rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    if (consumeSentTabFlag()) openSent();
+    const handler = () => openSent();
+    window.addEventListener(SHOW_SENT_EVENT, handler);
+    return () => window.removeEventListener(SHOW_SENT_EVENT, handler);
+  }, []);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState<null | "delete">(null);
@@ -503,7 +522,7 @@ export function ReadyEcerSection() {
   }
 
   return (
-    <div className="space-y-1.5">
+    <div ref={rootRef} className="space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">

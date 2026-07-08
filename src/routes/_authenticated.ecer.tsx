@@ -41,6 +41,7 @@ import {
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { markSent, useSentShots } from "@/lib/wa-sent-history";
+import { requestOpenSentHistory } from "@/lib/ready-ecer-sent-nav";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
@@ -1839,6 +1840,7 @@ function describeLocationUrl(raw: string): { label: string | null; kind: string 
 }
 
 function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName: string }) {
+  const navigate = useNavigate();
   const [shots, setShots] = useState<WorkerShot[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -2320,6 +2322,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           status: "success",
           idemKey: `worker-shot-wa-${s.id}-${Date.now()}`,
         });
+        toast.success("Terkirim — pindah ke Riwayat", {
+          description: `${title.name} · WhatsApp`,
+          action: {
+            label: "Lihat Riwayat",
+            onClick: () => {
+              requestOpenSentHistory();
+              void navigate({ to: "/" });
+            },
+          },
+        });
       }
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
@@ -2389,6 +2401,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           mapsUrl: s.location_url ?? null,
           status: "success",
           idemKey: `worker-shot-chat-${s.id}-${Date.now()}`,
+        });
+        toast.success("Terkirim — pindah ke Riwayat", {
+          description: `${title.name} · MCM Chat`,
+          action: {
+            label: "Lihat Riwayat",
+            onClick: () => {
+              requestOpenSentHistory();
+              void navigate({ to: "/" });
+            },
+          },
         });
       } else {
         toast.error(`Gagal mengirim: ${result.error}`);
