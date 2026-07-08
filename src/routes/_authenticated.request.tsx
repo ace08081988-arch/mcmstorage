@@ -1463,8 +1463,7 @@ function TitleDetailView({
                 const w = warehouseItems.find((x) => x.id === i.warehouse_item_id);
                 return (
                   <span key={i.id} className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                    {formatQty(i.target_grams, i.unit_label, w?.name)
-                      .replace(/^/, `${w?.name ?? "?"} `)}
+                    {w?.name ?? "?"} {formatQty(i.target_grams, i.unit_label, w?.name)}
                   </span>
                 );
               })}
