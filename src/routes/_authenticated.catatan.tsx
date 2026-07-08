@@ -82,13 +82,13 @@ function NotesPage() {
                 <CardContent className="space-y-1 p-3">
                   <div className="flex items-start gap-2">
                     <h3 className="flex-1 font-semibold text-sm">{n.title}</h3>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigator.clipboard?.writeText(n.body).then(() => toast.success("Disalin"))}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Salin catatan" onClick={() => navigator.clipboard?.writeText(n.body).then(() => toast.success("Disalin"))}>
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDraft({ id: n.id, title: n.title, body: n.body })}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit catatan" onClick={() => setDraft({ id: n.id, title: n.title, body: n.body })}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => del.mutate(n.id)}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label="Hapus catatan" onClick={() => del.mutate(n.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
