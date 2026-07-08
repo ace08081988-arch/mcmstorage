@@ -1,15 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowUpRight,
   Boxes,
+  Calendar as CalendarIcon,
   ClipboardList,
+  Download,
+  Filter,
+  LineChart,
   PackageCheck,
   ReceiptText,
   ShoppingBag,
   Sparkles,
   TrendingUp,
+  Users,
+  Warehouse,
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
