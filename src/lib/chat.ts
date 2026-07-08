@@ -33,6 +33,11 @@ export type ConversationListItem = ConversationRow & {
   workflow_category: string | null;
   /** Tanggal auto-archive workflow (Slice C). NULL bila belum diarsipkan otomatis. */
   workflow_archived_at: string | null;
+  /** Tautan business object (Slice A) — untuk grouping "per Order" di Slice D. */
+  linked_customer_id: string | null;
+  linked_request_prep_id: string | null;
+  linked_ecer_prep_id: string | null;
+  linked_task_id: string | null;
 };
 
 export type MessageRow = {
@@ -176,7 +181,7 @@ export function useConversations() {
       const { data: convs, error: cErr } = await supabase
         .from("conversations")
         .select(
-          "id, kind, title, owner_user_id, last_message_at, updated_at, category, archived_at",
+          "id, kind, title, owner_user_id, last_message_at, updated_at, category, archived_at, linked_customer_id, linked_request_prep_id, linked_ecer_prep_id, linked_task_id",
         )
         .in("id", ids)
         .order("last_message_at", { ascending: false, nullsFirst: false });
@@ -341,6 +346,14 @@ export function useConversations() {
             (c as { category?: string | null }).category ?? null,
           workflow_archived_at:
             (c as { archived_at?: string | null }).archived_at ?? null,
+          linked_customer_id:
+            (c as { linked_customer_id?: string | null }).linked_customer_id ?? null,
+          linked_request_prep_id:
+            (c as { linked_request_prep_id?: string | null }).linked_request_prep_id ?? null,
+          linked_ecer_prep_id:
+            (c as { linked_ecer_prep_id?: string | null }).linked_ecer_prep_id ?? null,
+          linked_task_id:
+            (c as { linked_task_id?: string | null }).linked_task_id ?? null,
         };
       });
       // Hide conversations the user cleared that have no newer activity.
