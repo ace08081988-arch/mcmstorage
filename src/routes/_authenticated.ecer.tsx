@@ -134,6 +134,53 @@ function EcerLoadingSkeleton() {
   );
 }
 
+function EcerSummaryCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: ChipTone;
+  hint?: string;
+}) {
+  const map: Record<ChipTone, string> = {
+    primary: "text-primary bg-primary/10 ring-primary/20",
+    info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+    success: "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20 dark:text-emerald-400",
+    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    danger: "text-destructive bg-destructive/10 ring-destructive/20",
+  };
+  return (
+    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:text-[11px]">
+            {label}
+          </p>
+          <p className="mt-1 text-xl font-bold tabular-nums tracking-tight md:text-2xl">
+            {value.toLocaleString("id-ID")}
+          </p>
+          {hint && (
+            <p className="mt-0.5 hidden text-[10px] leading-tight text-muted-foreground md:block">
+              {hint}
+            </p>
+          )}
+        </div>
+        <span
+          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${map[tone]} md:h-9 md:w-9`}
+          aria-hidden
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function EcerPage() {
   const search = Route.useSearch();
   const router = useRouter();
@@ -163,6 +210,10 @@ function EcerPage() {
   // Membuat produk gudang baru (lanjut otomatis ke pembuatan judul untuk produk itu).
   const [creatingProduct, setCreatingProduct] = useState(false);
   const [productSearch, setProductSearch] = useState("");
+  // Read-only aggregate untuk kartu ringkasan (Menunggu / Berjalan / Selesai).
+  // Bukan business logic baru — hanya count per title dari tabel yang sama
+  // dengan yang sudah dipakai TitleCard.
+  const [prepStats, setPrepStats] = useState<Record<string, { total: number; sold: number }>>({});
 
   function diagnose(err: { code?: string; message?: string; status?: number | string; details?: string }): string {
     const code = err?.code ?? "";
@@ -229,6 +280,23 @@ function EcerPage() {
       }
       setItems((wi.data ?? []) as WarehouseItem[]);
       setTitles((et.data ?? []) as EcerTitle[]);
+      // Ambil ringkasan penyiapan (per-title) untuk kartu ringkasan.
+      // Non-blocking: gagal → biarkan kosong, tidak memengaruhi alur utama.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pr = await (supabase.from as any)("ecer_preparations")
+          .select("title_id, sold_at");
+        if (!pr.error && Array.isArray(pr.data)) {
+          const acc: Record<string, { total: number; sold: number }> = {};
+          for (const row of pr.data as Array<{ title_id: string; sold_at: string | null }>) {
+            const s = acc[row.title_id] ?? { total: 0, sold: 0 };
+            s.total += 1;
+            if (row.sold_at) s.sold += 1;
+            acc[row.title_id] = s;
+          }
+          setPrepStats(acc);
+        }
+      } catch { /* diamkan — kartu ringkasan default 0 */ }
     } catch (e) {
       const err = e as { message?: string; status?: number; code?: string; name?: string };
       setLoadError({
@@ -415,16 +483,31 @@ function EcerPage() {
 
   const totalTitles = titles.length;
 
+  // Ringkasan status Judul Ecer (indikatif, dari prepStats).
+  //  - Siap    : ada penyiapan, semua sudah terkirim (sold_at != null)
+  //  - Berjalan: ada penyiapan, sebagian belum terkirim
+  //  - Menunggu: belum ada penyiapan sama sekali
+  //  - Selesai : sama dengan "Siap" (semua sold) — mengikuti label yang diminta
+  let readyCount = 0;
+  let inProgressCount = 0;
+  let waitingCount = 0;
+  for (const t of titles) {
+    const s = prepStats[t.id];
+    if (!s || s.total === 0) waitingCount += 1;
+    else if (s.sold >= s.total) readyCount += 1;
+    else inProgressCount += 1;
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5">
+      <section aria-labelledby="ecer-heading" className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border bg-background/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
               <Sparkles className="h-3 w-3 text-primary" /> Modul Penyiapan
             </div>
-            <h1 className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
+            <h1 id="ecer-heading" className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
               <Scale className="h-5 w-5 text-primary" /> Penyiapan Ecer
             </h1>
             <p className="mt-1 max-w-xl text-[11px] leading-snug text-muted-foreground sm:text-xs">
@@ -432,19 +515,43 @@ function EcerPage() {
               berisi foto + lokasi + berat aktual. Stok produk otomatis berkurang setiap penyiapan disimpan.
             </p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setCreatingProduct(true)} className="shrink-0 gap-1">
+          <Button size="sm" variant="outline" onClick={() => setCreatingProduct(true)} className="shrink-0 gap-1" aria-label="Tambah produk gudang baru">
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Produk baru</span>
           </Button>
         </div>
+      </section>
 
-        {/* Quick stats */}
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <StatChip icon={Boxes} label="Produk" value={items.length} tone="primary" />
-          <StatChip icon={LayoutGrid} label="Judul Ecer" value={totalTitles} tone="info" />
-          <StatChip icon={CheckCircle2} label="Terpilih" value={selectedItem ? titlesForItem.length : 0} tone="success" />
-        </div>
-      </div>
+      {/* Summary cards — Ready / In Progress / Waiting / Completed */}
+      <section aria-label="Ringkasan Judul Ecer" className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+        <EcerSummaryCard
+          icon={LayoutGrid}
+          label="Total Judul"
+          value={totalTitles}
+          tone="primary"
+        />
+        <EcerSummaryCard
+          icon={Clock}
+          label="Menunggu"
+          value={waitingCount}
+          tone="warning"
+          hint="Belum ada penyiapan"
+        />
+        <EcerSummaryCard
+          icon={RefreshCw}
+          label="Berjalan"
+          value={inProgressCount}
+          tone="info"
+          hint="Sebagian sudah disiapkan"
+        />
+        <EcerSummaryCard
+          icon={CheckCircle2}
+          label="Selesai"
+          value={readyCount}
+          tone="success"
+          hint="Semua sudah terkirim"
+        />
+      </section>
 
       {/* Product picker */}
       <div className="rounded-xl border bg-card p-3 shadow-sm sm:p-4">
@@ -540,6 +647,7 @@ function EcerPage() {
                     onEdit={() => setEditingTitle(t)}
                     onDeleted={refetchTitles}
                     highlighted={highlightTitleId === t.id}
+                    stat={prepStats[t.id]}
                   />
                 ))}
               </div>
@@ -606,9 +714,10 @@ function EcerPage() {
   );
 }
 
-function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: {
+function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, stat }: {
   title: EcerTitle; itemName?: string; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
   highlighted?: boolean;
+  stat?: { total: number; sold: number };
 }) {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
@@ -633,17 +742,21 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
     onDeleted();
   }
 
-  const c = count ?? 0;
-  const isLoadingCount = count === null;
+  // Prefer aggregate `stat` (dari parent), fallback ke head-count lama.
+  const c = stat?.total ?? count ?? 0;
+  const soldC = stat?.sold ?? 0;
+  const isLoadingCount = stat == null && count === null;
   const status = isLoadingCount
     ? { label: "…", cls: "bg-muted text-muted-foreground" }
     : c === 0
-      ? { label: "Baru", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-400" }
-      : c < 5
-        ? { label: "Berjalan", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" }
-        : { label: "Aktif", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" };
-  // Rough progress bar: caps at 10 penyiapan for visual scale (indikatif, bukan target keras).
-  const progress = Math.min(100, Math.round((c / 10) * 100));
+      ? { label: "Menunggu", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" }
+      : soldC >= c
+        ? { label: "Selesai", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" }
+        : { label: "Berjalan", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-400" };
+  // Progress berbasis penyiapan yang sudah terkirim; fallback: skala 10 penyiapan.
+  const progress = c > 0 && stat
+    ? Math.min(100, Math.round((soldC / c) * 100))
+    : Math.min(100, Math.round((c / 10) * 100));
   return (
     <div
       role="button"
@@ -661,7 +774,8 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
               <Scale className="h-3 w-3" /> {title.target_grams} {displayUnit(itemName, title.unit_label)}
             </span>
             <span className="inline-flex items-center gap-1 tabular-nums">
-              <Hash className="h-3 w-3" /> {isLoadingCount ? "…" : `${c} penyiapan`}
+              <Hash className="h-3 w-3" />
+              {isLoadingCount ? "…" : stat ? `${soldC}/${c} terkirim` : `${c} penyiapan`}
             </span>
           </div>
         </div>
