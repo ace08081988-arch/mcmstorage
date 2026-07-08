@@ -884,6 +884,7 @@ export function ReadyEcerSection() {
                 sentDetails={sentDetails}
                 selectMode={selectMode}
                 selected={selectedIds.has(r.id)}
+                justMoved={justMovedRowId === r.id}
                 onToggleSelect={() => toggleSelect(r.id)}
                 onEnterSelect={() => {
                   setSelectMode(true);
@@ -1076,6 +1077,7 @@ type EcerCardProps = {
   sentDetails: Map<string, SentEntry>;
   selectMode?: boolean;
   selected?: boolean;
+  justMoved?: boolean;
   onToggleSelect?: () => void;
   onEnterSelect?: () => void;
 };
@@ -1284,7 +1286,16 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, justMoved = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
+  const cardRootRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (justMoved && cardRootRef.current) {
+      // Delay 1 frame supaya layout tab "Riwayat" sudah selesai render.
+      requestAnimationFrame(() => {
+        cardRootRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  }, [justMoved]);
   const [sending, setSending] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
