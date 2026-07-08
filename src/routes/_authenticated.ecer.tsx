@@ -2305,6 +2305,18 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       }
       const waRes = await shareToWhatsApp({ text: shotCaption(s, { sentCount: files.length, excludedCount }), title: title.name, files });
       notifyShareResult(waRes);
+      // Pindahkan folder ke Riwayat Terkirim (SSOT wa-sent-history) begitu
+      // WA benar-benar terbuka/terkirim. Tanpa ini kartu tetap muncul di
+      // grid Kiriman pegawai walau WA sudah dibuka — user merasa "tidak
+      // pindah ke Riwayat". "fallback" juga sukses (URL dibuka manual).
+      if (waRes.status === "shared" || waRes.status === "fallback") {
+        markSent([s.id], {
+          channel: "wa",
+          mapsUrl: s.location_url ?? null,
+          status: "success",
+          idemKey: `worker-shot-wa-${s.id}-${Date.now()}`,
+        });
+      }
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
     } finally {
@@ -2366,6 +2378,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             `Terkirim ke ${convTitle} — ${confirmedPhotos} foto terkonfirmasi (${result.messageCount} pesan).`,
           );
         }
+        // Pindahkan folder ke Riwayat Terkirim setelah backend mengonfirmasi
+        // pengiriman ke MCM Chat. Simetris dengan alur WA di sendShotWA.
+        markSent([s.id], {
+          channel: "chat",
+          mapsUrl: s.location_url ?? null,
+          status: "success",
+          idemKey: `worker-shot-chat-${s.id}-${Date.now()}`,
+        });
       } else {
         toast.error(`Gagal mengirim: ${result.error}`);
       }
