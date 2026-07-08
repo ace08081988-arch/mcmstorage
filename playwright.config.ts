@@ -1304,5 +1304,19 @@ export default defineConfig({
         },
       },
     },
+    // ── PhotoEditor toolbar multi-viewport guard: memastikan semua
+    //   tombol tool (Pilih..Lingkaran) + Batal/Simpan tetap terlihat
+    //   dan aktionabel di viewport sempit termasuk 411×740 yang
+    //   sempat memicu regresi "Lingkaran terpotong". Viewport per-test
+    //   di-set lewat `test.use()` di spec — project ini hanya
+    //   menghubungkan file spec ke runner.
+    {
+      name: "photo-editor-toolbar-viewports-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /photo-editor-toolbar-viewports\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+      },
+    },
   ],
 });
