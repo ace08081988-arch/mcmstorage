@@ -456,11 +456,17 @@ export function ReadyEcerSection() {
   }
   const sentMap = useSentShots();
   const sentDetails = useSentDetails();
+  // Kartu yang di-"Hapus dari Riwayat" — dikecualikan dari daftar Aktif
+  // maupun Riwayat sampai user meng-unhide (misalnya lewat clear registry).
+  const hiddenSet = useHiddenSent();
   // Split each row's shots into active vs sent based on local history.
   const rowsForView = (filtered ?? []).map((r) => {
     const active: WorkerShot[] = [];
     const sent: WorkerShot[] = [];
-    for (const s of r.worker_shots) (sentMap.has(s.id) ? sent : active).push(s);
+    for (const s of r.worker_shots) {
+      if (hiddenSet.has(s.id)) continue;
+      (sentMap.has(s.id) ? sent : active).push(s);
+    }
     const sentTimes = sent.map((s) => sentMap.get(s.id) ?? 0).filter((n) => n > 0);
     const lastSentAt = sentTimes.length ? Math.max(...sentTimes) : null;
     return {
