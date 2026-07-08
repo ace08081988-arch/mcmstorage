@@ -454,13 +454,13 @@ function EcerPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5">
+      <section aria-labelledby="ecer-heading" className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border bg-background/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
               <Sparkles className="h-3 w-3 text-primary" /> Modul Penyiapan
             </div>
-            <h1 className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
+            <h1 id="ecer-heading" className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
               <Scale className="h-5 w-5 text-primary" /> Penyiapan Ecer
             </h1>
             <p className="mt-1 max-w-xl text-[11px] leading-snug text-muted-foreground sm:text-xs">
@@ -468,19 +468,43 @@ function EcerPage() {
               berisi foto + lokasi + berat aktual. Stok produk otomatis berkurang setiap penyiapan disimpan.
             </p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setCreatingProduct(true)} className="shrink-0 gap-1">
+          <Button size="sm" variant="outline" onClick={() => setCreatingProduct(true)} className="shrink-0 gap-1" aria-label="Tambah produk gudang baru">
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Produk baru</span>
           </Button>
         </div>
+      </section>
 
-        {/* Quick stats */}
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <StatChip icon={Boxes} label="Produk" value={items.length} tone="primary" />
-          <StatChip icon={LayoutGrid} label="Judul Ecer" value={totalTitles} tone="info" />
-          <StatChip icon={CheckCircle2} label="Terpilih" value={selectedItem ? titlesForItem.length : 0} tone="success" />
-        </div>
-      </div>
+      {/* Summary cards — Ready / In Progress / Waiting / Completed */}
+      <section aria-label="Ringkasan Judul Ecer" className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+        <EcerSummaryCard
+          icon={LayoutGrid}
+          label="Total Judul"
+          value={totalTitles}
+          tone="primary"
+        />
+        <EcerSummaryCard
+          icon={Clock}
+          label="Menunggu"
+          value={waitingCount}
+          tone="warning"
+          hint="Belum ada penyiapan"
+        />
+        <EcerSummaryCard
+          icon={RefreshCw}
+          label="Berjalan"
+          value={inProgressCount}
+          tone="info"
+          hint="Sebagian sudah disiapkan"
+        />
+        <EcerSummaryCard
+          icon={CheckCircle2}
+          label="Selesai"
+          value={readyCount}
+          tone="success"
+          hint="Semua sudah terkirim"
+        />
+      </section>
 
       {/* Product picker */}
       <div className="rounded-xl border bg-card p-3 shadow-sm sm:p-4">
