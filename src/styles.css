@@ -42,6 +42,15 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -95,6 +104,22 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  /* Semantik status — dipakai lintas modul (Gudang, Ecer, Tugas, Chat). */
+  --success: oklch(0.62 0.15 152);
+  --success-foreground: oklch(0.985 0.02 152);
+  --success-soft: color-mix(in oklab, var(--success) 15%, var(--background));
+  --warning: oklch(0.75 0.16 75);
+  --warning-foreground: oklch(0.22 0.08 75);
+  --warning-soft: color-mix(in oklab, var(--warning) 18%, var(--background));
+  --info: oklch(0.68 0.14 235);
+  --info-foreground: oklch(0.985 0.02 235);
+  --info-soft: color-mix(in oklab, var(--info) 15%, var(--background));
+  /* Elevation — konsisten light/dark. */
+  --shadow-color: 220 40% 12%;
+  --shadow-xs: 0 1px 2px 0 hsl(var(--shadow-color) / 0.05);
+  --shadow-sm: 0 1px 3px 0 hsl(var(--shadow-color) / 0.08), 0 1px 2px -1px hsl(var(--shadow-color) / 0.05);
+  --shadow-md: 0 4px 10px -3px hsl(var(--shadow-color) / 0.10), 0 2px 4px -2px hsl(var(--shadow-color) / 0.06);
+  --shadow-lg: 0 12px 24px -8px hsl(var(--shadow-color) / 0.14), 0 4px 8px -4px hsl(var(--shadow-color) / 0.08);
 }
 
 .dark {
@@ -130,12 +155,46 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --success: oklch(0.72 0.17 152);
+  --success-foreground: oklch(0.15 0.05 152);
+  --success-soft: color-mix(in oklab, var(--success) 22%, var(--background));
+  --warning: oklch(0.82 0.16 80);
+  --warning-foreground: oklch(0.18 0.08 75);
+  --warning-soft: color-mix(in oklab, var(--warning) 22%, var(--background));
+  --info: oklch(0.75 0.14 235);
+  --info-foreground: oklch(0.15 0.05 235);
+  --info-soft: color-mix(in oklab, var(--info) 22%, var(--background));
+  --shadow-color: 220 60% 2%;
+  --shadow-xs: 0 1px 2px 0 hsl(var(--shadow-color) / 0.40);
+  --shadow-sm: 0 1px 3px 0 hsl(var(--shadow-color) / 0.55), 0 1px 2px -1px hsl(var(--shadow-color) / 0.40);
+  --shadow-md: 0 4px 10px -3px hsl(var(--shadow-color) / 0.60), 0 2px 4px -2px hsl(var(--shadow-color) / 0.45);
+  --shadow-lg: 0 12px 24px -8px hsl(var(--shadow-color) / 0.70), 0 4px 8px -4px hsl(var(--shadow-color) / 0.50);
 }
 
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
 }
+
+/*
+ * Utility elevation — konsisten light/dark (token --shadow-* diselaraskan
+ * per mode di :root & .dark). Pakai `elev-sm`, `elev-md`, `elev-lg` alih-alih
+ * `shadow-*` bawaan untuk permukaan berlapis (card, sheet, popover) agar
+ * dark mode tidak flat.
+ */
+@utility elev-xs { box-shadow: var(--shadow-xs); }
+@utility elev-sm { box-shadow: var(--shadow-sm); }
+@utility elev-md { box-shadow: var(--shadow-md); }
+@utility elev-lg { box-shadow: var(--shadow-lg); }
+
+/*
+ * Utility soft-status — pengganti hardcoded `bg-amber-500/15 text-amber-700`
+ * agar konsisten light/dark & mengikuti aksen aksesibilitas kontras tinggi.
+ */
+@utility status-success { background-color: var(--success-soft); color: var(--success); }
+@utility status-warning { background-color: var(--warning-soft); color: var(--warning); }
+@utility status-info    { background-color: var(--info-soft);    color: var(--info); }
+@utility status-danger  { background-color: color-mix(in oklab, var(--destructive) 15%, var(--background)); color: var(--destructive); }
 
 @layer base {
   * {
