@@ -1660,6 +1660,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </div>
         )}
       </div>
+      </div>
 
       {/* Detailed first-use / returning guide modal for Teks/Stiker/Coret */}
       {guideTool && TOOL_GUIDES[guideTool] && (
