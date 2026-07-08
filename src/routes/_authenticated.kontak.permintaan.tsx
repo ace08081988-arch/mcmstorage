@@ -1,5 +1,5 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Check, X, Clock, UserPlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   useFriendRequests,
   useRespondFriendRequest,
 } from "@/lib/friend-requests";
+import { useStartDm } from "@/lib/chat";
 
 export const Route = createFileRoute("/_authenticated/kontak/permintaan")({
   component: FriendRequestsPage,
@@ -18,15 +19,35 @@ export const Route = createFileRoute("/_authenticated/kontak/permintaan")({
 
 function FriendRequestsPage() {
   const router = useRouter();
+  const navigate = useNavigate();
+  const startDm = useStartDm();
+  const [openingChatId, setOpeningChatId] = useState<string | null>(null);
   const { data, isLoading, isError, refetch } = useFriendRequests("all", true);
   const { incoming, outgoing } = useMemo(() => splitByDirection(data), [data]);
   const respond = useRespondFriendRequest();
   const cancel = useCancelFriendRequest();
 
-  async function accept(id: string, name: string | null) {
+  // Setelah permintaan diterima, spec MCM: langsung buka halaman chat dengan
+  // kontak baru. Kita ambil peer_id dari request row, buka/create DM via RPC
+  // `start_dm`, lalu navigate. Kalau start_dm gagal (mis. jaringan), tetap
+  // tampil toast sukses karena permintaan sudah tercatat accepted di DB.
+  async function accept(id: string, peerId: string, name: string | null) {
     try {
       await respond.mutateAsync({ requestId: id, accept: true });
-      toast.success(`Permintaan dari ${name ?? "kontak"} diterima. Sekarang bisa chat & panggil.`);
+      toast.success(`Permintaan dari ${name ?? "kontak"} diterima.`);
+      setOpeningChatId(id);
+      try {
+        const cid = await startDm.mutateAsync(peerId);
+        if (cid) {
+          navigate({ to: "/chat/$conversationId", params: { conversationId: cid } });
+          return;
+        }
+      } catch (dmErr) {
+        console.error("[friend-accept] start_dm gagal", dmErr);
+        toast.error("Kontak diterima, tapi gagal membuka chat. Coba dari daftar chat.");
+      } finally {
+        setOpeningChatId(null);
+      }
     } catch (e) {
       toast.error((e as Error).message || "Gagal menerima permintaan.");
     }
@@ -101,11 +122,16 @@ function FriendRequestsPage() {
                       <Button
                         type="button"
                         size="sm"
-                        onClick={() => accept(r.id, r.peer_display_name)}
-                        disabled={respond.isPending}
+                        onClick={() => accept(r.id, r.peer_id, r.peer_display_name)}
+                        disabled={respond.isPending || openingChatId === r.id}
                         className="gap-1"
                       >
-                        <Check className="h-4 w-4" /> Terima
+                        {openingChatId === r.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}{" "}
+                        {openingChatId === r.id ? "Membuka…" : "Terima"}
                       </Button>
                       <Button
                         type="button"
