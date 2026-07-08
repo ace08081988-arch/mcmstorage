@@ -355,50 +355,129 @@ function EcerPage() {
     );
   }
 
+  const q = productSearch.trim().toLowerCase();
+  const filteredItems = q
+    ? items.filter((it) =>
+        (it.name || "").toLowerCase().includes(q) ||
+        (it.category || "").toLowerCase().includes(q),
+      )
+    : items;
+
+  const totalTitles = titles.length;
+
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
-      <div className="flex items-center gap-2">
-        <Scale className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-semibold">Penyiapan Ecer</h1>
-      </div>
-      <p className="text-xs leading-snug text-muted-foreground">
-        Buat <b>Judul Ecer</b> per produk (mis. <i>KRISTAL 1 gram</i>), lalu tambahkan kotak-kotak penyiapan
-        berisi foto + lokasi + berat aktual yang ditimbang. Stok produk otomatis berkurang setiap penyiapan disimpan.
-      </p>
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border bg-background/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+              <Sparkles className="h-3 w-3 text-primary" /> Modul Penyiapan
+            </div>
+            <h1 className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
+              <Scale className="h-5 w-5 text-primary" /> Penyiapan Ecer
+            </h1>
+            <p className="mt-1 max-w-xl text-[11px] leading-snug text-muted-foreground sm:text-xs">
+              Buat <b>Judul Ecer</b> per produk (mis. <i>KRISTAL 1 gram</i>), lalu tambah kotak penyiapan
+              berisi foto + lokasi + berat aktual. Stok produk otomatis berkurang setiap penyiapan disimpan.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setCreatingProduct(true)} className="shrink-0 gap-1">
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Produk baru</span>
+          </Button>
+        </div>
 
-      <div>
-        <Label className="text-xs">Pilih produk</Label>
-        <select
-          value={selectedItemId ?? ""}
-          onChange={(e) => { setSelectedItemId(e.target.value || undefined); setSelectedTitleId(undefined); }}
-          className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm"
-        >
-          <option value="">— Pilih produk —</option>
-          {items.map((it) => (
-            <option key={it.id} value={it.id}>
-              {it.category ? `[${it.category}] ` : ""}{it.name} · stok {fmtItemQty(it.stock_base, { ...it, base_unit: it.base_unit as "g" | "pcs" })}
-            </option>
-          ))}
-        </select>
+        {/* Quick stats */}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <StatChip icon={Boxes} label="Produk" value={items.length} tone="primary" />
+          <StatChip icon={LayoutGrid} label="Judul Ecer" value={totalTitles} tone="info" />
+          <StatChip icon={CheckCircle2} label="Terpilih" value={selectedItem ? titlesForItem.length : 0} tone="success" />
+        </div>
+      </div>
+
+      {/* Product picker */}
+      <div className="rounded-xl border bg-card p-3 shadow-sm sm:p-4">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <PackageSearch className="h-3.5 w-3.5" /> Pilih produk
+          </Label>
+          {q && (
+            <span className="text-[10px] text-muted-foreground">
+              {filteredItems.length} / {items.length}
+            </span>
+          )}
+        </div>
+        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1.4fr]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              placeholder="Cari produk / kategori…"
+              className="h-10 w-full rounded-md border bg-background pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <select
+            value={selectedItemId ?? ""}
+            onChange={(e) => { setSelectedItemId(e.target.value || undefined); setSelectedTitleId(undefined); }}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">— Pilih produk —</option>
+            {filteredItems.map((it) => (
+              <option key={it.id} value={it.id}>
+                {it.category ? `[${it.category}] ` : ""}{it.name} · stok {fmtItemQty(it.stock_base, { ...it, base_unit: it.base_unit as "g" | "pcs" })}
+              </option>
+            ))}
+          </select>
+        </div>
+        {items.length === 0 && (
+          <div className="mt-3 rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
+            <Package className="mx-auto mb-1.5 h-6 w-6 opacity-60" />
+            Belum ada produk gudang. Tambahkan produk untuk mulai membuat judul ecer.
+          </div>
+        )}
       </div>
 
       {selectedItem && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <div>
-              <CardTitle className="text-base">{selectedItem.name}</CardTitle>
-              <div className="text-xs text-muted-foreground">
-                {selectedItem.category ?? "—"} · stok {fmtItemQty(selectedItem.stock_base, { ...selectedItem, base_unit: selectedItem.base_unit as "g" | "pcs" })}
+        <Card className="overflow-hidden border shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 border-b bg-muted/30 pb-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Package className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <CardTitle className="truncate text-base">{selectedItem.name}</CardTitle>
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                    {selectedItem.category && (
+                      <span className="rounded-full bg-background px-1.5 py-0.5 ring-1 ring-inset ring-border">
+                        {selectedItem.category}
+                      </span>
+                    )}
+                    <span>stok {fmtItemQty(selectedItem.stock_base, { ...selectedItem, base_unit: selectedItem.base_unit as "g" | "pcs" })}</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <Button size="sm" onClick={() => setCreatingTitle(true)}>
+            <Button size="sm" onClick={() => setCreatingTitle(true)} className="shrink-0 gap-1">
               <Plus className="h-4 w-4" /> Judul baru
             </Button>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 pt-3">
             {titlesForItem.length === 0 ? (
-              <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
-                Belum ada Judul Ecer. Buat satu untuk mulai mencatat penyiapan ecer.
+              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <LayoutGrid className="h-5 w-5" />
+                </span>
+                <div className="text-sm font-medium">Belum ada Judul Ecer</div>
+                <div className="max-w-xs text-[11px] text-muted-foreground">
+                  Buat judul pertama untuk mulai mencatat kotak penyiapan produk ini.
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setCreatingTitle(true)} className="mt-1 gap-1">
+                  <Plus className="h-3.5 w-3.5" /> Buat Judul Ecer
+                </Button>
               </div>
             ) : (
               <div className="grid gap-2 sm:grid-cols-2">
@@ -417,6 +496,18 @@ function EcerPage() {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {!selectedItem && items.length > 0 && (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-card/50 p-8 text-center">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <PackageSearch className="h-6 w-6" />
+          </span>
+          <div className="text-sm font-medium">Pilih produk untuk mulai</div>
+          <div className="max-w-sm text-[11px] text-muted-foreground">
+            Cari atau pilih produk gudang di atas untuk melihat dan mengelola Judul Ecer yang terkait.
+          </div>
+        </div>
       )}
 
       {(creatingTitle || editingTitle) && selectedItem && (
