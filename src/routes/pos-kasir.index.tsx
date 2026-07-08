@@ -10,8 +10,9 @@ import {
 import { loadGudangProduk, recordSale, refundSale } from "@/lib/pos-kasir-gudang";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+// jsPDF + autoTable dimuat lazy (dynamic import) di dalam exportPDF supaya
+// bundle awal halaman POS Kasir tidak membawa ~200KB kode PDF yang hanya
+// dipakai saat user mengekspor.
 
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
