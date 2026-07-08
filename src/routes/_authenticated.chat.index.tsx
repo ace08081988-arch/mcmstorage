@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import { useChatLists, useAllChatListMembers } from "@/lib/chat-lists";
 import { ChatListIcon } from "@/lib/chat-list-icons";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
