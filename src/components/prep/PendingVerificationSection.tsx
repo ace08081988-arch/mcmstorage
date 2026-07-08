@@ -1,0 +1,121 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/StatusBadge";
+import { VerificationDialog, type VerificationSubmission } from "./VerificationDialog";
+import { ShieldCheck } from "lucide-react";
+
+/**
+ * Section admin: daftar submisi karyawan yang menunggu verifikasi.
+ * Dipakai di /request dan /ecer. Filter opsional via `taskIds` untuk
+ * scope per-title. Bila `taskIds` undefined → semua task milik user.
+ */
+export function PendingVerificationSection({
+  taskIds,
+  onVerified,
+}: {
+  taskIds?: string[];
+  onVerified?: () => void;
+}) {
+  const [rows, setRows] = useState<
+    Array<VerificationSubmission & { photo_paths?: string[] | null; photo_path?: string | null }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [picked, setPicked] = useState<VerificationSubmission | null>(null);
+  const [pickedPhotos, setPickedPhotos] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
+
+  const taskFilter = useMemo(() => taskIds?.slice().sort().join(",") ?? "", [taskIds]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      let q = supabase
+        .from("prep_submissions")
+        .select("id,task_id,task_item_id,photo_path,photo_paths,location_url,note,qty_reported,submitted_at,verification_status")
+        .eq("verification_status", "pending")
+        .order("submitted_at", { ascending: false })
+        .limit(50);
+      if (taskIds && taskIds.length > 0) {
+        q = q.in("task_id", taskIds);
+      }
+      const { data, error } = await q;
+      if (error) throw error;
+      setRows((data ?? []) as typeof rows);
+    } catch {
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [taskFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function openDialog(sub: (typeof rows)[number]) {
+    const paths = (sub.photo_paths && sub.photo_paths.length > 0)
+      ? sub.photo_paths
+      : (sub.photo_path ? [sub.photo_path] : []);
+    const urls: string[] = [];
+    for (const p of paths) {
+      const { data } = await supabase.storage
+        .from("prep-photos")
+        .createSignedUrl(p, 300);
+      if (data?.signedUrl) urls.push(data.signedUrl);
+    }
+    setPicked(sub);
+    setPickedPhotos(urls);
+    setOpen(true);
+  }
+
+  if (!loading && rows.length === 0) return null;
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ShieldCheck className="h-4 w-4" />
+            Menunggu Verifikasi
+            <StatusBadge lifecycle="waiting_verification" size="xs" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {loading ? (
+            <p className="text-xs text-muted-foreground">Memuat…</p>
+          ) : (
+            rows.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between gap-2 rounded border p-2"
+              >
+                <div className="min-w-0 flex-1 text-xs">
+                  <div className="truncate font-medium">
+                    {new Date(r.submitted_at).toLocaleString("id-ID")}
+                  </div>
+                  {r.note ? (
+                    <div className="truncate text-muted-foreground">{r.note}</div>
+                  ) : null}
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => void openDialog(r)}
+                  aria-label="Verifikasi submisi"
+                >
+                  Verifikasi
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+      <VerificationDialog
+        open={open}
+        onOpenChange={setOpen}
+        submission={picked}
+        photoUrls={pickedPhotos}
+        onDone={() => { void load(); onVerified?.(); }}
+      />
+    </>
+  );
+}

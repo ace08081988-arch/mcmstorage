@@ -37,6 +37,7 @@ import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 import { emitDebtTx } from "@/lib/debt-tx-event";
+import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -281,6 +282,8 @@ function RequestPage() {
           <Plus className="mr-1 h-4 w-4" /> Judul Request Baru
         </Button>
       </div>
+
+      <PendingVerificationSection />
 
       {unrouted.length > 0 && (
         <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">

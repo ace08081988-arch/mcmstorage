@@ -29,6 +29,7 @@ import {
   AUTO_SEND_CANCEL_REASONS,
   type AutoSendCancelState,
 } from "@/components/ecer/AutoSendDialogs";
+import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
   Share2, ExternalLink, Loader2, ChevronLeft, ChevronDown, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
@@ -521,6 +522,8 @@ function EcerPage() {
           </Button>
         </div>
       </section>
+
+      <PendingVerificationSection />
 
       {/* Summary cards — Ready / In Progress / Waiting / Completed */}
       <section aria-label="Ringkasan Judul Ecer" className="grid grid-cols-2 gap-2.5 md:grid-cols-4">

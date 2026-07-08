@@ -1,89 +1,91 @@
-## Masalah
+# Gap #5 + #10 — Verifikasi & Status SSOT
 
-Tombol WA/Chat di alur penjualan tidak konsisten:
+## Prinsip
 
-| Surface | Ukuran | Style | Label WA | Label Chat | Disabled |
-|---|---|---|---|---|---|
-| `/tugas` Siapkan Sendiri (per kartu) | `h-8` | Soft outline (hijau/primary tint) | "Kirim WA" | (icon only) | `!sold_at` |
-| `/ecer` Ready per kartu | `h-8` | Solid `#25D366` + `bg-primary` | "WA" | "Chat" | `busy` |
-| `/ecer` bulk toolbar | `h-7` | Solid | "WA" | "Chat" | `count===0` |
-| `ReadyPackagesPanel` | `h-9` | Solid + emoji 💬 | "💬 Kirim WA" | — | `sharing` |
+- **Tidak ubah RPC/logic existing.** Kolom lifecycle & verifikasi ditambah, kode lama terus jalan (default = perilaku sekarang).
+- **1 SSOT** untuk 11 status di TS + 1 komponen badge dipakai di semua surface.
+- **Bahasa Indonesia** untuk label UI, kunci enum tetap English snake_case.
 
-Akibatnya: label & tinggi tombol beda-beda, semantik disabled beda (hanya `/tugas` yang mensyaratkan sudah terjual), dan caption dibangun ad-hoc di tiap file — mudah drift.
+## 1. DB (1 migrasi, additive-only)
 
-## Solusi (SSOT)
+**`prep_submissions`** — tambah:
+- `verification_status text NOT NULL DEFAULT 'pending'` — nilai: `pending | approved | rejected`
+- `verified_at timestamptz`
+- `verified_by uuid`
+- `rejection_reason text`
 
-Satu primitive tombol + satu builder caption, dipakai semua surface penjualan.
+**`request_preparations`** & **`ecer_preparations`** — tambah:
+- `verification_status text NOT NULL DEFAULT 'approved'` — record lama tetap approved (backward compat)
+- `verified_at timestamptz`, `verified_by uuid`, `rejection_reason text`
+- `ready_at timestamptz` — di-set saat approve (Request) / saat masuk ecer inventory (Ecer, disiapkan gap #9)
+- `archived_at timestamptz` — untuk status Archived
 
-### 1. Primitive `src/components/share/SaleShareButtons.tsx` (baru)
+**RPC baru** (tanpa ubah yang lama):
+- `prep_submission_verify(_submission_id uuid, _decision text, _reason text)` — hanya admin (has_role). Set `verification_status`, `verified_at`, `verified_by`. Kalau `approved`, set `verification_status='approved'` di `request_preparations`/`ecer_preparations` terkait (via `prep_task_item_id`) + `ready_at=now()`. Kalau `rejected`, simpan alasan; row prep TIDAK dibuat aktif.
+- **Trigger**: saat submission baru dibuat via existing `prep_submit_result`, default `verification_status='pending'`. Auto-provisioned row di `request_preparations`/`ecer_preparations` juga default ke `'pending'`.
 
-```tsx
-<WaShareButton size="sm|md" variant="soft|solid" disabled reason={...} onClick />
-<ChatShareButton size="sm|md" variant="soft|solid" disabled reason={...} onClick />
+**GRANT & RLS**: SELECT/UPDATE untuk `authenticated` sudah ada di kedua tabel; kolom baru ikut. Policy tidak diubah.
+
+## 2. Status SSOT (TS)
+
+Buat `src/lib/prep-status.ts`:
+
+```text
+LifecycleStatus =
+  | 'draft'
+  | 'new_request'
+  | 'sent_to_employee'
+  | 'preparing'
+  | 'waiting_verification'
+  | 'ready_to_ship'
+  | 'waiting_payment'
+  | 'paid'
+  | 'dp'
+  | 'credit'
+  | 'sent'
+  | 'completed'
+  | 'archived'
 ```
 
-Kontrak:
-- **Warna WA**: selalu `#25D366` (solid) atau `#25D366/10 + #1ea952 text` (soft). Chat: `primary` / `primary/10 + primary text`.
-- **Ukuran**: `sm` = `h-7 text-[11px]`, `md` = `h-9 text-xs`. Tidak ada `h-8` lagi.
-- **Label**: "Kirim WA" (varian `md`) / "WA" (varian `sm`). "Kirim Chat" / "Chat".
-- **Disabled + reason**: kalau `disabled` dan `reason` diisi, `title` tooltip = reason, cursor `not-allowed`, opacity 50. Tidak ada emoji di label; ikon Lucide `Send` / `MessageCircle`.
-- **aria-label** otomatis: "Kirim ke WhatsApp" / "Kirim ke MCM Chat".
+Fungsi utama:
+- `deriveRequestStatus(prep, task?, submission?)` → LifecycleStatus
+- `deriveEcerStatus(prep, task?, submission?)` → LifecycleStatus
+- `STATUS_LABEL_ID: Record<LifecycleStatus, string>` — Indonesian
+- `STATUS_VARIANT: Record<LifecycleStatus, StatusVariant>` — mapping ke variant `StatusBadge` existing (menunggu/siap/selesai/hutang/lunas/info/danger)
 
-### 2. Helper `saleShareGate(row)` di `src/lib/sale-share-gate.ts` (baru)
+Aturan derivasi (backward compat, tanpa ubah data lama):
+- Task ada + belum ada submission → `sent_to_employee`
+- Submission ada + `verification_status='pending'` → `waiting_verification`
+- `verification_status='rejected'` → `preparing` (kembali ke employee) + flag danger
+- `verification_status='approved'` + `sold_at IS NULL` → `ready_to_ship`
+- `sold_at` ada + method=`hutang` → `credit`; `partial` → `dp`; `kas` → `paid` → status `sent`/`completed`
+- `archived_at` → `archived`
 
-Satu tempat untuk aturan "boleh kirim atau belum":
+## 3. UI
 
-```ts
-type SaleShareState =
-  | { enabled: true }
-  | { enabled: false; reason: string };
+**Ekstend `StatusBadge`** (append-only) — tambah variant `verifikasi` (amber/kuning kuat) & keep semua yang lama:
+- Terima `lifecycle` prop opsional; kalau ada, resolve via `STATUS_LABEL_ID`+`STATUS_VARIANT`.
+- Backward compat: pemakaian `<StatusBadge status="hutang" />` lama tetap jalan.
 
-saleShareGate({ sold_at, hasPhoto, hasLocation })
-// → { enabled: false, reason: "Catat penjualan dulu (tombol Jual)" }
-// → { enabled: false, reason: "Foto paket belum ada" } (ecer)
-// → { enabled: true }
-```
+**Dialog Verifikasi Admin** (`src/components/prep/VerificationDialog.tsx`):
+- Tampilkan foto (multi), maps link, employee, waktu submit, item + qty.
+- Tombol **Setuju** & **Tolak** (dengan input alasan).
+- Panggil RPC `prep_submission_verify`.
+- Toast + invalidate query.
 
-Semua surface memanggil helper ini; tidak ada lagi ternary `!sold_at ? … : …` inline.
+**Pasang di 2 surface**:
+- `/request` — di tiap prep dengan `verification_status='pending'`, tampilkan kartu "Menunggu Verifikasi" + tombol Verifikasi. Prep `approved` masuk grid Ready-To-Ship existing tanpa perubahan visual besar (badge ganti ke `ready_to_ship`).
+- `/ecer` — sama, tapi setelah approve prep masuk section aktif ecer (Gap #9 nanti yang akan handle move ke inventory).
 
-### 3. Caption builder `buildSaleShareCaption(row, kind)` di `src/lib/sale-share-caption.ts` (baru)
+## 4. Non-goals turn ini
 
-Konsolidasi blok `💰 Penjualan` + `📍 Lokasi` + catatan hutang yang sekarang tersebar di 3 tempat. Format identik untuk WA & Chat (Chat hanya menambah metadata attachment).
+- Belum increment stok retail di ecer (Gap #9).
+- Belum pisah stage Ready-To-Ship dari dialog Kirim (Gap #6).
+- Belum tambah Order# & waktu ke pesan WA (Gap #7).
 
-### 4. Retrofit callsites (audit)
+## Verifikasi selesai
 
-- `src/components/SiapkanSendiriSection.tsx`: ganti `<button>` WA/Chat per kartu → `<WaShareButton size="sm" variant="soft" …>` + `saleShareGate({ sold_at })`. Hilangkan class hex hard-coded.
-- `src/components/ReadyPackagesPanel.tsx`: ganti tombol "💬 Kirim WA" → `<WaShareButton size="md" variant="solid" …>`. Emoji hilang, label "Kirim WA".
-- `src/components/ReadyEcerSection.tsx`:
-  - Bulk toolbar → `<WaShareButton size="sm" variant="solid">` + `<ChatShareButton size="sm" variant="solid">`.
-  - Kartu individu (per prep) → primitive yang sama, `variant="soft"`.
-- Caption di `sendWA` (ecer) dan `onSendWA` (tugas) pakai `buildSaleShareCaption`.
-
-Tidak menyentuh: halaman `/chat` composer (bukan alur penjualan), `/pos-kasir` (sudah punya UX sendiri), tombol WA di kontak/buku alamat (bukan share penjualan).
-
-### 5. Verifikasi
-
-1. `bun run typecheck` hijau.
-2. Buka `/tugas` → tombol WA & Chat pada kartu Siapkan Sendiri: `h-7`, warna hijau/primary soft, disabled dengan tooltip "Catat penjualan dulu" saat `sold_at` null. Setelah Jual sukses → keduanya nyala, label "WA" / "Chat".
-3. Buka `/ecer` (detail judul) → bulk toolbar & kartu Ready pakai tombol yang sama; caption WA berisi blok `💰 Penjualan` + `📍 Lokasi` konsisten dengan `/tugas`.
-4. `ReadyPackagesPanel` (context lain yang pakai) → tombol WA jadi label "Kirim WA" tanpa emoji, ukuran seragam.
-5. ESLint guardrail (opsional lanjutan, tidak di plan ini): larang `wa\.me` / `#25D366` di luar `src/components/share/`.
-
-## Detail teknis
-
-- Tidak ada perubahan DB / RLS — murni UI + helper.
-- Tidak mengubah kontrak `shareToWhatsApp` / `shareToChat` / `PickChatConversationDialog`.
-- Tidak mengubah semantik `sold_at IS NULL` (SSOT aktif tetap di `prep-active-selector`).
-- Tidak menyentuh `AutoSendConfirmDialog` (dialog konfirmasi ecer) — itu bukan tombol WA/Chat, hanya gerbang.
-
-## File terdampak
-
-Baru:
-- `src/components/share/SaleShareButtons.tsx`
-- `src/lib/sale-share-gate.ts`
-- `src/lib/sale-share-caption.ts`
-
-Diedit:
-- `src/components/SiapkanSendiriSection.tsx`
-- `src/components/ReadyPackagesPanel.tsx`
-- `src/components/ReadyEcerSection.tsx`
+- `tsgo` lulus.
+- `/request` & `/ecer` masih bisa render (query tambahan tidak menembak kolom yang tidak ada — semua nullable/default).
+- Prep lama (tanpa submission) tetap tampil sebagai "aktif" karena default `verification_status='approved'` di preparations table.
+- Buat 1 prep test lewat share link, cek muncul di "Menunggu Verifikasi", approve → pindah ke Ready.
