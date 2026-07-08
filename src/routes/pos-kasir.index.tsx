@@ -467,12 +467,16 @@ function PosKasirPage() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (riwayatSorted.length === 0) {
       setToast("Tidak ada transaksi pada rentang tanggal terpilih");
       setTimeout(() => setToast(null), 2500);
       return;
     }
+    const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const now = new Date();
     const stamp = now.toISOString().slice(0, 10);
