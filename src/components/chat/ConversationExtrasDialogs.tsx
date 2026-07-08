@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MUTE_PRESETS } from "@/lib/conversation-prefs";
 import type { MessageRow } from "@/lib/chat";
+import { previewText } from "@/lib/chat-cards";
 
 function extractUrls(text: string): string[] {
   if (!text) return [];
@@ -85,7 +86,7 @@ export function ConversationSearchDialog({
                   onOpenChange(false);
                 }}
               >
-                <div className="line-clamp-2 whitespace-pre-wrap">{m.body}</div>
+                <div className="line-clamp-2 whitespace-pre-wrap">{previewText(m.body) ?? ""}</div>
                 <div className="mt-1 text-[10px] text-muted-foreground">
                   {new Date(m.created_at).toLocaleString("id-ID")}
                 </div>
@@ -175,7 +176,7 @@ export function MediaLinksDialog({
                   className="block rounded-md border p-2 text-xs hover:bg-accent"
                 >
                   <div className="truncate font-medium text-primary">{l.url}</div>
-                  <div className="mt-0.5 line-clamp-2 text-muted-foreground">{l.body}</div>
+                  <div className="mt-0.5 line-clamp-2 text-muted-foreground">{previewText(l.body) ?? ""}</div>
                 </a>
               ))
             )}
