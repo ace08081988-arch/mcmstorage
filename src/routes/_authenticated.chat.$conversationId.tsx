@@ -98,15 +98,6 @@ import {
 } from "@/lib/chat-deleted";
 
 const safePreview = messagePreviewText;
-// Body pesan bisa berisi payload card MCM (sentinel "[mcm-card:v1]" + JSON).
-// plainBodyText mengembalikan teks aman untuk Linkify/copy: string kosong
-// bila body adalah card, atau string biasa untuk pesan teks. Mencegah JSON
-// mentah bocor ke UI walau decodeCard gagal / payload rusak.
-function plainBodyText(body: string | null | undefined): string {
-  if (!body) return "";
-  if (isCardBody(body)) return "";
-  return body;
-}
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
