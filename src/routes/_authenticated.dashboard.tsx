@@ -290,6 +290,217 @@ const QUICK_ACTIONS: {
   { title: "Notifikasi", href: "/notifikasi", icon: ReceiptText, desc: "Pemberitahuan terbaru" },
 ];
 
+// ---------------------------------------------------------------------------
+// Executive report additions (additive; does not alter existing metrics)
+// ---------------------------------------------------------------------------
+
+type PeriodKey = "today" | "7d" | "30d" | "month" | "custom";
+
+function toLocalYMD(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function computePeriodRange(key: PeriodKey, customStart?: string, customEnd?: string) {
+  const now = new Date();
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  if (key === "today") {
+    // start already today 00:00
+  } else if (key === "7d") {
+    start.setDate(start.getDate() - 6);
+  } else if (key === "30d") {
+    start.setDate(start.getDate() - 29);
+  } else if (key === "month") {
+    start.setDate(1);
+  } else if (key === "custom" && customStart && customEnd) {
+    const s = new Date(customStart + "T00:00:00");
+    const e = new Date(customEnd + "T23:59:59.999");
+    if (!Number.isNaN(s.getTime()) && !Number.isNaN(e.getTime())) {
+      return { start: s, end: e, label: `${toLocalYMD(s)} → ${toLocalYMD(e)}` };
+    }
+  }
+  const labelMap: Record<PeriodKey, string> = {
+    today: "Hari ini",
+    "7d": "7 hari terakhir",
+    "30d": "30 hari terakhir",
+    month: `Bulan ${now.toLocaleDateString("id-ID", { month: "long" })}`,
+    custom: "Kustom",
+  };
+  return { start, end, label: labelMap[key] };
+}
+
+function usePeriodReport(period: { start: Date; end: Date }) {
+  const startISO = period.start.toISOString();
+  const endISO = period.end.toISOString();
+  return useQuery({
+    queryKey: ["dashboard-period-report-v1", startISO, endISO],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const [salesPeriod, salesMonth, inventory, customersTotal] = await Promise.all([
+        supabase
+          .from("sales")
+          .select("id, total_revenue, cost_at_sale, qty_base, item_id, customer_id, created_at")
+          .gte("created_at", startISO)
+          .lte("created_at", endISO)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("sales")
+          .select("total_revenue")
+          .gte("created_at", monthStart.toISOString()),
+        supabase
+          .from("warehouse_items")
+          .select("id, name, stock_base, avg_cost_per_base"),
+        supabase.from("customers").select("id", { count: "exact", head: true }),
+      ]);
+
+      const sales = salesPeriod.data ?? [];
+      const revenuePeriod = sales.reduce((s, r: any) => s + (Number(r.total_revenue) || 0), 0);
+      const profitPeriod = sales.reduce(
+        (s, r: any) => s + (Number(r.total_revenue) || 0) - (Number(r.cost_at_sale) || 0),
+        0,
+      );
+      const revenueMonth = (salesMonth.data ?? []).reduce(
+        (s, r: any) => s + (Number(r.total_revenue) || 0),
+        0,
+      );
+      const ordersPeriod = sales.length;
+      const activeCustomers = new Set(
+        sales.map((r: any) => r.customer_id).filter((v: unknown) => !!v),
+      ).size;
+
+      const items = inventory.data ?? [];
+      const inventoryValue = items.reduce(
+        (s, r: any) => s + (Number(r.stock_base) || 0) * (Number(r.avg_cost_per_base) || 0),
+        0,
+      );
+      const itemNameById = new Map<string, string>();
+      items.forEach((r: any) => itemNameById.set(r.id, r.name));
+
+      // Top products by revenue in period
+      const productAgg = new Map<string, { name: string; revenue: number; qty: number; orders: number }>();
+      sales.forEach((r: any) => {
+        const id = r.item_id as string | null;
+        if (!id) return;
+        const cur = productAgg.get(id) ?? {
+          name: itemNameById.get(id) ?? "Produk",
+          revenue: 0,
+          qty: 0,
+          orders: 0,
+        };
+        cur.revenue += Number(r.total_revenue) || 0;
+        cur.qty += Number(r.qty_base) || 0;
+        cur.orders += 1;
+        productAgg.set(id, cur);
+      });
+      const topProducts = Array.from(productAgg.values())
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
+
+      return {
+        revenuePeriod,
+        profitPeriod,
+        revenueMonth,
+        ordersPeriod,
+        activeCustomers,
+        inventoryValue,
+        customersTotal: customersTotal.count ?? 0,
+        topProducts,
+        salesRows: sales,
+      };
+    },
+  });
+}
+
+const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
+  { key: "today", label: "Hari ini" },
+  { key: "7d", label: "7 hari" },
+  { key: "30d", label: "30 hari" },
+  { key: "month", label: "Bulan ini" },
+  { key: "custom", label: "Kustom" },
+];
+
+function ExecKpi({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone,
+  loading,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: typeof Sparkles;
+  tone: "primary" | "emerald" | "amber" | "sky" | "violet" | "rose";
+  loading?: boolean;
+}) {
+  const toneMap: Record<string, string> = {
+    primary: "from-primary/15 to-transparent text-primary ring-primary/20",
+    emerald: "from-emerald-500/15 to-transparent text-emerald-600 dark:text-emerald-400 ring-emerald-500/20",
+    amber: "from-amber-500/15 to-transparent text-amber-600 dark:text-amber-400 ring-amber-500/20",
+    sky: "from-sky-500/15 to-transparent text-sky-600 dark:text-sky-400 ring-sky-500/20",
+    violet: "from-violet-500/15 to-transparent text-violet-600 dark:text-violet-400 ring-violet-500/20",
+    rose: "from-rose-500/15 to-transparent text-rose-600 dark:text-rose-400 ring-rose-500/20",
+  };
+  return (
+    <div className="group relative flex min-h-[112px] flex-col gap-2 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <div
+        aria-hidden
+        className={cn("pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br", toneMap[tone])}
+      />
+      <div className="relative flex items-start justify-between">
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          {label}
+        </span>
+        <span
+          className={cn(
+            "grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-background/80 ring-1 shadow-sm backdrop-blur",
+            toneMap[tone].split(" ").filter((c) => c.startsWith("text-") || c.startsWith("ring-")).join(" "),
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <div className="relative mt-auto">
+        {loading ? (
+          <div className="h-7 w-24 animate-pulse rounded-lg bg-muted" />
+        ) : (
+          <div className="text-xl font-bold leading-tight tracking-tight text-foreground tabular-nums sm:text-[1.35rem]">
+            {value}
+          </div>
+        )}
+        {hint ? <div className="mt-0.5 text-[11px] text-muted-foreground/90">{hint}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+function downloadCSV(filename: string, rows: (string | number)[][]) {
+  const escape = (v: string | number) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = rows.map((r) => r.map(escape).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 function DashboardPage() {
   const { data, isLoading } = useDashboardData();
   const now = useMemo(() => new Date(), []);
