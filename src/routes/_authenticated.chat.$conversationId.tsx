@@ -1280,7 +1280,9 @@ function ChatRoomPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() => {
-                                const text = m.deleted_at ? DELETED_PLACEHOLDER : (m.body ?? "");
+                                const text = m.deleted_at
+                                  ? DELETED_PLACEHOLDER
+                                  : (safePreview(m) ?? "");
                                 navigator.clipboard?.writeText(text).then(
                                   () => toast.success("Teks pesan disalin"),
                                   () => toast.error("Gagal menyalin"),
