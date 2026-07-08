@@ -547,17 +547,33 @@ function ChatListPage() {
           )}
         </div>
       ) : (
-        <Tabs defaultValue="active">
-          <TabsList className="grid w-full grid-cols-2 bg-transparent">
-            <TabsTrigger value="active">Aktif {active.length ? `(${active.length})` : ""}</TabsTrigger>
-            <TabsTrigger value="archived">Arsip {archived.length ? `(${archived.length})` : ""}</TabsTrigger>
+        <Tabs defaultValue="all">
+          <TabsList className="grid w-full grid-cols-5 bg-transparent">
+            <TabsTrigger value="all" className="text-[11px] sm:text-xs">
+              Semua{active.length ? ` (${active.length})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="customer" className="text-[11px] sm:text-xs">
+              {CHAT_CATEGORY_LABEL_ID.customer}
+              {byCategory.customer.length ? ` (${byCategory.customer.length})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="employee" className="text-[11px] sm:text-xs">
+              {CHAT_CATEGORY_LABEL_ID.employee}
+              {byCategory.employee.length ? ` (${byCategory.employee.length})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="internal" className="text-[11px] sm:text-xs">
+              {CHAT_CATEGORY_LABEL_ID.internal}
+              {byCategory.internal.length ? ` (${byCategory.internal.length})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="archived" className="text-[11px] sm:text-xs">
+              Arsip{byCategory.archived.length ? ` (${byCategory.archived.length})` : ""}
+            </TabsTrigger>
           </TabsList>
           {!isLoading && active.length === 0 && archived.length === 0 ? (
             <div className="mt-3">
               <ChatOnboarding onNewGroup={() => setGrupOpen(true)} />
             </div>
           ) : null}
-          <TabsContent value="active">
+          <TabsContent value="all">
             <ConvList
               list={filteredActive}
               isLoading={isLoading}
@@ -604,9 +620,176 @@ function ChatListPage() {
               }
             />
           </TabsContent>
+          <TabsContent value="customer">
+            {customerGroups.groups.length === 0 && customerGroups.ungrouped.length === 0 ? (
+              <div className="rounded-lg border p-6 text-center text-xs text-muted-foreground">
+                Belum ada chat pelanggan.
+              </div>
+            ) : (
+              <>
+                {customerGroups.groups.length > 0 ? (
+                  <Accordion type="multiple" className="mb-2">
+                    {customerGroups.groups.map((g) => (
+                      <AccordionItem key={g.key} value={g.key} className="border-b">
+                        <AccordionTrigger className="px-1 py-2 text-xs font-medium">
+                          <span className="truncate">
+                            {g.label}{" "}
+                            <span className="ml-1 text-muted-foreground">
+                              ({g.items.length})
+                            </span>
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-0">
+                          <ConvList
+                            list={g.items}
+                            isLoading={false}
+                            selecting={selecting}
+                            selectedIds={selectedIds}
+                            onLongPressStart={toggleSelect}
+                            onRowTap={toggleSelect}
+                            empty={null}
+                            onPin={(c) =>
+                              pin.mutate(
+                                { conversationId: c.id, pin: !c.pinned_at },
+                                { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
+                              )
+                            }
+                            onArchive={(c) =>
+                              archive.mutate(
+                                { conversationId: c.id, archive: true },
+                                { onSuccess: () => toast.success("Percakapan diarsipkan") },
+                              )
+                            }
+                            onMute={(c, until) =>
+                              mute.mutate(
+                                { conversationId: c.id, until },
+                                {
+                                  onSuccess: () =>
+                                    toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
+                                },
+                              )
+                            }
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                ) : null}
+                {customerGroups.ungrouped.length > 0 ? (
+                  <div>
+                    <div className="px-1 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Tanpa Order
+                    </div>
+                    <ConvList
+                      list={customerGroups.ungrouped}
+                      isLoading={false}
+                      selecting={selecting}
+                      selectedIds={selectedIds}
+                      onLongPressStart={toggleSelect}
+                      onRowTap={toggleSelect}
+                      empty={null}
+                      onPin={(c) =>
+                        pin.mutate(
+                          { conversationId: c.id, pin: !c.pinned_at },
+                          { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
+                        )
+                      }
+                      onArchive={(c) =>
+                        archive.mutate(
+                          { conversationId: c.id, archive: true },
+                          { onSuccess: () => toast.success("Percakapan diarsipkan") },
+                        )
+                      }
+                      onMute={(c, until) =>
+                        mute.mutate(
+                          { conversationId: c.id, until },
+                          {
+                            onSuccess: () =>
+                              toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
+                          },
+                        )
+                      }
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </TabsContent>
+          <TabsContent value="employee">
+            <ConvList
+              list={byCategory.employee}
+              isLoading={isLoading}
+              selecting={selecting}
+              selectedIds={selectedIds}
+              onLongPressStart={toggleSelect}
+              onRowTap={toggleSelect}
+              empty={
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  Belum ada chat karyawan.
+                </div>
+              }
+              onPin={(c) =>
+                pin.mutate(
+                  { conversationId: c.id, pin: !c.pinned_at },
+                  { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
+                )
+              }
+              onArchive={(c) =>
+                archive.mutate(
+                  { conversationId: c.id, archive: true },
+                  { onSuccess: () => toast.success("Percakapan diarsipkan") },
+                )
+              }
+              onMute={(c, until) =>
+                mute.mutate(
+                  { conversationId: c.id, until },
+                  {
+                    onSuccess: () =>
+                      toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
+                  },
+                )
+              }
+            />
+          </TabsContent>
+          <TabsContent value="internal">
+            <ConvList
+              list={byCategory.internal}
+              isLoading={isLoading}
+              selecting={selecting}
+              selectedIds={selectedIds}
+              onLongPressStart={toggleSelect}
+              onRowTap={toggleSelect}
+              empty={
+                <div className="p-8 text-center text-xs text-muted-foreground">
+                  Belum ada catatan internal.
+                </div>
+              }
+              onPin={(c) =>
+                pin.mutate(
+                  { conversationId: c.id, pin: !c.pinned_at },
+                  { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
+                )
+              }
+              onArchive={(c) =>
+                archive.mutate(
+                  { conversationId: c.id, archive: true },
+                  { onSuccess: () => toast.success("Percakapan diarsipkan") },
+                )
+              }
+              onMute={(c, until) =>
+                mute.mutate(
+                  { conversationId: c.id, until },
+                  {
+                    onSuccess: () =>
+                      toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
+                  },
+                )
+              }
+            />
+          </TabsContent>
           <TabsContent value="archived">
             <ConvList
-              list={archived}
+              list={byCategory.archived}
               isLoading={isLoading}
               selecting={selecting}
               selectedIds={selectedIds}
