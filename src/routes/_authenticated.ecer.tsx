@@ -1451,7 +1451,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                 </div>
               )}
               {sent.length > 0 && (
-                <div className="mt-5 border-t pt-3">
+                <div id="riwayat-terkirim" data-testid="riwayat-terkirim" className="mt-5 border-t pt-3 scroll-mt-20">
                   <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Riwayat Terkirim
                     <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium normal-case text-muted-foreground">
@@ -2327,8 +2327,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           action: {
             label: "Lihat Riwayat",
             onClick: () => {
-              requestOpenSentHistory();
-              void navigate({ to: "/" });
+              document
+                .getElementById("riwayat-terkirim")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
             },
           },
         });
@@ -2407,8 +2408,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           action: {
             label: "Lihat Riwayat",
             onClick: () => {
-              requestOpenSentHistory();
-              void navigate({ to: "/" });
+              document
+                .getElementById("riwayat-terkirim")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
             },
           },
         });
