@@ -32,6 +32,7 @@ import { ChatListIcon } from "@/lib/chat-list-icons";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CHAT_CATEGORY_LABEL_ID, type ChatCategory } from "@/lib/chat-category";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { previewText } from "@/lib/chat-cards";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
@@ -537,7 +538,7 @@ function ChatListPage() {
                           <span className="truncate text-sm font-medium">{conv?.display_title ?? "Percakapan"}</span>
                           <span className="shrink-0 text-[10px] text-muted-foreground">{timeShort(m.created_at)}</span>
                         </div>
-                        <p className="line-clamp-2 text-xs text-muted-foreground">{highlight(m.body ?? "", q)}</p>
+                        <p className="line-clamp-2 text-xs text-muted-foreground">{highlight(previewText(m.body) ?? "", q)}</p>
                       </div>
                     </button>
                   </li>
@@ -915,7 +916,7 @@ function ConvList({
                               <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-muted opacity-70" aria-label="Terkirim" />
                             )
                           ) : null}
-                          <span className="truncate">{c.last_body}</span>
+                          <span className="truncate">{previewText(c.last_body) ?? c.last_body}</span>
                         </>
                       ) : (
                         <em className="text-muted-foreground/70">Belum ada pesan</em>
