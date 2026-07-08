@@ -89,7 +89,7 @@ export function NewGroupDialog({
               (contacts ?? []).map((c) => {
                 const on = !!picked[c.user_id];
                 return (
-                  <button
+                  <button aria-label="Konfirmasi"
                     key={c.user_id}
                     type="button"
                     onClick={() => toggle(c.user_id)}

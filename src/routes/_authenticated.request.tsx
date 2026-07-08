@@ -795,7 +795,7 @@ function TitleEditorDialog({
                     className="col-span-11 h-8 text-[11px]"
                     placeholder="catatan item (opsional)"
                   />
-                  <button
+                  <button aria-label="Hapus"
                     type="button"
                     onClick={() => removeRow(idx)}
                     className="col-span-1 flex items-center justify-center rounded-md border text-destructive hover:bg-destructive/10"

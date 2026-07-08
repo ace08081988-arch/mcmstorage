@@ -135,7 +135,7 @@ export function SharePinDialog({
       >
         <div className="mb-3 flex items-center justify-between">
           <div className="text-sm font-semibold">Bagikan link + PIN</div>
-          <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+          <button aria-label="Tutup" onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
             <X className="h-4 w-4" />
           </button>
         </div>
