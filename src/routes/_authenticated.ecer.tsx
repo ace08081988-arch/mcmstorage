@@ -633,6 +633,17 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
     onDeleted();
   }
 
+  const c = count ?? 0;
+  const isLoadingCount = count === null;
+  const status = isLoadingCount
+    ? { label: "…", cls: "bg-muted text-muted-foreground" }
+    : c === 0
+      ? { label: "Baru", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-400" }
+      : c < 5
+        ? { label: "Berjalan", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" }
+        : { label: "Aktif", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" };
+  // Rough progress bar: caps at 10 penyiapan for visual scale (indikatif, bukan target keras).
+  const progress = Math.min(100, Math.round((c / 10) * 100));
   return (
     <div
       role="button"
@@ -640,20 +651,48 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
       data-title-id={title.id}
-      className={`cursor-pointer rounded-lg border bg-card p-3 transition hover:border-primary/40 hover:bg-accent/30 active:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
+      className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
     >
-      <div className="text-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
-      <div className="mt-1 text-xs text-muted-foreground">
-        Target: <b>{title.target_grams} {displayUnit(itemName, title.unit_label)}</b> · {count ?? "…"} penyiapan
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 font-medium tabular-nums text-foreground">
+              <Scale className="h-3 w-3" /> {title.target_grams} {displayUnit(itemName, title.unit_label)}
+            </span>
+            <span className="inline-flex items-center gap-1 tabular-nums">
+              <Hash className="h-3 w-3" /> {isLoadingCount ? "…" : `${c} penyiapan`}
+            </span>
+          </div>
+        </div>
+        <span className={`inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-semibold uppercase tracking-wide ${status.cls}`}>
+          {status.label}
+        </span>
       </div>
-      {title.note && <div className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{title.note}</div>}
+
+      {title.note && (
+        <div className="mt-2 line-clamp-2 rounded-md bg-muted/40 px-2 py-1 text-[11px] leading-snug text-muted-foreground">
+          {title.note}
+        </div>
+      )}
+
+      {/* Progress indicator */}
+      <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
       <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
-        <span className="text-[11px] leading-snug text-muted-foreground">Tap untuk buka penyimpanan →</span>
+        <span className="text-[11px] leading-snug text-muted-foreground group-hover:text-primary">
+          Tap untuk buka →
+        </span>
         <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label="Edit judul">
             <Edit3 className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); void onDelete(); }}>
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); void onDelete(); }} aria-label="Hapus judul">
             <Trash2 className="h-3.5 w-3.5 text-destructive" />
           </Button>
         </div>
