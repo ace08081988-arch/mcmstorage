@@ -190,6 +190,65 @@ function SignedImg({ path, className, alt }: { path: string; className?: string;
   return <img src={url} alt={alt || ""} className={className} loading="lazy" />;
 }
 
+type SummaryTone = "primary" | "warning" | "danger" | "info";
+
+function SummaryCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+  loading,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: SummaryTone;
+  loading?: boolean;
+}) {
+  const toneCls: Record<SummaryTone, string> = {
+    primary: "text-primary bg-primary/10 ring-primary/20",
+    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    danger: "text-destructive bg-destructive/10 ring-destructive/20",
+    info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+  };
+  return (
+    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:text-[11px]">
+            {label}
+          </p>
+          {loading ? (
+            <div className="mt-2 h-6 w-12 animate-pulse rounded bg-muted md:h-7 md:w-16" />
+          ) : (
+            <p className="mt-1 text-xl font-bold tabular-nums tracking-tight md:text-2xl">
+              {value.toLocaleString("id-ID")}
+            </p>
+          )}
+        </div>
+        <span
+          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${toneCls[tone]} md:h-9 md:w-9`}
+        >
+          <Icon className="h-4 w-4 md:h-4.5 md:w-4.5" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function GudangLoadingSkeleton() {
+  return (
+    <div className="space-y-3">
+      <div className="h-10 w-full animate-pulse rounded-lg bg-muted/60" />
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-16 w-full animate-pulse rounded-lg bg-muted/50" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function GudangPage() {
   const [tab, setTab] = useState<
     "stok" | "supplier" | "beli" | "jual" | "pesanan" | "hutang" | "pelanggan" | "piutang" | "riwayat"
