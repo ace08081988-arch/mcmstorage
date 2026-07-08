@@ -521,7 +521,7 @@ function PosKasirPage() {
         5: { halign: "right" },
       },
       margin: { left: 40, right: 40 },
-      didDrawPage: (data) => {
+      didDrawPage: (data: { pageNumber: number }) => {
         const pageCount = doc.getNumberOfPages();
         const pageSize = doc.internal.pageSize;
         const pageHeight = pageSize.getHeight();
