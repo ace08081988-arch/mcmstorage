@@ -1032,9 +1032,19 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   if (typeof document === "undefined") return null;
+  // Sisi bawah editor bisa tertutup soft-keyboard (dialog Teks) atau
+  // ter-clip saat toolbar browser Android muncul. Hook ini melacak
+  // selisih visualViewport vs layoutViewport dan diaplikasikan ke:
+  //   - `bottom` root (`fixed inset-x-0 top-0` + `bottom: kbInset`) →
+  //     seluruh editor terangkat di atas keyboard, jadi tombol
+  //     Batal/Simpan/Coret dst. tetap dalam viewport
+  //   - `paddingBottom` panel tool options → agar env(safe-area-inset)
+  //     tetap dihormati saat kbInset = 0 (safe area device fisik).
+  const kbInset = useVisualViewportKeyboardInset();
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
+      className="fixed inset-x-0 top-0 z-[100] flex flex-col bg-background text-foreground"
+      style={{ bottom: kbInset }}
       // Stop the editor's pointerdown from reaching parent overlays (Sheet /
       // Dialog dismissal, drag-to-close sheets in the shell). MUST be the
       // bubble phase — capture-phase stopPropagation prevents pointerdown
