@@ -1147,12 +1147,15 @@ function ChatRoomPage() {
                                   />
                                 ) : null}
                                 {card ? <CardBlock card={card} mine={mine} /> : null}
-                                {!card && m.body ? (
+                                {!card && isCardBody(m.body) ? (
+                                  <UnknownCardBlock mine={mine} />
+                                ) : null}
+                                {!card && !isCardBody(m.body) && m.body ? (
                                   <div className="whitespace-pre-wrap break-words">
                                     <Linkify text={m.body} />
                                   </div>
                                 ) : null}
-                                {!card && m.body ? (
+                                {!card && !isCardBody(m.body) && m.body ? (
                                   <UrlPreviewList text={m.body} mine={mine} />
                                 ) : null}
                               </div>
