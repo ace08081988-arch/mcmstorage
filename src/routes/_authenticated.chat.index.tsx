@@ -96,6 +96,66 @@ function ChatListPage() {
     return { active: act, archived: arc };
   }, [conversations]);
 
+  /**
+   * Slice D — kategori workflow (SSOT).
+   * - Baris dengan `workflow_category='archived'` (dari auto-archive Slice C)
+   *   ATAU per-user archive lama (`archived_at`) → masuk tab "Arsip".
+   * - Sisanya dikelompokkan berdasarkan `workflow_category` dengan default
+   *   'customer' untuk baris yang belum di-set.
+   */
+  const byCategory = useMemo(() => {
+    const buckets: Record<ChatCategory, typeof active> = {
+      customer: [],
+      employee: [],
+      internal: [],
+      archived: [],
+    };
+    for (const c of active) {
+      const cat: ChatCategory =
+        c.workflow_category === "employee" ||
+        c.workflow_category === "internal" ||
+        c.workflow_category === "archived"
+          ? (c.workflow_category as ChatCategory)
+          : "customer";
+      if (cat === "archived") buckets.archived.push(c);
+      else buckets[cat].push(c);
+    }
+    // Auto-archived rows (workflow_category='archived') sudah masuk buckets.archived
+    // via loop di atas — mereka lolos filter `!c.archived_at` karena archive di sini
+    // adalah per-user (conversation_members), bukan workflow.
+    for (const c of archived) buckets.archived.push(c);
+    return buckets;
+  }, [active, archived]);
+
+  /** Untuk tab Pelanggan: kelompokkan per Order/Customer id. */
+  const customerGroups = useMemo(() => {
+    const groups = new Map<string, { key: string; label: string; items: typeof active }>();
+    const ungrouped: typeof active = [];
+    for (const c of byCategory.customer) {
+      const key =
+        c.linked_request_prep_id
+          ? `REQ-${c.linked_request_prep_id}`
+          : c.linked_ecer_prep_id
+            ? `ECER-${c.linked_ecer_prep_id}`
+            : c.linked_customer_id
+              ? `CUST-${c.linked_customer_id}`
+              : "";
+      if (!key) {
+        ungrouped.push(c);
+        continue;
+      }
+      const label = key
+        .replace(/^REQ-/, "REQ-")
+        .replace(/^ECER-/, "ECER-")
+        .replace(/^CUST-/, "CUST-")
+        .replace(/-([0-9a-f-]+)$/i, (_, id: string) => `-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`);
+      const g = groups.get(key) ?? { key, label, items: [] };
+      g.items.push(c);
+      groups.set(key, g);
+    }
+    return { groups: Array.from(groups.values()), ungrouped };
+  }, [byCategory.customer]);
+
   // Terapkan filter chip pada daftar aktif.
   const filteredActive = useMemo(() => {
     if (filter.startsWith("list:")) {
