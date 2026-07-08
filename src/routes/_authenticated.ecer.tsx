@@ -774,7 +774,8 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, st
               <Scale className="h-3 w-3" /> {title.target_grams} {displayUnit(itemName, title.unit_label)}
             </span>
             <span className="inline-flex items-center gap-1 tabular-nums">
-              <Hash className="h-3 w-3" /> {isLoadingCount ? "…" : `${c} penyiapan`}
+              <Hash className="h-3 w-3" />
+              {isLoadingCount ? "…" : stat ? `${soldC}/${c} terkirim` : `${c} penyiapan`}
             </span>
           </div>
         </div>
