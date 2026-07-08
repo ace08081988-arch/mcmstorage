@@ -1839,6 +1839,7 @@ function describeLocationUrl(raw: string): { label: string | null; kind: string 
 }
 
 function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName: string }) {
+  const navigate = useNavigate();
   const [shots, setShots] = useState<WorkerShot[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
