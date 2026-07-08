@@ -541,39 +541,95 @@ export type Database = {
       }
       conversations: {
         Row: {
+          archived_at: string | null
+          category: string
           created_at: string
           created_by: string
           id: string
           kind: string
           last_message_at: string | null
+          linked_customer_id: string | null
+          linked_ecer_prep_id: string | null
+          linked_product_id: string | null
+          linked_request_prep_id: string | null
+          linked_task_id: string | null
           order_request_id: string | null
           owner_user_id: string
           title: string | null
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
+          category?: string
           created_at?: string
           created_by: string
           id?: string
           kind: string
           last_message_at?: string | null
+          linked_customer_id?: string | null
+          linked_ecer_prep_id?: string | null
+          linked_product_id?: string | null
+          linked_request_prep_id?: string | null
+          linked_task_id?: string | null
           order_request_id?: string | null
           owner_user_id: string
           title?: string | null
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
+          category?: string
           created_at?: string
           created_by?: string
           id?: string
           kind?: string
           last_message_at?: string | null
+          linked_customer_id?: string | null
+          linked_ecer_prep_id?: string | null
+          linked_product_id?: string | null
+          linked_request_prep_id?: string | null
+          linked_task_id?: string | null
           order_request_id?: string | null
           owner_user_id?: string
           title?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_linked_customer_id_fkey"
+            columns: ["linked_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_linked_ecer_prep_id_fkey"
+            columns: ["linked_ecer_prep_id"]
+            isOneToOne: false
+            referencedRelation: "ecer_preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_linked_product_id_fkey"
+            columns: ["linked_product_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_linked_request_prep_id_fkey"
+            columns: ["linked_request_prep_id"]
+            isOneToOne: false
+            referencedRelation: "request_preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_order_request_id_fkey"
             columns: ["order_request_id"]
