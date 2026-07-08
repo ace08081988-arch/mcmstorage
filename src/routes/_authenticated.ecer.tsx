@@ -112,6 +112,7 @@ function EcerPage() {
   const [creatingTitleForItem, setCreatingTitleForItem] = useState<WarehouseItem | null>(null);
   // Membuat produk gudang baru (lanjut otomatis ke pembuatan judul untuk produk itu).
   const [creatingProduct, setCreatingProduct] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
 
   function diagnose(err: { code?: string; message?: string; status?: number | string; details?: string }): string {
     const code = err?.code ?? "";
