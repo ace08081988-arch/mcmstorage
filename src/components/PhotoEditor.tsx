@@ -1309,10 +1309,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       {/* Tool options bar */}
-      <ToolOptionsPanel
-        canvasReady={canvasReady}
-        exporting={exporting}
-      >
+      <ToolOptionsPanel canvasReady={canvasReady} exporting={exporting}>
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground">Warna:</span>
