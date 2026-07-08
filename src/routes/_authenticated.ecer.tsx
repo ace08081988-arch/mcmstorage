@@ -714,9 +714,10 @@ function EcerPage() {
   );
 }
 
-function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: {
+function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, stat }: {
   title: EcerTitle; itemName?: string; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
   highlighted?: boolean;
+  stat?: { total: number; sold: number };
 }) {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
@@ -741,17 +742,21 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
     onDeleted();
   }
 
-  const c = count ?? 0;
-  const isLoadingCount = count === null;
+  // Prefer aggregate `stat` (dari parent), fallback ke head-count lama.
+  const c = stat?.total ?? count ?? 0;
+  const soldC = stat?.sold ?? 0;
+  const isLoadingCount = stat == null && count === null;
   const status = isLoadingCount
     ? { label: "…", cls: "bg-muted text-muted-foreground" }
     : c === 0
-      ? { label: "Baru", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-400" }
-      : c < 5
-        ? { label: "Berjalan", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" }
-        : { label: "Aktif", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" };
-  // Rough progress bar: caps at 10 penyiapan for visual scale (indikatif, bukan target keras).
-  const progress = Math.min(100, Math.round((c / 10) * 100));
+      ? { label: "Menunggu", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" }
+      : soldC >= c
+        ? { label: "Selesai", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" }
+        : { label: "Berjalan", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-400" };
+  // Progress berbasis penyiapan yang sudah terkirim; fallback: skala 10 penyiapan.
+  const progress = c > 0 && stat
+    ? Math.min(100, Math.round((soldC / c) * 100))
+    : Math.min(100, Math.round((c / 10) * 100));
   return (
     <div
       role="button"
