@@ -11,6 +11,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PhotoEditor } from "@/components/PhotoEditor";
+import { PhotoEditorV2 } from "@/components/photo-editor/PhotoEditorV2";
 
 export const Route = createFileRoute("/lovable/visual/photo-editor")({
   head: () => ({
@@ -44,6 +45,7 @@ function Harness() {
   const [src, setSrc] = useState<string | null>(null);
   const [saved, setSaved] = useState<{ bytes: number; dataUrlLen: number } | null>(null);
   const [cancelled, setCancelled] = useState(false);
+  const useV2 = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("v") === "2";
 
   useEffect(() => {
     // Generate secara sinkron setelah mount agar canvas siap dipakai.
@@ -81,13 +83,24 @@ function Harness() {
         {status}
       </div>
       {src && !saved && !cancelled && (
-        <PhotoEditor
-          src={src}
-          onCancel={() => setCancelled(true)}
-          onSave={(blob, dataUrl) =>
-            setSaved({ bytes: blob.size, dataUrlLen: dataUrl.length })
-          }
-        />
+        useV2 ? (
+          <PhotoEditorV2
+            src={src}
+            onCancel={() => setCancelled(true)}
+            onSave={(blob, dataUrl) =>
+              setSaved({ bytes: blob.size, dataUrlLen: dataUrl.length })
+            }
+            autosaveKey="harness-v2"
+          />
+        ) : (
+          <PhotoEditor
+            src={src}
+            onCancel={() => setCancelled(true)}
+            onSave={(blob, dataUrl) =>
+              setSaved({ bytes: blob.size, dataUrlLen: dataUrl.length })
+            }
+          />
+        )
       )}
       {(saved || cancelled) && (
         <div className="p-6 text-sm">
