@@ -1309,14 +1309,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       {/* Tool options bar */}
-      <div
-        className="max-h-[55vh] overflow-y-auto border-t bg-card px-2 py-2 text-xs shadow-sm"
-        style={{
-          // Saat keyboard terbuka, root sudah terangkat via `bottom: kbInset`
-          // → padding di sini cukup mengikuti safe-area device fisik.
-          // Saat keyboard tertutup (kbInset = 0), tetap hormati notch/gesture bar.
-          paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
-        }}
+      <ToolOptionsPanel
+        canvasReady={canvasReady}
+        exporting={exporting}
       >
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
