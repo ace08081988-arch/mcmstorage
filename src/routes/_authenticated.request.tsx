@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import { displayUnit } from "@/lib/unit-label";
+import {
+  UNIT_GROUPS,
+  UNIT_LABEL_ID,
+  canonicalUnitLabel,
+  formatQty,
+  isDecimalKind,
+  qtyPlaceholder,
+  resolveKind,
+  type UnitKind,
+} from "@/lib/unit-kinds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
