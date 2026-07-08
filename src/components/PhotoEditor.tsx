@@ -1298,7 +1298,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       {/* Tool options bar */}
-      <div className="border-t bg-card px-2 py-2 text-xs shadow-sm">
+      <div
+        className="max-h-[55vh] overflow-y-auto border-t bg-card px-2 py-2 text-xs shadow-sm"
+        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+      >
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground">Warna:</span>
