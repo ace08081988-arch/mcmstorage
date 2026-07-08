@@ -1,91 +1,94 @@
-# Gap #5 + #10 — Verifikasi & Status SSOT
 
-## Prinsip
+## Audit Navigasi MCM Storage — Rencana Refactor Sidebar
 
-- **Tidak ubah RPC/logic existing.** Kolom lifecycle & verifikasi ditambah, kode lama terus jalan (default = perilaku sekarang).
-- **1 SSOT** untuk 11 status di TS + 1 komponen badge dipakai di semua surface.
-- **Bahasa Indonesia** untuk label UI, kunci enum tetap English snake_case.
+Tujuan: sidebar `AppSidebar.tsx` (satu-satunya nav app) disusun ulang mengikuti alur kerja
+**Dashboard → Gudang → Request Order → Penyiapan Ecer → POS/Kasir → Tugas Pegawai → Chat → Pembayaran → Riwayat → Pengaturan**, tanpa menghapus rute/fitur yang masih dipakai.
 
-## 1. DB (1 migrasi, additive-only)
+### 1. Temuan (inventaris singkat)
 
-**`prep_submissions`** — tambah:
-- `verification_status text NOT NULL DEFAULT 'pending'` — nilai: `pending | approved | rejected`
-- `verified_at timestamptz`
-- `verified_by uuid`
-- `rejection_reason text`
+Sidebar sekarang punya 6 grup (Utama, Operasional, Komunikasi, Keuangan, Akun, Sistem) dengan 24 item. Beberapa yang tumpang tindih / meragukan:
 
-**`request_preparations`** & **`ecer_preparations`** — tambah:
-- `verification_status text NOT NULL DEFAULT 'approved'` — record lama tetap approved (backward compat)
-- `verified_at timestamptz`, `verified_by uuid`, `rejection_reason text`
-- `ready_at timestamptz` — di-set saat approve (Request) / saat masuk ecer inventory (Ecer, disiapkan gap #9)
-- `archived_at timestamptz` — untuk status Archived
+| Item | Status | Catatan |
+|---|---|---|
+| Beranda `/` + Dasbor `/dashboard` | overlap ringan | `/` = home ber-lock/quick action, `/dashboard` = ringkasan bisnis. **Pertahankan keduanya**, tapi Dasbor jadi item #1 dan Beranda dipindah ke footer/profile |
+| POS Kasir + Ringkasan POS | wajar dipisah, tapi 2 baris top-level bikin sidebar bising | Gabung sebagai satu item "POS Kasir" — halaman `/pos-kasir` sudah punya tab Ringkasan internal (verifikasi dulu; jika belum, tambahkan sub-item saja) |
+| Penyiapan Produk `/tugas` + Daftar Tugas `/tugas-daftar` + Buat Tugas Manual `/tugas-baru` | 3 entri untuk 1 modul | Jadikan **satu** item "Tugas Pegawai" → `/tugas`; `/tugas-baru` dan `/tugas-daftar` tetap ada sebagai rute (dipanggil dari dalam halaman), tidak di sidebar |
+| Pratinjau Label `/label-preview` | dev-utility | Pindah ke grup Sistem (bukan alur kerja harian) |
+| Audit Rute `/audit` + Diagnostik `/diagnostics` + Chat-audit `/chat-audit` | overlap developer tools | Pertahankan semua rutenya, tapi cukup 1 entri "Diagnostik" di sidebar; sisanya diakses dari halaman itu |
+| Notifikasi `/notifikasi` + Status Notifikasi `/status-notifikasi` + Pembaruan `/pembaruan` + Fitur `/fitur` | 4 halaman informasional | Tetap ada sebagai rute (link dari profil/notif dropdown), tapi hanya "Notifikasi" yang layak di sidebar |
+| Catatan / Balas Cepat / Buku Alamat | pendukung Chat | Tetap, tapi dikelompokkan di bawah header "Chat & Komunikasi" |
+| Hutang & Piutang | tunggal | Rename group jadi "Pembayaran & Keuangan" biar konsisten dengan permintaan |
+| Log Penolakan Admin, OAuth Google, Rilis APK, Antrian Email | admin-only | Sudah difilter `filterSidebarItemsForAdmin` — dipertahankan di grup "Sistem" |
 
-**RPC baru** (tanpa ubah yang lama):
-- `prep_submission_verify(_submission_id uuid, _decision text, _reason text)` — hanya admin (has_role). Set `verification_status`, `verified_at`, `verified_by`. Kalau `approved`, set `verification_status='approved'` di `request_preparations`/`ecer_preparations` terkait (via `prep_task_item_id`) + `ready_at=now()`. Kalau `rejected`, simpan alasan; row prep TIDAK dibuat aktif.
-- **Trigger**: saat submission baru dibuat via existing `prep_submit_result`, default `verification_status='pending'`. Auto-provisioned row di `request_preparations`/`ecer_preparations` juga default ke `'pending'`.
+**Tidak ada rute yang dihapus** di slice ini. Yang berubah hanyalah *visibility* di sidebar. Semua halaman tetap bisa dibuka via URL / link dalam-halaman → dependensi aman.
 
-**GRANT & RLS**: SELECT/UPDATE untuk `authenticated` sudah ada di kedua tabel; kolom baru ikut. Policy tidak diubah.
-
-## 2. Status SSOT (TS)
-
-Buat `src/lib/prep-status.ts`:
+### 2. Struktur sidebar baru
 
 ```text
-LifecycleStatus =
-  | 'draft'
-  | 'new_request'
-  | 'sent_to_employee'
-  | 'preparing'
-  | 'waiting_verification'
-  | 'ready_to_ship'
-  | 'waiting_payment'
-  | 'paid'
-  | 'dp'
-  | 'credit'
-  | 'sent'
-  | 'completed'
-  | 'archived'
+UTAMA
+  • Dasbor              /dashboard        LayoutDashboard
+OPERASIONAL
+  • Gudang & Supplier   /gudang           Package
+  • Request Order       /request          PackagePlus
+  • Penyiapan Ecer      /ecer             Scale
+  • POS Kasir           /pos-kasir        Calculator
+  • Tugas Pegawai       /tugas            ClipboardList
+KOMUNIKASI
+  • Chat                /chat             MessageCircle          (badge unread)
+  • Catatan             /catatan          NotebookPen
+  • Balas Cepat         /balas-cepat      MessageSquarePlus
+  • Buku Alamat         /buku-alamat      ContactRound
+  • Notifikasi          /notifikasi       BellRing
+KEUANGAN
+  • Hutang & Piutang    /hutang-piutang   Wallet
+RIWAYAT & AUDIT
+  • Audit Rute          /audit            ClipboardCheck
+  • Diagnostik          /diagnostics      Activity
+AKUN
+  • Beranda             /                 Home                   (turun dari Utama)
+  • Profil Akun         /profil           User
+  • Pengaturan Kunci    /pengaturan-kunci Lock
+  • Sesi & Perangkat    /sesi             MonitorSmartphone
+SISTEM (admin-only, tak berubah)
+  • Antrian Email, Rilis APK, Log Penolakan Admin, OAuth Google, Pratinjau Label
 ```
 
-Fungsi utama:
-- `deriveRequestStatus(prep, task?, submission?)` → LifecycleStatus
-- `deriveEcerStatus(prep, task?, submission?)` → LifecycleStatus
-- `STATUS_LABEL_ID: Record<LifecycleStatus, string>` — Indonesian
-- `STATUS_VARIANT: Record<LifecycleStatus, StatusVariant>` — mapping ke variant `StatusBadge` existing (menunggu/siap/selesai/hutang/lunas/info/danger)
+Grup baru "Riwayat & Audit" memenuhi slot "Riwayat" pada alur yang diminta; halaman
+Riwayat transaksi sendiri hidup di dalam masing-masing modul (Ecer/Request/Chat arsip)
+sesuai desain Slice A–D chat.
 
-Aturan derivasi (backward compat, tanpa ubah data lama):
-- Task ada + belum ada submission → `sent_to_employee`
-- Submission ada + `verification_status='pending'` → `waiting_verification`
-- `verification_status='rejected'` → `preparing` (kembali ke employee) + flag danger
-- `verification_status='approved'` + `sold_at IS NULL` → `ready_to_ship`
-- `sold_at` ada + method=`hutang` → `credit`; `partial` → `dp`; `kas` → `paid` → status `sent`/`completed`
-- `archived_at` → `archived`
+### 3. Polish visual (tanpa breaking changes)
 
-## 3. UI
+- Label grup dipersingkat & huruf kecil kapital (`text-[10.5px] uppercase tracking-widest`).
+- Ikon diseragamkan ukuran `h-4 w-4`, spacing item `gap-2.5`.
+- Item aktif: strip aksen kiri `bg-primary/10 border-l-2 border-primary`.
+- Badge unread di Chat dipertahankan.
+- Sync pill di footer tetap.
 
-**Ekstend `StatusBadge`** (append-only) — tambah variant `verifikasi` (amber/kuning kuat) & keep semua yang lama:
-- Terima `lifecycle` prop opsional; kalau ada, resolve via `STATUS_LABEL_ID`+`STATUS_VARIANT`.
-- Backward compat: pemakaian `<StatusBadge status="hutang" />` lama tetap jalan.
+### 4. Rekomendasi (tidak dieksekusi — perlu keputusan user)
 
-**Dialog Verifikasi Admin** (`src/components/prep/VerificationDialog.tsx`):
-- Tampilkan foto (multi), maps link, employee, waktu submit, item + qty.
-- Tombol **Setuju** & **Tolak** (dengan input alasan).
-- Panggil RPC `prep_submission_verify`.
-- Toast + invalidate query.
+Kandidat *hapus di masa depan* setelah verifikasi lebih lanjut:
 
-**Pasang di 2 surface**:
-- `/request` — di tiap prep dengan `verification_status='pending'`, tampilkan kartu "Menunggu Verifikasi" + tombol Verifikasi. Prep `approved` masuk grid Ready-To-Ship existing tanpa perubahan visual besar (badge ganti ke `ready_to_ship`).
-- `/ecer` — sama, tapi setelah approve prep masuk section aktif ecer (Gap #9 nanti yang akan handle move ke inventory).
+1. `/fitur` — halaman "MCM Chat features" lama, mungkin tak relevan lagi untuk build MCM Storage.
+2. `/pembaruan` — changelog manual; bisa digantikan halaman rilis notes.
+3. `/status-notifikasi` — subset dari `/notifikasi`.
+4. `/pengaturan-scroll-guard` + `/pengaturan-penyimpanan` + `/pengaturan-aksesibilitas` + `/pengaturan-tampilan` + `/pengaturan-privasi` — sebaiknya digabung ke satu halaman `/pengaturan` bertab. (Tidak dilakukan sekarang.)
+5. `/chat-audit` — duplikasi konten `/audit`; kandidat dihapus setelah dicek referensinya.
 
-## 4. Non-goals turn ini
+Saya *tidak* akan mengubah/menghapus rute ini pada slice ini — hanya mencatat untuk audit lanjutan.
 
-- Belum increment stok retail di ecer (Gap #9).
-- Belum pisah stage Ready-To-Ship dari dialog Kirim (Gap #6).
-- Belum tambah Order# & waktu ke pesan WA (Gap #7).
+### 5. Ruang lingkup implementasi
 
-## Verifikasi selesai
+File yang disentuh: **hanya** `src/components/AppSidebar.tsx` (susun ulang array `groups`, mungkin tambah 1–2 utilitas kecil di file yang sama). Tidak ada perubahan pada:
+- rute `src/routes/**`
+- schema database / migrasi
+- auth, RLS, permissions
+- logika bisnis modul
 
-- `tsgo` lulus.
-- `/request` & `/ecer` masih bisa render (query tambahan tidak menembak kolom yang tidak ada — semua nullable/default).
-- Prep lama (tanpa submission) tetap tampil sebagai "aktif" karena default `verification_status='approved'` di preparations table.
-- Buat 1 prep test lewat share link, cek muncul di "Menunggu Verifikasi", approve → pindah ke Ready.
+### Verifikasi
+
+- `tsgo` typecheck.
+- Manual: buka `/`, `/dashboard`, `/gudang`, `/pos-kasir`, `/chat` — pastikan sidebar tetap navigasi ke rute yang benar & badge unread muncul.
+- E2E `sidebar-highlight` + `sidebar-scroll-guard` tetap harus lewat (tidak menyentuh mekanisme highlight/guard).
+
+Setelah plan disetujui, saya kerjakan langsung dalam satu edit ke `AppSidebar.tsx`.
