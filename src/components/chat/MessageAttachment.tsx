@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { StickerView } from "@/components/chat/StickerView";
 import { VoiceNotePlayer } from "@/components/chat/VoiceNotePlayer";
+import { AlertTriangle } from "lucide-react";
 
 function bytes(n: number | null | undefined): string {
   if (!n) return "";
