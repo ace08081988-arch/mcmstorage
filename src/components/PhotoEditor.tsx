@@ -1042,6 +1042,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   //   - `paddingBottom` panel tool options → agar env(safe-area-inset)
   //     tetap dihormati saat kbInset = 0 (safe area device fisik).
   const kbInset = useVisualViewportKeyboardInset();
+  // Ref + hook untuk indikator scroll pada panel opsi bawah. Panel ini
+  // dibatasi `max-h-[55vh]` sehingga tombol tool dapat ter-scroll ke luar
+  // pandangan pada layar sempit; user perlu tahu ke arah mana harus
+  // menggulir untuk mencapai tombol.
+  const toolPanelRef = useRef<HTMLDivElement | null>(null);
+  const { topShadow, bottomShadow } = useScrollShadow(toolPanelRef);
   return (
     <div
       className="fixed inset-x-0 top-0 z-[100] flex flex-col bg-background text-foreground"
