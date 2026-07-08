@@ -233,6 +233,23 @@ function EcerPage() {
       }
       setItems((wi.data ?? []) as WarehouseItem[]);
       setTitles((et.data ?? []) as EcerTitle[]);
+      // Ambil ringkasan penyiapan (per-title) untuk kartu ringkasan.
+      // Non-blocking: gagal → biarkan kosong, tidak memengaruhi alur utama.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pr = await (supabase.from as any)("ecer_preparations")
+          .select("title_id, sold_at");
+        if (!pr.error && Array.isArray(pr.data)) {
+          const acc: Record<string, { total: number; sold: number }> = {};
+          for (const row of pr.data as Array<{ title_id: string; sold_at: string | null }>) {
+            const s = acc[row.title_id] ?? { total: 0, sold: 0 };
+            s.total += 1;
+            if (row.sold_at) s.sold += 1;
+            acc[row.title_id] = s;
+          }
+          setPrepStats(acc);
+        }
+      } catch { /* diamkan — kartu ringkasan default 0 */ }
     } catch (e) {
       const err = e as { message?: string; status?: number; code?: string; name?: string };
       setLoadError({
