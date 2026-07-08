@@ -54,11 +54,12 @@ export function VerificationDialog({
     }
     setBusy(true);
     try {
-      const { data, error } = await supabase.rpc("prep_submission_verify", {
+      const args: { _submission_id: string; _decision: string; _reason?: string } = {
         _submission_id: submission.id,
         _decision: decision,
-        _reason: decision === "rejected" ? reason.trim() : null,
-      });
+      };
+      if (decision === "rejected") args._reason = reason.trim();
+      const { data, error } = await supabase.rpc("prep_submission_verify", args);
       if (error) throw error;
       const ok = (data as { ok?: boolean } | null)?.ok;
       if (!ok) throw new Error("Verifikasi gagal");
