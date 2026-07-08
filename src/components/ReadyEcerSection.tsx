@@ -2068,10 +2068,35 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             <DropdownMenuLabel className="truncate">{r.name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {view === "sent" ? (
-              <DropdownMenuItem onSelect={() => { setMenuOpen(false); doDelete(); }}>
-                <Undo2 className="mr-2 h-3.5 w-3.5" />
-                Kembalikan ke aktif
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem onSelect={() => { setMenuOpen(false); doDelete(); }}>
+                  <Undo2 className="mr-2 h-3.5 w-3.5" />
+                  Kembalikan ke aktif
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={async () => {
+                    setMenuOpen(false);
+                    if (shots.length === 0) {
+                      toast.info("Tidak ada kiriman untuk dihapus.");
+                      return;
+                    }
+                    const ok = await confirmDialog({
+                      title: `Hapus kartu "${r.name}" dari Riwayat?`,
+                      description:
+                        "Kartu akan disembunyikan dari Riwayat terkirim dan tidak akan kembali ke daftar Aktif. Foto pegawai tetap ada di database.",
+                      confirmText: "Hapus",
+                      destructive: true,
+                    });
+                    if (!ok) return;
+                    hideSent(shots.map((s) => s.id));
+                    toast.success("Kartu dihapus dari Riwayat.");
+                  }}
+                >
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />
+                  Hapus dari Riwayat
+                </DropdownMenuItem>
+              </>
             ) : (
               <DropdownMenuItem onSelect={() => { setMenuOpen(false); setConfirmDelete(true); }} className="text-destructive focus:text-destructive">
                 <Trash2 className="mr-2 h-3.5 w-3.5" />
