@@ -134,6 +134,53 @@ function EcerLoadingSkeleton() {
   );
 }
 
+function EcerSummaryCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: ChipTone;
+  hint?: string;
+}) {
+  const map: Record<ChipTone, string> = {
+    primary: "text-primary bg-primary/10 ring-primary/20",
+    info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+    success: "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20 dark:text-emerald-400",
+    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    danger: "text-destructive bg-destructive/10 ring-destructive/20",
+  };
+  return (
+    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:text-[11px]">
+            {label}
+          </p>
+          <p className="mt-1 text-xl font-bold tabular-nums tracking-tight md:text-2xl">
+            {value.toLocaleString("id-ID")}
+          </p>
+          {hint && (
+            <p className="mt-0.5 hidden text-[10px] leading-tight text-muted-foreground md:block">
+              {hint}
+            </p>
+          )}
+        </div>
+        <span
+          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${map[tone]} md:h-9 md:w-9`}
+          aria-hidden
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function EcerPage() {
   const search = Route.useSearch();
   const router = useRouter();
