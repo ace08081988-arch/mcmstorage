@@ -284,7 +284,6 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
   {
     label: "Utama",
     items: [
-      { title: "Beranda", url: "/", icon: Home },
       { title: "Dasbor", url: "/dashboard", icon: LayoutDashboard },
     ],
   },
@@ -292,13 +291,10 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
     label: "Operasional",
     items: [
       { title: "Gudang & Supplier", url: "/gudang", icon: Package },
+      { title: "Request Order", url: "/request", icon: PackagePlus },
       { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
-      { title: "POS Kasir Curah", url: "/pos-kasir", icon: Calculator },
-      { title: "Ringkasan POS Kasir", url: "/pos-kasir/ringkasan", icon: BarChart3 },
-      { title: "Penyiapan Request", url: "/request", icon: PackagePlus },
-      { title: "Penyiapan Produk", url: "/tugas", icon: ClipboardList },
-      { title: "Buat Tugas Manual", url: "/tugas-baru", icon: ClipboardCheck },
-      { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
+      { title: "POS Kasir", url: "/pos-kasir", icon: Calculator },
+      { title: "Tugas Pegawai", url: "/tugas", icon: ClipboardList },
     ],
   },
   {
@@ -312,14 +308,22 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
     ],
   },
   {
-    label: "Keuangan",
+    label: "Pembayaran & Keuangan",
     items: [
       { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
     ],
   },
   {
+    label: "Riwayat & Audit",
+    items: [
+      { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
+      { title: "Diagnostik", url: "/diagnostics", icon: Activity },
+    ],
+  },
+  {
     label: "Akun",
     items: [
+      { title: "Beranda", url: "/", icon: Home },
       { title: "Profil Akun", url: "/profil", icon: User },
       { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
       { title: "Sesi & Perangkat", url: "/sesi", icon: MonitorSmartphone },
@@ -328,10 +332,9 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
   {
     label: "Sistem",
     items: [
-      { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
-      { title: "Diagnostik", url: "/diagnostics", icon: Activity },
       { title: "Antrian Email", url: "/email-queue", icon: Mail },
       { title: "Rilis APK", url: "/pengaturan-apk", icon: Package },
+      { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
       { title: "Log Penolakan Admin", url: "/admin-denial-log", icon: ShieldAlert },
       { title: "OAuth Google (BYOK)", url: "/pengaturan-oauth-google", icon: KeyRound },
     ],
