@@ -138,7 +138,7 @@ export function StickerPickerDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {view === "editor" && mode.kind !== "edit" ? (
-              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setView("library"); setEditingSavedId(null); }}>
+              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" aria-label="Kembali ke pustaka stiker" onClick={() => { setView("library"); setEditingSavedId(null); }}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             ) : null}
