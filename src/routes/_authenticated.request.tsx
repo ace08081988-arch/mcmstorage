@@ -795,18 +795,37 @@ function TitleEditorDialog({
                     ))}
                   </select>
                   <Input
-                    type="number" inputMode="decimal" step="any" min="0"
+                    type="number"
+                    inputMode={isDecimalKind(r.unit_kind) ? "decimal" : "numeric"}
+                    step={isDecimalKind(r.unit_kind) ? "any" : "1"}
+                    min="0"
                     value={r.target_grams}
                     onChange={(e) => updateRow(idx, { target_grams: sanitizeQty(idx, e.target.value) })}
-                    className="col-span-3 h-9 text-xs"
-                    placeholder="0"
-                  />
-                  <Input
-                    value={r.unit_label}
-                    onChange={(e) => updateRow(idx, { unit_label: e.target.value })}
                     className="col-span-2 h-9 text-xs"
-                    placeholder="gram"
+                    placeholder={qtyPlaceholder(r.unit_kind)}
                   />
+                  <select
+                    value={r.unit_kind}
+                    onChange={(e) => updateRow(idx, { unit_kind: e.target.value as UnitKind })}
+                    className="col-span-3 h-9 rounded-md border bg-background px-1 text-xs"
+                    aria-label="Satuan"
+                  >
+                    {UNIT_GROUPS.map((g) => (
+                      <optgroup key={g.label} label={g.label}>
+                        {g.kinds.map((k) => (
+                          <option key={k} value={k}>{UNIT_LABEL_ID[k]}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  {r.unit_kind === "custom" ? (
+                    <Input
+                      value={r.unit_custom}
+                      onChange={(e) => updateRow(idx, { unit_custom: e.target.value })}
+                      className="col-span-12 h-8 text-[11px]"
+                      placeholder="Satuan lain (mis. sachet, renceng…)"
+                    />
+                  ) : null}
                   <Input
                     value={r.note}
                     onChange={(e) => updateRow(idx, { note: e.target.value })}
