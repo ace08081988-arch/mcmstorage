@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Loader2, AlertTriangle, Copy, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, AlertTriangle, Copy, RefreshCw, Globe as GlobeIcon } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { checkDomainDns, LOVABLE_IP, TXT_HOST_PREFIX, type DnsCheckResult } from "@/lib/domain-dns.functions";
@@ -151,7 +151,7 @@ function DomainSettingsPage() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-10">
-      <SettingsHeader title="Pengaturan Domain" subtitle="Checklist DNS untuk custom domain" />
+      <SettingsHeader title="Pengaturan Domain" subtitle="Checklist DNS untuk custom domain" icon={GlobeIcon} />
       <div className="space-y-4 px-4 pt-2">
         <Card>
           <CardHeader className="pb-3">

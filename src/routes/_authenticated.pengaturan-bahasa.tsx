@@ -4,7 +4,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { useAppPrefs } from "@/lib/app-prefs";
-import { Check } from "lucide-react";
+import { Check, Languages } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-bahasa")({
   head: () => ({ meta: [{ title: "Bahasa Aplikasi · MCM Storage" }] }),
@@ -21,7 +21,7 @@ function PengaturanBahasaPage() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
-      <SettingsHeader title="Bahasa Aplikasi" subtitle="Pilih bahasa yang paling nyaman" />
+      <SettingsHeader title="Bahasa Aplikasi" subtitle="Pilih bahasa yang paling nyaman" icon={Languages} />
       <div className="px-4 pt-2">
         <Card>
           <CardHeader className="pb-3">

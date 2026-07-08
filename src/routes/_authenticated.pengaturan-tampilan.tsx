@@ -549,7 +549,7 @@ function PengaturanTampilanPage() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-32">
-      <SettingsHeader title="Tampilan" subtitle="Preset, tema, aksen, font, latar & kerapatan" />
+      <SettingsHeader title="Tampilan" subtitle="Preset, tema, aksen, font, latar & kerapatan" icon={Palette} />
 
       <div className="space-y-4 px-4 pt-2">
         {/* Info draft */}

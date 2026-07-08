@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Globe, Users, Loader2 } from "lucide-react";
+import { Globe, Users, Loader2, ShieldCheck, Check, Info } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
@@ -71,45 +72,84 @@ function PrivasiPage() {
         onClick={() => choose(v)}
         aria-pressed={active}
         disabled={saving !== null}
-        className="flex w-full items-start gap-3 rounded-xl border p-3 text-left transition aria-[pressed=true]:border-primary aria-[pressed=true]:bg-primary/10 disabled:opacity-70"
+        className={cn(
+          "group flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition-all",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "disabled:opacity-70",
+          active
+            ? "border-primary bg-primary/8 shadow-sm"
+            : "border-border/70 hover:border-primary/40 hover:bg-accent/40",
+        )}
       >
-        <Icon className="mt-0.5 size-5 shrink-0" />
+        <span
+          aria-hidden
+          className={cn(
+            "grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 transition-colors",
+            active
+              ? "bg-primary/15 text-primary ring-primary/25"
+              : "bg-muted text-muted-foreground ring-border/70 group-hover:text-foreground",
+          )}
+        >
+          <Icon className="h-4.5 w-4.5" />
+        </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-medium">{title}</span>
-            {saving === v ? <Loader2 className="size-3.5 animate-spin" /> : null}
+            <span className="text-sm font-semibold tracking-tight">{title}</span>
+            {saving === v ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+            ) : null}
           </div>
-          <p className="text-xs text-muted-foreground">{desc}</p>
+          <p className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground">
+            {desc}
+          </p>
         </div>
         <span
           aria-hidden
-          className="mt-1 size-4 shrink-0 rounded-full border-2 aria-[checked=true]:border-primary aria-[checked=true]:bg-primary"
-          data-state={active ? "on" : "off"}
-          {...{ "aria-checked": active }}
-        />
+          className={cn(
+            "mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+            active ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30",
+          )}
+        >
+          {active ? <Check className="h-3 w-3" strokeWidth={3} /> : null}
+        </span>
       </button>
     );
   };
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
+    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-10">
       <SettingsHeader
         title="Privasi"
         subtitle="Atur siapa yang dapat melihat status Anda"
+        icon={ShieldCheck}
       />
-      <div className="space-y-4 px-4 pt-2">
-        <Card>
+      <div className="space-y-4 px-4 pt-4 sm:pt-5">
+        <Card className="overflow-hidden border-border/70 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Default status</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+              Default status
+            </CardTitle>
+            <CardDescription className="mt-1 text-xs leading-relaxed">
               Pilihan ini dipakai untuk status baru. Anda tetap bisa mengubahnya
               per status saat mengunggah.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 pt-0">
             {visibility === null ? (
-              <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" /> Memuat…
+              <div className="space-y-2 py-1" aria-busy>
+                {[0, 1].map((k) => (
+                  <div
+                    key={k}
+                    className="flex items-center gap-3 rounded-2xl border border-border/70 p-3.5"
+                  >
+                    <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-muted" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+                      <div className="h-2.5 w-48 animate-pulse rounded bg-muted/60" />
+                    </div>
+                    <div className="h-5 w-5 shrink-0 animate-pulse rounded-full bg-muted" />
+                  </div>
+                ))}
               </div>
             ) : (
               <>
@@ -130,10 +170,13 @@ function PrivasiPage() {
           </CardContent>
         </Card>
 
-        <p className="px-1 text-[11px] leading-snug text-muted-foreground">
-          Status yang sudah terlanjur diunggah tetap memakai pengaturan saat
-          diunggah. Ubah masing-masing status untuk mengganti visibilitasnya.
-        </p>
+        <div className="flex items-start gap-2.5 rounded-xl border border-border/70 bg-muted/30 p-3">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          <p className="text-[11.5px] leading-snug text-muted-foreground">
+            Status yang sudah terlanjur diunggah tetap memakai pengaturan saat
+            diunggah. Ubah masing-masing status untuk mengganti visibilitasnya.
+          </p>
+        </div>
       </div>
     </main>
   );
