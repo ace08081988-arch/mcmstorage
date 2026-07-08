@@ -341,16 +341,24 @@ function TugasPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-3 py-4">
-      <div className="mb-3">
-        <h1 className="text-lg font-semibold">Penyiapan Produk</h1>
-        <p className="text-[11px] text-muted-foreground">Pilih cara menyiapkan: kerjakan sendiri, atau kirim tugas ke pegawai.</p>
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
+            <ListTodo className="h-5 w-5 text-primary" /> Penyiapan Produk
+          </h1>
+          <p className="text-[11px] text-muted-foreground">Pilih cara menyiapkan: kerjakan sendiri, atau kirim tugas ke pegawai.</p>
+        </div>
       </div>
-      <div className="mb-3 inline-flex rounded-lg border bg-card p-1 text-xs shadow-sm">
+      <div role="tablist" aria-label="Mode penyiapan" className="mb-3 inline-flex rounded-lg border bg-card p-1 text-xs shadow-sm">
         <button
+          role="tab"
+          aria-selected={mode === "self"}
           onClick={() => setMode("self")}
           className={`rounded-md px-3 py-1.5 font-semibold transition ${mode === "self" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
         >Siapkan Sendiri</button>
         <button
+          role="tab"
+          aria-selected={mode === "staff"}
           onClick={() => setMode("staff")}
           className={`rounded-md px-3 py-1.5 font-semibold transition ${mode === "staff" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
         >Via Pegawai</button>
