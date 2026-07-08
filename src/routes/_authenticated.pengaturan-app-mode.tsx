@@ -5,6 +5,8 @@ import { AppMode, getAppMode, setAppModeOverride } from "@/lib/app-mode";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SettingsHeader } from "@/components/settings/SettingsHeader";
+import { AppWindow, MessageSquare, Layers, Info } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-app-mode")({
   head: () => ({
@@ -43,61 +45,97 @@ function AppModePage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight">Mode Aplikasi</h1>
-        <p className="text-sm text-muted-foreground">
-          Atur tampilan sidebar antara <b>Lengkap</b> (semua fitur) atau
-          <b> Chat-only</b> (hanya Komunikasi, Akun, Sistem). Data & akun
-          tetap sama.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Mode aktif sekarang</CardTitle>
-          <CardDescription>
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <Badge variant={mode === "chat" ? "default" : "secondary"}>
-                {mode === "chat" ? "Chat-only" : "Lengkap"}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Build flag <code className="rounded bg-muted px-1">VITE_APP_MODE</code>:{" "}
-                <code>{envMode}</code>
+    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-10">
+      <SettingsHeader
+        title="Mode Aplikasi"
+        subtitle="Sidebar Lengkap vs Chat-only — data & akun tetap sama"
+        icon={AppWindow}
+      />
+      <div className="space-y-4 px-4 pt-4 sm:pt-5">
+        <Card className="overflow-hidden border-border/70 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+              Mode aktif sekarang
+            </CardTitle>
+            <CardDescription className="mt-1.5">
+              <span className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant={mode === "chat" ? "default" : "secondary"}
+                  className="gap-1.5 px-2.5 py-1 text-[11px]"
+                >
+                  {mode === "chat" ? (
+                    <MessageSquare className="h-3 w-3" />
+                  ) : (
+                    <Layers className="h-3 w-3" />
+                  )}
+                  {mode === "chat" ? "Chat-only" : "Lengkap"}
+                </Badge>
+                <span className="text-[11px] text-muted-foreground">
+                  Build flag{" "}
+                  <code className="rounded bg-muted px-1 py-0.5 text-[10.5px]">VITE_APP_MODE</code>
+                  : <code className="text-foreground/80">{envMode}</code>
+                </span>
               </span>
-            </div>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button
-            variant={mode === "full" ? "default" : "outline"}
-            onClick={() => apply("full")}
-          >
-            Lengkap
-          </Button>
-          <Button
-            variant={mode === "chat" ? "default" : "outline"}
-            onClick={() => apply("chat")}
-          >
-            Chat-only
-          </Button>
-          <Button variant="ghost" onClick={clear}>
-            Hapus override lokal
-          </Button>
-        </CardContent>
-      </Card>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2 pt-0">
+            <Button
+              variant={mode === "full" ? "default" : "outline"}
+              onClick={() => apply("full")}
+              aria-pressed={mode === "full"}
+              className="min-h-11 gap-1.5"
+            >
+              <Layers className="h-4 w-4" />
+              Lengkap
+            </Button>
+            <Button
+              variant={mode === "chat" ? "default" : "outline"}
+              onClick={() => apply("chat")}
+              aria-pressed={mode === "chat"}
+              className="min-h-11 gap-1.5"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Chat-only
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={clear}
+              className="min-h-11 text-muted-foreground hover:text-foreground"
+            >
+              Hapus override lokal
+            </Button>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Cara pakai untuk build permanen</CardTitle>
-          <CardDescription>
-            Untuk deploy versi Chat-only ke domain terpisah (mis.
-            <code className="mx-1">chat.mcmstorage.biz</code>), set env
-            <code className="mx-1">VITE_APP_MODE=chat</code> saat build.
-            Override di halaman ini hanya berlaku di perangkat ini.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    </div>
+        <Card className="overflow-hidden border-border/70 bg-muted/30 shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden
+                className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15"
+              >
+                <Info className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+                  Cara pakai untuk build permanen
+                </CardTitle>
+                <CardDescription className="mt-1 text-xs leading-relaxed">
+                  Untuk deploy versi Chat-only ke domain terpisah (mis.{" "}
+                  <code className="rounded bg-background px-1 py-0.5 text-[10.5px]">
+                    chat.mcmstorage.biz
+                  </code>
+                  ), set env{" "}
+                  <code className="rounded bg-background px-1 py-0.5 text-[10.5px]">
+                    VITE_APP_MODE=chat
+                  </code>{" "}
+                  saat build. Override di halaman ini hanya berlaku di perangkat ini.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+    </main>
   );
 }

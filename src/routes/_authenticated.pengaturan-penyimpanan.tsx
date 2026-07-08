@@ -295,7 +295,7 @@ function PenyimpananPage() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
-      <SettingsHeader title="Penyimpanan dan Data" subtitle="Penggunaan lokal & unduhan otomatis" />
+      <SettingsHeader title="Penyimpanan dan Data" subtitle="Penggunaan lokal & unduhan otomatis" icon={HardDrive} />
       <div className="space-y-4 px-4 pt-2">
         <Card>
           <CardHeader className="pb-3">
