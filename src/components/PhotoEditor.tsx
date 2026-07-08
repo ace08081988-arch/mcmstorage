@@ -1308,8 +1308,15 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         )}
       </div>
 
-      {/* Tool options bar */}
-      <ToolOptionsPanel canvasReady={canvasReady} exporting={exporting}>
+      {/*
+        Tool options bar — scroll-aware. Menampilkan bayangan fade di atas
+        dan bawah saat konten meluap agar user tahu ada tombol tambahan di
+        luar viewport panel. Selain itu, memblokir tool button + memberi
+        indikator loading saat kanvas belum siap.
+      */}
+      <ToolOptionsPanel canvasReady={canvasReady} exporting={exporting}
+        // eslint-disable-next-line react/no-children-prop
+      >
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground">Warna:</span>
