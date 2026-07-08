@@ -87,6 +87,7 @@ import {
 } from "@/components/chat/ConversationExtrasDialogs";
 import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
 import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls";
+import { OrderSummaryCard } from "@/components/chat/OrderSummaryCard";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
