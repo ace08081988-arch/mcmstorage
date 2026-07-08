@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RotateCcw, Check, X, AlertTriangle } from "lucide-react";
+import { RotateCcw, Check, X, AlertTriangle, Accessibility } from "lucide-react";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { DEFAULT_APP_PREFS, useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 
@@ -160,6 +160,7 @@ function PengaturanAksesibilitasPage() {
       <SettingsHeader
         title="Aksesibilitas"
         subtitle="Skala teks, kontras, dan animasi"
+        icon={Accessibility}
       />
       <div className="space-y-4 px-4 pt-2">
         {/* Badge status "Belum disimpan" — hanya tampil kalau draft ≠ snapshot */}
