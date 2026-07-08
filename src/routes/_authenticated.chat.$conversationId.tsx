@@ -1325,6 +1325,12 @@ function ChatRoomPage() {
                                     </DropdownMenuItem>
                                   );
                                 }
+                                // Card non-sticker (lokasi/kontak/produk/keranjang) tidak boleh
+                                // dibuka di composer teks — payload mentahnya akan bocor sebagai
+                                // JSON. Untuk sekarang, sembunyikan menu "Edit" pada card semacam
+                                // itu; editor khusus per-jenis kartu adalah pekerjaan iterasi
+                                // berikutnya.
+                                if (isCardBody(m.body)) return null;
                                 return (
                                   <DropdownMenuItem
                                     onSelect={() => {
