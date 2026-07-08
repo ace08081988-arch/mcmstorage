@@ -495,7 +495,7 @@ export function AppSidebar() {
                         asChild
                         isActive={active}
                         tooltip={item.title}
-                        className="group/nav relative h-9 rounded-md px-2.5 font-medium text-sidebar-foreground/85 transition-colors duration-150 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:shadow-[inset_2px_0_0_0_var(--primary)]"
+                        className="group/nav relative h-9 overflow-hidden rounded-lg px-2.5 font-medium text-sidebar-foreground/85 transition-all duration-200 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground hover:translate-x-0.5 data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/15 data-[active=true]:to-primary/5 data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:opacity-0 before:transition-opacity data-[active=true]:before:opacity-100"
                       >
                         <NavLinkItem
                           item={item}
