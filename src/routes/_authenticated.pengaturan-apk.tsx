@@ -624,7 +624,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
             <AlertDialogAction
               className={
                 hasError
-                  ? "bg-red-600 text-white hover:bg-red-700"
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   : undefined
               }
               onClick={() => {
