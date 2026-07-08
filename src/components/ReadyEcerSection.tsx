@@ -522,7 +522,7 @@ export function ReadyEcerSection() {
   }
 
   return (
-    <div className="space-y-1.5">
+    <div ref={rootRef} className="space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
