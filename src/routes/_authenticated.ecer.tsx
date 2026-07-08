@@ -647,6 +647,7 @@ function EcerPage() {
                     onEdit={() => setEditingTitle(t)}
                     onDeleted={refetchTitles}
                     highlighted={highlightTitleId === t.id}
+                    stat={prepStats[t.id]}
                   />
                 ))}
               </div>
