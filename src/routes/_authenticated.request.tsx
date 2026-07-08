@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import { displayUnit } from "@/lib/unit-label";
+import {
+  UNIT_GROUPS,
+  UNIT_LABEL_ID,
+  canonicalUnitLabel,
+  formatQty,
+  isDecimalKind,
+  qtyPlaceholder,
+  resolveKind,
+  type UnitKind,
+} from "@/lib/unit-kinds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -389,7 +399,7 @@ function RequestPage() {
                 lines.push("Isi paket:");
                 tItems.forEach((i) => {
                   const w = items.find((wi) => wi.id === i.warehouse_item_id);
-                  lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
+                  lines.push(`• ${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`);
                 });
               }
               void shareToWhatsApp({ text: lines.join("\n"), title: `Request ${t.name}` }).then(notifyShareResult);
@@ -423,7 +433,7 @@ function RequestPage() {
                     ? tItems
                         .map((i) => {
                           const w = items.find((wi) => wi.id === i.warehouse_item_id);
-                          return `${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`;
+                          return `${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`;
                         })
                         .join(" · ")
                     : "Belum ada produk"}
@@ -536,9 +546,10 @@ function TitleEditorDialog({
   ];
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
-  const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
+  type EditorRow = { warehouse_item_id: string; target_grams: string; unit_kind: UnitKind; unit_custom: string; note: string };
+  const [rows, setRows] = useState<Array<EditorRow>>([]);
   const [busy, setBusy] = useState(false);
-  const [initialSnap, setInitialSnap] = useState<{ name: string; note: string; rows: Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }> }>({ name: "", note: "", rows: [] });
+  const [initialSnap, setInitialSnap] = useState<{ name: string; note: string; rows: Array<EditorRow> }>({ name: "", note: "", rows: [] });
   const [negErrors, setNegErrors] = useState<Record<number, string>>({});
   // Pesan error terakhir dari save() — dibaca `useSaveStatusToast`
   // saat status berubah saving → dirty (gagal simpan).
@@ -593,15 +604,19 @@ function TitleEditorDialog({
     if (!open) return;
     const nextName = existing?.name ?? "";
     const nextNote = existing?.note ?? "";
-    const nextRows =
+    const nextRows: EditorRow[] =
       existingItems.length > 0
-        ? existingItems.map((i) => ({
-            warehouse_item_id: i.warehouse_item_id,
-            target_grams: String(i.target_grams),
-            unit_label: i.unit_label,
-            note: i.note ?? "",
-          }))
-        : [{ warehouse_item_id: "", target_grams: "1", unit_label: "gram", note: "" }];
+        ? existingItems.map((i) => {
+            const kind = resolveKind(i.unit_label);
+            return {
+              warehouse_item_id: i.warehouse_item_id,
+              target_grams: String(i.target_grams),
+              unit_kind: kind,
+              unit_custom: kind === "custom" ? (i.unit_label ?? "") : "",
+              note: i.note ?? "",
+            };
+          })
+        : [{ warehouse_item_id: "", target_grams: "1", unit_kind: "gr", unit_custom: "", note: "" }];
     setName(nextName);
     setNote(nextNote);
     setRows(nextRows);
@@ -609,7 +624,7 @@ function TitleEditorDialog({
   }, [open, existing, existingItems]);
 
   function addRow() {
-    setRows((r) => [...r, { warehouse_item_id: "", target_grams: "1", unit_label: "gram", note: "" }]);
+    setRows((r) => [...r, { warehouse_item_id: "", target_grams: "1", unit_kind: "gr", unit_custom: "", note: "" }]);
   }
   function removeRow(idx: number) {
     setRows((r) => r.filter((_, i) => i !== idx));
@@ -652,7 +667,7 @@ function TitleEditorDialog({
         title_id: titleId,
         warehouse_item_id: r.warehouse_item_id,
         target_grams: Number(r.target_grams),
-        unit_label: r.unit_label || "gram",
+        unit_label: canonicalUnitLabel(r.unit_kind, r.unit_custom),
         note: r.note.trim() || null,
         position: idx,
       }));
@@ -780,18 +795,37 @@ function TitleEditorDialog({
                     ))}
                   </select>
                   <Input
-                    type="number" inputMode="decimal" step="any" min="0"
+                    type="number"
+                    inputMode={isDecimalKind(r.unit_kind) ? "decimal" : "numeric"}
+                    step={isDecimalKind(r.unit_kind) ? "any" : "1"}
+                    min="0"
                     value={r.target_grams}
                     onChange={(e) => updateRow(idx, { target_grams: sanitizeQty(idx, e.target.value) })}
-                    className="col-span-3 h-9 text-xs"
-                    placeholder="0"
-                  />
-                  <Input
-                    value={r.unit_label}
-                    onChange={(e) => updateRow(idx, { unit_label: e.target.value })}
                     className="col-span-2 h-9 text-xs"
-                    placeholder="gram"
+                    placeholder={qtyPlaceholder(r.unit_kind)}
                   />
+                  <select
+                    value={r.unit_kind}
+                    onChange={(e) => updateRow(idx, { unit_kind: e.target.value as UnitKind })}
+                    className="col-span-3 h-9 rounded-md border bg-background px-1 text-xs"
+                    aria-label="Satuan"
+                  >
+                    {UNIT_GROUPS.map((g) => (
+                      <optgroup key={g.label} label={g.label}>
+                        {g.kinds.map((k) => (
+                          <option key={k} value={k}>{UNIT_LABEL_ID[k]}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  {r.unit_kind === "custom" ? (
+                    <Input
+                      value={r.unit_custom}
+                      onChange={(e) => updateRow(idx, { unit_custom: e.target.value })}
+                      className="col-span-12 h-8 text-[11px]"
+                      placeholder="Satuan lain (mis. sachet, renceng…)"
+                    />
+                  ) : null}
                   <Input
                     value={r.note}
                     onChange={(e) => updateRow(idx, { note: e.target.value })}
@@ -928,7 +962,7 @@ function SendPrepLinkDialog({
         noteLines.push("Target isi paket:");
         for (const i of titleItems) {
           const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
-          noteLines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
+          noteLines.push(`• ${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`);
         }
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -962,7 +996,7 @@ function SendPrepLinkDialog({
       lines.push("*Isi paket:*");
       for (const i of titleItems) {
         const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
-        lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
+        lines.push(`• ${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`);
       }
     }
     lines.push("");
@@ -1174,7 +1208,7 @@ function SendPrepLinkDialog({
         doc.setFontSize(10);
         for (const i of titleItems) {
           const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
-          const line = `• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`;
+          const line = `• ${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`;
           doc.text(line, 15, y);
           y += 5;
           if (y > 280) { doc.addPage(); y = 20; }
@@ -1453,7 +1487,7 @@ function TitleDetailView({
                 const w = warehouseItems.find((x) => x.id === i.warehouse_item_id);
                 return (
                   <span key={i.id} className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                    {w?.name ?? "?"} {i.target_grams}{displayUnit(w?.name, i.unit_label)}
+                    {w?.name ?? "?"} {formatQty(i.target_grams, i.unit_label, w?.name)}
                   </span>
                 );
               })}

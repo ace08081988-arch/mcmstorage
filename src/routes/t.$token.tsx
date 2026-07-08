@@ -75,6 +75,7 @@ import {
 } from "@/components/ui/dialog";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
+import { formatQty } from "@/lib/unit-kinds";
 import {
   getWorkerPortalConfig,
   fetchAndApplyWorkerPortalConfig,
@@ -2623,7 +2624,7 @@ function ItemCard({
         throw new Error(msg);
       }
       toast.success(
-        `Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`,
+        `Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${formatQty(res.deducted ?? item.qty_requested, item.unit_label, item.name)}`,
       );
       setSendStatus({ kind: "success", at: Date.now(), count: uploaded.length });
       setPhotos([]);
@@ -2752,7 +2753,7 @@ function ItemCard({
               <div className="mt-0.5 truncate text-[10px] text-muted-foreground">{item.category ?? "—"}</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                  {item.qty_requested} {displayUnit(item.name, item.unit_label)}
+                  {formatQty(item.qty_requested, item.unit_label, item.name)}
                 </span>
                 {(item.qty_prepared ?? 0) > 0 && (
                   <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -2927,7 +2928,7 @@ function ItemCard({
         <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
           Siapkan{" "}
           <b>
-            {item.qty_requested} {displayUnit(item.name, item.unit_label)}
+            {formatQty(item.qty_requested, item.unit_label, item.name)}
           </b>{" "}
           sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang
           sebanyak itu — Anda tidak perlu mengisi angka apa pun.
@@ -3564,7 +3565,7 @@ function RequestSection({
                       {requestItems
                         .map(
                           (i) =>
-                            `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`,
+                            `${i.product_name ?? "?"} ${formatQty(i.target_grams, i.unit_label, i.product_name)}`,
                         )
                         .join(" · ") || "Tidak ada item"}
                     </div>
@@ -3582,7 +3583,7 @@ function RequestSection({
                       {requestItems
                         .map(
                           (i) =>
-                            `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`,
+                            `${i.product_name ?? "?"} ${formatQty(i.target_grams, i.unit_label, i.product_name)}`,
                         )
                         .join(" · ") || "Tidak ada item"}
                     </div>
