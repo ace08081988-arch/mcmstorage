@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { editorFeedback } from "@/lib/editor-feedback";
 import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
+import { useScrollShadow } from "@/hooks/use-scroll-shadow";
 
 export type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
 export type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
