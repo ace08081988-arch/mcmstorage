@@ -263,11 +263,7 @@ function EcerPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
-      </div>
-    );
+    return <EcerLoadingSkeleton />;
   }
 
   if (loadError && items.length === 0 && titles.length === 0) {
