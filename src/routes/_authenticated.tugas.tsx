@@ -110,6 +110,8 @@ function TugasPage() {
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
   const [progress, setProgress] = useState<Record<string, { items: number; submitted: number }>>({});
   const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
+  const [taskSearch, setTaskSearch] = useState("");
+  const [tasksLoaded, setTasksLoaded] = useState(false);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
