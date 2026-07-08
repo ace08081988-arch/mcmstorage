@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { editorFeedback } from "@/lib/editor-feedback";
 import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
+import { useScrollShadow } from "@/hooks/use-scroll-shadow";
 
 export type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
 export type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
@@ -1041,6 +1042,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   //   - `paddingBottom` panel tool options → agar env(safe-area-inset)
   //     tetap dihormati saat kbInset = 0 (safe area device fisik).
   const kbInset = useVisualViewportKeyboardInset();
+  // Ref + hook untuk indikator scroll pada panel opsi bawah. Panel ini
+  // dibatasi `max-h-[55vh]` sehingga tombol tool dapat ter-scroll ke luar
+  // pandangan pada layar sempit; user perlu tahu ke arah mana harus
+  // menggulir untuk mencapai tombol.
+  const toolPanelRef = useRef<HTMLDivElement | null>(null);
+  const { topShadow, bottomShadow } = useScrollShadow(toolPanelRef);
   return (
     <div
       className="fixed inset-x-0 top-0 z-[100] flex flex-col bg-background text-foreground"
@@ -1309,15 +1316,50 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       {/* Tool options bar */}
+      {/*
+        Panel opsi tool. Dilengkapi:
+          - gradient fade atas/bawah yang muncul otomatis saat masih ada
+            tombol di luar pandangan → user tahu perlu men-scroll.
+          - `aria-busy` + spinner kecil saat kanvas belum siap → tombol
+            tool dinonaktifkan sampai kanvas mount, tidak silent-fail.
+      */}
+      <div className="relative">
+        {topShadow && (
+          <div
+            aria-hidden
+            data-testid="tool-panel-shadow-top"
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-card to-transparent"
+          />
+        )}
+        {bottomShadow && (
+          <div
+            aria-hidden
+            data-testid="tool-panel-shadow-bottom"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-card to-transparent"
+          />
+        )}
       <div
+        ref={toolPanelRef}
+        data-scroll-shadow={
+          topShadow && bottomShadow ? "both" : topShadow ? "top" : bottomShadow ? "bottom" : "none"
+        }
+        aria-busy={!canvasReady && loadStatus === "ready"}
         className="max-h-[55vh] overflow-y-auto border-t bg-card px-2 py-2 text-xs shadow-sm"
         style={{
-          // Saat keyboard terbuka, root sudah terangkat via `bottom: kbInset`
-          // → padding di sini cukup mengikuti safe-area device fisik.
-          // Saat keyboard tertutup (kbInset = 0), tetap hormati notch/gesture bar.
           paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
         }}
       >
+        {!canvasReady && loadStatus === "ready" && (
+          <div
+            role="status"
+            aria-live="polite"
+            data-testid="tool-panel-loading"
+            className="mb-2 flex items-center gap-2 rounded-md border border-muted-foreground/20 bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Menyiapkan kanvas — tombol siap sebentar lagi.</span>
+          </div>
+        )}
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground">Warna:</span>
@@ -1565,13 +1607,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           aria-label="Toolbar editor foto"
           className="flex flex-wrap items-center gap-1"
         >
-          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" shortcut={TOOL_SHORTCUTS.select} />
-          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" shortcut={TOOL_SHORTCUTS.draw} />
-          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" shortcut={TOOL_SHORTCUTS.text} />
-          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" hint="Pilih emoji lalu ketuk untuk menempelkan di tengah" shortcut={TOOL_SHORTCUTS.emoji} />
-          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" hint="Pilih arah panah, otomatis tempel di tengah kanvas" shortcut={TOOL_SHORTCUTS.arrow} />
-          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" hint="Seret untuk ukuran bebas, atau ketuk untuk kotak default" shortcut={TOOL_SHORTCUTS.rect} />
-          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" hint="Seret dari pusat ke tepi, atau ketuk untuk ukuran default" shortcut={TOOL_SHORTCUTS.circle} />
+          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" shortcut={TOOL_SHORTCUTS.select} disabled={!canvasReady} />
+          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" shortcut={TOOL_SHORTCUTS.draw} disabled={!canvasReady} />
+          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" shortcut={TOOL_SHORTCUTS.text} disabled={!canvasReady} />
+          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" hint="Pilih emoji lalu ketuk untuk menempelkan di tengah" shortcut={TOOL_SHORTCUTS.emoji} disabled={!canvasReady} />
+          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" hint="Pilih arah panah, otomatis tempel di tengah kanvas" shortcut={TOOL_SHORTCUTS.arrow} disabled={!canvasReady} />
+          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" hint="Seret untuk ukuran bebas, atau ketuk untuk kotak default" shortcut={TOOL_SHORTCUTS.rect} disabled={!canvasReady} />
+          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" hint="Seret dari pusat ke tepi, atau ketuk untuk ukuran default" shortcut={TOOL_SHORTCUTS.circle} disabled={!canvasReady} />
           <button
             type="button"
             onClick={() => setHelpOpen((v) => !v)}
@@ -1617,6 +1659,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             <div className="mt-1 text-muted-foreground">Semua objek bisa dipilih ulang → geser, duplikat, atau hapus lewat ikon di kanan.</div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Detailed first-use / returning guide modal for Teks/Stiker/Coret */}
@@ -1766,28 +1809,48 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 }
 
 function ToolBtn({
-  active, onClick, icon, label, hint, shortcut,
+  active, onClick, icon, label, hint, shortcut, disabled = false,
 }: {
-  active: boolean; onClick: () => void; icon: React.ReactNode; label: string; hint?: string; shortcut?: string | null;
+  active: boolean; onClick: () => void; icon: React.ReactNode; label: string; hint?: string; shortcut?: string | null; disabled?: boolean;
 }) {
   // `title` memberi tooltip native saat hover (desktop) dan long-press (Android/iOS).
   // `aria-label` menambahkan konteks untuk pembaca layar, termasuk pintasan keyboard.
   const suffix = shortcut ? ` (${shortcut})` : "";
   const display = `${label}${suffix}`;
-  const aria = hint ? `${display} — ${hint}` : display;
+  const ariaBase = hint ? `${display} — ${hint}` : display;
+  const aria = disabled ? `${ariaBase} (belum siap)` : active ? `${ariaBase} (aktif)` : ariaBase;
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       title={hint ? `${display}: ${hint}` : display}
       aria-label={aria}
       aria-keyshortcuts={shortcut ?? undefined}
       aria-pressed={active}
       data-testid={`photo-editor-tool-${label.toLowerCase()}`}
       data-photo-editor-tool={label}
-      className={`inline-flex h-8 min-w-11 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${active ? "border-primary bg-primary/10" : ""}`}
+      data-state={disabled ? "loading" : active ? "active" : "ready"}
+      className={`relative inline-flex h-8 min-w-11 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-background ${active ? "border-primary bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--tw-shadow-color)] shadow-primary/40 ring-1 ring-primary/40" : ""}`}
     >
       {icon}<span>{label}</span>
+      {active && !disabled && (
+        <span
+          aria-hidden
+          data-testid={`photo-editor-tool-${label.toLowerCase()}-active-dot`}
+          className="relative ml-0.5 flex h-1.5 w-1.5 shrink-0"
+        >
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+        </span>
+      )}
+      {disabled && (
+        <Loader2
+          aria-hidden
+          data-testid={`photo-editor-tool-${label.toLowerCase()}-loading`}
+          className="ml-0.5 h-3 w-3 animate-spin text-muted-foreground"
+        />
+      )}
     </button>
   );
 }
