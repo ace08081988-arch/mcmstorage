@@ -248,6 +248,23 @@ function GudangPage() {
   const totalRevenue = useMemo(() => sales.reduce((a, s) => a + Number(s.total_revenue), 0), [sales]);
   const totalCost = useMemo(() => sales.reduce((a, s) => a + Number(s.cost_at_sale), 0), [sales]);
 
+  const invSummary = useMemo(() => {
+    let low = 0;
+    let out = 0;
+    for (const it of items) {
+      const stock = Number(it.stock_base ?? 0);
+      const size = Number(it.package_size ?? 0) || 1;
+      if (stock <= 0) out += 1;
+      else if (stock < size) low += 1;
+    }
+    return {
+      totalProducts: items.length,
+      lowStock: low,
+      outOfStock: out,
+      totalSuppliers: suppliers.length,
+    };
+  }, [items, suppliers]);
+
   const navItems = [
     { k: "stok", label: "Stok", icon: Boxes },
     { k: "supplier", label: "Supplier", icon: Truck },
