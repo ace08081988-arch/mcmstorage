@@ -35,6 +35,7 @@ import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/L
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
 import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, type Entry as SentEntry } from "@/lib/wa-sent-history";
+import { confirm as confirmDialog } from "@/lib/confirm";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
 
