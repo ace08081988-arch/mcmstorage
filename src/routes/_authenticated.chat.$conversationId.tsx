@@ -90,6 +90,7 @@ import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls
 import { OrderSummaryCard } from "@/components/chat/OrderSummaryCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
+import { isCardBody } from "@/lib/chat-cards";
 import {
   DELETED_PLACEHOLDER,
   MessagePreview,
@@ -98,10 +99,9 @@ import {
 
 const safePreview = messagePreviewText;
 // Body pesan bisa berisi payload card MCM (sentinel "[mcm-card:v1]" + JSON).
-// Helper ini mengembalikan teks yang aman ditampilkan/disalin: null bila
-// body adalah card, atau string biasa untuk pesan teks. Mencegah JSON mentah
-// bocor ke UI walau decodeCard gagal.
-import { isCardBody } from "@/lib/chat-cards";
+// plainBodyText mengembalikan teks aman untuk Linkify/copy: string kosong
+// bila body adalah card, atau string biasa untuk pesan teks. Mencegah JSON
+// mentah bocor ke UI walau decodeCard gagal / payload rusak.
 function plainBodyText(body: string | null | undefined): string {
   if (!body) return "";
   if (isCardBody(body)) return "";
