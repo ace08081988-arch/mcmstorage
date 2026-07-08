@@ -11,6 +11,9 @@ import {
   Users,
   Wallet,
   History,
+  Package,
+  AlertTriangle,
+  PackageX,
 } from "lucide-react";
 import { notifyError } from "@/lib/friendly-error";
 import { StatusBadge } from "@/components/StatusBadge";
