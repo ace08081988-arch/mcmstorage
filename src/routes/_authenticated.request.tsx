@@ -546,9 +546,10 @@ function TitleEditorDialog({
   ];
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
-  const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
+  type EditorRow = { warehouse_item_id: string; target_grams: string; unit_kind: UnitKind; unit_custom: string; note: string };
+  const [rows, setRows] = useState<Array<EditorRow>>([]);
   const [busy, setBusy] = useState(false);
-  const [initialSnap, setInitialSnap] = useState<{ name: string; note: string; rows: Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }> }>({ name: "", note: "", rows: [] });
+  const [initialSnap, setInitialSnap] = useState<{ name: string; note: string; rows: Array<EditorRow> }>({ name: "", note: "", rows: [] });
   const [negErrors, setNegErrors] = useState<Record<number, string>>({});
   // Pesan error terakhir dari save() — dibaca `useSaveStatusToast`
   // saat status berubah saving → dirty (gagal simpan).
@@ -603,15 +604,19 @@ function TitleEditorDialog({
     if (!open) return;
     const nextName = existing?.name ?? "";
     const nextNote = existing?.note ?? "";
-    const nextRows =
+    const nextRows: EditorRow[] =
       existingItems.length > 0
-        ? existingItems.map((i) => ({
-            warehouse_item_id: i.warehouse_item_id,
-            target_grams: String(i.target_grams),
-            unit_label: i.unit_label,
-            note: i.note ?? "",
-          }))
-        : [{ warehouse_item_id: "", target_grams: "1", unit_label: "gram", note: "" }];
+        ? existingItems.map((i) => {
+            const kind = resolveKind(i.unit_label);
+            return {
+              warehouse_item_id: i.warehouse_item_id,
+              target_grams: String(i.target_grams),
+              unit_kind: kind,
+              unit_custom: kind === "custom" ? (i.unit_label ?? "") : "",
+              note: i.note ?? "",
+            };
+          })
+        : [{ warehouse_item_id: "", target_grams: "1", unit_kind: "gr", unit_custom: "", note: "" }];
     setName(nextName);
     setNote(nextNote);
     setRows(nextRows);
@@ -619,7 +624,7 @@ function TitleEditorDialog({
   }, [open, existing, existingItems]);
 
   function addRow() {
-    setRows((r) => [...r, { warehouse_item_id: "", target_grams: "1", unit_label: "gram", note: "" }]);
+    setRows((r) => [...r, { warehouse_item_id: "", target_grams: "1", unit_kind: "gr", unit_custom: "", note: "" }]);
   }
   function removeRow(idx: number) {
     setRows((r) => r.filter((_, i) => i !== idx));
@@ -662,7 +667,7 @@ function TitleEditorDialog({
         title_id: titleId,
         warehouse_item_id: r.warehouse_item_id,
         target_grams: Number(r.target_grams),
-        unit_label: r.unit_label || "gram",
+        unit_label: canonicalUnitLabel(r.unit_kind, r.unit_custom),
         note: r.note.trim() || null,
         position: idx,
       }));
