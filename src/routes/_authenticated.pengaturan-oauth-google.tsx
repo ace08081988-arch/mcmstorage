@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
@@ -444,7 +445,7 @@ function OAuthGooglePage() {
   if (!isAdmin) {
     return (
       <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
-        <SettingsHeader title="OAuth Google (BYOK)" subtitle="Panduan admin" />
+        <SettingsHeader title="OAuth Google (BYOK)" subtitle="Panduan admin" icon={KeyRound} />
         <Card className="mx-4 mt-2 border-destructive/40">
           <CardContent className="flex items-start gap-3 py-4 text-sm">
             <ShieldAlert className="mt-0.5 h-4 w-4 text-destructive" />
@@ -462,6 +463,7 @@ function OAuthGooglePage() {
       <SettingsHeader
         title="OAuth Google (BYOK)"
         subtitle="Ganti kredensial bawaan agar layar consent tampil sebagai MCM Storage"
+        icon={KeyRound}
       />
       <div className="space-y-4 px-4 pt-2">
         <Card className="border-amber-500/40 bg-amber-500/5">
