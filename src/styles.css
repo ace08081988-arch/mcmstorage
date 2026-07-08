@@ -176,6 +176,26 @@
   100% { transform: translateX(300%); }
 }
 
+/*
+ * Utility elevation — konsisten light/dark (token --shadow-* diselaraskan
+ * per mode di :root & .dark). Pakai `elev-sm`, `elev-md`, `elev-lg` alih-alih
+ * `shadow-*` bawaan untuk permukaan berlapis (card, sheet, popover) agar
+ * dark mode tidak flat.
+ */
+@utility elev-xs { box-shadow: var(--shadow-xs); }
+@utility elev-sm { box-shadow: var(--shadow-sm); }
+@utility elev-md { box-shadow: var(--shadow-md); }
+@utility elev-lg { box-shadow: var(--shadow-lg); }
+
+/*
+ * Utility soft-status — pengganti hardcoded `bg-amber-500/15 text-amber-700`
+ * agar konsisten light/dark & mengikuti aksen aksesibilitas kontras tinggi.
+ */
+@utility status-success { background-color: var(--success-soft); color: var(--success); }
+@utility status-warning { background-color: var(--warning-soft); color: var(--warning); }
+@utility status-info    { background-color: var(--info-soft);    color: var(--info); }
+@utility status-danger  { background-color: color-mix(in oklab, var(--destructive) 15%, var(--background)); color: var(--destructive); }
+
 @layer base {
   * {
     border-color: var(--color-border);
