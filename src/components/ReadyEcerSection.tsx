@@ -436,6 +436,24 @@ export function ReadyEcerSection() {
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
   const [view, setView] = useState<"active" | "sent">("active");
+  // Ref ke root section supaya kita bisa scroll ke sini saat user datang
+  // dari toast "Lihat Riwayat" di /ecer.
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // Buka tab Riwayat + scroll ke section bila datang dari toast atau bila
+  // ReadyEcerSection sudah ter-mount saat event di-dispatch.
+  useEffect(() => {
+    const openSent = () => {
+      setView("sent");
+      // Tunggu satu frame supaya konten tab Riwayat sudah render sebelum scroll.
+      requestAnimationFrame(() => {
+        rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    if (consumeSentTabFlag()) openSent();
+    const handler = () => openSent();
+    window.addEventListener(SHOW_SENT_EVENT, handler);
+    return () => window.removeEventListener(SHOW_SENT_EVENT, handler);
+  }, []);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState<null | "delete">(null);
