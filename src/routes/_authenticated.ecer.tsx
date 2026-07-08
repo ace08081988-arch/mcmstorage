@@ -2401,6 +2401,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     }
   }
 
+  // Sembunyikan kartu yang sudah masuk Riwayat Terkirim agar tidak
+  // dobel-tampil di grid aktif + tab Riwayat.
+  const visibleShots = shots.filter((s) => !sentShotMap.has(s.id));
   return (
     <Card id={`worker-shots-${title.id}`} className="scroll-mt-20 transition-shadow">
       <CardHeader className="pb-2">
@@ -2411,9 +2414,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               {!loading && (
                 <span
                   className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
-                  title={`${shots.length} kiriman`}
+                  title={`${visibleShots.length} kiriman aktif`}
                 >
-                  {shots.length}
+                  {visibleShots.length}
                 </span>
               )}
             </CardTitle>
@@ -2430,14 +2433,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               onClick={sendWA}
               disabled={sending}
               aria-label={
-                shots.length === 0
+                visibleShots.length === 0
                   ? "Kirim perintah penyiapan ke pegawai via WhatsApp"
-                  : `Kirim ${shots.length} kiriman pegawai via WhatsApp`
+                  : `Kirim ${visibleShots.length} kiriman pegawai via WhatsApp`
               }
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               <MessageCircle className="h-3.5 w-3.5" />
-              {shots.length === 0 ? "Kirim perintah" : "Kirim WA"}
+              {visibleShots.length === 0 ? "Kirim perintah" : "Kirim WA"}
             </Button>
           </div>
         </div>
@@ -2453,13 +2456,13 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
             Gagal memuat: {error}
           </div>
-        ) : shots.length === 0 ? (
+        ) : visibleShots.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
             Belum ada kiriman pegawai untuk judul ini. Bagikan link tugas ke pegawai dari halaman Tugas.
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {shots.map((s) => {
+            {visibleShots.map((s) => {
               const paths = shotPaths(s);
               const isWa = waSendingId === s.id;
               const isChat = chatSendingId === s.id;
