@@ -67,7 +67,7 @@ import { ringUser } from "@/lib/webrtc";
 import { dispatchStartCall } from "@/components/chat/CallHost";
 import { usePeerAlias } from "@/lib/contact-alias";
 import { AttachMenu } from "@/components/chat/AttachMenu";
-import { MessageAttachment, CardBlock, decodeCard } from "@/components/chat/MessageAttachment";
+import { MessageAttachment, CardBlock, UnknownCardBlock, decodeCard } from "@/components/chat/MessageAttachment";
 import { previewText } from "@/lib/chat-cards";
 import { SelectionToolbar } from "@/components/chat/SelectionToolbar";
 import { PinnedBanner } from "@/components/chat/PinnedBanner";
@@ -90,6 +90,7 @@ import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls
 import { OrderSummaryCard } from "@/components/chat/OrderSummaryCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
+import { isCardBody } from "@/lib/chat-cards";
 import {
   DELETED_PLACEHOLDER,
   MessagePreview,
@@ -1137,12 +1138,15 @@ function ChatRoomPage() {
                                   />
                                 ) : null}
                                 {card ? <CardBlock card={card} mine={mine} /> : null}
-                                {!card && m.body ? (
+                                {!card && isCardBody(m.body) ? (
+                                  <UnknownCardBlock mine={mine} />
+                                ) : null}
+                                {!card && !isCardBody(m.body) && m.body ? (
                                   <div className="whitespace-pre-wrap break-words">
                                     <Linkify text={m.body} />
                                   </div>
                                 ) : null}
-                                {!card && m.body ? (
+                                {!card && !isCardBody(m.body) && m.body ? (
                                   <UrlPreviewList text={m.body} mine={mine} />
                                 ) : null}
                               </div>
@@ -1267,7 +1271,9 @@ function ChatRoomPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() => {
-                                const text = m.deleted_at ? DELETED_PLACEHOLDER : (m.body ?? "");
+                                const text = m.deleted_at
+                                  ? DELETED_PLACEHOLDER
+                                  : (safePreview(m) ?? "");
                                 navigator.clipboard?.writeText(text).then(
                                   () => toast.success("Teks pesan disalin"),
                                   () => toast.error("Gagal menyalin"),
@@ -1396,10 +1402,19 @@ function ChatRoomPage() {
                         : "bg-primary/80 text-primary-foreground"
                     }`}
                   >
-                    <div className="whitespace-pre-wrap break-words">
-                      <Linkify text={o.body} />
-                    </div>
-                    <UrlPreviewList text={o.body} mine />
+                    {(() => {
+                      const outCard = decodeCard(o.body);
+                      if (outCard) return <CardBlock card={outCard} mine={true} />;
+                      if (isCardBody(o.body)) return <UnknownCardBlock mine={true} />;
+                      return (
+                        <>
+                          <div className="whitespace-pre-wrap break-words">
+                            <Linkify text={o.body} />
+                          </div>
+                          <UrlPreviewList text={o.body} mine />
+                        </>
+                      );
+                    })()}
                     <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] opacity-90">
                       <span>{fmtTime(o.createdAt)}</span>
                       {o.status === "sending" ? (
@@ -1449,7 +1464,9 @@ function ChatRoomPage() {
             <Pencil className="mt-0.5 h-3.5 w-3.5 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-primary">Edit pesan</div>
-              <div className="line-clamp-2 text-muted-foreground">{editing.body || "(kosong)"}</div>
+              <div className="line-clamp-2 text-muted-foreground">
+                {previewText(editing.body) || "(kosong)"}
+              </div>
             </div>
             <Button
               type="button"

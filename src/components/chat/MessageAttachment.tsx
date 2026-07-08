@@ -1,11 +1,38 @@
 import { useEffect, useState } from "react";
-import { FileText, Download, MapPin, Phone, MessageCircle, Package, Navigation, ShoppingCart } from "lucide-react";
+import { FileText, Download, MapPin, Phone, MessageCircle, Package, Navigation, ShoppingCart, AlertTriangle } from "lucide-react";
 import { signedChatUrl } from "@/lib/chat-attachments";
 import { decodeCard, type Card } from "@/lib/chat-cards";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { StickerView } from "@/components/chat/StickerView";
 import { VoiceNotePlayer } from "@/components/chat/VoiceNotePlayer";
+
+/**
+ * Fallback yang ditampilkan saat body pesan berisi payload card MCM tapi
+ * decodeCard gagal (payload rusak / versi baru yang belum dikenali).
+ * Wajib dipakai agar JSON mentah tidak pernah bocor ke UI chat.
+ */
+export function UnknownCardBlock({ mine }: { mine: boolean }) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-xs ${
+        mine
+          ? "border-primary-foreground/30 bg-primary-foreground/10"
+          : "border-border bg-background/70"
+      }`}
+      role="note"
+      aria-label="Pesan spesial tidak dapat ditampilkan"
+    >
+      <AlertTriangle className="h-4 w-4 shrink-0 opacity-70" />
+      <div className="min-w-0 flex-1">
+        <div className="font-medium">Pesan spesial</div>
+        <div className="opacity-70">
+          Format tidak dikenali. Perbarui aplikasi untuk melihat kartu ini.
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function bytes(n: number | null | undefined): string {
   if (!n) return "";

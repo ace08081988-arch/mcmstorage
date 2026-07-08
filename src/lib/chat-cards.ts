@@ -76,6 +76,18 @@ export type Card =
 
 const SENTINEL = "[mcm-card:v1]";
 
+export const CARD_SENTINEL = SENTINEL;
+
+/**
+ * Cek apakah body pesan adalah payload card (dimulai dengan sentinel).
+ * Dipakai renderer untuk mencegah JSON mentah bocor ke UI walau
+ * decodeCard gagal (mis. payload rusak / versi baru yang belum dikenali).
+ */
+export function isCardBody(body: string | null | undefined): boolean {
+  if (!body) return false;
+  return body.startsWith(SENTINEL);
+}
+
 export function encodeCard(card: Card, fallbackText?: string): string {
   return `${SENTINEL}\n${JSON.stringify(card)}${fallbackText ? `\n${fallbackText}` : ""}`;
 }
