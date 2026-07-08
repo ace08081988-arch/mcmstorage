@@ -1864,6 +1864,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [waSendingId, setWaSendingId] = useState<string | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
   const [chatPickShot, setChatPickShot] = useState<WorkerShot | null>(null);
+  // SSOT Riwayat Terkirim: begitu folder pegawai ditandai terkirim (WA
+  // atau Chat) lewat markSent, ia hilang dari grid aktif di section ini
+  // dan pindah ke tab "Riwayat Terkirim" di ReadyEcerSection.
+  const sentShotMap = useSentShots();
   type PreviewReq = {
     title: string;
     description: string;
