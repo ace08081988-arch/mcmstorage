@@ -88,6 +88,7 @@ import {
 import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
 import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls";
 import { OrderSummaryCard } from "@/components/chat/OrderSummaryCard";
+import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
