@@ -86,6 +86,52 @@ type Party = { id: string; name: string; contact?: string | null };
 const rupiah = (n: number) =>
   "Rp " + Math.round(n).toLocaleString("id-ID");
 
+type FinanceTone = "emerald" | "rose" | "amber" | "sky" | "danger" | "muted";
+function FinanceStatCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone?: FinanceTone;
+}) {
+  const tones: Record<FinanceTone, string> = {
+    emerald: "from-emerald-500/15 to-emerald-500/5 text-emerald-600 dark:text-emerald-300",
+    rose: "from-rose-500/15 to-rose-500/5 text-rose-600 dark:text-rose-300",
+    amber: "from-amber-500/15 to-amber-500/5 text-amber-700 dark:text-amber-300",
+    sky: "from-sky-500/15 to-sky-500/5 text-sky-600 dark:text-sky-300",
+    danger: "from-destructive/20 to-destructive/5 text-destructive",
+    muted: "from-muted/60 to-muted/20 text-foreground",
+  };
+  return (
+    <div className="rounded-2xl border bg-card p-3 shadow-sm">
+      <div className="flex items-start gap-2">
+        <div
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${tones[tone]}`}
+        >
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </div>
+          <div className="mt-0.5 truncate text-[13px] font-bold leading-tight tabular-nums">
+            {value}
+          </div>
+          {hint && (
+            <div className="mt-0.5 truncate text-[10.5px] text-muted-foreground">{hint}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Baris status pembayaran untuk disisipkan di setiap pesan WA/chat sebagai
  * verifikasi ringkas. `LUNAS` bila sisa = 0, `BAYAR SEBAGIAN` bila sudah
