@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { editorFeedback } from "@/lib/editor-feedback";
+import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 
 export type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
 export type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
@@ -1031,9 +1032,19 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   if (typeof document === "undefined") return null;
+  // Sisi bawah editor bisa tertutup soft-keyboard (dialog Teks) atau
+  // ter-clip saat toolbar browser Android muncul. Hook ini melacak
+  // selisih visualViewport vs layoutViewport dan diaplikasikan ke:
+  //   - `bottom` root (`fixed inset-x-0 top-0` + `bottom: kbInset`) →
+  //     seluruh editor terangkat di atas keyboard, jadi tombol
+  //     Batal/Simpan/Coret dst. tetap dalam viewport
+  //   - `paddingBottom` panel tool options → agar env(safe-area-inset)
+  //     tetap dihormati saat kbInset = 0 (safe area device fisik).
+  const kbInset = useVisualViewportKeyboardInset();
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
+      className="fixed inset-x-0 top-0 z-[100] flex flex-col bg-background text-foreground"
+      style={{ bottom: kbInset }}
       // Stop the editor's pointerdown from reaching parent overlays (Sheet /
       // Dialog dismissal, drag-to-close sheets in the shell). MUST be the
       // bubble phase — capture-phase stopPropagation prevents pointerdown
@@ -1300,7 +1311,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       {/* Tool options bar */}
       <div
         className="max-h-[55vh] overflow-y-auto border-t bg-card px-2 py-2 text-xs shadow-sm"
-        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+        style={{
+          // Saat keyboard terbuka, root sudah terangkat via `bottom: kbInset`
+          // → padding di sini cukup mengikuti safe-area device fisik.
+          // Saat keyboard tertutup (kbInset = 0), tetap hormati notch/gesture bar.
+          paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        }}
       >
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
