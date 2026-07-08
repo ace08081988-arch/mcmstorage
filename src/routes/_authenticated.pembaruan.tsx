@@ -533,7 +533,7 @@ function PembaruanPage() {
                       {ch.unread > 0 && (
                         <span
                           aria-hidden="true"
-                          className="grid min-w-6 shrink-0 place-items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[11px] font-semibold text-white"
+                          className="grid min-w-6 shrink-0 place-items-center rounded-full bg-success px-1.5 py-0.5 text-[11px] font-semibold text-success-foreground"
                         >
                           {ch.unread > 99 ? "99+" : ch.unread}
                         </span>
