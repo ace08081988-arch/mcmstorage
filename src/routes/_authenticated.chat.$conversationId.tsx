@@ -67,7 +67,7 @@ import { ringUser } from "@/lib/webrtc";
 import { dispatchStartCall } from "@/components/chat/CallHost";
 import { usePeerAlias } from "@/lib/contact-alias";
 import { AttachMenu } from "@/components/chat/AttachMenu";
-import { MessageAttachment, CardBlock, decodeCard } from "@/components/chat/MessageAttachment";
+import { MessageAttachment, CardBlock, UnknownCardBlock, decodeCard } from "@/components/chat/MessageAttachment";
 import { previewText } from "@/lib/chat-cards";
 import { SelectionToolbar } from "@/components/chat/SelectionToolbar";
 import { PinnedBanner } from "@/components/chat/PinnedBanner";
@@ -97,6 +97,16 @@ import {
 } from "@/lib/chat-deleted";
 
 const safePreview = messagePreviewText;
+// Body pesan bisa berisi payload card MCM (sentinel "[mcm-card:v1]" + JSON).
+// Helper ini mengembalikan teks yang aman ditampilkan/disalin: null bila
+// body adalah card, atau string biasa untuk pesan teks. Mencegah JSON mentah
+// bocor ke UI walau decodeCard gagal.
+import { isCardBody } from "@/lib/chat-cards";
+function plainBodyText(body: string | null | undefined): string {
+  if (!body) return "";
+  if (isCardBody(body)) return "";
+  return body;
+}
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
