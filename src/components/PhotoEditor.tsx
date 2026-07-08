@@ -1809,28 +1809,48 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 }
 
 function ToolBtn({
-  active, onClick, icon, label, hint, shortcut,
+  active, onClick, icon, label, hint, shortcut, disabled = false,
 }: {
-  active: boolean; onClick: () => void; icon: React.ReactNode; label: string; hint?: string; shortcut?: string | null;
+  active: boolean; onClick: () => void; icon: React.ReactNode; label: string; hint?: string; shortcut?: string | null; disabled?: boolean;
 }) {
   // `title` memberi tooltip native saat hover (desktop) dan long-press (Android/iOS).
   // `aria-label` menambahkan konteks untuk pembaca layar, termasuk pintasan keyboard.
   const suffix = shortcut ? ` (${shortcut})` : "";
   const display = `${label}${suffix}`;
-  const aria = hint ? `${display} — ${hint}` : display;
+  const ariaBase = hint ? `${display} — ${hint}` : display;
+  const aria = disabled ? `${ariaBase} (belum siap)` : active ? `${ariaBase} (aktif)` : ariaBase;
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       title={hint ? `${display}: ${hint}` : display}
       aria-label={aria}
       aria-keyshortcuts={shortcut ?? undefined}
       aria-pressed={active}
       data-testid={`photo-editor-tool-${label.toLowerCase()}`}
       data-photo-editor-tool={label}
-      className={`inline-flex h-8 min-w-11 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${active ? "border-primary bg-primary/10" : ""}`}
+      data-state={disabled ? "loading" : active ? "active" : "ready"}
+      className={`relative inline-flex h-8 min-w-11 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-background ${active ? "border-primary bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--tw-shadow-color)] shadow-primary/40 ring-1 ring-primary/40" : ""}`}
     >
       {icon}<span>{label}</span>
+      {active && !disabled && (
+        <span
+          aria-hidden
+          data-testid={`photo-editor-tool-${label.toLowerCase()}-active-dot`}
+          className="relative ml-0.5 flex h-1.5 w-1.5 shrink-0"
+        >
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+        </span>
+      )}
+      {disabled && (
+        <Loader2
+          aria-hidden
+          data-testid={`photo-editor-tool-${label.toLowerCase()}-loading`}
+          className="ml-0.5 h-3 w-3 animate-spin text-muted-foreground"
+        />
+      )}
     </button>
   );
 }
