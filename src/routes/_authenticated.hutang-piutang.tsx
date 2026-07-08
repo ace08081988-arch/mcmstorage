@@ -10,6 +10,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ArrowLeft,
+  Plus,
+  Wallet,
+  Coins,
+  CalendarClock,
+  AlertTriangle,
+  CheckCircle2,
+  Sparkles,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Scale,
+} from "lucide-react";
 import { assertDebtSource } from "@/lib/debt-source";
 import {
   Dialog,
@@ -203,6 +217,34 @@ function HutangPiutangPage() {
     }
     return { hutangSisa, piutangSisa, net: piutangSisa - hutangSisa };
   }, [debtsInPeriod, paidByDebt]);
+
+  const financeStats = useMemo(() => {
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+    let dueToday = 0;
+    let dueTodayCount = 0;
+    let overdueSum = 0;
+    let overdueCount = 0;
+    for (const d of debtsInPeriod) {
+      const sisa = Math.max(0, Number(d.amount) - (paidByDebt.get(d.id) ?? 0));
+      if (sisa <= 0 || !d.due_date) continue;
+      const dueKey = new Date(d.due_date).toISOString().slice(0, 10);
+      if (dueKey === todayKey) {
+        dueToday += sisa;
+        dueTodayCount += 1;
+      } else if (dueKey < todayKey) {
+        overdueSum += sisa;
+        overdueCount += 1;
+      }
+    }
+    let paidThisMonth = 0;
+    for (const p of payments) {
+      const t = new Date(p.paid_at).getTime();
+      if (t >= monthStart) paidThisMonth += Number(p.amount);
+    }
+    return { dueToday, dueTodayCount, overdueSum, overdueCount, paidThisMonth };
+  }, [debtsInPeriod, paidByDebt, payments]);
 
   const removeDebt = async (d: Debt) => {
     if (
@@ -405,35 +447,108 @@ function HutangPiutangPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background" data-press-scope="on">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-3 sm:px-6">
+    <div
+      className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30"
+      data-press-scope="on"
+    >
+      <header className="sticky top-0 z-10 border-b bg-card/85 backdrop-blur-md">
+        <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 sm:px-6">
           <Link
             to="/"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-accent"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border bg-background/60 hover:bg-accent"
             aria-label="Kembali"
           >
-            ←
+            <ArrowLeft className="h-4 w-4" />
           </Link>
-          <h1 className="flex-1 truncate text-base font-semibold">
-            Hutang & Piutang
-          </h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold leading-tight">
+              Hutang &amp; Piutang
+            </h1>
+            <p className="truncate text-[11px] text-muted-foreground">
+              Kelola arus tagihan &amp; pelunasan
+            </p>
+          </div>
           <Button
             size="sm"
+            className="shrink-0 rounded-xl"
             onClick={() => {
               setAddPrefill(null);
               setAddOpen(true);
             }}
+            aria-label={activeKind === "hutang" ? "Tambah hutang" : "Tambah piutang"}
           >
-            {activeKind === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
+            <Plus className="mr-1 h-4 w-4" />
+            <span className="hidden sm:inline">
+              {activeKind === "hutang" ? "Tambah hutang" : "Tambah piutang"}
+            </span>
+            <span className="sm:hidden">Tambah</span>
           </Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-3 py-4 sm:px-6">
-        <div className="mb-3 rounded-lg border bg-card p-3">
+      <main className="mx-auto max-w-3xl space-y-4 px-3 py-4 sm:px-6">
+        <section
+          aria-label="Ringkasan keuangan"
+          className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary">
+              <Sparkles className="h-3 w-3" /> Modul Keuangan
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Selisih bersih{" "}
+              <span
+                className={
+                  "font-semibold tabular-nums " +
+                  (overall.net >= 0 ? "text-emerald-600" : "text-red-600")
+                }
+              >
+                {(overall.net >= 0 ? "+" : "−") + rupiah(Math.abs(overall.net))}
+              </span>
+            </span>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            <FinanceStatCard
+              label="Total Piutang"
+              value={rupiah(overall.piutangSisa)}
+              hint="Uang yang belum masuk"
+              icon={ArrowDownCircle}
+              tone="emerald"
+            />
+            <FinanceStatCard
+              label="Total Hutang"
+              value={rupiah(overall.hutangSisa)}
+              hint="Uang yang belum keluar"
+              icon={ArrowUpCircle}
+              tone="rose"
+            />
+            <FinanceStatCard
+              label="Jatuh Tempo Hari Ini"
+              value={rupiah(financeStats.dueToday)}
+              hint={`${financeStats.dueTodayCount} catatan`}
+              icon={CalendarClock}
+              tone="amber"
+            />
+            <FinanceStatCard
+              label="Terlambat"
+              value={rupiah(financeStats.overdueSum)}
+              hint={`${financeStats.overdueCount} catatan`}
+              icon={AlertTriangle}
+              tone={financeStats.overdueCount > 0 ? "danger" : "muted"}
+            />
+            <FinanceStatCard
+              label="Terbayar Bulan Ini"
+              value={rupiah(financeStats.paidThisMonth)}
+              hint="Arus kas periode ini"
+              icon={CheckCircle2}
+              tone="sky"
+            />
+          </div>
+        </section>
+
+        <div className="rounded-2xl border bg-card p-3 shadow-sm">
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-muted-foreground">Periode:</span>
+            <span className="font-medium text-muted-foreground">Periode:</span>
             <div className="flex flex-wrap gap-1">
               {([
                 { v: "all", l: "Semua" },
@@ -445,11 +560,12 @@ function HutangPiutangPage() {
                   key={opt.v}
                   type="button"
                   onClick={() => setPeriod(opt.v)}
+                  aria-pressed={period === opt.v}
                   className={
-                    "rounded-md border px-2 py-1 text-xs " +
+                    "rounded-full border px-3 py-1 text-xs transition-colors " +
                     (period === opt.v
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "hover:bg-accent")
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "border-transparent bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground")
                   }
                 >
                   {opt.l}
@@ -468,7 +584,7 @@ function HutangPiutangPage() {
                   value={draftFrom}
                   onChange={(e) => setDraftFrom(e.target.value)}
                   className={
-                    "h-8 w-auto text-xs" +
+                    "h-9 w-auto rounded-lg text-xs" +
                     (invalidRange ? " border-destructive" : "")
                   }
                 />
@@ -478,14 +594,14 @@ function HutangPiutangPage() {
                   value={draftTo}
                   onChange={(e) => setDraftTo(e.target.value)}
                   className={
-                    "h-8 w-auto text-xs" +
+                    "h-9 w-auto rounded-lg text-xs" +
                     (invalidRange ? " border-destructive" : "")
                   }
                 />
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 px-2 text-xs"
+                  className="h-9 rounded-lg px-3 text-xs"
                   onClick={() => {
                     setCustomFrom(draftFrom);
                     setCustomTo(draftTo);
@@ -501,7 +617,7 @@ function HutangPiutangPage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-8 px-2 text-xs"
+                  className="h-9 rounded-lg px-3 text-xs"
                   onClick={() => {
                     setDraftFrom("");
                     setDraftTo("");
@@ -524,77 +640,85 @@ function HutangPiutangPage() {
           </div>
         </div>
 
-        <div className="mb-3 grid grid-cols-3 gap-2 rounded-lg border bg-card p-3 text-center text-xs">
-          <div>
-            <div className="text-muted-foreground">Sisa hutang</div>
-            <div className="font-semibold text-red-600">
-              {rupiah(overall.hutangSisa)}
-            </div>
-          </div>
-          <div>
-            <div className="text-muted-foreground">Sisa piutang</div>
-            <div className="font-semibold text-emerald-600">
-              {rupiah(overall.piutangSisa)}
-            </div>
-          </div>
-          <div>
-            <div className="text-muted-foreground">Selisih bersih</div>
-            <div
-              className={
-                "font-semibold " +
-                (overall.net >= 0 ? "text-emerald-600" : "text-red-600")
-              }
-            >
-              {(overall.net >= 0 ? "+" : "−") +
-                rupiah(Math.abs(overall.net)).replace("Rp ", "Rp ")}
-            </div>
-          </div>
-        </div>
-
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="hutang">Hutang saya</TabsTrigger>
-            <TabsTrigger value="piutang">Piutang saya</TabsTrigger>
-            <TabsTrigger value="laporan">Laporan</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 rounded-xl">
+            <TabsTrigger value="hutang" className="rounded-lg gap-1.5">
+              <ArrowUpCircle className="h-3.5 w-3.5" /> Hutang
+            </TabsTrigger>
+            <TabsTrigger value="piutang" className="rounded-lg gap-1.5">
+              <ArrowDownCircle className="h-3.5 w-3.5" /> Piutang
+            </TabsTrigger>
+            <TabsTrigger value="laporan" className="rounded-lg gap-1.5">
+              <Scale className="h-3.5 w-3.5" /> Laporan
+            </TabsTrigger>
           </TabsList>
 
           {(["hutang", "piutang"] as const).map((k) => (
             <TabsContent key={k} value={k} className="mt-3 space-y-3">
-              <div className="grid grid-cols-3 gap-2 rounded-lg border bg-card p-3 text-center text-xs">
-                <div>
-                  <div className="text-muted-foreground">Total</div>
-                  <div className="font-semibold">{rupiah(totals.total)}</div>
+              <div className="grid grid-cols-3 gap-2 rounded-2xl border bg-card p-3 text-center text-xs shadow-sm">
+                <div className="rounded-xl bg-muted/40 p-2">
+                  <div className="flex items-center justify-center gap-1 text-muted-foreground">
+                    <Wallet className="h-3 w-3" /> Total
+                  </div>
+                  <div className="mt-0.5 font-semibold tabular-nums">{rupiah(totals.total)}</div>
                 </div>
-                <div>
-                  <div className="text-muted-foreground">Terbayar</div>
-                  <div className="font-semibold text-emerald-600">
+                <div className="rounded-xl bg-emerald-500/10 p-2">
+                  <div className="flex items-center justify-center gap-1 text-emerald-700 dark:text-emerald-300">
+                    <CheckCircle2 className="h-3 w-3" /> Terbayar
+                  </div>
+                  <div className="mt-0.5 font-semibold tabular-nums text-emerald-600">
                     {rupiah(totals.paid)}
                   </div>
                 </div>
-                <div>
-                  <div className="text-muted-foreground">Sisa</div>
-                  <div className="font-semibold text-amber-600">
+                <div className="rounded-xl bg-amber-500/10 p-2">
+                  <div className="flex items-center justify-center gap-1 text-amber-700 dark:text-amber-300">
+                    <Coins className="h-3 w-3" /> Sisa
+                  </div>
+                  <div className="mt-0.5 font-semibold tabular-nums text-amber-600">
                     {rupiah(totals.sisa)}
                   </div>
                 </div>
               </div>
 
               {loading ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  Memuat…
-                </div>
+                <ul className="space-y-3" aria-busy="true" aria-live="polite">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <li key={i} className="rounded-2xl border bg-card p-3 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <Skeleton className="h-4 w-2/5" />
+                          <Skeleton className="h-3 w-1/3" />
+                        </div>
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                      <Skeleton className="mt-3 h-8 w-full" />
+                    </li>
+                  ))}
+                </ul>
               ) : filtered.length === 0 ? (
-                <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
-                  <p>Belum ada catatan {k}.</p>
+                <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card/40 py-12 text-center text-sm text-muted-foreground">
+                  <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary">
+                    {k === "hutang" ? (
+                      <ArrowUpCircle className="h-6 w-6" />
+                    ) : (
+                      <ArrowDownCircle className="h-6 w-6" />
+                    )}
+                  </div>
+                  <p className="font-semibold text-foreground">Belum ada catatan {k}</p>
+                  <p className="mx-auto max-w-xs text-xs leading-relaxed">
+                    Catat {k} secara manual atau tunggu {k === "hutang" ? "pembelian" : "penjualan"}{" "}
+                    masuk otomatis.
+                  </p>
                   <Button
                     size="sm"
-                    className="mt-3"
+                    className="mt-1 rounded-xl"
                     onClick={() => {
                       setAddPrefill(null);
                       setAddOpen(true);
                     }}
                   >
-                    {k === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
+                    <Plus className="mr-1 h-4 w-4" />
+                    {k === "hutang" ? "Tambah hutang" : "Tambah piutang"}
                   </Button>
                 </div>
               ) : (
@@ -610,24 +734,25 @@ function HutangPiutangPage() {
                     return (
                       <section
                         key={group.key}
-                        className="rounded-lg border bg-card"
+                        className="overflow-hidden rounded-2xl border bg-card shadow-sm"
                       >
-                        <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+                        <header className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-3 py-2.5">
                           <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-semibold">
+                            <div className="truncate text-sm font-semibold text-foreground">
                               {group.name}
                             </div>
                             <div className="text-[11px] text-muted-foreground">
                               {group.items.length} catatan · sisa{" "}
-                              <span className="font-medium text-amber-600">
+                              <span className="font-semibold tabular-nums text-amber-600">
                                 {rupiah(gSisa)}
                               </span>{" "}
-                              dari {rupiah(gTotal)}
+                              dari <span className="tabular-nums">{rupiah(gTotal)}</span>
                             </div>
                           </div>
                           <Button
                             size="sm"
                             variant="outline"
+                            className="h-8 rounded-lg"
                             onClick={() => {
                               setAddPrefill({
                                 kind: k,
@@ -639,16 +764,16 @@ function HutangPiutangPage() {
                             }}
                             title={`Tambah ${k} untuk ${group.name}`}
                           >
-                            + Tambah {k}
+                            <Plus className="mr-1 h-3.5 w-3.5" /> Tambah
                           </Button>
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            className="h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
                             onClick={() => void sendPartyReportWA(group)}
                             title="Kirim laporan via MCM"
                           >
-                            Kirim laporan MCM
+                            Kirim laporan
                           </Button>
                         </header>
                         <ul className="divide-y">
@@ -663,7 +788,12 @@ function HutangPiutangPage() {
                     return (
                       <li
                         key={d.id}
-                        className="p-3 text-sm"
+                        className={
+                          "p-3 text-sm transition-colors " +
+                          (overdue
+                            ? "bg-destructive/[0.04] hover:bg-destructive/[0.07]"
+                            : "hover:bg-muted/30")
+                        }
                       >
                         <div className="flex items-start gap-2">
                           <div className="min-w-0 flex-1">
@@ -691,51 +821,70 @@ function HutangPiutangPage() {
                                 {d.note}
                               </div>
                             )}
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              {d.due_date
-                                ? `Jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
-                                : "Tanpa jatuh tempo"}
+                            <div
+                              className={
+                                "mt-1 flex items-center gap-1 text-xs " +
+                                (overdue ? "text-destructive" : "text-muted-foreground")
+                              }
+                            >
+                              <CalendarClock className="h-3 w-3 shrink-0" />
+                              <span className="truncate">
+                                {d.due_date
+                                  ? `Jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
+                                  : "Tanpa jatuh tempo"}
+                              </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-semibold">
+                          <div className="shrink-0 text-right">
+                            <div className="font-semibold tabular-nums">
                               {rupiah(Number(d.amount))}
                             </div>
                             {paid > 0 && (
-                              <div className="text-[11px] text-muted-foreground">
+                              <div className="text-[11px] tabular-nums text-muted-foreground">
                                 terbayar {rupiah(paid)}
                               </div>
                             )}
-                            <div className="text-[11px] font-medium text-amber-600">
+                            <div
+                              className={
+                                "text-[11px] font-medium tabular-nums " +
+                                (lunas
+                                  ? "text-emerald-600"
+                                  : overdue
+                                    ? "text-destructive"
+                                    : "text-amber-600")
+                              }
+                            >
                               sisa {rupiah(Math.max(0, sisa))}
                             </div>
                           </div>
                         </div>
-                        <div className="mt-2 flex gap-2">
+                        <div className="mt-2 flex flex-wrap gap-1.5">
                           {!lunas && (
                             <Button
                               size="sm"
                               variant="outline"
+                              className="h-8 rounded-lg"
                               onClick={() => setPayFor(d)}
                             >
-                              + Bayar
+                              <Plus className="mr-1 h-3.5 w-3.5" /> Bayar
                             </Button>
                           )}
                           {!lunas && (
                             <Button
                               size="sm"
                               variant="secondary"
-                              className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                              className="h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
                               onClick={() => setReminderFor(d)}
                               title="Kirim pengingat via MCM"
                             >
-                              Tagih via MCM
+                              Tagih
                             </Button>
                           )}
                           {d.source === "manual" && (
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="h-8 rounded-lg"
                               onClick={() => setEditFor(d)}
                               title="Edit catatan"
                             >
@@ -745,7 +894,7 @@ function HutangPiutangPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="text-destructive hover:text-destructive"
+                            className="ml-auto h-8 rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => void removeDebt(d)}
                           >
                             Hapus
