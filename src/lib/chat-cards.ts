@@ -111,6 +111,22 @@ export function decodeCard(body: string | null | undefined): Card | null {
 
 export function previewText(body: string | null | undefined): string | null {
   if (!body) return null;
+  // Payload card tapi decode gagal / tipe baru: jangan bocorkan JSON mentah.
+  if (isCardBody(body)) {
+    const c = decodeCard(body);
+    if (!c) return "📎 Kartu chat";
+    if (c.type === "location") return c.live_until ? "📍 Berbagi live location" : "📍 Lokasi dibagikan";
+    if (c.type === "contact") return `👤 Kontak: ${c.name}`;
+    if (c.type === "product") return `🛒 Produk: ${c.name}`;
+    if (c.type === "cart") return `🛒 Keranjang · ${c.lines.length} item`;
+    if (c.type === "sticker") {
+      if (c.kind === "arrow") return `🧭 Stiker panah${c.caption ? ` · ${c.caption}` : ""}`;
+      if (c.kind === "bank") return `🏦 Rekening ${c.bank} · ${c.account_number}`;
+      if (c.kind === "text") return `🏷️ ${c.text.slice(0, 60)}`;
+      if (c.kind === "ai") return `✨ Stiker AI${c.caption ? ` · ${c.caption}` : ""}`;
+    }
+    return "📎 Kartu chat";
+  }
   const c = decodeCard(body);
   if (!c) return body;
   if (c.type === "location") return c.live_until ? "📍 Berbagi live location" : "📍 Lokasi dibagikan";
