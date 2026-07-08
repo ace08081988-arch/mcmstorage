@@ -136,7 +136,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     el.style.transition = "opacity 0ms, transform 0ms";
   }
 }
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3 } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -283,7 +283,10 @@ type NavItem = { title: string; url: string; icon: typeof Home };
 const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
   {
     label: "Utama",
-    items: [{ title: "Beranda", url: "/", icon: Home }],
+    items: [
+      { title: "Beranda", url: "/", icon: Home },
+      { title: "Dasbor", url: "/dashboard", icon: LayoutDashboard },
+    ],
   },
   {
     label: "Operasional",
