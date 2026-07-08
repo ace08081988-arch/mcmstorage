@@ -146,6 +146,7 @@ function TugasPage() {
       prog[id] = { items: itemsByTask[id] ?? 0, submitted: submittedByTask[id]?.size ?? 0 };
     }
     setProgress(prog);
+    setTasksLoaded(true);
   }
   useEffect(() => { void load(); }, [uid]);
 
