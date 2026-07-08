@@ -40,6 +40,7 @@ import {
 } from "@/lib/ecer";
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
+import { markSent, useSentShots } from "@/lib/wa-sent-history";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
@@ -1863,6 +1864,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [waSendingId, setWaSendingId] = useState<string | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
   const [chatPickShot, setChatPickShot] = useState<WorkerShot | null>(null);
+  // SSOT Riwayat Terkirim: begitu folder pegawai ditandai terkirim (WA
+  // atau Chat) lewat markSent, ia hilang dari grid aktif di section ini
+  // dan pindah ke tab "Riwayat Terkirim" di ReadyEcerSection.
+  const sentShotMap = useSentShots();
   type PreviewReq = {
     title: string;
     description: string;
@@ -2304,6 +2309,18 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       }
       const waRes = await shareToWhatsApp({ text: shotCaption(s, { sentCount: files.length, excludedCount }), title: title.name, files });
       notifyShareResult(waRes);
+      // Pindahkan folder ke Riwayat Terkirim (SSOT wa-sent-history) begitu
+      // WA benar-benar terbuka/terkirim. Tanpa ini kartu tetap muncul di
+      // grid Kiriman pegawai walau WA sudah dibuka — user merasa "tidak
+      // pindah ke Riwayat". "fallback" juga sukses (URL dibuka manual).
+      if (waRes.status === "shared" || waRes.status === "fallback") {
+        markSent([s.id], {
+          channel: "wa",
+          mapsUrl: s.location_url ?? null,
+          status: "success",
+          idemKey: `worker-shot-wa-${s.id}-${Date.now()}`,
+        });
+      }
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
     } finally {
@@ -2365,6 +2382,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             `Terkirim ke ${convTitle} — ${confirmedPhotos} foto terkonfirmasi (${result.messageCount} pesan).`,
           );
         }
+        // Pindahkan folder ke Riwayat Terkirim setelah backend mengonfirmasi
+        // pengiriman ke MCM Chat. Simetris dengan alur WA di sendShotWA.
+        markSent([s.id], {
+          channel: "chat",
+          mapsUrl: s.location_url ?? null,
+          status: "success",
+          idemKey: `worker-shot-chat-${s.id}-${Date.now()}`,
+        });
       } else {
         toast.error(`Gagal mengirim: ${result.error}`);
       }
@@ -2376,6 +2401,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     }
   }
 
+  // Sembunyikan kartu yang sudah masuk Riwayat Terkirim agar tidak
+  // dobel-tampil di grid aktif + tab Riwayat.
+  const visibleShots = shots.filter((s) => !sentShotMap.has(s.id));
   return (
     <Card id={`worker-shots-${title.id}`} className="scroll-mt-20 transition-shadow">
       <CardHeader className="pb-2">
@@ -2386,9 +2414,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               {!loading && (
                 <span
                   className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
-                  title={`${shots.length} kiriman`}
+                  title={`${visibleShots.length} kiriman aktif`}
                 >
-                  {shots.length}
+                  {visibleShots.length}
                 </span>
               )}
             </CardTitle>
@@ -2405,14 +2433,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               onClick={sendWA}
               disabled={sending}
               aria-label={
-                shots.length === 0
+                visibleShots.length === 0
                   ? "Kirim perintah penyiapan ke pegawai via WhatsApp"
-                  : `Kirim ${shots.length} kiriman pegawai via WhatsApp`
+                  : `Kirim ${visibleShots.length} kiriman pegawai via WhatsApp`
               }
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               <MessageCircle className="h-3.5 w-3.5" />
-              {shots.length === 0 ? "Kirim perintah" : "Kirim WA"}
+              {visibleShots.length === 0 ? "Kirim perintah" : "Kirim WA"}
             </Button>
           </div>
         </div>
@@ -2428,13 +2456,13 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
             Gagal memuat: {error}
           </div>
-        ) : shots.length === 0 ? (
+        ) : visibleShots.length === 0 ? (
           <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
             Belum ada kiriman pegawai untuk judul ini. Bagikan link tugas ke pegawai dari halaman Tugas.
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {shots.map((s) => {
+            {visibleShots.map((s) => {
               const paths = shotPaths(s);
               const isWa = waSendingId === s.id;
               const isChat = chatSendingId === s.id;
