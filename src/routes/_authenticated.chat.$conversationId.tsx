@@ -1411,10 +1411,19 @@ function ChatRoomPage() {
                         : "bg-primary/80 text-primary-foreground"
                     }`}
                   >
-                    <div className="whitespace-pre-wrap break-words">
-                      <Linkify text={o.body} />
-                    </div>
-                    <UrlPreviewList text={o.body} mine />
+                    {(() => {
+                      const outCard = decodeCard(o.body);
+                      if (outCard) return <CardBlock card={outCard} mine={true} />;
+                      if (isCardBody(o.body)) return <UnknownCardBlock mine={true} />;
+                      return (
+                        <>
+                          <div className="whitespace-pre-wrap break-words">
+                            <Linkify text={o.body} />
+                          </div>
+                          <UrlPreviewList text={o.body} mine />
+                        </>
+                      );
+                    })()}
                     <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] opacity-90">
                       <span>{fmtTime(o.createdAt)}</span>
                       {o.status === "sending" ? (
