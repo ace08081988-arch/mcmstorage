@@ -843,6 +843,7 @@ export type Database = {
       ecer_preparations: {
         Row: {
           actual_grams: number
+          archived_at: string | null
           created_at: string
           created_by: string
           gps_lat: number | null
@@ -852,6 +853,8 @@ export type Database = {
           note: string | null
           photo_path: string | null
           prep_task_item_id: string | null
+          ready_at: string | null
+          rejection_reason: string | null
           sold_at: string | null
           sold_customer_id: string | null
           sold_note: string | null
@@ -861,10 +864,14 @@ export type Database = {
           sold_total: number | null
           title_id: string
           user_id: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
           warehouse_item_id: string
         }
         Insert: {
           actual_grams: number
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           gps_lat?: number | null
@@ -874,6 +881,8 @@ export type Database = {
           note?: string | null
           photo_path?: string | null
           prep_task_item_id?: string | null
+          ready_at?: string | null
+          rejection_reason?: string | null
           sold_at?: string | null
           sold_customer_id?: string | null
           sold_note?: string | null
@@ -883,10 +892,14 @@ export type Database = {
           sold_total?: number | null
           title_id: string
           user_id: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           warehouse_item_id: string
         }
         Update: {
           actual_grams?: number
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           gps_lat?: number | null
@@ -896,6 +909,8 @@ export type Database = {
           note?: string | null
           photo_path?: string | null
           prep_task_item_id?: string | null
+          ready_at?: string | null
+          rejection_reason?: string | null
           sold_at?: string | null
           sold_customer_id?: string | null
           sold_note?: string | null
@@ -905,6 +920,9 @@ export type Database = {
           sold_total?: number | null
           title_id?: string
           user_id?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           warehouse_item_id?: string
         }
         Relationships: [
@@ -1700,9 +1718,13 @@ export type Database = {
           photo_path: string | null
           photo_paths: string[]
           qty_reported: number | null
+          rejection_reason: string | null
           submitted_at: string
           task_id: string
           task_item_id: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           gps_lat?: number | null
@@ -1713,9 +1735,13 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           qty_reported?: number | null
+          rejection_reason?: string | null
           submitted_at?: string
           task_id: string
           task_item_id: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           gps_lat?: number | null
@@ -1726,9 +1752,13 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           qty_reported?: number | null
+          rejection_reason?: string | null
           submitted_at?: string
           task_id?: string
           task_item_id?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -2161,6 +2191,7 @@ export type Database = {
       }
       request_preparations: {
         Row: {
+          archived_at: string | null
           created_at: string
           created_by: string
           gps_lat: number | null
@@ -2171,6 +2202,8 @@ export type Database = {
           photo_path: string | null
           photo_paths: string[]
           prep_task_item_id: string | null
+          ready_at: string | null
+          rejection_reason: string | null
           sold_at: string | null
           sold_customer_id: string | null
           sold_paid_amount: number | null
@@ -2179,9 +2212,13 @@ export type Database = {
           sold_total: number | null
           title_id: string
           user_id: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
           via_task_id: string | null
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           gps_lat?: number | null
@@ -2192,6 +2229,8 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           prep_task_item_id?: string | null
+          ready_at?: string | null
+          rejection_reason?: string | null
           sold_at?: string | null
           sold_customer_id?: string | null
           sold_paid_amount?: number | null
@@ -2200,9 +2239,13 @@ export type Database = {
           sold_total?: number | null
           title_id: string
           user_id: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           via_task_id?: string | null
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           gps_lat?: number | null
@@ -2213,6 +2256,8 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           prep_task_item_id?: string | null
+          ready_at?: string | null
+          rejection_reason?: string | null
           sold_at?: string | null
           sold_customer_id?: string | null
           sold_paid_amount?: number | null
@@ -2221,6 +2266,9 @@ export type Database = {
           sold_total?: number | null
           title_id?: string
           user_id?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           via_task_id?: string | null
         }
         Relationships: [
@@ -3522,6 +3570,10 @@ export type Database = {
         Returns: boolean
       }
       prep_share_token_exists: { Args: { _token: string }; Returns: boolean }
+      prep_submission_verify: {
+        Args: { _decision: string; _reason?: string; _submission_id: string }
+        Returns: Json
+      }
       prep_submit:
         | {
             Args: {
