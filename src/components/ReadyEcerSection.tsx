@@ -2108,9 +2108,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
 
   return (
     <div
+      ref={cardRootRef}
+      data-just-moved={justMoved ? "1" : undefined}
       className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md ${
         selectMode ? "cursor-pointer" : ""
-      } ${selected ? "ring-2 ring-primary ring-offset-1" : ""}`}
+      } ${selected ? "ring-2 ring-primary ring-offset-1" : ""} ${
+        justMoved ? "ring-2 ring-emerald-400 ring-offset-2 shadow-lg shadow-emerald-500/20 animate-pulse" : ""
+      }`}
       onClickCapture={
         selectMode
           ? (e) => {
