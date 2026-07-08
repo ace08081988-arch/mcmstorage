@@ -748,6 +748,207 @@ function DashboardPage() {
         </div>
       </section>
 
+      {/* Executive report (period-scoped, additive) */}
+      <section aria-label="Laporan eksekutif" className="space-y-4 sm:space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm">
+              <LineChart className="h-3 w-3 text-primary" />
+              Laporan Eksekutif
+            </div>
+            <h2 className="mt-2 text-lg font-bold tracking-tight sm:text-xl">
+              Kinerja bisnis · <span className="text-muted-foreground font-semibold">{range.label}</span>
+            </h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportSales}
+              disabled={reportLoading || (report?.salesRows.length ?? 0) === 0}
+              className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-background disabled:hover:text-foreground"
+              aria-label="Ekspor CSV penjualan"
+            >
+              <Download className="h-3.5 w-3.5" /> CSV Penjualan
+            </button>
+            <button
+              type="button"
+              onClick={handleExportTopProducts}
+              disabled={reportLoading || (report?.topProducts.length ?? 0) === 0}
+              className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-background disabled:hover:text-foreground"
+              aria-label="Ekspor CSV top produk"
+            >
+              <Download className="h-3.5 w-3.5" /> CSV Top Produk
+            </button>
+          </div>
+        </div>
+
+        {/* Period filter chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <Filter className="h-3 w-3" /> Rentang
+          </span>
+          {PERIOD_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setPeriod(opt.key)}
+              aria-pressed={period === opt.key}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-semibold transition-all",
+                period === opt.key
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {period === "custom" ? (
+            <div className="flex items-center gap-1.5 rounded-full border bg-background px-2 py-1 shadow-sm">
+              <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                aria-label="Tanggal mulai"
+                className="bg-transparent text-xs font-medium outline-none tabular-nums"
+              />
+              <span className="text-xs text-muted-foreground">→</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                aria-label="Tanggal akhir"
+                className="bg-transparent text-xs font-medium outline-none tabular-nums"
+              />
+            </div>
+          ) : null}
+        </div>
+
+        {/* Exec KPI grid */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <ExecKpi
+            label="Pendapatan periode"
+            value={IDR.format(report?.revenuePeriod ?? 0)}
+            hint={range.label}
+            icon={TrendingUp}
+            tone="primary"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Pendapatan bulan ini"
+            value={IDR.format(report?.revenueMonth ?? 0)}
+            hint="Dari tanggal 1"
+            icon={CalendarIcon}
+            tone="sky"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Jumlah transaksi"
+            value={String(report?.ordersPeriod ?? 0)}
+            hint="Order di periode"
+            icon={ReceiptText}
+            tone="violet"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Keuntungan periode"
+            value={IDR.format(report?.profitPeriod ?? 0)}
+            hint={(report?.profitPeriod ?? 0) >= 0 ? "Estimasi kotor" : "Rugi periode"}
+            icon={Sparkles}
+            tone="emerald"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Nilai inventaris"
+            value={IDR.format(report?.inventoryValue ?? 0)}
+            hint="Stok × HPP rata-rata"
+            icon={Warehouse}
+            tone="amber"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Pelanggan aktif"
+            value={String(report?.activeCustomers ?? 0)}
+            hint={`Dari ${report?.customersTotal ?? 0} total`}
+            icon={Users}
+            tone="rose"
+            loading={reportLoading}
+          />
+        </div>
+
+        {/* Top products table */}
+        <div className="relative overflow-hidden rounded-2xl border bg-card/80 shadow-sm backdrop-blur-sm">
+          <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-3 sm:px-5">
+            <div className="min-w-0">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Produk terlaris
+              </div>
+              <div className="mt-0.5 text-sm font-semibold">Top 5 · {range.label}</div>
+            </div>
+            <span className="hidden shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary ring-1 ring-primary/20 sm:inline-flex">
+              <TrendingUp className="h-3 w-3" /> Berdasarkan pendapatan
+            </span>
+          </div>
+          {reportLoading ? (
+            <div className="space-y-2 p-4 sm:p-5">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="h-8 w-8 shrink-0 animate-pulse rounded-lg bg-muted" />
+                  <div className="h-3 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-muted/70" />
+                </div>
+              ))}
+            </div>
+          ) : (report?.topProducts.length ?? 0) === 0 ? (
+            <div className="flex flex-col items-center gap-2 p-8 text-center">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-muted/60 text-muted-foreground">
+                <Boxes className="h-5 w-5" />
+              </span>
+              <div className="text-sm font-medium">Belum ada penjualan</div>
+              <div className="text-xs text-muted-foreground">
+                Tidak ada transaksi pada rentang {range.label.toLowerCase()}.
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/20 text-left text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    <th scope="col" className="px-4 py-2.5 sm:px-5">#</th>
+                    <th scope="col" className="px-4 py-2.5">Produk</th>
+                    <th scope="col" className="px-4 py-2.5 text-right tabular-nums">Pendapatan</th>
+                    <th scope="col" className="hidden px-4 py-2.5 text-right tabular-nums sm:table-cell">Qty</th>
+                    <th scope="col" className="hidden px-4 py-2.5 text-right tabular-nums sm:table-cell sm:px-5">Trx</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report!.topProducts.map((p, i) => (
+                    <tr key={i} className="border-b last:border-b-0 transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3 text-xs font-semibold text-muted-foreground sm:px-5">
+                        {i + 1}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="truncate font-medium">{p.name}</div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                        {IDR.format(p.revenue)}
+                      </td>
+                      <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground sm:table-cell">
+                        {p.qty.toLocaleString("id-ID")}
+                      </td>
+                      <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground sm:table-cell sm:px-5">
+                        {p.orders}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Quick actions */}
       <section aria-label="Aksi cepat">
         <div className="mb-4 flex items-center justify-between">
