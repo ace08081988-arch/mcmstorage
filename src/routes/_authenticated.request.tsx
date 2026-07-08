@@ -282,6 +282,8 @@ function RequestPage() {
         </Button>
       </div>
 
+      <PendingVerificationSection />
+
       {unrouted.length > 0 && (
         <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">
           <CardHeader className="pb-2">
