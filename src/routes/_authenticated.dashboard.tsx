@@ -754,6 +754,8 @@ function DashboardPage() {
           <h2 className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Aksi cepat
           </h2>
+
+      {/* --- injected marker --- */}
           {prepActiveCount > 0 ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2.5 py-1 text-[11px] font-semibold text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
               <ClipboardList className="h-3 w-3" />
