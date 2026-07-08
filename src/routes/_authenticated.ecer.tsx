@@ -436,6 +436,21 @@ function EcerPage() {
 
   const totalTitles = titles.length;
 
+  // Ringkasan status Judul Ecer (indikatif, dari prepStats).
+  //  - Siap    : ada penyiapan, semua sudah terkirim (sold_at != null)
+  //  - Berjalan: ada penyiapan, sebagian belum terkirim
+  //  - Menunggu: belum ada penyiapan sama sekali
+  //  - Selesai : sama dengan "Siap" (semua sold) — mengikuti label yang diminta
+  let readyCount = 0;
+  let inProgressCount = 0;
+  let waitingCount = 0;
+  for (const t of titles) {
+    const s = prepStats[t.id];
+    if (!s || s.total === 0) waitingCount += 1;
+    else if (s.sold >= s.total) readyCount += 1;
+    else inProgressCount += 1;
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
       {/* Hero header */}
