@@ -84,10 +84,10 @@ function QuickRepliesPage() {
                     <p className="font-mono text-xs text-primary">/{r.shortcut}</p>
                     <p className="whitespace-pre-wrap text-sm">{r.body}</p>
                   </div>
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDraft({ id: r.id, shortcut: r.shortcut, body: r.body })}>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit balasan cepat" onClick={() => setDraft({ id: r.id, shortcut: r.shortcut, body: r.body })}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => del.mutate(r.id)}>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label="Hapus balasan cepat" onClick={() => del.mutate(r.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </CardContent>
