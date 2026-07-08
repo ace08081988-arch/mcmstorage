@@ -916,7 +916,7 @@ function ConvList({
                               <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-muted opacity-70" aria-label="Terkirim" />
                             )
                           ) : null}
-                          <span className="truncate">{previewText(c.last_body) ?? c.last_body}</span>
+                          <span className="truncate">{previewText(c.last_body) ?? ""}</span>
                         </>
                       ) : (
                         <em className="text-muted-foreground/70">Belum ada pesan</em>
