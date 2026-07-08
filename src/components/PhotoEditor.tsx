@@ -1767,6 +1767,8 @@ function ToolBtn({
       aria-label={aria}
       aria-keyshortcuts={shortcut ?? undefined}
       aria-pressed={active}
+      data-testid={`photo-editor-tool-${label.toLowerCase()}`}
+      data-photo-editor-tool={label}
       className={`inline-flex h-8 min-w-11 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${active ? "border-primary bg-primary/10" : ""}`}
     >
       {icon}<span>{label}</span>
