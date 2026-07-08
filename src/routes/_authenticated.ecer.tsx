@@ -2402,6 +2402,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           status: "success",
           idemKey: `worker-shot-chat-${s.id}-${Date.now()}`,
         });
+        toast.success("Terkirim — pindah ke Riwayat", {
+          description: `${title.name} · MCM Chat`,
+          action: {
+            label: "Lihat Riwayat",
+            onClick: () => {
+              requestOpenSentHistory();
+              void navigate({ to: "/" });
+            },
+          },
+        });
       } else {
         toast.error(`Gagal mengirim: ${result.error}`);
       }
