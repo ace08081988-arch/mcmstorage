@@ -399,7 +399,7 @@ function RequestPage() {
                 lines.push("Isi paket:");
                 tItems.forEach((i) => {
                   const w = items.find((wi) => wi.id === i.warehouse_item_id);
-                  lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
+                  lines.push(`• ${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`);
                 });
               }
               void shareToWhatsApp({ text: lines.join("\n"), title: `Request ${t.name}` }).then(notifyShareResult);
@@ -433,7 +433,7 @@ function RequestPage() {
                     ? tItems
                         .map((i) => {
                           const w = items.find((wi) => wi.id === i.warehouse_item_id);
-                          return `${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`;
+                          return `${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`;
                         })
                         .join(" · ")
                     : "Belum ada produk"}
@@ -938,7 +938,7 @@ function SendPrepLinkDialog({
         noteLines.push("Target isi paket:");
         for (const i of titleItems) {
           const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
-          noteLines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
+          noteLines.push(`• ${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`);
         }
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -972,7 +972,7 @@ function SendPrepLinkDialog({
       lines.push("*Isi paket:*");
       for (const i of titleItems) {
         const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
-        lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
+        lines.push(`• ${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`);
       }
     }
     lines.push("");
@@ -1184,7 +1184,7 @@ function SendPrepLinkDialog({
         doc.setFontSize(10);
         for (const i of titleItems) {
           const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
-          const line = `• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`;
+          const line = `• ${w?.name ?? "?"} ${formatQty(i.target_grams, i.unit_label, w?.name)}`;
           doc.text(line, 15, y);
           y += 5;
           if (y > 280) { doc.addPage(); y = 20; }
@@ -1463,7 +1463,8 @@ function TitleDetailView({
                 const w = warehouseItems.find((x) => x.id === i.warehouse_item_id);
                 return (
                   <span key={i.id} className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                    {w?.name ?? "?"} {i.target_grams}{displayUnit(w?.name, i.unit_label)}
+                    {formatQty(i.target_grams, i.unit_label, w?.name)
+                      .replace(/^/, `${w?.name ?? "?"} `)}
                   </span>
                 );
               })}
