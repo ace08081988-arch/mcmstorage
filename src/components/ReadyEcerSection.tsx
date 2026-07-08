@@ -500,6 +500,57 @@ export function ReadyEcerSection() {
   const totalActive = rowsForView.reduce((a, r) => a + r._activeCount, 0);
   const totalSent = rowsForView.reduce((a, r) => a + r._sentCount, 0);
   const rowsAfterView = rowsForView.filter((r) => (view === "sent" ? r._sentCount > 0 : true));
+  // ------------------------------------------------------------------
+  // Highlight kartu yang BARU dipindah ke Riwayat. Alur:
+  //   1. Deteksi sentinel `max(sentMap.at)` bertambah dibanding baseline
+  //      saat komponen mount → berarti ada shot yang baru saja ditandai
+  //      terkirim (baik dari toast /ecer, tombol MCM, atau tab lain).
+  //   2. Temukan row (Judul Ecer) yang memiliki shot tersebut.
+  //   3. Kalau user belum di tab "Riwayat terkirim", buka tab-nya dulu
+  //      (pending), lalu ketika view === "sent" — set justMovedRowId
+  //      supaya kartu scroll ke tengah viewport + ring emerald.
+  //   4. Highlight auto-hilang setelah 2.6 detik.
+  // ------------------------------------------------------------------
+  const initialMaxAtRef = useRef<number | null>(null);
+  const [justMovedRowId, setJustMovedRowId] = useState<string | null>(null);
+  const [pendingHighlightRowId, setPendingHighlightRowId] = useState<string | null>(null);
+  useEffect(() => {
+    let maxAt = 0;
+    let newestId: string | null = null;
+    for (const [id, at] of sentMap) {
+      if (at > maxAt) { maxAt = at; newestId = id; }
+    }
+    if (initialMaxAtRef.current === null) {
+      initialMaxAtRef.current = maxAt;
+      return;
+    }
+    if (maxAt <= initialMaxAtRef.current) return;
+    initialMaxAtRef.current = maxAt;
+    if (!newestId) return;
+    const rowsAll = filtered ?? [];
+    const row = rowsAll.find((r) => r.worker_shots.some((s) => s.id === newestId));
+    if (!row) return;
+    if (view === "sent") {
+      setJustMovedRowId(row.id);
+    } else {
+      setPendingHighlightRowId(row.id);
+      setView("sent");
+      requestAnimationFrame(() => {
+        rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [sentMap, filtered, view]);
+  useEffect(() => {
+    if (view === "sent" && pendingHighlightRowId) {
+      setJustMovedRowId(pendingHighlightRowId);
+      setPendingHighlightRowId(null);
+    }
+  }, [view, pendingHighlightRowId]);
+  useEffect(() => {
+    if (!justMovedRowId) return;
+    const t = setTimeout(() => setJustMovedRowId(null), 2600);
+    return () => clearTimeout(t);
+  }, [justMovedRowId]);
   const syncCounts = (rows ?? []).reduce<Record<SyncLevel, number>>((acc, r) => {
     acc[r.sync.level] = (acc[r.sync.level] ?? 0) + 1;
     return acc;
