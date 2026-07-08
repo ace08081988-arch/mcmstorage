@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MUTE_PRESETS } from "@/lib/conversation-prefs";
 import type { MessageRow } from "@/lib/chat";
-import { previewText } from "@/lib/chat-cards";
+import { previewText, isCardBody } from "@/lib/chat-cards";
 
 function extractUrls(text: string): string[] {
   if (!text) return [];
@@ -114,6 +114,10 @@ export function MediaLinksDialog({
     const dcs: Array<{ url: string; at: string }> = [];
     for (const m of messages) {
       if (m.deleted_at) continue;
+      // Payload card MCM (sentinel `[mcm-card:v1]` + JSON) bisa mengandung
+      // string URL di field seperti `avatar_url`/`href` — jangan indeks
+      // sebagai tautan chat, itu bocornya JSON internal.
+      if (isCardBody(m.body)) continue;
       const urls = extractUrls(m.body ?? "");
       for (const u of urls) {
         if (isImage(u)) imgs.push({ url: u, at: m.created_at });
