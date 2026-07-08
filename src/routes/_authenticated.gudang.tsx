@@ -11,6 +11,9 @@ import {
   Users,
   Wallet,
   History,
+  Package,
+  AlertTriangle,
+  PackageX,
 } from "lucide-react";
 import { notifyError } from "@/lib/friendly-error";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -187,6 +190,65 @@ function SignedImg({ path, className, alt }: { path: string; className?: string;
   return <img src={url} alt={alt || ""} className={className} loading="lazy" />;
 }
 
+type SummaryTone = "primary" | "warning" | "danger" | "info";
+
+function SummaryCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+  loading,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: SummaryTone;
+  loading?: boolean;
+}) {
+  const toneCls: Record<SummaryTone, string> = {
+    primary: "text-primary bg-primary/10 ring-primary/20",
+    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    danger: "text-destructive bg-destructive/10 ring-destructive/20",
+    info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+  };
+  return (
+    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:text-[11px]">
+            {label}
+          </p>
+          {loading ? (
+            <div className="mt-2 h-6 w-12 animate-pulse rounded bg-muted md:h-7 md:w-16" />
+          ) : (
+            <p className="mt-1 text-xl font-bold tabular-nums tracking-tight md:text-2xl">
+              {value.toLocaleString("id-ID")}
+            </p>
+          )}
+        </div>
+        <span
+          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${toneCls[tone]} md:h-9 md:w-9`}
+        >
+          <Icon className="h-4 w-4 md:h-4.5 md:w-4.5" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function GudangLoadingSkeleton() {
+  return (
+    <div className="space-y-3">
+      <div className="h-10 w-full animate-pulse rounded-lg bg-muted/60" />
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-16 w-full animate-pulse rounded-lg bg-muted/50" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function GudangPage() {
   const [tab, setTab] = useState<
     "stok" | "supplier" | "beli" | "jual" | "pesanan" | "hutang" | "pelanggan" | "piutang" | "riwayat"
@@ -245,6 +307,23 @@ function GudangPage() {
   const totalRevenue = useMemo(() => sales.reduce((a, s) => a + Number(s.total_revenue), 0), [sales]);
   const totalCost = useMemo(() => sales.reduce((a, s) => a + Number(s.cost_at_sale), 0), [sales]);
 
+  const invSummary = useMemo(() => {
+    let low = 0;
+    let out = 0;
+    for (const it of items) {
+      const stock = Number(it.stock_base ?? 0);
+      const size = Number(it.package_size ?? 0) || 1;
+      if (stock <= 0) out += 1;
+      else if (stock < size) low += 1;
+    }
+    return {
+      totalProducts: items.length,
+      lowStock: low,
+      outOfStock: out,
+      totalSuppliers: suppliers.length,
+    };
+  }, [items, suppliers]);
+
   const navItems = [
     { k: "stok", label: "Stok", icon: Boxes },
     { k: "supplier", label: "Supplier", icon: Truck },
@@ -258,16 +337,18 @@ function GudangPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-background text-foreground md:flex">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground md:flex">
       {/* Sidebar — md+ */}
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r bg-card md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r bg-card/80 backdrop-blur md:flex md:flex-col">
         <div className="border-b px-4 py-4">
           <Link to="/" className="text-[11px] text-muted-foreground hover:underline">← Beranda</Link>
-          <h1 className="mt-1 text-lg font-bold">📦 Gudang</h1>
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            Nilai stok
-          </p>
-          <p className="text-sm font-semibold">{rupiah(totalStokValue)}</p>
+          <h1 className="mt-1 flex items-center gap-1.5 text-lg font-bold tracking-tight">
+            <Package className="h-4.5 w-4.5 text-primary" /> Gudang
+          </h1>
+          <div className="mt-3 rounded-lg border bg-muted/30 px-3 py-2">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Nilai stok</p>
+            <p className="text-sm font-bold tabular-nums">{rupiah(totalStokValue)}</p>
+          </div>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-2">
           {navItems.map(({ k, label, icon: Icon }) => {
@@ -276,12 +357,15 @@ function GudangPage() {
               <button
                 key={k}
                 onClick={() => setTab(k)}
-                className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+                className={`group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${
                   active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-foreground/80 hover:bg-accent hover:text-foreground"
+                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-sm"
+                    : "text-foreground/75 hover:bg-accent hover:text-foreground"
                 }`}
               >
+                {active && (
+                  <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-primary-foreground/80" />
+                )}
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="truncate">{label}</span>
               </button>
@@ -292,23 +376,27 @@ function GudangPage() {
 
       {/* Mobile header + horizontal nav */}
       <div className="flex-1 min-w-0">
-        <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur md:hidden">
+        <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur-xl md:hidden">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-3 py-3">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <Link to="/" className="rounded-md border px-2 py-1 text-xs hover:bg-accent">← Beranda</Link>
-              <h1 className="text-base font-bold">📦 Gudang</h1>
+              <h1 className="flex items-center gap-1.5 truncate text-base font-bold tracking-tight">
+                <Package className="h-4 w-4 shrink-0 text-primary" /> Gudang
+              </h1>
             </div>
-            <div className="text-[11px] text-muted-foreground">
-              Nilai stok: <span className="font-semibold text-foreground">{rupiah(totalStokValue)}</span>
+            <div className="shrink-0 text-right text-[10px] text-muted-foreground">
+              <div className="uppercase tracking-wide">Nilai stok</div>
+              <div className="text-xs font-bold tabular-nums text-foreground">{rupiah(totalStokValue)}</div>
             </div>
           </div>
-          <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-3 pb-2 text-xs">
-            {navItems.map(({ k, label }) => (
+          <nav className="mx-auto flex max-w-3xl gap-1.5 overflow-x-auto px-3 pb-2 text-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {navItems.map(({ k, label, icon: Icon }) => (
               <button
                 key={k}
                 onClick={() => setTab(k)}
-                className={`shrink-0 rounded-md border px-3 py-1.5 font-medium ${tab === k ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"}`}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-colors ${tab === k ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border/60 bg-background/60 hover:bg-accent"}`}
               >
+                <Icon className="h-3.5 w-3.5" />
                 {label}
               </button>
             ))}
@@ -316,7 +404,39 @@ function GudangPage() {
         </header>
 
         <main className="mx-auto max-w-3xl space-y-4 p-3 md:max-w-4xl md:p-6">
-        {loading && <div className="text-sm text-muted-foreground">Memuat…</div>}
+        {/* Inventory summary — always visible */}
+        <section aria-label="Ringkasan inventaris" className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          <SummaryCard
+            icon={Package}
+            label="Total Produk"
+            value={invSummary.totalProducts}
+            tone="primary"
+            loading={loading}
+          />
+          <SummaryCard
+            icon={AlertTriangle}
+            label="Stok Menipis"
+            value={invSummary.lowStock}
+            tone="warning"
+            loading={loading}
+          />
+          <SummaryCard
+            icon={PackageX}
+            label="Stok Habis"
+            value={invSummary.outOfStock}
+            tone="danger"
+            loading={loading}
+          />
+          <SummaryCard
+            icon={Truck}
+            label="Supplier"
+            value={invSummary.totalSuppliers}
+            tone="info"
+            loading={loading}
+          />
+        </section>
+
+        {loading && <GudangLoadingSkeleton />}
 
         {tab === "stok" && (
           <StokTab items={items} uid={uid} onChanged={reloadAll} />
