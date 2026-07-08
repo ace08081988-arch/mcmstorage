@@ -159,61 +159,65 @@ function KpiCard({
   href?: string;
 }) {
   const toneMap: Record<string, string> = {
-    primary: "from-primary/15 to-primary/0 text-primary",
-    emerald: "from-emerald-500/15 to-emerald-500/0 text-emerald-600 dark:text-emerald-400",
-    amber: "from-amber-500/15 to-amber-500/0 text-amber-600 dark:text-amber-400",
-    sky: "from-sky-500/15 to-sky-500/0 text-sky-600 dark:text-sky-400",
+    primary: "from-primary/20 via-primary/5 to-transparent text-primary",
+    emerald: "from-emerald-500/20 via-emerald-500/5 to-transparent text-emerald-600 dark:text-emerald-400",
+    amber: "from-amber-500/20 via-amber-500/5 to-transparent text-amber-600 dark:text-amber-400",
+    sky: "from-sky-500/20 via-sky-500/5 to-transparent text-sky-600 dark:text-sky-400",
   };
   const inner = (
     <div
       className={cn(
-        "relative flex flex-col gap-2 rounded-2xl border bg-card p-4 shadow-sm transition-all",
-        "hover:shadow-md hover:-translate-y-0.5",
-        "min-h-[112px]",
+        "group/card relative flex h-full flex-col gap-3 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all duration-300",
+        "hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30",
+        "min-h-[124px]",
       )}
     >
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br opacity-70",
+          "pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br opacity-80",
           toneMap[tone],
         )}
       />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-current opacity-[0.04] blur-2xl transition-all duration-500 group-hover/card:opacity-[0.09]"
+      />
       <div className="relative flex items-start justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {label}
         </span>
         <span
           className={cn(
-            "grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-background/70 shadow-sm ring-1 ring-border",
+            "grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-background/80 shadow-sm ring-1 ring-border/70 backdrop-blur transition-transform duration-300 group-hover/card:scale-110 group-hover/card:rotate-3",
             toneMap[tone].split(" ").filter((c) => c.startsWith("text-")).join(" "),
           )}
         >
-          <Icon className="h-4 w-4" />
+          <Icon className="h-4.5 w-4.5" />
         </span>
       </div>
-      <div className="relative">
+      <div className="relative mt-auto">
         {loading ? (
-          <div className="h-7 w-24 animate-pulse rounded-md bg-muted" />
+          <div className="h-8 w-28 animate-pulse rounded-lg bg-muted" />
         ) : (
-          <div className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
+          <div className="text-[1.55rem] font-bold leading-tight tracking-tight text-foreground tabular-nums">
             {value}
           </div>
         )}
         {hint ? (
-          <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
+          <div className="mt-1 text-xs text-muted-foreground/90">{hint}</div>
         ) : null}
       </div>
       {href ? (
-        <span className="relative ml-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-          Buka <ArrowUpRight className="h-3.5 w-3.5" />
+        <span className="relative inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-all group-hover/card:text-primary group-hover/card:translate-x-0.5">
+          Buka <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
         </span>
       ) : null}
     </div>
   );
   if (href) {
     return (
-      <Link to={href} className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl">
+      <Link to={href} className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
         {inner}
       </Link>
     );
@@ -296,23 +300,27 @@ function DashboardPage() {
   const weekTotal = buckets.reduce((s, b) => s + b.value, 0);
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 p-4 pb-24 sm:p-6">
+    <main className="mx-auto w-full max-w-6xl space-y-6 p-4 pb-24 sm:space-y-8 sm:p-6 lg:p-8">
       {/* Header */}
-      <header className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-background to-background p-5 sm:p-7">
+      <header className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/12 via-background to-background p-5 shadow-sm sm:p-8">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-primary/10 blur-3xl"
+          className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-primary/15 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-primary/5 blur-3xl"
         />
         <div className="relative flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-1.5 rounded-full border bg-background/70 px-2.5 py-1 text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground backdrop-blur">
-              <Sparkles className="h-3 w-3 text-primary" />
+            <div className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm backdrop-blur">
+              <Sparkles className="h-3 w-3 animate-pulse text-primary" />
               Ringkasan Hari Ini
             </div>
-            <h1 className="mt-3 truncate text-2xl font-bold tracking-tight sm:text-3xl">
-              {greeting} 👋
+            <h1 className="mt-3 truncate bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-[2rem] sm:leading-[1.15]">
+              {greeting}&nbsp;👋
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {now.toLocaleDateString("id-ID", {
                 weekday: "long",
                 day: "numeric",
@@ -323,9 +331,10 @@ function DashboardPage() {
           </div>
           <Link
             to="/"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border bg-background/90 px-4 py-2 text-sm font-semibold shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground hover:shadow-md"
           >
-            Buka Beranda <ArrowUpRight className="h-4 w-4" />
+            Buka Beranda
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </div>
       </header>
@@ -372,76 +381,92 @@ function DashboardPage() {
       </section>
 
       {/* Chart + activity */}
-      <section className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2 rounded-2xl border bg-card p-5 shadow-sm">
+      <section className="grid gap-4 sm:gap-5 lg:grid-cols-3">
+        <div className="relative overflow-hidden rounded-2xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md sm:p-6 lg:col-span-2">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl"
+          />
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Penjualan 7 hari terakhir
               </div>
-              <div className="mt-1 text-2xl font-bold tabular-nums">
+              <div className="mt-1.5 text-[1.75rem] font-bold leading-tight tracking-tight tabular-nums">
                 {isLoading ? (
-                  <span className="inline-block h-7 w-32 animate-pulse rounded bg-muted align-middle" />
+                  <span className="inline-block h-8 w-36 animate-pulse rounded-lg bg-muted align-middle" />
                 ) : (
                   IDR.format(weekTotal)
                 )}
               </div>
             </div>
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-3 py-1 text-[11px] font-semibold text-primary ring-1 ring-primary/20">
+              <TrendingUp className="h-3 w-3" />
               {COMPACT.format(buckets.reduce((s, b) => s + b.value, 0))}
             </span>
           </div>
-          <div className="mt-4">
+          <div className="relative mt-5">
             {isLoading ? (
-              <div className="h-16 w-full animate-pulse rounded-lg bg-muted" />
+              <div className="space-y-2">
+                <div className="h-16 w-full animate-pulse rounded-xl bg-muted" />
+                <div className="flex justify-between">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <span key={i} className="h-2 w-6 animate-pulse rounded bg-muted/70" />
+                  ))}
+                </div>
+              </div>
             ) : (
               <Sparkline points={buckets} />
             )}
           </div>
-          <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-flex h-2 w-2 rounded-full bg-primary" />
+          <div className="relative mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex h-2 w-2 rounded-full bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.15)]" />
             Total pendapatan per hari
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-card p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-2xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Aktivitas terbaru
             </div>
             <Link
               to="/gudang"
-              className="text-xs font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-0.5 text-xs font-semibold text-primary transition-colors hover:text-primary/80"
             >
-              Lihat semua
+              Lihat semua <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-muted" />
+                <div key={i} className="flex items-center gap-3 rounded-xl p-1">
+                  <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-muted" />
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="h-3 w-32 animate-pulse rounded bg-muted" />
-                    <div className="h-3 w-20 animate-pulse rounded bg-muted/70" />
+                    <div className="h-3.5 w-32 animate-pulse rounded bg-muted" />
+                    <div className="h-2.5 w-20 animate-pulse rounded bg-muted/70" />
                   </div>
+                  <div className="h-3 w-8 animate-pulse rounded bg-muted/60" />
                 </div>
               ))}
             </div>
           ) : data?.recentSales.length ? (
-            <ul className="space-y-3">
+            <ul className="-mx-1.5 space-y-1">
               {data.recentSales.map((s: any) => {
                 const t = new Date(s.created_at);
                 return (
-                  <li key={s.id} className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <li
+                    key={s.id}
+                    className="flex items-center gap-3 rounded-xl px-1.5 py-2 transition-colors hover:bg-muted/50"
+                  >
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-500/12 text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
                       <ReceiptText className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">
+                      <div className="truncate text-sm font-semibold tabular-nums">
                         {IDR.format(Number(s.total_revenue) || 0)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
                         {t.toLocaleString("id-ID", {
                           day: "numeric",
                           month: "short",
@@ -450,16 +475,22 @@ function DashboardPage() {
                         })}
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {Number(s.qty_base || 0).toLocaleString("id-ID")}
+                    <span className="rounded-md bg-muted/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+                      ×{Number(s.qty_base || 0).toLocaleString("id-ID")}
                     </span>
                   </li>
                 );
               })}
             </ul>
           ) : (
-            <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Belum ada transaksi tercatat.
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-8 text-center">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-muted/60 text-muted-foreground">
+                <ReceiptText className="h-5 w-5" />
+              </span>
+              <div className="text-sm font-medium">Belum ada aktivitas</div>
+              <div className="text-xs text-muted-foreground">
+                Transaksi terbaru akan muncul di sini.
+              </div>
             </div>
           )}
         </div>
@@ -467,33 +498,38 @@ function DashboardPage() {
 
       {/* Quick actions */}
       <section aria-label="Aksi cepat">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Aksi cepat
           </h2>
           {prepActiveCount > 0 ? (
-            <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2.5 py-1 text-[11px] font-semibold text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
+              <ClipboardList className="h-3 w-3" />
               {prepActiveCount} tugas aktif
             </span>
           ) : null}
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
           {QUICK_ACTIONS.map((a) => (
             <Link
               key={a.href}
               to={a.href}
               className={cn(
-                "group flex flex-col gap-2 rounded-2xl border bg-card p-4 shadow-sm transition-all",
-                "hover:-translate-y-0.5 hover:shadow-md focus:outline-none",
+                "group relative flex flex-col gap-2.5 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all duration-300",
+                "hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg focus:outline-none",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               )}
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-primary/8 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"
+              />
+              <span className="relative grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-md">
                 <a.icon className="h-5 w-5" />
               </span>
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold">{a.title}</div>
-                <div className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">
+              <div className="relative min-w-0">
+                <div className="truncate text-sm font-semibold tracking-tight">{a.title}</div>
+                <div className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
                   {a.desc}
                 </div>
               </div>
