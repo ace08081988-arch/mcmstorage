@@ -191,7 +191,6 @@ function SignedImg({ path, className, alt }: { path: string; className?: string;
 }
 
 function GudangPage() {
-  // placeholder to keep diff small
   const [tab, setTab] = useState<
     "stok" | "supplier" | "beli" | "jual" | "pesanan" | "hutang" | "pelanggan" | "piutang" | "riwayat"
   >("stok");
