@@ -84,6 +84,56 @@ type WarehouseItem = {
   package_size?: number | null;
 };
 
+type ChipTone = "primary" | "info" | "success" | "warning" | "danger";
+
+function StatChip({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: ChipTone;
+}) {
+  const map: Record<ChipTone, string> = {
+    primary: "text-primary bg-primary/10 ring-primary/20",
+    info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+    success: "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20 dark:text-emerald-400",
+    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    danger: "text-destructive bg-destructive/10 ring-destructive/20",
+  };
+  return (
+    <div className="flex items-center gap-2 rounded-lg border bg-background/70 px-2.5 py-1.5 backdrop-blur">
+      <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1 ring-inset ${map[tone]}`}>
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <div className="min-w-0">
+        <div className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className="text-sm font-bold leading-none tabular-nums">{value.toLocaleString("id-ID")}</div>
+      </div>
+    </div>
+  );
+}
+
+function EcerLoadingSkeleton() {
+  return (
+    <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
+      <div className="h-28 w-full animate-pulse rounded-2xl bg-muted/50" />
+      <div className="h-24 w-full animate-pulse rounded-xl bg-muted/50" />
+      <div className="space-y-2">
+        <div className="h-14 w-full animate-pulse rounded-lg bg-muted/40" />
+        <div className="grid gap-2 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 w-full animate-pulse rounded-lg bg-muted/40" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EcerPage() {
   const search = Route.useSearch();
   const router = useRouter();
