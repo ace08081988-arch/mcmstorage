@@ -1,99 +1,94 @@
-## Slice E — Request Order workflow: SSOT untuk jenis produk
+# Refactor Photo Editor → Engine react-konva (Iterasi 1)
 
-### Audit temuan (yang SUDAH ada, tak akan disentuh)
+## Konteks penting
 
-Alur end-to-end sudah lengkap dan konsisten — verifikasi cepat:
+Editor lama: `src/components/PhotoEditor.tsx` (2010 baris, canvas manual). Dipakai di 4 tempat:
+- `src/routes/t.$token.tsx` (2 titik — pegawai siap kirim & request)
+- `src/routes/_authenticated.request.tsx` (admin preview)
+- `src/routes/_authenticated.ecer.tsx` (ecer)
+- `src/routes/lovable.visual.photo-editor.tsx` (harness QA)
 
-| Tahap | Sumber kode | Status |
-|---|---|---|
-| Admin buat Request Order | `src/routes/_authenticated.request.tsx` (TitleEditor) | ada |
-| Kirim tugas → pegawai | `src/lib/tugas-share.ts`, RPC `create_prep_task_from_title` | ada |
-| Buka via PIN | `src/routes/t.$token.tsx` (share token + PIN gate) | ada |
-| Foto kamera/galeri + edit (crop, rotate, panah, lingkaran, kotak, teks, stiker, undo/redo) | `src/components/PhotoEditor.tsx` | ada |
-| Lokasi GPS + paste Google Maps link + koord manual | `t.$token.tsx` ln 2382/2947–2985/4156–4219 | ada |
-| Selesai → Ready-to-ship | `ready_packages` + `prep_submissions` + `verification_status` (SSOT `deriveRequestStatus`) | ada |
-| Status pipeline 11-state | `src/lib/prep-status.ts` (`deriveRequestStatus/deriveEcerStatus`) | ada |
-| Belum masuk pembayaran / belum kirim ke customer | Tidak ada trigger auto-payment; `sold_at` di-set manual di flow pembayaran terpisah | benar |
+Ada 6+ e2e test yang lock ke selector toolbar lama (`worker-portal-panel-photoedit`, `photo-editor-touch-android`, `photo-editor-toolbar-viewports`, `photo-editor-keyboard-safe-area`, `worker-portal-pick-photo`, `worker-portal-camera-no-reload`). Test-test itu mengunci workflow bisnis — harus tetap hijau.
 
-**Kesimpulan**: alur bisnis Request Order sudah komplit. Yang inkonsisten hanyalah **input satuan (unit)** — saat ini `unit_label` bebas ketik teks (`<Input placeholder="gram">`), jadi user bisa mengetik "grm", "Gram", "GR", "kg", "kgs", "karton" campur-baur. Tidak ada SSOT jenis produk.
+## Strategi: engine baru side-by-side, bukan patch in-place
 
-### Yang akan dibuat/diubah
+Buat `PhotoEditorV2` di komponen baru. Caller tetap import `PhotoEditor` — export dari `PhotoEditor.tsx` di-alias ke V2 setelah fondasi stabil. Ini menjaga API dan mempermudah rollback.
 
-Buat **SSOT jenis produk & satuan** yang membakukan input di semua surface, tanpa mengubah DB. Kolom `unit_label` (free-text) tetap dipakai sebagai storage; SSOT hanya membakukan nilai yang ditulis + rendering.
+## Iterasi 1 (deliverable batch ini)
 
-#### 1. `src/lib/unit-kinds.ts` (baru)
+### A. Engine
+- Tambah dependency: `konva`, `react-konva`, `use-image` (~150KB gz).
+- File baru `src/components/photo-editor/` (folder):
+  - `PhotoEditorV2.tsx` — shell, canvas Stage, state root
+  - `engine/scene.ts` — tipe `Scene`, `SceneObject` (image | draw | shape | text | sticker), serialize/deserialize `sceneJson`
+  - `engine/history.ts` — undo/redo unlimited via patch stack
+  - `engine/gestures.ts` — pinch zoom, pan, double-tap-fit (native Konva + pointer events)
+  - `hooks/useAutosaveScene.ts` — debounced simpan ke IndexedDB via `prep-draft-store` (kunci baru `photo-editor-scene:<key>`)
 
+### B. Tools (semua di iterasi 1)
+1. Crop: free / 1:1 / 4:5 / 16:9 + Rotate 90° + Flip H/V (crop layer non-destruktif; final commit saat Selesai)
+2. Draw: Pen, Highlighter (multiply blend), Brush, Eraser — size 1–40, opacity 10–100, color picker HSV + palette preset MCM
+3. Shapes: Arrow, Line, Circle, Rectangle, Triangle, Oval — resize handle, rotate handle, stroke width, opacity, color
+4. Text: font (system + Inter + Poppins), size, bold, italic, outline, shadow, background, alignment, emoji (native picker)
+5. Undo/Redo unlimited + tombol reset
+6. Zoom: pinch + double-tap toggle 1×↔2× + fit button + slider (100/200/400)
+7. Layer panel (bottom sheet): list objek, bring-to-front, send-to-back, duplicate, hide, delete, lock
+8. Autosave scene ke IndexedDB tiap 500ms debounce; restore saat re-open
+
+### C. API kompat
 ```ts
-export type UnitKind =
-  | "mg" | "gr" | "ons" | "kg"   // ECER (berat)
-  | "pcs"                          // Hitung satuan
-  | "botol"                        // Botol/bottle
-  | "karton"                       // Karton/dus
-  | "koli"                         // Koli/bal
-  | "custom";                      // Bebas ketik (fallback backward-compat)
-
-export const UNIT_GROUPS = [
-  { label: "Ecer (berat)", kinds: ["mg","gr","ons","kg"] as const },
-  { label: "Hitungan",     kinds: ["pcs","botol"] as const },
-  { label: "Bulk",         kinds: ["karton","koli"] as const },
-  { label: "Lainnya",      kinds: ["custom"] as const },
-];
-
-export const UNIT_LABEL_ID: Record<UnitKind,string>;   // "mg" | "gr" | "ons" | "kg" | "pcs" | "botol" | "karton" | "koli" | "custom"
-export function resolveKind(free: string|null|undefined): UnitKind;  // pakai UNIT_SYNONYMS existing
-export function canonicalUnitLabel(kind: UnitKind, custom?: string): string; // ditulis ke DB
-export function formatQty(qty: number, kind: UnitKind, custom?: string, productName?: string): string;
-// weight helpers (hanya untuk berat): toGrams(qty, kind), fromGrams(g, kind)
+type PhotoEditorProps = {
+  src: string;                       // existing
+  onCancel: () => void;              // existing
+  onSave: (blob, dataUrl, sceneJson?: string) => void;  // sceneJson OPSIONAL
+  initialSceneJson?: string;         // opsional; jika ada → restore objek editable
+  autosaveKey?: string;              // opsional; enable IndexedDB draft
+};
 ```
+Caller lama (tanpa `initialSceneJson`) tetap jalan — signature backward compat.
 
-- `resolveKind` sudah dijaga oleh grup sinonim di `unit-label.ts` (extend, bukan ganti).
-- `canonicalUnitLabel` memastikan yang ditulis ke DB selalu bentuk pendek konsisten (`"gr"`, `"kg"`, `"pcs"`, `"botol"`, `"karton"`, `"koli"`; `custom` → apa adanya).
-- `formatQty` menghormati kasus khusus GS→botol (SSOT `displayUnit` lama).
+### D. Sticker (iterasi 1: minimum set pakai Lucide)
+Pack 8 sticker paling penting via Lucide render-to-SVG: Check, X, AlertTriangle, MapPin, Package, DollarSign (Paid), Clock (Pending), BadgeCheck (Verified). Semua bisa resize/rotate/warna/opacity. Sticker sisanya (Fragile SVG custom, DP, Hutang, dsb) ditunda ke iterasi 2 sesuai persetujuan tadi ("fondasi dulu").
 
-#### 2. `TitleEditor` di `src/routes/_authenticated.request.tsx`
+### E. UI
+- Floating bottom toolbar ikon (44px tap target), aktif tool di-highlight
+- Bottom sheet options per tool (size/opacity/color)
+- Top bar: Batal / Undo / Redo / Selesai
+- Dark mode via token existing (`bg-background`, `text-foreground`)
+- Mobile-first 411px; tetap responsif ke desktop
+- Animasi via `framer-motion` (sudah terpasang)
 
-Ganti `<Input placeholder="gram">` per-baris menjadi:
+### F. Yang ditunda ke iterasi 2 (persetujuan sudah dicatat)
+Sticker Pack lengkap (SVG custom 20+), Blur/Pixelate/Mosaic brush, Export quality picker (PNG/JPEG/WEBP + kompres tier), Smart guides/grid/snap, Custom PNG sticker upload.
 
-```
-[ produk ▾ ]  [ qty ] [ satuan ▾ ]  ← Select dgn 4 grup (Berat/Hitung/Bulk/Custom)
-                        ↳ jika 'custom' → tampilkan Input teks bebas
-```
+## Kompatibilitas tes
 
-- State baris menyimpan `unit_kind: UnitKind` + `unit_custom: string`.
-- Saat submit: `unit_label = canonicalUnitLabel(unit_kind, unit_custom)`.
-- Saat load pesanan lama: `unit_kind = resolveKind(row.unit_label); unit_custom = unit_kind==='custom' ? row.unit_label : ""`. Backward-compat 100%.
-- Qty input `inputMode="decimal"` untuk `mg/gr/ons/kg`, `inputMode="numeric"` step=1 untuk `pcs/botol/karton/koli`.
-- Placeholder qty menyesuaikan kind ("500", "1", "3").
+Toolbar lama diuji lewat selector seperti `data-testid="pe-tool-*"`. Saya akan:
+1. Baca semua spec e2e photo-editor dulu, catat testid yang harus dipertahankan.
+2. Terapkan testid yang sama di V2 (Crop, Rotate, Draw, Text, Save, Cancel, Undo).
+3. Jalankan `bunx vitest run` untuk unit test hittest lama — jika logic hittest lama tidak relevan lagi, ganti test-nya (bukan skip) dengan test hittest V2.
 
-#### 3. Rendering konsisten (audit ringan)
+## File yang berubah
 
-- Ganti `${i.target_grams}${displayUnit(...)}` di file berikut agar melalui `formatQty(qty, resolveKind(unit_label), unit_label, name)` → seragam spasi & label ("500 gr", "3 pcs", bukan "500gram" campur "3 pcs").
-  - `src/routes/_authenticated.request.tsx` (4 lokasi)
-  - `src/routes/t.$token.tsx` (7 lokasi)
-- `displayUnit` tetap ada sebagai thin wrapper — legacy caller lain tidak pecah.
+Baru:
+- `src/components/photo-editor/PhotoEditorV2.tsx`
+- `src/components/photo-editor/engine/scene.ts`
+- `src/components/photo-editor/engine/history.ts`
+- `src/components/photo-editor/engine/gestures.ts`
+- `src/components/photo-editor/tools/*.tsx` (Crop, Draw, Shapes, Text, Sticker, Layers, Zoom)
+- `src/components/photo-editor/hooks/useAutosaveScene.ts`
+- Unit test: `src/components/photo-editor/engine/scene.test.ts`, `history.test.ts`
 
-#### 4. Status SSOT (verifikasi, bukan perubahan)
+Edited:
+- `src/components/PhotoEditor.tsx` → thin re-export dari V2 (menjaga import path lama)
+- Tidak ada perubahan di caller (`t.$token.tsx`, `request.tsx`, `ecer.tsx`, harness)
+- Tidak ada perubahan DB, RLS, route, auth, atau workflow bisnis
 
-Cek cepat semua `StatusBadge` di halaman Request memakai `lifecycle={deriveRequestStatus(prep, task)}`; jika ada yang masih hardcode string status, ganti. Tidak menambah state baru — pipeline 11-status tetap.
+## Risiko + mitigasi
 
-### Yang TIDAK disentuh
+1. Bundle +150KB → lazy-load `PhotoEditorV2` via `React.lazy` di re-export shim. Editor cuma dibuka on-demand, tidak masuk critical path.
+2. E2E test lama bergantung selector spesifik → mirror testid yang identik.
+3. HEIC/kompresi existing → tetap dipakai apa adanya (input file staging tak berubah).
+4. Autosave menyimpan scene ke IndexedDB → key bersih otomatis saat pegawai klik Selesai (sama pola `prep-draft-store`).
 
-- Skema database (tidak ada migrasi). `unit_label` tetap `text`.
-- Auth, RLS, route paths, sidebar/navigasi.
-- PhotoEditor, share token, PIN gate, GPS/paste-Maps, upload Ready-to-ship.
-- Ecer route (`/ecer`) — meski ikut kena `formatQty` via helper, perilaku bisnisnya tidak berubah.
-- Payment flow — masih manual (sesuai permintaan "belum masuk pembayaran").
-
-### Verifikasi
-
-- `bunx tsgo --noEmit`.
-- Manual: buka `/request` → New title → dropdown satuan berisi 4 grup → pilih `karton` qty 3 → simpan → cek baris tersimpan "3 karton" konsisten di list, kartu, dan halaman `/t/$token`.
-- Test `src/lib/prep-active-selector.test.ts` + existing tests tidak boleh regress.
-- Load pesanan lama (dengan `unit_label = "gram"` legacy) tetap tampil "N gr" via `resolveKind` — backward-compat.
-
-### File yang disentuh
-
-- **baru**: `src/lib/unit-kinds.ts`
-- **edit**: `src/lib/unit-label.ts` (extend, tambah export), `src/routes/_authenticated.request.tsx` (TitleEditor row + renderer helpers), `src/routes/t.$token.tsx` (renderer only)
-
-Setelah plan disetujui, dikerjakan dalam satu edit batch.
+Perkiraan: implementasi + verifikasi ~1 batch besar. Setelah plan ini disetujui, saya kerjakan sampai `tsgo` + build + smoke test harness hijau, lalu lapor untuk iterasi 2 (sticker pack lengkap + blur + export quality).
