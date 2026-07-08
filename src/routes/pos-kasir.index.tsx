@@ -10,8 +10,9 @@ import {
 import { loadGudangProduk, recordSale, refundSale } from "@/lib/pos-kasir-gudang";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+// jsPDF + autoTable dimuat lazy (dynamic import) di dalam exportPDF supaya
+// bundle awal halaman POS Kasir tidak membawa ~200KB kode PDF yang hanya
+// dipakai saat user mengekspor.
 
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
@@ -466,12 +467,16 @@ function PosKasirPage() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     if (riwayatSorted.length === 0) {
       setToast("Tidak ada transaksi pada rentang tanggal terpilih");
       setTimeout(() => setToast(null), 2500);
       return;
     }
+    const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const now = new Date();
     const stamp = now.toISOString().slice(0, 10);
@@ -516,7 +521,7 @@ function PosKasirPage() {
         5: { halign: "right" },
       },
       margin: { left: 40, right: 40 },
-      didDrawPage: (data) => {
+      didDrawPage: (data: { pageNumber: number }) => {
         const pageCount = doc.getNumberOfPages();
         const pageSize = doc.internal.pageSize;
         const pageHeight = pageSize.getHeight();

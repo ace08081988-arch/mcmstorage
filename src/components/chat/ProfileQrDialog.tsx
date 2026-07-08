@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import QRCode from "qrcode";
 import { Camera, Download, Maximize2, MessageSquare, Minimize2, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -149,6 +148,8 @@ export function ProfileQrDialog({
     let cancelled = false;
     (async () => {
       try {
+        const { default: QRCode } = await import("qrcode");
+        if (cancelled) return;
         const url = await QRCode.toDataURL(payload, {
           errorCorrectionLevel: "M",
           margin: 2,

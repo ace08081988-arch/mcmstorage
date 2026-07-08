@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import QRCode from "qrcode";
 import { ArrowLeft, Copy, Share2, QrCode, UserPlus, RefreshCcw, Check, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,12 +30,21 @@ function UndangPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     if (!canvasRef.current || !myUrl) return;
-    QRCode.toCanvas(canvasRef.current, myUrl, {
-      errorCorrectionLevel: "M",
-      margin: 2,
-      width: 320,
-      color: { dark: "#0f172a", light: "#ffffff" },
-    }).catch(() => {});
+    let cancelled = false;
+    import("qrcode")
+      .then(({ default: QRCode }) => {
+        if (cancelled || !canvasRef.current) return;
+        return QRCode.toCanvas(canvasRef.current, myUrl, {
+          errorCorrectionLevel: "M",
+          margin: 2,
+          width: 320,
+          color: { dark: "#0f172a", light: "#ffffff" },
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [myUrl]);
 
   const [copied, setCopied] = useState<"code" | "url" | null>(null);

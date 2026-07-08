@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
 import { Copy, Check, Loader2 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -29,14 +28,26 @@ export function ApkQrDialog({
     const canvas = canvasRef.current;
     if (!canvas) return;
     setRendering(true);
-    QRCode.toCanvas(canvas, target.url, {
-      width: 260,
-      margin: 2,
-      errorCorrectionLevel: "M",
-      color: { dark: "#000000", light: "#ffffff" },
-    })
-      .catch(() => toast.error("Gagal membuat QR code"))
-      .finally(() => setRendering(false));
+    let cancelled = false;
+    import("qrcode")
+      .then(({ default: QRCode }) => {
+        if (cancelled) return;
+        return QRCode.toCanvas(canvas, target.url, {
+          width: 260,
+          margin: 2,
+          errorCorrectionLevel: "M",
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+      })
+      .catch(() => {
+        if (!cancelled) toast.error("Gagal membuat QR code");
+      })
+      .finally(() => {
+        if (!cancelled) setRendering(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open, target]);
 
   const copyUrl = async () => {
