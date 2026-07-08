@@ -72,6 +72,7 @@ import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
+import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lovable.visual.worker-shot-marksent'
 import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
 import { Route as LovableVisualTapTargetsRouteImport } from './routes/lovable.visual.tap-targets'
 import { Route as LovableVisualReadyBadgesSelectorRouteImport } from './routes/lovable.visual.ready-badges-selector'
@@ -455,6 +456,12 @@ const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedChatRoute,
 } as any)
+const LovableVisualWorkerShotMarksentRoute =
+  LovableVisualWorkerShotMarksentRouteImport.update({
+    id: '/lovable/visual/worker-shot-marksent',
+    path: '/lovable/visual/worker-shot-marksent',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualVoiceNotePlayerRoute =
   LovableVisualVoiceNotePlayerRouteImport.update({
     id: '/lovable/visual/voice-note-player',
@@ -833,6 +840,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
+  '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -943,6 +951,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
+  '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -1057,6 +1066,7 @@ export interface FileRoutesById {
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
+  '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -1171,6 +1181,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
     | '/lovable/visual/voice-note-player'
+    | '/lovable/visual/worker-shot-marksent'
     | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -1281,6 +1292,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
     | '/lovable/visual/voice-note-player'
+    | '/lovable/visual/worker-shot-marksent'
     | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -1394,6 +1406,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
     | '/lovable/visual/voice-note-player'
+    | '/lovable/visual/worker-shot-marksent'
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -1451,6 +1464,7 @@ export interface RootRouteChildren {
   LovableVisualReadyBadgesSelectorRoute: typeof LovableVisualReadyBadgesSelectorRoute
   LovableVisualTapTargetsRoute: typeof LovableVisualTapTargetsRoute
   LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
+  LovableVisualWorkerShotMarksentRoute: typeof LovableVisualWorkerShotMarksentRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
@@ -1904,6 +1918,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/chat/'
       preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
       parentRoute: typeof AuthenticatedChatRoute
+    }
+    '/lovable/visual/worker-shot-marksent': {
+      id: '/lovable/visual/worker-shot-marksent'
+      path: '/lovable/visual/worker-shot-marksent'
+      fullPath: '/lovable/visual/worker-shot-marksent'
+      preLoaderRoute: typeof LovableVisualWorkerShotMarksentRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/visual/voice-note-player': {
       id: '/lovable/visual/voice-note-player'
@@ -2486,6 +2507,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualReadyBadgesSelectorRoute: LovableVisualReadyBadgesSelectorRoute,
   LovableVisualTapTargetsRoute: LovableVisualTapTargetsRoute,
   LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
+  LovableVisualWorkerShotMarksentRoute: LovableVisualWorkerShotMarksentRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
