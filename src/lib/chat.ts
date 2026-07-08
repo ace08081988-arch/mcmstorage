@@ -480,7 +480,9 @@ export function useConversationMessages(conversationId: string | undefined) {
 export async function getConversationMeta(conversationId: string) {
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, kind, title, owner_user_id, last_message_at")
+    .select(
+      "id, kind, title, owner_user_id, last_message_at, category, linked_customer_id, linked_request_prep_id, linked_ecer_prep_id, linked_task_id, linked_product_id, archived_at",
+    )
     .eq("id", conversationId)
     .single();
   if (error) throw error;

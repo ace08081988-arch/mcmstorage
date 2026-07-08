@@ -87,6 +87,7 @@ import {
 } from "@/components/chat/ConversationExtrasDialogs";
 import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
 import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls";
+import { OrderSummaryCard } from "@/components/chat/OrderSummaryCard";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
@@ -987,6 +988,18 @@ function ChatRoomPage() {
         onJump={jumpToMessage}
         canUnpin
       />
+
+      {meta.data ? (
+        <OrderSummaryCard
+          links={{
+            linked_customer_id: meta.data.linked_customer_id ?? null,
+            linked_request_prep_id: meta.data.linked_request_prep_id ?? null,
+            linked_ecer_prep_id: meta.data.linked_ecer_prep_id ?? null,
+            linked_task_id: meta.data.linked_task_id ?? null,
+            linked_product_id: meta.data.linked_product_id ?? null,
+          }}
+        />
+      ) : null}
 
       <div ref={scrollerRef} className="wa-chat-bg flex-1 space-y-3 overflow-y-auto p-3">
         {isLoading ? (
