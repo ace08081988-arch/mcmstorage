@@ -1,15 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowUpRight,
   Boxes,
+  Calendar as CalendarIcon,
   ClipboardList,
+  Download,
+  Filter,
+  LineChart,
   PackageCheck,
   ReceiptText,
   ShoppingBag,
   Sparkles,
   TrendingUp,
+  Users,
+  Warehouse,
   Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -284,10 +290,256 @@ const QUICK_ACTIONS: {
   { title: "Notifikasi", href: "/notifikasi", icon: ReceiptText, desc: "Pemberitahuan terbaru" },
 ];
 
+// ---------------------------------------------------------------------------
+// Executive report additions (additive; does not alter existing metrics)
+// ---------------------------------------------------------------------------
+
+type PeriodKey = "today" | "7d" | "30d" | "month" | "custom";
+
+function toLocalYMD(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function computePeriodRange(key: PeriodKey, customStart?: string, customEnd?: string) {
+  const now = new Date();
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  if (key === "today") {
+    // start already today 00:00
+  } else if (key === "7d") {
+    start.setDate(start.getDate() - 6);
+  } else if (key === "30d") {
+    start.setDate(start.getDate() - 29);
+  } else if (key === "month") {
+    start.setDate(1);
+  } else if (key === "custom" && customStart && customEnd) {
+    const s = new Date(customStart + "T00:00:00");
+    const e = new Date(customEnd + "T23:59:59.999");
+    if (!Number.isNaN(s.getTime()) && !Number.isNaN(e.getTime())) {
+      return { start: s, end: e, label: `${toLocalYMD(s)} → ${toLocalYMD(e)}` };
+    }
+  }
+  const labelMap: Record<PeriodKey, string> = {
+    today: "Hari ini",
+    "7d": "7 hari terakhir",
+    "30d": "30 hari terakhir",
+    month: `Bulan ${now.toLocaleDateString("id-ID", { month: "long" })}`,
+    custom: "Kustom",
+  };
+  return { start, end, label: labelMap[key] };
+}
+
+function usePeriodReport(period: { start: Date; end: Date }) {
+  const startISO = period.start.toISOString();
+  const endISO = period.end.toISOString();
+  return useQuery({
+    queryKey: ["dashboard-period-report-v1", startISO, endISO],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const [salesPeriod, salesMonth, inventory, customersTotal] = await Promise.all([
+        supabase
+          .from("sales")
+          .select("id, total_revenue, cost_at_sale, qty_base, item_id, customer_id, created_at")
+          .gte("created_at", startISO)
+          .lte("created_at", endISO)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("sales")
+          .select("total_revenue")
+          .gte("created_at", monthStart.toISOString()),
+        supabase
+          .from("warehouse_items")
+          .select("id, name, stock_base, avg_cost_per_base"),
+        supabase.from("customers").select("id", { count: "exact", head: true }),
+      ]);
+
+      const sales = salesPeriod.data ?? [];
+      const revenuePeriod = sales.reduce((s, r: any) => s + (Number(r.total_revenue) || 0), 0);
+      const profitPeriod = sales.reduce(
+        (s, r: any) => s + (Number(r.total_revenue) || 0) - (Number(r.cost_at_sale) || 0),
+        0,
+      );
+      const revenueMonth = (salesMonth.data ?? []).reduce(
+        (s, r: any) => s + (Number(r.total_revenue) || 0),
+        0,
+      );
+      const ordersPeriod = sales.length;
+      const activeCustomers = new Set(
+        sales.map((r: any) => r.customer_id).filter((v: unknown) => !!v),
+      ).size;
+
+      const items = inventory.data ?? [];
+      const inventoryValue = items.reduce(
+        (s, r: any) => s + (Number(r.stock_base) || 0) * (Number(r.avg_cost_per_base) || 0),
+        0,
+      );
+      const itemNameById = new Map<string, string>();
+      items.forEach((r: any) => itemNameById.set(r.id, r.name));
+
+      // Top products by revenue in period
+      const productAgg = new Map<string, { name: string; revenue: number; qty: number; orders: number }>();
+      sales.forEach((r: any) => {
+        const id = r.item_id as string | null;
+        if (!id) return;
+        const cur = productAgg.get(id) ?? {
+          name: itemNameById.get(id) ?? "Produk",
+          revenue: 0,
+          qty: 0,
+          orders: 0,
+        };
+        cur.revenue += Number(r.total_revenue) || 0;
+        cur.qty += Number(r.qty_base) || 0;
+        cur.orders += 1;
+        productAgg.set(id, cur);
+      });
+      const topProducts = Array.from(productAgg.values())
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
+
+      return {
+        revenuePeriod,
+        profitPeriod,
+        revenueMonth,
+        ordersPeriod,
+        activeCustomers,
+        inventoryValue,
+        customersTotal: customersTotal.count ?? 0,
+        topProducts,
+        salesRows: sales,
+      };
+    },
+  });
+}
+
+const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
+  { key: "today", label: "Hari ini" },
+  { key: "7d", label: "7 hari" },
+  { key: "30d", label: "30 hari" },
+  { key: "month", label: "Bulan ini" },
+  { key: "custom", label: "Kustom" },
+];
+
+function ExecKpi({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone,
+  loading,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: typeof Sparkles;
+  tone: "primary" | "emerald" | "amber" | "sky" | "violet" | "rose";
+  loading?: boolean;
+}) {
+  const toneMap: Record<string, string> = {
+    primary: "from-primary/15 to-transparent text-primary ring-primary/20",
+    emerald: "from-emerald-500/15 to-transparent text-emerald-600 dark:text-emerald-400 ring-emerald-500/20",
+    amber: "from-amber-500/15 to-transparent text-amber-600 dark:text-amber-400 ring-amber-500/20",
+    sky: "from-sky-500/15 to-transparent text-sky-600 dark:text-sky-400 ring-sky-500/20",
+    violet: "from-violet-500/15 to-transparent text-violet-600 dark:text-violet-400 ring-violet-500/20",
+    rose: "from-rose-500/15 to-transparent text-rose-600 dark:text-rose-400 ring-rose-500/20",
+  };
+  return (
+    <div className="group relative flex min-h-[112px] flex-col gap-2 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <div
+        aria-hidden
+        className={cn("pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br", toneMap[tone])}
+      />
+      <div className="relative flex items-start justify-between">
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          {label}
+        </span>
+        <span
+          className={cn(
+            "grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-background/80 ring-1 shadow-sm backdrop-blur",
+            toneMap[tone].split(" ").filter((c) => c.startsWith("text-") || c.startsWith("ring-")).join(" "),
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <div className="relative mt-auto">
+        {loading ? (
+          <div className="h-7 w-24 animate-pulse rounded-lg bg-muted" />
+        ) : (
+          <div className="text-xl font-bold leading-tight tracking-tight text-foreground tabular-nums sm:text-[1.35rem]">
+            {value}
+          </div>
+        )}
+        {hint ? <div className="mt-0.5 text-[11px] text-muted-foreground/90">{hint}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+function downloadCSV(filename: string, rows: (string | number)[][]) {
+  const escape = (v: string | number) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = rows.map((r) => r.map(escape).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 function DashboardPage() {
   const { data, isLoading } = useDashboardData();
   const now = useMemo(() => new Date(), []);
   const greeting = greetingFor(now.getHours());
+
+  // Executive report state (additive; independent of existing summary above)
+  const [period, setPeriod] = useState<PeriodKey>("today");
+  const [customStart, setCustomStart] = useState<string>(toLocalYMD(new Date()));
+  const [customEnd, setCustomEnd] = useState<string>(toLocalYMD(new Date()));
+  const range = useMemo(
+    () => computePeriodRange(period, customStart, customEnd),
+    [period, customStart, customEnd],
+  );
+  const { data: report, isLoading: reportLoading } = usePeriodReport({
+    start: range.start,
+    end: range.end,
+  });
+
+  const handleExportSales = () => {
+    const rows: (string | number)[][] = [
+      ["Tanggal", "Item ID", "Qty", "Harga", "Total", "HPP"],
+      ...(report?.salesRows ?? []).map((r: any) => [
+        new Date(r.created_at).toLocaleString("id-ID"),
+        r.item_id ?? "",
+        Number(r.qty_base) || 0,
+        Number(r.price_per_base) || 0,
+        Number(r.total_revenue) || 0,
+        Number(r.cost_at_sale) || 0,
+      ]),
+    ];
+    downloadCSV(`laporan-penjualan-${toLocalYMD(range.start)}_${toLocalYMD(range.end)}.csv`, rows);
+  };
+  const handleExportTopProducts = () => {
+    const rows: (string | number)[][] = [
+      ["Produk", "Pendapatan", "Kuantitas", "Transaksi"],
+      ...(report?.topProducts ?? []).map((p) => [p.name, p.revenue, p.qty, p.orders]),
+    ];
+    downloadCSV(`top-produk-${toLocalYMD(range.start)}_${toLocalYMD(range.end)}.csv`, rows);
+  };
 
   const revenueToday = data?.revenueToday ?? 0;
   const profitToday = data?.profitToday ?? 0;
@@ -491,6 +743,207 @@ function DashboardPage() {
               <div className="text-xs text-muted-foreground">
                 Transaksi terbaru akan muncul di sini.
               </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Executive report (period-scoped, additive) */}
+      <section aria-label="Laporan eksekutif" className="space-y-4 sm:space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm">
+              <LineChart className="h-3 w-3 text-primary" />
+              Laporan Eksekutif
+            </div>
+            <h2 className="mt-2 text-lg font-bold tracking-tight sm:text-xl">
+              Kinerja bisnis · <span className="text-muted-foreground font-semibold">{range.label}</span>
+            </h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportSales}
+              disabled={reportLoading || (report?.salesRows.length ?? 0) === 0}
+              className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-background disabled:hover:text-foreground"
+              aria-label="Ekspor CSV penjualan"
+            >
+              <Download className="h-3.5 w-3.5" /> CSV Penjualan
+            </button>
+            <button
+              type="button"
+              onClick={handleExportTopProducts}
+              disabled={reportLoading || (report?.topProducts.length ?? 0) === 0}
+              className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-background disabled:hover:text-foreground"
+              aria-label="Ekspor CSV top produk"
+            >
+              <Download className="h-3.5 w-3.5" /> CSV Top Produk
+            </button>
+          </div>
+        </div>
+
+        {/* Period filter chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <Filter className="h-3 w-3" /> Rentang
+          </span>
+          {PERIOD_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setPeriod(opt.key)}
+              aria-pressed={period === opt.key}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-semibold transition-all",
+                period === opt.key
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {period === "custom" ? (
+            <div className="flex items-center gap-1.5 rounded-full border bg-background px-2 py-1 shadow-sm">
+              <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                aria-label="Tanggal mulai"
+                className="bg-transparent text-xs font-medium outline-none tabular-nums"
+              />
+              <span className="text-xs text-muted-foreground">→</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                aria-label="Tanggal akhir"
+                className="bg-transparent text-xs font-medium outline-none tabular-nums"
+              />
+            </div>
+          ) : null}
+        </div>
+
+        {/* Exec KPI grid */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <ExecKpi
+            label="Pendapatan periode"
+            value={IDR.format(report?.revenuePeriod ?? 0)}
+            hint={range.label}
+            icon={TrendingUp}
+            tone="primary"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Pendapatan bulan ini"
+            value={IDR.format(report?.revenueMonth ?? 0)}
+            hint="Dari tanggal 1"
+            icon={CalendarIcon}
+            tone="sky"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Jumlah transaksi"
+            value={String(report?.ordersPeriod ?? 0)}
+            hint="Order di periode"
+            icon={ReceiptText}
+            tone="violet"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Keuntungan periode"
+            value={IDR.format(report?.profitPeriod ?? 0)}
+            hint={(report?.profitPeriod ?? 0) >= 0 ? "Estimasi kotor" : "Rugi periode"}
+            icon={Sparkles}
+            tone="emerald"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Nilai inventaris"
+            value={IDR.format(report?.inventoryValue ?? 0)}
+            hint="Stok × HPP rata-rata"
+            icon={Warehouse}
+            tone="amber"
+            loading={reportLoading}
+          />
+          <ExecKpi
+            label="Pelanggan aktif"
+            value={String(report?.activeCustomers ?? 0)}
+            hint={`Dari ${report?.customersTotal ?? 0} total`}
+            icon={Users}
+            tone="rose"
+            loading={reportLoading}
+          />
+        </div>
+
+        {/* Top products table */}
+        <div className="relative overflow-hidden rounded-2xl border bg-card/80 shadow-sm backdrop-blur-sm">
+          <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-3 sm:px-5">
+            <div className="min-w-0">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Produk terlaris
+              </div>
+              <div className="mt-0.5 text-sm font-semibold">Top 5 · {range.label}</div>
+            </div>
+            <span className="hidden shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary ring-1 ring-primary/20 sm:inline-flex">
+              <TrendingUp className="h-3 w-3" /> Berdasarkan pendapatan
+            </span>
+          </div>
+          {reportLoading ? (
+            <div className="space-y-2 p-4 sm:p-5">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="h-8 w-8 shrink-0 animate-pulse rounded-lg bg-muted" />
+                  <div className="h-3 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-muted/70" />
+                </div>
+              ))}
+            </div>
+          ) : (report?.topProducts.length ?? 0) === 0 ? (
+            <div className="flex flex-col items-center gap-2 p-8 text-center">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-muted/60 text-muted-foreground">
+                <Boxes className="h-5 w-5" />
+              </span>
+              <div className="text-sm font-medium">Belum ada penjualan</div>
+              <div className="text-xs text-muted-foreground">
+                Tidak ada transaksi pada rentang {range.label.toLowerCase()}.
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/20 text-left text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    <th scope="col" className="px-4 py-2.5 sm:px-5">#</th>
+                    <th scope="col" className="px-4 py-2.5">Produk</th>
+                    <th scope="col" className="px-4 py-2.5 text-right tabular-nums">Pendapatan</th>
+                    <th scope="col" className="hidden px-4 py-2.5 text-right tabular-nums sm:table-cell">Qty</th>
+                    <th scope="col" className="hidden px-4 py-2.5 text-right tabular-nums sm:table-cell sm:px-5">Trx</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report!.topProducts.map((p, i) => (
+                    <tr key={i} className="border-b last:border-b-0 transition-colors hover:bg-muted/30">
+                      <td className="px-4 py-3 text-xs font-semibold text-muted-foreground sm:px-5">
+                        {i + 1}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="truncate font-medium">{p.name}</div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                        {IDR.format(p.revenue)}
+                      </td>
+                      <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground sm:table-cell">
+                        {p.qty.toLocaleString("id-ID")}
+                      </td>
+                      <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground sm:table-cell sm:px-5">
+                        {p.orders}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
