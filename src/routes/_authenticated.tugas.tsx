@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
 import { fmtItemQty } from "@/lib/stock-format";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown, RotateCcw, ListTodo, Clock, PlayCircle, Timer, Flame, CalendarClock, Users } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
@@ -42,6 +42,48 @@ function deriveTaskStatus(
   if (p.items > 0 && p.submitted >= p.items) return "Selesai";
   if (p.submitted > 0) return "Dikerjakan";
   return "Menunggu";
+}
+
+type TugasChipTone = "primary" | "info" | "success" | "warning" | "danger";
+
+function TugasSummaryCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: TugasChipTone;
+}) {
+  const map: Record<TugasChipTone, string> = {
+    primary: "text-primary bg-primary/10 ring-primary/20",
+    info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+    success: "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20 dark:text-emerald-400",
+    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    danger: "text-destructive bg-destructive/10 ring-destructive/20",
+  };
+  return (
+    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:text-[11px]">
+            {label}
+          </p>
+          <p className="mt-1 text-xl font-bold tabular-nums tracking-tight md:text-2xl">
+            {value.toLocaleString("id-ID")}
+          </p>
+        </div>
+        <span
+          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${map[tone]} md:h-9 md:w-9`}
+          aria-hidden
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+    </div>
+  );
 }
 
 // Kunci sessionStorage untuk membuat draf dialog "Buat tugas baru" tahan
@@ -110,6 +152,8 @@ function TugasPage() {
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
   const [progress, setProgress] = useState<Record<string, { items: number; submitted: number }>>({});
   const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
+  const [taskSearch, setTaskSearch] = useState("");
+  const [tasksLoaded, setTasksLoaded] = useState(false);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
@@ -144,6 +188,7 @@ function TugasPage() {
       prog[id] = { items: itemsByTask[id] ?? 0, submitted: submittedByTask[id]?.size ?? 0 };
     }
     setProgress(prog);
+    setTasksLoaded(true);
   }
   useEffect(() => { void load(); }, [uid]);
 
@@ -296,16 +341,24 @@ function TugasPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-3 py-4">
-      <div className="mb-3">
-        <h1 className="text-lg font-semibold">Penyiapan Produk</h1>
-        <p className="text-[11px] text-muted-foreground">Pilih cara menyiapkan: kerjakan sendiri, atau kirim tugas ke pegawai.</p>
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
+            <ListTodo className="h-5 w-5 text-primary" /> Penyiapan Produk
+          </h1>
+          <p className="text-[11px] text-muted-foreground">Pilih cara menyiapkan: kerjakan sendiri, atau kirim tugas ke pegawai.</p>
+        </div>
       </div>
-      <div className="mb-3 inline-flex rounded-lg border bg-card p-1 text-xs shadow-sm">
+      <div role="tablist" aria-label="Mode penyiapan" className="mb-3 inline-flex rounded-lg border bg-card p-1 text-xs shadow-sm">
         <button
+          role="tab"
+          aria-selected={mode === "self"}
           onClick={() => setMode("self")}
           className={`rounded-md px-3 py-1.5 font-semibold transition ${mode === "self" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
         >Siapkan Sendiri</button>
         <button
+          role="tab"
+          aria-selected={mode === "staff"}
           onClick={() => setMode("staff")}
           className={`rounded-md px-3 py-1.5 font-semibold transition ${mode === "staff" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
         >Via Pegawai</button>
@@ -320,27 +373,74 @@ function TugasPage() {
   );
 
   function ViaPegawaiBlock() {
+    const now = Date.now();
+    const counts = { all: tasks.length, waiting: 0, progress: 0, done: 0, overdue: 0 };
+    for (const t of tasks) {
+      const p = progress[t.id] ?? { items: 0, submitted: 0 };
+      const s = deriveTaskStatus(t.status, p);
+      if (s === "Selesai") counts.done++;
+      else if (s === "Dikerjakan") counts.progress++;
+      else counts.waiting++;
+      if (s !== "Selesai" && t.expires_at && new Date(t.expires_at).getTime() < now) counts.overdue++;
+    }
+    const q = taskSearch.trim().toLowerCase();
     return (
       <>
       <StaffContactsPanel uid={uid} />
 
-      <div className="mt-3 mb-3 flex items-center justify-between">
-        <h2 className="mt-3 text-sm font-semibold">Tugas untuk Pegawai</h2>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setOpenVariantsHub(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
-            <Settings2 className="h-4 w-4" /> Kelola Varian
-          </button>
-          <button onClick={() => setOpenAudit(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
-            <ShieldCheck className="h-4 w-4" /> Revalidasi
-          </button>
-          <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-            <Plus className="h-4 w-4" /> Buat tugas
-          </button>
+      <section aria-labelledby="tugas-pegawai-heading" className="mt-4 rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border bg-background/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+              <Users className="h-3 w-3 text-primary" /> Tugas Pegawai
+            </div>
+            <h2 id="tugas-pegawai-heading" className="flex items-center gap-2 text-base font-bold tracking-tight sm:text-lg">
+              <ListTodo className="h-5 w-5 text-primary" /> Tugas untuk Pegawai
+            </h2>
+            <p className="mt-0.5 max-w-xl text-[11px] leading-snug text-muted-foreground">
+              Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via MCM. Foto & lokasi otomatis muncul di sini.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => setOpenVariantsHub(true)} className="inline-flex h-9 items-center gap-1 rounded-md border bg-background/70 px-3 text-xs font-semibold backdrop-blur hover:bg-accent" aria-label="Kelola varian">
+              <Settings2 className="h-4 w-4" /> <span className="hidden sm:inline">Kelola Varian</span>
+            </button>
+            <button onClick={() => setOpenAudit(true)} className="inline-flex h-9 items-center gap-1 rounded-md border bg-background/70 px-3 text-xs font-semibold backdrop-blur hover:bg-accent" aria-label="Revalidasi tugas">
+              <ShieldCheck className="h-4 w-4" /> <span className="hidden sm:inline">Revalidasi</span>
+            </button>
+            <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90">
+              <Plus className="h-4 w-4" /> Buat tugas
+            </button>
+          </div>
         </div>
+      </section>
+
+      {/* Summary cards */}
+      <section aria-label="Ringkasan tugas" className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5">
+        <TugasSummaryCard icon={ListTodo} label="Total" value={counts.all} tone="primary" />
+        <TugasSummaryCard icon={Clock} label="Menunggu" value={counts.waiting} tone="warning" />
+        <TugasSummaryCard icon={PlayCircle} label="Dikerjakan" value={counts.progress} tone="info" />
+        <TugasSummaryCard icon={CheckCircle2} label="Selesai" value={counts.done} tone="success" />
+        <TugasSummaryCard icon={AlertTriangle} label="Terlambat" value={counts.overdue} tone="danger" />
+      </section>
+
+      {/* Search + filter chips */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <label className="relative min-w-0 flex-1">
+          <span className="sr-only">Cari tugas</span>
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={taskSearch}
+            onChange={(e) => setTaskSearch(e.target.value)}
+            placeholder="Cari judul tugas / catatan…"
+            className="h-9 w-full rounded-md border bg-background pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
       </div>
-      <p className="mb-2 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via MCM. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
+
       {pinAlerts.length > 0 && (
-        <div className="mb-3 space-y-2">
+        <div className="mt-3 space-y-2">
           {pinAlerts.map((a) => {
             const task = tasks.find((t) => t.id === a.task_id);
             const minutes = Math.max(
@@ -368,30 +468,24 @@ function TugasPage() {
           })}
         </div>
       )}
-      <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
+      <div className="mt-3 mb-4 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
         ⚖️ <b>Anda</b> yang menentukan <b>berat / jumlah</b> yang harus disiapkan per item (boleh desimal, mis. <b>0.90</b> gram untuk eceran kristal). Pegawai cukup mengirim <b>foto + lokasi</b>. Stok gudang induk otomatis berkurang sesuai angka yang Anda isi (mis. 100 − 0.90 = 99.10).
       </div>
 
       {(() => {
-        const counts = { all: tasks.length, waiting: 0, progress: 0, done: 0 };
-        for (const t of tasks) {
-          const p = progress[t.id] ?? { items: 0, submitted: 0 };
-          const s = deriveTaskStatus(t.status, p);
-          if (s === "Selesai") counts.done++;
-          else if (s === "Dikerjakan") counts.progress++;
-          else counts.waiting++;
-        }
         const chip = (key: typeof statusFilter, label: string, n: number) => (
           <button
             key={key}
+            type="button"
+            aria-pressed={statusFilter === key}
             onClick={() => setStatusFilter(key)}
-            className={`inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[11px] font-semibold transition ${statusFilter === key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-accent"}`}
+            className={`inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[11px] font-semibold transition ${statusFilter === key ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground hover:bg-accent"}`}
           >
-            {label} <span className="opacity-70">({n})</span>
+            {label} <span className="opacity-70 tabular-nums">({n})</span>
           </button>
         );
         return (
-          <div className="mb-3 flex flex-wrap gap-1.5">
+          <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Filter status tugas">
             {chip("all", "Semua", counts.all)}
             {chip("waiting", "Menunggu", counts.waiting)}
             {chip("progress", "Dikerjakan", counts.progress)}
@@ -401,6 +495,13 @@ function TugasPage() {
       })()}
 
       <div className="space-y-2">
+        {!tasksLoaded && tasks.length === 0 && (
+          <div className="space-y-2" aria-hidden>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-20 w-full animate-pulse rounded-xl bg-muted/40" />
+            ))}
+          </div>
+        )}
         {tasks
           .filter((t) => {
             if (statusFilter === "all") return true;
@@ -411,6 +512,13 @@ function TugasPage() {
               (statusFilter === "done" && s === "Selesai")
             );
           })
+          .filter((t) => {
+            if (!q) return true;
+            return (
+              (t.title || "").toLowerCase().includes(q) ||
+              (t.note || "").toLowerCase().includes(q)
+            );
+          })
           .map((t) => {
           const p = progress[t.id] ?? { items: 0, submitted: 0 };
           const s = deriveTaskStatus(t.status, p);
@@ -419,45 +527,108 @@ function TugasPage() {
             s === "Selesai" ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 dark:text-emerald-400"
             : s === "Dikerjakan" ? "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-400"
             : "bg-muted text-muted-foreground border-border";
+          const expMs = t.expires_at ? new Date(t.expires_at).getTime() : 0;
+          const remainingMs = expMs ? expMs - now : 0;
+          const overdue = s !== "Selesai" && expMs > 0 && remainingMs < 0;
+          // Urgensi (visual only — didasarkan sisa waktu vs status):
+          //  Mendesak: overdue atau < 2 jam
+          //  Tinggi  : < 12 jam
+          //  Sedang  : < 48 jam
+          //  Rendah  : sisanya
+          const H = 3_600_000;
+          const urg: "urgent" | "high" | "medium" | "low" =
+            s === "Selesai" ? "low"
+              : overdue || remainingMs < 2 * H ? "urgent"
+              : remainingMs < 12 * H ? "high"
+              : remainingMs < 48 * H ? "medium"
+              : "low";
+          const urgLabel = { urgent: "Mendesak", high: "Tinggi", medium: "Sedang", low: "Rendah" }[urg];
+          const urgCls = {
+            urgent: "bg-destructive/15 text-destructive border-destructive/40",
+            high: "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-400",
+            medium: "bg-sky-500/15 text-sky-700 border-sky-500/40 dark:text-sky-400",
+            low: "bg-muted text-muted-foreground border-border",
+          }[urg];
           return (
-          <div key={t.id} className="flex items-center gap-2 rounded-xl border bg-card p-3 shadow-sm">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex h-5 shrink-0 items-center rounded-full border px-2 text-[10px] font-semibold ${badgeCls}`}>{s}</span>
-                <div className="truncate text-sm font-semibold">{t.title}</div>
-              </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">
-                Dibuat {new Date(t.created_at).toLocaleString("id-ID")} · {p.submitted}/{p.items} item
-              </div>
-              {p.items > 0 && (
-                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={`h-full rounded-full transition-all ${s === "Selesai" ? "bg-emerald-500" : s === "Dikerjakan" ? "bg-amber-500" : "bg-muted-foreground/40"}`}
-                    style={{ width: `${pct}%` }}
-                  />
+          <div key={t.id} className="group relative overflow-hidden rounded-xl border bg-card p-3 shadow-sm transition-all hover:border-primary/40 hover:shadow-md">
+            <div className="flex flex-wrap items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className={`inline-flex h-5 shrink-0 items-center rounded-full border px-2 text-[10px] font-semibold uppercase tracking-wide ${badgeCls}`}>{s}</span>
+                  <span className={`inline-flex h-5 shrink-0 items-center gap-1 rounded-full border px-2 text-[10px] font-semibold uppercase tracking-wide ${urgCls}`}>
+                    {urg === "urgent" ? <Flame className="h-3 w-3" /> : <Timer className="h-3 w-3" />} {urgLabel}
+                  </span>
+                  {overdue && (
+                    <span className="inline-flex h-5 shrink-0 items-center gap-1 rounded-full border border-destructive/40 bg-destructive/15 px-2 text-[10px] font-semibold uppercase tracking-wide text-destructive">
+                      <AlertTriangle className="h-3 w-3" /> Terlambat
+                    </span>
+                  )}
                 </div>
-              )}
+                <div className="mt-1 truncate text-sm font-semibold [overflow-wrap:anywhere]">{t.title}</div>
+                {t.note && (
+                  <div className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{t.note}</div>
+                )}
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <CalendarClock className="h-3 w-3" />
+                    {new Date(t.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}
+                  </span>
+                  {expMs > 0 && (
+                    <span className={`inline-flex items-center gap-1 tabular-nums ${overdue ? "text-destructive font-semibold" : ""}`}>
+                      <Clock className="h-3 w-3" />
+                      {overdue ? "lewat " : "berakhir "}
+                      {new Date(t.expires_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1 tabular-nums">
+                    <CheckCircle2 className="h-3 w-3" /> {p.submitted}/{p.items} item
+                  </span>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs font-medium hover:bg-accent" aria-label={`Buka tugas ${t.title}`}>Buka</button>
+                <button
+                  onClick={() => setSharePinFor(t)}
+                  title="Bagikan link + PIN via MCM"
+                  aria-label="Bagikan link dan PIN"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => resetPinAttempts(t.share_token, t.title)}
+                  title="Reset percobaan PIN (pemilik / admin)"
+                  aria-label="Reset percobaan PIN"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+                <button onClick={() => removeTask(t.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive hover:bg-destructive/10" title="Hapus tugas" aria-label="Hapus tugas"><Trash2 className="h-4 w-4" /></button>
+              </div>
             </div>
-            <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
-            <button
-              onClick={() => setSharePinFor(t)}
-              title="Bagikan link + PIN via MCM"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => resetPinAttempts(t.share_token, t.title)}
-              title="Reset percobaan PIN (pemilik / admin)"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-            <button onClick={() => removeTask(t.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive" title="Hapus tugas"><Trash2 className="h-4 w-4" /></button>
+            {p.items > 0 && (
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${s === "Selesai" ? "bg-emerald-500" : s === "Dikerjakan" ? "bg-amber-500" : "bg-muted-foreground/40"}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            )}
           </div>
           );
         })}
-        {tasks.length === 0 && <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Belum ada tugas. Klik "Buat tugas".</div>}
+        {tasksLoaded && tasks.length === 0 && (
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-card/50 p-8 text-center">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <ListTodo className="h-6 w-6" />
+            </span>
+            <div className="text-sm font-medium">Belum ada tugas</div>
+            <div className="max-w-sm text-[11px] text-muted-foreground">Buat tugas pertama untuk mulai mengirim daftar penyiapan ke pegawai via link + PIN.</div>
+            <button onClick={() => setOpenCreate(true)} className="mt-1 inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground">
+              <Plus className="h-3.5 w-3.5" /> Buat tugas
+            </button>
+          </div>
+        )}
         {tasks.length > 0 && tasks.filter((t) => {
           if (statusFilter === "all") return true;
           const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
@@ -466,8 +637,16 @@ function TugasPage() {
             (statusFilter === "progress" && s === "Dikerjakan") ||
             (statusFilter === "done" && s === "Selesai")
           );
+        }).filter((t) => {
+          if (!q) return true;
+          return (
+            (t.title || "").toLowerCase().includes(q) ||
+            (t.note || "").toLowerCase().includes(q)
+          );
         }).length === 0 && (
-          <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Tidak ada tugas pada filter ini.</div>
+          <div className="rounded-xl border border-dashed bg-card/50 p-6 text-center text-xs text-muted-foreground">
+            Tidak ada tugas yang cocok dengan filter / pencarian.
+          </div>
         )}
       </div>
 
