@@ -1308,14 +1308,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         )}
       </div>
 
-      {/*
-        Tool options bar — scroll-aware. Menampilkan bayangan fade di atas
-        dan bawah saat konten meluap agar user tahu ada tombol tambahan di
-        luar viewport panel. Selain itu, memblokir tool button + memberi
-        indikator loading saat kanvas belum siap.
-      */}
-      <ToolOptionsPanel canvasReady={canvasReady} exporting={exporting}
-        // eslint-disable-next-line react/no-children-prop
+      {/* Tool options bar */}
+      <div
+        className="max-h-[55vh] overflow-y-auto border-t bg-card px-2 py-2 text-xs shadow-sm"
+        style={{
+          paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        }}
       >
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
