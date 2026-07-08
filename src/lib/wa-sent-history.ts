@@ -10,6 +10,15 @@ const EVENT = "wa-sent-shots:changed";
 const MAX_ENTRIES = 500;
 const RETAIN_MS = 1000 * 60 * 60 * 24 * 30; // 30 hari
 
+/**
+ * Registry terpisah untuk id yang di-"Hapus dari Riwayat" — kartu ini
+ * TIDAK muncul di Aktif maupun Riwayat sampai user meng-unhide. Disimpan
+ * di key sendiri supaya operasi hide tidak mengganggu waktu / metadata
+ * kiriman asli di `wa-sent-shots:v1`.
+ */
+const HIDDEN_KEY = "wa-sent-hidden:v1";
+const HIDDEN_EVENT = "wa-sent-hidden:changed";
+
 /** Channel pengiriman yang menghasilkan entri Riwayat. */
 export type SentChannel = "wa" | "chat";
 /** Status hasil pengiriman. Saat ini hanya kiriman sukses yang masuk Riwayat. */
@@ -109,6 +118,66 @@ export function unmarkSent(ids: string[]) {
 }
 
 export function clearSent() { writeRaw([]); }
+
+// ---------------------------------------------------------------------
+// Hidden registry — sembunyikan permanen dari Riwayat terkirim.
+// ---------------------------------------------------------------------
+
+function readHiddenRaw(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(HIDDEN_KEY);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return [];
+    return data.filter((v): v is string => typeof v === "string" && v.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function writeHiddenRaw(ids: string[]) {
+  try {
+    // Dedup + cap agar tidak tak terbatas.
+    const uniq = Array.from(new Set(ids)).slice(-MAX_ENTRIES * 2);
+    window.localStorage.setItem(HIDDEN_KEY, JSON.stringify(uniq));
+    window.dispatchEvent(new CustomEvent(HIDDEN_EVENT));
+  } catch { /* ignore quota */ }
+}
+
+export function getHiddenSet(): Set<string> {
+  return new Set(readHiddenRaw());
+}
+
+export function hideSent(ids: string[]) {
+  if (!ids || ids.length === 0) return;
+  const set = getHiddenSet();
+  for (const id of ids) if (id) set.add(id);
+  writeHiddenRaw(Array.from(set));
+}
+
+export function unhideSent(ids: string[]) {
+  if (!ids || ids.length === 0) return;
+  const set = getHiddenSet();
+  for (const id of ids) set.delete(id);
+  writeHiddenRaw(Array.from(set));
+}
+
+export function useHiddenSent() {
+  const [set, setSet] = useState<Set<string>>(() => getHiddenSet());
+  const refresh = useCallback(() => setSet(getHiddenSet()), []);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => { if (e.key === HIDDEN_KEY) refresh(); };
+    const onLocal = () => refresh();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(HIDDEN_EVENT, onLocal);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(HIDDEN_EVENT, onLocal);
+    };
+  }, [refresh]);
+  return set;
+}
 
 export function useSentShots() {
   const [map, setMap] = useState<Map<string, number>>(() => getSentMap());

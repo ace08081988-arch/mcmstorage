@@ -34,7 +34,8 @@ import { ExternalLink, History, Undo2 } from "lucide-react";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
-import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
+import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, type Entry as SentEntry } from "@/lib/wa-sent-history";
+import { confirm as confirmDialog } from "@/lib/confirm";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
 
@@ -456,11 +457,17 @@ export function ReadyEcerSection() {
   }
   const sentMap = useSentShots();
   const sentDetails = useSentDetails();
+  // Kartu yang di-"Hapus dari Riwayat" — dikecualikan dari daftar Aktif
+  // maupun Riwayat sampai user meng-unhide (misalnya lewat clear registry).
+  const hiddenSet = useHiddenSent();
   // Split each row's shots into active vs sent based on local history.
   const rowsForView = (filtered ?? []).map((r) => {
     const active: WorkerShot[] = [];
     const sent: WorkerShot[] = [];
-    for (const s of r.worker_shots) (sentMap.has(s.id) ? sent : active).push(s);
+    for (const s of r.worker_shots) {
+      if (hiddenSet.has(s.id)) continue;
+      (sentMap.has(s.id) ? sent : active).push(s);
+    }
     const sentTimes = sent.map((s) => sentMap.get(s.id) ?? 0).filter((n) => n > 0);
     const lastSentAt = sentTimes.length ? Math.max(...sentTimes) : null;
     return {
@@ -2061,10 +2068,35 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             <DropdownMenuLabel className="truncate">{r.name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {view === "sent" ? (
-              <DropdownMenuItem onSelect={() => { setMenuOpen(false); doDelete(); }}>
-                <Undo2 className="mr-2 h-3.5 w-3.5" />
-                Kembalikan ke aktif
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem onSelect={() => { setMenuOpen(false); doDelete(); }}>
+                  <Undo2 className="mr-2 h-3.5 w-3.5" />
+                  Kembalikan ke aktif
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={async () => {
+                    setMenuOpen(false);
+                    if (shots.length === 0) {
+                      toast.info("Tidak ada kiriman untuk dihapus.");
+                      return;
+                    }
+                    const ok = await confirmDialog({
+                      title: `Hapus kartu "${r.name}" dari Riwayat?`,
+                      description:
+                        "Kartu akan disembunyikan dari Riwayat terkirim dan tidak akan kembali ke daftar Aktif. Foto pegawai tetap ada di database.",
+                      confirmText: "Hapus",
+                      destructive: true,
+                    });
+                    if (!ok) return;
+                    hideSent(shots.map((s) => s.id));
+                    toast.success("Kartu dihapus dari Riwayat.");
+                  }}
+                >
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />
+                  Hapus dari Riwayat
+                </DropdownMenuItem>
+              </>
             ) : (
               <DropdownMenuItem onSelect={() => { setMenuOpen(false); setConfirmDelete(true); }} className="text-destructive focus:text-destructive">
                 <Trash2 className="mr-2 h-3.5 w-3.5" />
