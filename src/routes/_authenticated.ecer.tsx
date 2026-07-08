@@ -2322,6 +2322,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           status: "success",
           idemKey: `worker-shot-wa-${s.id}-${Date.now()}`,
         });
+        toast.success("Terkirim — pindah ke Riwayat", {
+          description: `${title.name} · WhatsApp`,
+          action: {
+            label: "Lihat Riwayat",
+            onClick: () => {
+              requestOpenSentHistory();
+              void navigate({ to: "/" });
+            },
+          },
+        });
       }
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
