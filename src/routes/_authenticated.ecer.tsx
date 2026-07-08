@@ -163,6 +163,10 @@ function EcerPage() {
   // Membuat produk gudang baru (lanjut otomatis ke pembuatan judul untuk produk itu).
   const [creatingProduct, setCreatingProduct] = useState(false);
   const [productSearch, setProductSearch] = useState("");
+  // Read-only aggregate untuk kartu ringkasan (Menunggu / Berjalan / Selesai).
+  // Bukan business logic baru — hanya count per title dari tabel yang sama
+  // dengan yang sudah dipakai TitleCard.
+  const [prepStats, setPrepStats] = useState<Record<string, { total: number; sold: number }>>({});
 
   function diagnose(err: { code?: string; message?: string; status?: number | string; details?: string }): string {
     const code = err?.code ?? "";
