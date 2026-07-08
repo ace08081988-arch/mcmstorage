@@ -1473,7 +1473,9 @@ function ChatRoomPage() {
             <Pencil className="mt-0.5 h-3.5 w-3.5 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-primary">Edit pesan</div>
-              <div className="line-clamp-2 text-muted-foreground">{editing.body || "(kosong)"}</div>
+              <div className="line-clamp-2 text-muted-foreground">
+                {previewText(editing.body) || "(kosong)"}
+              </div>
             </div>
             <Button
               type="button"
