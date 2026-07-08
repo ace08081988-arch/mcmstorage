@@ -292,7 +292,7 @@ export function DebtQuickActions({
       title: `Lunasi seluruh ${kindLabel.toLowerCase()} ${partyLabel}?`,
       desc: `Melunasi seluruh saldo ${rupiah(saldo)} atas nama ${partyLabel}. Tindakan ini tidak bisa diurungkan otomatis.`,
       cta: `Ya, lunasi ${rupiah(saldo)}`,
-      ctaClass: "bg-emerald-600 hover:bg-emerald-700 text-white",
+      ctaClass: "bg-success text-success-foreground hover:bg-success/90",
     },
   };
 
@@ -819,7 +819,7 @@ export function DebtQuickActions({
           type="button"
           onClick={() => setPending({ kind: "lunas", amount: saldo })}
           disabled={busy !== null || saldo <= 0}
-          className="inline-flex h-8 items-center gap-1 rounded-md border border-emerald-500/60 bg-emerald-500 px-2 text-[11px] font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+          className="inline-flex h-8 items-center gap-1 rounded-md border border-success/60 bg-success px-2 text-[11px] font-semibold text-success-foreground hover:bg-success/90 disabled:opacity-50"
           title={`Lunasi semua ${kindLabel.toLowerCase()} (${rupiah(saldo)})`}
         >
           {busy === "lunas" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
@@ -949,7 +949,7 @@ export function DebtQuickActions({
             <AlertDialogCancel disabled={reverting}>Tidak</AlertDialogCancel>
             <AlertDialogAction
               disabled={reverting}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async (e) => {
                 e.preventDefault();
                 undoConfirmedRef.current = true;
