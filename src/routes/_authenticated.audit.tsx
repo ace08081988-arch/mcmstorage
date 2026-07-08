@@ -167,7 +167,7 @@ function AuditPage() {
         <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
           mode: {currentMode()}
         </span>
-        <button
+        <button aria-label="Memuat"
           onClick={() => void runAudit()}
           disabled={running}
           className="ml-auto inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"

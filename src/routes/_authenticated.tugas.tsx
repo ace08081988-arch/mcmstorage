@@ -1245,7 +1245,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                    ))}
                                 </select>
                               </label>
-                              <button type="button" onClick={() => removeLine(it.id, l.key)}
+                              <button aria-label="Hapus baris" type="button" onClick={() => removeLine(it.id, l.key)}
                                 className="mt-4 inline-flex h-7 w-7 items-center justify-center rounded border text-destructive"
                                 title="Hapus baris"><X className="h-3 w-3" /></button>
                             </div>
@@ -1945,14 +1945,14 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
           <div className="text-[11px] text-muted-foreground">Link</div>
           <div className="flex gap-2">
             <input readOnly value={url} className="h-9 flex-1 rounded-md border bg-background px-2 text-xs" />
-            <button onClick={() => void copy(url, "Link")} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
+            <button aria-label="Salin" onClick={() => void copy(url, "Link")} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
           </div>
         </div>
         <div>
           <div className="text-[11px] text-muted-foreground">PIN (kirim terpisah agar lebih aman)</div>
           <div className="flex gap-2">
             <input readOnly value={info.pin} className="h-9 w-32 rounded-md border bg-background px-2 text-center text-base tracking-widest tabular-nums" />
-            <button onClick={() => void copy(info.pin, "PIN")} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
+            <button aria-label="Salin" onClick={() => void copy(info.pin, "PIN")} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-2.5 pt-2 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11">
@@ -2136,7 +2136,7 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
       <div className={`max-h-[90vh] w-full ${wide ? "max-w-3xl" : "max-w-lg"} overflow-y-auto rounded-t-2xl bg-card p-4 shadow-xl sm:rounded-2xl`}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-semibold">{title}</h2>
-          <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md border"><X className="h-4 w-4" /></button>
+          <button aria-label="Tutup" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md border"><X className="h-4 w-4" /></button>
         </div>
         {children}
       </div>
@@ -2313,7 +2313,7 @@ function CategoryVariantManager({ category, variants, onClose, onChanged }: { ca
               className="h-8 w-20 rounded border bg-background px-1 text-center text-xs tabular-nums" />
             <input defaultValue={v.unit_label ?? ""} onBlur={(e) => (e.target.value || null) !== v.unit_label && updateRow(v.id, { unit_label: e.target.value || null })}
               className="h-8 w-16 rounded border bg-background px-1 text-xs" placeholder="gr" />
-            <button onClick={() => remove(v.id)} className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded border text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+            <button aria-label="Hapus" onClick={() => remove(v.id)} className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded border text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
           </div>
         ))}
         {rows.length === 0 && <div className="rounded border border-dashed p-3 text-center text-[11px] text-muted-foreground">Belum ada preset. Tambah di bawah.</div>}
@@ -2423,7 +2423,7 @@ function VariantManager({ item, variants, onClose, onChanged }: { item: WItem; v
               className="h-8 w-20 rounded border bg-background px-1 text-center text-xs tabular-nums" />
             <input defaultValue={v.unit_label ?? ""} onBlur={(e) => (e.target.value || null) !== v.unit_label && updateRow(v.id, { unit_label: e.target.value || null })}
               className="h-8 w-16 rounded border bg-background px-1 text-xs" placeholder="gr" />
-            <button onClick={() => remove(v.id)} className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded border text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+            <button aria-label="Hapus" onClick={() => remove(v.id)} className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded border text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
           </div>
         ))}
         {rows.length === 0 && <div className="rounded border border-dashed p-3 text-center text-[11px] text-muted-foreground">Belum ada varian. Tambah di bawah.</div>}

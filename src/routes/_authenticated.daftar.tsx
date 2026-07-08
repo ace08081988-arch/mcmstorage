@@ -505,7 +505,7 @@ function ConversationCheckRow({
 }) {
   return (
     <li>
-      <button
+      <button aria-label="Konfirmasi"
         type="button"
         onClick={onToggle}
         className={

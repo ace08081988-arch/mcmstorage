@@ -167,7 +167,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </button>
-          <button
+          <button aria-label="Tambah"
             onClick={() => setOpen((v) => !v)}
             className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs"
           >
@@ -259,11 +259,11 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
                 title="Kirim via WA"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]"
               ><MessageCircle className="h-4 w-4" /></a>
-              <button
+              <button aria-label="Salin nomor"
                 onClick={() => copyPhone(c)} title="Salin nomor"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border"
               ><Copy className="h-4 w-4" /></button>
-              <button
+              <button aria-label="Hapus"
                 onClick={() => onDelete(c)} title="Hapus"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive"
               ><Trash2 className="h-4 w-4" /></button>

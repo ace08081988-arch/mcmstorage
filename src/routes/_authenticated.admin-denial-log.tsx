@@ -299,7 +299,7 @@ function AdminDenialLogPage() {
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 {byReferer.map(([ref, count]) => (
-                  <button
+                  <button aria-label="Klik untuk filter referer ini"
                     key={ref}
                     type="button"
                     className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-xs hover:bg-muted"
@@ -361,7 +361,7 @@ function AdminDenialLogPage() {
                             </div>
                           </td>
                           <td className="px-4 py-2">
-                            <button
+                            <button aria-label="Filter fn ini"
                               type="button"
                               className="font-mono text-xs hover:underline"
                               onClick={() => setFnFilter(r.fn)}

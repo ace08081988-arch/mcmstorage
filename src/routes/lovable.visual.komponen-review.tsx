@@ -328,7 +328,7 @@ function KomponenReviewPage() {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <button
+          <button aria-label="Unduh PNG untuk semua lebar"
             type="button"
             onClick={exportAll}
             disabled={busy !== null}
@@ -338,7 +338,7 @@ function KomponenReviewPage() {
             <Images className="h-3.5 w-3.5" />
             <span>{busy === "all" ? "Mengunduh…" : "Unduh semua"}</span>
           </button>
-          <button
+          <button aria-label="Mode terang"
             type="button"
             onClick={() => setDark((v) => !v)}
             aria-pressed={dark}

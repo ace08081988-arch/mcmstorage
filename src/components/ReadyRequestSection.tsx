@@ -95,7 +95,7 @@ export function ReadyRequestSection() {
             className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs"
           />
           {query && (
-            <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2">
+            <button aria-label="Tutup" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2">
               <X className="h-3 w-3 text-muted-foreground" />
             </button>
           )}

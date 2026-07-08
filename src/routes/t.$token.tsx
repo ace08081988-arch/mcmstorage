@@ -2873,7 +2873,7 @@ function ItemCard({
           }}
         />
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <button
+          <button aria-label="Kamera"
             type="button"
             onClick={pickCamera}
             className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"
@@ -4079,7 +4079,7 @@ function RequestForm({
         }}
       />
       <div className="grid grid-cols-2 gap-2">
-        <button
+        <button aria-label="Kamera"
           type="button"
           onClick={pickCamera}
           className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"

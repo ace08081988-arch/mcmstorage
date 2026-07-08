@@ -841,7 +841,7 @@ function TugasBaruForm() {
             <Field label="PIN">
               <div className="flex items-center gap-2">
                 <code className="flex-1 rounded bg-muted px-2 py-1 text-base tracking-widest">{created.pin}</code>
-                <button type="button" onClick={() => copyText(created.pin)} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">
+                <button aria-label="Salin" type="button" onClick={() => copyText(created.pin)} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">
                   <Copy className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -849,7 +849,7 @@ function TugasBaruForm() {
             <Field label="Link pegawai">
               <div className="flex items-center gap-2">
                 <code className="flex-1 truncate rounded bg-muted px-2 py-1 text-xs">{created.url}</code>
-                <button type="button" onClick={() => copyText(created.url)} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">
+                <button aria-label="Salin" type="button" onClick={() => copyText(created.url)} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">
                   <Copy className="h-3.5 w-3.5" />
                 </button>
                 <a href={created.url} target="_blank" rel="noreferrer" className="rounded-md border px-2 py-1 text-xs hover:bg-accent">
