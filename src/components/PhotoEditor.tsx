@@ -1607,13 +1607,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           aria-label="Toolbar editor foto"
           className="flex flex-wrap items-center gap-1"
         >
-          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" shortcut={TOOL_SHORTCUTS.select} />
-          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" shortcut={TOOL_SHORTCUTS.draw} />
-          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" shortcut={TOOL_SHORTCUTS.text} />
-          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" hint="Pilih emoji lalu ketuk untuk menempelkan di tengah" shortcut={TOOL_SHORTCUTS.emoji} />
-          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" hint="Pilih arah panah, otomatis tempel di tengah kanvas" shortcut={TOOL_SHORTCUTS.arrow} />
-          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" hint="Seret untuk ukuran bebas, atau ketuk untuk kotak default" shortcut={TOOL_SHORTCUTS.rect} />
-          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" hint="Seret dari pusat ke tepi, atau ketuk untuk ukuran default" shortcut={TOOL_SHORTCUTS.circle} />
+          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" shortcut={TOOL_SHORTCUTS.select} disabled={!canvasReady} />
+          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" shortcut={TOOL_SHORTCUTS.draw} disabled={!canvasReady} />
+          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" shortcut={TOOL_SHORTCUTS.text} disabled={!canvasReady} />
+          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" hint="Pilih emoji lalu ketuk untuk menempelkan di tengah" shortcut={TOOL_SHORTCUTS.emoji} disabled={!canvasReady} />
+          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" hint="Pilih arah panah, otomatis tempel di tengah kanvas" shortcut={TOOL_SHORTCUTS.arrow} disabled={!canvasReady} />
+          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" hint="Seret untuk ukuran bebas, atau ketuk untuk kotak default" shortcut={TOOL_SHORTCUTS.rect} disabled={!canvasReady} />
+          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" hint="Seret dari pusat ke tepi, atau ketuk untuk ukuran default" shortcut={TOOL_SHORTCUTS.circle} disabled={!canvasReady} />
           <button
             type="button"
             onClick={() => setHelpOpen((v) => !v)}
