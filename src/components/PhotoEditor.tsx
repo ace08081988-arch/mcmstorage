@@ -1316,12 +1316,50 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       {/* Tool options bar */}
+      {/*
+        Panel opsi tool. Dilengkapi:
+          - gradient fade atas/bawah yang muncul otomatis saat masih ada
+            tombol di luar pandangan → user tahu perlu men-scroll.
+          - `aria-busy` + spinner kecil saat kanvas belum siap → tombol
+            tool dinonaktifkan sampai kanvas mount, tidak silent-fail.
+      */}
+      <div className="relative">
+        {topShadow && (
+          <div
+            aria-hidden
+            data-testid="tool-panel-shadow-top"
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-card to-transparent"
+          />
+        )}
+        {bottomShadow && (
+          <div
+            aria-hidden
+            data-testid="tool-panel-shadow-bottom"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-card to-transparent"
+          />
+        )}
       <div
+        ref={toolPanelRef}
+        data-scroll-shadow={
+          topShadow && bottomShadow ? "both" : topShadow ? "top" : bottomShadow ? "bottom" : "none"
+        }
+        aria-busy={!canvasReady && loadStatus === "ready"}
         className="max-h-[55vh] overflow-y-auto border-t bg-card px-2 py-2 text-xs shadow-sm"
         style={{
           paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
         }}
       >
+        {!canvasReady && loadStatus === "ready" && (
+          <div
+            role="status"
+            aria-live="polite"
+            data-testid="tool-panel-loading"
+            className="mb-2 flex items-center gap-2 rounded-md border border-muted-foreground/20 bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Menyiapkan kanvas — tombol siap sebentar lagi.</span>
+          </div>
+        )}
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground">Warna:</span>
