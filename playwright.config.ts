@@ -1318,5 +1318,18 @@ export default defineConfig({
         ...devices["Pixel 5"],
       },
     },
+    // ── PhotoEditor keyboard + orientation safe-area guard: memastikan
+    //   root editor ter-offset lewat `bottom: kbInset` saat visualViewport
+    //   shrink (keyboard) dan kembali ke 0 saat tertutup. Juga menguji
+    //   rotasi portrait ↔ landscape.
+    {
+      name: "photo-editor-keyboard-safe-area-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /photo-editor-keyboard-safe-area\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 740 },
+      },
+    },
   ],
 });
