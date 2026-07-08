@@ -506,6 +506,41 @@ function DashboardPage() {
   const now = useMemo(() => new Date(), []);
   const greeting = greetingFor(now.getHours());
 
+  // Executive report state (additive; independent of existing summary above)
+  const [period, setPeriod] = useState<PeriodKey>("today");
+  const [customStart, setCustomStart] = useState<string>(toLocalYMD(new Date()));
+  const [customEnd, setCustomEnd] = useState<string>(toLocalYMD(new Date()));
+  const range = useMemo(
+    () => computePeriodRange(period, customStart, customEnd),
+    [period, customStart, customEnd],
+  );
+  const { data: report, isLoading: reportLoading } = usePeriodReport({
+    start: range.start,
+    end: range.end,
+  });
+
+  const handleExportSales = () => {
+    const rows: (string | number)[][] = [
+      ["Tanggal", "Item ID", "Qty", "Harga", "Total", "HPP"],
+      ...(report?.salesRows ?? []).map((r: any) => [
+        new Date(r.created_at).toLocaleString("id-ID"),
+        r.item_id ?? "",
+        Number(r.qty_base) || 0,
+        Number(r.price_per_base) || 0,
+        Number(r.total_revenue) || 0,
+        Number(r.cost_at_sale) || 0,
+      ]),
+    ];
+    downloadCSV(`laporan-penjualan-${toLocalYMD(range.start)}_${toLocalYMD(range.end)}.csv`, rows);
+  };
+  const handleExportTopProducts = () => {
+    const rows: (string | number)[][] = [
+      ["Produk", "Pendapatan", "Kuantitas", "Transaksi"],
+      ...(report?.topProducts ?? []).map((p) => [p.name, p.revenue, p.qty, p.orders]),
+    ];
+    downloadCSV(`top-produk-${toLocalYMD(range.start)}_${toLocalYMD(range.end)}.csv`, rows);
+  };
+
   const revenueToday = data?.revenueToday ?? 0;
   const profitToday = data?.profitToday ?? 0;
   const salesTodayCount = data?.salesTodayCount ?? 0;
