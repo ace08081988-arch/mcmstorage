@@ -26,6 +26,14 @@ import {
   ScanLine,
   Loader2,
 } from "lucide-react";
+import {
+  Search as SearchIcon,
+  Sparkles,
+  Phone as PhoneIcon,
+  Mail as MailIcon,
+  ArrowUpDown,
+  ArrowLeft,
+} from "lucide-react";
 import { QrScannerDialog } from "@/components/QrScannerDialog";
 import {
   formatInviteCode,
@@ -67,6 +75,76 @@ export const Route = createFileRoute("/_authenticated/buku-alamat")({
 });
 
 type Filter = "all" | "linked" | "unlinked";
+type SortKey = "name" | "recent";
+
+const numberFmt = new Intl.NumberFormat("id-ID");
+
+function initialsOf(name: string): string {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+  if (parts.length === 0) return "?";
+  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("");
+}
+
+function avatarTone(name: string): string {
+  const tones = [
+    "bg-primary/15 text-primary",
+    "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
+    "bg-sky-500/15 text-sky-600 dark:text-sky-300",
+    "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-300",
+    "bg-rose-500/15 text-rose-600 dark:text-rose-300",
+  ];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+  return tones[Math.abs(h) % tones.length];
+}
+
+type StatTone = "primary" | "emerald" | "sky" | "amber" | "muted";
+function StatCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone = "muted",
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone?: StatTone;
+}) {
+  const tones: Record<StatTone, string> = {
+    primary: "from-primary/12 to-primary/5 text-primary",
+    emerald: "from-emerald-500/12 to-emerald-500/5 text-emerald-600 dark:text-emerald-300",
+    sky: "from-sky-500/12 to-sky-500/5 text-sky-600 dark:text-sky-300",
+    amber: "from-amber-500/12 to-amber-500/5 text-amber-700 dark:text-amber-300",
+    muted: "from-muted/50 to-muted/20 text-foreground",
+  };
+  return (
+    <div className="rounded-2xl border bg-card p-3 shadow-sm">
+      <div className="flex items-start gap-2">
+        <div
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${tones[tone]}`}
+        >
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </div>
+          <div className="mt-0.5 text-lg font-bold leading-tight tabular-nums">
+            {typeof value === "number" ? numberFmt.format(value) : value}
+          </div>
+          {hint && <div className="mt-0.5 truncate text-[10.5px] text-muted-foreground">{hint}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function BukuAlamatPage() {
   const [rows, setRows] = useState<AddressBookRow[]>([]);
@@ -75,6 +153,7 @@ function BukuAlamatPage() {
   const [matching, setMatching] = useState(false);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<SortKey>("name");
   const [editing, setEditing] = useState<AddressBookRow | "new" | null>(null);
   const navigate = useNavigate();
   const startDm = useStartDm();
@@ -196,7 +275,7 @@ function BukuAlamatPage() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return rows.filter((r) => {
+    const base = rows.filter((r) => {
       if (filter === "linked" && !r.linked_user_id) return false;
       if (filter === "unlinked" && r.linked_user_id) return false;
       if (!needle) return true;
@@ -206,132 +285,254 @@ function BukuAlamatPage() {
         (r.email_norm ?? "").includes(needle)
       );
     });
-  }, [rows, q, filter]);
+    const sorted = [...base];
+    if (sort === "name") {
+      sorted.sort((a, b) => a.name.localeCompare(b.name, "id"));
+    } else {
+      sorted.sort((a, b) => {
+        const ax = (a as unknown as { updated_at?: string; created_at?: string });
+        const bx = (b as unknown as { updated_at?: string; created_at?: string });
+        const at = ax.updated_at ?? ax.created_at ?? "";
+        const bt = bx.updated_at ?? bx.created_at ?? "";
+        return bt.localeCompare(at);
+      });
+    }
+    return sorted;
+  }, [rows, q, filter, sort]);
 
   const linkedCount = useMemo(() => rows.filter((r) => r.linked_user_id).length, [rows]);
+  const deviceCount = useMemo(() => rows.filter((r) => r.source === "device").length, [rows]);
+  const manualCount = useMemo(() => rows.filter((r) => r.source === "manual").length, [rows]);
+  const linkedPct = rows.length ? Math.round((linkedCount / rows.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-3 sm:px-6">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
+      <header className="sticky top-0 z-10 border-b bg-card/85 backdrop-blur-md">
+        <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 sm:px-6">
           <Link
             to="/"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-accent"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border bg-background/60 hover:bg-accent"
             aria-label="Kembali"
           >
-            ←
+            <ArrowLeft className="h-4 w-4" />
           </Link>
-          <h1 className="flex-1 truncate text-base font-semibold">Buku Alamat</h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold leading-tight">Pelanggan &amp; Pemasok</h1>
+            <p className="truncate text-[11px] text-muted-foreground">
+              Buku alamat &middot; {numberFmt.format(rows.length)} kontak
+            </p>
+          </div>
           <Button
             size="sm"
             variant="secondary"
+            className="shrink-0"
             onClick={() => void runMatchOnLatest()}
             disabled={matching || rows.length === 0}
             title="Cocokkan ulang dengan akun terdaftar"
+            aria-label="Cocokkan dengan akun terdaftar"
           >
-            <RefreshCcw className="mr-1 h-4 w-4" />
+            <RefreshCcw className={`mr-1 h-4 w-4 ${matching ? "animate-spin" : ""}`} />
             {matching ? "Mencocokkan…" : "Cocokkan"}
           </Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-3 px-3 py-4 sm:px-6">
+      <main className="mx-auto max-w-3xl space-y-4 px-3 py-4 sm:px-6">
+        <section
+          aria-label="Ringkasan kontak"
+          className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm"
+        >
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary">
+              <Sparkles className="h-3 w-3" /> CRM Ringkas
+            </span>
+            {rows.length > 0 && (
+              <span className="text-[11px] text-muted-foreground">
+                {linkedPct}% kontak sudah tertaut ke akun MCM
+              </span>
+            )}
+          </div>
+          <p className="mt-2 max-w-md text-[12.5px] leading-relaxed text-muted-foreground">
+            Kelola pelanggan &amp; pemasok Anda: impor dari HP, tautkan otomatis ke akun MCM, dan
+            promosikan menjadi pelanggan atau pemasok.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <StatCard label="Total Kontak" value={rows.length} icon={ContactRound} tone="primary" />
+            <StatCard
+              label="Terdaftar"
+              value={linkedCount}
+              hint={rows.length ? `${linkedPct}% dari total` : undefined}
+              icon={CheckCircle2}
+              tone="emerald"
+            />
+            <StatCard label="Dari HP" value={deviceCount} icon={Smartphone} tone="sky" />
+            <StatCard label="Manual" value={manualCount} icon={UserPlus} tone="amber" />
+          </div>
+        </section>
+
         <div className="grid grid-cols-2 gap-2">
           <Button
             onClick={() => void handleImport()}
             disabled={importing || support === "unsupported"}
+            className="h-11 rounded-xl"
             title={
               support === "unsupported"
                 ? "Akses kontak hanya tersedia di aplikasi Android atau Chrome Android."
                 : "Ambil kontak dari penyimpanan HP"
             }
           >
-            <Smartphone className="mr-1 h-4 w-4" />
+            <Smartphone className="mr-1.5 h-4 w-4" />
             {importing ? "Mengimpor…" : "Impor dari HP"}
           </Button>
-          <Button variant="outline" onClick={() => setEditing("new")}>
-            <UserPlus className="mr-1 h-4 w-4" /> Tambah manual
+          <Button
+            variant="outline"
+            className="h-11 rounded-xl"
+            onClick={() => setEditing("new")}
+          >
+            <UserPlus className="mr-1.5 h-4 w-4" /> Tambah manual
           </Button>
         </div>
         {support === "unsupported" && (
-          <p className="rounded-md border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="rounded-xl border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
             Akses kontak HP hanya tersedia di aplikasi Android MCM Storage, atau di Chrome Android
             (Contact Picker). Tambah manual tetap bisa di semua perangkat.
           </p>
         )}
 
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Cari nama, telepon, atau email…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+          <div className="relative flex-1">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari nama, telepon, atau email…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="h-11 rounded-xl pl-9"
+              aria-label="Cari kontak"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-11 shrink-0 rounded-xl"
+            onClick={() => setSort((s) => (s === "name" ? "recent" : "name"))}
+            title="Urutkan"
+            aria-label={`Urut: ${sort === "name" ? "Nama" : "Terbaru"}`}
+          >
+            <ArrowUpDown className="mr-1.5 h-4 w-4" />
+            {sort === "name" ? "Nama" : "Terbaru"}
+          </Button>
         </div>
 
         <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all">Semua ({rows.length})</TabsTrigger>
-            <TabsTrigger value="linked">Terdaftar ({linkedCount})</TabsTrigger>
-            <TabsTrigger value="unlinked">Belum ({rows.length - linkedCount})</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 rounded-xl">
+            <TabsTrigger value="all" className="rounded-lg">
+              Semua <span className="ml-1 text-muted-foreground">({rows.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="linked" className="rounded-lg">
+              Terdaftar <span className="ml-1 text-muted-foreground">({linkedCount})</span>
+            </TabsTrigger>
+            <TabsTrigger value="unlinked" className="rounded-lg">
+              Belum <span className="ml-1 text-muted-foreground">({rows.length - linkedCount})</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={filter} className="mt-3">
             {loading ? (
-              <ul className="space-y-2" aria-busy="true">
+              <ul className="space-y-2" aria-busy="true" aria-live="polite">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <li key={i} className="rounded-lg border bg-card p-3">
-                    <Skeleton className="h-4 w-2/5" />
-                    <Skeleton className="mt-2 h-3 w-1/3" />
+                  <li key={i} className="rounded-2xl border bg-card p-3">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Skeleton className="h-4 w-2/5" />
+                        <Skeleton className="h-3 w-1/3" />
+                        <Skeleton className="h-3 w-1/4" />
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <ContactRound className="h-5 w-5" />
+              <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card/40 py-12 text-center text-sm text-muted-foreground">
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary">
+                  <ContactRound className="h-6 w-6" />
                 </div>
-                <p className="font-medium text-foreground">Belum ada kontak</p>
-                <p className="mx-auto max-w-xs text-xs">
-                  Mulai dengan <span className="font-medium">Impor dari HP</span> atau tambah satu
-                  per satu lewat <span className="font-medium">Tambah manual</span>.
+                <p className="font-semibold text-foreground">
+                  {q || filter !== "all" ? "Tidak ada kontak cocok" : "Belum ada kontak"}
+                </p>
+                <p className="mx-auto max-w-xs text-xs leading-relaxed">
+                  {q || filter !== "all" ? (
+                    <>Coba ubah kata kunci atau ganti tab filter di atas.</>
+                  ) : (
+                    <>
+                      Mulai dengan <span className="font-medium">Impor dari HP</span> atau tambah
+                      satu per satu lewat <span className="font-medium">Tambah manual</span>.
+                    </>
+                  )}
                 </p>
               </div>
             ) : (
               <ul className="space-y-2">
-                {filtered.map((r) => (
-                  <li key={r.id} className="rounded-lg border bg-card p-3 text-sm">
-                    <div className="flex items-start gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate font-medium">{r.name}</span>
-                          {r.linked_user_id && (
-                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                              <CheckCircle2 className="h-3 w-3" /> Akun terdaftar
-                            </span>
-                          )}
-                          <span className="inline-block rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                            {r.source === "device" ? "HP" : r.source === "app" ? "App" : "Manual"}
-                          </span>
+                {filtered.map((r) => {
+                  const sourceLabel =
+                    r.source === "device" ? "HP" : r.source === "app" ? "App" : "Manual";
+                  return (
+                    <li
+                      key={r.id}
+                      className="group rounded-2xl border bg-card p-3 text-sm shadow-sm transition-colors hover:border-primary/30 hover:bg-card/80"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${avatarTone(
+                            r.name,
+                          )}`}
+                          aria-hidden="true"
+                        >
+                          {initialsOf(r.name)}
                         </div>
-                        {r.phone && (
-                          <div className="truncate text-xs text-muted-foreground">📱 {r.phone}</div>
-                        )}
-                        {r.email && (
-                          <div className="truncate text-xs text-muted-foreground">✉️ {r.email}</div>
-                        )}
-                        {r.note && (
-                          <div className="mt-1 truncate text-[11px] text-muted-foreground">
-                            {r.note}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="min-w-0 truncate font-semibold text-foreground">
+                              {r.name}
+                            </span>
+                            {r.linked_user_id && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                <CheckCircle2 className="h-3 w-3" /> Terdaftar
+                              </span>
+                            )}
+                            <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                              {sourceLabel}
+                            </span>
                           </div>
-                        )}
+                          <div className="mt-1 space-y-0.5">
+                            {r.phone && (
+                              <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                                <PhoneIcon className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{r.phone}</span>
+                              </div>
+                            )}
+                            {r.email && (
+                              <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                                <MailIcon className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{r.email}</span>
+                              </div>
+                            )}
+                            {r.note && (
+                              <div className="mt-1 truncate text-[11px] italic text-muted-foreground">
+                                “{r.note}”
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t pt-2.5">
                         {r.phone && (
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            className="h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
                             onClick={() => void handleWa(r)}
+                            aria-label={`Kirim pesan WA ke ${r.name}`}
                           >
                             MCM
                           </Button>
@@ -342,42 +543,61 @@ function BukuAlamatPage() {
                             variant="secondary"
                             disabled={chatting === r.id}
                             onClick={() => void handleChat(r)}
-                            className="bg-primary/10 text-primary hover:bg-primary/20"
+                            className="h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary/20"
+                            aria-label={`Buka chat dengan ${r.name}`}
                           >
-                            <MessageCircle className="mr-1 h-3.5 w-3.5" /> Chat
+                            {chatting === r.id ? (
+                              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                            )}
+                            Chat
                           </Button>
                         )}
                         <Button
                           size="sm"
                           variant="outline"
+                          className="h-8 rounded-lg"
                           onClick={() => void handlePromote(r, "customer")}
                           title="Tambahkan sebagai pelanggan"
+                          aria-label={`Jadikan ${r.name} pelanggan`}
                         >
                           <Users2 className="mr-1 h-3.5 w-3.5" /> Pelanggan
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
+                          className="h-8 rounded-lg"
                           onClick={() => void handlePromote(r, "supplier")}
                           title="Tambahkan sebagai pemasok"
+                          aria-label={`Jadikan ${r.name} pemasok`}
                         >
                           <Truck className="mr-1 h-3.5 w-3.5" /> Pemasok
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditing(r)}>
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => void handleDelete(r)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="ml-auto flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 rounded-lg"
+                            onClick={() => setEditing(r)}
+                            aria-label={`Edit ${r.name}`}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 rounded-lg p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => void handleDelete(r)}
+                            aria-label={`Hapus ${r.name}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </TabsContent>
