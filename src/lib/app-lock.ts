@@ -2,8 +2,58 @@
 // Methods: "pin" | "pattern" | "biometric". Multiple methods can be enabled,
 // but only ONE primary credential (pin or pattern) is stored at a time;
 // biometric is an additional unlock shortcut on supported devices.
+//
+// ─────────────────────────────────────────────────────────────
+// M24 — Storage & threat model (audit): the PIN/pattern secret is
+// NEVER stored in plaintext. What is stored is a SHA-256 hash + random
+// per-user salt in the following backends:
+//
+//   1) `localStorage` — read/written synchronously for UI paths that
+//      cannot await Capacitor (e.g. lock screen render, migrations).
+//   2) `@capacitor/preferences` — mirrored on native (Android APK) so
+//      the config survives app-kill even if WebView storage is cleared.
+//
+// Neither backend is Android Keystore / iOS Keychain-backed encrypted
+// storage. This project does NOT currently ship a Keystore-backed
+// secure-storage Capacitor plugin, so we don't pretend to have one.
+//
+// Threat implications, made explicit:
+//   - On-device attacker with root/JB access can read the SHA-256 hash
+//     + salt out of SharedPreferences / UserDefaults / localStorage and
+//     mount an offline brute-force. A 4-digit PIN has 10⁴ combinations;
+//     an unsalted SHA-256 pre-image scan is trivial. The salt raises
+//     the cost to a per-user attack (no rainbow tables) but does not
+//     stop targeted brute force.
+//   - The lock is a *convenience* barrier for local shoulder-surfing
+//     and casual multi-user device sharing, NOT an anti-forensics
+//     control. Server-side auth is enforced separately by Supabase Auth
+//     regardless of the local lock state.
+//
+// If/when a project-wide secure-storage plugin is adopted (e.g.
+// `@aparajita/capacitor-secure-storage` — same vendor as the biometric
+// plugin we already ship), swap `prefsGet`/`prefsSet`/`prefsRemove`
+// below to that plugin's Keystore-backed API. `getLockStorageMode()`
+// exists precisely to surface the current backend without lying.
+// ─────────────────────────────────────────────────────────────
 
 export type LockMethod = "pin" | "pattern" | "biometric";
+
+export type LockStorageMode = "secure" | "preferences" | "localstorage";
+
+/**
+ * Report the strongest storage backend actually in use for the
+ * hashed PIN/pattern secret. `"secure"` is reserved for a future
+ * Keystore/Keychain-backed plugin — currently never returned.
+ */
+export async function getLockStorageMode(): Promise<LockStorageMode> {
+  try {
+    const mod = await import("@capacitor/preferences");
+    if (mod && typeof mod.Preferences?.get === "function") return "preferences";
+  } catch {
+    /* plugin not present */
+  }
+  return "localstorage";
+}
 
 export type LockConfig = {
   method: "pin" | "pattern"; // primary stored credential
