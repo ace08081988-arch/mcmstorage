@@ -163,7 +163,19 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
         </div>
         {card.package ? <div className="opacity-80">{card.package}</div> : null}
         {card.category ? <div className="opacity-70">{card.category}</div> : null}
-        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined }} className="mt-1 inline-flex items-center gap-1 text-primary underline">
+        {/*
+         * M1: kartu produk yang di-share via chat harus membuka /ecer dan
+         * langsung menyorot item yang dimaksud. Sebelumnya seluruh search
+         * di-set `undefined` sehingga link hanya membuka halaman umum tanpa
+         * konteks — operator harus scroll manual untuk menemukan produk.
+         * `card.id` = warehouse item id (lihat AttachMenu produk),
+         * cocok dengan search param `item` yang di-parse oleh route Ecer.
+         */}
+        <Link
+          to="/ecer"
+          search={{ item: card.id, title: undefined, highlight: undefined }}
+          className="mt-1 inline-flex items-center gap-1 text-primary underline"
+        >
           Buka produk
         </Link>
       </div>
