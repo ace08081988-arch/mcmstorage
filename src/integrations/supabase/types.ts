@@ -3671,6 +3671,15 @@ export type Database = {
       }
       normalize_phone: { Args: { _p: string }; Returns: string }
       normalize_unit_label: { Args: { _u: string }; Returns: string }
+      pos_commit_sale: {
+        Args: {
+          _item_id: string
+          _note?: string
+          _price_per_base: number
+          _qty_base: number
+        }
+        Returns: string
+      }
       prep_create_task: {
         Args: {
           _items: Json
@@ -3886,6 +3895,10 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
       start_dm: { Args: { _partner: string }; Returns: string }
       start_pro_trial: { Args: never; Returns: Json }
+      storage_upload_within_limits: {
+        Args: { _max_bytes?: number; _metadata: Json }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
