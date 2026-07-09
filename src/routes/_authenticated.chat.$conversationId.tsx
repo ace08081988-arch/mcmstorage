@@ -405,13 +405,44 @@ function ChatRoomPage() {
       }
       return minMs;
     },
-    refetchInterval: 5000,
+    // H13: rely on the postgres_changes subscription below instead of polling.
   });
+
+  // H13: realtime read-receipt updates for other members.
+  useEffect(() => {
+    if (!myId) return;
+    const ch = supabase
+      .channel(`chat-members-read:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "conversation_members",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        () => {
+          qc.invalidateQueries({
+            queryKey: ["chat", "conv-others-read", conversationId, myId],
+          });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [conversationId, myId, qc]);
 
   // Typing indicator via Realtime broadcast
   const [typingNames, setTypingNames] = useState<string[]>([]);
   const typingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // H12: reference profiles.data via a ref so the typing channel isn't
+  // torn down and recreated every time the profiles query refetches.
+  const profilesRef = useRef(profiles.data);
+  useEffect(() => {
+    profilesRef.current = profiles.data;
+  }, [profiles.data]);
   useEffect(() => {
     if (!myId) return;
     const ch = supabase.channel(`chat-typing:${conversationId}`, {
@@ -420,7 +451,7 @@ function ChatRoomPage() {
     ch.on("broadcast", { event: "typing" }, (msg) => {
       const uid = (msg.payload as { userId?: string } | undefined)?.userId;
       if (!uid || uid === myId) return;
-      const p = profiles.data?.get(uid);
+      const p = profilesRef.current?.get(uid);
       const name =
         p?.display_name
         || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
@@ -442,7 +473,7 @@ function ChatRoomPage() {
       supabase.removeChannel(ch);
       typingChannelRef.current = null;
     };
-  }, [conversationId, myId, profiles.data]);
+  }, [conversationId, myId]);
 
   const lastTypingSentRef = useRef(0);
   const emitTyping = () => {

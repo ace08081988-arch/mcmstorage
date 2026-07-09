@@ -270,7 +270,14 @@ function GudangPage() {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
   }, []);
 
-  async function reloadAll() {
+  // H10: coalesce burst reloads within a short window into a single fetch.
+  // Prevents `onLocalPayment` + `onChanged` (and similar dual-callbacks) from
+  // firing two full 8-table reloads per mutation.
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reloadInFlightRef = useRef(false);
+  const reloadPendingRef = useRef(false);
+
+  async function reloadAllNow() {
     const [s, w, p, sa, py, c, cp, or] = await Promise.all([
       supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("*").order("name"),
@@ -292,10 +299,37 @@ function GudangPage() {
     setLoading(false);
   }
 
+  async function reloadAll() {
+    if (reloadInFlightRef.current) {
+      reloadPendingRef.current = true;
+      return;
+    }
+    if (reloadTimerRef.current) return; // already scheduled
+    reloadTimerRef.current = setTimeout(async () => {
+      reloadTimerRef.current = null;
+      reloadInFlightRef.current = true;
+      try {
+        await reloadAllNow();
+      } finally {
+        reloadInFlightRef.current = false;
+        if (reloadPendingRef.current) {
+          reloadPendingRef.current = false;
+          reloadAll();
+        }
+      }
+    }, 250);
+  }
+
   useEffect(() => {
     if (!uid) return;
-    reloadAll();
+    reloadAllNow();
   }, [uid]);
+
+  useEffect(() => {
+    return () => {
+      if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
+    };
+  }, []);
 
   const itemMap = useMemo(() => Object.fromEntries(items.map((i) => [i.id, i])), [items]);
   const supMap = useMemo(() => Object.fromEntries(suppliers.map((s) => [s.id, s])), [suppliers]);

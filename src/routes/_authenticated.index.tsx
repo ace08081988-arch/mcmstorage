@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { isChatOnly } from "@/lib/app-mode";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -334,6 +334,9 @@ function Index() {
   };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  // H11: skip the first save after hydration so mounting the page
+  // doesn't upsert identical data back to user_storage.
+  const skipNextSaveRef = useRef(false);
   const [filter, setFilter] = useState<"semua" | Status>(() => {
     if (typeof window === "undefined") return "semua";
     const v = window.localStorage.getItem("mcm_filter");
@@ -406,6 +409,7 @@ function Index() {
       } else {
         const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
         const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
+        skipNextSaveRef.current = true;
         setItems(loadedItems);
         setCategories(loadedCats);
         try {
@@ -419,6 +423,10 @@ function Index() {
 
   useEffect(() => {
     if (!hydrated) return;
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
     let cancelled = false;
     const t = setTimeout(async () => {
       const { data: userRes } = await supabase.auth.getUser();

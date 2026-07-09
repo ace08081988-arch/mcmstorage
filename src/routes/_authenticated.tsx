@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { autoLockKey, isAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 import {
@@ -24,6 +24,11 @@ function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
   const [locked, setLockedState] = useState(false);
   const [cfgVer, setCfgVer] = useState(0);
+  // H23: keep an always-current uid in a ref so pagehide/beforeunload
+  // never sees a stale (or null) captured value and never removes tokens
+  // that don't belong to the currently signed-in user.
+  const uidRef = useRef<string | null>(null);
+  useEffect(() => { uidRef.current = uid; }, [uid]);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
   }, []);
@@ -86,7 +91,9 @@ function AuthLock() {
   useEffect(() => {
     if (!uid) return;
     const lock = () => {
-      if (!isAutoLockEnabled(uid)) return;
+      const currentUid = uidRef.current;
+      if (!currentUid) return;
+      if (!isAutoLockEnabled(currentUid)) return;
       try {
         for (const k of Object.keys(localStorage)) {
           if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
