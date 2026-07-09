@@ -1385,15 +1385,15 @@ function PosKasirPage() {
                         <div className="text-right shrink-0">
                           <div className="text-emerald-400 font-mono font-semibold text-sm">{rupiah(t.total)}</div>
                           <div className="text-[11px] text-slate-400 font-mono">
-                            {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                            {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(t)}
                           </div>
                         </div>
                       </div>
                       <div className={`border-t border-slate-800 flex justify-between text-[11px] text-slate-500 ${modeRingkas ? "mt-1.5 pt-1.5" : "mt-2 pt-2"}`}>
-                        <span>@ {rupiah(t.hargaPerKg)}/kg</span>
+                        <span>@ {rupiah(t.hargaPerKg)}/{unitOf(t)}</span>
                         <span>
                           Sisa:{" "}
-                          <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
+                          <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} {unitOf(t)}</span>
                         </span>
                       </div>
                       <div className={`flex ${modeRingkas ? "mt-1.5 gap-1.5" : "mt-2 gap-2"}`}>
