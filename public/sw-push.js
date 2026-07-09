@@ -102,7 +102,13 @@ async function appAlreadyFocusedFor(conversationId) {
   if (!conversationId) return false;
   const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
   for (const c of clients) {
-    if (!c.focused) continue;
+    // M3: `Client.focused` tidak reliable di iOS Safari — pada PWA yang
+    // sedang aktif nilainya bisa `false` walau aplikasi terlihat di layar.
+    // Fallback ke `Client.visibilityState === "visible"` supaya deteksi
+    // "app sedang dibuka" tetap benar; jika keduanya menandai tidak
+    // aktif, lewati klien tersebut.
+    const focused = c.focused === true || c.visibilityState === "visible";
+    if (!focused) continue;
     try {
       const u = new URL(c.url);
       if (u.pathname === `/chat/${conversationId}`) return true;
