@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Bell, BellOff, BellRing, ChevronRight, MessageCircle, ClipboardCheck, Package, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Popover,
   PopoverContent,
@@ -16,7 +17,7 @@ import {
   type FeedItem,
 } from "@/lib/notif-feed.functions";
 
-const REFRESH_MS = 30_000;
+const REFRESH_MS = 60_000; // fallback polling — realtime yang utama
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -143,6 +144,53 @@ export function NotificationBell() {
       alive = false;
       if (timer) window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVis);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Realtime: refresh instan saat ada event notifikasi baru pada sumber
+  // data yang di-agregasi feed (chat/tugas/order/sistem). RLS memastikan
+  // hanya event yang boleh dilihat user yang akan diterima klien.
+  useEffect(() => {
+    let debounce: number | null = null;
+    const bump = () => {
+      if (debounce) return;
+      debounce = window.setTimeout(() => {
+        debounce = null;
+        if (document.visibilityState === "visible") void refresh();
+      }, 400);
+    };
+    const channel = supabase
+      .channel("notif-bell")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        bump,
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "friend_requests" },
+        bump,
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "prep_submissions" },
+        bump,
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "order_request_events" },
+        bump,
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "prep_pin_alerts" },
+        bump,
+      )
+      .subscribe();
+    return () => {
+      if (debounce) window.clearTimeout(debounce);
+      void supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
