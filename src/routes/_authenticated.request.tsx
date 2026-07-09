@@ -2745,17 +2745,19 @@ function PrepEditorDialog({
                 const ti = titleItems.find((t) => t.warehouse_item_id === r.warehouse_item_id);
                 const unit = displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
                 return (
+                  // L9: stack di 411px agar nama produk tidak dipotong;
+                  // qty + satuan berjajar di baris kedua.
                   <div key={idx} className="grid grid-cols-12 gap-1.5">
-                    <div className="col-span-7 flex min-w-0 items-center rounded-md border bg-muted/30 px-2 text-xs">
+                    <div className="col-span-12 sm:col-span-7 flex min-w-0 items-center rounded-md border bg-muted/30 px-2 py-1.5 sm:py-0 text-xs">
                       <span className="truncate">{w?.name ?? "?"}</span>
                     </div>
                     <Input
                       type="number" inputMode="decimal" step="any" min="0"
                       value={r.actual_grams}
                       onChange={(e) => setRows((rs) => rs.map((x, i) => i === idx ? { ...x, actual_grams: e.target.value } : x))}
-                      className="col-span-3 h-9 text-xs"
+                      className="col-span-8 sm:col-span-3 h-9 text-xs"
                     />
-                    <div className="col-span-2 flex min-w-0 items-center justify-center rounded-md border bg-muted/30 px-1 text-[11px] font-medium text-muted-foreground">
+                    <div className="col-span-4 sm:col-span-2 flex min-w-0 items-center justify-center rounded-md border bg-muted/30 px-1 text-[11px] font-medium text-muted-foreground">
                       <span className="truncate">{unit}</span>
                     </div>
                   </div>
