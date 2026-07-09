@@ -71,15 +71,17 @@ function useDashboardData() {
       const todayISO = startOfTodayISO();
       const weekAgoISO = startOfDayISO(6);
 
-      const [salesToday, salesWeek, readyPending, piutangSummary, piutangCountRes, prepActive, recentSales] =
+      // M10: konsolidasi query `salesToday` — dulu ada dua fetch terpisah ke
+      // tabel `sales` (hari ini + minggu ini). Sekarang cukup satu fetch
+      // minggu-terakhir dengan kolom lengkap (`total_revenue`, `cost_at_sale`,
+      // `created_at`) lalu turunkan angka hari ini di klien. Menghilangkan
+      // 1 round-trip Supabase per render dashboard dan menjamin angka
+      // hari ini konsisten dengan sparkline minggu ini (SSOT tunggal).
+      const [salesWeek, readyPending, piutangSummary, piutangCountRes, prepActive, recentSales] =
         await Promise.all([
           supabase
             .from("sales")
-            .select("total_revenue, cost_at_sale")
-            .gte("created_at", todayISO),
-          supabase
-            .from("sales")
-            .select("total_revenue, created_at")
+            .select("total_revenue, cost_at_sale, created_at")
             .gte("created_at", weekAgoISO)
             .order("created_at", { ascending: true }),
           supabase
@@ -105,12 +107,19 @@ function useDashboardData() {
             .limit(6),
         ]);
 
-      const revenueToday = (salesToday.data ?? []).reduce(
-        (s, r: any) => s + (Number(r.total_revenue) || 0),
+      // Derivasi hari ini dari data minggu (SSOT tunggal untuk `sales`).
+      const weekRows = (salesWeek.data ?? []) as Array<{
+        total_revenue: number | null;
+        cost_at_sale: number | null;
+        created_at: string;
+      }>;
+      const todayRows = weekRows.filter((r) => r.created_at >= todayISO);
+      const revenueToday = todayRows.reduce(
+        (s, r) => s + (Number(r.total_revenue) || 0),
         0,
       );
-      const profitToday = (salesToday.data ?? []).reduce(
-        (s, r: any) =>
+      const profitToday = todayRows.reduce(
+        (s, r) =>
           s + (Number(r.total_revenue) || 0) - (Number(r.cost_at_sale) || 0),
         0,
       );
@@ -126,7 +135,7 @@ function useDashboardData() {
           value: 0,
         };
       });
-      (salesWeek.data ?? []).forEach((r: any) => {
+      weekRows.forEach((r) => {
         const t = new Date(r.created_at);
         const now = new Date();
         now.setHours(0, 0, 0, 0);
@@ -137,7 +146,7 @@ function useDashboardData() {
       return {
         revenueToday,
         profitToday,
-        salesTodayCount: salesToday.data?.length ?? 0,
+        salesTodayCount: todayRows.length,
         readyPendingCount: readyPending.count ?? 0,
         piutangTotal,
         piutangCount: piutangCountRes.count ?? 0,
