@@ -59,12 +59,15 @@ export const adminGetUserEmailStatus = createServerFn({ method: "POST" })
       banned_until: string | null;
     } | null = null;
 
-    // Supabase Admin API tidak punya filter email langsung; gunakan
-    // pagination sampai 5 halaman (1000 user) — cukup untuk shop kecil.
-    for (let page = 1; page <= 5 && !userFound; page += 1) {
+    // Supabase Admin API tidak punya filter email langsung. Loop sampai
+    // halaman terakhir (halaman berikutnya mengembalikan <perPage rows)
+    // dengan safety cap besar agar pencarian tidak berhenti di user ke-1001.
+    const PER_PAGE = 200;
+    const MAX_PAGES = 500; // 100.000 user — jauh di atas kebutuhan shop kecil
+    for (let page = 1; page <= MAX_PAGES && !userFound; page += 1) {
       const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
         page,
-        perPage: 200,
+        perPage: PER_PAGE,
       });
       if (error) throw new Error(error.message);
       const match = list.users.find(
@@ -80,7 +83,7 @@ export const adminGetUserEmailStatus = createServerFn({ method: "POST" })
           banned_until: (match as { banned_until?: string }).banned_until ?? null,
         };
       }
-      if (list.users.length < 200) break;
+      if (list.users.length < PER_PAGE) break;
     }
 
     // Suppressed?
