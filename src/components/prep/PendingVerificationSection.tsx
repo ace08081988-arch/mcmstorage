@@ -18,9 +18,13 @@ export function PendingVerificationSection({
   taskIds?: string[];
   onVerified?: () => void;
 }) {
-  const [rows, setRows] = useState<
-    Array<VerificationSubmission & { photo_paths?: string[] | null; photo_path?: string | null }>
-  >([]);
+  type Row = VerificationSubmission & {
+    photo_paths?: string[] | null;
+    photo_path?: string | null;
+    task_id?: string | null;
+    task_item_id?: string | null;
+  };
+  const [rows, setRows] = useState<Row[]>([]);
   // Nama task dan nama item untuk triage. Ambil terpisah supaya query
   // utama tetap sederhana dan tidak bergantung pada FK embed (yang bisa
   // gagal diam-diam bila relasi tidak terdeteksi PostgREST). Peta ini
@@ -48,7 +52,7 @@ export function PendingVerificationSection({
       }
       const { data, error } = await q;
       if (error) throw error;
-      const list = (data ?? []) as typeof rows;
+      const list = (data ?? []) as Row[];
       setRows(list);
 
       // Resolusi nama task & item untuk triage — ambil dari SSOT tabelnya
