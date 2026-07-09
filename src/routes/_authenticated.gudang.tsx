@@ -2685,13 +2685,13 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       toast.error("Penjualan hutang wajib pilih pelanggan");
       return;
     }
+    // H3: total_revenue & cost_at_sale diisi trigger apply_sale (SSOT).
     const { error } = await supabase.from("sales").insert({
       user_id: uid,
       item_id: item.id,
       qty_base: qtyBase,
       price_per_base: pricePerBaseEff,
-      total_revenue: total,
-      cost_at_sale: 0, // recomputed in trigger
+      total_revenue: 0,
       note: note.trim() || null,
       customer_id: useCustomerId,
       payment_method: paymentMethod,
@@ -3415,9 +3415,10 @@ function PesananTab({
       }))
     )
       return false;
+    // H3: total_revenue & cost_at_sale diisi trigger apply_sale (SSOT).
     const { error } = await supabase.from("sales").insert({
       user_id: uid, item_id: it.id, qty_base: qBase,
-      price_per_base: perBase, total_revenue: qBase * perBase, cost_at_sale: 0,
+      price_per_base: perBase, total_revenue: 0,
       note: `Pesanan: ${o.note ?? "-"}`, customer_id: o.customer_id, payment_method: "kas",
     });
     if (error) { notifyError(error); return false; }

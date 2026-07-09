@@ -100,9 +100,12 @@ function PesananDetailPage() {
       confirmText: "Catat",
     }))) return;
     setBusy(true);
+    // H3: total_revenue & cost_at_sale diisi otomatis oleh trigger apply_sale
+    // (SSOT harga & modal). Klien hanya menyerahkan qty & harga per unit
+    // supaya tidak ada risiko drift kalau ke depan formula berubah.
     const { error } = await supabase.from("sales").insert({
       user_id: order.user_id, item_id: item.id, qty_base: qtyBase,
-      price_per_base: perBase, total_revenue: qtyBase * perBase, cost_at_sale: 0,
+      price_per_base: perBase, total_revenue: 0,
       note: `Pesanan: ${order.note ?? "-"}`, customer_id: order.customer_id, payment_method: "kas",
     });
     if (error) { setBusy(false); toast.error("Gagal catat penjualan"); return; }
