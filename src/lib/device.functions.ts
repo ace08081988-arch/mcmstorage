@@ -195,7 +195,7 @@ export const verifyDeviceOtp = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = deviceIdentityHash(data.deviceHash);
+    const fullHash = deviceIdentityHash(data.deviceHash, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -308,7 +308,7 @@ export const isDeviceTrusted = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = deviceIdentityHash(data.deviceHash);
+    const fullHash = deviceIdentityHash(data.deviceHash, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("user_devices")
