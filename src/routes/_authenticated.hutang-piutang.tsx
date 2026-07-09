@@ -178,12 +178,20 @@ function HutangPiutangPage() {
 
   const refresh = async () => {
     setLoading(true);
+    // H14: cap large tables so page doesn't fetch unbounded rows.
+    // Debts and their payments are already scoped to the user by RLS; we cap
+    // to keep memory + first-render fast.
     const [d, p, s, c] = await Promise.all([
       supabase
         .from("debts")
         .select("*")
-        .order("created_at", { ascending: false }),
-      supabase.from("debt_payments").select("*"),
+        .order("created_at", { ascending: false })
+        .limit(2000),
+      supabase
+        .from("debt_payments")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5000),
       supabase.from("suppliers").select("id,name,contact").order("name"),
       supabase.from("customers").select("id,name,contact").order("name"),
     ]);
@@ -197,6 +205,37 @@ function HutangPiutangPage() {
 
   useEffect(() => {
     if (uid) void refresh();
+  }, [uid]);
+
+  // H21: realtime — pull fresh data when debts / payments change from another
+  // tab or device so the piutang view isn't stale.
+  useEffect(() => {
+    if (!uid) return;
+    let scheduled: ReturnType<typeof setTimeout> | null = null;
+    const bump = () => {
+      if (scheduled) return;
+      scheduled = setTimeout(() => {
+        scheduled = null;
+        void refresh();
+      }, 400);
+    };
+    const ch = supabase
+      .channel(`hutang-piutang:${uid}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "debts", filter: `user_id=eq.${uid}` },
+        bump,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "debt_payments", filter: `user_id=eq.${uid}` },
+        bump,
+      )
+      .subscribe();
+    return () => {
+      if (scheduled) clearTimeout(scheduled);
+      supabase.removeChannel(ch);
+    };
   }, [uid]);
 
   const paidByDebt = useMemo(() => {
