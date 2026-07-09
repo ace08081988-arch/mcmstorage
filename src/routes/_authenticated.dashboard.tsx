@@ -560,7 +560,12 @@ function DashboardPage() {
   const piutangCount = data?.piutangCount ?? 0;
   const prepActiveCount = data?.prepActiveCount ?? 0;
   const buckets = data?.weekBuckets ?? [];
-  const weekTotal = buckets.reduce((s, b) => s + b.value, 0);
+  // M9: memoize agregasi buckets agar tidak dihitung ulang pada setiap render
+  // (dashboard cukup banyak re-render karena state periode & tanggal kustom).
+  const weekTotal = useMemo(
+    () => buckets.reduce((s, b) => s + b.value, 0),
+    [buckets],
+  );
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 p-4 pb-24 sm:space-y-8 sm:p-6 lg:p-8">
