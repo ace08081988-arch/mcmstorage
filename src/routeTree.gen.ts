@@ -121,6 +121,7 @@ import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/ap
 import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
 import { Route as ApiPublicHooksOrderEventNotifyRouteImport } from './routes/api/public/hooks/order-event-notify'
 import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
+import { Route as ApiPublicHooksFriendNotifyRouteImport } from './routes/api/public/hooks/friend-notify'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
@@ -742,6 +743,12 @@ const ApiPublicHooksLogPortalErrorRoute =
     path: '/api/public/hooks/log-portal-error',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksFriendNotifyRoute =
+  ApiPublicHooksFriendNotifyRouteImport.update({
+    id: '/api/public/hooks/friend-notify',
+    path: '/api/public/hooks/friend-notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksEmailQueueMonitorRoute =
   ApiPublicHooksEmailQueueMonitorRouteImport.update({
     id: '/api/public/hooks/email-queue-monitor',
@@ -865,6 +872,7 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
@@ -979,6 +987,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
@@ -1097,6 +1106,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
@@ -1215,6 +1225,7 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
     | '/api/public/hooks/prep-task-notify'
@@ -1329,6 +1340,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
     | '/api/public/hooks/prep-task-notify'
@@ -1446,6 +1458,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
     | '/api/public/hooks/prep-task-notify'
@@ -1504,6 +1517,7 @@ export interface RootRouteChildren {
   LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
   LovableVisualWorkerShotMarksentRoute: typeof LovableVisualWorkerShotMarksentRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
+  ApiPublicHooksFriendNotifyRoute: typeof ApiPublicHooksFriendNotifyRoute
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
   ApiPublicHooksOrderEventNotifyRoute: typeof ApiPublicHooksOrderEventNotifyRoute
   ApiPublicHooksPrepTaskNotifyRoute: typeof ApiPublicHooksPrepTaskNotifyRoute
@@ -2302,6 +2316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksLogPortalErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/friend-notify': {
+      id: '/api/public/hooks/friend-notify'
+      path: '/api/public/hooks/friend-notify'
+      fullPath: '/api/public/hooks/friend-notify'
+      preLoaderRoute: typeof ApiPublicHooksFriendNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/email-queue-monitor': {
       id: '/api/public/hooks/email-queue-monitor'
       path: '/api/public/hooks/email-queue-monitor'
@@ -2572,6 +2593,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
   LovableVisualWorkerShotMarksentRoute: LovableVisualWorkerShotMarksentRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
+  ApiPublicHooksFriendNotifyRoute: ApiPublicHooksFriendNotifyRoute,
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,
   ApiPublicHooksOrderEventNotifyRoute: ApiPublicHooksOrderEventNotifyRoute,
   ApiPublicHooksPrepTaskNotifyRoute: ApiPublicHooksPrepTaskNotifyRoute,

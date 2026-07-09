@@ -1278,6 +1278,27 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_notify_hook_config: {
+        Row: {
+          enabled: boolean
+          hook_url: string | null
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       friend_requests: {
         Row: {
           created_at: string
