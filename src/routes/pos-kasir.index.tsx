@@ -173,13 +173,14 @@ function PosKasirPage() {
       : "";
 
   const buildStrukText = (t: PosKasirTransaksi, withLokasi: boolean): string => {
+    const u = unitOf(t);
     const lines = [
       "🧾 *Struk POS Kasir*",
       `${t.produkEmoji} ${t.produkNama}`,
-      `Berat: ${t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
-      `Harga: ${rupiah(t.hargaPerKg)}/kg`,
+      `Jumlah: ${t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${u}`,
+      `Harga: ${rupiah(t.hargaPerKg)}/${u}`,
       `Total: *${rupiah(t.total)}*`,
-      `Sisa stok: ${t.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
+      `Sisa stok: ${t.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${u}`,
       `Waktu: ${new Date(t.waktu).toLocaleString("id-ID")}`,
     ];
     if (withLokasi && waLokasiValid) {
