@@ -71,7 +71,7 @@ function useDashboardData() {
       const todayISO = startOfTodayISO();
       const weekAgoISO = startOfDayISO(6);
 
-      const [salesToday, salesWeek, readyPending, piutangSummary, prepActive, recentSales] =
+      const [salesToday, salesWeek, readyPending, piutangSummary, piutangCountRes, prepActive, recentSales] =
         await Promise.all([
           supabase
             .from("sales")
@@ -90,6 +90,10 @@ function useDashboardData() {
           // dikurangi masing-masing pembayarannya). Menghilangkan drift
           // angka piutang antara Dashboard vs Gudang/Hutang-Piutang.
           fetchPiutangSummary(),
+          supabase
+            .from("debts")
+            .select("id", { count: "exact", head: true })
+            .eq("kind", "piutang"),
           supabase
             .from("prep_tasks")
             .select("id", { count: "exact", head: true })
@@ -136,7 +140,7 @@ function useDashboardData() {
         salesTodayCount: salesToday.data?.length ?? 0,
         readyPendingCount: readyPending.count ?? 0,
         piutangTotal,
-        piutangCount: debtsPiutang.data?.length ?? 0,
+        piutangCount: piutangCountRes.count ?? 0,
         prepActiveCount: prepActive.count ?? 0,
         recentSales: recentSales.data ?? [],
         weekBuckets: buckets,
