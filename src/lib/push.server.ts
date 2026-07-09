@@ -55,7 +55,9 @@ export type PushPayload = {
   icon?: string;
   badge?: string;
   image?: string;
-  kind?: "chat" | "generic" | "security" | "system";
+  // "order"/"tugas" cocok dgn enabledKinds di public/sw-push.js supaya
+  // toggle kategori notifikasi di pengaturan benar-benar berlaku.
+  kind?: "chat" | "generic" | "security" | "system" | "order" | "tugas";
   requireInteraction?: boolean;
   silent?: boolean;
   vibrate?: number[];

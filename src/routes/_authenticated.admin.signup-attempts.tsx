@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAdminStatus } from "@/hooks/use-is-admin";
+import { useServerFn } from "@tanstack/react-start";
+import { listSignupAttempts, type SignupAttemptRow } from "@/lib/signup-attempts.functions";
 import { ArrowLeft, ShieldAlert, RefreshCw, Search, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/signup-attempts")({
@@ -14,14 +15,7 @@ export const Route = createFileRoute("/_authenticated/admin/signup-attempts")({
   component: SignupAttemptsPage,
 });
 
-type Attempt = {
-  id: number;
-  ip: string;
-  email: string | null;
-  succeeded: boolean;
-  created_at: string;
-  user_agent: string | null;
-};
+type Attempt = SignupAttemptRow;
 
 type StatusFilter = "all" | "success" | "failed";
 
@@ -33,19 +27,9 @@ function fmt(iso: string): string {
   } catch { return iso; }
 }
 
-function toIsoStart(d: string): string | null {
-  if (!d) return null;
-  const dt = new Date(`${d}T00:00:00`);
-  return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
-}
-function toIsoEnd(d: string): string | null {
-  if (!d) return null;
-  const dt = new Date(`${d}T23:59:59.999`);
-  return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
-}
-
 function SignupAttemptsPage() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
+  const listFn = useServerFn(listSignupAttempts);
   const [rows, setRows] = useState<Attempt[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -58,22 +42,15 @@ function SignupAttemptsPage() {
   async function load() {
     setBusy(true);
     setErr(null);
-    let query = supabase
-      .from("signup_attempts")
-      .select("id,ip,email,succeeded,created_at,user_agent")
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    const iso1 = toIsoStart(from);
-    const iso2 = toIsoEnd(to);
-    if (iso1) query = query.gte("created_at", iso1);
-    if (iso2) query = query.lte("created_at", iso2);
-    if (status === "success") query = query.eq("succeeded", true);
-    else if (status === "failed") query = query.eq("succeeded", false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (query as any);
-    setBusy(false);
-    if (error) { setErr(error.message); return; }
-    setRows((data ?? []) as Attempt[]);
+    try {
+      const res = await listFn({ data: { from, to, status, limit } });
+      setBusy(false);
+      if (!res.isAdmin) { setErr("Akses ditolak"); return; }
+      setRows(res.rows);
+    } catch (e) {
+      setBusy(false);
+      setErr(e instanceof Error ? e.message : String(e));
+    }
   }
 
   useEffect(() => {

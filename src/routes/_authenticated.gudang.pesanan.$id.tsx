@@ -85,6 +85,11 @@ function PesananDetailPage() {
 
   async function proses() {
     if (!order || !item) return;
+    // C3: cegah double-decrement stok kalau pesanan sudah selesai.
+    if (order.status === "selesai") {
+      toast.error("Pesanan sudah selesai — tidak bisa diproses ulang.");
+      return;
+    }
     if (qtyBase > item.stock_base) { toast.error("Stok kurang"); return; }
     const perBase = order.price_per_unit
       ? (order.qty_mode === "base" ? Number(order.price_per_unit) : Number(order.price_per_unit) / item.package_size)
@@ -222,11 +227,11 @@ function PesananDetailPage() {
                 {order.status !== "siap" && (
                   <button disabled={busy} onClick={() => setStatus("siap")} className="rounded border px-3 py-1.5 text-xs hover:bg-accent disabled:opacity-50">📦 Tandai Siap</button>
                 )}
-                <button disabled={busy || !item || !cukup} onClick={proses} className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50">
+                <button disabled={busy || !item || !cukup || order.status === "selesai"} onClick={proses} className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50">
                   💰 Proses Jadi Penjualan
                 </button>
                 {order.status === "selesai" && (
-                  <span className="self-center text-[11px] text-muted-foreground">Pesanan sudah selesai — bisa diproses ulang bila diperlukan.</span>
+                  <span className="self-center text-[11px] text-muted-foreground">Pesanan sudah selesai — sudah tercatat sebagai penjualan.</span>
                 )}
               </div>
             </div>

@@ -1,5 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { timingSafeEqual } from "crypto";
+
+// M2: constant-time compare untuk hindari timing-oracle di secret verification.
+function safeSecretEq(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 // Dipanggil oleh trigger DB `trg_notify_prep_task_via_hook` via pg_net saat
 // admin membuat tugas penyiapan baru dan menugaskannya ke pegawai.
@@ -29,7 +38,7 @@ export const Route = createFileRoute("/api/public/hooks/prep-task-notify")({
           return Response.json({ error: "Server configuration error" }, { status: 500 });
         }
         const provided = request.headers.get("x-hook-secret") ?? "";
-        if (provided.length !== expected.length || provided !== expected) {
+        if (!safeSecretEq(provided, expected)) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -74,9 +83,12 @@ export const Route = createFileRoute("/api/public/hooks/prep-task-notify")({
             payload: {
               title: `Tugas baru: ${titleText}`,
               body,
-              url: `/pegawai/tugas/${parsed.task_id}`,
+              // H18: /pegawai/tugas/... tidak ada; arahkan ke daftar tugas.
+              url: `/tugas-daftar`,
               tag: `prep-task:${parsed.task_id}`,
-              kind: "generic",
+              // H19: samakan dgn enabledKinds di SW (chat/tugas/order/system)
+              // supaya toggle "Notifikasi Tugas" pengguna benar-benar berlaku.
+              kind: "tugas",
               requireInteraction: false,
               vibrate: [80, 40, 80],
               timestamp: Date.now(),

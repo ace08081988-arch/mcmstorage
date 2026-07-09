@@ -1,5 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { timingSafeEqual } from "crypto";
+
+// M2: constant-time compare untuk hindari timing-oracle.
+function safeSecretEq(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 // Dipanggil oleh trigger DB `trg_notify_friend_request_via_hook` via pg_net
 // setiap kali sebuah friend_request dibuat, diterima, atau ditolak.
@@ -53,7 +62,7 @@ export const Route = createFileRoute("/api/public/hooks/friend-notify")({
           return Response.json({ error: "Server configuration error" }, { status: 500 });
         }
         const provided = request.headers.get("x-hook-secret") ?? "";
-        if (provided.length !== expected.length || provided !== expected) {
+        if (!safeSecretEq(provided, expected)) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
