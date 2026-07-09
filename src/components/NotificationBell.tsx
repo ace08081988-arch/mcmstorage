@@ -152,6 +152,8 @@ export function NotificationBell() {
   // data yang di-agregasi feed (chat/tugas/order/sistem). RLS memastikan
   // hanya event yang boleh dilihat user yang akan diterima klien.
   useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     let debounce: number | null = null;
     const bump = () => {
       if (debounce) return;
@@ -160,37 +162,47 @@ export function NotificationBell() {
         if (document.visibilityState === "visible") void refresh();
       }, 400);
     };
-    const channel = supabase
-      .channel("notif-bell")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        bump,
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "friend_requests" },
-        bump,
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "prep_submissions" },
-        bump,
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "order_request_events" },
-        bump,
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "prep_pin_alerts" },
-        bump,
-      )
-      .subscribe();
+    // H15: only subscribe once the current user is known, and scope postgres_changes
+    // filters to columns owned by the user so we don't process every insert globally.
+    // RLS already gates row visibility; the filter cuts wire traffic + wakeups.
+    void supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      const uid = data.user?.id;
+      if (!uid) return;
+      channel = supabase
+        .channel(`notif-bell:${uid}`)
+        // messages has no per-recipient column; keep global insert but rely on RLS.
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages" },
+          bump,
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "friend_requests", filter: `to_user=eq.${uid}` },
+          bump,
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "prep_submissions" },
+          bump,
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "order_request_events", filter: `user_id=eq.${uid}` },
+          bump,
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "prep_pin_alerts", filter: `owner_user_id=eq.${uid}` },
+          bump,
+        )
+        .subscribe();
+    });
     return () => {
+      cancelled = true;
       if (debounce) window.clearTimeout(debounce);
-      void supabase.removeChannel(channel);
+      if (channel) void supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
