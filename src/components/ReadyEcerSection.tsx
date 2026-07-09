@@ -403,12 +403,16 @@ export function ReadyEcerSection() {
 
   useEffect(() => {
     void load();
+    const bump = async () => {
+      setSyncing(true);
+      try { await load(); } finally { setSyncing(false); }
+    };
     const ch = supabase
       .channel("ready-ecer:prep_submissions")
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, async () => {
-        setSyncing(true);
-        try { await load(); } finally { setSyncing(false); }
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, bump)
+      // H20: "siapkan sendiri" rows live in ecer_preparations — subscribe here too
+      // so paket yang dibuat dari flow ecer langsung ikut refresh.
+      .on("postgres_changes", { event: "*", schema: "public", table: "ecer_preparations" }, bump)
       .subscribe((status) => {
         if (status === "SUBSCRIBED") setRealtimeStatus("live");
         else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRealtimeStatus("offline");
