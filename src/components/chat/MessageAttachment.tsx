@@ -46,8 +46,15 @@ function useSignedUrl(path: string | null | undefined) {
   useEffect(() => {
     if (!path) return;
     let alive = true;
-    signedChatUrl(path, 3600).then((u) => { if (alive) setUrl(u); });
-    return () => { alive = false; };
+    const TTL_SEC = 3600;
+    // H16: refresh signed URL sebelum kadaluarsa (TTL 1 jam, refresh ~50 mnt)
+    // supaya tab yang lama terbuka tidak menampilkan gambar 403.
+    const refresh = () => {
+      signedChatUrl(path, TTL_SEC).then((u) => { if (alive) setUrl(u); }).catch(() => {});
+    };
+    refresh();
+    const iv = setInterval(refresh, (TTL_SEC - 600) * 1000);
+    return () => { alive = false; clearInterval(iv); };
   }, [path]);
   return url;
 }

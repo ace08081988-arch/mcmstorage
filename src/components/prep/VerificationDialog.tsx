@@ -61,9 +61,24 @@ export function VerificationDialog({
       if (decision === "rejected") args._reason = reason.trim();
       const { data, error } = await supabase.rpc("prep_submission_verify", args);
       if (error) throw error;
-      const ok = (data as { ok?: boolean } | null)?.ok;
-      if (!ok) throw new Error("Verifikasi gagal");
-      toast.success(decision === "approved" ? "Disetujui" : "Ditolak");
+      const res = data as {
+        ok?: boolean;
+        stock_changed?: boolean;
+        stock_delta_qty?: number;
+      } | null;
+      if (!res?.ok) throw new Error("Verifikasi gagal");
+      // H9: assert klien — pada penolakan submisi pending, stok tidak
+      // boleh berubah. Jika RPC melaporkan perubahan stok, tampilkan
+      // peringatan alih-alih sukses diam-diam.
+      if (decision === "rejected" && res.stock_changed === true) {
+        toast.warning(
+          `Ditolak — stok berubah ${res.stock_delta_qty ?? 0}. Periksa audit trail.`,
+        );
+      } else if (decision === "rejected") {
+        toast.success("Ditolak. Stok tidak berubah.");
+      } else {
+        toast.success("Disetujui");
+      }
       setReason("");
       setRejecting(false);
       onOpenChange(false);
