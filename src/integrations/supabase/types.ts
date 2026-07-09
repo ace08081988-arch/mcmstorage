@@ -272,6 +272,27 @@ export type Database = {
         }
         Relationships: []
       }
+      business_notify_hook_config: {
+        Row: {
+          enabled: boolean
+          hook_url: string | null
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_calls: {
         Row: {
           accepted_at: string | null
