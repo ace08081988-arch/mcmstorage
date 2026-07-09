@@ -77,27 +77,20 @@ export async function recordSale(input: {
   pricePerBase: number;
   note?: string | null;
 }): Promise<{ ok: true; saleId: string } | { ok: false; error: string }> {
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) return { ok: false, error: "Belum login" };
-
-  const total = +(input.qtyBase * input.pricePerBase).toFixed(2);
-  const { data, error } = await supabase
-    .from("sales")
-    .insert({
-      user_id: userData.user.id,
-      item_id: input.warehouseItemId,
-      qty_base: input.qtyBase,
-      price_per_base: input.pricePerBase,
-      total_revenue: total,
-      cost_at_sale: 0,
-      payment_method: "cash",
-      note: input.note ?? "POS Kasir",
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) return { ok: false, error: error?.message ?? "Gagal menyimpan penjualan" };
-  return { ok: true, saleId: data.id };
+  // C5: gunakan RPC atomic `pos_commit_sale` — di dalam DB baris
+  // `warehouse_items` di-lock (FOR UPDATE) sebelum stok divalidasi dan
+  // penjualan disimpan, sehingga dua kasir/tab paralel tidak bisa menjual
+  // stok yang sama dua kali (race TOCTOU dihapus).
+  const { data, error } = await supabase.rpc("pos_commit_sale", {
+    _item_id: input.warehouseItemId,
+    _qty_base: input.qtyBase,
+    _price_per_base: input.pricePerBase,
+    _note: input.note ?? "POS Kasir",
+  });
+  if (error || !data) {
+    return { ok: false, error: error?.message ?? "Gagal menyimpan penjualan" };
+  }
+  return { ok: true, saleId: data as string };
 }
 
 /** Batalkan transaksi POS: hapus sales row → trigger apply_sale mengembalikan stok. */
