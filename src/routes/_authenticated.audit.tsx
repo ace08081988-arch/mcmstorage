@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
     meta: [
       { title: "Audit Rute · MCM Storage" },
-      { name: "description", content: "Laporan otomatis status tiap menu/rute aplikasi pada Mode Ringkas & Mode Normal." },
+      { name: "description", content: "Halaman audit internal: laporan otomatis status tiap menu/rute pada tampilan Ringkas & Normal. Tidak mengubah data atau environment." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -175,8 +175,21 @@ function AuditPage() {
           <ClipboardCheck className="h-4 w-4 text-primary" />
           <h1 className="text-base font-semibold">Audit Rute</h1>
         </div>
-        <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          mode: {currentMode()}
+        {/* L12: perjelas bahwa "mode" di sini merujuk ke tampilan
+            Ringkas/Normal aplikasi — bukan environment (dev/prod) atau
+            build mode. Prefiks "Tampilan:" dan label "Audit internal"
+            memastikan operator tidak salah baca. */}
+        <span
+          className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+          title="Tampilan aplikasi saat audit dijalankan (Ringkas atau Normal)"
+        >
+          Tampilan: {currentMode() === "ringkas" ? "Ringkas" : "Normal"}
+        </span>
+        <span
+          className="rounded border border-dashed border-muted-foreground/40 bg-background px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+          title="Halaman internal untuk owner — tidak memengaruhi environment atau data aplikasi."
+        >
+          Audit internal
         </span>
         <button aria-label="Memuat"
           onClick={() => void runAudit()}
@@ -217,7 +230,7 @@ function AuditPage() {
               <th className="px-2 py-1.5 text-left font-medium">Status</th>
               <th className="px-2 py-1.5 text-left font-medium">Rute</th>
               <th className="px-2 py-1.5 text-left font-medium">Durasi</th>
-              <th className="px-2 py-1.5 text-left font-medium">Mode</th>
+              <th className="px-2 py-1.5 text-left font-medium">Tampilan</th>
               <th className="px-2 py-1.5 text-left font-medium">Timestamp</th>
               <th className="px-2 py-1.5 text-left font-medium">Detail</th>
             </tr>

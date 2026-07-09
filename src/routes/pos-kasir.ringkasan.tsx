@@ -199,7 +199,7 @@ function PosKasirRingkasanPage() {
           </div>
         </div>
 
-        <section className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700 mb-6">
+        <section className="bg-slate-800/50 backdrop-blur rounded-2xl p-3 sm:p-5 border border-slate-700 mb-6 min-w-0 overflow-hidden">
           <div className="flex flex-col gap-4 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div>
@@ -258,15 +258,19 @@ function PosKasirRingkasanPage() {
               Tidak ada data untuk rentang tanggal ini.
             </div>
           ) : (
-            <div className="w-full h-72 md:h-80">
+            <div className="w-full min-w-0 h-64 sm:h-72 md:h-80">
+              {/* L8: ResponsiveContainer + min-w-0 wrapper mencegah chart
+                  melebar keluar container di 411px. Sumbu kanan (kg) dan
+                  legend disempitkan di viewport kecil agar tidak overlap. */}
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={trenData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <ComposedChart data={trenData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="label" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="label" stroke="#94a3b8" tick={{ fontSize: 10 }} interval="preserveStartEnd" minTickGap={16} />
                   <YAxis
                     yAxisId="left"
                     stroke="#34d399"
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 10 }}
+                    width={44}
                     tickFormatter={(v) =>
                       v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}jt` : v >= 1000 ? `${(v / 1000).toFixed(0)}rb` : `${v}`
                     }
@@ -275,7 +279,8 @@ function PosKasirRingkasanPage() {
                     yAxisId="right"
                     orientation="right"
                     stroke="#60a5fa"
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 10 }}
+                    width={36}
                     tickFormatter={(v) => `${v}kg`}
                   />
                   <Tooltip
@@ -293,7 +298,7 @@ function PosKasirRingkasanPage() {
                       return [value, name];
                     }}
                   />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 4 }} />
                   <Bar yAxisId="left" dataKey="omzet" name="Omzet" fill="#10b981" radius={[4, 4, 0, 0]} />
                   <Line
                     yAxisId="right"

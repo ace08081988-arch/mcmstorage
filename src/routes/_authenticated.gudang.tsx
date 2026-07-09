@@ -423,18 +423,37 @@ function GudangPage() {
               <div className="text-xs font-bold tabular-nums text-foreground">{rupiah(totalStokValue)}</div>
             </div>
           </div>
-          <nav className="mx-auto flex max-w-3xl gap-1.5 overflow-x-auto px-3 pb-2 text-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {navItems.map(({ k, label, icon: Icon }) => (
-              <button
-                key={k}
-                onClick={() => setTab(k)}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-colors ${tab === k ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border/60 bg-background/60 hover:bg-accent"}`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </button>
-            ))}
-          </nav>
+          {/* L7: overflow cue — fade kiri/kanan menunjukkan tab masih bisa
+              discroll di layar sempit (411px). Fade dinonaktifkan pointer
+              agar tidak menghalangi klik tab. */}
+          <div className="relative mx-auto max-w-3xl">
+            <nav
+              role="tablist"
+              aria-label="Bagian Gudang"
+              className="flex gap-1.5 overflow-x-auto scroll-smooth px-3 pb-2 text-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {navItems.map(({ k, label, icon: Icon }) => (
+                <button
+                  key={k}
+                  role="tab"
+                  aria-selected={tab === k}
+                  onClick={() => setTab(k)}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-colors ${tab === k ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border/60 bg-background/60 hover:bg-accent"}`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background to-transparent"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background to-transparent"
+            />
+          </div>
         </header>
 
         <main className="mx-auto max-w-3xl space-y-4 p-3 md:max-w-4xl md:p-6">

@@ -125,21 +125,23 @@ function StatCard({
     muted: "from-muted/50 to-muted/20 text-foreground",
   };
   return (
-    <div className="rounded-2xl border bg-card p-3 shadow-sm">
+    <div className="min-w-0 rounded-2xl border bg-card p-3 shadow-sm">
       <div className="flex items-start gap-2">
         <div
           className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${tones[tone]}`}
         >
           <Icon className="h-4 w-4" />
         </div>
-        <div className="min-w-0">
-          <div className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="min-w-0 flex-1">
+          {/* L10: label & angka bisa panjang (Total Kontak, angka ratusan) —
+              truncate agar StatCard tidak overflow di 411px. */}
+          <div className="truncate text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground" title={label}>
             {label}
           </div>
-          <div className="mt-0.5 text-lg font-bold leading-tight tabular-nums">
+          <div className="mt-0.5 truncate text-lg font-bold leading-tight tabular-nums" title={String(value)}>
             {typeof value === "number" ? numberFmt.format(value) : value}
           </div>
-          {hint && <div className="mt-0.5 truncate text-[10.5px] text-muted-foreground">{hint}</div>}
+          {hint && <div className="mt-0.5 truncate text-[10.5px] text-muted-foreground" title={hint}>{hint}</div>}
         </div>
       </div>
     </div>

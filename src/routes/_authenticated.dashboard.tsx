@@ -463,13 +463,13 @@ function ExecKpi({
     rose: "from-rose-500/15 to-transparent text-rose-600 dark:text-rose-400 ring-rose-500/20",
   };
   return (
-    <div className="group relative flex min-h-[112px] flex-col gap-2 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group relative flex min-h-[112px] min-w-0 flex-col gap-2 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div
         aria-hidden
         className={cn("pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br", toneMap[tone])}
       />
-      <div className="relative flex items-start justify-between">
-        <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <div className="relative flex items-start justify-between gap-2">
+        <span className="min-w-0 flex-1 truncate text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground" title={label}>
           {label}
         </span>
         <span
@@ -481,15 +481,21 @@ function ExecKpi({
           <Icon className="h-4 w-4" />
         </span>
       </div>
-      <div className="relative mt-auto">
+      <div className="relative mt-auto min-w-0">
         {loading ? (
           <div className="h-7 w-24 animate-pulse rounded-lg bg-muted" />
         ) : (
-          <div className="text-xl font-bold leading-tight tracking-tight text-foreground tabular-nums sm:text-[1.35rem]">
+          // L6: nilai IDR bisa panjang di 411px 2-kolom — cegah overflow
+          // dengan truncate + tooltip fallback, dan turunkan sedikit ukuran
+          // di viewport terkecil agar tetap terbaca.
+          <div
+            className="truncate text-[1.05rem] font-bold leading-tight tracking-tight text-foreground tabular-nums sm:text-[1.35rem]"
+            title={value}
+          >
             {value}
           </div>
         )}
-        {hint ? <div className="mt-0.5 text-[11px] text-muted-foreground/90">{hint}</div> : null}
+        {hint ? <div className="mt-0.5 truncate text-[11px] text-muted-foreground/90" title={hint}>{hint}</div> : null}
       </div>
     </div>
   );
