@@ -447,16 +447,17 @@ function PosKasirPage() {
       setTimeout(() => setToast(null), 2500);
       return;
     }
-    const header = ["Waktu", "Produk", "Berat (kg)", "Harga per kg (IDR)", "Total (IDR)", "Sisa Stok (kg)"];
+    const header = ["Waktu", "Produk", "Jumlah", "Unit", "Harga per unit (IDR)", "Total (IDR)", "Sisa Stok"];
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const rows = riwayatSorted.map((t) =>
       [
         new Date(t.waktu).toLocaleString("id-ID"),
         t.produkNama,
         t.beratKg.toString().replace(".", ","),
+        unitOf(t),
         t.hargaPerKg.toString(),
         t.total.toString(),
-        t.sisaStokKg.toString().replace(".", ","),
+        `${t.sisaStokKg.toString().replace(".", ",")} ${unitOf(t)}`,
       ]
         .map((c) => escape(String(c)))
         .join(";")
