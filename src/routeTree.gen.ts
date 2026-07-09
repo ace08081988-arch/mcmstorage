@@ -118,6 +118,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
+import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
 import { Route as ApiPublicHooksOrderEventNotifyRouteImport } from './routes/api/public/hooks/order-event-notify'
 import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
@@ -723,6 +724,12 @@ const ApiPublicHooksSecurityScanDailyRoute =
     path: '/api/public/hooks/security-scan-daily',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPrepTaskNotifyRoute =
+  ApiPublicHooksPrepTaskNotifyRouteImport.update({
+    id: '/api/public/hooks/prep-task-notify',
+    path: '/api/public/hooks/prep-task-notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOrderEventNotifyRoute =
   ApiPublicHooksOrderEventNotifyRouteImport.update({
     id: '/api/public/hooks/order-event-notify',
@@ -860,6 +867,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -973,6 +981,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1090,6 +1099,7 @@ export interface FileRoutesById {
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1207,6 +1217,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
     | '/lovable/email/auth/preview'
@@ -1320,6 +1331,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
     | '/lovable/email/auth/preview'
@@ -1436,6 +1448,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
     | '/lovable/email/auth/preview'
@@ -1493,6 +1506,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
   ApiPublicHooksOrderEventNotifyRoute: typeof ApiPublicHooksOrderEventNotifyRoute
+  ApiPublicHooksPrepTaskNotifyRoute: typeof ApiPublicHooksPrepTaskNotifyRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   ApiPublicHooksShipmentStatusChangeRoute: typeof ApiPublicHooksShipmentStatusChangeRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -2267,6 +2281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSecurityScanDailyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/prep-task-notify': {
+      id: '/api/public/hooks/prep-task-notify'
+      path: '/api/public/hooks/prep-task-notify'
+      fullPath: '/api/public/hooks/prep-task-notify'
+      preLoaderRoute: typeof ApiPublicHooksPrepTaskNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/order-event-notify': {
       id: '/api/public/hooks/order-event-notify'
       path: '/api/public/hooks/order-event-notify'
@@ -2553,6 +2574,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,
   ApiPublicHooksOrderEventNotifyRoute: ApiPublicHooksOrderEventNotifyRoute,
+  ApiPublicHooksPrepTaskNotifyRoute: ApiPublicHooksPrepTaskNotifyRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   ApiPublicHooksShipmentStatusChangeRoute:
     ApiPublicHooksShipmentStatusChangeRoute,
