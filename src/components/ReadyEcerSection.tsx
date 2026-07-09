@@ -34,7 +34,7 @@ import { ExternalLink, History, Undo2 } from "lucide-react";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
-import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, type Entry as SentEntry } from "@/lib/wa-sent-history";
+import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, hydrateSentFromDb, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { consumeSentTabFlag, SHOW_SENT_EVENT } from "@/lib/ready-ecer-sent-nav";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
@@ -207,7 +207,7 @@ export function ReadyEcerSection() {
           .limit(200),
         sb
           .from("prep_submissions")
-          .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id")
+          .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id,sent_at,sent_channel,sent_maps_url")
           .gte("submitted_at", sinceIso)
           .order("submitted_at", { ascending: false })
           .limit(200),
