@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import { copyText } from "@/lib/share-wa";
 import { publicTaskUrl } from "@/lib/prep";
-import { ArrowLeft, CalendarClock, ShieldAlert, Copy, ExternalLink, Search, Plus, StickyNote } from "lucide-react";
+import { ArrowLeft, CalendarClock, ShieldAlert, Copy, ExternalLink, Search, Plus, StickyNote, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/tugas-daftar")({
@@ -69,22 +69,43 @@ function TugasDaftarPage() {
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<FilterMode>("all");
+  const [refreshing, setRefreshing] = useState(false);
+  // L3: guard "latest-wins" agar refresh cepat berturut-turut tidak
+  // menimpa state dengan hasil request lama.
+  const reqIdRef = useRef(0);
 
+  const load = useCallback(async () => {
+    if (!isAdmin) return;
+    const myReq = ++reqIdRef.current;
+    setRefreshing(true);
+    const { data, error } = await supabase
+      .from("prep_tasks")
+      .select("id,title,note,share_token,status,scheduled_at,created_at,completed_at,completion_note,expires_at")
+      .order("scheduled_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+    if (myReq !== reqIdRef.current) return;
+    if (error) { setLoadErr(error.message); setRefreshing(false); return; }
+    setLoadErr(null);
+    setTasks((data ?? []) as Task[]);
+    setRefreshing(false);
+  }, [isAdmin]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  // L3: realtime — refresh daftar saat tugas dibuat/diubah/dihapus.
+  // Cleanup channel aman untuk StrictMode double-mount.
   useEffect(() => {
     if (!isAdmin) return;
-    let alive = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("prep_tasks")
-        .select("id,title,note,share_token,status,scheduled_at,created_at,completed_at,completion_note,expires_at")
-        .order("scheduled_at", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
-      if (!alive) return;
-      if (error) { setLoadErr(error.message); return; }
-      setTasks((data ?? []) as Task[]);
-    })();
-    return () => { alive = false; };
-  }, [isAdmin]);
+    const ch = supabase
+      .channel("prep_tasks-daftar")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "prep_tasks" },
+        () => { void load(); },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [isAdmin, load]);
 
   const filtered = useMemo(() => {
     if (!tasks) return [];
@@ -139,6 +160,16 @@ function TugasDaftarPage() {
           <p className="text-xs text-muted-foreground">Ringkasan tugas yang Anda buat — tanggal, jadwal, dan catatan.</p>
         </div>
         <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+            title="Muat ulang daftar tugas"
+          >
+            {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Refresh
+          </button>
           <Link to="/tugas-baru" className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
             <Plus className="h-3.5 w-3.5" /> Tugas baru
           </Link>

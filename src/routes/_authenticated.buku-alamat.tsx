@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -639,6 +639,9 @@ function EditDialog({
   const [scanOpen, setScanOpen] = useState(false);
   const [pinPreview, setPinPreview] = useState<InviteProfile | null>(null);
   const [pinChecking, setPinChecking] = useState(false);
+  // L13: sequence id agar response resolveInviteCode lama tidak menimpa
+  // preview terbaru.
+  const pinReqIdRef = useRef(0);
 
   useEffect(() => {
     if (isNew) {
@@ -670,15 +673,16 @@ function EditDialog({
       return;
     }
     let cancelled = false;
+    const myReq = ++pinReqIdRef.current;
     setPinChecking(true);
     const t = setTimeout(async () => {
       try {
         const p = await resolveInviteCode(cleaned);
-        if (!cancelled) setPinPreview(p);
+        if (!cancelled && myReq === pinReqIdRef.current) setPinPreview(p);
       } catch {
-        if (!cancelled) setPinPreview(null);
+        if (!cancelled && myReq === pinReqIdRef.current) setPinPreview(null);
       } finally {
-        if (!cancelled) setPinChecking(false);
+        if (!cancelled && myReq === pinReqIdRef.current) setPinChecking(false);
       }
     }, 350);
     return () => {

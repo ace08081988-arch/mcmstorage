@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, ScanLine, Loader2, UserPlus, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -60,9 +60,14 @@ export function AddContactFab() {
     }
   }, [open]);
 
+  // L13: sequence id — response request lama tidak boleh menimpa preview
+  // terbaru saat user mengetik cepat.
+  const reqIdRef = useRef(0);
+
   // Debounced preview resolve — mirip alur di /undang.
   useEffect(() => {
     let cancelled = false;
+    const myReq = ++reqIdRef.current;
     if (!looksValid) {
       setPreview(null);
       return;
@@ -71,11 +76,11 @@ export function AddContactFab() {
     const t = setTimeout(async () => {
       try {
         const p = await resolveInviteCode(cleaned);
-        if (!cancelled) setPreview(p);
+        if (!cancelled && myReq === reqIdRef.current) setPreview(p);
       } catch {
-        if (!cancelled) setPreview(null);
+        if (!cancelled && myReq === reqIdRef.current) setPreview(null);
       } finally {
-        if (!cancelled) setChecking(false);
+        if (!cancelled && myReq === reqIdRef.current) setChecking(false);
       }
     }, 350);
     return () => {

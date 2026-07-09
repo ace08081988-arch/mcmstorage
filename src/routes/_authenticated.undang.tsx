@@ -84,6 +84,10 @@ function UndangPage() {
 
   const cleanInput = normalizeInviteCode(input);
   const looksValid = isLikelyInviteCode(input);
+  // L13: sequence id — hanya response request terbaru yang boleh
+  // menimpa state preview, mencegah race saat user mengetik cepat
+  // atau memoles PIN sebelum request lama selesai.
+  const reqIdRef = useRef(0);
 
   // Autocheck saat panjang cukup
   useEffect(() => {
@@ -93,17 +97,18 @@ function UndangPage() {
       return;
     }
     let cancelled = false;
+    const myReq = ++reqIdRef.current;
     setChecking(true);
     const t = setTimeout(async () => {
       try {
         const p = await resolveInviteCode(cleanInput);
-        if (cancelled) return;
+        if (cancelled || myReq !== reqIdRef.current) return;
         setPreview(p);
         setPreviewError(p ? null : "PIN tidak ditemukan.");
       } catch (e) {
-        if (!cancelled) setPreviewError((e as Error).message || "Gagal memeriksa PIN.");
+        if (!cancelled && myReq === reqIdRef.current) setPreviewError((e as Error).message || "Gagal memeriksa PIN.");
       } finally {
-        if (!cancelled) setChecking(false);
+        if (!cancelled && myReq === reqIdRef.current) setChecking(false);
       }
     }, 250);
     return () => {
