@@ -95,15 +95,32 @@ export async function notifyUsers(opts: {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const targets = opts.userIds.filter((u) => u && u !== opts.excludeUserId);
   if (targets.length === 0) return { sent: 0, pruned: 0 };
-  const { data: subs, error } = await supabaseAdmin
-    .from("push_subscriptions")
-    .select("id, endpoint, p256dh, auth")
+  // H17: dedup web-push vs FCM. Pengguna yang punya token FCM native
+  // (Android/iOS APK) akan menerima notifikasi via FCM — jangan kirim
+  // ulang lewat web-push supaya tidak dobel. Web-push tetap dipakai
+  // untuk pengguna yang hanya buka via browser (tanpa FCM token).
+  const { data: nativeRows } = await supabaseAdmin
+    .from("fcm_tokens")
+    .select("user_id, platform")
     .in("user_id", targets);
-  if (error || !subs || subs.length === 0) return { sent: 0, pruned: 0 };
+  const nativeUserIds = new Set<string>(
+    (nativeRows ?? [])
+      .filter((r) => r.platform === "android" || r.platform === "ios")
+      .map((r) => r.user_id),
+  );
+  const webTargets = targets.filter((u) => !nativeUserIds.has(u));
+  const { data: subs, error } = webTargets.length > 0
+    ? await supabaseAdmin
+        .from("push_subscriptions")
+        .select("id, endpoint, p256dh, auth")
+        .in("user_id", webTargets)
+    : { data: [], error: null };
+  if (error) return { sent: 0, pruned: 0 };
+  const subsSafe = subs ?? [];
   let sent = 0;
   const dead: string[] = [];
   await Promise.all(
-    subs.map(async (s) => {
+    subsSafe.map(async (s) => {
       const r = await sendWebPush(s, opts.payload);
       if (r.ok) sent++;
       else if (r.status === 404 || r.status === 410) dead.push(s.id);
