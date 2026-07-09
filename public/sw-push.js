@@ -81,6 +81,10 @@ self.__notifPrefs = {
   dnd: { enabled: false, start: "22:00", end: "06:00", allowUrgent: true },
 };
 
+// C7: Cache daftar percakapan yang di-mute (id → mutedUntil ms epoch).
+// Diperbarui via postMessage `muted-conversations` dari halaman utama.
+self.__mutedConversations = {};
+
 function isInDndWindow(now, start, end) {
   const [sh, sm] = String(start || "22:00").split(":").map((n) => parseInt(n, 10) || 0);
   const [eh, em] = String(end || "06:00").split(":").map((n) => parseInt(n, 10) || 0);
@@ -121,6 +125,11 @@ self.addEventListener("push", (event) => {
   const prefs = self.__notifPrefs || {};
   // Filter jenis: jika user mematikan kategori ini, abaikan push
   if (prefs.enabledKinds && prefs.enabledKinds[kind] === false) return;
+  // C7: Jika conversation ini sedang di-mute, jangan tampilkan notifikasi.
+  if (isChat && data.conversationId) {
+    const until = (self.__mutedConversations || {})[data.conversationId];
+    if (typeof until === "number" && until > Date.now()) return;
+  }
   // Jangan ganggu: hening total kecuali payload.urgent dan user mengizinkan urgent
   const dnd = prefs.dnd || {};
   const inDnd = dnd.enabled && isInDndWindow(new Date(), dnd.start, dnd.end);
@@ -229,6 +238,9 @@ self.addEventListener("message", (event) => {
   const d = event.data || {};
   if (d && d.type === "notif-prefs" && d.prefs) {
     self.__notifPrefs = d.prefs;
+  }
+  if (d && d.type === "muted-conversations" && d.muted && typeof d.muted === "object") {
+    self.__mutedConversations = d.muted;
   }
   if (d && d.type === "SKIP_WAITING") {
     self.skipWaiting();
