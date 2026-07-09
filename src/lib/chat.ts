@@ -885,10 +885,15 @@ export function useHiddenMessageIds() {
     let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
-      const { data } = await supabase.auth.getUser();
-      const uid = data.user?.id;
+      let uid: string | undefined;
+      try {
+        const { data } = await supabase.auth.getUser();
+        uid = data.user?.id;
+      } catch {
+        return;
+      }
       if (!uid || cancelled) return;
-      channel = supabase
+      const ch = supabase
         .channel(`chat-hidden:${uid}`)
         .on(
           "postgres_changes",
@@ -918,6 +923,14 @@ export function useHiddenMessageIds() {
           },
         )
         .subscribe();
+      // Belt-and-braces: jika unmount terjadi tepat setelah subscribe (mis.
+      // race pada React StrictMode double-invoke), langsung teardown agar
+      // channel tidak bocor.
+      if (cancelled) {
+        supabase.removeChannel(ch);
+        return;
+      }
+      channel = ch;
     })();
     return () => {
       cancelled = true;
