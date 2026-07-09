@@ -785,11 +785,13 @@ function TitleEditorDialog({
             </div>
             <div className="space-y-2">
               {rows.map((r, idx) => (
+                // L9: stack ke 2 baris di 411px (produk full-width, lalu
+                // qty + satuan). Pada >=sm kembali ke 7/2/3 seperti semula.
                 <div key={idx} className="grid grid-cols-12 gap-1.5 rounded-md border bg-muted/30 p-2">
                   <select
                     value={r.warehouse_item_id}
                     onChange={(e) => updateRow(idx, { warehouse_item_id: e.target.value })}
-                    className="col-span-7 h-9 rounded-md border bg-background px-2 text-xs"
+                    className="col-span-12 sm:col-span-7 h-9 rounded-md border bg-background px-2 text-xs"
                   >
                     <option value="">— pilih produk —</option>
                     {warehouseItems.map((w) => (
@@ -803,13 +805,13 @@ function TitleEditorDialog({
                     min="0"
                     value={r.target_grams}
                     onChange={(e) => updateRow(idx, { target_grams: sanitizeQty(idx, e.target.value) })}
-                    className="col-span-2 h-9 text-xs"
+                    className="col-span-5 sm:col-span-2 h-9 text-xs"
                     placeholder={qtyPlaceholder(r.unit_kind)}
                   />
                   <select
                     value={r.unit_kind}
                     onChange={(e) => updateRow(idx, { unit_kind: e.target.value as UnitKind })}
-                    className="col-span-3 h-9 rounded-md border bg-background px-1 text-xs"
+                    className="col-span-7 sm:col-span-3 h-9 rounded-md border bg-background px-1 text-xs"
                     aria-label="Satuan"
                   >
                     {UNIT_GROUPS.map((g) => (
