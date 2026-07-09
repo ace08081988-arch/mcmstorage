@@ -45,6 +45,10 @@ export type ChatShareInput = {
 export async function shareToChat(input: ChatShareInput): Promise<ChatShareResult> {
   const { conversationId, caption, locationUrl, shots, markIds, idemKey, onProgress } = input;
   let count = 0;
+  // M13: hitung foto yang benar-benar berhasil terkirim. Kalau ada `shots`
+  // sama sekali (paket foto), pesan hanya sah "terkirim" bila minimal satu
+  // foto sukses — caption/lokasi saja tidak menggantikan foto paket.
+  let photoOk = 0;
   const emit = (p: ChatShareProgress) => { try { onProgress?.(p); } catch { /* ignore */ } };
 
   try {
@@ -79,6 +83,7 @@ export async function shareToChat(input: ChatShareInput): Promise<ChatShareResul
           },
         });
         count++;
+        photoOk++;
         emit({ type: "photo", index: i, total: shots.length, status: "ok" });
       } catch (e) {
         // satu foto gagal tidak menghentikan pengiriman lain
@@ -105,13 +110,23 @@ export async function shareToChat(input: ChatShareInput): Promise<ChatShareResul
       return { status: "failed", error: "Tidak ada pesan yang berhasil dikirim.", messageCount: 0 };
     }
 
+    // M13: jangan tandai "terkirim" bila paket foto ada tapi semua gagal upload.
+    const photosRequiredButAllFailed = shots.length > 0 && photoOk === 0;
+    if (photosRequiredButAllFailed) {
+      return {
+        status: "failed",
+        error: "Foto gagal terkirim. Kartu tetap di daftar aktif.",
+        messageCount: count,
+      };
+    }
+
     if (markIds && markIds.length > 0) {
       markSent(markIds, { channel: "chat", mapsUrl: locationUrl ?? null, status: "success", idemKey });
     }
     return { status: "shared", messageCount: count };
   } catch (err) {
     const msg = (err as Error)?.message ?? "Unknown error";
-    if (count > 0) {
+    if (count > 0 && !(shots.length > 0 && photoOk === 0)) {
       if (markIds && markIds.length > 0) {
         markSent(markIds, { channel: "chat", mapsUrl: locationUrl ?? null, status: "success", idemKey });
       }
