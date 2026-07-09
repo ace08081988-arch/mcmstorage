@@ -1469,7 +1469,13 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     setLoadError(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from as any)("ecer_preparations")
-      .select("*").eq("title_id", title.id).order("created_at", { ascending: false });
+      .select("*")
+      .eq("title_id", title.id)
+      .order("created_at", { ascending: false })
+      // L1: batasi baris per judul (kotak ecer). 500 jauh di atas kebutuhan
+      // operator harian (biasanya <50) dan mencegah fetch balloon jika
+      // ada penyiapan lama yang tidak dibersihkan.
+      .limit(500);
     if (error) {
       setLoadError({
         message: error.message ?? "Gagal memuat daftar penyiapan.",
