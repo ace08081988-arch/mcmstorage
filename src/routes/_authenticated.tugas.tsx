@@ -386,7 +386,7 @@ function TugasPage() {
     const now = Date.now();
     const counts = { all: tasks.length, waiting: 0, progress: 0, done: 0, overdue: 0 };
     for (const t of tasks) {
-      const p = progress[t.id] ?? { items: 0, submitted: 0 };
+      const p = progress[t.id] ?? { items: 0, submitted: 0, approved: 0 };
       const s = deriveTaskStatus(t.status, p);
       if (s === "Selesai") counts.done++;
       else if (s === "Dikerjakan") counts.progress++;
@@ -515,7 +515,7 @@ function TugasPage() {
         {tasks
           .filter((t) => {
             if (statusFilter === "all") return true;
-            const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
+            const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0, approved: 0 });
             return (
               (statusFilter === "waiting" && s === "Menunggu") ||
               (statusFilter === "progress" && s === "Dikerjakan") ||
@@ -530,7 +530,7 @@ function TugasPage() {
             );
           })
           .map((t) => {
-          const p = progress[t.id] ?? { items: 0, submitted: 0 };
+          const p = progress[t.id] ?? { items: 0, submitted: 0, approved: 0 };
           const s = deriveTaskStatus(t.status, p);
           const pct = p.items > 0 ? Math.min(100, Math.round((p.submitted / p.items) * 100)) : 0;
           const badgeCls =
@@ -641,7 +641,7 @@ function TugasPage() {
         )}
         {tasks.length > 0 && tasks.filter((t) => {
           if (statusFilter === "all") return true;
-          const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
+          const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0, approved: 0 });
           return (
             (statusFilter === "waiting" && s === "Menunggu") ||
             (statusFilter === "progress" && s === "Dikerjakan") ||
