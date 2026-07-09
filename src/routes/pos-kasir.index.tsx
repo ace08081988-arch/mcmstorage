@@ -1438,8 +1438,8 @@ function PosKasirPage() {
                     <tr className="text-left text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
                       <th className="py-2 pr-3 font-medium">Waktu</th>
                       <th className="py-2 pr-3 font-medium">Produk</th>
-                      <th className="py-2 pr-3 font-medium text-right">Berat</th>
-                      <th className="py-2 pr-3 font-medium text-right">Harga/kg</th>
+                      <th className="py-2 pr-3 font-medium text-right">Jumlah</th>
+                      <th className="py-2 pr-3 font-medium text-right">Harga/unit</th>
                       <th className="py-2 pr-3 font-medium text-right">Total</th>
                       <th className="py-2 font-medium text-right">Sisa Stok</th>
                       <th className="py-2 font-medium text-right">WA</th>
@@ -1454,14 +1454,14 @@ function PosKasirPage() {
                           {t.produkNama}
                         </td>
                         <td className="py-2 pr-3 text-right font-mono">
-                          {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                          {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(t)}
                         </td>
                         <td className="py-2 pr-3 text-right font-mono text-slate-400">{rupiah(t.hargaPerKg)}</td>
                         <td className="py-2 pr-3 text-right font-mono font-semibold text-emerald-400">
                           {rupiah(t.total)}
                         </td>
                         <td className="py-2 text-right font-mono text-slate-300">
-                          {t.sisaStokKg.toLocaleString("id-ID")} kg
+                          {t.sisaStokKg.toLocaleString("id-ID")} {unitOf(t)}
                         </td>
                         <td className="py-2 text-right">
                           <button
