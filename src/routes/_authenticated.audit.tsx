@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
     meta: [
       { title: "Audit Rute · MCM Storage" },
-      { name: "description", content: "Laporan otomatis status tiap menu/rute aplikasi pada Mode Ringkas & Mode Normal." },
+      { name: "description", content: "Halaman audit internal: laporan otomatis status tiap menu/rute pada tampilan Ringkas & Normal. Tidak mengubah data atau environment." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -230,7 +230,7 @@ function AuditPage() {
               <th className="px-2 py-1.5 text-left font-medium">Status</th>
               <th className="px-2 py-1.5 text-left font-medium">Rute</th>
               <th className="px-2 py-1.5 text-left font-medium">Durasi</th>
-              <th className="px-2 py-1.5 text-left font-medium">Mode</th>
+              <th className="px-2 py-1.5 text-left font-medium">Tampilan</th>
               <th className="px-2 py-1.5 text-left font-medium">Timestamp</th>
               <th className="px-2 py-1.5 text-left font-medium">Detail</th>
             </tr>
