@@ -30,33 +30,7 @@ export function assertDebtSource(source: string): DebtSource {
   }
   return source as DebtSource;
 }
-
-// ---------------------------------------------------------------------------
-// Self-test (inline) — validasi allowlist & guard tanpa framework, dijalankan
-// hanya saat `NODE_ENV === "test"` agar tidak menambah beban runtime produksi.
-// ---------------------------------------------------------------------------
-if (typeof process !== "undefined" && process.env?.NODE_ENV === "test") {
-  const cases: Array<[string, boolean]> = [
-    ["manual", true],
-    ["purchase", true],
-    ["sale", true],
-    ["request_prep", true],
-    ["ecer_prep", true],
-    ["chat", false],
-    ["", false],
-    ["MANUAL", false],
-  ];
-  for (const [input, ok] of cases) {
-    let threw = false;
-    try {
-      assertDebtSource(input);
-    } catch {
-      threw = true;
-    }
-    if (ok === threw) {
-      throw new Error(
-        `debt-source self-test gagal: input="${input}" expected ok=${ok}, threw=${threw}`,
-      );
-    }
-  }
-}
+// Self-test dipindahkan ke `src/lib/debt-source.test.ts` — modul ini
+// tidak lagi menjalankan efek samping saat diimpor. Menghindari
+// ketergantungan pada `process.env.NODE_ENV` pada jalur klien
+// (runtime browser tidak menjamin nilai tersebut).

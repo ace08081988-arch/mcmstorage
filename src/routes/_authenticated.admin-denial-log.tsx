@@ -90,23 +90,31 @@ function AdminDenialLogPage() {
   // refresh manual (RLS admin-only tetap yang menjamin akses).
   useEffect(() => {
     if (!isAdmin) return;
+    // StrictMode-safe mounted guard: cegah setState (liveOn / liveTick) setelah
+    // unmount atau setelah cleanup effect berjalan. Tanpa ini, callback
+    // subscribe/postgres_changes yang terlambat bisa memicu warning
+    // "Can't perform state update on unmounted component" dan menahan
+    // referensi komponen di memory (leak).
+    let mounted = true;
     const channel = supabase
       .channel("admin-denial-events")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "admin_denial_events" },
         () => {
+          if (!mounted) return;
           lastLiveAtRef.current = Date.now();
           setLiveTick((n) => n + 1);
           queryClient.invalidateQueries({ queryKey: ["admin-denial-log"] });
         },
       )
       .subscribe((status) => {
+        if (!mounted) return;
         setLiveOn(status === "SUBSCRIBED");
       });
     return () => {
+      mounted = false;
       supabase.removeChannel(channel);
-      setLiveOn(false);
     };
   }, [isAdmin, queryClient]);
 
