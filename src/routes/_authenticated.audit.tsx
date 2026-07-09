@@ -175,8 +175,21 @@ function AuditPage() {
           <ClipboardCheck className="h-4 w-4 text-primary" />
           <h1 className="text-base font-semibold">Audit Rute</h1>
         </div>
-        <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          mode: {currentMode()}
+        {/* L12: perjelas bahwa "mode" di sini merujuk ke tampilan
+            Ringkas/Normal aplikasi — bukan environment (dev/prod) atau
+            build mode. Prefiks "Tampilan:" dan label "Audit internal"
+            memastikan operator tidak salah baca. */}
+        <span
+          className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+          title="Tampilan aplikasi saat audit dijalankan (Ringkas atau Normal)"
+        >
+          Tampilan: {currentMode() === "ringkas" ? "Ringkas" : "Normal"}
+        </span>
+        <span
+          className="rounded border border-dashed border-muted-foreground/40 bg-background px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+          title="Halaman internal untuk owner — tidak memengaruhi environment atau data aplikasi."
+        >
+          Audit internal
         </span>
         <button aria-label="Memuat"
           onClick={() => void runAudit()}
