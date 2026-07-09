@@ -224,18 +224,30 @@ function PembaruanPage() {
 
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   useEffect(() => {
+    // Guard ganda: `alive` flag untuk mencegah setState setelah unmount, dan
+    // `AbortController` untuk membatalkan iterasi berikutnya. `statusSignedUrl`
+    // belum menerima signal secara langsung, jadi kita periksa `signal.aborted`
+    // di antara setiap await sehingga loop berhenti secepat mungkin ketika
+    // dependency (statuses) berubah atau komponen unmount — mencegah memory
+    // leak dan permintaan yatim (orphan requests) yang tetap berjalan.
     let alive = true;
+    const controller = new AbortController();
     (async () => {
       const entries: [string, string][] = [];
       for (const s of statuses) {
+        if (!alive || controller.signal.aborted) return;
         if (s.media_type === "text" || !s.media_path) continue;
         const u = await statusSignedUrl(s.media_path, 60 * 30);
+        if (!alive || controller.signal.aborted) return;
         if (u) entries.push([s.id, u]);
       }
-      if (alive) setThumbUrls(Object.fromEntries(entries));
+      if (alive && !controller.signal.aborted) {
+        setThumbUrls(Object.fromEntries(entries));
+      }
     })();
     return () => {
       alive = false;
+      controller.abort();
     };
   }, [statuses]);
 
