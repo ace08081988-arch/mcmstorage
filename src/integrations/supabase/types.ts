@@ -3514,6 +3514,10 @@ export type Database = {
         Returns: string[]
       }
       chat_heartbeat: { Args: never; Returns: undefined }
+      chat_link_business: {
+        Args: { _conv: string; _id: string; _kind: string }
+        Returns: Json
+      }
       chat_mute: { Args: { _conv: string; _until: string }; Returns: undefined }
       chat_search_messages: {
         Args: { _limit?: number; _q: string }

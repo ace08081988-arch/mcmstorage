@@ -383,6 +383,22 @@ export function useConversations() {
     }
   }, [cacheKey, query.isSuccess, query.data, query.dataUpdatedAt]);
 
+  // C7: Sinkronisasi daftar chat yang di-mute ke Service Worker supaya
+  // notifikasi push tidak muncul walau server sempat mengirim.
+  useEffect(() => {
+    if (!query.isSuccess || !query.data) return;
+    const nowMs = Date.now();
+    const muted: Record<string, number> = {};
+    for (const c of query.data) {
+      if (!c.muted_until) continue;
+      const t = new Date(c.muted_until).getTime();
+      if (t > nowMs) muted[c.id] = t;
+    }
+    void import("@/lib/notif-prefs").then(({ broadcastMutedConversations }) => {
+      broadcastMutedConversations(muted);
+    }).catch(() => {});
+  }, [query.isSuccess, query.data, query.dataUpdatedAt]);
+
   // Realtime: refresh on any message or membership change
   useEffect(() => {
     if (!myId) return;

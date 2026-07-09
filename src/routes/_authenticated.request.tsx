@@ -2675,6 +2675,17 @@ function PrepEditorDialog({
         try {
           const { data: convId, error: dmErr } = await sb.rpc("start_dm", { _partner: pickedLinkedUserId });
           if (dmErr) throw dmErr;
+          // C2: Auto-link chat ke request preparation supaya percakapan tercatat
+          // dalam konteks pesanan (bukan DM lepas).
+          try {
+            await sb.rpc("chat_link_business", {
+              _conv: String(convId),
+              _kind: "request_prep",
+              _id: prep.id,
+            });
+          } catch (linkErr) {
+            console.warn("[chat] link business failed:", linkErr);
+          }
           const photoSigned = await requestSignedUrl(photoPath, 60 * 60 * 24);
           const prefillText = [buildMessage(), photoSigned ? `Foto: ${photoSigned}` : ""].filter(Boolean).join("\n");
           try {
