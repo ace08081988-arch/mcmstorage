@@ -670,7 +670,7 @@ function DashboardPage() {
             </div>
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-3 py-1 text-[11px] font-semibold text-primary ring-1 ring-primary/20">
               <TrendingUp className="h-3 w-3" />
-              {COMPACT.format(buckets.reduce((s, b) => s + b.value, 0))}
+              {COMPACT.format(weekTotal)}
             </span>
           </div>
           <div className="relative mt-5">
