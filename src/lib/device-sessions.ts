@@ -108,8 +108,7 @@ async function heartbeatOnce(userId: string): Promise<"ok" | "revoked"> {
 export function useDeviceSessionGuard() {
   useEffect(() => {
     let cancelled = false;
-    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-    let revokeTimer: ReturnType<typeof setInterval> | null = null;
+    let sessionTimer: ReturnType<typeof setInterval> | null = null;
     let activeUserId: string | null = null;
 
     const stopTimers = () => {
