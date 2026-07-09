@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useServerFn } from "@tanstack/react-start";
 import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft, FlaskConical, CheckCircle2, AlertTriangle, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyError } from "@/lib/friendly-error";
@@ -15,6 +16,7 @@ import {
   encodePreviewConfigHash,
   type WorkerPortalConfig,
 } from "@/lib/worker-portal-config";
+import { saveWorkerPortalConfig } from "@/lib/worker-portal-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/worker-portal")({
   head: () => ({
@@ -58,6 +60,7 @@ function buildSchema() {
 }
 
 function AdminWorkerPortalPage() {
+  const saveFn = useServerFn(saveWorkerPortalConfig);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -218,13 +221,18 @@ function AdminWorkerPortalPage() {
     const parsed = schema.safeParse(parsedRaw);
     if (!parsed.success) return; // pengaman ganda — seharusnya tidak terjadi
     setSaving(true);
-    const { error } = await supabase
-      .from("app_settings")
-      .update({ worker_portal_config: parsed.data })
-      .eq("id", true);
-    setSaving(false);
-    if (error) return notifyError(error);
-    toast.success("Konfigurasi portal pegawai disimpan. Perangkat pegawai akan memakai nilai baru pada mount berikutnya.");
+    try {
+      // M22: jalur write dipindah ke server function (`requireSupabaseAuth`
+      // + `has_role` di server). RLS `app_settings` tetap enforcement
+      // terakhir; klien tidak lagi bergantung pada validasi role client-side
+      // untuk keputusan write sensitif.
+      await saveFn({ data: parsed.data as WorkerPortalConfig });
+      toast.success("Konfigurasi portal pegawai disimpan. Perangkat pegawai akan memakai nilai baru pada mount berikutnya.");
+    } catch (err) {
+      notifyError(err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
