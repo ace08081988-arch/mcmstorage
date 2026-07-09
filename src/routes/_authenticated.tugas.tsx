@@ -150,7 +150,7 @@ function TugasPage() {
   const [openAudit, setOpenAudit] = useState(false);
   const [pinAlerts, setPinAlerts] = useState<PinAlert[]>([]);
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
-  const [progress, setProgress] = useState<Record<string, { items: number; submitted: number }>>({});
+  const [progress, setProgress] = useState<Record<string, { items: number; submitted: number; approved: number }>>({});
   const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
   const [taskSearch, setTaskSearch] = useState("");
   const [tasksLoaded, setTasksLoaded] = useState(false);
@@ -167,7 +167,7 @@ function TugasPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_category_variants").select("*").order("position"),
       supabase.from("prep_task_items").select("id,task_id"),
-      supabase.from("prep_submissions").select("task_id,task_item_id"),
+      supabase.from("prep_submissions").select("task_id,task_item_id,verification_status"),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
@@ -178,14 +178,24 @@ function TugasPage() {
       itemsByTask[row.task_id] = (itemsByTask[row.task_id] ?? 0) + 1;
     }
     const submittedByTask: Record<string, Set<string>> = {};
-    for (const row of (sb ?? []) as { task_id: string; task_item_id: string }[]) {
+    const approvedByTask: Record<string, Set<string>> = {};
+    for (const row of (sb ?? []) as { task_id: string; task_item_id: string; verification_status: string | null }[]) {
       const set = submittedByTask[row.task_id] ?? new Set<string>();
       set.add(row.task_item_id);
       submittedByTask[row.task_id] = set;
+      if (row.verification_status === 'approved') {
+        const a = approvedByTask[row.task_id] ?? new Set<string>();
+        a.add(row.task_item_id);
+        approvedByTask[row.task_id] = a;
+      }
     }
-    const prog: Record<string, { items: number; submitted: number }> = {};
+    const prog: Record<string, { items: number; submitted: number; approved: number }> = {};
     for (const id of new Set([...Object.keys(itemsByTask), ...Object.keys(submittedByTask)])) {
-      prog[id] = { items: itemsByTask[id] ?? 0, submitted: submittedByTask[id]?.size ?? 0 };
+      prog[id] = {
+        items: itemsByTask[id] ?? 0,
+        submitted: submittedByTask[id]?.size ?? 0,
+        approved: approvedByTask[id]?.size ?? 0,
+      };
     }
     setProgress(prog);
     setTasksLoaded(true);
