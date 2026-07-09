@@ -3895,6 +3895,10 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
       start_dm: { Args: { _partner: string }; Returns: string }
       start_pro_trial: { Args: never; Returns: Json }
+      storage_upload_within_limits: {
+        Args: { _max_bytes?: number; _metadata: Json }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
