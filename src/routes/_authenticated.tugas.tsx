@@ -251,11 +251,30 @@ function TugasPage() {
       .order("created_at", { ascending: false });
     setPinAlerts((data ?? []) as PinAlert[]);
   }
+  // L2: ganti polling 30 detik dengan realtime subscription pada
+  // `prep_pin_alerts` (tabel sudah masuk publication `supabase_realtime`).
+  // Fallback: refresh sekali saat tab kembali visible agar tetap
+  // konsisten walau koneksi realtime sempat terputus.
   useEffect(() => {
     if (!uid) return;
     void loadPinAlerts();
-    const id = setInterval(() => { void loadPinAlerts(); }, 30_000);
-    return () => clearInterval(id);
+    const ch = supabase
+      .channel("prep_pin_alerts-tugas")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "prep_pin_alerts", filter: `owner_user_id=eq.${uid}` },
+        () => { void loadPinAlerts(); },
+      )
+      .subscribe();
+    const onVis = () => {
+      if (document.visibilityState === "visible") void loadPinAlerts();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      void supabase.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   async function ackPinAlert(alertId: string) {
