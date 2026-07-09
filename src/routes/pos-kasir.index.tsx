@@ -1527,13 +1527,13 @@ function PosKasirPage() {
                 </div>
                 <div className="rounded-lg bg-slate-800/60 border border-slate-700 p-3 text-sm space-y-1.5 font-mono">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Berat</span>
+                    <span className="text-slate-400">Jumlah</span>
                     <span className="text-slate-100">
-                      {strukTransaksi.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                      {strukTransaksi.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(strukTransaksi)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Harga/kg</span>
+                    <span className="text-slate-400">Harga/{unitOf(strukTransaksi)}</span>
                     <span className="text-slate-100">{rupiah(strukTransaksi.hargaPerKg)}</span>
                   </div>
                   <div className="flex justify-between pt-1.5 border-t border-slate-700">
@@ -1545,7 +1545,7 @@ function PosKasirPage() {
                   <div className="flex justify-between text-[11px] text-slate-500">
                     <span>Sisa stok</span>
                     <span>
-                      {strukTransaksi.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                      {strukTransaksi.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(strukTransaksi)}
                     </span>
                   </div>
                 </div>
