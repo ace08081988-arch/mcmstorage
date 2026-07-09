@@ -286,7 +286,12 @@ function EcerPage() {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pr = await (supabase.from as any)("ecer_preparations")
-          .select("title_id, sold_at");
+          // L1: batas atas defensif — ringkasan per-title cukup dengan
+          // sampel besar tetapi bounded agar query tidak balloon untuk
+          // dataset lama.
+          .select("title_id, sold_at")
+          .order("created_at", { ascending: false })
+          .limit(5000);
         if (!pr.error && Array.isArray(pr.data)) {
           const acc: Record<string, { total: number; sold: number }> = {};
           for (const row of pr.data as Array<{ title_id: string; sold_at: string | null }>) {
