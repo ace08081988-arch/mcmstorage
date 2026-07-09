@@ -639,6 +639,9 @@ function EditDialog({
   const [scanOpen, setScanOpen] = useState(false);
   const [pinPreview, setPinPreview] = useState<InviteProfile | null>(null);
   const [pinChecking, setPinChecking] = useState(false);
+  // L13: sequence id agar response resolveInviteCode lama tidak menimpa
+  // preview terbaru.
+  const pinReqIdRef = useRef(0);
 
   useEffect(() => {
     if (isNew) {
