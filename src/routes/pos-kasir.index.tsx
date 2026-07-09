@@ -38,6 +38,14 @@ function quickAddsFor(unitLabel: string): number[] {
 
 const AMBANG_STORAGE_KEY = "mcm-pos-kasir-ambang-stok";
 const AMBANG_DEFAULT = 5;
+
+// M16: ambil unit label dari transaksi (SSOT: `PosKasirTransaksi.unitLabel`).
+// Untuk transaksi lama yang belum menyimpan `unitLabel`, fallback ke "kg"
+// karena dulu semua produk memang default kg (backward-compatible).
+function unitOf(t: { unitLabel?: string | null }): string {
+  const u = (t.unitLabel ?? "").trim();
+  return u || "kg";
+}
 const MODE_RINGKAS_KEY = "mcm-pos-kasir-mode-ringkas";
 const URUTAN_KEY = "mcm-pos-kasir-urutan";
 
