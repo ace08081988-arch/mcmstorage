@@ -224,7 +224,10 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
       </div>
     );
   }
-  return null;
+  // C6: fallback aman — jangan pernah return null. Tipe card tak dikenal
+  // (payload lama/rusak) di-render sebagai UnknownCardBlock, jadi bubble
+  // tidak pernah kosong tanpa penjelasan.
+  return <UnknownCardBlock mine={mine} />;
 }
 
 export { decodeCard };

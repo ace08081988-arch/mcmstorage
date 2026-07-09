@@ -931,10 +931,12 @@ function EditableSaleRow({
       confirmText: "Hapus",
     }))) return;
     setBusy(true);
-    onLocalRemoveSale(sale.id);
+    // C4: hapus di DB dulu; hanya update state lokal bila sukses,
+    // supaya baris tidak "hilang" di UI padahal DB gagal.
     const { error } = await supabase.from("sales").delete().eq("id", sale.id);
     setBusy(false);
-    if (error) { notifyError(error); onChanged(); return; }
+    if (error) { notifyError(error); return; }
+    onLocalRemoveSale(sale.id);
     toast.success("Transaksi dihapus");
     onChanged();
   }

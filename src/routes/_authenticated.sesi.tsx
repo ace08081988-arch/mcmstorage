@@ -98,9 +98,14 @@ function SesiPage() {
 
   const revokeOthers = useMutation({
     mutationFn: async () => {
+      // C8: WAJIB filter user_id agar mutasi tidak pernah menyentuh
+      // baris milik user lain, walau RLS memang membatasi. Defense in depth.
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !userRes.user) throw userErr ?? new Error("Sesi tidak valid");
       const { error } = await supabase
         .from("device_sessions")
         .update({ revoked_at: new Date().toISOString() })
+        .eq("user_id", userRes.user.id)
         .neq("device_id", currentDeviceId);
       if (error) throw error;
     },

@@ -1,5 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { timingSafeEqual } from "crypto";
+
+// M2: constant-time compare untuk hindari timing-oracle.
+function safeSecretEq(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 // Dipanggil oleh trigger DB `trg_notify_order_event_via_hook` via pg_net.
 // Autentikasi: header x-hook-secret harus cocok dgn env BUSINESS_NOTIFY_HOOK_SECRET.
@@ -123,7 +132,7 @@ export const Route = createFileRoute("/api/public/hooks/order-event-notify")({
           return Response.json({ error: "Server configuration error" }, { status: 500 });
         }
         const provided = request.headers.get("x-hook-secret") ?? "";
-        if (provided.length !== expected.length || provided !== expected) {
+        if (!safeSecretEq(provided, expected)) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
         let parsed: z.infer<typeof payloadSchema>;
@@ -162,7 +171,8 @@ export const Route = createFileRoute("/api/public/hooks/order-event-notify")({
               body: copy.body,
               url: copy.url,
               tag: copy.tag,
-              kind: "generic",
+              // H19: samakan dgn enabledKinds di SW; toggle "Notifikasi Order" jadi efektif.
+              kind: "order",
               requireInteraction: false,
               vibrate: [80, 40, 80],
               timestamp: Date.now(),
