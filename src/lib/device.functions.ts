@@ -26,14 +26,23 @@ function hashCode(code: string, salt: string) {
 }
 
 /**
- * Identitas device = hash dari sidik jari klien saja.
+ * Identitas device = hash sidik jari klien di-garam dengan user id.
+ *
+ * L11: sebelumnya `sha256("device:" + rawClientHash)` — deterministik lintas
+ * user, sehingga fingerprint yang sama menghasilkan hash yang sama di semua
+ * akun. Sekarang: bungkus outer hash dengan `user_id` supaya fingerprint yang
+ * identik menghasilkan `device_hash` berbeda per user, tidak bisa dikorelasikan
+ * antar-akun.
+ *
  * IP TIDAK dimasukkan ke identitas — IP berubah setiap ganti jaringan
- * (WiFi → seluler, ISP rotasi), dan jika ikut di-hash, device akan
- * dianggap "baru" tiap kali dan OTP diminta ulang. IP tetap dicatat
- * sebagai metadata di `last_ip` untuk audit.
+ * (WiFi → seluler, ISP rotasi). IP tetap dicatat sebagai metadata di `last_ip`.
  */
-function deviceIdentityHash(deviceHash: string) {
-  return createHash("sha256").update(`device:${deviceHash}`).digest("hex");
+function deviceIdentityHash(deviceHash: string, userId: string) {
+  const inner = createHash("sha256").update(`device:${deviceHash}`).digest("hex");
+  const outer = createHash("sha256")
+    .update(`v2wrap:${userId}:${inner}`)
+    .digest("hex");
+  return `v2:${outer}`;
 }
 
 export const requestDeviceOtp = createServerFn({ method: "POST" })
@@ -48,7 +57,7 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = deviceIdentityHash(data.deviceHash);
+    const fullHash = deviceIdentityHash(data.deviceHash, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
