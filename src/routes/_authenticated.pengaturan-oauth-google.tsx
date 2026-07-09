@@ -203,21 +203,19 @@ function saveChecks(next: Record<StepId, boolean>) {
   }
 }
 
+// M23: Client ID Google OAuth TIDAK LAGI di-persist ke localStorage.
+// Nilai ini hanya dipakai untuk membantu operator menyalin/menempel
+// selama proses konfigurasi provider di Backend; setelah konfigurasi
+// selesai, tidak ada kegunaan menyimpannya lagi di sisi klien. Cukup
+// gunakan React state selama halaman terbuka. `loadClientId` menjadi
+// no-op (mengembalikan string kosong) dan `saveClientId` menjadi no-op
+// agar callsite tidak perlu diubah.
 function loadClientId(): string {
-  try {
-    return localStorage.getItem(CLIENT_ID_KEY) ?? "";
-  } catch {
-    return "";
-  }
+  return "";
 }
 
-function saveClientId(value: string) {
-  try {
-    if (value) localStorage.setItem(CLIENT_ID_KEY, value);
-    else localStorage.removeItem(CLIENT_ID_KEY);
-  } catch {
-    /* storage penuh — abaikan */
-  }
+function saveClientId(_value: string) {
+  /* intentionally no-op — Client ID tidak persist di localStorage lagi (M23) */
 }
 
 function OAuthGooglePage() {
