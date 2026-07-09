@@ -1,7 +1,7 @@
 /* MCM Storage — Web Push service worker (Play Store-grade UX) */
 // Ubah SW_VERSION untuk memaksa browser mengambil SW baru + memicu update
 // asset (manifest, ikon) tanpa harus uninstall aplikasi.
-const SW_VERSION = "2026-07-02-1";
+const SW_VERSION = "2026-07-09-1";
 const ASSET_CACHE = `mcm-assets-${SW_VERSION}`;
 // Aset yang wajib selalu segar setelah SW baru aktif (manifest & ikon).
 const FRESH_ASSETS = [
