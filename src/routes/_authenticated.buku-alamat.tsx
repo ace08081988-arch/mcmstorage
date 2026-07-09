@@ -670,15 +670,16 @@ function EditDialog({
       return;
     }
     let cancelled = false;
+    const myReq = ++pinReqIdRef.current;
     setPinChecking(true);
     const t = setTimeout(async () => {
       try {
         const p = await resolveInviteCode(cleaned);
-        if (!cancelled) setPinPreview(p);
+        if (!cancelled && myReq === pinReqIdRef.current) setPinPreview(p);
       } catch {
-        if (!cancelled) setPinPreview(null);
+        if (!cancelled && myReq === pinReqIdRef.current) setPinPreview(null);
       } finally {
-        if (!cancelled) setPinChecking(false);
+        if (!cancelled && myReq === pinReqIdRef.current) setPinChecking(false);
       }
     }, 350);
     return () => {
