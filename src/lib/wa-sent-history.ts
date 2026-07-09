@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Local-only registry of kiriman pegawai (prep_submissions IDs) yang sudah
@@ -148,6 +149,20 @@ export function markSent(ids: string[], meta?: SentMeta) {
   }
   const entries = prune(Array.from(map.values()));
   persistSent(entries);
+  // H6: write-through ke DB agar status "terkirim" konsisten lintas
+  // perangkat. Fire-and-forget — kegagalan tidak boleh mengganggu UI,
+  // localStorage tetap kanonik untuk perangkat ini.
+  const channel = meta?.channel === "chat" ? "chat" : "wa";
+  const cleanIds = ids.filter((s): s is string => typeof s === "string" && s.length > 0);
+  if (cleanIds.length > 0) {
+    void supabase
+      .rpc("prep_submissions_mark_sent", {
+        _ids: cleanIds,
+        _channel: channel,
+        _maps_url: meta?.mapsUrl ?? undefined,
+      })
+      .then(() => undefined, () => undefined);
+  }
 }
 
 export function unmarkSent(ids: string[]) {
@@ -155,9 +170,46 @@ export function unmarkSent(ids: string[]) {
   const map = new Map(ensureMemSent());
   for (const id of ids) map.delete(id);
   persistSent(Array.from(map.values()));
+  const cleanIds = ids.filter((s): s is string => typeof s === "string" && s.length > 0);
+  if (cleanIds.length > 0) {
+    void supabase
+      .rpc("prep_submissions_unmark_sent", { _ids: cleanIds })
+      .then(() => undefined, () => undefined);
+  }
 }
 
 export function clearSent() { persistSent([]); }
+
+/**
+ * H6: hydrate registry lokal dari kolom DB `prep_submissions.sent_at`.
+ * Dipanggil sekali per mount komponen konsumen (ReadyEcerSection),
+ * setelah data submission dimuat. Menggabungkan entri DB ke overlay
+ * lokal tanpa mengganti entri lokal yang lebih baru — supaya perangkat
+ * offline yang baru saja markSent tidak kehilangan riwayatnya.
+ */
+export function hydrateSentFromDb(
+  rows: Array<{ id: string; sent_at: string | null; sent_channel?: string | null; sent_maps_url?: string | null }>,
+) {
+  if (!rows || rows.length === 0) return;
+  const map = new Map(ensureMemSent());
+  let dirty = false;
+  for (const r of rows) {
+    if (!r.sent_at) continue;
+    const at = new Date(r.sent_at).getTime();
+    if (!Number.isFinite(at)) continue;
+    const existing = map.get(r.id);
+    if (existing && existing.at >= at) continue;
+    map.set(r.id, {
+      id: r.id,
+      at,
+      channel: r.sent_channel === "chat" ? "chat" : r.sent_channel === "wa" ? "wa" : undefined,
+      mapsUrl: r.sent_maps_url ?? null,
+      status: "success",
+    });
+    dirty = true;
+  }
+  if (dirty) persistSent(prune(Array.from(map.values())));
+}
 
 // ---------------------------------------------------------------------
 // Hidden registry — sembunyikan permanen dari Riwayat terkirim.

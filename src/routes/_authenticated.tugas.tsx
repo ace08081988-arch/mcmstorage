@@ -11,6 +11,7 @@ import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-valid
 import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
 import { StaffContactsPanel } from "@/components/StaffContactsPanel";
 import { SharePinDialog } from "@/components/tugas/SharePinDialog";
+import { deriveTaskShortStatus, type TaskShortStatus } from "@/lib/prep-status";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
@@ -33,15 +34,14 @@ type TaskItem = { id: string; task_id: string; name_snapshot: string; category_s
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
 type PinAlert = { id: string; task_id: string; share_token: string; failure_count: number; window_start: string; window_end: string; created_at: string };
 
+// H5: gunakan SSOT `deriveTaskShortStatus` dari `@/lib/prep-status` yang
+// juga memperhitungkan `verification_status` supaya kartu tugas tidak
+// tampil "Selesai" saat submisi masih pending review admin.
 function deriveTaskStatus(
   rawStatus: string,
-  p: { items: number; submitted: number },
-): "Menunggu" | "Dikerjakan" | "Selesai" {
-  const s = String(rawStatus ?? "").toLowerCase();
-  if (s === "done" || s === "selesai") return "Selesai";
-  if (p.items > 0 && p.submitted >= p.items) return "Selesai";
-  if (p.submitted > 0) return "Dikerjakan";
-  return "Menunggu";
+  p: { items: number; submitted: number; approved: number },
+): TaskShortStatus {
+  return deriveTaskShortStatus(rawStatus, p);
 }
 
 type TugasChipTone = "primary" | "info" | "success" | "warning" | "danger";
@@ -150,7 +150,7 @@ function TugasPage() {
   const [openAudit, setOpenAudit] = useState(false);
   const [pinAlerts, setPinAlerts] = useState<PinAlert[]>([]);
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
-  const [progress, setProgress] = useState<Record<string, { items: number; submitted: number }>>({});
+  const [progress, setProgress] = useState<Record<string, { items: number; submitted: number; approved: number }>>({});
   const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
   const [taskSearch, setTaskSearch] = useState("");
   const [tasksLoaded, setTasksLoaded] = useState(false);
@@ -167,7 +167,7 @@ function TugasPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_category_variants").select("*").order("position"),
       supabase.from("prep_task_items").select("id,task_id"),
-      supabase.from("prep_submissions").select("task_id,task_item_id"),
+      supabase.from("prep_submissions").select("task_id,task_item_id,verification_status"),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
@@ -178,14 +178,24 @@ function TugasPage() {
       itemsByTask[row.task_id] = (itemsByTask[row.task_id] ?? 0) + 1;
     }
     const submittedByTask: Record<string, Set<string>> = {};
-    for (const row of (sb ?? []) as { task_id: string; task_item_id: string }[]) {
+    const approvedByTask: Record<string, Set<string>> = {};
+    for (const row of (sb ?? []) as { task_id: string; task_item_id: string; verification_status: string | null }[]) {
       const set = submittedByTask[row.task_id] ?? new Set<string>();
       set.add(row.task_item_id);
       submittedByTask[row.task_id] = set;
+      if (row.verification_status === 'approved') {
+        const a = approvedByTask[row.task_id] ?? new Set<string>();
+        a.add(row.task_item_id);
+        approvedByTask[row.task_id] = a;
+      }
     }
-    const prog: Record<string, { items: number; submitted: number }> = {};
+    const prog: Record<string, { items: number; submitted: number; approved: number }> = {};
     for (const id of new Set([...Object.keys(itemsByTask), ...Object.keys(submittedByTask)])) {
-      prog[id] = { items: itemsByTask[id] ?? 0, submitted: submittedByTask[id]?.size ?? 0 };
+      prog[id] = {
+        items: itemsByTask[id] ?? 0,
+        submitted: submittedByTask[id]?.size ?? 0,
+        approved: approvedByTask[id]?.size ?? 0,
+      };
     }
     setProgress(prog);
     setTasksLoaded(true);
@@ -376,7 +386,7 @@ function TugasPage() {
     const now = Date.now();
     const counts = { all: tasks.length, waiting: 0, progress: 0, done: 0, overdue: 0 };
     for (const t of tasks) {
-      const p = progress[t.id] ?? { items: 0, submitted: 0 };
+      const p = progress[t.id] ?? { items: 0, submitted: 0, approved: 0 };
       const s = deriveTaskStatus(t.status, p);
       if (s === "Selesai") counts.done++;
       else if (s === "Dikerjakan") counts.progress++;
@@ -505,7 +515,7 @@ function TugasPage() {
         {tasks
           .filter((t) => {
             if (statusFilter === "all") return true;
-            const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
+            const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0, approved: 0 });
             return (
               (statusFilter === "waiting" && s === "Menunggu") ||
               (statusFilter === "progress" && s === "Dikerjakan") ||
@@ -520,7 +530,7 @@ function TugasPage() {
             );
           })
           .map((t) => {
-          const p = progress[t.id] ?? { items: 0, submitted: 0 };
+          const p = progress[t.id] ?? { items: 0, submitted: 0, approved: 0 };
           const s = deriveTaskStatus(t.status, p);
           const pct = p.items > 0 ? Math.min(100, Math.round((p.submitted / p.items) * 100)) : 0;
           const badgeCls =
@@ -631,7 +641,7 @@ function TugasPage() {
         )}
         {tasks.length > 0 && tasks.filter((t) => {
           if (statusFilter === "all") return true;
-          const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
+          const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0, approved: 0 });
           return (
             (statusFilter === "waiting" && s === "Menunggu") ||
             (statusFilter === "progress" && s === "Dikerjakan") ||

@@ -34,7 +34,7 @@ import { ExternalLink, History, Undo2 } from "lucide-react";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
-import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, type Entry as SentEntry } from "@/lib/wa-sent-history";
+import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, hydrateSentFromDb, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { consumeSentTabFlag, SHOW_SENT_EVENT } from "@/lib/ready-ecer-sent-nav";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
@@ -207,7 +207,7 @@ export function ReadyEcerSection() {
           .limit(200),
         sb
           .from("prep_submissions")
-          .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id")
+          .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id,sent_at,sent_channel,sent_maps_url")
           .gte("submitted_at", sinceIso)
           .order("submitted_at", { ascending: false })
           .limit(200),
@@ -224,7 +224,16 @@ export function ReadyEcerSection() {
       void selfPreps;
 
       // Map prep_submissions → task_item attributes, then bucket by product+size.
-      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
+      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string; sent_at: string | null; sent_channel: string | null; sent_maps_url: string | null }>;
+      // H6: SSOT sent tracker sekarang di DB (`prep_submissions.sent_at`).
+      // Hydrate overlay lokal supaya kartu tetap di "Terkirim" walau
+      // localStorage baru (ganti perangkat / clear cache).
+      hydrateSentFromDb(subRows.map((r) => ({
+        id: r.id,
+        sent_at: r.sent_at,
+        sent_channel: r.sent_channel,
+        sent_maps_url: r.sent_maps_url,
+      })));
       const taskItemIds = Array.from(new Set(subRows.map((s) => s.task_item_id))).filter(Boolean);
       type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null };
       let metaByItemId = new Map<string, TaskItemMeta>();

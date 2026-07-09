@@ -1817,6 +1817,9 @@ export type Database = {
           photo_paths: string[]
           qty_reported: number | null
           rejection_reason: string | null
+          sent_at: string | null
+          sent_channel: string | null
+          sent_maps_url: string | null
           submitted_at: string
           task_id: string
           task_item_id: string
@@ -1834,6 +1837,9 @@ export type Database = {
           photo_paths?: string[]
           qty_reported?: number | null
           rejection_reason?: string | null
+          sent_at?: string | null
+          sent_channel?: string | null
+          sent_maps_url?: string | null
           submitted_at?: string
           task_id: string
           task_item_id: string
@@ -1851,6 +1857,9 @@ export type Database = {
           photo_paths?: string[]
           qty_reported?: number | null
           rejection_reason?: string | null
+          sent_at?: string | null
+          sent_channel?: string | null
+          sent_maps_url?: string | null
           submitted_at?: string
           task_id?: string
           task_item_id?: string
@@ -3671,6 +3680,7 @@ export type Database = {
       }
       normalize_phone: { Args: { _p: string }; Returns: string }
       normalize_unit_label: { Args: { _u: string }; Returns: string }
+      piutang_summary_v1: { Args: never; Returns: Json }
       pos_commit_sale: {
         Args: {
           _item_id: string
@@ -3706,6 +3716,11 @@ export type Database = {
         Args: { _decision: string; _reason?: string; _submission_id: string }
         Returns: Json
       }
+      prep_submissions_mark_sent: {
+        Args: { _channel: string; _ids: string[]; _maps_url?: string }
+        Returns: Json
+      }
+      prep_submissions_unmark_sent: { Args: { _ids: string[] }; Returns: Json }
       prep_submit:
         | {
             Args: {

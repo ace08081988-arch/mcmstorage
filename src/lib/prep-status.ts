@@ -74,6 +74,32 @@ export type TaskLifecycleInput = {
 };
 
 /**
+ * H5: SSOT untuk tampilan status ringkas kartu tugas pegawai
+ * ("Menunggu" | "Dikerjakan" | "Selesai"). Sebelumnya tugas.tsx punya
+ * heuristik lokal `submitted >= items → Selesai` yang mengabaikan
+ * `verification_status` sehingga tugas bisa terlihat Selesai padahal
+ * masih menunggu verifikasi admin.
+ */
+export type TaskShortStatus = "Menunggu" | "Dikerjakan" | "Selesai";
+
+export function deriveTaskShortStatus(
+  rawStatus: string | null | undefined,
+  progress: { items: number; submitted: number; approved: number },
+): TaskShortStatus {
+  const s = String(rawStatus ?? "").toLowerCase();
+  if (s === "cancelled" || s === "expired") return "Menunggu";
+  // Tuntas hanya bila SEMUA item sudah disetujui admin (bukan hanya submitted).
+  if (progress.items > 0 && progress.approved >= progress.items) return "Selesai";
+  if (s === "done" || s === "selesai") {
+    // Backend menandai done tapi belum semua approved → tetap "Dikerjakan"
+    // supaya operator sadar masih ada yang perlu diverifikasi.
+    return progress.submitted > 0 ? "Dikerjakan" : "Menunggu";
+  }
+  if (progress.submitted > 0) return "Dikerjakan";
+  return "Menunggu";
+}
+
+/**
  * Derivasi status untuk pesanan Request Order (ada customer + payment).
  */
 export function deriveRequestStatus(

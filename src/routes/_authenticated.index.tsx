@@ -74,6 +74,23 @@ type Kategori = string;
 
 export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 
+/**
+ * H2: Batas SSOT — Beranda vs Gudang.
+ *
+ * `user_storage.items` (JSON di baris ini) HANYA jurnal pesanan harian
+ * yang dicatat manual dari halaman Beranda (kirim WA, kelola status
+ * "Belum Dikirim" / "Sudah Dikirim"). Ini BUKAN inventaris.
+ *
+ * Inventaris (stok, harga jual, modal, penjualan) SSOT-nya di tabel
+ * relasional: `warehouse_items`, `sales`, `customer_payments`, dll —
+ * dikelola dari halaman Gudang & POS Kasir. Jangan mem-fork data stok
+ * ke `user_storage`; jangan pakai `Produk.jumlah` di sini untuk
+ * mendorong stok gudang.
+ *
+ * Bila di masa depan Beranda perlu menampilkan barang gudang, ambil
+ * langsung dari `warehouse_items` (bukan copy ke `user_storage`).
+ */
+
 const SATUAN_LIST: Satuan[] = ["gram", "kg", "botol", "sachet", "pcs", "lusin", "pak", "dus"];
 
 function satuanBounds(s: Satuan): { min: number; max: number; step: number } {

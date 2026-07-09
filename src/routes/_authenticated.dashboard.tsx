@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { fetchPiutangSummary } from "@/lib/piutang";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -70,7 +71,7 @@ function useDashboardData() {
       const todayISO = startOfTodayISO();
       const weekAgoISO = startOfDayISO(6);
 
-      const [salesToday, salesWeek, readyPending, debtsPiutang, prepActive, recentSales] =
+      const [salesToday, salesWeek, readyPending, piutangSummary, piutangCountRes, prepActive, recentSales] =
         await Promise.all([
           supabase
             .from("sales")
@@ -85,9 +86,13 @@ function useDashboardData() {
             .from("ready_packages")
             .select("id", { count: "exact", head: true })
             .neq("status", "sent"),
+          // H1: SSOT tunggal via RPC gabungan (sales-hutang + debts-piutang
+          // dikurangi masing-masing pembayarannya). Menghilangkan drift
+          // angka piutang antara Dashboard vs Gudang/Hutang-Piutang.
+          fetchPiutangSummary(),
           supabase
             .from("debts")
-            .select("amount")
+            .select("id", { count: "exact", head: true })
             .eq("kind", "piutang"),
           supabase
             .from("prep_tasks")
@@ -109,10 +114,7 @@ function useDashboardData() {
           s + (Number(r.total_revenue) || 0) - (Number(r.cost_at_sale) || 0),
         0,
       );
-      const piutangTotal = (debtsPiutang.data ?? []).reduce(
-        (s, r: any) => s + (Number(r.amount) || 0),
-        0,
-      );
+      const piutangTotal = piutangSummary.total_outstanding;
 
       // 7-day sparkline bucket by day (local time).
       const buckets: { label: string; value: number }[] = Array.from({ length: 7 }, (_, i) => {
@@ -138,7 +140,7 @@ function useDashboardData() {
         salesTodayCount: salesToday.data?.length ?? 0,
         readyPendingCount: readyPending.count ?? 0,
         piutangTotal,
-        piutangCount: debtsPiutang.data?.length ?? 0,
+        piutangCount: piutangCountRes.count ?? 0,
         prepActiveCount: prepActive.count ?? 0,
         recentSales: recentSales.data ?? [],
         weekBuckets: buckets,
