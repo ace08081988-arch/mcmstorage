@@ -197,7 +197,9 @@ function RequestPage() {
 
   useEffect(() => {
     void router.navigate({ to: "/request", search: { title: selectedTitleId, highlight: undefined }, replace: true });
-  }, [selectedTitleId, router]);
+    // M11: hapus `router` dari deps — lihat catatan sejenis di `_authenticated.ecer.tsx`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTitleId]);
 
   const selectedTitle = useMemo(
     () => titles.find((t) => t.id === selectedTitleId),

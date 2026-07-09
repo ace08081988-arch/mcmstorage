@@ -57,14 +57,17 @@ function PosKasirRingkasanPage() {
     // Sinkron ulang saat tab difokuskan kembali (mis. balik dari kasir di mobile)
     const refresh = () => setRiwayat(getPosKasirRiwayat());
     const unsub = subscribePosKasirRiwayat(refresh);
+    // M17: `focus` + `visibilitychange` sebelumnya keduanya memanggil
+    // `refresh()` saat user balik dari tab lain → dua kali `setRiwayat`
+    // beruntun → Recharts render dua kali. `visibilitychange` sudah
+    // mencakup skenario "kembali ke tab" pada semua browser modern
+    // (termasuk Safari iOS/Android). Cukup satu listener.
     const onVisibility = () => {
       if (document.visibilityState === "visible") refresh();
     };
-    window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       unsub();
-      window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);

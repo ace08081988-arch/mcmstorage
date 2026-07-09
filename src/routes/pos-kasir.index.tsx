@@ -38,6 +38,14 @@ function quickAddsFor(unitLabel: string): number[] {
 
 const AMBANG_STORAGE_KEY = "mcm-pos-kasir-ambang-stok";
 const AMBANG_DEFAULT = 5;
+
+// M16: ambil unit label dari transaksi (SSOT: `PosKasirTransaksi.unitLabel`).
+// Untuk transaksi lama yang belum menyimpan `unitLabel`, fallback ke "kg"
+// karena dulu semua produk memang default kg (backward-compatible).
+function unitOf(t: { unitLabel?: string | null }): string {
+  const u = (t.unitLabel ?? "").trim();
+  return u || "kg";
+}
 const MODE_RINGKAS_KEY = "mcm-pos-kasir-mode-ringkas";
 const URUTAN_KEY = "mcm-pos-kasir-urutan";
 
@@ -165,13 +173,14 @@ function PosKasirPage() {
       : "";
 
   const buildStrukText = (t: PosKasirTransaksi, withLokasi: boolean): string => {
+    const u = unitOf(t);
     const lines = [
       "🧾 *Struk POS Kasir*",
       `${t.produkEmoji} ${t.produkNama}`,
-      `Berat: ${t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
-      `Harga: ${rupiah(t.hargaPerKg)}/kg`,
+      `Jumlah: ${t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${u}`,
+      `Harga: ${rupiah(t.hargaPerKg)}/${u}`,
       `Total: *${rupiah(t.total)}*`,
-      `Sisa stok: ${t.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
+      `Sisa stok: ${t.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${u}`,
       `Waktu: ${new Date(t.waktu).toLocaleString("id-ID")}`,
     ];
     if (withLokasi && waLokasiValid) {
@@ -438,16 +447,17 @@ function PosKasirPage() {
       setTimeout(() => setToast(null), 2500);
       return;
     }
-    const header = ["Waktu", "Produk", "Berat (kg)", "Harga per kg (IDR)", "Total (IDR)", "Sisa Stok (kg)"];
+    const header = ["Waktu", "Produk", "Jumlah", "Unit", "Harga per unit (IDR)", "Total (IDR)", "Sisa Stok"];
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const rows = riwayatSorted.map((t) =>
       [
         new Date(t.waktu).toLocaleString("id-ID"),
         t.produkNama,
         t.beratKg.toString().replace(".", ","),
+        unitOf(t),
         t.hargaPerKg.toString(),
         t.total.toString(),
-        t.sisaStokKg.toString().replace(".", ","),
+        `${t.sisaStokKg.toString().replace(".", ",")} ${unitOf(t)}`,
       ]
         .map((c) => escape(String(c)))
         .join(";")
@@ -482,6 +492,10 @@ function PosKasirPage() {
     const stamp = now.toISOString().slice(0, 10);
     const totalOmzetF = riwayatSorted.reduce((s, t) => s + t.total, 0);
     const totalKgF = riwayatSorted.reduce((s, t) => s + t.beratKg, 0);
+    // M16: bila seluruh transaksi pakai unit yang sama, tampilkan di header;
+    // bila campur unit, gunakan "unit" generik agar tidak menyesatkan.
+    const unitSet = new Set(riwayatSorted.map((t) => unitOf(t)));
+    const totalUnitLabel = unitSet.size === 1 ? Array.from(unitSet)[0] : "unit";
     const rangeLabel =
       dariTgl || sampaiTgl
         ? `Periode: ${dariTgl || "awal"} s/d ${sampaiTgl || "sekarang"}`
@@ -495,30 +509,32 @@ function PosKasirPage() {
     doc.text(rangeLabel, 40, 58);
     doc.text(`Dibuat: ${now.toLocaleString("id-ID")}`, 40, 72);
     doc.text(
-      `Total transaksi: ${riwayatSorted.length}  ·  Total berat: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg  ·  Omzet: ${rupiah(totalOmzetF)}`,
+      `Total transaksi: ${riwayatSorted.length}  ·  Total jumlah: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${totalUnitLabel}  ·  Omzet: ${rupiah(totalOmzetF)}`,
       40,
       86,
     );
 
     autoTable(doc, {
       startY: 100,
-      head: [["Waktu", "Produk", "Berat (kg)", "Harga/kg", "Total", "Sisa Stok"]],
+      head: [["Waktu", "Produk", "Jumlah", "Unit", "Harga/unit", "Total", "Sisa Stok"]],
       body: riwayatSorted.map((t) => [
         new Date(t.waktu).toLocaleString("id-ID"),
         `${t.produkEmoji} ${t.produkNama}`,
         t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 }),
+        unitOf(t),
         rupiah(t.hargaPerKg),
         rupiah(t.total),
-        `${t.sisaStokKg.toLocaleString("id-ID")} kg`,
+        `${t.sisaStokKg.toLocaleString("id-ID")} ${unitOf(t)}`,
       ]),
       styles: { fontSize: 9, cellPadding: 4 },
       headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
         2: { halign: "right" },
-        3: { halign: "right" },
+        3: { halign: "left" },
         4: { halign: "right" },
         5: { halign: "right" },
+        6: { halign: "right" },
       },
       margin: { left: 40, right: 40 },
       didDrawPage: (data: { pageNumber: number }) => {
@@ -1369,15 +1385,15 @@ function PosKasirPage() {
                         <div className="text-right shrink-0">
                           <div className="text-emerald-400 font-mono font-semibold text-sm">{rupiah(t.total)}</div>
                           <div className="text-[11px] text-slate-400 font-mono">
-                            {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                            {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(t)}
                           </div>
                         </div>
                       </div>
                       <div className={`border-t border-slate-800 flex justify-between text-[11px] text-slate-500 ${modeRingkas ? "mt-1.5 pt-1.5" : "mt-2 pt-2"}`}>
-                        <span>@ {rupiah(t.hargaPerKg)}/kg</span>
+                        <span>@ {rupiah(t.hargaPerKg)}/{unitOf(t)}</span>
                         <span>
                           Sisa:{" "}
-                          <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
+                          <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} {unitOf(t)}</span>
                         </span>
                       </div>
                       <div className={`flex ${modeRingkas ? "mt-1.5 gap-1.5" : "mt-2 gap-2"}`}>
@@ -1422,8 +1438,8 @@ function PosKasirPage() {
                     <tr className="text-left text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
                       <th className="py-2 pr-3 font-medium">Waktu</th>
                       <th className="py-2 pr-3 font-medium">Produk</th>
-                      <th className="py-2 pr-3 font-medium text-right">Berat</th>
-                      <th className="py-2 pr-3 font-medium text-right">Harga/kg</th>
+                      <th className="py-2 pr-3 font-medium text-right">Jumlah</th>
+                      <th className="py-2 pr-3 font-medium text-right">Harga/unit</th>
                       <th className="py-2 pr-3 font-medium text-right">Total</th>
                       <th className="py-2 font-medium text-right">Sisa Stok</th>
                       <th className="py-2 font-medium text-right">WA</th>
@@ -1438,14 +1454,14 @@ function PosKasirPage() {
                           {t.produkNama}
                         </td>
                         <td className="py-2 pr-3 text-right font-mono">
-                          {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                          {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(t)}
                         </td>
                         <td className="py-2 pr-3 text-right font-mono text-slate-400">{rupiah(t.hargaPerKg)}</td>
                         <td className="py-2 pr-3 text-right font-mono font-semibold text-emerald-400">
                           {rupiah(t.total)}
                         </td>
                         <td className="py-2 text-right font-mono text-slate-300">
-                          {t.sisaStokKg.toLocaleString("id-ID")} kg
+                          {t.sisaStokKg.toLocaleString("id-ID")} {unitOf(t)}
                         </td>
                         <td className="py-2 text-right">
                           <button
@@ -1511,13 +1527,13 @@ function PosKasirPage() {
                 </div>
                 <div className="rounded-lg bg-slate-800/60 border border-slate-700 p-3 text-sm space-y-1.5 font-mono">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Berat</span>
+                    <span className="text-slate-400">Jumlah</span>
                     <span className="text-slate-100">
-                      {strukTransaksi.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                      {strukTransaksi.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(strukTransaksi)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Harga/kg</span>
+                    <span className="text-slate-400">Harga/{unitOf(strukTransaksi)}</span>
                     <span className="text-slate-100">{rupiah(strukTransaksi.hargaPerKg)}</span>
                   </div>
                   <div className="flex justify-between pt-1.5 border-t border-slate-700">
@@ -1529,7 +1545,7 @@ function PosKasirPage() {
                   <div className="flex justify-between text-[11px] text-slate-500">
                     <span>Sisa stok</span>
                     <span>
-                      {strukTransaksi.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                      {strukTransaksi.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(strukTransaksi)}
                     </span>
                   </div>
                 </div>
