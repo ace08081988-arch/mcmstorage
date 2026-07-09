@@ -18,6 +18,8 @@ import {
   randomSalt,
   requestLockNow,
   setLockConfig,
+  getLockStorageMode,
+  type LockStorageMode,
   type BiometricStatus,
   type LockConfig,
 } from "@/lib/app-lock";
@@ -100,6 +102,12 @@ function PengaturanKunci() {
   const prevBioRef = useRef<BiometricStatus | null>(null);
   const bioAvailable = bioStatus.available;
   const [autoLock, setAutoLock] = useState(false);
+  // M24: tampilkan backend penyimpanan hash PIN/pola secara eksplisit
+  // supaya admin/pengguna tahu bukan Keystore/Keychain terenkripsi.
+  const [storageMode, setStorageMode] = useState<LockStorageMode | null>(null);
+  useEffect(() => {
+    void getLockStorageMode().then(setStorageMode);
+  }, []);
 
   // Nama toko untuk caption WhatsApp
   const [shopName, setShopName] = useState("");
@@ -393,6 +401,28 @@ function PengaturanKunci() {
                 ? `Aktif — ${cfg.method === "pin" ? "PIN" : "Pola"}${cfg.biometric ? " + Sidik jari" : ""}`
                 : "Belum diaktifkan"}
             </div>
+            {storageMode ? (
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                Penyimpanan hash:{" "}
+                <span className="font-mono">
+                  {storageMode === "secure"
+                    ? "Keystore/Keychain (terenkripsi)"
+                    : storageMode === "preferences"
+                      ? "Capacitor Preferences (Android SharedPreferences / iOS UserDefaults)"
+                      : "localStorage (browser)"}
+                </span>
+                {storageMode !== "secure" ? (
+                  <>
+                    {" · "}
+                    <span>
+                      Hash + salt, bukan plaintext. Kunci ini adalah
+                      barrier lokal, bukan pertahanan anti-forensik —
+                      auth server tetap independen.
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <div className="flex gap-2">
             {cfg && (
