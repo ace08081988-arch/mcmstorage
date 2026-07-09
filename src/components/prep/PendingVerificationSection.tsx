@@ -21,6 +21,12 @@ export function PendingVerificationSection({
   const [rows, setRows] = useState<
     Array<VerificationSubmission & { photo_paths?: string[] | null; photo_path?: string | null }>
   >([]);
+  // Nama task dan nama item untuk triage. Ambil terpisah supaya query
+  // utama tetap sederhana dan tidak bergantung pada FK embed (yang bisa
+  // gagal diam-diam bila relasi tidak terdeteksi PostgREST). Peta ini
+  // dipakai untuk menampilkan "Task · Item" pada tiap baris pending.
+  const [taskNames, setTaskNames] = useState<Record<string, string>>({});
+  const [itemNames, setItemNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [picked, setPicked] = useState<VerificationSubmission | null>(null);
   const [pickedPhotos, setPickedPhotos] = useState<string[]>([]);
@@ -42,9 +48,40 @@ export function PendingVerificationSection({
       }
       const { data, error } = await q;
       if (error) throw error;
-      setRows((data ?? []) as typeof rows);
+      const list = (data ?? []) as typeof rows;
+      setRows(list);
+
+      // Resolusi nama task & item untuk triage — ambil dari SSOT tabelnya
+      // masing-masing, bukan duplikasi manual. RLS `prep_tasks` /
+      // `prep_task_items` sudah membatasi ke owner sehingga aman.
+      const taskIdSet = Array.from(
+        new Set(list.map((r) => r.task_id).filter((v): v is string => !!v)),
+      );
+      const itemIdSet = Array.from(
+        new Set(list.map((r) => r.task_item_id).filter((v): v is string => !!v)),
+      );
+      const [tasksRes, itemsRes] = await Promise.all([
+        taskIdSet.length > 0
+          ? supabase.from("prep_tasks").select("id,title").in("id", taskIdSet)
+          : Promise.resolve({ data: [] as Array<{ id: string; title: string | null }> }),
+        itemIdSet.length > 0
+          ? supabase.from("prep_task_items").select("id,name").in("id", itemIdSet)
+          : Promise.resolve({ data: [] as Array<{ id: string; name: string | null }> }),
+      ]);
+      const tMap: Record<string, string> = {};
+      for (const t of (tasksRes.data ?? []) as Array<{ id: string; title: string | null }>) {
+        if (t.title) tMap[t.id] = t.title;
+      }
+      const iMap: Record<string, string> = {};
+      for (const it of (itemsRes.data ?? []) as Array<{ id: string; name: string | null }>) {
+        if (it.name) iMap[it.id] = it.name;
+      }
+      setTaskNames(tMap);
+      setItemNames(iMap);
     } catch {
       setRows([]);
+      setTaskNames({});
+      setItemNames({});
     } finally {
       setLoading(false);
     }
@@ -90,9 +127,21 @@ export function PendingVerificationSection({
                 className="flex items-center justify-between gap-2 rounded border p-2"
               >
                 <div className="min-w-0 flex-1 text-xs">
-                  <div className="truncate font-medium">
-                    {new Date(r.submitted_at).toLocaleString("id-ID")}
-                  </div>
+                  {(() => {
+                    const taskName = r.task_id ? taskNames[r.task_id] : undefined;
+                    const itemName = r.task_item_id ? itemNames[r.task_item_id] : undefined;
+                    const label = [taskName, itemName].filter(Boolean).join(" · ");
+                    return (
+                      <>
+                        <div className="truncate font-medium">
+                          {label || "Submisi pegawai"}
+                        </div>
+                        <div className="truncate text-[11px] text-muted-foreground">
+                          {new Date(r.submitted_at).toLocaleString("id-ID")}
+                        </div>
+                      </>
+                    );
+                  })()}
                   {r.note ? (
                     <div className="truncate text-muted-foreground">{r.note}</div>
                   ) : null}
