@@ -321,7 +321,12 @@ function EcerPage() {
       search: { item: selectedItemId, title: selectedTitleId, highlight: undefined },
       replace: true,
     });
-  }, [selectedItemId, selectedTitleId, router]);
+    // M11: `router` sengaja tidak masuk deps. Instance `router` bisa
+    // berubah rujukan pada beberapa versi TanStack Router (mis. saat
+    // route context di-invalidate) dan menyebabkan effect ini re-fire
+    // tanpa perubahan seleksi → loop `navigate({ replace: true })`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItemId, selectedTitleId]);
 
   // Persist selected warehouse item so other surfaces (beranda) can sync filter
   useEffect(() => {
