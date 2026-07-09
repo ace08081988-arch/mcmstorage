@@ -159,7 +159,7 @@ export function markSent(ids: string[], meta?: SentMeta) {
       .rpc("prep_submissions_mark_sent", {
         _ids: cleanIds,
         _channel: channel,
-        _maps_url: meta?.mapsUrl ?? null,
+        _maps_url: meta?.mapsUrl ?? undefined,
       })
       .then(() => undefined, () => undefined);
   }
