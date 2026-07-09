@@ -350,9 +350,18 @@ function Index() {
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [categories, setCategories] = useState<string[]>([]);
+  // M19: SATU sumber kebenaran untuk kategori aktif. Sebelumnya ada dua
+  // key localStorage (`mcm_active_cat` dan `ACTIVE_CAT_KEY`) yang keduanya
+  // ditulis pada setiap perubahan → 2× I/O per klik chip kategori dan
+  // rawan divergen bila salah satu path gagal. Konsolidasi ke
+  // `ACTIVE_CAT_KEY` (konstanta bernama) untuk baca dan tulis.
   const [activeCat, setActiveCat] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
-    return window.localStorage.getItem("mcm_active_cat");
+    try {
+      return window.localStorage.getItem(ACTIVE_CAT_KEY);
+    } catch {
+      return null;
+    }
   });
   const [newCatName, setNewCatName] = useState("");
   const [railOpen, setRailOpen] = useState<boolean>(() => {
@@ -378,14 +387,8 @@ function Index() {
     }
   }, [filter]);
 
-  useEffect(() => {
-    try {
-      if (activeCat) window.localStorage.setItem("mcm_active_cat", activeCat);
-      else window.localStorage.removeItem("mcm_active_cat");
-    } catch {
-      /* ignore */
-    }
-  }, [activeCat]);
+  // Persistensi ditangani effect tunggal di bawah (setelah `hydrated`).
+  // Effect di sini dihapus untuk menghilangkan double-write ke localStorage.
 
   useEffect(() => {
     try {
