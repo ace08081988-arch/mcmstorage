@@ -11,6 +11,7 @@ import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-valid
 import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
 import { StaffContactsPanel } from "@/components/StaffContactsPanel";
 import { SharePinDialog } from "@/components/tugas/SharePinDialog";
+import { deriveTaskShortStatus, type TaskShortStatus } from "@/lib/prep-status";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
@@ -33,15 +34,14 @@ type TaskItem = { id: string; task_id: string; name_snapshot: string; category_s
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
 type PinAlert = { id: string; task_id: string; share_token: string; failure_count: number; window_start: string; window_end: string; created_at: string };
 
+// H5: gunakan SSOT `deriveTaskShortStatus` dari `@/lib/prep-status` yang
+// juga memperhitungkan `verification_status` supaya kartu tugas tidak
+// tampil "Selesai" saat submisi masih pending review admin.
 function deriveTaskStatus(
   rawStatus: string,
-  p: { items: number; submitted: number },
-): "Menunggu" | "Dikerjakan" | "Selesai" {
-  const s = String(rawStatus ?? "").toLowerCase();
-  if (s === "done" || s === "selesai") return "Selesai";
-  if (p.items > 0 && p.submitted >= p.items) return "Selesai";
-  if (p.submitted > 0) return "Dikerjakan";
-  return "Menunggu";
+  p: { items: number; submitted: number; approved: number },
+): TaskShortStatus {
+  return deriveTaskShortStatus(rawStatus, p);
 }
 
 type TugasChipTone = "primary" | "info" | "success" | "warning" | "danger";
