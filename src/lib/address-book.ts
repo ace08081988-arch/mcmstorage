@@ -116,16 +116,30 @@ export async function importDeviceContacts(
   // Postgres tidak menerima partial unique index sebagai ON CONFLICT target
   // lewat PostgREST upsert. Lakukan dedup di client: ambil device_contact_id
   // yang sudah ada, lalu insert hanya yang baru dan update yang berubah.
-  const ids = rows.map((r) => r.device_contact_id);
+  // M25: gunakan tipe eksplisit `ExistingRow` sebagai pengganti `any`
+  // supaya perbandingan field aman dari typo/rename dan hasil `.map()` /
+  // `.get()` di bawah tetap typesafe.
+  type ExistingRow = {
+    id: string;
+    device_contact_id: string | null;
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    note: string | null;
+  };
+  const ids = rows
+    .map((r) => r.device_contact_id)
+    .filter((v): v is string => !!v);
   const { data: existing, error: exErr } = await supabase
     .from("address_book")
     .select("id,device_contact_id,name,phone,email,note")
     .eq("user_id", uid)
     .in("device_contact_id", ids);
   if (exErr) throw exErr;
-  const byId = new Map(
-    (existing ?? []).map((r: any) => [r.device_contact_id as string, r]),
-  );
+  const byId = new Map<string, ExistingRow>();
+  for (const r of (existing ?? []) as ExistingRow[]) {
+    if (r.device_contact_id) byId.set(r.device_contact_id, r);
+  }
   const toInsert = rows.filter((r) => !byId.has(r.device_contact_id));
   const toUpdate = rows
     .filter((r) => byId.has(r.device_contact_id))
@@ -150,7 +164,7 @@ export async function importDeviceContacts(
         email: u.next.email,
         note: u.next.note,
       })
-      .eq("id", (u.existing as any).id);
+      .eq("id", u.existing.id);
     if (error) throw error;
   }
   return { inserted: toInsert.length, skipped: rows.length - toInsert.length - toUpdate.length };
