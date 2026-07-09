@@ -65,6 +65,21 @@ export function broadcastPrefs(prefs: NotifPrefs) {
   }).catch(() => {});
 }
 
+// C7: Sinkronisasi daftar chat yang di-mute ke Service Worker.
+// Map: conversationId -> mutedUntil (ms epoch). Nilai <= now dianggap tidak mute.
+// SW menggunakan map ini untuk menahan tampilan notifikasi walau server salah
+// mengirim (mis. karena race saat mute baru diaktifkan).
+export function broadcastMutedConversations(muted: Record<string, number>) {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    for (const r of regs) {
+      try {
+        r.active?.postMessage({ type: "muted-conversations", muted });
+      } catch {}
+    }
+  }).catch(() => {});
+}
+
 // Helper waktu: apakah jam "HH:MM" saat ini berada dalam jendela DND?
 export function isInDndWindow(now: Date, start: string, end: string): boolean {
   const [sh, sm] = start.split(":").map((n) => parseInt(n, 10) || 0);
