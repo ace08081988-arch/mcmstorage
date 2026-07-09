@@ -3671,6 +3671,15 @@ export type Database = {
       }
       normalize_phone: { Args: { _p: string }; Returns: string }
       normalize_unit_label: { Args: { _u: string }; Returns: string }
+      pos_commit_sale: {
+        Args: {
+          _item_id: string
+          _note?: string
+          _price_per_base: number
+          _qty_base: number
+        }
+        Returns: string
+      }
       prep_create_task: {
         Args: {
           _items: Json
