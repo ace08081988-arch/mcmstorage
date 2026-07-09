@@ -64,6 +64,12 @@ function AuditPage() {
   const [autoOnToggle, setAutoOnToggle] = useState(true);
   const [log, setLog] = useState<string[]>([]);
   const runIdRef = useRef(0);
+  // L5: pakai ref agar `runAudit` tidak perlu bergantung pada state
+  // `running` (menghindari identitas fungsi berubah → efek/listener
+  // ikut re-bind, dan stale closure saat auto-audit dipicu event).
+  const runningRef = useRef(false);
+  // Guard StrictMode double-mount: audit awal dijalankan sekali per sesi.
+  const initialRanRef = useRef(false);
 
   const appendLog = useCallback((line: string) => {
     setLog((prev) => {
@@ -73,7 +79,8 @@ function AuditPage() {
   }, []);
 
   const runAudit = useCallback(async () => {
-    if (running) return;
+    if (runningRef.current) return;
+    runningRef.current = true;
     const myRun = ++runIdRef.current;
     setRunning(true);
     const mode = currentMode();
@@ -109,7 +116,8 @@ function AuditPage() {
 
     appendLog(`[${nowIso()}] === Audit selesai (mode: ${mode}) ===`);
     setRunning(false);
-  }, [appendLog, router, running]);
+    runningRef.current = false;
+  }, [appendLog, router]);
 
   // Auto-jalankan saat toggle Mode Ringkas/Normal.
   useEffect(() => {
@@ -125,11 +133,14 @@ function AuditPage() {
     return () => window.removeEventListener(COMPACT_MODE_EVENT, onChange);
   }, [autoOnToggle, runAudit, appendLog]);
 
-  // Jalankan sekali saat halaman dibuka.
+  // Jalankan sekali saat halaman dibuka (guard StrictMode double-mount
+  // dan stale closure — dep list eksplisit; ref `initialRanRef` memastikan
+  // tidak looping).
   useEffect(() => {
+    if (initialRanRef.current) return;
+    initialRanRef.current = true;
     void runAudit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [runAudit]);
 
   const okCount = rows.filter((r) => r.status === "ok").length;
   const failCount = rows.filter((r) => r.status === "fail").length;
