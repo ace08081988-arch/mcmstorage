@@ -492,6 +492,10 @@ function PosKasirPage() {
     const stamp = now.toISOString().slice(0, 10);
     const totalOmzetF = riwayatSorted.reduce((s, t) => s + t.total, 0);
     const totalKgF = riwayatSorted.reduce((s, t) => s + t.beratKg, 0);
+    // M16: bila seluruh transaksi pakai unit yang sama, tampilkan di header;
+    // bila campur unit, gunakan "unit" generik agar tidak menyesatkan.
+    const unitSet = new Set(riwayatSorted.map((t) => unitOf(t)));
+    const totalUnitLabel = unitSet.size === 1 ? Array.from(unitSet)[0] : "unit";
     const rangeLabel =
       dariTgl || sampaiTgl
         ? `Periode: ${dariTgl || "awal"} s/d ${sampaiTgl || "sekarang"}`
@@ -505,30 +509,32 @@ function PosKasirPage() {
     doc.text(rangeLabel, 40, 58);
     doc.text(`Dibuat: ${now.toLocaleString("id-ID")}`, 40, 72);
     doc.text(
-      `Total transaksi: ${riwayatSorted.length}  ·  Total berat: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg  ·  Omzet: ${rupiah(totalOmzetF)}`,
+      `Total transaksi: ${riwayatSorted.length}  ·  Total jumlah: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} ${totalUnitLabel}  ·  Omzet: ${rupiah(totalOmzetF)}`,
       40,
       86,
     );
 
     autoTable(doc, {
       startY: 100,
-      head: [["Waktu", "Produk", "Berat (kg)", "Harga/kg", "Total", "Sisa Stok"]],
+      head: [["Waktu", "Produk", "Jumlah", "Unit", "Harga/unit", "Total", "Sisa Stok"]],
       body: riwayatSorted.map((t) => [
         new Date(t.waktu).toLocaleString("id-ID"),
         `${t.produkEmoji} ${t.produkNama}`,
         t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 }),
+        unitOf(t),
         rupiah(t.hargaPerKg),
         rupiah(t.total),
-        `${t.sisaStokKg.toLocaleString("id-ID")} kg`,
+        `${t.sisaStokKg.toLocaleString("id-ID")} ${unitOf(t)}`,
       ]),
       styles: { fontSize: 9, cellPadding: 4 },
       headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
         2: { halign: "right" },
-        3: { halign: "right" },
+        3: { halign: "left" },
         4: { halign: "right" },
         5: { halign: "right" },
+        6: { halign: "right" },
       },
       margin: { left: 40, right: 40 },
       didDrawPage: (data: { pageNumber: number }) => {
