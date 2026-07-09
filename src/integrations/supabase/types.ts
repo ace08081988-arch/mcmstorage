@@ -1927,6 +1927,27 @@ export type Database = {
           },
         ]
       }
+      prep_task_notify_hook_config: {
+        Row: {
+          enabled: boolean
+          hook_url: string | null
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prep_tasks: {
         Row: {
           completed_at: string | null
