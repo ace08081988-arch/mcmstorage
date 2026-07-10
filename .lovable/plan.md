@@ -1,94 +1,86 @@
-# Refactor Photo Editor → Engine react-konva (Iterasi 1)
+## Konteks
 
-## Konteks penting
+Halaman Beranda menampilkan dua panel utama:
+- `ReadyEcerSection` (2571 LOC) — kartu ecer siap-kirim, tab Aktif/Riwayat terkirim, bulk select, view/layout toggle, chat share, WA share. Ini sumber utama keluhan.
+- `ReadyRequestSection` — daftar judul request + badge `N paket`. Tidak punya tab Riwayat / bulk select / view toggle.
 
-Editor lama: `src/components/PhotoEditor.tsx` (2010 baris, canvas manual). Dipakai di 4 tempat:
-- `src/routes/t.$token.tsx` (2 titik — pegawai siap kirim & request)
-- `src/routes/_authenticated.request.tsx` (admin preview)
-- `src/routes/_authenticated.ecer.tsx` (ecer)
-- `src/routes/lovable.visual.photo-editor.tsx` (harness QA)
+Sebelum mulai edit 2500+ baris kritikal, saya butuh konfirmasi arah keputusan berikut (semua di sisi UI/UX; tidak ada perubahan DB/RLS/RPC/business logic).
 
-Ada 6+ e2e test yang lock ke selector toolbar lama (`worker-portal-panel-photoedit`, `photo-editor-touch-android`, `photo-editor-toolbar-viewports`, `photo-editor-keyboard-safe-area`, `worker-portal-pick-photo`, `worker-portal-camera-no-reload`). Test-test itu mengunci workflow bisnis — harus tetap hijau.
+## Root cause "Riwayat terkirim tampak tidak jelas"
 
-## Strategi: engine baru side-by-side, bukan patch in-place
+1. Kartu ecer (`EcerCard`) me-render **layout dan tombol yang berbeda** untuk `view="sent"` vs `view="active"` — bukan card yang konsisten. Contoh: `view==="sent"` menyembunyikan sebagian info produk dan menampilkan cap "Terkirim / Sukses / Tersinkron" yang mendominasi.
+2. Beberapa aksi masih di-render di card meski tidak relevan untuk tab Riwayat (tombol "Kirim" mestinya hilang, "Aktif"/undo kadang muncul).
+3. `BulkToolbar` selalu muncul begitu ada kartu — termasuk di mobile — dengan tombol "Pilih beberapa" walau tidak ada bulk-op yang jelas untuk operator harian di 411px.
+4. `LayoutModeToggle` (grid/list/table icons di bawah) selalu tampil di mobile meski daily user hanya butuh 1 layout list.
 
-Buat `PhotoEditorV2` di komponen baru. Caller tetap import `PhotoEditor` — export dari `PhotoEditor.tsx` di-alias ke V2 setelah fondasi stabil. Ini menjaga API dan mempermudah rollback.
+## Rencana Perubahan (UI/UX only)
 
-## Iterasi 1 (deliverable batch ini)
+### A. Card Riwayat Terkirim = Card Aktif + Overlay Status
+- Buang cabang layout khusus `view==="sent"` di `EcerCard`. Render struktur inti yang **sama** (nama produk, foto/thumbnail, GPS, jumlah foto, detail kiriman) di kedua tab.
+- Overlay tipis (badge "Terkirim · <waktu relatif>") di kanan-atas card, tidak menghabiskan space.
+- Sisipkan **satu row aksi** yang berbeda kondisional:
+  - Tab **Aktif**: `Pratinjau` · `Kirim WA` · `Kirim Chat` · menu tiga titik (lihat B).
+  - Tab **Riwayat**: `Preview foto` · `Buka Maps` (jika ada GPS) · menu tiga titik (lihat B).
+- Tombol `Kirim ke pembeli` / `Kirim` / `Kirim ulang` **tidak muncul** di tab Riwayat. `Kirim ulang` tetap ada tapi hanya di menu tiga titik (per-card) untuk kasus kiriman gagal.
 
-### A. Engine
-- Tambah dependency: `konva`, `react-konva`, `use-image` (~150KB gz).
-- File baru `src/components/photo-editor/` (folder):
-  - `PhotoEditorV2.tsx` — shell, canvas Stage, state root
-  - `engine/scene.ts` — tipe `Scene`, `SceneObject` (image | draw | shape | text | sticker), serialize/deserialize `sceneJson`
-  - `engine/history.ts` — undo/redo unlimited via patch stack
-  - `engine/gestures.ts` — pinch zoom, pan, double-tap-fit (native Konva + pointer events)
-  - `hooks/useAutosaveScene.ts` — debounced simpan ke IndexedDB via `prep-draft-store` (kunci baru `photo-editor-scene:<key>`)
+### B. Konsolidasi ke Menu Tiga Titik (per card)
+Sekarang tombol tersebar. Rencana:
+- Tab **Aktif** ⋯: `Pratinjau`, `Buka Maps` (jika ada), `Refresh sinkron`, `Tandai terkirim (skip)`, `Kirim ulang WA/Chat` (hidden kalau belum pernah dikirim).
+- Tab **Riwayat** ⋯: `Preview foto`, `Buka Maps` (jika ada), `Kirim ulang WA/Chat`, `Kembalikan ke Aktif` (undo), `Hapus dari Riwayat` (dengan konfirmasi — sudah ada mekanisme hide lokal via `wa-sent-history`).
 
-### B. Tools (semua di iterasi 1)
-1. Crop: free / 1:1 / 4:5 / 16:9 + Rotate 90° + Flip H/V (crop layer non-destruktif; final commit saat Selesai)
-2. Draw: Pen, Highlighter (multiply blend), Brush, Eraser — size 1–40, opacity 10–100, color picker HSV + palette preset MCM
-3. Shapes: Arrow, Line, Circle, Rectangle, Triangle, Oval — resize handle, rotate handle, stroke width, opacity, color
-4. Text: font (system + Inter + Poppins), size, bold, italic, outline, shadow, background, alignment, emoji (native picker)
-5. Undo/Redo unlimited + tombol reset
-6. Zoom: pinch + double-tap toggle 1×↔2× + fit button + slider (100/200/400)
-7. Layer panel (bottom sheet): list objek, bring-to-front, send-to-back, duplicate, hide, delete, lock
-8. Autosave scene ke IndexedDB tiap 500ms debounce; restore saat re-open
+Semua item menu yang no-op untuk konteks saat ini disembunyikan, bukan disable, agar mobile tidak penuh.
 
-### C. API kompat
-```ts
-type PhotoEditorProps = {
-  src: string;                       // existing
-  onCancel: () => void;              // existing
-  onSave: (blob, dataUrl, sceneJson?: string) => void;  // sceneJson OPSIONAL
-  initialSceneJson?: string;         // opsional; jika ada → restore objek editable
-  autosaveKey?: string;              // opsional; enable IndexedDB draft
-};
-```
-Caller lama (tanpa `initialSceneJson`) tetap jalan — signature backward compat.
+### C. Bersihkan No-op / Redundant Buttons (mobile)
+| Tombol | Keputusan |
+|---|---|
+| `Pilih beberapa` (BulkToolbar) | **Sembunyikan di mobile** (`< sm`). Tetap tampil di desktop dengan aksi bulk WA/Chat/Delete existing. |
+| Layout toggle grid/list/table di ReadyEcer | **Sembunyikan di mobile**. Mobile force `list` layout. Tetap tampil di desktop. |
+| Layout toggle di ReadyRequestSection | Idem — hidden < sm. |
+| Tombol `Kirim` pada card di tab Riwayat | **Hapus** (sudah salah konteks). |
+| Tombol `Aktif`/undo yang muncul inline | Pindahkan ke menu tiga titik sebagai `Kembalikan ke Aktif`. |
+| Tombol `Kelola →` di ReadyRequestSection | **Tetap** (fungsional, ke `/request`). |
+| Thumbnail "6 foto" | Konfirmasi handler ada (buka preview) — jika no-op akan diberi handler yang membuka dialog preview foto yang sudah ada. |
 
-### D. Sticker (iterasi 1: minimum set pakai Lucide)
-Pack 8 sticker paling penting via Lucide render-to-SVG: Check, X, AlertTriangle, MapPin, Package, DollarSign (Paid), Clock (Pending), BadgeCheck (Verified). Semua bisa resize/rotate/warna/opacity. Sticker sisanya (Fragile SVG custom, DP, Hutang, dsb) ditunda ke iterasi 2 sesuai persetujuan tadi ("fondasi dulu").
+### D. Konsistensi Layout Mobile
+- Grid ecer di mobile jadi 1 kolom full-width (sudah kebanyakan begitu tapi ada state grid yang membuat sempit) — pastikan `grid-cols-1` di `< sm`.
+- Card padding & typography sama untuk kedua tab.
+- Tidak ada horizontal overflow: `min-w-0` + `truncate` pada semua row.
 
-### E. UI
-- Floating bottom toolbar ikon (44px tap target), aktif tool di-highlight
-- Bottom sheet options per tool (size/opacity/color)
-- Top bar: Batal / Undo / Redo / Selesai
-- Dark mode via token existing (`bg-background`, `text-foreground`)
-- Mobile-first 411px; tetap responsif ke desktop
-- Animasi via `framer-motion` (sudah terpasang)
+### E. Aksi Destructive
+- `Hapus dari Riwayat` — sudah pakai `AlertDialog` konfirmasi + hide lokal via `wa-sent-history`. **Tidak** hard-delete. Copy diperjelas: "Sembunyikan dari Riwayat".
+- `Kembalikan ke Aktif` — pakai handler `ecer-bulk:undo:<id>` yang sudah ada; tidak destructive.
 
-### F. Yang ditunda ke iterasi 2 (persetujuan sudah dicatat)
-Sticker Pack lengkap (SVG custom 20+), Blur/Pixelate/Mosaic brush, Export quality picker (PNG/JPEG/WEBP + kompres tier), Smart guides/grid/snap, Custom PNG sticker upload.
+## File yang Akan Diubah
 
-## Kompatibilitas tes
+- `src/components/ReadyEcerSection.tsx` — refactor lokal (bukan rewrite) pada:
+  - `BulkToolbar` — sembunyikan di mobile (`hidden sm:flex`).
+  - Wrapper `LayoutModeToggle` — `hidden sm:inline-flex`.
+  - `EcerCard` — hapus branching layout `view==="sent"`, satukan struktur, sisipkan menu tiga titik konsolidasi (komponen baru `EcerCardMenu` inline).
+  - Hapus tombol inline `Kirim` di tab Riwayat.
+- `src/components/ReadyRequestSection.tsx` — sembunyikan `LayoutModeToggle` di mobile.
+- Jika perlu, tambahkan komponen kecil `<EcerCardMenu />` di file yang sama (bukan refactor besar keluar file).
 
-Toolbar lama diuji lewat selector seperti `data-testid="pe-tool-*"`. Saya akan:
-1. Baca semua spec e2e photo-editor dulu, catat testid yang harus dipertahankan.
-2. Terapkan testid yang sama di V2 (Crop, Rotate, Draw, Text, Save, Cancel, Undo).
-3. Jalankan `bunx vitest run` untuk unit test hittest lama — jika logic hittest lama tidak relevan lagi, ganti test-nya (bukan skip) dengan test hittest V2.
+**Tidak** disentuh: DB migration, RLS, `sales`/`request_preparations`/`wa_sent_history` schema, event bus `ecer-bulk:*`, handler `handleRefresh`, alur `send WA/Chat`, verifikasi bayar, permission.
 
-## File yang berubah
+## Verifikasi
 
-Baru:
-- `src/components/photo-editor/PhotoEditorV2.tsx`
-- `src/components/photo-editor/engine/scene.ts`
-- `src/components/photo-editor/engine/history.ts`
-- `src/components/photo-editor/engine/gestures.ts`
-- `src/components/photo-editor/tools/*.tsx` (Crop, Draw, Shapes, Text, Sticker, Layers, Zoom)
-- `src/components/photo-editor/hooks/useAutosaveScene.ts`
-- Unit test: `src/components/photo-editor/engine/scene.test.ts`, `history.test.ts`
+1. `bunx tsgo --noEmit` hijau.
+2. Build via harness.
+3. Manual (411px & 390px, screenshot pakai Playwright headless):
+   - Buka `/` → tab Aktif → kartu tampil, aksi Kirim WA/Chat visible.
+   - Switch ke Riwayat terkirim → layout kartu sama, badge "Terkirim" di kanan atas, tidak ada tombol "Kirim".
+   - Menu tiga titik pada kartu Riwayat → Preview, Maps, Kirim ulang, Kembalikan ke Aktif, Sembunyikan.
+   - `Pilih beberapa` & layout toggle tidak muncul di mobile.
+   - Desktop (≥ sm) tidak berubah signifikan.
 
-Edited:
-- `src/components/PhotoEditor.tsx` → thin re-export dari V2 (menjaga import path lama)
-- Tidak ada perubahan di caller (`t.$token.tsx`, `request.tsx`, `ecer.tsx`, harness)
-- Tidak ada perubahan DB, RLS, route, auth, atau workflow bisnis
+## Yang Tetap Ditahan
 
-## Risiko + mitigasi
+Publish tetap ditahan sampai user smoke test ulang 411px/390px dan menyatakan lulus.
 
-1. Bundle +150KB → lazy-load `PhotoEditorV2` via `React.lazy` di re-export shim. Editor cuma dibuka on-demand, tidak masuk critical path.
-2. E2E test lama bergantung selector spesifik → mirror testid yang identik.
-3. HEIC/kompresi existing → tetap dipakai apa adanya (input file staging tak berubah).
-4. Autosave menyimpan scene ke IndexedDB → key bersih otomatis saat pegawai klik Selesai (sama pola `prep-draft-store`).
+## Persetujuan yang Saya Butuhkan
 
-Perkiraan: implementasi + verifikasi ~1 batch besar. Setelah plan ini disetujui, saya kerjakan sampai `tsgo` + build + smoke test harness hijau, lalu lapor untuk iterasi 2 (sticker pack lengkap + blur + export quality).
+1. **Setujui daftar tombol yang disembunyikan/dipindahkan** di tabel bagian C.
+2. **Konfirmasi**: `Pilih beberapa` & layout toggle boleh hilang di mobile, tetap ada di desktop. (Alternatif: hapus total dari kedua ukuran.)
+3. **Konfirmasi**: mobile card Riwayat tetap punya `Kirim ulang` di menu tiga titik (untuk retry kiriman gagal), atau hilangkan sama sekali karena bulk sudah tersedia di desktop.
+
+Setelah OK, saya eksekusi langsung — perkiraan 1 giliran, semua di frontend.

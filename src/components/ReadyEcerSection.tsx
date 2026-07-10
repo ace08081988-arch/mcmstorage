@@ -598,7 +598,9 @@ export function ReadyEcerSection() {
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
-      <div className="flex justify-end">
+      {/* Layout toggle (grid/list/table) — desktop only. Di mobile user
+          harian cukup dengan satu layout list yang paling jelas. */}
+      <div className="hidden justify-end sm:flex">
         <LayoutModeToggle mode={layout} onChange={setLayout} />
       </div>
 
@@ -733,6 +735,7 @@ export function ReadyEcerSection() {
       )}
 
       {rows && rows.length > 0 && visible.length > 0 && (
+        <div className="hidden sm:block">
         <BulkToolbar
           selectMode={selectMode}
           setSelectMode={(v) => { setSelectMode(v); if (!v) setSelectedIds(new Set()); }}
@@ -764,6 +767,7 @@ export function ReadyEcerSection() {
           onBulkChatPick={() => setBulkPickChat(true)}
           onBulkDelete={() => setBulkConfirm("delete")}
         />
+        </div>
       )}
 
       <PickChatConversationDialog
@@ -1743,12 +1747,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     try { await sendWA(fake, expected); } catch { /* dilaporkan di kartu */ }
   }
 
-  function undoSent(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    unmarkSent(shots.map((s) => s.id));
-    toast.message("Dikembalikan ke daftar aktif.");
-  }
+  // Aksi "Kembalikan ke aktif" untuk kartu Riwayat dilakukan lewat
+  // DropdownMenu (memakai `doDelete()` yang sudah handle unmarkSent).
+  // Fungsi inline `undoSent` lama dihapus supaya tidak ada handler duplikat.
 
   async function prepareChat(conversationId: string, convTitle: string) {
     if (chatSending || chatPreparing) return;
@@ -2206,6 +2207,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 setMenuOpen(false);
                 onEnterSelect?.();
               }}
+              className="hidden sm:flex"
             >
               <CheckSquare className="mr-2 h-3.5 w-3.5" />
               Pilih beberapa
@@ -2503,7 +2505,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               Owner tetap bisa memakai fitur share foto pegawai langsung
               dari detail judul kalau memang perlu koordinasi internal.
             */}
-            {r.prep_count > 0 ? (
+            {view === "sent" ? null : r.prep_count > 0 ? (
               <Link
                 to="/ecer"
                 search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" }}
@@ -2524,17 +2526,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 <Send className="h-3 w-3" /> Kirim
               </span>
             )}
-            {view === "sent" && (
-              <button
-                type="button"
-                onClick={undoSent}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label="Kembalikan ke aktif"
-                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent"
-              >
-                <Undo2 className="h-3 w-3" /> Aktif
-              </button>
-            )}
+            {/* Aksi "Kembalikan ke aktif" dan "Hapus dari Riwayat" untuk
+                view === "sent" dikonsolidasi ke DropdownMenu di kanan atas
+                kartu — tombol inline "Aktif" dihapus supaya tidak duplikat. */}
             </div>
           </div>
           </>

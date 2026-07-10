@@ -80,7 +80,10 @@ export function ReadyRequestSection() {
           Paket Request Siap Kirim
         </p>
         <div className="flex items-center gap-2">
-          <LayoutModeToggle mode={layout} onChange={setLayout} />
+          {/* Layout toggle desktop-only — mobile default ke list. */}
+          <div className="hidden sm:inline-flex">
+            <LayoutModeToggle mode={layout} onChange={setLayout} />
+          </div>
           <Link to="/request" search={{ title: undefined, highlight: undefined }} className="text-[11px] font-medium text-primary hover:underline">Kelola →</Link>
         </div>
       </div>
