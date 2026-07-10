@@ -2875,31 +2875,36 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       </label>
 
       {item && (() => {
-        // Label Jumlah/Harga: gram → "g"; item botol → "botol" (bukan "pcs",
-        // karena satuan terkecil pada alur botol adalah botol, dan tingkat
-        // di atasnya adalah karton). Selain itu → "pcs".
-        const isBotol = (item.package_type ?? "").trim().toLowerCase() === "botol";
-        const humU = isBotol
-          ? "botol"
-          : (item.base_unit ?? "").trim().toLowerCase() === "g"
-            ? "g"
-            : "pcs";
+        // SSOT label satuan jual: `humanBaseUnit(pt, bu)` — hanya
+        // mengembalikan "botol" bila item benar-benar botol per-pcs
+        // (pt='botol' & bu='pcs'). Untuk item gram (bu='g') selalu
+        // "g"/"gram" tanpa peduli pt yang mungkin salah tag. Untuk pcs
+        // murni → "pcs". Tidak ada fallback ke "botol".
+        const humU = humanBaseUnit(item.package_type, item.base_unit) || "unit";
+        const isBotolTrue =
+          (item.package_type ?? "").trim().toLowerCase() === "botol" &&
+          (item.base_unit ?? "").trim().toLowerCase() === "pcs";
         const pkgLabel = (item.package_type ?? "").trim();
         // Sembunyikan tombol "per package" kalau labelnya sama persis dengan
         // label satuan dasar (mis. GS: base "botol" = package "botol"), atau
         // kalau package_size ≤ 1 sehingga tidak ada konversi bermakna.
-        // Untuk botol, tombol "per package" selalu redundan (karton dipilih
-        // lewat tombol khusus di bawah).
+        // Untuk botol asli, tombol "per package" selalu redundan (karton
+        // dipilih lewat tombol khusus di bawah).
         const showPackageBtn =
-          !isBotol &&
+          !isBotolTrue &&
           pkgLabel !== "" &&
           pkgLabel !== "pcs" &&
           !isSameUnitLabel(pkgLabel, humU) &&
           !isSameUnitLabel(pkgLabel, item.base_unit) &&
           Number(item.package_size) > 1;
-        // Sinkronkan sellMode kalau tombolnya hilang.
+        const showKartonBtn = isBotolTrue;
+        // Sinkronkan sellMode kalau tombolnya hilang (mis. ganti item
+        // dari botol ke gram: mode 'karton'/'package' jadi invalid).
         if (!showPackageBtn && sellMode === "package") {
           // schedule via microtask to avoid setState during render
+          Promise.resolve().then(() => setSellMode("base"));
+        }
+        if (!showKartonBtn && sellMode === "karton") {
           Promise.resolve().then(() => setSellMode("base"));
         }
         const packageLabelForQty = showPackageBtn ? pkgLabel : humU;
@@ -2914,7 +2919,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
                 Jual per {pkgLabel}
               </button>
             )}
-            {isBotol && (
+            {showKartonBtn && (
               <button type="button" onClick={() => setSellMode("karton")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "karton" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
                 Jual per karton
               </button>
@@ -2930,7 +2935,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
               testId="jual-kemasan-hint-trigger"
             >
               {(() => {
-                if (item.package_type === "botol") {
+                if (isBotolTrue) {
                   return `ℹ️ 1 karton = ${BOTOL_PER_KARTON} botol`;
                 }
                 // Base unit gram → selalu tampilkan aturan ons yang konsisten.
