@@ -30,21 +30,19 @@ export function humanBaseUnit(
  * Label satuan stok yang benar-benar dipakai untuk menyimpan/menambah stok
  * (base unit), dengan memperhitungkan `package_size`.
  *
- * Kasus GS-like (`package_type='botol'`, `base_unit='pcs'`, `package_size===1`)
- * tetap dilabel "botol" karena 1 botol = 1 pcs — memang counted by botol.
- * Selain itu (mis. botol isi 100 pcs) label stok = base unit apa adanya
- * ("pcs" / "g"). Ini mencegah copy menyesatkan seperti
- * "Stok disimpan dalam botol" padahal stok base sebenarnya bertambah pcs.
+ * Aturan bisnis: pada alur botol, satuan terkecil adalah **botol** (bukan pcs),
+ * dan tingkat di atasnya adalah **karton** (1 karton = 100 botol). Karena itu
+ * setiap item ber-`package_type='botol'` selalu dilabel "botol" sebagai base
+ * stok — tanpa memandang `package_size` atau `base_unit`. Untuk item non-botol,
+ * label mengikuti `base_unit` apa adanya ("pcs" / "g").
  */
 export function stockBaseUnitLabel(
   packageType: string | null | undefined,
   baseUnit: string | null | undefined,
-  packageSize: number | null | undefined,
+  _packageSize: number | null | undefined,
 ): string {
   const pt = (packageType ?? "").trim().toLowerCase();
-  const bu = (baseUnit ?? "").trim().toLowerCase();
-  const ps = Number(packageSize) || 0;
-  if (pt === "botol" && bu === "pcs" && ps === 1) return "botol";
+  if (pt === "botol") return "botol";
   return baseUnit ?? "";
 }
 
