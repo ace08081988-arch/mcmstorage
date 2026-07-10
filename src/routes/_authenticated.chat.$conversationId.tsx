@@ -495,9 +495,45 @@ function ChatRoomPage() {
 
   // Scroll to bottom
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const isNearBottomRef = useRef(true);
+  const [hasNewBelow, setHasNewBelow] = useState(false);
+  const NEAR_BOTTOM_PX = 120;
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+    isNearBottomRef.current = true;
+    setHasNewBelow(false);
+  }, []);
+  const onScrollerScroll = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const near = distance <= NEAR_BOTTOM_PX;
+    isNearBottomRef.current = near;
+    if (near) setHasNewBelow(false);
+  }, []);
+  // Initial land at bottom whenever we switch conversation.
   useEffect(() => {
+    isNearBottomRef.current = true;
+    setHasNewBelow(false);
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
+  }, [conversationId]);
+  // On new messages, only stick if user is near bottom; else surface a
+  // "pesan baru" pill so the user can jump on demand.
+  const prevMsgCountRef = useRef(0);
+  useEffect(() => {
+    const count = messages?.length ?? 0;
+    const grew = count > prevMsgCountRef.current;
+    prevMsgCountRef.current = count;
+    if (!grew) return;
+    if (isNearBottomRef.current) {
+      const el = scrollerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    } else {
+      setHasNewBelow(true);
+    }
   }, [messages?.length]);
 
   const [body, setBody] = useState("");
