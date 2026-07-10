@@ -986,7 +986,7 @@ function ChatRoomPage() {
               {convPrefs.markedUnread ? "Tandai sudah dibaca" : "Tandai belum dibaca"}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onSelect={() => navigate({ to: "/ecer" })}
+              onSelect={() => navigate({ to: "/ecer", search: { item: undefined, title: undefined, highlight: undefined, send: undefined } })}
             >
               <ShoppingCart className="mr-2 h-4 w-4" /> Buat pesanan
             </DropdownMenuItem>
