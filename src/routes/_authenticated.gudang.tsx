@@ -1907,10 +1907,10 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
           <label className="block">
             <span className="text-[11px] text-muted-foreground">Jenis kemasan</span>
             <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageType} onChange={(e) => setPackageType(e.target.value as PackageType)}>
-              <option value="gram">gram (curah)</option>
-              <option value="botol">botol</option>
-              <option value="sachet">sachet</option>
-              <option value="pcs">pcs</option>
+              <option value="gram">gram (curah, ecer: gram)</option>
+              <option value="botol">botol (ecer: botol · 1 karton = 100 botol)</option>
+              <option value="sachet">sachet (ecer: sachet)</option>
+              <option value="pcs">pcs (ecer: pcs)</option>
             </select>
           </label>
           {packageType !== "pcs" && (
@@ -2494,11 +2494,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
                   }
                 }}
               >
-                <option value="gram">gram (curah)</option>
-                <option value="karton">karton (ecer: botol)</option>
-                <option value="botol">botol</option>
-                <option value="sachet">sachet</option>
-                <option value="pcs">pcs</option>
+                <option value="gram">gram (curah, ecer: gram)</option>
+                <option value="karton">karton (ecer: botol · 1 karton = 100 botol)</option>
+                <option value="botol">botol (ecer: botol)</option>
+                <option value="sachet">sachet (ecer: sachet)</option>
+                <option value="pcs">pcs (ecer: pcs)</option>
               </select>
             </label>
             {packageType !== "pcs" && packageType !== "botol" && (
