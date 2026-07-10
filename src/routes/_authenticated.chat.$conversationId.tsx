@@ -495,9 +495,45 @@ function ChatRoomPage() {
 
   // Scroll to bottom
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const isNearBottomRef = useRef(true);
+  const [hasNewBelow, setHasNewBelow] = useState(false);
+  const NEAR_BOTTOM_PX = 120;
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+    isNearBottomRef.current = true;
+    setHasNewBelow(false);
+  }, []);
+  const onScrollerScroll = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const near = distance <= NEAR_BOTTOM_PX;
+    isNearBottomRef.current = near;
+    if (near) setHasNewBelow(false);
+  }, []);
+  // Initial land at bottom whenever we switch conversation.
   useEffect(() => {
+    isNearBottomRef.current = true;
+    setHasNewBelow(false);
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
+  }, [conversationId]);
+  // On new messages, only stick if user is near bottom; else surface a
+  // "pesan baru" pill so the user can jump on demand.
+  const prevMsgCountRef = useRef(0);
+  useEffect(() => {
+    const count = messages?.length ?? 0;
+    const grew = count > prevMsgCountRef.current;
+    prevMsgCountRef.current = count;
+    if (!grew) return;
+    if (isNearBottomRef.current) {
+      const el = scrollerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    } else {
+      setHasNewBelow(true);
+    }
   }, [messages?.length]);
 
   const [body, setBody] = useState("");
@@ -578,10 +614,16 @@ function ChatRoomPage() {
     [doSend],
   );
 
+  const sendingLockRef = useRef(false);
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
     if (!t) return;
+    if (sendingLockRef.current) return;
+    sendingLockRef.current = true;
+    // Buka kunci pada frame berikutnya — cegah double-submit dari tap ganda
+    // atau Enter beruntun, tanpa mem-block antrian kirim beruntun yang sah.
+    setTimeout(() => { sendingLockRef.current = false; }, 250);
     // Edit mode -> commit edit instead of sending new
     if (editing) {
       editMsg.mutate(
@@ -651,10 +693,16 @@ function ChatRoomPage() {
   const onlyOne = oneSelected ? selectedMessages[0] : null;
   const allMineSelected = selectedMessages.length > 0 && selectedMessages.every((m) => m.sender_id === myId);
 
-  // Re-scroll when outbox changes too.
+  // Outbox = pesan yang baru saja kita kirim → selalu turun ke bawah.
+  const prevOutboxCountRef = useRef(0);
   useEffect(() => {
+    const grew = outbox.length > prevOutboxCountRef.current;
+    prevOutboxCountRef.current = outbox.length;
+    if (!grew) return;
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
+    isNearBottomRef.current = true;
+    setHasNewBelow(false);
   }, [outbox.length]);
 
   return (
@@ -1051,7 +1099,7 @@ function ChatRoomPage() {
         />
       ) : null}
 
-      <div ref={scrollerRef} className="wa-chat-bg flex-1 space-y-3 overflow-y-auto p-3">
+      <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg relative flex-1 space-y-3 overflow-y-auto p-3">
         {isLoading ? (
           <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat pesan…
@@ -1509,6 +1557,18 @@ function ChatRoomPage() {
         ) : null}
       </div>
 
+      {hasNewBelow ? (
+        <div className="pointer-events-none sticky bottom-16 z-20 flex justify-center px-2">
+          <button
+            type="button"
+            onClick={() => scrollToBottom("smooth")}
+            className="pointer-events-auto rounded-full border bg-background/95 px-3 py-1 text-xs font-medium shadow-md backdrop-blur hover:bg-accent"
+            aria-label="Lompat ke pesan terbaru"
+          >
+            ↓ Pesan baru
+          </button>
+        </div>
+      ) : null}
       <form onSubmit={onSubmit} className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur">
         {editing ? (
           <div className="mb-2 flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
