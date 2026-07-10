@@ -687,10 +687,16 @@ function ChatRoomPage() {
   const onlyOne = oneSelected ? selectedMessages[0] : null;
   const allMineSelected = selectedMessages.length > 0 && selectedMessages.every((m) => m.sender_id === myId);
 
-  // Re-scroll when outbox changes too.
+  // Outbox = pesan yang baru saja kita kirim → selalu turun ke bawah.
+  const prevOutboxCountRef = useRef(0);
   useEffect(() => {
+    const grew = outbox.length > prevOutboxCountRef.current;
+    prevOutboxCountRef.current = outbox.length;
+    if (!grew) return;
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
+    isNearBottomRef.current = true;
+    setHasNewBelow(false);
   }, [outbox.length]);
 
   return (
