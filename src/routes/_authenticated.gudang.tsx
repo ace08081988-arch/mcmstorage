@@ -2633,12 +2633,16 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             </KemasanRumusPopover>
           </b>
         </div>
-        {displayPackageType !== "pcs" && displayPkgSize > 1 && !packageDuplicatesBase ? (
+        {displayPackageType === "botol" ? (
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Konversi</span>
+            <span>1 karton = {BOTOL_PER_KARTON} botol</span>
+          </div>
+        ) : displayPackageType !== "pcs" && displayPkgSize > 1 && !packageDuplicatesBase ? (
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Konversi</span>
             <span>
               1 {displayPackageType} = {displayPkgSize.toLocaleString("id-ID")} {displayHumanBase}
-              {displayPackageType === "botol" ? ` · 1 karton = ${BOTOL_PER_KARTON} botol` : ""}
             </span>
           </div>
         ) : null}
