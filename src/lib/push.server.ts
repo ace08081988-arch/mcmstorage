@@ -90,8 +90,8 @@ export type PushPayload = {
 };
 
 export async function sendWebPush(sub: PushSubRow, payload: PushPayload) {
-  ensureConfigured();
   try {
+    ensureConfigured();
     await webpush.sendNotification(
       {
         endpoint: sub.endpoint,
@@ -103,7 +103,13 @@ export async function sendWebPush(sub: PushSubRow, payload: PushPayload) {
     return { ok: true as const };
   } catch (e: unknown) {
     const status = (e as { statusCode?: number })?.statusCode;
-    return { ok: false as const, status, error: (e as Error)?.message ?? "push_failed" };
+    const rawMsg = (e as Error)?.message ?? "push_failed";
+    // Detail teknis tetap tersimpan di server log; jangan bocor ke client.
+    console.warn("[push] sendWebPush gagal:", rawMsg);
+    const safeMsg = /vapid|subject|url/i.test(rawMsg)
+      ? "config_invalid"
+      : rawMsg;
+    return { ok: false as const, status, error: safeMsg };
   }
 }
 
