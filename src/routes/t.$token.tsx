@@ -3541,20 +3541,31 @@ function RequestSection({
   const [openId, setOpenId] = useState<string | null>(null);
 
   async function load() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", {
-      _token: token,
-      _pin: pin,
-    });
-    if (error) {
-      toast.error("Gagal muat request: " + error.message);
-      return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", {
+        _token: token,
+        _pin: pin,
+      });
+      if (error) {
+        toast.error("Gagal muat request: " + error.message);
+        setTitles((prev) => prev ?? []);
+        return;
+      }
+      const res = data as { ok: boolean; titles?: unknown; owner_user_id?: unknown };
+      if (res?.ok) {
+        setTitles(normalizeRequestTitles(res.titles));
+        setOwnerUserId(stringOrNull(res.owner_user_id));
+      } else {
+        setTitles([]);
+      }
+    } catch (e) {
+      // Jangan biarkan promise rejection meruntuhkan boundary.
+      // eslint-disable-next-line no-console
+      console.error("[RequestSection.load]", e);
+      toast.error("Gagal muat request: " + ((e as Error)?.message ?? "unknown"));
+      setTitles((prev) => prev ?? []);
     }
-    const res = data as { ok: boolean; titles?: unknown; owner_user_id?: unknown };
-    if (res?.ok) {
-      setTitles(normalizeRequestTitles(res.titles));
-      setOwnerUserId(stringOrNull(res.owner_user_id));
-    } else setTitles([]);
   }
   useEffect(() => {
     void load();
