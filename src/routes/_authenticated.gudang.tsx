@@ -2685,6 +2685,17 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
     if (!itemId && items[0]) setItemId(items[0].id);
   }, [items, itemId]);
 
+  // Reset mode & input saat item berganti agar label satuan (g/pcs/botol)
+  // selalu mengikuti item aktif — bukan warisan mode dari item sebelumnya.
+  // Tanpa reset ini, memilih item gram setelah item botol tetap menampilkan
+  // "Jumlah (botol)" / "Harga / botol" karena sellMode="package" stuck.
+  useEffect(() => {
+    setSellMode("base");
+    setQty("");
+    setPricePerBase("");
+    setPricePerPackage("");
+  }, [itemId]);
+
   const item = items.find((i) => i.id === itemId);
   const qtyN = Number(qty) || 0;
   // 1 karton = BOTOL_PER_KARTON botol. Faktor pengali ke base untuk tiap mode.
