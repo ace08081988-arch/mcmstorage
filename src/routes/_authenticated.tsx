@@ -13,6 +13,7 @@ import {
   hydrateLockConfig,
   isLocked,
   setLocked,
+  isLockSuppressed,
 } from "@/lib/app-lock";
 import { AppLockScreen } from "@/components/AppLockScreen";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -59,6 +60,8 @@ function AuthLock() {
     const cfg = getLockConfig(uid);
     const lockNow = () => {
       if (!getLockConfig(uid)) return;
+      // Grace period saat user membuka native picker (kamera/galeri/file).
+      if (isLockSuppressed()) return;
       setLocked(uid, true);
     };
     const onReq = () => lockNow();

@@ -67,6 +67,49 @@ export type LockConfig = {
 export const APP_LOCK_EVENT = "app-lock:changed";
 export const APP_LOCK_REQUEST = "app-lock:lock-now";
 
+// ─────────────────────────────────────────────────────────────
+// Native picker suppression
+//
+// Membuka kamera / galeri / file picker native di Android bikin
+// WebView berpindah ke background — `document.visibilityState` jadi
+// "hidden" dan idle timer bisa jalan. Tanpa guard, user yang cuma
+// milih foto akan disambut layar App Lock pas kembali. Flag ini
+// meng-suppress trigger lockOnHide dan idleTimer selama window
+// singkat (default 90 detik) yang cukup untuk siklus picker.
+// Guard TIDAK menonaktifkan app-lock total: kalau user beneran
+// keluar app lebih lama, flag akan sudah expired saat kembali.
+// ─────────────────────────────────────────────────────────────
+const SUPPRESS_KEY = "app-lock:suppress-until";
+
+export function beginNativePicker(reasonMs = 90_000) {
+  try {
+    const until = Date.now() + Math.max(1_000, reasonMs);
+    localStorage.setItem(SUPPRESS_KEY, String(until));
+  } catch {}
+}
+
+export function endNativePicker() {
+  try {
+    localStorage.removeItem(SUPPRESS_KEY);
+  } catch {}
+}
+
+export function isLockSuppressed(): boolean {
+  try {
+    const raw = localStorage.getItem(SUPPRESS_KEY);
+    if (!raw) return false;
+    const until = Number(raw);
+    if (!Number.isFinite(until)) return false;
+    if (Date.now() > until) {
+      localStorage.removeItem(SUPPRESS_KEY);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function cfgKey(uid: string) {
   return `app-lock:cfg:${uid}`;
 }
