@@ -2523,7 +2523,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <div className="text-[11px] text-muted-foreground">
             {displayPackageType === "botol" ? (
               <>
-                Pembelian dicatat per <b>botol</b>. 1 karton = {BOTOL_PER_KARTON} botol. Stok bertambah dalam <b>botol</b>.
+                Pembelian dicatat per <b>{kartonActive ? "karton" : "botol"}</b>. 1 karton = {BOTOL_PER_KARTON} botol. Stok bertambah dalam <b>botol</b>.
               </>
             ) : packageType !== "pcs" && displayPkgSize > 0 && !packageDuplicatesBase ? (
               <>
