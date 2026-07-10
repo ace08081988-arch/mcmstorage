@@ -16,6 +16,11 @@ export const ADMIN_ONLY_URLS: ReadonlySet<string> = new Set<string>([
   "/email-queue",
   "/admin-denial-log",
   "/pengaturan-oauth-google",
+  // Menu audit/debug/internal — hanya admin (menyederhanakan UI harian
+  // untuk user biasa; route tetap ada untuk deep link admin).
+  "/audit",
+  "/diagnostics",
+  "/label-preview",
 ]);
 
 export function isAdminOnlyUrl(url: string): boolean {

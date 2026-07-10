@@ -136,7 +136,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     el.style.transition = "opacity 0ms, transform 0ms";
   }
 }
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard, ChevronDown, MoreHorizontal } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -280,15 +280,22 @@ function OrgHeader() {
  * Keuangan → Akun → Sistem).
  */
 type NavItem = { title: string; url: string; icon: typeof Home };
-const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
+/**
+ * `mobilePrimary` = tampil langsung di menu utama mobile. Group lain
+ * disembunyikan di balik toggle "Lainnya" agar layar mobile tidak penuh.
+ * Desktop selalu menampilkan semua group.
+ */
+const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: boolean }[] = [
   {
     label: "Utama",
+    mobilePrimary: true,
     items: [
       { title: "Dasbor", url: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
     label: "Operasional",
+    mobilePrimary: true,
     items: [
       { title: "Gudang & Supplier", url: "/gudang", icon: Package },
       { title: "Request Order", url: "/request", icon: PackagePlus },
@@ -299,6 +306,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
   },
   {
     label: "Komunikasi",
+    mobilePrimary: true,
     items: [
       { title: "Chat", url: "/chat", icon: MessageCircle },
       { title: "Catatan", url: "/catatan", icon: NotebookPen },
@@ -309,6 +317,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
   },
   {
     label: "Pembayaran & Keuangan",
+    mobilePrimary: true,
     items: [
       { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
     ],
@@ -401,6 +410,16 @@ export function AppSidebar() {
     }))
     .filter((g) => g.items.length > 0);
   void modeTick;
+  // Mobile: bagi group ke "primary" (langsung tampil) dan "secondary"
+  // (masuk drawer "Lainnya"). Desktop / chat-only tetap merender semua
+  // group berurutan seperti biasa.
+  const [showMore, setShowMore] = useState(false);
+  const primaryGroups = isMobile
+    ? visibleGroups.filter((g) => g.mobilePrimary)
+    : visibleGroups;
+  const secondaryGroups = isMobile
+    ? visibleGroups.filter((g) => !g.mobilePrimary)
+    : [];
   const chatFetching = useIsFetching({ queryKey: ["chat", "conversations"] });
   const queryClient = useQueryClient();
   const [online, setOnline] = useState(() =>
@@ -480,7 +499,8 @@ export function AppSidebar() {
         <OrgHeader />
       </SidebarHeader>
       <SidebarContent className="gap-0">
-        {visibleGroups.map((group, gi) => (
+        {(() => {
+          const renderGroup = (group: typeof visibleGroups[number], gi: number) => (
           <SidebarGroup key={group.label} className="px-2 py-1.5">
             {gi > 0 ? (
               <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />
@@ -546,7 +566,41 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ))}
+          );
+          const nodes: React.ReactNode[] = [];
+          primaryGroups.forEach((g, gi) => nodes.push(renderGroup(g, gi)));
+          if (isMobile && secondaryGroups.length > 0) {
+            nodes.push(
+              <SidebarGroup key="__more__" className="px-2 py-1.5">
+                <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />
+                <button
+                  type="button"
+                  onClick={() => setShowMore((v) => !v)}
+                  aria-expanded={showMore}
+                  aria-controls="mcm-sidebar-more"
+                  className="group/nav flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
+                >
+                  <MoreHorizontal className="h-[17px] w-[17px] shrink-0 text-muted-foreground group-hover/nav:text-sidebar-foreground" />
+                  <span className="flex-1 truncate text-left tracking-[-0.005em]">Lainnya</span>
+                  <ChevronDown
+                    className={
+                      "h-4 w-4 shrink-0 text-muted-foreground transition-transform " +
+                      (showMore ? "rotate-180" : "")
+                    }
+                  />
+                </button>
+              </SidebarGroup>,
+            );
+            if (showMore) {
+              nodes.push(
+                <div key="__more_content__" id="mcm-sidebar-more">
+                  {secondaryGroups.map((g, i) => renderGroup(g, i + 1))}
+                </div>,
+              );
+            }
+          }
+          return nodes;
+        })()}
       </SidebarContent>
       <SidebarFooter className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
         <div
