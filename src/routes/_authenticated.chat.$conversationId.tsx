@@ -1099,7 +1099,7 @@ function ChatRoomPage() {
         />
       ) : null}
 
-      <div ref={scrollerRef} className="wa-chat-bg flex-1 space-y-3 overflow-y-auto p-3">
+      <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg relative flex-1 space-y-3 overflow-y-auto p-3">
         {isLoading ? (
           <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat pesan…
