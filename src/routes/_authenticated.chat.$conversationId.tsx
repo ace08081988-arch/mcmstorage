@@ -1612,18 +1612,22 @@ function ChatRoomPage() {
       </div>
 
       {hasNewBelow ? (
-        <div className="pointer-events-none sticky bottom-16 z-20 flex justify-center px-2">
+        <div className="pointer-events-none sticky bottom-20 z-30 flex justify-center px-2 sm:bottom-16">
           <button
             type="button"
             onClick={() => scrollToBottom("smooth")}
-            className="pointer-events-auto rounded-full border bg-background/95 px-3 py-1 text-xs font-medium shadow-md backdrop-blur hover:bg-accent"
+            className="pointer-events-auto inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg ring-1 ring-primary/40 backdrop-blur hover:opacity-95 active:scale-95"
             aria-label="Lompat ke pesan terbaru"
           >
             ↓ Pesan baru
           </button>
         </div>
       ) : null}
-      <form onSubmit={onSubmit} className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur">
+      <form
+        onSubmit={onSubmit}
+        className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur"
+        style={{ paddingBottom: `max(env(safe-area-inset-bottom), 0.5rem)` }}
+      >
         {editing ? (
           <div className="mb-2 flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
             <Pencil className="mt-0.5 h-3.5 w-3.5 text-primary" />
