@@ -750,8 +750,16 @@ function ChatRoomPage() {
     setHasNewBelow(false);
   }, [outbox.length]);
 
+  const kbInset = useVisualViewportKeyboardInset();
   return (
-    <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col wa-surface">
+    <div
+      className="mx-auto flex h-[100dvh] max-w-2xl flex-col overflow-x-hidden wa-surface"
+      style={
+        kbInset > 0
+          ? { height: `calc(100dvh - ${kbInset}px)` }
+          : undefined
+      }
+    >
       {!meta.isPending && !meta.data ? (
         <div
           role="alert"
