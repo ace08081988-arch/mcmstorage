@@ -88,6 +88,7 @@ import {
 import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
 import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls";
 import { OrderSummaryCard } from "@/components/chat/OrderSummaryCard";
+import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import { isCardBody } from "@/lib/chat-cards";
@@ -513,13 +514,52 @@ function ChatRoomPage() {
     isNearBottomRef.current = near;
     if (near) setHasNewBelow(false);
   }, []);
-  // Initial land at bottom whenever we switch conversation.
+  // Initial land at bottom whenever we switch conversation. Media (images,
+  // stickers, link previews) load async and grow the scroller AFTER we mount,
+  // sehingga scroll tunggal terlalu awal sering meninggalkan user di tengah
+  // riwayat. Solusinya: reset saat pindah conversation, lalu paksa scroll di
+  // beberapa titik waktu (setelah messages siap, setelah 2× rAF, dan sekali
+  // lagi setelah 250ms untuk menampung gambar yang baru selesai layout).
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
+    didInitialScrollRef.current = false;
     isNearBottomRef.current = true;
     setHasNewBelow(false);
-    const el = scrollerRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
   }, [conversationId]);
+  useEffect(() => {
+    if (didInitialScrollRef.current) return;
+    const count = messages?.length ?? 0;
+    if (count === 0) return;
+    didInitialScrollRef.current = true;
+    const el = scrollerRef.current;
+    if (!el) return;
+    const stick = () => {
+      const s = scrollerRef.current;
+      if (!s) return;
+      s.scrollTop = s.scrollHeight;
+    };
+    stick();
+    const r1 = requestAnimationFrame(() => {
+      stick();
+      const r2 = requestAnimationFrame(stick);
+      (el as HTMLElement & { __r2?: number }).__r2 = r2;
+    });
+    const t1 = window.setTimeout(stick, 120);
+    const t2 = window.setTimeout(stick, 400);
+    // Setelah gambar/thumbnail yang belum ter-load selesai, geser lagi ke bawah
+    // agar tidak terlihat "ngambang" di tengah.
+    const imgs = Array.from(el.querySelectorAll("img")) as HTMLImageElement[];
+    const onImg = () => stick();
+    imgs.forEach((img) => {
+      if (!img.complete) img.addEventListener("load", onImg, { once: true });
+    });
+    return () => {
+      cancelAnimationFrame(r1);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      imgs.forEach((img) => img.removeEventListener("load", onImg));
+    };
+  }, [conversationId, messages?.length]);
   // On new messages, only stick if user is near bottom; else surface a
   // "pesan baru" pill so the user can jump on demand.
   const prevMsgCountRef = useRef(0);
@@ -615,15 +655,20 @@ function ChatRoomPage() {
   );
 
   const sendingLockRef = useRef(false);
+  const [isSending, setIsSending] = useState(false);
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
     if (!t) return;
     if (sendingLockRef.current) return;
     sendingLockRef.current = true;
+    setIsSending(true);
     // Buka kunci pada frame berikutnya — cegah double-submit dari tap ganda
     // atau Enter beruntun, tanpa mem-block antrian kirim beruntun yang sah.
-    setTimeout(() => { sendingLockRef.current = false; }, 250);
+    setTimeout(() => {
+      sendingLockRef.current = false;
+      setIsSending(false);
+    }, 300);
     // Edit mode -> commit edit instead of sending new
     if (editing) {
       editMsg.mutate(
@@ -705,8 +750,16 @@ function ChatRoomPage() {
     setHasNewBelow(false);
   }, [outbox.length]);
 
+  const kbInset = useVisualViewportKeyboardInset();
   return (
-    <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col wa-surface">
+    <div
+      className="mx-auto flex h-[100dvh] max-w-2xl flex-col overflow-x-hidden wa-surface"
+      style={
+        kbInset > 0
+          ? { height: `calc(100dvh - ${kbInset}px)` }
+          : undefined
+      }
+    >
       {!meta.isPending && !meta.data ? (
         <div
           role="alert"
@@ -798,12 +851,13 @@ function ChatRoomPage() {
           }}
         />
       ) : (
-      <header className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-1.5 border-b px-2 py-1.5 sm:gap-2 sm:py-2">
+      <header className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-1 border-b px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-2">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate({ to: "/chat" })}
           aria-label="Kembali"
+          className="h-10 w-10 shrink-0"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -812,12 +866,12 @@ function ChatRoomPage() {
             type="button"
             aria-label={`Lihat profil ${displayedPeerName}`}
             onClick={() => setPeerProfileOpen(true)}
-            className="grid h-10 w-10 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase transition hover:opacity-80 active:scale-95"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase transition hover:opacity-80 active:scale-95 sm:h-10 sm:w-10"
           >
             {displayedPeerName.trim().charAt(0) || "?"}
           </button>
         ) : (
-          <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase sm:h-10 sm:w-10">
             {(meta.data?.kind === "dm" ? displayedPeerName : headerTitle || "?").trim().charAt(0) || "?"}
           </div>
         )}
@@ -1558,18 +1612,22 @@ function ChatRoomPage() {
       </div>
 
       {hasNewBelow ? (
-        <div className="pointer-events-none sticky bottom-16 z-20 flex justify-center px-2">
+        <div className="pointer-events-none sticky bottom-20 z-30 flex justify-center px-2 sm:bottom-16">
           <button
             type="button"
             onClick={() => scrollToBottom("smooth")}
-            className="pointer-events-auto rounded-full border bg-background/95 px-3 py-1 text-xs font-medium shadow-md backdrop-blur hover:bg-accent"
+            className="pointer-events-auto inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg ring-1 ring-primary/40 backdrop-blur hover:opacity-95 active:scale-95"
             aria-label="Lompat ke pesan terbaru"
           >
             ↓ Pesan baru
           </button>
         </div>
       ) : null}
-      <form onSubmit={onSubmit} className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur">
+      <form
+        onSubmit={onSubmit}
+        className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur"
+        style={{ paddingBottom: `max(env(safe-area-inset-bottom), 0.5rem)` }}
+      >
         {editing ? (
           <div className="mb-2 flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
             <Pencil className="mt-0.5 h-3.5 w-3.5 text-primary" />
@@ -1660,8 +1718,15 @@ function ChatRoomPage() {
             className="max-h-32 min-h-9 resize-none"
             disabled={chatBlocked}
           />
-          <Button type="submit" size="icon" disabled={!body.trim() || chatBlocked} aria-label="Kirim">
-            <Send className="h-4 w-4" />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!body.trim() || chatBlocked || isSending}
+            aria-label="Kirim"
+            aria-busy={isSending}
+            className="h-10 w-10 shrink-0"
+          >
+            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
           <ProductSharePopover
             conversationId={conversationId}
