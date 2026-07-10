@@ -1718,8 +1718,15 @@ function ChatRoomPage() {
             className="max-h-32 min-h-9 resize-none"
             disabled={chatBlocked}
           />
-          <Button type="submit" size="icon" disabled={!body.trim() || chatBlocked} aria-label="Kirim">
-            <Send className="h-4 w-4" />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!body.trim() || chatBlocked || isSending}
+            aria-label="Kirim"
+            aria-busy={isSending}
+            className="h-10 w-10 shrink-0"
+          >
+            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
           <ProductSharePopover
             conversationId={conversationId}
