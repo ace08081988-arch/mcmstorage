@@ -2477,8 +2477,25 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <span className="text-[11px] text-muted-foreground">Jenis kemasan</span>
-              <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageType} onChange={(e) => setPackageType(e.target.value as PackageType)}>
+              <select
+                className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                value={packageType === "botol" && inputKarton ? "karton" : packageType}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "karton") {
+                    // Karton = wadah 100 botol; secara internal item disimpan
+                    // sebagai botol (satuan ecer), input pembelian per karton.
+                    setPackageType("botol");
+                    setInputKarton(true);
+                    setPriceMode("package");
+                  } else {
+                    setPackageType(v as PackageType);
+                    setInputKarton(false);
+                  }
+                }}
+              >
                 <option value="gram">gram (curah)</option>
+                <option value="karton">karton (ecer: botol)</option>
                 <option value="botol">botol</option>
                 <option value="sachet">sachet</option>
                 <option value="pcs">pcs</option>
@@ -2506,7 +2523,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <div className="text-[11px] text-muted-foreground">
             {displayPackageType === "botol" ? (
               <>
-                Pembelian dicatat per <b>botol</b>. 1 karton = {BOTOL_PER_KARTON} botol. Stok bertambah dalam <b>botol</b>.
+                Pembelian dicatat per <b>{kartonActive ? "karton" : "botol"}</b>. 1 karton = {BOTOL_PER_KARTON} botol. Stok bertambah dalam <b>botol</b>.
               </>
             ) : packageType !== "pcs" && displayPkgSize > 0 && !packageDuplicatesBase ? (
               <>
