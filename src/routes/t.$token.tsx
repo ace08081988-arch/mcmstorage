@@ -3541,20 +3541,31 @@ function RequestSection({
   const [openId, setOpenId] = useState<string | null>(null);
 
   async function load() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", {
-      _token: token,
-      _pin: pin,
-    });
-    if (error) {
-      toast.error("Gagal muat request: " + error.message);
-      return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", {
+        _token: token,
+        _pin: pin,
+      });
+      if (error) {
+        toast.error("Gagal muat request: " + error.message);
+        setTitles((prev) => prev ?? []);
+        return;
+      }
+      const res = data as { ok: boolean; titles?: unknown; owner_user_id?: unknown };
+      if (res?.ok) {
+        setTitles(normalizeRequestTitles(res.titles));
+        setOwnerUserId(stringOrNull(res.owner_user_id));
+      } else {
+        setTitles([]);
+      }
+    } catch (e) {
+      // Jangan biarkan promise rejection meruntuhkan boundary.
+      // eslint-disable-next-line no-console
+      console.error("[RequestSection.load]", e);
+      toast.error("Gagal muat request: " + ((e as Error)?.message ?? "unknown"));
+      setTitles((prev) => prev ?? []);
     }
-    const res = data as { ok: boolean; titles?: unknown; owner_user_id?: unknown };
-    if (res?.ok) {
-      setTitles(normalizeRequestTitles(res.titles));
-      setOwnerUserId(stringOrNull(res.owner_user_id));
-    } else setTitles([]);
   }
   useEffect(() => {
     void load();
@@ -3574,9 +3585,11 @@ function RequestSection({
       </div>
       <div className="space-y-2">
         {titles.map((t) => {
-          const requestItems = Array.isArray(t.items) ? t.items : [];
-          const isDone = (t.submitted_count ?? 0) > 0;
-          return (
+          let renderedRow: ReactNode;
+          try {
+            const requestItems = Array.isArray(t.items) ? t.items : [];
+            const isDone = (t.submitted_count ?? 0) > 0;
+            renderedRow = (
             <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
               {isDone ? (
                 <div className="flex w-full items-center justify-between px-3 py-2 text-left opacity-75">
@@ -3636,7 +3649,20 @@ function RequestSection({
                 </div>
               )}
             </div>
-          );
+            );
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error("[RequestSection] render title failed", t?.id, err);
+            renderedRow = (
+              <div
+                key={t?.id ?? Math.random()}
+                className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300"
+              >
+                Paket &quot;{t?.name ?? "tanpa nama"}&quot; tidak bisa ditampilkan. Muat ulang portal atau hubungi admin.
+              </div>
+            );
+          }
+          return renderedRow;
         })}
       </div>
     </div>
@@ -3938,6 +3964,20 @@ function RequestForm({
       toast.error("Minimal 1 item dengan jumlah > 0");
       return;
     }
+    // Validasi Maps URL client-side: kosong OK, tapi kalau diisi harus https://...
+    // (mencocokkan validasi RPC). Short-link maps.app.goo.gl valid karena
+    // sudah https. Trim spasi & newline dari clipboard.
+    const trimmedLoc = (locUrl || "").trim();
+    if (trimmedLoc.length > 0) {
+      if (trimmedLoc.length > 2048) {
+        toast.error("Link Maps terlalu panjang. Kosongkan atau perpendek.");
+        return;
+      }
+      if (!/^https:\/\//i.test(trimmedLoc)) {
+        toast.error("Link Maps belum valid. Harus diawali https:// atau kosongkan.");
+        return;
+      }
+    }
     onKeepAlive();
     onActivityChange(true);
     setBusy(true);
@@ -3999,7 +4039,7 @@ function RequestForm({
         _items: itemsPayload,
         _photo_path: uploaded[0],
         _photo_paths: uploaded,
-        _location_url: locUrl || null,
+        _location_url: trimmedLoc || null,
         _gps_lat: gps?.lat ?? null,
         _gps_lng: gps?.lng ?? null,
         _note: note || null,
@@ -4010,21 +4050,35 @@ function RequestForm({
       if (error) throw error;
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) {
+        const code = res?.error || "submit_failed";
         const msg =
-          res?.error === "task_exhausted"
+          code === "task_exhausted"
             ? "Link ini sudah dipakai untuk 1 paket. Minta link + PIN baru ke admin."
-            : res?.error === "bad_pin"
+            : code === "bad_pin"
               ? "PIN salah"
-              : res?.error || "submit_failed";
+              : code === "invalid_url"
+                ? "Link Maps belum valid. Kosongkan link Maps jika tidak ada."
+                : code === "url_too_long"
+                  ? "Link Maps terlalu panjang."
+                  : code === "photo_required"
+                    ? "Foto bukti wajib dilampirkan."
+                    : code === "grams_exceed_target"
+                      ? "Jumlah melebihi target paket. Periksa qty."
+                      : code === "not_found"
+                        ? "Link tugas sudah tidak aktif. Minta link baru ke admin."
+                        : code === "internal_error"
+                          ? "Server menolak paket. Coba lagi atau hubungi admin."
+                          : code;
         throw new Error(msg);
       }
-      toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
+      toast.success(`Paket terkirim (${uploaded.length} foto). Status berubah ke Selesai.`);
       setPhotos([]);
       setUploads([]);
       void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
-      toast.error("Gagal: " + (e as Error).message);
+      const raw = (e as Error)?.message ?? "unknown";
+      toast.error(`Paket belum terkirim: ${raw}. Foto & isian tetap tersimpan — coba kirim lagi.`);
     } finally {
       setBusy(false);
       onKeepAlive();
