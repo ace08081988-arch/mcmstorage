@@ -162,7 +162,7 @@ export function ChatHeaderDebtControls({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold transition hover:bg-accent ${
+          className={`inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold transition hover:bg-accent ${
             dominantKind === "piutang"
               ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
               : "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
@@ -178,7 +178,7 @@ export function ChatHeaderDebtControls({
               : "Hutang (Anda berhutang ke dia)"
           }
         >
-          <Wallet className="h-3 w-3" />
+          <Wallet className="h-3 w-3 shrink-0" />
           <span className="truncate">
             {dominantKind === "piutang" ? "Piutang" : "Hutang"} · {rupiah(dominantValue)}
           </span>
