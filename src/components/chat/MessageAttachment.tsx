@@ -118,8 +118,8 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
     const map = `https://www.google.com/maps/search/?api=1&query=${card.lat},${card.lng}`;
     const embed = `https://www.openstreetmap.org/export/embed.html?bbox=${card.lng - 0.005},${card.lat - 0.004},${card.lng + 0.005},${card.lat + 0.004}&layer=mapnik&marker=${card.lat},${card.lng}`;
     return (
-      <div className={`overflow-hidden rounded-lg border text-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
-        <iframe title="peta" src={embed} className="h-32 w-full max-w-xs" />
+      <div className={`max-w-full overflow-hidden rounded-lg border text-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
+        <iframe title="peta" src={embed} className="h-32 w-full max-w-full sm:max-w-xs" />
         <div className="px-2 py-1.5">
           <div className="flex items-center gap-1 font-semibold">
             {liveActive ? <Navigation className="h-3.5 w-3.5 animate-pulse text-primary" /> : <MapPin className="h-3.5 w-3.5" />}
@@ -128,8 +128,8 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
           {liveActive ? (
             <div className="opacity-70">Berakhir {new Date(card.live_until!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</div>
           ) : null}
-          <div className="opacity-70">{card.lat.toFixed(5)}, {card.lng.toFixed(5)}</div>
-          <a href={map} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-primary underline">
+          <div className="truncate opacity-70">{card.lat.toFixed(5)}, {card.lng.toFixed(5)}</div>
+          <a href={map} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-primary underline">
             Buka di Maps
           </a>
         </div>
