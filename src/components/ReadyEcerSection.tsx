@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash, Send, CheckSquare, Square, Trash2, ListChecks, MoreVertical } from "lucide-react";
 import {
@@ -1305,6 +1305,13 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
 
 function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, justMoved = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
   const cardRootRef = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
+  const openCardDetail = () => {
+    void navigate({
+      to: "/ecer",
+      search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined },
+    });
+  };
   useEffect(() => {
     if (justMoved && cardRootRef.current) {
       // Delay 1 frame supaya layout tab "Riwayat" sudah selesai render.
@@ -2141,7 +2148,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 e.preventDefault();
                 e.stopPropagation();
                 longPressFired.current = false;
+                return;
               }
+              // Buat seluruh kartu bisa di-tap untuk membuka detail /ecer,
+              // termasuk area SentDetailList / thumbnails / badge yang tidak
+              // dibungkus <Link>. Anak-anak interaktif (dropdown menu, tombol
+              // Kirim, popover, anchor Maps) sudah memanggil stopPropagation
+              // sendiri, jadi tidak akan sampai ke sini.
+              const target = e.target as HTMLElement | null;
+              if (target && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [data-radix-collection-item]")) {
+                return;
+              }
+              openCardDetail();
             }
       }
       onPointerDown={selectMode ? undefined : startLongPress}
