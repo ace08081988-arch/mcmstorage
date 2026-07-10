@@ -20,6 +20,7 @@ import { ConfirmHost } from "@/lib/confirm";
 import { WhatsAppTargetHost } from "@/lib/wa-target";
 import { WaPreviewHost } from "@/lib/wa-preview";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
+import { ChatModeSplash } from "@/components/ChatModeSplash";
 
 function NotFoundComponent() {
   return (
@@ -64,15 +65,21 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     if (!isChunkLoadError) return;
     if (typeof window === "undefined") return;
-    // Avoid infinite reload loops: only auto-reload once per session.
-    const KEY = "__chunk_reload_once";
+    // Chunk-load recovery: cache-busting reload throttled to once every 5s.
+    // A cache-busting `__r` query param + `location.replace` reliably forces
+    // the browser to bypass its stale index.html/chunk cache; a plain
+    // reload can still resolve to the same broken chunk.
+    const KEY = "__chunk_reload_at";
     try {
-      if (window.sessionStorage.getItem(KEY)) return;
-      window.sessionStorage.setItem(KEY, "1");
+      const prev = Number(window.sessionStorage.getItem(KEY) || "0");
+      if (prev && Date.now() - prev < 5_000) return;
+      window.sessionStorage.setItem(KEY, String(Date.now()));
     } catch {
       // ignore storage errors
     }
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.set("__r", String(Date.now()));
+    window.location.replace(url.toString());
   }, [isChunkLoadError]);
 
   useEffect(() => {
@@ -279,6 +286,63 @@ function RootComponent() {
     }).catch(() => {});
     applyCompactMode();
     applyReduceMotion();
+    // Terapkan preferensi aksesibilitas (font scale, high contrast, reduce
+    // motion, bahasa) di boot supaya user tidak perlu membuka halaman
+    // pengaturan dulu agar preferensi mereka aktif.
+    import("@/lib/app-prefs").then(({ applyAppPrefs }) => applyAppPrefs()).catch(() => {});
+    // Warna brand organisasi + branding mode Chat (title/icon/manifest).
+    import("@/lib/org-name").then(({ applyBrandColor, watchThemeForBrand, hydrateOrgBrandingFromRemote }) => {
+      applyBrandColor();
+      watchThemeForBrand();
+      hydrateOrgBrandingFromRemote().catch(() => {});
+    }).catch(() => {});
+    import("@/lib/chat-mode-branding").then(({ applyChatModeBranding }) => {
+      applyChatModeBranding();
+    }).catch(() => {});
+    const onAppModeChange = () => {
+      import("@/lib/chat-mode-branding").then(({ applyChatModeBranding }) => applyChatModeBranding()).catch(() => {});
+    };
+    window.addEventListener("mcm:app-mode-change", onAppModeChange);
+    // Recovery bundle basi + auto-update SW pasca deploy baru.
+    import("@/lib/build-cache-buster").then(({ installBuildCacheBuster }) => installBuildCacheBuster()).catch(() => {});
+    import("@/lib/sw-auto-update").then(({ installSwAutoUpdate }) => installSwAutoUpdate()).catch(() => {});
+    // Ketika Supabase mencabut sesi (mis. refresh 403 session_not_found),
+    // paksa router re-run `_authenticated` gate supaya user diarahkan ke
+    // /auth. Tanpa ini, komponen mounted (mis. NotificationBell) terus
+    // memanggil serverFn yang butuh bearer → 401 "No authorization header
+    // provided" dan layar blank.
+    let authUnsub: (() => void) | null = null;
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      const { data } = supabase.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_OUT" || event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+          try { router.invalidate(); } catch { /* ignore */ }
+          if (event !== "SIGNED_OUT") {
+            try { queryClient.invalidateQueries(); } catch { /* ignore */ }
+          }
+        }
+      });
+      authUnsub = () => data.subscription.unsubscribe();
+    }).catch(() => {});
+    // Chunk-load errors yang muncul dari event handler / timer tidak akan
+    // menyentuh errorComponent — tangkap di window scope dan lakukan hard
+    // reload cache-busting sekali per 5 detik.
+    const CHUNK_RE = /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed/i;
+    const tryChunkReload = (msg: string) => {
+      if (!CHUNK_RE.test(msg)) return;
+      try {
+        const KEY = "__chunk_reload_at";
+        const prev = Number(window.sessionStorage.getItem(KEY) || "0");
+        if (prev && Date.now() - prev < 5_000) return;
+        window.sessionStorage.setItem(KEY, String(Date.now()));
+      } catch { /* ignore */ }
+      const url = new URL(window.location.href);
+      url.searchParams.set("__r", String(Date.now()));
+      window.location.replace(url.toString());
+    };
+    const onErr = (e: ErrorEvent) => tryChunkReload(String(e?.message || e?.error?.message || ""));
+    const onRej = (e: PromiseRejectionEvent) => tryChunkReload(String((e?.reason as { message?: string } | undefined)?.message || e?.reason || ""));
+    window.addEventListener("error", onErr);
+    window.addEventListener("unhandledrejection", onRej);
     // Kirim preferensi notifikasi ke service worker + tarik versi terbaru dari cloud
     let unsub: (() => void) | null = null;
     import("@/lib/notif-prefs").then(({ loadPrefs, broadcastPrefs, pullPrefsFromCloud, subscribeRemotePrefs }) => {
@@ -286,7 +350,13 @@ function RootComponent() {
       pullPrefsFromCloud().catch(() => {});
       unsub = subscribeRemotePrefs(() => {});
     }).catch(() => {});
-    return () => { if (unsub) unsub(); };
+    return () => {
+      if (unsub) unsub();
+      if (authUnsub) authUnsub();
+      window.removeEventListener("mcm:app-mode-change", onAppModeChange);
+      window.removeEventListener("error", onErr);
+      window.removeEventListener("unhandledrejection", onRej);
+    };
   }, []);
 
   // Tangani pesan dari service worker push (klik notifikasi / aksi cepat)
@@ -317,6 +387,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppearanceInit />
+      <ChatModeSplash />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster richColors position="top-center" />
