@@ -2647,7 +2647,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Rata-rata modal item</span>
             <span>
-              {rupiah(selectedItem.avg_cost_per_base)}/{humanBaseUnit(selectedItem.package_type, selectedItem.base_unit)}
+              {rupiah(selectedItem.avg_cost_per_base)}/{stockBaseUnitLabel(selectedItem.package_type, selectedItem.base_unit, selectedItem.package_size)}
             </span>
           </div>
         )}
