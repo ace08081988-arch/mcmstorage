@@ -2364,6 +2364,9 @@ function ItemCard({
 
   async function pickCamera() {
     onKeepAlive();
+    onActivityChange(true);
+    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
+    beginNativePicker();
     try {
       const nativePhoto = await captureNativeCameraPhoto();
       if (nativePhoto === "cancelled") return;
@@ -2375,6 +2378,10 @@ function ItemCard({
       toast.error("Kamera native gagal, membuka kamera browser…", {
         description: (err as Error).message || undefined,
       });
+    } finally {
+      endNativePicker();
+      onActivityChange(false);
+      onKeepAlive();
     }
     const state = await queryCameraPermission();
     if (state === "denied") {
@@ -2384,10 +2391,14 @@ function ItemCard({
       setHelpKind("camera");
       return;
     }
+    beginNativePicker();
     cameraRef.current?.click();
   }
   async function pickGallery() {
     onKeepAlive();
+    onActivityChange(true);
+    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
+    beginNativePicker();
     try {
       const nativePhotos = await pickNativeGalleryPhotos();
       if (nativePhotos === "cancelled") return;
@@ -2399,9 +2410,14 @@ function ItemCard({
       toast.error("Galeri native gagal, membuka galeri browser…", {
         description: (err as Error).message || undefined,
       });
+    } finally {
+      endNativePicker();
+      onActivityChange(false);
+      onKeepAlive();
     }
     // Web tidak menyediakan Permissions API khusus untuk galeri; tetap
     // buka file picker, kalau kosong user bisa klik panduan di bawah.
+    beginNativePicker();
     galleryRef.current?.click();
   }
 
@@ -2484,12 +2500,14 @@ function ItemCard({
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
+    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
     if (!f) return;
     await stageOne(f, true);
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
     if (files.length === 0) return;
     await stageGalleryFiles(files);
   }
@@ -3800,6 +3818,9 @@ function RequestForm({
 
   async function pickCamera() {
     onKeepAlive();
+    onActivityChange(true);
+    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
+    beginNativePicker();
     try {
       const nativePhoto = await captureNativeCameraPhoto();
       if (nativePhoto === "cancelled") return;
@@ -3811,6 +3832,10 @@ function RequestForm({
       toast.error("Kamera native gagal, membuka kamera browser…", {
         description: (err as Error).message || undefined,
       });
+    } finally {
+      endNativePicker();
+      onActivityChange(false);
+      onKeepAlive();
     }
     const state = await queryCameraPermission();
     if (state === "denied") {
@@ -3820,10 +3845,14 @@ function RequestForm({
       setHelpKind("camera");
       return;
     }
+    beginNativePicker();
     cameraRef.current?.click();
   }
   async function pickGallery() {
     onKeepAlive();
+    onActivityChange(true);
+    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
+    beginNativePicker();
     try {
       const nativePhotos = await pickNativeGalleryPhotos();
       if (nativePhotos === "cancelled") return;
@@ -3835,7 +3864,12 @@ function RequestForm({
       toast.error("Galeri native gagal, membuka galeri browser…", {
         description: (err as Error).message || undefined,
       });
+    } finally {
+      endNativePicker();
+      onActivityChange(false);
+      onKeepAlive();
     }
+    beginNativePicker();
     galleryRef.current?.click();
   }
 
@@ -3915,12 +3949,14 @@ function RequestForm({
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
+    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
     if (!f) return;
     await stageOne(f, true);
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
     if (files.length === 0) return;
     await stageGalleryFiles(files);
   }
