@@ -191,7 +191,7 @@ function AuditPage() {
         >
           Audit internal
         </span>
-        <button aria-label="Memuat"
+        <button
           onClick={() => void runAudit()}
           disabled={running}
           className="ml-auto inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"

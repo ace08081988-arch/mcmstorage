@@ -1155,7 +1155,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, onResend,
           <div className="font-semibold text-foreground">Gagal kirim via MCM</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
           {onResend ? (
-            <button aria-label="Muat ulang"
+            <button
               type="button"
               onClick={(e) => { stop(e); onResend(); }}
               className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
@@ -2468,7 +2468,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               ? "Realtime terputus. Tap Segarkan untuk memuat ulang."
               : "Menyambung ke realtime…"}
           </span>
-          <button aria-label="Muat ulang"
+          <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
             disabled={refreshing}

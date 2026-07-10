@@ -772,7 +772,7 @@ export function DebtQuickActions({
           className="h-8 min-w-0 flex-1 basis-full rounded-md border bg-background px-2 text-right font-mono text-xs sm:basis-auto"
           disabled={busy !== null}
         />
-        <button aria-label="Memuat"
+        <button
           type="button"
           onClick={() => setPending({ kind: "add" })}
           disabled={busy !== null || !hasAmount}
