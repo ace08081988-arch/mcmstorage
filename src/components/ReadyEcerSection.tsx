@@ -1747,12 +1747,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     try { await sendWA(fake, expected); } catch { /* dilaporkan di kartu */ }
   }
 
-  function undoSent(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    unmarkSent(shots.map((s) => s.id));
-    toast.message("Dikembalikan ke daftar aktif.");
-  }
+  // Aksi "Kembalikan ke aktif" untuk kartu Riwayat dilakukan lewat
+  // DropdownMenu (memakai `doDelete()` yang sudah handle unmarkSent).
+  // Fungsi inline `undoSent` lama dihapus supaya tidak ada handler duplikat.
 
   async function prepareChat(conversationId: string, convTitle: string) {
     if (chatSending || chatPreparing) return;
