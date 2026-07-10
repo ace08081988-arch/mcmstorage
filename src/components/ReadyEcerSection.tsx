@@ -1305,6 +1305,13 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
 
 function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, justMoved = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
   const cardRootRef = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
+  const openCardDetail = () => {
+    void navigate({
+      to: "/ecer",
+      search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined },
+    });
+  };
   useEffect(() => {
     if (justMoved && cardRootRef.current) {
       // Delay 1 frame supaya layout tab "Riwayat" sudah selesai render.
