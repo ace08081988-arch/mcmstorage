@@ -2210,6 +2210,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 setMenuOpen(false);
                 onEnterSelect?.();
               }}
+              className="hidden sm:flex"
             >
               <CheckSquare className="mr-2 h-3.5 w-3.5" />
               Pilih beberapa
