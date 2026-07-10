@@ -514,13 +514,52 @@ function ChatRoomPage() {
     isNearBottomRef.current = near;
     if (near) setHasNewBelow(false);
   }, []);
-  // Initial land at bottom whenever we switch conversation.
+  // Initial land at bottom whenever we switch conversation. Media (images,
+  // stickers, link previews) load async and grow the scroller AFTER we mount,
+  // sehingga scroll tunggal terlalu awal sering meninggalkan user di tengah
+  // riwayat. Solusinya: reset saat pindah conversation, lalu paksa scroll di
+  // beberapa titik waktu (setelah messages siap, setelah 2× rAF, dan sekali
+  // lagi setelah 250ms untuk menampung gambar yang baru selesai layout).
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
+    didInitialScrollRef.current = false;
     isNearBottomRef.current = true;
     setHasNewBelow(false);
-    const el = scrollerRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
   }, [conversationId]);
+  useEffect(() => {
+    if (didInitialScrollRef.current) return;
+    const count = messages?.length ?? 0;
+    if (count === 0) return;
+    didInitialScrollRef.current = true;
+    const el = scrollerRef.current;
+    if (!el) return;
+    const stick = () => {
+      const s = scrollerRef.current;
+      if (!s) return;
+      s.scrollTop = s.scrollHeight;
+    };
+    stick();
+    const r1 = requestAnimationFrame(() => {
+      stick();
+      const r2 = requestAnimationFrame(stick);
+      (el as HTMLElement & { __r2?: number }).__r2 = r2;
+    });
+    const t1 = window.setTimeout(stick, 120);
+    const t2 = window.setTimeout(stick, 400);
+    // Setelah gambar/thumbnail yang belum ter-load selesai, geser lagi ke bawah
+    // agar tidak terlihat "ngambang" di tengah.
+    const imgs = Array.from(el.querySelectorAll("img")) as HTMLImageElement[];
+    const onImg = () => stick();
+    imgs.forEach((img) => {
+      if (!img.complete) img.addEventListener("load", onImg, { once: true });
+    });
+    return () => {
+      cancelAnimationFrame(r1);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      imgs.forEach((img) => img.removeEventListener("load", onImg));
+    };
+  }, [conversationId, messages?.length]);
   // On new messages, only stick if user is near bottom; else surface a
   // "pesan baru" pill so the user can jump on demand.
   const prevMsgCountRef = useRef(0);
