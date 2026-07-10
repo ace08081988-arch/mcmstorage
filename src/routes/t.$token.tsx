@@ -1749,10 +1749,10 @@ function PublicPrepPage() {
           <div className="grid grid-cols-2 divide-x text-center">
             <div className="px-3 py-2.5">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Progres
+                {totalItems > 0 ? "Progres" : "Tugas satuan"}
               </div>
               <div className="mt-0.5 text-sm font-semibold tabular-nums">
-                {completedItems} / {totalItems}
+                {totalItems > 0 ? `${completedItems} / ${totalItems}` : "—"}
               </div>
             </div>
             <div className="flex items-center justify-center gap-1.5 px-3 py-2.5">
