@@ -72,18 +72,18 @@ export function MessageAttachment(props: {
   const mime = props.mime ?? "";
   if (mime.startsWith("image/")) {
     return url ? (
-      <a href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
-        <img src={url} alt={props.name ?? "foto"} className="max-h-72 w-full max-w-xs object-cover" loading="lazy" />
+      <a href={url} target="_blank" rel="noreferrer" className="block max-w-full overflow-hidden rounded-lg">
+        <img src={url} alt={props.name ?? "foto"} className="h-auto max-h-72 w-full max-w-full object-cover sm:max-w-xs" loading="lazy" />
       </a>
     ) : (
-      <div className="grid h-32 w-48 animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat foto…</div>
+      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat foto…</div>
     );
   }
   if (mime.startsWith("video/")) {
     return url ? (
-      <video src={url} controls preload="metadata" className="max-h-72 w-full max-w-xs rounded-lg bg-black" />
+      <video src={url} controls preload="metadata" className="max-h-72 w-full max-w-full rounded-lg bg-black sm:max-w-xs" />
     ) : (
-      <div className="grid h-32 w-48 animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat video…</div>
+      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat video…</div>
     );
   }
   if (mime.startsWith("audio/")) {
