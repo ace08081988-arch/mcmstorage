@@ -2133,7 +2133,17 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       data-just-moved={justMoved ? "1" : undefined}
       role={selectMode ? undefined : "button"}
       tabIndex={selectMode ? undefined : 0}
-      aria-label={selectMode ? undefined : "Buka detail kartu"}
+      aria-label={
+        selectMode
+          ? `${selected ? "Lepas pilihan" : "Pilih"} kartu ${r.name}`
+          : `Buka detail kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}${
+              view === "sent"
+                ? `, ${shots.length} kiriman terkirim`
+                : `, ${r.prep_count} kotak siap`
+            }`
+      }
+      aria-describedby={`ecer-card-desc-${r.id}`}
+      aria-pressed={selectMode ? selected : undefined}
       onKeyDown={
         selectMode
           ? undefined
@@ -2189,12 +2199,23 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       onPointerCancel={cancelLongPress}
       onContextMenu={(e) => { e.preventDefault(); setMenuOpen(true); }}
     >
+      <span id={`ecer-card-desc-${r.id}`} className="sr-only">
+        {view === "sent"
+          ? `Riwayat terkirim. ${shots.length} kiriman pegawai${
+              thumbs[0]?.location_url ? ", ada lokasi GPS" : ""
+            }. Tekan Enter untuk membuka detail di Ecer, atau tekan menu untuk kembalikan ke aktif.`
+          : `Daftar aktif. ${r.prep_count} kotak siap${
+              shots.length > 0 ? `, ${shots.length} foto dari pegawai` : ", belum ada foto pegawai"
+            }. Tekan Enter untuk membuka detail di Ecer.`}
+      </span>
       {!selectMode && (
         <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label="Menu kartu"
+              aria-label={`Menu aksi kartu ${r.name}`}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(true); }}
               onPointerDown={(e) => e.stopPropagation()}
               className="absolute right-1.5 top-1.5 z-30 inline-flex h-6 w-6 items-center justify-center rounded-md border border-border/60 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-sm transition hover:bg-accent hover:text-foreground"
@@ -2346,7 +2367,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       {selectMode && (
         <button
           type="button"
-          aria-label={selected ? "Lepas pilihan" : "Pilih kartu"}
+          aria-label={selected ? `Lepas pilihan kartu ${r.name}` : `Pilih kartu ${r.name}`}
+          aria-pressed={selected}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect?.(); }}
           className={`absolute left-1.5 top-1.5 z-20 inline-flex h-6 w-6 items-center justify-center rounded-md border shadow-sm transition ${
             selected
@@ -2361,6 +2383,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         <Link
           to="/ecer"
           search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
+          aria-label={`Buka foto ${r.name} — ${shots.length} foto${thumbs[0]?.location_url ? ", dengan lokasi GPS" : ""}`}
           className="relative block aspect-[4/3] overflow-hidden bg-muted"
         >
           {thumbs[0]?.thumb_url ? (
@@ -2390,6 +2413,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           to="/ecer"
           search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
           data-testid={`ready-ecer-card-${r.id}`}
+          aria-label={`Buka detail ${r.name} di halaman Ecer`}
           className="flex flex-col gap-0.5"
         >
           {shots.length === 0 && (
@@ -2439,6 +2463,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             <PopoverTrigger asChild>
               <button
                 type="button"
+                aria-label={`Lihat aturan pencocokan foto untuk ${r.name}`}
+                aria-haspopup="dialog"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 className="flex w-fit min-w-0 max-w-full items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium leading-none text-muted-foreground hover:bg-accent"
                 title={`Cocok: produk + ${r.target_grams}${unit}`}
@@ -2509,6 +2535,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </span>
           <button
             type="button"
+            aria-label={`Segarkan kiriman pegawai untuk ${r.name}`}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
             disabled={refreshing}
             className="mt-0.5 inline-flex h-6 items-center gap-1 rounded bg-primary/10 px-2 text-[11px] font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
@@ -2531,7 +2558,11 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               </div>
             ))}
             {extra > 0 && (
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-[11px] font-semibold text-muted-foreground ring-1 ring-border">
+              <div
+                role="img"
+                aria-label={`${extra} foto lainnya`}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-[11px] font-semibold text-muted-foreground ring-1 ring-border"
+              >
                 +{extra}
               </div>
             )}
