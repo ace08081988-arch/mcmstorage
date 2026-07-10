@@ -2788,7 +2788,9 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       </label>
 
       {item && (() => {
-        const humU = humanBaseUnit(item.package_type, item.base_unit);
+        // Label Jumlah/Harga: gram → "g", selain itu → "pcs".
+        // Menghindari label warisan seperti "botol"/"sachet" pada mode base.
+        const humU = (item.base_unit ?? "").trim().toLowerCase() === "g" ? "g" : "pcs";
         const pkgLabel = (item.package_type ?? "").trim();
         // Sembunyikan tombol "per package" kalau labelnya sama persis dengan
         // label satuan dasar (mis. GS: base "botol" = package "botol"), atau
