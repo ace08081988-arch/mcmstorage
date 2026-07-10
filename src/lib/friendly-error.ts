@@ -135,6 +135,11 @@ export function friendlyError(
   }
 
   const msg = (e.message ?? "").toLowerCase();
+  // Konfigurasi push (VAPID) — jangan bocorkan detail teknis ke user.
+  if (msg.includes("vapid") || msg.includes("config_invalid") ||
+      (msg.includes("subject") && msg.includes("url"))) {
+    return "Konfigurasi notifikasi belum valid.";
+  }
   // Pro-tier paywall (thrown by enforce_free_*_cap triggers)
   if (msg.includes("pro_required:warehouse_items"))
     return "Batas 30 barang gudang pada paket Free sudah tercapai. Upgrade ke Pro untuk menambah lebih banyak.";

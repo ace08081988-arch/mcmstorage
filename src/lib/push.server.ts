@@ -31,11 +31,35 @@ export const VAPID_PUBLIC_KEY =
 function ensureConfigured() {
   if (configured) return;
   const priv = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
+  const rawSubject = (process.env.VAPID_SUBJECT || "mailto:admin@example.com").trim();
+  const subject = normalizeVapidSubject(rawSubject);
   if (!priv) throw new Error("VAPID_PRIVATE_KEY tidak diset");
   ensureBufferHasOwnPropertyShim();
   webpush.setVapidDetails(subject, VAPID_PUBLIC_KEY, priv);
   configured = true;
+}
+
+// VAPID subject harus berupa URL absolut valid (RFC 8292: mailto: atau https:).
+// Env kadang berisi email polos (`ops@example.com`) — normalisasi otomatis ke
+// `mailto:` supaya web-push tidak melempar "Vapid subject is not a valid URL".
+function normalizeVapidSubject(input: string): string {
+  const s = input.trim();
+  if (!s) return "mailto:admin@example.com";
+  const lower = s.toLowerCase();
+  if (lower.startsWith("mailto:") || lower.startsWith("http://") || lower.startsWith("https://")) {
+    try {
+      // eslint-disable-next-line no-new
+      new URL(s);
+      return s;
+    } catch {
+      // fallthrough ke fallback aman
+    }
+  }
+  // Bentuk email polos → prefix mailto:
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return `mailto:${s}`;
+  // Fallback aman: hindari crash runtime, log detail server-side.
+  console.warn("[push] VAPID_SUBJECT tidak valid, fallback ke mailto:admin@example.com");
+  return "mailto:admin@example.com";
 }
 
 export type PushSubRow = {
@@ -66,8 +90,8 @@ export type PushPayload = {
 };
 
 export async function sendWebPush(sub: PushSubRow, payload: PushPayload) {
-  ensureConfigured();
   try {
+    ensureConfigured();
     await webpush.sendNotification(
       {
         endpoint: sub.endpoint,
@@ -79,7 +103,13 @@ export async function sendWebPush(sub: PushSubRow, payload: PushPayload) {
     return { ok: true as const };
   } catch (e: unknown) {
     const status = (e as { statusCode?: number })?.statusCode;
-    return { ok: false as const, status, error: (e as Error)?.message ?? "push_failed" };
+    const rawMsg = (e as Error)?.message ?? "push_failed";
+    // Detail teknis tetap tersimpan di server log; jangan bocor ke client.
+    console.warn("[push] sendWebPush gagal:", rawMsg);
+    const safeMsg = /vapid|subject|url/i.test(rawMsg)
+      ? "config_invalid"
+      : rawMsg;
+    return { ok: false as const, status, error: safeMsg };
   }
 }
 
