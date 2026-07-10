@@ -750,7 +750,7 @@ function ChatRoomPage() {
           }}
         />
       ) : (
-      <header className="wa-header sticky top-0 z-10 flex items-center gap-1.5 border-b px-2 py-2 sm:gap-2">
+      <header className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-1.5 border-b px-2 py-1.5 sm:gap-2 sm:py-2">
         <Button
           variant="ghost"
           size="icon"
@@ -1622,7 +1622,7 @@ function ChatRoomPage() {
             />
           ) : null}
         </div>
-        <p className="mt-1 px-1 text-[10px] text-muted-foreground">
+        <p className="mt-1 hidden px-1 text-[10px] text-muted-foreground sm:block">
           Enter untuk kirim · Shift+Enter untuk baris baru
         </p>
       </form>

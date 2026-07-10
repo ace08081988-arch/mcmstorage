@@ -11,6 +11,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 
+/** Format rupiah compact untuk badge mobile agar nominal tetap terlihat. */
+function rupiahCompact(n: number): string {
+  const v = Math.abs(n || 0);
+  const sign = n < 0 ? "-" : "";
+  if (v >= 1_000_000_000) return `${sign}Rp ${(v / 1_000_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })} M`;
+  if (v >= 1_000_000) return `${sign}Rp ${(v / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })} Jt`;
+  if (v >= 1_000) return `${sign}Rp ${(v / 1_000).toLocaleString("id-ID", { maximumFractionDigits: 0 })} rb`;
+  return rupiah(n);
+}
+
 type Kind = "hutang" | "piutang";
 
 type DebtRow = {
@@ -162,7 +172,7 @@ export function ChatHeaderDebtControls({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`inline-flex min-w-0 max-w-full items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold transition hover:bg-accent ${
+          className={`inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold transition hover:bg-accent ${
             dominantKind === "piutang"
               ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
               : "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
@@ -174,13 +184,17 @@ export function ChatHeaderDebtControls({
           }
           title={
             dominantKind === "piutang"
-              ? "Piutang (dia berhutang ke Anda)"
-              : "Hutang (Anda berhutang ke dia)"
+              ? `Piutang (dia berhutang ke Anda): ${rupiah(dominantValue)}`
+              : `Hutang (Anda berhutang ke dia): ${rupiah(dominantValue)}`
           }
         >
           <Wallet className="h-3 w-3 shrink-0" />
-          <span className="truncate">
-            {dominantKind === "piutang" ? "Piutang" : "Hutang"} · {rupiah(dominantValue)}
+          <span>
+            {dominantKind === "piutang" ? "Piutang" : "Hutang"}
+          </span>
+          <span className="font-mono">
+            <span className="sm:hidden">{rupiahCompact(dominantValue)}</span>
+            <span className="hidden sm:inline">{rupiah(dominantValue)}</span>
           </span>
         </button>
       </PopoverTrigger>
