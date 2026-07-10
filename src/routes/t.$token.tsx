@@ -3964,6 +3964,20 @@ function RequestForm({
       toast.error("Minimal 1 item dengan jumlah > 0");
       return;
     }
+    // Validasi Maps URL client-side: kosong OK, tapi kalau diisi harus https://...
+    // (mencocokkan validasi RPC). Short-link maps.app.goo.gl valid karena
+    // sudah https. Trim spasi & newline dari clipboard.
+    const trimmedLoc = (locUrl || "").trim();
+    if (trimmedLoc.length > 0) {
+      if (trimmedLoc.length > 2048) {
+        toast.error("Link Maps terlalu panjang. Kosongkan atau perpendek.");
+        return;
+      }
+      if (!/^https:\/\//i.test(trimmedLoc)) {
+        toast.error("Link Maps belum valid. Harus diawali https:// atau kosongkan.");
+        return;
+      }
+    }
     onKeepAlive();
     onActivityChange(true);
     setBusy(true);
@@ -4025,7 +4039,7 @@ function RequestForm({
         _items: itemsPayload,
         _photo_path: uploaded[0],
         _photo_paths: uploaded,
-        _location_url: locUrl || null,
+        _location_url: trimmedLoc || null,
         _gps_lat: gps?.lat ?? null,
         _gps_lng: gps?.lng ?? null,
         _note: note || null,
@@ -4036,21 +4050,35 @@ function RequestForm({
       if (error) throw error;
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) {
+        const code = res?.error || "submit_failed";
         const msg =
-          res?.error === "task_exhausted"
+          code === "task_exhausted"
             ? "Link ini sudah dipakai untuk 1 paket. Minta link + PIN baru ke admin."
-            : res?.error === "bad_pin"
+            : code === "bad_pin"
               ? "PIN salah"
-              : res?.error || "submit_failed";
+              : code === "invalid_url"
+                ? "Link Maps belum valid. Kosongkan link Maps jika tidak ada."
+                : code === "url_too_long"
+                  ? "Link Maps terlalu panjang."
+                  : code === "photo_required"
+                    ? "Foto bukti wajib dilampirkan."
+                    : code === "grams_exceed_target"
+                      ? "Jumlah melebihi target paket. Periksa qty."
+                      : code === "not_found"
+                        ? "Link tugas sudah tidak aktif. Minta link baru ke admin."
+                        : code === "internal_error"
+                          ? "Server menolak paket. Coba lagi atau hubungi admin."
+                          : code;
         throw new Error(msg);
       }
-      toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
+      toast.success(`Paket terkirim (${uploaded.length} foto). Status berubah ke Selesai.`);
       setPhotos([]);
       setUploads([]);
       void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
-      toast.error("Gagal: " + (e as Error).message);
+      const raw = (e as Error)?.message ?? "unknown";
+      toast.error(`Paket belum terkirim: ${raw}. Foto & isian tetap tersimpan — coba kirim lagi.`);
     } finally {
       setBusy(false);
       onKeepAlive();
