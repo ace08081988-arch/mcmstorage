@@ -3949,12 +3949,14 @@ function RequestForm({
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
+    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
     if (!f) return;
     await stageOne(f, true);
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
     if (files.length === 0) return;
     await stageGalleryFiles(files);
   }
