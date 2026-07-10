@@ -2495,7 +2495,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
-            Stok disimpan dalam <b>{displayHumanBase}</b>. Saat dijual per {displayHumanBase}, akan dikurangi otomatis.
+            {packageType !== "pcs" && displayPkgSize > 0 && !packageDuplicatesBase ? (
+              <>
+                Pembelian dicatat per <b>{displayPackageType}</b>. 1 {displayPackageType} = {displayPkgSize} {displayHumanBase}. Stok bertambah dalam <b>{displayHumanBase}</b>.
+              </>
+            ) : (
+              <>Stok disimpan dalam <b>{displayHumanBase}</b>.</>
+            )}
           </div>
           <PhotoPicker value={newImagePath} onChange={setNewImagePath} uid={uid} />
         </div>
