@@ -598,7 +598,9 @@ export function ReadyEcerSection() {
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
-      <div className="flex justify-end">
+      {/* Layout toggle (grid/list/table) — desktop only. Di mobile user
+          harian cukup dengan satu layout list yang paling jelas. */}
+      <div className="hidden justify-end sm:flex">
         <LayoutModeToggle mode={layout} onChange={setLayout} />
       </div>
 
