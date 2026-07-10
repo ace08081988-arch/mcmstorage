@@ -11,6 +11,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 
+/** Format rupiah compact untuk badge mobile agar nominal tetap terlihat. */
+function rupiahCompact(n: number): string {
+  const v = Math.abs(n || 0);
+  const sign = n < 0 ? "-" : "";
+  if (v >= 1_000_000_000) return `${sign}Rp ${(v / 1_000_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })} M`;
+  if (v >= 1_000_000) return `${sign}Rp ${(v / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })} Jt`;
+  if (v >= 1_000) return `${sign}Rp ${(v / 1_000).toLocaleString("id-ID", { maximumFractionDigits: 0 })} rb`;
+  return rupiah(n);
+}
+
 type Kind = "hutang" | "piutang";
 
 type DebtRow = {
