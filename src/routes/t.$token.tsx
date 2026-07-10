@@ -2127,16 +2127,18 @@ function PublicPrepPage() {
                 ))}
               </div>
             ) : (
-              <div className="col-span-2 flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Inbox className="h-5 w-5" />
-                </div>
-                <div className="space-y-1">
-                  <p className="font-medium text-foreground">Belum ada item tugas</p>
-                  <p className="text-xs">
-                    Admin belum menambahkan item ke tugas ini. Coba muat ulang sebentar lagi.
-                  </p>
-                </div>
+              // Empty-state minimalis: kalau tidak ada tugas satuan, jangan
+              // menghalangi pandangan. Panel "Permintaan Paket" (RequestSection
+              // di bawah) mungkin masih punya pekerjaan aktif, jadi kita
+              // cukup pasang strip tipis alih-alih blok besar "tidak ada tugas".
+              <div className="col-span-2 flex items-center gap-2 rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+                <Inbox className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  Belum ada tugas satuan.{" "}
+                  <span className="text-foreground">
+                    Lanjutkan lewat Permintaan Paket di bawah bila tersedia.
+                  </span>
+                </span>
               </div>
             ))
             }
