@@ -1445,7 +1445,7 @@ function ChatRoomPage() {
           <div className="space-y-2">
             {outbox.map((o) => (
               <div key={o.tempId} className="flex justify-end">
-                <div className="flex max-w-[80%] flex-row-reverse items-start gap-1">
+                <div className="flex min-w-0 max-w-[85%] flex-row-reverse items-start gap-1 sm:max-w-[75%]">
                   <div
                     className={`rounded-2xl rounded-br-sm px-3 py-1.5 text-sm leading-snug shadow-sm ${
                       o.status === "failed"
