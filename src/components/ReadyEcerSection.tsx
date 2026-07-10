@@ -2131,8 +2131,25 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     <div
       ref={cardRootRef}
       data-just-moved={justMoved ? "1" : undefined}
-      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md ${
-        selectMode ? "cursor-pointer" : ""
+      role={selectMode ? undefined : "button"}
+      tabIndex={selectMode ? undefined : 0}
+      aria-label={selectMode ? undefined : "Buka detail kartu"}
+      onKeyDown={
+        selectMode
+          ? undefined
+          : (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                const target = e.target as HTMLElement | null;
+                if (target && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [data-radix-collection-item]")) {
+                  return;
+                }
+                e.preventDefault();
+                openCardDetail();
+              }
+            }
+      }
+      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/60 hover:shadow-md active:scale-[0.997] active:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
+        selectMode ? "cursor-pointer" : "cursor-pointer"
       } ${selected ? "ring-2 ring-primary ring-offset-1" : ""} ${
         justMoved ? "ring-2 ring-emerald-400 ring-offset-2 shadow-lg shadow-emerald-500/20 animate-pulse" : ""
       }`}
