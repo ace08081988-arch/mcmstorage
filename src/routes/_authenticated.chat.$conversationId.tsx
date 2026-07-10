@@ -750,7 +750,7 @@ function ChatRoomPage() {
           }}
         />
       ) : (
-      <header className="wa-header sticky top-0 z-10 flex items-center gap-2 border-b px-2 py-2">
+      <header className="wa-header sticky top-0 z-10 flex items-center gap-1.5 border-b px-2 py-2 sm:gap-2">
         <Button
           variant="ghost"
           size="icon"
@@ -812,18 +812,31 @@ function ChatRoomPage() {
               `Grup · ${members.data?.length ?? 0} anggota`
             )}
           </div>
+          {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
+            <div className="mt-0.5 flex max-w-full items-center sm:hidden">
+              <ChatHeaderDebtControls
+                myId={myId}
+                peerUserId={dmPeer.peerUserId}
+                peerPhone={dmPeer.peerPhone ?? null}
+                peerName={displayedPeerName}
+              />
+            </div>
+          ) : null}
         </div>
         {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
           <>
-            <ChatHeaderDebtControls
-              myId={myId}
-              peerUserId={dmPeer.peerUserId}
-              peerPhone={dmPeer.peerPhone ?? null}
-              peerName={displayedPeerName}
-            />
+            <div className="hidden sm:flex">
+              <ChatHeaderDebtControls
+                myId={myId}
+                peerUserId={dmPeer.peerUserId}
+                peerPhone={dmPeer.peerPhone ?? null}
+                peerName={displayedPeerName}
+              />
+            </div>
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
               aria-label="Panggilan suara"
               aria-busy={startingCall}
               disabled={!online || startingCall}
@@ -864,6 +877,7 @@ function ChatRoomPage() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
               aria-label="Panggilan video"
               aria-busy={startingCall}
               disabled={!online || startingCall}
@@ -1082,7 +1096,7 @@ function ChatRoomPage() {
                     id={`msg-${m.id}`}
                     className={`flex transition-colors duration-200 ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
-                    <div className={`group relative flex max-w-[80%] items-start gap-1 ${mine ? "flex-row-reverse" : "flex-row"}`}>
+                    <div className={`group relative flex min-w-0 max-w-[85%] items-start gap-1 sm:max-w-[75%] ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
                         className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
@@ -1431,7 +1445,7 @@ function ChatRoomPage() {
           <div className="space-y-2">
             {outbox.map((o) => (
               <div key={o.tempId} className="flex justify-end">
-                <div className="flex max-w-[80%] flex-row-reverse items-start gap-1">
+                <div className="flex min-w-0 max-w-[85%] flex-row-reverse items-start gap-1 sm:max-w-[75%]">
                   <div
                     className={`rounded-2xl rounded-br-sm px-3 py-1.5 text-sm leading-snug shadow-sm ${
                       o.status === "failed"

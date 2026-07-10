@@ -72,18 +72,18 @@ export function MessageAttachment(props: {
   const mime = props.mime ?? "";
   if (mime.startsWith("image/")) {
     return url ? (
-      <a href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg">
-        <img src={url} alt={props.name ?? "foto"} className="max-h-72 w-full max-w-xs object-cover" loading="lazy" />
+      <a href={url} target="_blank" rel="noreferrer" className="block max-w-full overflow-hidden rounded-lg">
+        <img src={url} alt={props.name ?? "foto"} className="h-auto max-h-72 w-full max-w-full object-cover sm:max-w-xs" loading="lazy" />
       </a>
     ) : (
-      <div className="grid h-32 w-48 animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat foto…</div>
+      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat foto…</div>
     );
   }
   if (mime.startsWith("video/")) {
     return url ? (
-      <video src={url} controls preload="metadata" className="max-h-72 w-full max-w-xs rounded-lg bg-black" />
+      <video src={url} controls preload="metadata" className="max-h-72 w-full max-w-full rounded-lg bg-black sm:max-w-xs" />
     ) : (
-      <div className="grid h-32 w-48 animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat video…</div>
+      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat video…</div>
     );
   }
   if (mime.startsWith("audio/")) {
@@ -118,8 +118,8 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
     const map = `https://www.google.com/maps/search/?api=1&query=${card.lat},${card.lng}`;
     const embed = `https://www.openstreetmap.org/export/embed.html?bbox=${card.lng - 0.005},${card.lat - 0.004},${card.lng + 0.005},${card.lat + 0.004}&layer=mapnik&marker=${card.lat},${card.lng}`;
     return (
-      <div className={`overflow-hidden rounded-lg border text-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
-        <iframe title="peta" src={embed} className="h-32 w-full max-w-xs" />
+      <div className={`max-w-full overflow-hidden rounded-lg border text-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
+        <iframe title="peta" src={embed} className="h-32 w-full max-w-full sm:max-w-xs" />
         <div className="px-2 py-1.5">
           <div className="flex items-center gap-1 font-semibold">
             {liveActive ? <Navigation className="h-3.5 w-3.5 animate-pulse text-primary" /> : <MapPin className="h-3.5 w-3.5" />}
@@ -128,8 +128,8 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
           {liveActive ? (
             <div className="opacity-70">Berakhir {new Date(card.live_until!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</div>
           ) : null}
-          <div className="opacity-70">{card.lat.toFixed(5)}, {card.lng.toFixed(5)}</div>
-          <a href={map} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-primary underline">
+          <div className="truncate opacity-70">{card.lat.toFixed(5)}, {card.lng.toFixed(5)}</div>
+          <a href={map} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-primary underline">
             Buka di Maps
           </a>
         </div>
