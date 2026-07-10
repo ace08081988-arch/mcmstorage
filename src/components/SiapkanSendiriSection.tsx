@@ -584,8 +584,13 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
               type="file"
               accept="image/*"
               multiple
+              onClick={() => {
+                // Cegah App Lock nyala waktu native picker buka.
+                import("@/lib/app-lock").then((m) => m.beginNativePicker());
+              }}
               onChange={(e) => {
                 const picked = Array.from(e.target.files ?? []);
+                import("@/lib/app-lock").then((m) => m.endNativePicker());
                 if (picked.length) setFiles((prev) => [...prev, ...picked]);
               }}
               className="block w-full text-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-2 file:py-1.5 file:text-xs"
