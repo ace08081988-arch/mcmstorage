@@ -614,10 +614,16 @@ function ChatRoomPage() {
     [doSend],
   );
 
+  const sendingLockRef = useRef(false);
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
     if (!t) return;
+    if (sendingLockRef.current) return;
+    sendingLockRef.current = true;
+    // Buka kunci pada frame berikutnya — cegah double-submit dari tap ganda
+    // atau Enter beruntun, tanpa mem-block antrian kirim beruntun yang sah.
+    setTimeout(() => { sendingLockRef.current = false; }, 250);
     // Edit mode -> commit edit instead of sending new
     if (editing) {
       editMsg.mutate(
