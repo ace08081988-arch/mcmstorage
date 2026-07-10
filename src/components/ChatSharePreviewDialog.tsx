@@ -443,7 +443,7 @@ export function ChatSharePreviewDialog({
                   Kirim ulang (paksa)
                 </button>
               ) : (
-                <button aria-label="Memuat"
+                <button
                   type="button"
                   onClick={onConfirm}
                   disabled={sending || !data || live?.status === "in-flight"}

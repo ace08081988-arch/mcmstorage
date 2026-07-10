@@ -753,7 +753,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                             • <span className="font-medium">{p.file.name}:</span>{" "}
                             {isRetrying ? "Sedang mengulang…" : statuses[p.id]?.error}
                           </span>
-                          <button aria-label="Memuat"
+                          <button
                             type="button"
                             onClick={() => confirmSendPending(false, [p.id])}
                             disabled={!!busy || isRetrying}

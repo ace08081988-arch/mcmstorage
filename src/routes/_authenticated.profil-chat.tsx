@@ -334,7 +334,7 @@ function ProfilChatPage() {
                 Cek apakah link yang Anda salin masih bisa dipakai.
               </span>
             </div>
-            <button aria-label="Memuat"
+            <button
               type="button"
               onClick={validateClipboardLink}
               disabled={validating}

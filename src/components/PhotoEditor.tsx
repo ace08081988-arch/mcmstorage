@@ -1066,11 +1066,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <X className="h-4 w-4" /> Batal
         </button>
         <div className="flex items-center gap-1">
-          <button aria-label="Batal" onClick={undo} disabled={!history.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Undo2 className="h-4 w-4" /></button>
+          <button onClick={undo} aria-label="Undo" disabled={!history.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Undo2 className="h-4 w-4" /></button>
           <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
-          <button aria-label="Muat ulang" onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted"><RotateCw className="h-4 w-4" /></button>
+          <button aria-label="Putar 90°" onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted"><RotateCw className="h-4 w-4" /></button>
         </div>
-        <button aria-label="Memuat"
+        <button
           onClick={exportImage}
           disabled={exporting || !canvasReady}
           className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground transition disabled:cursor-not-allowed disabled:opacity-60"

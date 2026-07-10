@@ -525,7 +525,7 @@ function ChatListPage() {
                 const conv = (conversations ?? []).find((c) => c.id === m.conversation_id);
                 return (
                   <li key={m.id}>
-                    <button aria-label="Cari"
+                    <button
                       type="button"
                       onClick={() => navigate({ to: "/chat/$conversationId", params: { conversationId: m.conversation_id } })}
                       className="flex w-full items-start gap-3 px-3 py-3 text-left hover:bg-accent/50"
