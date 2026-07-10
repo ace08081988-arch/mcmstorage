@@ -2508,7 +2508,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               Owner tetap bisa memakai fitur share foto pegawai langsung
               dari detail judul kalau memang perlu koordinasi internal.
             */}
-            {r.prep_count > 0 ? (
+            {view === "sent" ? null : r.prep_count > 0 ? (
               <Link
                 to="/ecer"
                 search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" }}
@@ -2529,17 +2529,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 <Send className="h-3 w-3" /> Kirim
               </span>
             )}
-            {view === "sent" && (
-              <button
-                type="button"
-                onClick={undoSent}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label="Kembalikan ke aktif"
-                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent"
-              >
-                <Undo2 className="h-3 w-3" /> Aktif
-              </button>
-            )}
+            {/* Aksi "Kembalikan ke aktif" dan "Hapus dari Riwayat" untuk
+                view === "sent" dikonsolidasi ke DropdownMenu di kanan atas
+                kartu — tombol inline "Aktif" dihapus supaya tidak duplikat. */}
             </div>
           </div>
           </>
