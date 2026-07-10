@@ -2148,7 +2148,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 e.preventDefault();
                 e.stopPropagation();
                 longPressFired.current = false;
+                return;
               }
+              // Buat seluruh kartu bisa di-tap untuk membuka detail /ecer,
+              // termasuk area SentDetailList / thumbnails / badge yang tidak
+              // dibungkus <Link>. Anak-anak interaktif (dropdown menu, tombol
+              // Kirim, popover, anchor Maps) sudah memanggil stopPropagation
+              // sendiri, jadi tidak akan sampai ke sini.
+              const target = e.target as HTMLElement | null;
+              if (target && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [data-radix-collection-item]")) {
+                return;
+              }
+              openCardDetail();
             }
       }
       onPointerDown={selectMode ? undefined : startLongPress}
