@@ -4292,17 +4292,43 @@ function RequestForm({
         className="h-10 w-full rounded-lg border bg-background px-3 text-xs"
       />
 
-      <button
-        type="button"
-        disabled={busy}
-        onClick={submit}
-        className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {busy && uploads.some((u) => u.status !== "idle")
-          ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
-          : "Kirim Paket"}
-      </button>
+      {(() => {
+        const hasQty = rows.some((r) => Number(r.actual_grams) > 0);
+        const hasPhoto = photos.length > 0;
+        const uploading =
+          busy && uploads.some((u) => u.status !== "idle");
+        const disabled = busy || !hasQty || !hasPhoto;
+        const reason = !hasPhoto
+          ? "Tambahkan minimal 1 foto bukti"
+          : !hasQty
+            ? "Isi jumlah dulu"
+            : null;
+        return (
+          <div className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 border-t bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            {reason ? (
+              <p className="mb-1.5 text-center text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                {reason}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={submit}
+              aria-label="Kirim Paket"
+              className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {uploading
+                ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
+                : "Kirim Paket"}
+            </button>
+          </div>
+        );
+      })()}
 
       {editorOpen && editorSrc && (
         <PhotoEditor
