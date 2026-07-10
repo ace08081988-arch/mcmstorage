@@ -314,11 +314,10 @@ function RootComponent() {
     let authUnsub: (() => void) | null = null;
     import("@/integrations/supabase/client").then(({ supabase }) => {
       const { data } = supabase.auth.onAuthStateChange((event) => {
-        if (event === "SIGNED_OUT" || event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
-          try { router.invalidate(); } catch { /* ignore */ }
-          if (event !== "SIGNED_OUT") {
-            try { queryClient.invalidateQueries(); } catch { /* ignore */ }
-          }
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        try { router.invalidate(); } catch { /* ignore */ }
+        if (event !== "SIGNED_OUT") {
+          try { queryClient.invalidateQueries(); } catch { /* ignore */ }
         }
       });
       authUnsub = () => data.subscription.unsubscribe();
