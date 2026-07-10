@@ -410,6 +410,16 @@ export function AppSidebar() {
     }))
     .filter((g) => g.items.length > 0);
   void modeTick;
+  // Mobile: bagi group ke "primary" (langsung tampil) dan "secondary"
+  // (masuk drawer "Lainnya"). Desktop / chat-only tetap merender semua
+  // group berurutan seperti biasa.
+  const [showMore, setShowMore] = useState(false);
+  const primaryGroups = isMobile
+    ? visibleGroups.filter((g) => g.mobilePrimary)
+    : visibleGroups;
+  const secondaryGroups = isMobile
+    ? visibleGroups.filter((g) => !g.mobilePrimary)
+    : [];
   const chatFetching = useIsFetching({ queryKey: ["chat", "conversations"] });
   const queryClient = useQueryClient();
   const [online, setOnline] = useState(() =>
