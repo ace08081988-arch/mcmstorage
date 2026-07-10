@@ -76,6 +76,30 @@ import {
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
 import { formatQty } from "@/lib/unit-kinds";
+
+/**
+ * Label satuan ringkas untuk tampilan worker portal mobile.
+ * Aturan sweep Batch 2:
+ *  - GS → "botol" (SSOT displayUnit)
+ *  - gram/gr/g/grams → "g" (konsisten satu label pendek di seluruh flow)
+ *  - lainnya → apa adanya (pcs, botol, kg, ons…)
+ */
+function shortUnitLabel(
+  name: string | null | undefined,
+  unit: string | null | undefined,
+): string {
+  const base = displayUnit(name, unit);
+  const u = (base ?? "").trim().toLowerCase();
+  if (u === "g" || u === "gr" || u === "gram" || u === "grams") return "g";
+  return base ?? "";
+}
+function formatQtyShort(
+  qty: number | string,
+  unit: string | null | undefined,
+  name?: string | null,
+): string {
+  return formatQty(qty, unit, name ?? undefined).replace(/\bgr\b/gi, "g");
+}
 import {
   getWorkerPortalConfig,
   fetchAndApplyWorkerPortalConfig,
