@@ -76,6 +76,30 @@ import {
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
 import { formatQty } from "@/lib/unit-kinds";
+
+/**
+ * Label satuan ringkas untuk tampilan worker portal mobile.
+ * Aturan sweep Batch 2:
+ *  - GS → "botol" (SSOT displayUnit)
+ *  - gram/gr/g/grams → "g" (konsisten satu label pendek di seluruh flow)
+ *  - lainnya → apa adanya (pcs, botol, kg, ons…)
+ */
+function shortUnitLabel(
+  name: string | null | undefined,
+  unit: string | null | undefined,
+): string {
+  const base = displayUnit(name, unit);
+  const u = (base ?? "").trim().toLowerCase();
+  if (u === "g" || u === "gr" || u === "gram" || u === "grams") return "g";
+  return base ?? "";
+}
+function formatQtyShort(
+  qty: number | string,
+  unit: string | null | undefined,
+  name?: string | null,
+): string {
+  return formatQty(qty, unit, name ?? undefined).replace(/\bgr\b/gi, "g");
+}
 import {
   getWorkerPortalConfig,
   fetchAndApplyWorkerPortalConfig,
@@ -1878,7 +1902,7 @@ function PublicPrepPage() {
                     .filter((e) => (e.it.submissions?.length ?? 0) > 0)
                     .reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
                   const allDone = doneCount === totalCount && totalCount > 0;
-                  const unit = displayUnit(g.entries[0].it.name, g.entries[0].it.unit_label);
+                  const unit = shortUnitLabel(g.entries[0].it.name, g.entries[0].it.unit_label);
                   const collapsed = !!collapsedGroups[g.key];
                   const sortedEntries = (() => {
                     const arr = [...g.entries];
@@ -2043,7 +2067,7 @@ function PublicPrepPage() {
                           .reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
                         const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
                         const allDone = doneCount === totalCount && totalCount > 0;
-                        const unit = displayUnit(sg.entries[0].it.name, sg.entries[0].it.unit_label);
+                        const unit = shortUnitLabel(sg.entries[0].it.name, sg.entries[0].it.unit_label);
                         return (
                           <>
                             <DialogHeader>
@@ -2626,7 +2650,7 @@ function ItemCard({
         throw new Error(msg);
       }
       toast.success(
-        `Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${formatQty(res.deducted ?? item.qty_requested, item.unit_label, item.name)}`,
+        `Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${formatQtyShort(res.deducted ?? item.qty_requested, item.unit_label, item.name)}`,
       );
       setSendStatus({ kind: "success", at: Date.now(), count: uploaded.length });
       setPhotos([]);
@@ -2755,7 +2779,7 @@ function ItemCard({
               <div className="mt-0.5 truncate text-[10px] text-muted-foreground">{item.category ?? "—"}</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                  {formatQty(item.qty_requested, item.unit_label, item.name)}
+                  {formatQtyShort(item.qty_requested, item.unit_label, item.name)}
                 </span>
                 {(item.qty_prepared ?? 0) > 0 && (
                   <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -2930,7 +2954,7 @@ function ItemCard({
         <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
           Siapkan{" "}
           <b>
-            {formatQty(item.qty_requested, item.unit_label, item.name)}
+            {formatQtyShort(item.qty_requested, item.unit_label, item.name)}
           </b>{" "}
           sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang
           sebanyak itu — Anda tidak perlu mengisi angka apa pun.
@@ -3567,7 +3591,7 @@ function RequestSection({
                       {requestItems
                         .map(
                           (i) =>
-                            `${i.product_name ?? "?"} ${formatQty(i.target_grams, i.unit_label, i.product_name)}`,
+                            `${i.product_name ?? "?"} ${formatQtyShort(i.target_grams, i.unit_label, i.product_name)}`,
                         )
                         .join(" · ") || "Tidak ada item"}
                     </div>
@@ -3585,7 +3609,7 @@ function RequestSection({
                       {requestItems
                         .map(
                           (i) =>
-                            `${i.product_name ?? "?"} ${formatQty(i.target_grams, i.unit_label, i.product_name)}`,
+                            `${i.product_name ?? "?"} ${formatQtyShort(i.target_grams, i.unit_label, i.product_name)}`,
                         )
                         .join(" · ") || "Tidak ada item"}
                     </div>
@@ -4030,7 +4054,7 @@ function RequestForm({
               className="col-span-3 h-9 rounded-md border bg-background px-2 text-xs"
             />
             <div className="col-span-1 flex items-center text-[10px] text-muted-foreground">
-              {displayUnit(r.product_name, r.unit_label)}
+              {shortUnitLabel(r.product_name, r.unit_label)}
             </div>
           </div>
         ))}
@@ -4268,17 +4292,43 @@ function RequestForm({
         className="h-10 w-full rounded-lg border bg-background px-3 text-xs"
       />
 
-      <button
-        type="button"
-        disabled={busy}
-        onClick={submit}
-        className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {busy && uploads.some((u) => u.status !== "idle")
-          ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
-          : "Kirim Paket"}
-      </button>
+      {(() => {
+        const hasQty = rows.some((r) => Number(r.actual_grams) > 0);
+        const hasPhoto = photos.length > 0;
+        const uploading =
+          busy && uploads.some((u) => u.status !== "idle");
+        const disabled = busy || !hasQty || !hasPhoto;
+        const reason = !hasPhoto
+          ? "Tambahkan minimal 1 foto bukti"
+          : !hasQty
+            ? "Isi jumlah dulu"
+            : null;
+        return (
+          <div className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 border-t bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            {reason ? (
+              <p className="mb-1.5 text-center text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                {reason}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={submit}
+              aria-label="Kirim Paket"
+              className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {uploading
+                ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
+                : "Kirim Paket"}
+            </button>
+          </div>
+        );
+      })()}
 
       {editorOpen && editorSrc && (
         <PhotoEditor
