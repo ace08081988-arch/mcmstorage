@@ -3816,6 +3816,9 @@ function RequestForm({
 
   async function pickCamera() {
     onKeepAlive();
+    onActivityChange(true);
+    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
+    beginNativePicker();
     try {
       const nativePhoto = await captureNativeCameraPhoto();
       if (nativePhoto === "cancelled") return;
@@ -3827,6 +3830,10 @@ function RequestForm({
       toast.error("Kamera native gagal, membuka kamera browser…", {
         description: (err as Error).message || undefined,
       });
+    } finally {
+      endNativePicker();
+      onActivityChange(false);
+      onKeepAlive();
     }
     const state = await queryCameraPermission();
     if (state === "denied") {
@@ -3836,10 +3843,14 @@ function RequestForm({
       setHelpKind("camera");
       return;
     }
+    beginNativePicker();
     cameraRef.current?.click();
   }
   async function pickGallery() {
     onKeepAlive();
+    onActivityChange(true);
+    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
+    beginNativePicker();
     try {
       const nativePhotos = await pickNativeGalleryPhotos();
       if (nativePhotos === "cancelled") return;
@@ -3851,7 +3862,12 @@ function RequestForm({
       toast.error("Galeri native gagal, membuka galeri browser…", {
         description: (err as Error).message || undefined,
       });
+    } finally {
+      endNativePicker();
+      onActivityChange(false);
+      onKeepAlive();
     }
+    beginNativePicker();
     galleryRef.current?.click();
   }
 
