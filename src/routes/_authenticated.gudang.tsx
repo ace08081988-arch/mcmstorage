@@ -2484,7 +2484,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
                 <option value="pcs">pcs</option>
               </select>
             </label>
-            {packageType !== "pcs" && (
+            {packageType !== "pcs" && packageType !== "botol" && (
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">Isi / kemasan ({displayBaseUnit})</span>
                 {displayBaseUnit === "g" ? (
@@ -2657,7 +2657,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         ) : null}
         <div className="flex justify-between">
           <span className="text-muted-foreground">Tambahan stok</span>
-          <b>{isWItem(selectedItem) ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, displayBaseUnit)}</b>
+          <b>
+            {isWItem(selectedItem)
+              ? fmtItemQty(baseAdded, selectedItem)
+              : displayPackageType === "botol"
+                ? `${Math.round(baseAdded).toLocaleString("id-ID")} botol`
+                : fmtBase(baseAdded, displayBaseUnit)}
+          </b>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Harga per {displayPackageType}</span>
