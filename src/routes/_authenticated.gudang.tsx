@@ -2286,10 +2286,12 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   const displayPkgSize: number = mode === "existing" && isWItem(selectedItem)
     ? Number(selectedItem.package_size) || 0
     : (packageType === "pcs" ? 1 : Number(packageSize) || 0);
-  // Satuan dasar yang layak ditampilkan ke user. Untuk botol yang dihitung
-  // per-pcs (mis. GS: 1 pcs = 1 botol) tampilkan 'botol' agar tidak
-  // membingungkan; selain itu sama dengan displayBaseUnit.
-  const displayHumanBase = humanBaseUnit(displayPackageType, displayBaseUnit);
+  // Satuan dasar untuk display stok. Menghormati `package_size`: hanya
+  // GS-like (botol/pcs dengan package_size===1) yang dilabel "botol"; untuk
+  // botol dengan isi >1 pcs, satuan stok = "pcs" (bukan "botol").
+  // Tanpa ini, kalimat "Stok disimpan dalam botol" muncul padahal stok
+  // base bertambah pcs — membingungkan user (smoke-test Beli).
+  const displayHumanBase = stockBaseUnitLabel(displayPackageType, displayBaseUnit, displayPkgSize);
   // True jika label jenis kemasan secara semantik SAMA dengan satuan dasar
   // (mis. package_type="gram" dgn base_unit="g"). Kalau iya, semua tombol/
   // hint "per package" hanya menduplikasi label satuan dasar — sembunyikan.
