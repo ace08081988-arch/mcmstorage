@@ -2792,8 +2792,9 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
     }
     const minBase = 0.01; // 0.01 g atau 0.01 pcs
     if (qtyBase < minBase) {
+      const minLabel = humanBaseUnit(item.package_type, item.base_unit);
       toast.error(
-        `Jumlah minimal ${minBase} ${item.base_unit}. Tidak bisa menjual di bawah itu.`
+        `Jumlah minimal ${minBase} ${minLabel}. Tidak bisa menjual di bawah itu.`
       );
       return;
     }
@@ -2854,14 +2855,23 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       </label>
 
       {item && (() => {
-        // Label Jumlah/Harga: gram → "g", selain itu → "pcs".
-        // Menghindari label warisan seperti "botol"/"sachet" pada mode base.
-        const humU = (item.base_unit ?? "").trim().toLowerCase() === "g" ? "g" : "pcs";
+        // Label Jumlah/Harga: gram → "g"; item botol → "botol" (bukan "pcs",
+        // karena satuan terkecil pada alur botol adalah botol, dan tingkat
+        // di atasnya adalah karton). Selain itu → "pcs".
+        const isBotol = (item.package_type ?? "").trim().toLowerCase() === "botol";
+        const humU = isBotol
+          ? "botol"
+          : (item.base_unit ?? "").trim().toLowerCase() === "g"
+            ? "g"
+            : "pcs";
         const pkgLabel = (item.package_type ?? "").trim();
         // Sembunyikan tombol "per package" kalau labelnya sama persis dengan
         // label satuan dasar (mis. GS: base "botol" = package "botol"), atau
         // kalau package_size ≤ 1 sehingga tidak ada konversi bermakna.
+        // Untuk botol, tombol "per package" selalu redundan (karton dipilih
+        // lewat tombol khusus di bawah).
         const showPackageBtn =
+          !isBotol &&
           pkgLabel !== "" &&
           pkgLabel !== "pcs" &&
           !isSameUnitLabel(pkgLabel, humU) &&
@@ -2884,7 +2894,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
                 Jual per {pkgLabel}
               </button>
             )}
-            {item.package_type === "botol" && (
+            {isBotol && (
               <button type="button" onClick={() => setSellMode("karton")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "karton" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
                 Jual per karton
               </button>
@@ -3012,7 +3022,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
                 </div>
                 <div className={kurang ? "text-destructive font-semibold" : ""}>
                   {kurang
-                    ? <>Stok kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)} — tidak bisa disimpan</>
+                    ? <>Stok kurang {fmtQtyDual(qtyBase - item.stock_base, item.base_unit, item.package_type, item.package_size, dispMode, item.name)} — tidak bisa disimpan</>
                     : <>Sisa setelah jual: <b>{fmtQtyDual(sisa, item.base_unit, item.package_type, item.package_size, dispMode, item.name)}</b></>}
                 </div>
                 <div>Total pendapatan: <b>{rupiah(total)}</b> ({paymentMethod === "hutang" ? "piutang ke pelanggan" : "lunas tunai"})</div>
