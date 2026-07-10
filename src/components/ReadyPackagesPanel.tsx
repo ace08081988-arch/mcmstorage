@@ -884,12 +884,14 @@ function PackageForm({
                 <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border bg-background px-2 text-xs hover:bg-accent">
                   📷 {uploadingPhoto ? "Mengunggah…" : "Kamera"}
                   <input type="file" accept="image/*" capture="environment" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
+                    onClick={() => { import("@/lib/app-lock").then((m) => m.beginNativePicker()); }}
+                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
                 </label>
                 <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border bg-background px-2 text-xs hover:bg-accent">
                   🖼️ Galeri
                   <input type="file" accept="image/*" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
+                    onClick={() => { import("@/lib/app-lock").then((m) => m.beginNativePicker()); }}
+                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
                 </label>
               </div>
             </div>
