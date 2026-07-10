@@ -3585,9 +3585,11 @@ function RequestSection({
       </div>
       <div className="space-y-2">
         {titles.map((t) => {
-          const requestItems = Array.isArray(t.items) ? t.items : [];
-          const isDone = (t.submitted_count ?? 0) > 0;
-          return (
+          let renderedRow: ReactNode;
+          try {
+            const requestItems = Array.isArray(t.items) ? t.items : [];
+            const isDone = (t.submitted_count ?? 0) > 0;
+            renderedRow = (
             <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
               {isDone ? (
                 <div className="flex w-full items-center justify-between px-3 py-2 text-left opacity-75">
@@ -3647,7 +3649,20 @@ function RequestSection({
                 </div>
               )}
             </div>
-          );
+            );
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error("[RequestSection] render title failed", t?.id, err);
+            renderedRow = (
+              <div
+                key={t?.id ?? Math.random()}
+                className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300"
+              >
+                Paket &quot;{t?.name ?? "tanpa nama"}&quot; tidak bisa ditampilkan. Muat ulang portal atau hubungi admin.
+              </div>
+            );
+          }
+          return renderedRow;
         })}
       </div>
     </div>
