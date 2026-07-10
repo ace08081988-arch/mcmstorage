@@ -2616,10 +2616,28 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         <div className="flex justify-between">
           <span className="text-muted-foreground">Jumlah kemasan</span>
           <b>
-            {pkgQ.toLocaleString("id-ID")} {displayPackageType}
-            {kartonActive ? ` (${(pkgQ / BOTOL_PER_KARTON).toLocaleString("id-ID")} karton)` : ""}
+            <KemasanRumusPopover
+              packageType={displayPackageType}
+              packageSize={displayPkgSize}
+              baseUnit={displayBaseUnit}
+              qty={pkgQ}
+              mode="package"
+              testId="beli-jumlah-kemasan-rumus"
+            >
+              {pkgQ.toLocaleString("id-ID")} {displayPackageType}
+              {kartonActive ? ` (${(pkgQ / BOTOL_PER_KARTON).toLocaleString("id-ID")} karton)` : ""}
+            </KemasanRumusPopover>
           </b>
         </div>
+        {displayPackageType !== "pcs" && displayPkgSize > 1 && !packageDuplicatesBase ? (
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Konversi</span>
+            <span>
+              1 {displayPackageType} = {displayPkgSize.toLocaleString("id-ID")} {displayHumanBase}
+              {displayPackageType === "botol" ? ` · 1 karton = ${BOTOL_PER_KARTON} botol` : ""}
+            </span>
+          </div>
+        ) : null}
         <div className="flex justify-between">
           <span className="text-muted-foreground">Tambahan stok</span>
           <b>{isWItem(selectedItem) ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, displayBaseUnit)}</b>
