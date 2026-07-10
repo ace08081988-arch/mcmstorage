@@ -2551,7 +2551,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
           <span className="text-[11px] text-muted-foreground">
-            Jumlah {kartonActive ? "karton" : "kemasan"}
+            Jumlah {kartonActive
+              ? "karton"
+              : (displayPackageType && displayPackageType !== "pcs"
+                  ? displayPackageType
+                  : displayHumanBase || "unit")}
           </span>
           <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageQty} onChange={(e) => setPackageQty(e.target.value)} required />
         </label>
@@ -2644,7 +2648,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           )}
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Jumlah kemasan</span>
+          <span className="text-muted-foreground">Jumlah beli</span>
           <b>
             <KemasanRumusPopover
               packageType={displayPackageType}
@@ -2654,15 +2658,18 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
               mode="package"
               testId="beli-jumlah-kemasan-rumus"
             >
-              {pkgQ.toLocaleString("id-ID")} {displayPackageType}
-              {kartonActive ? ` (${(pkgQ / BOTOL_PER_KARTON).toLocaleString("id-ID")} karton)` : ""}
+              {kartonActive
+                ? `${(pkgQ / BOTOL_PER_KARTON).toLocaleString("id-ID")} karton`
+                : `${pkgQ.toLocaleString("id-ID")} ${displayPackageType}`}
             </KemasanRumusPopover>
           </b>
         </div>
-        {displayPackageType === "botol" ? (
+        {kartonActive ? (
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Konversi</span>
-            <span>1 karton = {BOTOL_PER_KARTON} botol</span>
+            <span>
+              {(pkgQ / BOTOL_PER_KARTON).toLocaleString("id-ID")} karton = {pkgQ.toLocaleString("id-ID")} botol
+            </span>
           </div>
         ) : displayPackageType !== "pcs" && displayPkgSize > 1 && !packageDuplicatesBase ? (
           <div className="flex justify-between text-[10px] text-muted-foreground">
