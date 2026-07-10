@@ -750,7 +750,7 @@ function ChatRoomPage() {
           }}
         />
       ) : (
-      <header className="wa-header sticky top-0 z-10 flex items-center gap-2 border-b px-2 py-2">
+      <header className="wa-header sticky top-0 z-10 flex items-center gap-1.5 border-b px-2 py-2 sm:gap-2">
         <Button
           variant="ghost"
           size="icon"
@@ -812,18 +812,31 @@ function ChatRoomPage() {
               `Grup · ${members.data?.length ?? 0} anggota`
             )}
           </div>
+          {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
+            <div className="mt-0.5 flex max-w-full items-center sm:hidden">
+              <ChatHeaderDebtControls
+                myId={myId}
+                peerUserId={dmPeer.peerUserId}
+                peerPhone={dmPeer.peerPhone ?? null}
+                peerName={displayedPeerName}
+              />
+            </div>
+          ) : null}
         </div>
         {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
           <>
-            <ChatHeaderDebtControls
-              myId={myId}
-              peerUserId={dmPeer.peerUserId}
-              peerPhone={dmPeer.peerPhone ?? null}
-              peerName={displayedPeerName}
-            />
+            <div className="hidden sm:flex">
+              <ChatHeaderDebtControls
+                myId={myId}
+                peerUserId={dmPeer.peerUserId}
+                peerPhone={dmPeer.peerPhone ?? null}
+                peerName={displayedPeerName}
+              />
+            </div>
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
               aria-label="Panggilan suara"
               aria-busy={startingCall}
               disabled={!online || startingCall}
@@ -864,6 +877,7 @@ function ChatRoomPage() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
               aria-label="Panggilan video"
               aria-busy={startingCall}
               disabled={!online || startingCall}
