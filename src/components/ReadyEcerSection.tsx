@@ -2138,19 +2138,23 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         selectMode
           ? undefined
           : (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                const target = e.target as HTMLElement | null;
-                if (target && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [data-radix-collection-item]")) {
-                  return;
-                }
-                e.preventDefault();
-                openCardDetail();
+              if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+              const target = e.target as HTMLElement | null;
+              // Bila fokus ada di anak interaktif (tombol menu ⋮, tombol Kirim,
+              // link Maps, checkbox pilih), biarkan elemen tersebut menangani
+              // Enter/Space sesuai perannya sendiri.
+              if (target && target !== e.currentTarget && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [role='checkbox'], [data-radix-collection-item]")) {
+                return;
               }
+              // Cegah scroll halaman saat Space ditekan di container kartu.
+              e.preventDefault();
+              e.stopPropagation();
+              openCardDetail();
             }
       }
-      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/60 hover:shadow-md active:scale-[0.997] active:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
-        selectMode ? "cursor-pointer" : "cursor-pointer"
-      } ${selected ? "ring-2 ring-primary ring-offset-1" : ""} ${
+      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm outline-none transition hover:border-primary/60 hover:shadow-md active:scale-[0.997] active:bg-accent/30 focus-visible:z-10 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer ${
+        selected ? "ring-2 ring-primary ring-offset-1" : ""
+      } ${
         justMoved ? "ring-2 ring-emerald-400 ring-offset-2 shadow-lg shadow-emerald-500/20 animate-pulse" : ""
       }`}
       onClickCapture={
