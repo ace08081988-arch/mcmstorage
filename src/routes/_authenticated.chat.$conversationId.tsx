@@ -88,6 +88,7 @@ import {
 import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
 import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls";
 import { OrderSummaryCard } from "@/components/chat/OrderSummaryCard";
+import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import { isCardBody } from "@/lib/chat-cards";
