@@ -27,6 +27,28 @@ export function humanBaseUnit(
 }
 
 /**
+ * Label satuan stok yang benar-benar dipakai untuk menyimpan/menambah stok
+ * (base unit), dengan memperhitungkan `package_size`.
+ *
+ * Kasus GS-like (`package_type='botol'`, `base_unit='pcs'`, `package_size===1`)
+ * tetap dilabel "botol" karena 1 botol = 1 pcs — memang counted by botol.
+ * Selain itu (mis. botol isi 100 pcs) label stok = base unit apa adanya
+ * ("pcs" / "g"). Ini mencegah copy menyesatkan seperti
+ * "Stok disimpan dalam botol" padahal stok base sebenarnya bertambah pcs.
+ */
+export function stockBaseUnitLabel(
+  packageType: string | null | undefined,
+  baseUnit: string | null | undefined,
+  packageSize: number | null | undefined,
+): string {
+  const pt = (packageType ?? "").trim().toLowerCase();
+  const bu = (baseUnit ?? "").trim().toLowerCase();
+  const ps = Number(packageSize) || 0;
+  if (pt === "botol" && bu === "pcs" && ps === 1) return "botol";
+  return baseUnit ?? "";
+}
+
+/**
  * Grup sinonim satuan yang secara semantik identik. Dipakai untuk mendeteksi
  * kasus seperti `package_type="gram"` + `base_unit="g"` (1 gram = 1 g), di mana
  * tombol/label "per package" hanya menduplikasi satuan dasar.

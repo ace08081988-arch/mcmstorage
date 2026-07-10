@@ -115,7 +115,7 @@ export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah
 import { computeBeliDerived } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
 import { beliResetKey } from "@/lib/beli-reset-key";
-import { humanBaseUnit, isSameUnitLabel } from "@/lib/unit-label";
+import { humanBaseUnit, isSameUnitLabel, stockBaseUnitLabel } from "@/lib/unit-label";
 import { SmartWeightInput } from "@/components/SmartWeightInput";
 import { KartonRumusPopover } from "@/components/KartonRumusPopover";
 import { KemasanRumusPopover } from "@/components/KemasanRumusPopover";
@@ -2286,10 +2286,12 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   const displayPkgSize: number = mode === "existing" && isWItem(selectedItem)
     ? Number(selectedItem.package_size) || 0
     : (packageType === "pcs" ? 1 : Number(packageSize) || 0);
-  // Satuan dasar yang layak ditampilkan ke user. Untuk botol yang dihitung
-  // per-pcs (mis. GS: 1 pcs = 1 botol) tampilkan 'botol' agar tidak
-  // membingungkan; selain itu sama dengan displayBaseUnit.
-  const displayHumanBase = humanBaseUnit(displayPackageType, displayBaseUnit);
+  // Satuan dasar untuk display stok. Menghormati `package_size`: hanya
+  // GS-like (botol/pcs dengan package_size===1) yang dilabel "botol"; untuk
+  // botol dengan isi >1 pcs, satuan stok = "pcs" (bukan "botol").
+  // Tanpa ini, kalimat "Stok disimpan dalam botol" muncul padahal stok
+  // base bertambah pcs — membingungkan user (smoke-test Beli).
+  const displayHumanBase = stockBaseUnitLabel(displayPackageType, displayBaseUnit, displayPkgSize);
   // True jika label jenis kemasan secara semantik SAMA dengan satuan dasar
   // (mis. package_type="gram" dgn base_unit="g"). Kalau iya, semua tombol/
   // hint "per package" hanya menduplikasi label satuan dasar — sembunyikan.
@@ -2493,7 +2495,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
-            Stok disimpan dalam <b>{displayHumanBase}</b>. Saat dijual per {displayHumanBase}, akan dikurangi otomatis.
+            {packageType !== "pcs" && displayPkgSize > 0 && !packageDuplicatesBase ? (
+              <>
+                Pembelian dicatat per <b>{displayPackageType}</b>. 1 {displayPackageType} = {displayPkgSize} {displayHumanBase}. Stok bertambah dalam <b>{displayHumanBase}</b>.
+              </>
+            ) : (
+              <>Stok disimpan dalam <b>{displayHumanBase}</b>.</>
+            )}
           </div>
           <PhotoPicker value={newImagePath} onChange={setNewImagePath} uid={uid} />
         </div>
@@ -2639,7 +2647,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Rata-rata modal item</span>
             <span>
-              {rupiah(selectedItem.avg_cost_per_base)}/{humanBaseUnit(selectedItem.package_type, selectedItem.base_unit)}
+              {rupiah(selectedItem.avg_cost_per_base)}/{stockBaseUnitLabel(selectedItem.package_type, selectedItem.base_unit, selectedItem.package_size)}
             </span>
           </div>
         )}
