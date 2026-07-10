@@ -735,6 +735,7 @@ export function ReadyEcerSection() {
       )}
 
       {rows && rows.length > 0 && visible.length > 0 && (
+        <div className="hidden sm:block">
         <BulkToolbar
           selectMode={selectMode}
           setSelectMode={(v) => { setSelectMode(v); if (!v) setSelectedIds(new Set()); }}
@@ -766,6 +767,7 @@ export function ReadyEcerSection() {
           onBulkChatPick={() => setBulkPickChat(true)}
           onBulkDelete={() => setBulkConfirm("delete")}
         />
+        </div>
       )}
 
       <PickChatConversationDialog
