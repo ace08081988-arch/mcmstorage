@@ -136,7 +136,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     el.style.transition = "opacity 0ms, transform 0ms";
   }
 }
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard, ChevronDown, MoreHorizontal } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -280,15 +280,22 @@ function OrgHeader() {
  * Keuangan → Akun → Sistem).
  */
 type NavItem = { title: string; url: string; icon: typeof Home };
-const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
+/**
+ * `mobilePrimary` = tampil langsung di menu utama mobile. Group lain
+ * disembunyikan di balik toggle "Lainnya" agar layar mobile tidak penuh.
+ * Desktop selalu menampilkan semua group.
+ */
+const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: boolean }[] = [
   {
     label: "Utama",
+    mobilePrimary: true,
     items: [
       { title: "Dasbor", url: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
     label: "Operasional",
+    mobilePrimary: true,
     items: [
       { title: "Gudang & Supplier", url: "/gudang", icon: Package },
       { title: "Request Order", url: "/request", icon: PackagePlus },
@@ -299,6 +306,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
   },
   {
     label: "Komunikasi",
+    mobilePrimary: true,
     items: [
       { title: "Chat", url: "/chat", icon: MessageCircle },
       { title: "Catatan", url: "/catatan", icon: NotebookPen },
@@ -309,6 +317,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
   },
   {
     label: "Pembayaran & Keuangan",
+    mobilePrimary: true,
     items: [
       { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
     ],
