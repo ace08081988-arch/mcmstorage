@@ -2221,6 +2221,15 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (mode === "existing" && !itemId && items[0]) setItemId(items[0].id);
   }, [mode, items, itemId]);
 
+  // Aturan alur botol: satuan terkecil = **botol**, tingkat di atas =
+  // **karton** (1 karton = 100 botol). Tidak ada sub-unit "pcs" di dalam
+  // botol. Paksa package_size=1 saat user memilih Jenis kemasan "botol"
+  // agar field "Isi/kemasan (pcs)" tidak muncul & ringkasan tidak lagi
+  // menampilkan "500 pcs".
+  useEffect(() => {
+    if (packageType === "botol" && packageSize !== "1") setPackageSize("1");
+  }, [packageType, packageSize]);
+
   // Untuk mode "existing", SEMUA turunan (jenis kemasan, ukuran, base unit)
   // WAJIB diambil dari item terpilih — bukan state form "barang baru".
   // Anotasi eksplisit + useMemo mencegah TDZ (TS2448/TS2454) bila hook lain
@@ -2475,7 +2484,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
                 <option value="pcs">pcs</option>
               </select>
             </label>
-            {packageType !== "pcs" && (
+            {packageType !== "pcs" && packageType !== "botol" && (
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">Isi / kemasan ({displayBaseUnit})</span>
                 {displayBaseUnit === "g" ? (
@@ -2648,7 +2657,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         ) : null}
         <div className="flex justify-between">
           <span className="text-muted-foreground">Tambahan stok</span>
-          <b>{isWItem(selectedItem) ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, displayBaseUnit)}</b>
+          <b>
+            {isWItem(selectedItem)
+              ? fmtItemQty(baseAdded, selectedItem)
+              : displayPackageType === "botol"
+                ? `${Math.round(baseAdded).toLocaleString("id-ID")} botol`
+                : fmtBase(baseAdded, displayBaseUnit)}
+          </b>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Harga per {displayPackageType}</span>
