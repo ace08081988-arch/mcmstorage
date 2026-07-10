@@ -323,7 +323,7 @@ function EcerPage() {
   useEffect(() => {
     void router.navigate({
       to: "/ecer",
-      search: { item: selectedItemId, title: selectedTitleId, highlight: undefined },
+      search: { item: selectedItemId, title: selectedTitleId, highlight: undefined, send: undefined },
       replace: true,
     });
     // M11: `router` sengaja tidak masuk deps. Instance `router` bisa

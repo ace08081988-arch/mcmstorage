@@ -594,7 +594,7 @@ export function ReadyEcerSection() {
           </p>
           <RealtimeBadge status={realtimeStatus} syncing={syncing || refreshing} />
         </div>
-        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined }} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
+        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
@@ -845,7 +845,7 @@ export function ReadyEcerSection() {
       ) : rows.length === 0 ? (
         <Link
           to="/ecer"
-          search={{ item: undefined, title: undefined, highlight: undefined }}
+          search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }}
           className="flex flex-col items-center gap-1.5 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground hover:border-primary/40 hover:bg-accent"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
@@ -2319,7 +2319,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       {shots.length > 0 ? (
         <Link
           to="/ecer"
-          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
           className="relative block aspect-[4/3] overflow-hidden bg-muted"
         >
           {thumbs[0]?.thumb_url ? (
@@ -2347,7 +2347,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       <div className="flex flex-col gap-1.5 p-2">
         <Link
           to="/ecer"
-          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
           data-testid={`ready-ecer-card-${r.id}`}
           className="flex flex-col gap-0.5"
         >
@@ -2431,7 +2431,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               </p>
               <Link
                 to="/ecer"
-                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
                 className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
               >
                 <ExternalLink className="h-2.5 w-2.5" /> Buka detail item di Ecer

@@ -173,7 +173,7 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
          */}
         <Link
           to="/ecer"
-          search={{ item: card.id, title: undefined, highlight: undefined }}
+          search={{ item: card.id, title: undefined, highlight: undefined, send: undefined }}
           className="mt-1 inline-flex items-center gap-1 text-primary underline"
         >
           Buka produk
