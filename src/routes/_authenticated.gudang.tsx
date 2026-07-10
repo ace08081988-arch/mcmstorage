@@ -2689,10 +2689,23 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
                 : fmtBase(baseAdded, displayBaseUnit)}
           </b>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Harga per {displayPackageType}</span>
-          <b>{rupiah(price)}</b>
-        </div>
+        {kartonActive ? (
+          <>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Harga per karton</span>
+              <b>{rupiah(price * BOTOL_PER_KARTON)}</b>
+            </div>
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>Harga per botol</span>
+              <span>{rupiah(price)}</span>
+            </div>
+          </>
+        ) : (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Harga per {displayPackageType}</span>
+            <b>{rupiah(price)}</b>
+          </div>
+        )}
         {displayPackageType !== "pcs" && baseAdded > 0 && !packageDuplicatesBase && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">Harga per {displayHumanBase}</span>
