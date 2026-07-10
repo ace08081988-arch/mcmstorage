@@ -851,12 +851,13 @@ function ChatRoomPage() {
           }}
         />
       ) : (
-      <header className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-1.5 border-b px-2 py-1.5 sm:gap-2 sm:py-2">
+      <header className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-1 border-b px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-2">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => navigate({ to: "/chat" })}
           aria-label="Kembali"
+          className="h-10 w-10 shrink-0"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -865,12 +866,12 @@ function ChatRoomPage() {
             type="button"
             aria-label={`Lihat profil ${displayedPeerName}`}
             onClick={() => setPeerProfileOpen(true)}
-            className="grid h-10 w-10 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase transition hover:opacity-80 active:scale-95"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase transition hover:opacity-80 active:scale-95 sm:h-10 sm:w-10"
           >
             {displayedPeerName.trim().charAt(0) || "?"}
           </button>
         ) : (
-          <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase sm:h-10 sm:w-10">
             {(meta.data?.kind === "dm" ? displayedPeerName : headerTitle || "?").trim().charAt(0) || "?"}
           </div>
         )}
