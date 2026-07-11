@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/_authenticated/kontak")({
+export const Route = createFileRoute("/_authenticated/kontak/")({
   head: () => ({
     meta: [
       { title: "Pelanggan & Pemasok · MCM Storage" },
