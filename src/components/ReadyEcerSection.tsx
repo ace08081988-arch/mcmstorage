@@ -2576,15 +2576,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               dari detail judul kalau memang perlu koordinasi internal.
             */}
             {view === "sent" ? null : r.prep_count > 0 ? (
-              <Link
-                to="/ecer"
-                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" }}
-                onClick={(e) => e.stopPropagation()}
-                onClickCapture={(e) => {
-                  // Cegah navigasi langsung; buka modal konfirmasi dulu supaya
-                  // owner bisa memastikan jumlah kotak & lokasi sebelum masuk
-                  // ke halaman verifikasi pembayaran WA.
-                  e.preventDefault();
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Buka modal konfirmasi dulu, lalu redirect otomatis ke /ecer
+                  // dengan flag send=1 supaya dialog pembayaran langsung terbuka.
                   const withLoc = r.worker_shots.filter((s) => s.location_url).length;
                   void (async () => {
                     const ok = await confirmDialog({
@@ -2594,7 +2591,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                         `Produk: ${r.product_name} · ${r.target_grams} ${r.unit_label}\n` +
                         `Jumlah kotak siap: ${r.prep_count}\n` +
                         `Lokasi terlampir: ${withLoc}/${r.worker_shots.length} kotak\n\n` +
-                        `Langkah berikutnya di halaman verifikasi:\n` +
+                        `Setelah ini Anda akan diarahkan otomatis ke halaman /ecer untuk verifikasi pembayaran.\n\n` +
+                        `Langkah di halaman verifikasi:\n` +
                         `1. Pilih metode pembayaran (Lunas / Hutang / Bayar sebagian)\n` +
                         `2. Periksa lokasi & isi pesan WhatsApp\n` +
                         `3. Kirim ke pembeli\n\n` +
@@ -2615,7 +2613,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
               >
                 <Send className="h-3 w-3" /> Kirim ke pembeli
-              </Link>
+              </button>
             ) : (
               <Link
                 to="/ecer"
