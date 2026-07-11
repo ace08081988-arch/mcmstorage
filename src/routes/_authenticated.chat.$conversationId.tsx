@@ -705,6 +705,16 @@ function ChatRoomPage() {
   const pendingProductsKey = conversationId
     ? `mcm.chat.pendingProducts.${conversationId}`
     : null;
+  // Status singkat yang muncul setelah localStorage tertulis sinkron. Tidak
+  // menggantikan toast migrasi/error — hanya memberi jaminan visual bahwa
+  // perubahan qty/hapus chip sudah aman di penyimpanan lokal.
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved">("idle");
+  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashSaved = useCallback(() => {
+    setSaveStatus("saved");
+    if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+    saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+  }, []);
   // Tulis nilai `pendingProducts` ke localStorage SEKARANG (tidak menunggu
   // effect). Dipakai oleh handler +/− dan prompt qty supaya perubahan tetap
   // aman walau tab langsung ditutup sebelum React sempat menjalankan effect
@@ -723,6 +733,7 @@ function ChatRoomPage() {
           JSON.stringify({ v: PENDING_PRODUCTS_VERSION, items: next }),
         );
       }
+      flashSaved();
     } catch { /* ignore quota */ }
   };
   // Wrapper untuk update+persist dalam satu langkah. Menerima nilai baru
