@@ -342,7 +342,7 @@ function FriendRequestsPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => doCancel(r.id, r.peer_display_name)}
-                      disabled={cancel.isPending}
+                      disabled={pendingActionId === r.id}
                       className="gap-1"
                     >
                       <X className="h-4 w-4" /> Batalkan
