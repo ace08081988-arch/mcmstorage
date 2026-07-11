@@ -1988,9 +1988,16 @@ function ChatRoomPage() {
         {pendingProducts.length > 0 ? (
           <div className="mb-2 space-y-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-primary">
-                Produk siap dikirim ({pendingProducts.length})
-              </span>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="font-semibold text-primary">
+                  Produk siap dikirim ({pendingProducts.length})
+                </span>
+                {saveStatus === "saved" ? (
+                  <span className="inline-flex shrink-0 items-center rounded bg-emerald-500/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                    tersimpan
+                  </span>
+                ) : null}
+              </div>
               <button
                 type="button"
                 className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
