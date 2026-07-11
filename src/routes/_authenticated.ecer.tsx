@@ -4273,7 +4273,11 @@ function SendEcerPrepsDialog({
   const [customerId, setCustomerId] = useState<string>(customers[0]?.id ?? "");
   const [manualName, setManualName] = useState("");
   const [totalStr, setTotalStr] = useState("");
-  const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial">("kas");
+  // Metode bayar WAJIB dipilih eksplisit oleh owner sebelum tombol
+  // "Kirim WA" aktif. Default `null` (belum dipilih) — bukan "kas" —
+  // supaya tidak ada jalur tembus dimana owner main tekan Kirim tanpa
+  // sadar mencatat penjualan sebagai Lunas.
+  const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial" | null>(null);
   const [paidStr, setPaidStr] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -4285,7 +4289,7 @@ function SendEcerPrepsDialog({
     setCustomerId(customers[0]?.id ?? "");
     setManualName("");
     setTotalStr("");
-    setPayMethod("kas");
+    setPayMethod(null);
     setPaidStr("");
     setNote("");
   }, [open, customers, title.id, prepIdsKey]);
@@ -4297,7 +4301,7 @@ function SendEcerPrepsDialog({
     return parsePaymentAmountInput(paidStr);
   }, [paidStr]);
   const payment = useMemo(
-    () => getPaymentBreakdown(payMethod, totalAmount, paidAmount),
+    () => getPaymentBreakdown(payMethod ?? "kas", totalAmount, paidAmount),
     [payMethod, totalAmount, paidAmount],
   );
   const remaining = payment.remaining;
@@ -4311,7 +4315,16 @@ function SendEcerPrepsDialog({
     return { id: null as string | null, name: manualName.trim(), contact: null as string | null };
   }, [mode, customerId, manualName, customers]);
 
-  const canSend = !!party.name && totalAmount > 0 && preps.length > 0 && !busy && partialValid;
+  // Payment-first gate: tombol Kirim hanya aktif kalau metode bayar
+  // sudah dipilih (Lunas / Hutang / Bayar sebagian) DAN validasi lain
+  // lolos. Ini yang mencegah WA benar-benar terkirim tanpa verifikasi.
+  const canSend =
+    payMethod !== null &&
+    !!party.name &&
+    totalAmount > 0 &&
+    preps.length > 0 &&
+    !busy &&
+    partialValid;
 
   async function resolvePhotoUrl(prep: EcerPreparation) {
     if (!prep.photo_path) return null;
