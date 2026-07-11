@@ -1841,10 +1841,10 @@ function ChatRoomPage() {
             size="icon"
             disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending || !!productSendProgress}
             aria-label="Kirim"
-            aria-busy={isSending}
+            aria-busy={isSending || !!productSendProgress}
             className="h-10 w-10 shrink-0"
           >
-            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isSending || !!productSendProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
           <ProductSharePopover
             conversationId={conversationId}
