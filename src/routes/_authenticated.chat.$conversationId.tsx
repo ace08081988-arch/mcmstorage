@@ -581,6 +581,44 @@ function ChatRoomPage() {
   // di atas textarea; baru terkirim saat user menekan tombol Kirim.
   const [pendingProducts, setPendingProducts] = useState<PickedProductRow[]>([]);
 
+  // Persist chip pratinjau produk per-percakapan supaya tetap ada setelah
+  // refresh atau navigasi keluar-masuk chat. Baru dibersihkan setelah user
+  // menekan Kirim (atau menghapus chip manual).
+  const pendingProductsKey = conversationId
+    ? `mcm.chat.pendingProducts.${conversationId}`
+    : null;
+  const pendingHydratedRef = useRef(false);
+  useEffect(() => {
+    pendingHydratedRef.current = false;
+    if (!pendingProductsKey) return;
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(pendingProductsKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as PickedProductRow[];
+        if (Array.isArray(parsed)) setPendingProducts(parsed);
+        else setPendingProducts([]);
+      } else {
+        setPendingProducts([]);
+      }
+    } catch {
+      setPendingProducts([]);
+    }
+    pendingHydratedRef.current = true;
+  }, [pendingProductsKey]);
+  useEffect(() => {
+    if (!pendingProductsKey) return;
+    if (!pendingHydratedRef.current) return;
+    if (typeof window === "undefined") return;
+    try {
+      if (pendingProducts.length === 0) {
+        window.localStorage.removeItem(pendingProductsKey);
+      } else {
+        window.localStorage.setItem(pendingProductsKey, JSON.stringify(pendingProducts));
+      }
+    } catch { /* ignore quota */ }
+  }, [pendingProductsKey, pendingProducts]);
+
   // Prefill komposer dari flow lain (mis. Penyiapan Request → Buka Chat MCM).
   // Handoff via localStorage key `mcm.chat.prefill.<convId>` supaya bisa
   // dipakai dari navigate tanpa mengubah tipe search params rute.
