@@ -2084,29 +2084,45 @@ function ChatRoomPage() {
                 // tampilkan tombol − / + dengan step sesuai unit.
                 const editable =
                   p.source !== "catalog" && p.qty !== null && p.baseUnit !== null;
-                const step = p.baseUnit === "g" ? 100 : 1;
+                const bounds = qtyBounds(p.baseUnit);
+                const step = bounds.step;
                 const adjustQty = (delta: number) => {
                   updatePendingProducts((prev) =>
                     prev.map((row, i) => {
                       if (i !== idx) return row;
                       if (row.qty === null) return row;
-                      const next = Math.max(step, row.qty + delta);
+                      const raw = row.qty + delta;
+                      const next = clampQty(raw, row.baseUnit);
+                      if (next === null) return row;
                       return { ...row, qty: next };
                     }),
                   );
                 };
                 const promptQty = () => {
                   if (!editable || p.qty === null || !p.baseUnit) return;
-                  const unitLabel = p.baseUnit === "g" ? "gram" : "pcs";
+                  const unitLabel = p.baseUnit === "g" ? "gram (mis. 1 kg, 500 gr, 2 ons)" : "pcs";
                   const input = window.prompt(
                     `Ubah jumlah ${p.productName} (${unitLabel}):`,
                     String(p.qty),
                   );
                   if (input === null) return;
-                  const n = Number(input.replace(",", "."));
-                  if (!Number.isFinite(n) || n < step) {
-                    toast.error(`Jumlah minimal ${step} ${unitLabel}.`);
+                  const n = parseQtyInput(input, p.baseUnit);
+                  if (n === null) {
+                    toast.error(
+                      p.baseUnit === "g"
+                        ? "Jumlah tidak valid. Contoh: 1 kg, 500 gr, 2 ons."
+                        : "Jumlah harus angka positif.",
+                    );
                     return;
+                  }
+                  if (n < bounds.min) {
+                    toast.error(`Jumlah minimal ${bounds.min} ${p.baseUnit === "g" ? "gr" : "pcs"}.`);
+                    return;
+                  }
+                  if (n >= bounds.max) {
+                    toast.warning(
+                      `Jumlah dibatasi maksimum ${bounds.max.toLocaleString("id-ID")} ${p.baseUnit === "g" ? "gr" : "pcs"}.`,
+                    );
                   }
                   updatePendingProducts((prev) =>
                     prev.map((row, i) => (i === idx ? { ...row, qty: n } : row)),
