@@ -69,20 +69,22 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(src).toMatch(/tidak_dijelaskan/);
   });
 
-  it("ReadyEcerSection: tombol 'Kirim ke pembeli' → <Link to=/ecer …> dengan send:\"1\"", () => {
+  it("ReadyEcerSection: tombol 'Kirim ke pembeli' → navigate('/ecer', { send:'1' }) untuk verifikasi bayar", () => {
     const src = readSrc("src/components/ReadyEcerSection.tsx");
-    const block = extractKirimLinkBlock(src);
-    expect(block, "Link 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
-    expect(block!).toMatch(/to=["']\/ecer["']/);
-    expect(block!).toMatch(/search=\{\{[\s\S]*?send:\s*["']1["'][\s\S]*?\}\}/);
+    const block = extractKirimButtonBlock(src);
+    expect(block, "Tombol 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
+    // Tombol memanggil confirmDialog dulu, baru navigate ke /ecer dengan send=1.
+    expect(block!).toMatch(/confirmDialog\(/);
+    expect(block!).toMatch(/navigate\(\s*\{[\s\S]*?to:\s*["']\/ecer["'][\s\S]*?\}\s*\)/);
+    expect(block!).toMatch(/send:\s*["']1["']/);
     // Tidak ada tombol WA cepat yang menerobos verifikasi di dashboard row.
     expect(src).not.toMatch(/Kirim ke pembeli via WA/);
   });
 
-  it("ReadyEcerSection: Link tombol memutus gestur long-press & onClickCapture kartu induk", () => {
+  it("ReadyEcerSection: tombol memutus gestur long-press & onClickCapture kartu induk", () => {
     const src = readSrc("src/components/ReadyEcerSection.tsx");
-    const block = extractKirimLinkBlock(src);
-    expect(block, "Link 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
+    const block = extractKirimButtonBlock(src);
+    expect(block, "Tombol 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
     // Butuh keduanya: onClick + onPointerDown stopPropagation supaya
     // long-press card & onClickCapture card tidak membatalkan navigasi.
     expect(block!).toMatch(/onPointerDown=\{\s*\(e\)\s*=>\s*e\.stopPropagation\(\)\s*\}/);
