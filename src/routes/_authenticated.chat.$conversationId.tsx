@@ -659,6 +659,13 @@ function ChatRoomPage() {
 
   const sendingLockRef = useRef(false);
   const [isSending, setIsSending] = useState(false);
+  const [productSendProgress, setProductSendProgress] = useState<{
+    current: number;
+    total: number;
+    name: string;
+    done: number;
+    failed: number;
+  } | null>(null);
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
@@ -703,18 +710,42 @@ function ChatRoomPage() {
     // pesan konsisten dan status/riwayat paket ter-update satu-satu.
     if (pendingProducts.length > 0) {
       const queue = pendingProducts.slice();
+      setProductSendProgress({ current: 0, total: queue.length, name: "", done: 0, failed: 0 });
+      const progressToast = toast.loading(`Mengirim 0 dari ${queue.length} produk…`);
       void (async () => {
-        for (const row of queue) {
+        let done = 0;
+        let failed = 0;
+        for (let i = 0; i < queue.length; i++) {
+          const row = queue[i];
+          setProductSendProgress({ current: i + 1, total: queue.length, name: row.productName, done, failed });
+          toast.loading(`Mengirim ${i + 1}/${queue.length}: ${row.productName}…`, { id: progressToast });
           try {
             const ok = await sendProductRow(row, {
               conversationId,
               peerName: displayedPeerName,
             });
-            if (ok) toast.success(`Terkirim: ${row.productName}`);
+            if (ok) {
+              done++;
+              toast.success(`Terkirim: ${row.productName}`, { id: `prod-ok-${row.id}-${i}` });
+            } else {
+              failed++;
+              toast.error(`Gagal mengirim: ${row.productName}`, { id: `prod-err-${row.id}-${i}` });
+            }
           } catch (err) {
-            toast.error((err as Error)?.message || `Gagal mengirim: ${row.productName}`);
+            failed++;
+            toast.error((err as Error)?.message || `Gagal mengirim: ${row.productName}`, { id: `prod-err-${row.id}-${i}` });
           }
+          setProductSendProgress((prev) => (prev ? { ...prev, done, failed } : prev));
         }
+        toast.dismiss(progressToast);
+        if (failed === 0) {
+          toast.success(`${done} produk berhasil dikirim`);
+        } else if (done === 0) {
+          toast.error(`Semua ${queue.length} produk gagal dikirim`);
+        } else {
+          toast.warning(`${done} terkirim, ${failed} gagal dari ${queue.length} produk`);
+        }
+        setProductSendProgress(null);
         void othersRead.refetch();
       })();
     }
