@@ -42,7 +42,7 @@ type ReadyRow = {
   } | null;
 };
 
-type Row = {
+export type PickedProductRow = {
   id: string;
   source: "ready" | "self" | "catalog";
   bucket: "ready-packages" | "self-prep-photos" | "item-photos";
@@ -54,17 +54,104 @@ type Row = {
   photoPaths: string[];
   locationUrl: string | null;
 };
+type Row = PickedProductRow;
+
+/**
+ * Kirim satu Row (paket / katalog gudang) ke percakapan aktif.
+ * Dipakai baik dari popover (mode langsung-kirim) maupun dari composer
+ * chat setelah user menekan tombol Kirim pada antrian preview.
+ *
+ * Return `true` kalau pesan chat berhasil disisipkan (walau status
+ * update di tabel asal gagal), `false` kalau delivery pesan gagal.
+ */
+export async function sendProductRow(
+  row: Row,
+  opts: { conversationId: string; peerName?: string | null },
+): Promise<boolean> {
+  const shots: { id: string; file: File }[] = [];
+  for (let i = 0; i < row.photoPaths.length; i++) {
+    const p = row.photoPaths[i];
+    const { data: signed, error: signErr } = await supabase.storage
+      .from(row.bucket)
+      .createSignedUrl(p, 3600);
+    if (signErr || !signed?.signedUrl) {
+      toast.error(`Gagal mengambil foto: ${row.productName}`);
+      return false;
+    }
+    const file = await urlToFile(
+      signed.signedUrl,
+      `${row.productName.replace(/[^\w.-]+/g, "_")}-${i + 1}.jpg`,
+      "image/jpeg",
+    );
+    if (file) shots.push({ id: `${row.id}:${i}`, file });
+  }
+
+  const qtyLabel = row.source === "catalog" ? "Stok" : "Jumlah";
+  const caption = [
+    `📦 ${row.productName}`,
+    row.qty !== null && row.baseUnit ? `${qtyLabel}: ${fmtBase(row.qty, row.baseUnit)}` : null,
+    row.variant ? `Varian: ${row.variant}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const res = await shareToChat({
+    conversationId: opts.conversationId,
+    caption,
+    locationUrl: row.locationUrl,
+    shots,
+    idemKey: `chat-share-${row.id}-${Date.now()}`,
+  });
+
+  if (res.status === "failed") {
+    toast.error(res.error || `Gagal mengirim: ${row.productName}`);
+    return false;
+  }
+
+  const nowIso = new Date().toISOString();
+  const peer = opts.peerName?.trim() || null;
+  const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
+  let upErr: unknown = null;
+  if (row.source === "ready") {
+    upErr = (await supabase
+      .from("ready_packages")
+      .update({ status: "sent", sent_at: nowIso, sent_to_name: peer })
+      .eq("id", row.id)).error;
+  } else if (row.source === "self") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    upErr = (await (supabase.from as any)("self_prep_items")
+      .update({
+        status: "sent",
+        sent_at: nowIso,
+        sent_channel: "chat",
+        sent_to: peer,
+        sent_summary: summary,
+      })
+      .eq("id", row.id)).error;
+  }
+  if (upErr) {
+    toast.error(`Terkirim tapi gagal update status: ${friendlyError(upErr)}`);
+  }
+  return true;
+}
 
 export function ProductSharePopover({
   conversationId,
   disabled,
   peerName,
   onSent,
+  onQueue,
 }: {
   conversationId: string;
   disabled?: boolean;
   peerName?: string;
   onSent?: () => void;
+  /**
+   * Kalau di-set, tap item TIDAK langsung mengirim. Item dikembalikan
+   * ke parent untuk ditumpuk sebagai preview di composer, lalu dikirim
+   * saat user menekan tombol Kirim.
+   */
+  onQueue?: (row: PickedProductRow) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
@@ -177,83 +264,22 @@ export function ProductSharePopover({
   }, [filtered]);
 
   async function pickAndSend(row: Row) {
+    if (onQueue) {
+      onQueue(row);
+      // Paket siap-kirim di-drop dari daftar supaya tidak dipilih dua kali
+      // dalam sesi popover yang sama. Katalog gudang tetap ada.
+      if (row.source !== "catalog") {
+        setRows((prev) => prev.filter((r) => r.id !== row.id));
+      }
+      setOpen(false);
+      return;
+    }
     if (sendingId) return;
     setSendingId(row.id);
     try {
-      // 1. Fetch photos (if any) via signed URLs and turn them into Files.
-      const shots: { id: string; file: File }[] = [];
-      for (let i = 0; i < row.photoPaths.length; i++) {
-        const p = row.photoPaths[i];
-        const { data: signed, error: signErr } = await supabase.storage
-          .from(row.bucket)
-          .createSignedUrl(p, 3600);
-        if (signErr || !signed?.signedUrl) {
-          toast.error("Gagal mengambil foto produk");
-          return;
-        }
-        const file = await urlToFile(
-          signed.signedUrl,
-          `${row.productName.replace(/[^\w.-]+/g, "_")}-${i + 1}.jpg`,
-          "image/jpeg",
-        );
-        if (file) shots.push({ id: `${row.id}:${i}`, file });
-      }
-
-      const qtyLabel = row.source === "catalog" ? "Stok" : "Jumlah";
-      const caption = [
-        `📦 ${row.productName}`,
-        row.qty !== null && row.baseUnit ? `${qtyLabel}: ${fmtBase(row.qty, row.baseUnit)}` : null,
-        row.variant ? `Varian: ${row.variant}` : null,
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      // 2. Send caption + photo + location into the current conversation.
-      const res = await shareToChat({
-        conversationId,
-        caption,
-        locationUrl: row.locationUrl,
-        shots,
-        idemKey: `chat-share-${row.id}`,
-      });
-
-      if (res.status === "failed") {
-        toast.error(res.error || "Gagal mengirim produk");
-        return;
-      }
-
-      // 3. Mark row as sent di tabel asalnya (kolomnya beda antar tabel).
-      // Katalog gudang tidak diubah statusnya — hanya paket yang pindah ke Riwayat.
-      const nowIso = new Date().toISOString();
-      const peer = peerName?.trim() || null;
-      const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
-      let upErr: unknown = null;
-      if (row.source === "ready") {
-        upErr = (await supabase
-          .from("ready_packages")
-          .update({ status: "sent", sent_at: nowIso, sent_to_name: peer })
-          .eq("id", row.id)).error;
-      } else if (row.source === "self") {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        upErr = (await (supabase.from as any)("self_prep_items")
-          .update({
-            status: "sent",
-            sent_at: nowIso,
-            sent_channel: "chat",
-            sent_to: peer,
-            sent_summary: summary,
-          })
-          .eq("id", row.id)).error;
-      }
-      if (upErr) {
-        // Message already delivered — surface but don't rollback the send.
-        toast.error(`Terkirim tapi gagal update status: ${friendlyError(upErr)}`);
-      } else {
-        toast.success(`Terkirim: ${row.productName}`);
-      }
-
-      // Paket yang sudah dikirim di-drop dari daftar supaya tidak dikirim
-      // dua kali. Katalog gudang tetap ada — bisa dikirim ke chat lain.
+      const ok = await sendProductRow(row, { conversationId, peerName });
+      if (!ok) return;
+      toast.success(`Terkirim: ${row.productName}`);
       if (row.source !== "catalog") {
         setRows((prev) => prev.filter((r) => r.id !== row.id));
       }
@@ -282,10 +308,13 @@ export function ProductSharePopover({
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-80 p-0" data-no-press>
         <div className="border-b p-2">
-          <div className="text-sm font-medium">Kirim produk ke chat</div>
+          <div className="text-sm font-medium">
+            {onQueue ? "Tambah produk ke pesan" : "Kirim produk ke chat"}
+          </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Ketuk paket siap kirim untuk mengirim foto + lokasi (pindah ke Riwayat).
-            Ketuk katalog gudang untuk mengirim foto + info stok tanpa mengubah stok.
+            {onQueue
+              ? "Ketuk untuk menambah ke pratinjau di composer — belum terkirim sampai Anda tekan Kirim."
+              : "Ketuk paket siap kirim untuk mengirim foto + lokasi (pindah ke Riwayat). Ketuk katalog gudang untuk mengirim foto + info stok tanpa mengubah stok."}
           </p>
           <div className="relative mt-2">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
