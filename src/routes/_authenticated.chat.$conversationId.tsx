@@ -13,7 +13,7 @@ import {
   History as HistoryIcon,
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
-  Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus,
+  Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus, Package,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
