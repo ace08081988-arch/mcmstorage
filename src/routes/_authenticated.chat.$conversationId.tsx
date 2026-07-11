@@ -2012,10 +2012,10 @@ function ChatRoomPage() {
       >
         {editing ? (
           <div className="mb-2 flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
-            <Pencil className="mt-0.5 h-3.5 w-3.5 text-primary" />
+            <Pencil className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-primary">Edit pesan</div>
-              <div className="line-clamp-2 text-muted-foreground">
+              <div className="line-clamp-2 break-words [overflow-wrap:anywhere] text-muted-foreground">
                 {previewText(editing.body) || "(kosong)"}
               </div>
             </div>
@@ -2023,7 +2023,7 @@ function ChatRoomPage() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-6 w-6 shrink-0"
               aria-label="Batal edit"
               onClick={() => {
                 setEditing(null);
@@ -2035,12 +2035,12 @@ function ChatRoomPage() {
           </div>
         ) : replyTo ? (
           <div className="mb-2 flex items-start gap-2 rounded-md border-l-2 border-primary bg-muted/60 px-2 py-1 text-xs">
-            <Reply className="mt-0.5 h-3.5 w-3.5 text-primary" />
+            <Reply className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <div className="font-semibold">
+              <div className="truncate font-semibold">
                 Balas {replyTo.sender_id === myId ? "Anda" : (profiles.data?.get(replyTo.sender_id)?.display_name || "Pengguna")}
               </div>
-              <div className="line-clamp-2 text-muted-foreground">
+              <div className="line-clamp-2 break-words [overflow-wrap:anywhere] text-muted-foreground">
                 <MessagePreview message={replyTo} />
               </div>
             </div>
@@ -2048,7 +2048,7 @@ function ChatRoomPage() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-6 w-6 shrink-0"
               aria-label="Batal balas"
               onClick={() => setReplyTo(null)}
             >
