@@ -2576,10 +2576,15 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               dari detail judul kalau memang perlu koordinasi internal.
             */}
             {view === "sent" ? null : r.prep_count > 0 ? (
-              <button
-                type="button"
+              <Link
+                to="/ecer"
+                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" }}
                 onClick={(e) => {
                   e.stopPropagation();
+                  // Cegah navigasi langsung; buka modal konfirmasi dulu supaya
+                  // owner bisa memastikan jumlah kotak & lokasi sebelum masuk
+                  // ke halaman verifikasi pembayaran.
+                  e.preventDefault();
                   const withLoc = r.worker_shots.filter((s) => s.location_url).length;
                   void (async () => {
                     const ok = await confirmDialog({
@@ -2606,7 +2611,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
               >
                 <Send className="h-3 w-3" /> Kirim ke pembeli
-              </button>
+              </Link>
             ) : (
               <Link
                 to="/ecer"
