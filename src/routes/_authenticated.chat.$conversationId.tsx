@@ -705,6 +705,16 @@ function ChatRoomPage() {
   const pendingProductsKey = conversationId
     ? `mcm.chat.pendingProducts.${conversationId}`
     : null;
+  // Status singkat yang muncul setelah localStorage tertulis sinkron. Tidak
+  // menggantikan toast migrasi/error — hanya memberi jaminan visual bahwa
+  // perubahan qty/hapus chip sudah aman di penyimpanan lokal.
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved">("idle");
+  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashSaved = useCallback(() => {
+    setSaveStatus("saved");
+    if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+    saveStatusTimerRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+  }, []);
   // Tulis nilai `pendingProducts` ke localStorage SEKARANG (tidak menunggu
   // effect). Dipakai oleh handler +/− dan prompt qty supaya perubahan tetap
   // aman walau tab langsung ditutup sebelum React sempat menjalankan effect
@@ -723,6 +733,7 @@ function ChatRoomPage() {
           JSON.stringify({ v: PENDING_PRODUCTS_VERSION, items: next }),
         );
       }
+      flashSaved();
     } catch { /* ignore quota */ }
   };
   // Wrapper untuk update+persist dalam satu langkah. Menerima nilai baru
@@ -741,6 +752,9 @@ function ChatRoomPage() {
     [],
   );
   const pendingHydratedRef = useRef(false);
+  useEffect(() => () => {
+    if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+  }, []);
   useEffect(() => {
     pendingHydratedRef.current = false;
     if (!pendingProductsKey) return;
@@ -1977,9 +1991,16 @@ function ChatRoomPage() {
         {pendingProducts.length > 0 ? (
           <div className="mb-2 space-y-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-primary">
-                Produk siap dikirim ({pendingProducts.length})
-              </span>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="font-semibold text-primary">
+                  Produk siap dikirim ({pendingProducts.length})
+                </span>
+                {saveStatus === "saved" ? (
+                  <span className="inline-flex shrink-0 items-center rounded bg-emerald-500/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                    tersimpan
+                  </span>
+                ) : null}
+              </div>
               <button
                 type="button"
                 className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
