@@ -2588,21 +2588,17 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 <Send className="h-3 w-3" /> Kirim ke pembeli
               </Link>
             ) : (
-              <button
-                type="button"
-                aria-disabled="true"
-                title="Belum ada kotak siap untuk dikirim"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toast.info("Belum ada kotak siap untuk dikirim", {
-                    description: "Siapkan minimal 1 kotak dulu di halaman detail, lalu tombol Kirim akan aktif.",
-                  });
-                }}
+              <Link
+                to="/ecer"
+                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
+                onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="inline-flex h-7 shrink-0 cursor-not-allowed items-center justify-center gap-1 rounded-md border border-dashed bg-muted/40 px-2 text-[11px] font-medium text-muted-foreground opacity-70"
+                aria-label={`Siapkan minimal 1 kotak untuk ${r.name} sebelum bisa dikirim`}
+                title="Belum ada kotak siap — buka detail untuk menyiapkan kotak dulu"
+                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md border border-dashed border-primary/50 bg-primary/5 px-2 text-[11px] font-semibold text-primary shadow-sm transition hover:bg-primary/10"
               >
-                <Send className="h-3 w-3 opacity-60" /> Kirim
-              </button>
+                <Send className="h-3 w-3 opacity-70" /> Siapkan kotak →
+              </Link>
             )}
             {/* Aksi "Kembalikan ke aktif" dan "Hapus dari Riwayat" untuk
                 view === "sent" dikonsolidasi ke DropdownMenu di kanan atas
