@@ -38,6 +38,56 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatInviteCode } from "@/lib/invite";
 import { fmtBase } from "@/lib/stock-format";
+import { parseWeightToGrams, parsePlainQty } from "@/lib/weight-parse";
+
+// Batas rentang qty yang diizinkan sebelum disimpan. Nilai di luar rentang
+// biasanya artefak salah ketik (mis. tanpa satuan) atau overflow yang tidak
+// masuk akal untuk skala toko retail — clamp agar localStorage tidak
+// pernah menyimpan angka korup.
+const QTY_STEP_G = 100;    // gram: satu ons
+const QTY_STEP_PCS = 1;
+const QTY_MIN_G = 1;
+const QTY_MIN_PCS = 1;
+const QTY_MAX_G = 10_000_000;   // 10 000 kg
+const QTY_MAX_PCS = 1_000_000;  // 1 juta pcs
+
+/** Batas [min, max] dan step sesuai base unit. */
+export function qtyBounds(baseUnit: "g" | "pcs" | null | undefined) {
+  if (baseUnit === "g") {
+    return { min: QTY_MIN_G, max: QTY_MAX_G, step: QTY_STEP_G };
+  }
+  return { min: QTY_MIN_PCS, max: QTY_MAX_PCS, step: QTY_STEP_PCS };
+}
+
+/** Clamp qty ke rentang yang diizinkan; kembalikan null bila tidak valid. */
+export function clampQty(
+  n: number | null | undefined,
+  baseUnit: "g" | "pcs" | null | undefined,
+): number | null {
+  if (n == null || !Number.isFinite(n)) return null;
+  const { min, max } = qtyBounds(baseUnit);
+  if (n < min) return min;
+  if (n > max) return max;
+  // Bulatkan gram ke 0.001 dan pcs ke integer agar stabil di localStorage.
+  return baseUnit === "g" ? Math.round(n * 1000) / 1000 : Math.round(n);
+}
+
+/**
+ * Parse input mentah dari user (prompt / ketik) sesuai base unit.
+ * - Untuk `g`: menerima "1 kg", "500 gr", "2 ons", "500 mg", atau angka.
+ * - Untuk `pcs`: hanya angka positif (koma id-ID diterima).
+ * Return `null` bila tidak valid.
+ */
+export function parseQtyInput(
+  raw: string,
+  baseUnit: "g" | "pcs" | null | undefined,
+): number | null {
+  if (typeof raw !== "string") return null;
+  const s = raw.trim();
+  if (!s) return null;
+  const n = baseUnit === "g" ? parseWeightToGrams(s) : parsePlainQty(s);
+  return clampQty(n, baseUnit);
+}
 import {
   getConversationMeta,
   markConversationRead,
@@ -174,6 +224,13 @@ function sanitizePendingProducts(
       if (Number.isFinite(n)) { qty = n; needsMigration = true; }
     } else if (r.qty === undefined) {
       needsMigration = true;
+    }
+    // Clamp ke rentang yang diizinkan; nilai di luar batas dianggap
+    // korupsi dan dinormalisasi (mis. hasil edit manual localStorage).
+    if (qty !== null) {
+      const clamped = clampQty(qty, baseUnit);
+      if (clamped !== qty) needsMigration = true;
+      qty = clamped;
     }
     // ── variant / locationUrl ── (opsional, default null)
     const variant = typeof r.variant === "string" ? r.variant : null;
@@ -2027,29 +2084,45 @@ function ChatRoomPage() {
                 // tampilkan tombol − / + dengan step sesuai unit.
                 const editable =
                   p.source !== "catalog" && p.qty !== null && p.baseUnit !== null;
-                const step = p.baseUnit === "g" ? 100 : 1;
+                const bounds = qtyBounds(p.baseUnit);
+                const step = bounds.step;
                 const adjustQty = (delta: number) => {
                   updatePendingProducts((prev) =>
                     prev.map((row, i) => {
                       if (i !== idx) return row;
                       if (row.qty === null) return row;
-                      const next = Math.max(step, row.qty + delta);
+                      const raw = row.qty + delta;
+                      const next = clampQty(raw, row.baseUnit);
+                      if (next === null) return row;
                       return { ...row, qty: next };
                     }),
                   );
                 };
                 const promptQty = () => {
                   if (!editable || p.qty === null || !p.baseUnit) return;
-                  const unitLabel = p.baseUnit === "g" ? "gram" : "pcs";
+                  const unitLabel = p.baseUnit === "g" ? "gram (mis. 1 kg, 500 gr, 2 ons)" : "pcs";
                   const input = window.prompt(
                     `Ubah jumlah ${p.productName} (${unitLabel}):`,
                     String(p.qty),
                   );
                   if (input === null) return;
-                  const n = Number(input.replace(",", "."));
-                  if (!Number.isFinite(n) || n < step) {
-                    toast.error(`Jumlah minimal ${step} ${unitLabel}.`);
+                  const n = parseQtyInput(input, p.baseUnit);
+                  if (n === null) {
+                    toast.error(
+                      p.baseUnit === "g"
+                        ? "Jumlah tidak valid. Contoh: 1 kg, 500 gr, 2 ons."
+                        : "Jumlah harus angka positif.",
+                    );
                     return;
+                  }
+                  if (n < bounds.min) {
+                    toast.error(`Jumlah minimal ${bounds.min} ${p.baseUnit === "g" ? "gr" : "pcs"}.`);
+                    return;
+                  }
+                  if (n >= bounds.max) {
+                    toast.warning(
+                      `Jumlah dibatasi maksimum ${bounds.max.toLocaleString("id-ID")} ${p.baseUnit === "g" ? "gr" : "pcs"}.`,
+                    );
                   }
                   updatePendingProducts((prev) =>
                     prev.map((row, i) => (i === idx ? { ...row, qty: n } : row)),
