@@ -723,6 +723,7 @@ function ChatRoomPage() {
             const ok = await sendProductRow(row, {
               conversationId,
               peerName: displayedPeerName,
+              silent: true,
             });
             if (ok) {
               done++;
