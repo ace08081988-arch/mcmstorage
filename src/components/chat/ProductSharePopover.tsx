@@ -44,8 +44,8 @@ type ReadyRow = {
 
 type Row = {
   id: string;
-  source: "ready" | "self";
-  bucket: "ready-packages" | "self-prep-photos";
+  source: "ready" | "self" | "catalog";
+  bucket: "ready-packages" | "self-prep-photos" | "item-photos";
   productName: string;
   baseUnit: "g" | "pcs" | null;
   qty: number | null;
@@ -74,7 +74,7 @@ export function ProductSharePopover({
 
   async function reload() {
     setLoading(true);
-    const [readyRes, selfRes] = await Promise.all([
+    const [readyRes, selfRes, catalogRes] = await Promise.all([
       supabase
         .from("ready_packages")
         .select(
@@ -88,6 +88,10 @@ export function ProductSharePopover({
         .select("id,title,note,photo_path,photo_paths,location_url,created_at")
         .eq("status", "ready")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("warehouse_items")
+        .select("id,name,base_unit,stock_base,image_path,package_type")
+        .order("name", { ascending: true }),
     ]);
     setLoading(false);
     if (readyRes.error) {
@@ -131,7 +135,27 @@ export function ProductSharePopover({
         locationUrl: r.location_url,
       };
     });
-    setRows([...mappedReady, ...mappedSelf]);
+    type CatalogRow = {
+      id: string;
+      name: string;
+      base_unit: "g" | "pcs";
+      stock_base: number | null;
+      image_path: string | null;
+      package_type: string | null;
+    };
+    const mappedCatalog: Row[] = ((catalogRes.data ?? []) as unknown as CatalogRow[]).map((r) => ({
+      id: r.id,
+      source: "catalog" as const,
+      bucket: "item-photos" as const,
+      productName: r.name || "Produk",
+      baseUnit: (r.base_unit ?? "pcs") as "g" | "pcs",
+      qty: Number(r.stock_base) || 0,
+      variant: r.package_type?.trim() ? r.package_type.trim() : null,
+      photoPath: r.image_path,
+      photoPaths: r.image_path ? [r.image_path] : [],
+      locationUrl: null,
+    }));
+    setRows([...mappedReady, ...mappedSelf, ...mappedCatalog]);
   }
 
   useEffect(() => {
@@ -169,9 +193,10 @@ export function ProductSharePopover({
         if (file) shots.push({ id: `${row.id}:${i}`, file });
       }
 
+      const qtyLabel = row.source === "catalog" ? "Stok" : "Jumlah";
       const caption = [
         `📦 ${row.productName}`,
-        row.qty !== null && row.baseUnit ? `Jumlah: ${fmtBase(row.qty, row.baseUnit)}` : null,
+        row.qty !== null && row.baseUnit ? `${qtyLabel}: ${fmtBase(row.qty, row.baseUnit)}` : null,
         row.variant ? `Varian: ${row.variant}` : null,
       ]
         .filter(Boolean)
@@ -192,24 +217,28 @@ export function ProductSharePopover({
       }
 
       // 3. Mark row as sent di tabel asalnya (kolomnya beda antar tabel).
+      // Katalog gudang tidak diubah statusnya — hanya paket yang pindah ke Riwayat.
       const nowIso = new Date().toISOString();
       const peer = peerName?.trim() || null;
       const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
-      const upErr = row.source === "ready"
-        ? (await supabase
-            .from("ready_packages")
-            .update({ status: "sent", sent_at: nowIso, sent_to_name: peer })
-            .eq("id", row.id)).error
+      let upErr: unknown = null;
+      if (row.source === "ready") {
+        upErr = (await supabase
+          .from("ready_packages")
+          .update({ status: "sent", sent_at: nowIso, sent_to_name: peer })
+          .eq("id", row.id)).error;
+      } else if (row.source === "self") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        : (await (supabase.from as any)("self_prep_items")
-            .update({
-              status: "sent",
-              sent_at: nowIso,
-              sent_channel: "chat",
-              sent_to: peer,
-              sent_summary: summary,
-            })
-            .eq("id", row.id)).error;
+        upErr = (await (supabase.from as any)("self_prep_items")
+          .update({
+            status: "sent",
+            sent_at: nowIso,
+            sent_channel: "chat",
+            sent_to: peer,
+            sent_summary: summary,
+          })
+          .eq("id", row.id)).error;
+      }
       if (upErr) {
         // Message already delivered — surface but don't rollback the send.
         toast.error(`Terkirim tapi gagal update status: ${friendlyError(upErr)}`);
@@ -217,9 +246,11 @@ export function ProductSharePopover({
         toast.success(`Terkirim: ${row.productName}`);
       }
 
-      // Optimistically drop from local list so the same package can't be
-      // resent by accident.
-      setRows((prev) => prev.filter((r) => r.id !== row.id));
+      // Paket yang sudah dikirim di-drop dari daftar supaya tidak dikirim
+      // dua kali. Katalog gudang tetap ada — bisa dikirim ke chat lain.
+      if (row.source !== "catalog") {
+        setRows((prev) => prev.filter((r) => r.id !== row.id));
+      }
       onSent?.();
     } catch (e) {
       toast.error((e as Error)?.message || "Gagal mengirim produk");
