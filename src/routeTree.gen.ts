@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrustRouteImport } from './routes/trust'
+import { Route as TestProductButtonRouteImport } from './routes/test-product-button'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -130,6 +131,11 @@ import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_
 const TrustRoute = TrustRouteImport.update({
   id: '/trust',
   path: '/trust',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestProductButtonRoute = TestProductButtonRouteImport.update({
+  id: '/test-product-button',
+  path: '/test-product-button',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -786,6 +792,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/test-product-button': typeof TestProductButtonRoute
   '/trust': typeof TrustRoute
   '/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/audit': typeof AuthenticatedAuditRoute
@@ -902,6 +909,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/test-product-button': typeof TestProductButtonRoute
   '/trust': typeof TrustRoute
   '/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/audit': typeof AuthenticatedAuditRoute
@@ -1020,6 +1028,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/test-product-button': typeof TestProductButtonRoute
   '/trust': typeof TrustRoute
   '/_authenticated/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
@@ -1141,6 +1150,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/test-product-button'
     | '/trust'
     | '/admin-denial-log'
     | '/audit'
@@ -1257,6 +1267,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/test-product-button'
     | '/trust'
     | '/admin-denial-log'
     | '/audit'
@@ -1374,6 +1385,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/test-product-button'
     | '/trust'
     | '/_authenticated/admin-denial-log'
     | '/_authenticated/audit'
@@ -1494,6 +1506,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  TestProductButtonRoute: typeof TestProductButtonRoute
   TrustRoute: typeof TrustRoute
   ApiVersionRoute: typeof ApiVersionRoute
   DiagnostikPaketRoute: typeof DiagnostikPaketRoute
@@ -1548,6 +1561,13 @@ declare module '@tanstack/react-router' {
       path: '/trust'
       fullPath: '/trust'
       preLoaderRoute: typeof TrustRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/test-product-button': {
+      id: '/test-product-button'
+      path: '/test-product-button'
+      fullPath: '/test-product-button'
+      preLoaderRoute: typeof TestProductButtonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -2576,6 +2596,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  TestProductButtonRoute: TestProductButtonRoute,
   TrustRoute: TrustRoute,
   ApiVersionRoute: ApiVersionRoute,
   DiagnostikPaketRoute: DiagnostikPaketRoute,
