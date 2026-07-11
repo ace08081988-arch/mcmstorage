@@ -14,7 +14,6 @@ import {
 import { useStartDm } from "@/lib/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { respondFriendRequest } from "@/lib/invite";
 
 export const Route = createFileRoute("/_authenticated/kontak/permintaan")({
   component: FriendRequestsPage,
