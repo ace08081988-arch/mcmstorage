@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatInviteCode } from "@/lib/invite";
+import { fmtBase } from "@/lib/stock-format";
 import {
   getConversationMeta,
   markConversationRead,
@@ -1857,21 +1858,39 @@ function ChatRoomPage() {
               {pendingProducts.map((p, idx) => (
                 <li
                   key={`${p.source}:${p.id}:${idx}`}
-                  className="inline-flex max-w-full items-center gap-1 rounded-full border bg-background px-2 py-0.5"
+                  className="inline-flex max-w-[220px] items-center gap-1.5 rounded-md border bg-background py-1 pl-1 pr-1.5"
                 >
-                  <Package className="h-3 w-3 shrink-0 text-primary" />
-                  <span className="truncate text-[11px]" title={p.productName}>
-                    {p.productName}
-                  </span>
+                  <PendingProductThumb path={p.photoPath} bucket={p.bucket} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[11px] font-medium leading-tight" title={p.productName}>
+                      {p.productName}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] leading-tight text-muted-foreground">
+                      {p.qty !== null && p.baseUnit ? (
+                        <span>{fmtBase(p.qty, p.baseUnit)}</span>
+                      ) : (
+                        <span className="rounded bg-muted px-1 py-px text-[9px]">sendiri</span>
+                      )}
+                      {p.variant ? (
+                        <span className="truncate" title={p.variant}>· {p.variant}</span>
+                      ) : null}
+                      {p.source === "catalog" ? (
+                        <span className="rounded bg-primary/10 px-1 py-px text-[9px] text-primary">katalog</span>
+                      ) : null}
+                      {p.locationUrl ? (
+                        <span className="text-[9px]">· lokasi</span>
+                      ) : null}
+                    </div>
+                  </div>
                   <button
                     type="button"
                     aria-label={`Buang ${p.productName}`}
-                    className="ml-0.5 rounded-full text-muted-foreground hover:text-foreground"
+                    className="ml-0.5 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
                     onClick={() =>
                       setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
                     }
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </li>
               ))}
@@ -2372,3 +2391,48 @@ function ChatRoomPage() {
 
 // Keep a hint link in case the room URL is opened directly without context.
 export const ChatRoomFallbackLink = () => <Link to="/chat">Kembali ke daftar chat</Link>;
+
+const pendingThumbCache = new Map<string, { url: string; exp: number }>();
+
+function PendingProductThumb({
+  path,
+  bucket,
+}: {
+  path: string | null;
+  bucket: "ready-packages" | "self-prep-photos" | "item-photos";
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!path) return;
+    const key = `${bucket}:${path}`;
+    const c = pendingThumbCache.get(key);
+    if (c && c.exp > Date.now()) {
+      setUrl(c.url);
+      return;
+    }
+    let alive = true;
+    supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 3600)
+      .then(({ data }) => {
+        if (!alive || !data?.signedUrl) return;
+        pendingThumbCache.set(key, { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 });
+        setUrl(data.signedUrl);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [path, bucket]);
+  if (!path) {
+    return (
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-dashed text-muted-foreground">
+        <Package className="h-3.5 w-3.5" />
+      </div>
+    );
+  }
+  return (
+    <div className="h-9 w-9 shrink-0 overflow-hidden rounded border bg-muted">
+      {url ? <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
+    </div>
+  );
+}
