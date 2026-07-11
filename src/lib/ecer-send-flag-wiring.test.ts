@@ -12,15 +12,15 @@ import { resolve } from "node:path";
 const readSrc = (rel: string) =>
   readFileSync(resolve(process.cwd(), rel), "utf8");
 
-/** Ambil blok source Link "Kirim ke pembeli" — dari `<Link` sampai `</Link>` terdekat yg mengandung teksnya. */
-function extractKirimLinkBlock(src: string): string | null {
+/** Ambil blok source tombol "Kirim ke pembeli" — dari `<button` sampai `</button>` terdekat yg mengandung teksnya. */
+function extractKirimButtonBlock(src: string): string | null {
   const idx = src.indexOf("Kirim ke pembeli");
   if (idx < 0) return null;
-  // Backtrack ke `<Link` sebelum idx.
-  const start = src.lastIndexOf("<Link", idx);
-  const end = src.indexOf("</Link>", idx);
+  // Backtrack ke `<button` sebelum idx (abaikan tombol lain yg mungkin ada).
+  const start = src.lastIndexOf("<button", idx);
+  const end = src.indexOf("</button>", idx);
   if (start < 0 || end < 0) return null;
-  return src.slice(start, end + "</Link>".length);
+  return src.slice(start, end + "</button>".length);
 }
 
 describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
