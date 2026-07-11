@@ -44,8 +44,8 @@ type ReadyRow = {
 
 type Row = {
   id: string;
-  source: "ready" | "self";
-  bucket: "ready-packages" | "self-prep-photos";
+  source: "ready" | "self" | "catalog";
+  bucket: "ready-packages" | "self-prep-photos" | "item-photos";
   productName: string;
   baseUnit: "g" | "pcs" | null;
   qty: number | null;
@@ -74,7 +74,7 @@ export function ProductSharePopover({
 
   async function reload() {
     setLoading(true);
-    const [readyRes, selfRes] = await Promise.all([
+    const [readyRes, selfRes, catalogRes] = await Promise.all([
       supabase
         .from("ready_packages")
         .select(
@@ -88,6 +88,10 @@ export function ProductSharePopover({
         .select("id,title,note,photo_path,photo_paths,location_url,created_at")
         .eq("status", "ready")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("warehouse_items")
+        .select("id,name,base_unit,stock_base,image_path,package_type")
+        .order("name", { ascending: true }),
     ]);
     setLoading(false);
     if (readyRes.error) {
@@ -131,7 +135,27 @@ export function ProductSharePopover({
         locationUrl: r.location_url,
       };
     });
-    setRows([...mappedReady, ...mappedSelf]);
+    type CatalogRow = {
+      id: string;
+      name: string;
+      base_unit: "g" | "pcs";
+      stock_base: number | null;
+      image_path: string | null;
+      package_type: string | null;
+    };
+    const mappedCatalog: Row[] = ((catalogRes.data ?? []) as unknown as CatalogRow[]).map((r) => ({
+      id: r.id,
+      source: "catalog" as const,
+      bucket: "item-photos" as const,
+      productName: r.name || "Produk",
+      baseUnit: (r.base_unit ?? "pcs") as "g" | "pcs",
+      qty: Number(r.stock_base) || 0,
+      variant: r.package_type?.trim() ? r.package_type.trim() : null,
+      photoPath: r.image_path,
+      photoPaths: r.image_path ? [r.image_path] : [],
+      locationUrl: null,
+    }));
+    setRows([...mappedReady, ...mappedSelf, ...mappedCatalog]);
   }
 
   useEffect(() => {
@@ -145,6 +169,12 @@ export function ProductSharePopover({
       `${r.productName} ${r.variant ?? ""}`.toLowerCase().includes(needle),
     );
   }, [rows, q]);
+
+  const grouped = useMemo(() => {
+    const paket = filtered.filter((r) => r.source !== "catalog");
+    const katalog = filtered.filter((r) => r.source === "catalog");
+    return { paket, katalog };
+  }, [filtered]);
 
   async function pickAndSend(row: Row) {
     if (sendingId) return;
@@ -169,9 +199,10 @@ export function ProductSharePopover({
         if (file) shots.push({ id: `${row.id}:${i}`, file });
       }
 
+      const qtyLabel = row.source === "catalog" ? "Stok" : "Jumlah";
       const caption = [
         `📦 ${row.productName}`,
-        row.qty !== null && row.baseUnit ? `Jumlah: ${fmtBase(row.qty, row.baseUnit)}` : null,
+        row.qty !== null && row.baseUnit ? `${qtyLabel}: ${fmtBase(row.qty, row.baseUnit)}` : null,
         row.variant ? `Varian: ${row.variant}` : null,
       ]
         .filter(Boolean)
@@ -192,24 +223,28 @@ export function ProductSharePopover({
       }
 
       // 3. Mark row as sent di tabel asalnya (kolomnya beda antar tabel).
+      // Katalog gudang tidak diubah statusnya — hanya paket yang pindah ke Riwayat.
       const nowIso = new Date().toISOString();
       const peer = peerName?.trim() || null;
       const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
-      const upErr = row.source === "ready"
-        ? (await supabase
-            .from("ready_packages")
-            .update({ status: "sent", sent_at: nowIso, sent_to_name: peer })
-            .eq("id", row.id)).error
+      let upErr: unknown = null;
+      if (row.source === "ready") {
+        upErr = (await supabase
+          .from("ready_packages")
+          .update({ status: "sent", sent_at: nowIso, sent_to_name: peer })
+          .eq("id", row.id)).error;
+      } else if (row.source === "self") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        : (await (supabase.from as any)("self_prep_items")
-            .update({
-              status: "sent",
-              sent_at: nowIso,
-              sent_channel: "chat",
-              sent_to: peer,
-              sent_summary: summary,
-            })
-            .eq("id", row.id)).error;
+        upErr = (await (supabase.from as any)("self_prep_items")
+          .update({
+            status: "sent",
+            sent_at: nowIso,
+            sent_channel: "chat",
+            sent_to: peer,
+            sent_summary: summary,
+          })
+          .eq("id", row.id)).error;
+      }
       if (upErr) {
         // Message already delivered — surface but don't rollback the send.
         toast.error(`Terkirim tapi gagal update status: ${friendlyError(upErr)}`);
@@ -217,9 +252,11 @@ export function ProductSharePopover({
         toast.success(`Terkirim: ${row.productName}`);
       }
 
-      // Optimistically drop from local list so the same package can't be
-      // resent by accident.
-      setRows((prev) => prev.filter((r) => r.id !== row.id));
+      // Paket yang sudah dikirim di-drop dari daftar supaya tidak dikirim
+      // dua kali. Katalog gudang tetap ada — bisa dikirim ke chat lain.
+      if (row.source !== "catalog") {
+        setRows((prev) => prev.filter((r) => r.id !== row.id));
+      }
       onSent?.();
     } catch (e) {
       toast.error((e as Error)?.message || "Gagal mengirim produk");
@@ -245,10 +282,10 @@ export function ProductSharePopover({
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-80 p-0" data-no-press>
         <div className="border-b p-2">
-          <div className="text-sm font-medium">Kirim produk siap kirim</div>
+          <div className="text-sm font-medium">Kirim produk ke chat</div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Ketuk satu produk untuk langsung kirim foto + lokasi. Stok akan tetap
-            berkurang dan paket pindah ke Riwayat terkirim.
+            Ketuk paket siap kirim untuk mengirim foto + lokasi (pindah ke Riwayat).
+            Ketuk katalog gudang untuk mengirim foto + info stok tanpa mengubah stok.
           </p>
           <div className="relative mt-2">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -269,45 +306,36 @@ export function ProductSharePopover({
           ) : filtered.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
               {rows.length === 0
-                ? "Belum ada paket siap kirim di gudang."
+                ? "Belum ada produk di gudang."
                 : "Tidak ada produk yang cocok."}
             </div>
           ) : (
-            <ul className="divide-y">
-              {filtered.map((row) => (
-                <li key={row.id}>
-                  <button
-                    type="button"
-                    onClick={() => void pickAndSend(row)}
-                    disabled={sendingId !== null}
-                    className="flex w-full items-center gap-2 p-2 text-left hover:bg-accent disabled:opacity-60"
-                  >
-                    <ProductThumb path={row.photoPath} bucket={row.bucket} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">
-                        {row.productName}
-                      </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-                        {row.qty !== null && row.baseUnit ? (
-                          <span>{fmtBase(row.qty, row.baseUnit)}</span>
-                        ) : (
-                          <span className="rounded bg-muted px-1 py-0.5 text-[10px]">sendiri</span>
-                        )}
-                        {row.variant ? <span>· {row.variant}</span> : null}
-                        {row.locationUrl ? (
-                          <span className="inline-flex items-center gap-0.5">
-                            <MapPin className="h-3 w-3" /> lokasi
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    {sendingId === row.id ? (
-                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div>
+              {grouped.paket.length > 0 ? (
+                <>
+                  <div className="sticky top-0 z-[1] bg-muted/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                    Paket siap kirim
+                  </div>
+                  <ul className="divide-y">
+                    {grouped.paket.map((row) => (
+                      <ProductRow key={row.id} row={row} sendingId={sendingId} onPick={pickAndSend} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              {grouped.katalog.length > 0 ? (
+                <>
+                  <div className="sticky top-0 z-[1] bg-muted/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                    Katalog gudang
+                  </div>
+                  <ul className="divide-y">
+                    {grouped.katalog.map((row) => (
+                      <ProductRow key={row.id} row={row} sendingId={sendingId} onPick={pickAndSend} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </div>
           )}
         </div>
       </PopoverContent>
@@ -316,7 +344,53 @@ export function ProductSharePopover({
 }
 
 const thumbCache = new Map<string, { url: string; exp: number }>();
-function ProductThumb({ path, bucket }: { path: string | null; bucket: "ready-packages" | "self-prep-photos" }) {
+
+function ProductRow({
+  row,
+  sendingId,
+  onPick,
+}: {
+  row: Row;
+  sendingId: string | null;
+  onPick: (row: Row) => void | Promise<void>;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => void onPick(row)}
+        disabled={sendingId !== null}
+        className="flex w-full items-center gap-2 p-2 text-left hover:bg-accent disabled:opacity-60"
+      >
+        <ProductThumb path={row.photoPath} bucket={row.bucket} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">{row.productName}</div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+            {row.qty !== null && row.baseUnit ? (
+              <span>{fmtBase(row.qty, row.baseUnit)}</span>
+            ) : (
+              <span className="rounded bg-muted px-1 py-0.5 text-[10px]">sendiri</span>
+            )}
+            {row.variant ? <span>· {row.variant}</span> : null}
+            {row.locationUrl ? (
+              <span className="inline-flex items-center gap-0.5">
+                <MapPin className="h-3 w-3" /> lokasi
+              </span>
+            ) : null}
+            {row.source === "catalog" ? (
+              <span className="rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary">katalog</span>
+            ) : null}
+          </div>
+        </div>
+        {sendingId === row.id ? (
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+        ) : null}
+      </button>
+    </li>
+  );
+}
+
+function ProductThumb({ path, bucket }: { path: string | null; bucket: "ready-packages" | "self-prep-photos" | "item-photos" }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!path) return;
