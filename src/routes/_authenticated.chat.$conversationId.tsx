@@ -1817,7 +1817,7 @@ function ChatRoomPage() {
           <Button
             type="submit"
             size="icon"
-            disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending}
+            disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending || !!productSendProgress}
             aria-label="Kirim"
             aria-busy={isSending}
             className="h-10 w-10 shrink-0"
