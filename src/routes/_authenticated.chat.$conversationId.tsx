@@ -14,6 +14,7 @@ import {
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
   Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus, Package,
+  Minus, Plus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
