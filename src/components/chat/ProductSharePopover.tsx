@@ -282,10 +282,10 @@ export function ProductSharePopover({
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-80 p-0" data-no-press>
         <div className="border-b p-2">
-          <div className="text-sm font-medium">Kirim produk siap kirim</div>
+          <div className="text-sm font-medium">Kirim produk ke chat</div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Ketuk satu produk untuk langsung kirim foto + lokasi. Stok akan tetap
-            berkurang dan paket pindah ke Riwayat terkirim.
+            Ketuk paket siap kirim untuk mengirim foto + lokasi (pindah ke Riwayat).
+            Ketuk katalog gudang untuk mengirim foto + info stok tanpa mengubah stok.
           </p>
           <div className="relative mt-2">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
