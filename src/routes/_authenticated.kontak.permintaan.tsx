@@ -333,3 +333,48 @@ function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
     </div>
   );
 }
+
+function StatusChip({
+  status,
+}: {
+  status: "pending" | "accepted" | "rejected" | "cancelled";
+}) {
+  if (status === "accepted") {
+    return (
+      <span
+        aria-label="Status: diterima"
+        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600"
+      >
+        <CheckCircle2 className="h-3 w-3" /> Diterima
+      </span>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <span
+        aria-label="Status: ditolak"
+        className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-600"
+      >
+        <XCircle className="h-3 w-3" /> Ditolak
+      </span>
+    );
+  }
+  if (status === "cancelled") {
+    return (
+      <span
+        aria-label="Status: dibatalkan"
+        className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+      >
+        <X className="h-3 w-3" /> Dibatalkan
+      </span>
+    );
+  }
+  return (
+    <span
+      aria-label="Status: menunggu diterima"
+      className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600"
+    >
+      <Clock className="h-3 w-3" /> Menunggu
+    </span>
+  );
+}
