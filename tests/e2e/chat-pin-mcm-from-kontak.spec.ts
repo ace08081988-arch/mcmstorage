@@ -42,9 +42,24 @@ function hasAuthState(): boolean {
 
 // ── 1) Source guard: kontak → chat wiring & dialog placeholder ────────
 test.describe("kontak → DM: wiring startDm + navigate($conversationId)", () => {
+  test("route parent /kontak wajib layout Outlet supaya /kontak/permintaan tidak nyangkut ke daftar kontak", () => {
+    const parent = readFileSync(
+      resolve(process.cwd(), "src/routes/_authenticated.kontak.tsx"),
+      "utf8",
+    );
+    expect(parent).toMatch(/createFileRoute\(\s*["']\/_authenticated\/kontak["']\s*\)/);
+    expect(parent).toMatch(/<Outlet\s*\/>/);
+
+    const index = readFileSync(
+      resolve(process.cwd(), "src/routes/_authenticated.kontak.index.tsx"),
+      "utf8",
+    );
+    expect(index).toMatch(/createFileRoute\(\s*["']\/_authenticated\/kontak\/["']\s*\)/);
+  });
+
   test("halaman /kontak: tombol Chat pakai startDm.mutateAsync lalu navigate ke /chat/$conversationId", () => {
     const src = readFileSync(
-      resolve(process.cwd(), "src/routes/_authenticated.kontak.tsx"),
+      resolve(process.cwd(), "src/routes/_authenticated.kontak.index.tsx"),
       "utf8",
     );
     // Harus memakai mutateAsync (bukan mutate) supaya id percakapan

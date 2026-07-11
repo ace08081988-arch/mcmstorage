@@ -72,6 +72,7 @@ import { Route as AuthenticatedBukuAlamatRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
+import { Route as AuthenticatedKontakIndexRouteImport } from './routes/_authenticated.kontak.index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lovable.visual.worker-shot-marksent'
 import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
@@ -459,6 +460,12 @@ const AuthenticatedAdminDenialLogRoute =
     id: '/admin-denial-log',
     path: '/admin-denial-log',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKontakIndexRoute =
+  AuthenticatedKontakIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedKontakRoute,
   } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/',
@@ -870,6 +877,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
+  '/kontak/': typeof AuthenticatedKontakIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
@@ -910,7 +918,6 @@ export interface FileRoutesByTo {
   '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
-  '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -985,6 +992,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat': typeof AuthenticatedChatIndexRoute
+  '/kontak': typeof AuthenticatedKontakIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
@@ -1104,6 +1112,7 @@ export interface FileRoutesById {
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/_authenticated/kontak/': typeof AuthenticatedKontakIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
@@ -1223,6 +1232,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/voice-note-player'
     | '/lovable/visual/worker-shot-marksent'
     | '/chat/'
+    | '/kontak/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/friend-notify'
@@ -1263,7 +1273,6 @@ export interface FileRouteTypes {
     | '/fitur'
     | '/gudang'
     | '/hutang-piutang'
-    | '/kontak'
     | '/label-preview'
     | '/link-pegawai'
     | '/notifikasi'
@@ -1338,6 +1347,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/voice-note-player'
     | '/lovable/visual/worker-shot-marksent'
     | '/chat'
+    | '/kontak'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/friend-notify'
@@ -1456,6 +1466,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/voice-note-player'
     | '/lovable/visual/worker-shot-marksent'
     | '/_authenticated/chat/'
+    | '/_authenticated/kontak/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/friend-notify'
@@ -1973,6 +1984,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminDenialLogRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/kontak/': {
+      id: '/_authenticated/kontak/'
+      path: '/'
+      fullPath: '/kontak/'
+      preLoaderRoute: typeof AuthenticatedKontakIndexRouteImport
+      parentRoute: typeof AuthenticatedKontakRoute
+    }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
       path: '/'
@@ -2389,10 +2407,12 @@ const AuthenticatedGudangRouteWithChildren =
 
 interface AuthenticatedKontakRouteChildren {
   AuthenticatedKontakPermintaanRoute: typeof AuthenticatedKontakPermintaanRoute
+  AuthenticatedKontakIndexRoute: typeof AuthenticatedKontakIndexRoute
 }
 
 const AuthenticatedKontakRouteChildren: AuthenticatedKontakRouteChildren = {
   AuthenticatedKontakPermintaanRoute: AuthenticatedKontakPermintaanRoute,
+  AuthenticatedKontakIndexRoute: AuthenticatedKontakIndexRoute,
 }
 
 const AuthenticatedKontakRouteWithChildren =
@@ -2609,13 +2629,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
