@@ -662,7 +662,7 @@ function ChatRoomPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
-    if (!t) return;
+    if (!t && pendingProducts.length === 0) return;
     if (sendingLockRef.current) return;
     sendingLockRef.current = true;
     setIsSending(true);
@@ -687,17 +687,40 @@ function ChatRoomPage() {
       );
       return;
     }
-    const item: OutboxItem = {
-      tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      body: t,
-      status: "sending",
-      createdAt: new Date().toISOString(),
-    };
     const replyId = replyTo?.id ?? null;
-    setOutbox((prev) => [...prev, item]);
+    // Kirim teks (kalau ada) via jalur outbox biasa.
+    if (t) {
+      const item: OutboxItem = {
+        tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        body: t,
+        status: "sending",
+        createdAt: new Date().toISOString(),
+      };
+      setOutbox((prev) => [...prev, item]);
+      void doSendWith(item, replyId);
+    }
+    // Kirim produk-produk yang di-queue secara berurutan supaya urutan
+    // pesan konsisten dan status/riwayat paket ter-update satu-satu.
+    if (pendingProducts.length > 0) {
+      const queue = pendingProducts.slice();
+      void (async () => {
+        for (const row of queue) {
+          try {
+            const ok = await sendProductRow(row, {
+              conversationId,
+              peerName: displayedPeerName,
+            });
+            if (ok) toast.success(`Terkirim: ${row.productName}`);
+          } catch (err) {
+            toast.error((err as Error)?.message || `Gagal mengirim: ${row.productName}`);
+          }
+        }
+        void othersRead.refetch();
+      })();
+    }
     setBody("");
     setReplyTo(null);
-    void doSendWith(item, replyId);
+    setPendingProducts([]);
   };
 
   // Auto-retry failed messages once the browser is back online.
