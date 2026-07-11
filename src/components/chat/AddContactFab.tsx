@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, ScanLine, Loader2, UserPlus, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useStartDm } from "@/lib/chat";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +49,9 @@ export function AddContactFab() {
   const [preview, setPreview] = useState<InviteProfile | null>(null);
   const [checking, setChecking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const startDm = useStartDm();
 
   const cleaned = normalizeInviteCode(input);
   const looksValid = isLikelyInviteCode(input);
@@ -103,16 +109,46 @@ export function AddContactFab() {
     setSubmitting(true);
     try {
       const r = await addContactByInviteCode(v.code);
-      if (r.alreadyFriends) {
-        toast.success("Sudah berteman — kontak siap dipakai.");
-      } else if (r.pending) {
-        toast.success("Permintaan terkirim. Menunggu diterima.");
-      } else if (r.alreadyExisted) {
-        toast.success("Kontak sudah tersimpan.");
-      } else {
-        toast.success("Kontak ditambahkan.");
-      }
+      // Selalu segarkan daftar permintaan pertemanan supaya baris baru
+      // muncul langsung di tab Terkirim / Masuk sesuai konteks.
+      qc.invalidateQueries({ queryKey: ["friend-requests"] });
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
       setOpen(false);
+
+      if (r.alreadyFriends) {
+        // Sudah berteman → buka DM langsung, bukan hanya tampilkan toast.
+        toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}. Membuka chat…`);
+        try {
+          const cid = await startDm.mutateAsync(r.linkedUserId);
+          if (cid) {
+            navigate({ to: "/chat/$conversationId", params: { conversationId: cid } });
+            return;
+          }
+          navigate({ to: "/chat" });
+        } catch (e) {
+          console.error("[AddContactFab] start_dm failed", e);
+          navigate({ to: "/chat" });
+        }
+        return;
+      }
+
+      if (r.incomingReverseId) {
+        // Lawan sudah kirim permintaan lebih dulu → arahkan ke halaman
+        // permintaan supaya user bisa menekan Terima (bukan kirim balik).
+        toast.info(
+          `${r.displayName ?? "Kontak"} sudah mengirim permintaan lebih dulu — buka daftar Permintaan untuk menerima.`,
+        );
+        navigate({ to: "/kontak/permintaan" as never });
+        return;
+      }
+
+      // Permintaan baru dikirim atau sudah ada dalam status pending.
+      toast.success(
+        r.alreadyExisted
+          ? `Permintaan sebelumnya masih menunggu diterima ${r.displayName ?? "kontak"}.`
+          : `Permintaan pertemanan terkirim ke ${r.displayName ?? "kontak"}.`,
+      );
+      navigate({ to: "/kontak/permintaan" as never });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Gagal menambah kontak.";
       toast.error(msg);
