@@ -25,6 +25,7 @@ function FriendRequestsPage() {
   const startDm = useStartDm();
   const qc = useQueryClient();
   const [openingChatId, setOpeningChatId] = useState<string | null>(null);
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   // Tampilkan juga baris yang baru saja "accepted"/"rejected" (bukan hanya
   // pending) supaya perubahan status terlihat real-time di kartu sebelum
   // baris menghilang. Filter tampilan tetap membatasi ke pending + status
@@ -100,6 +101,7 @@ function FriendRequestsPage() {
       await refetch();
       return;
     }
+    setPendingActionId(id);
     try {
       const returnedStatus = await respond.mutateAsync({ requestId: id, accept: true });
       // Validasi hasil RPC: kalau server tidak mengembalikan "accepted",
@@ -139,24 +141,32 @@ function FriendRequestsPage() {
       console.error("[friend-accept] RPC gagal", e);
       const msg = (e as Error).message || "Gagal menerima permintaan.";
       toast.error(`Gagal menerima permintaan: ${msg}`);
+    } finally {
+      setPendingActionId((cur) => (cur === id ? null : cur));
     }
   }
   async function reject(id: string, name: string | null) {
+    setPendingActionId(id);
     try {
       await respond.mutateAsync({ requestId: id, accept: false });
       setRecentStatus((s) => ({ ...s, [id]: "rejected" }));
       toast.success(`Permintaan dari ${name ?? "kontak"} ditolak.`);
     } catch (e) {
       toast.error((e as Error).message || "Gagal menolak permintaan.");
+    } finally {
+      setPendingActionId((cur) => (cur === id ? null : cur));
     }
   }
   async function doCancel(id: string, name: string | null) {
+    setPendingActionId(id);
     try {
       await cancel.mutateAsync(id);
       setRecentStatus((s) => ({ ...s, [id]: "rejected" }));
       toast.success(`Permintaan ke ${name ?? "kontak"} dibatalkan.`);
     } catch (e) {
       toast.error((e as Error).message || "Gagal membatalkan permintaan.");
+    } finally {
+      setPendingActionId((cur) => (cur === id ? null : cur));
     }
   }
   // Buka DM dengan peer setelah status berubah accepted (dipakai tombol
@@ -253,22 +263,22 @@ function FriendRequestsPage() {
                         type="button"
                         size="sm"
                         onClick={() => accept(r.id, r.peer_display_name)}
-                        disabled={respond.isPending || openingChatId === r.id}
+                        disabled={pendingActionId === r.id}
                         className="gap-1"
                       >
-                        {openingChatId === r.id ? (
+                        {pendingActionId === r.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Check className="h-4 w-4" />
                         )}{" "}
-                        {openingChatId === r.id ? "Membuka…" : "Terima"}
+                        {pendingActionId === r.id ? "Menerima…" : "Terima"}
                       </Button>
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => reject(r.id, r.peer_display_name)}
-                        disabled={respond.isPending}
+                        disabled={pendingActionId === r.id}
                         className="gap-1"
                       >
                         <X className="h-4 w-4" /> Tolak
@@ -332,7 +342,7 @@ function FriendRequestsPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => doCancel(r.id, r.peer_display_name)}
-                      disabled={cancel.isPending}
+                      disabled={pendingActionId === r.id}
                       className="gap-1"
                     >
                       <X className="h-4 w-4" /> Batalkan
