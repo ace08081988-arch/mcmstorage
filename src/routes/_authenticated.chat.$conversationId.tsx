@@ -1700,6 +1700,45 @@ function ChatRoomPage() {
             </Button>
           </div>
         ) : null}
+        {pendingProducts.length > 0 ? (
+          <div className="mb-2 space-y-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-primary">
+                Produk siap dikirim ({pendingProducts.length})
+              </span>
+              <button
+                type="button"
+                className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
+                onClick={() => setPendingProducts([])}
+              >
+                Bersihkan
+              </button>
+            </div>
+            <ul className="flex flex-wrap gap-1.5">
+              {pendingProducts.map((p, idx) => (
+                <li
+                  key={`${p.source}:${p.id}:${idx}`}
+                  className="inline-flex max-w-full items-center gap-1 rounded-full border bg-background px-2 py-0.5"
+                >
+                  <Package className="h-3 w-3 shrink-0 text-primary" />
+                  <span className="truncate text-[11px]" title={p.productName}>
+                    {p.productName}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Buang ${p.productName}`}
+                    className="ml-0.5 rounded-full text-muted-foreground hover:text-foreground"
+                    onClick={() =>
+                      setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div className="relative flex items-end gap-2">
           {qrQuery !== null ? (
             <QuickReplyPopover
@@ -1747,7 +1786,7 @@ function ChatRoomPage() {
           <Button
             type="submit"
             size="icon"
-            disabled={!body.trim() || chatBlocked || isSending}
+            disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending}
             aria-label="Kirim"
             aria-busy={isSending}
             className="h-10 w-10 shrink-0"
@@ -1759,13 +1798,14 @@ function ChatRoomPage() {
             disabled={chatBlocked}
             peerName={displayedPeerName}
             onSent={() => { void othersRead.refetch(); }}
+            onQueue={(row) => setPendingProducts((prev) => [...prev, row])}
           />
           <CartComposer
             conversationId={conversationId}
             disabled={chatBlocked}
             onSent={() => { void othersRead.refetch(); }}
           />
-          {!body.trim() ? (
+          {!body.trim() && pendingProducts.length === 0 ? (
             <VoiceRecorderButton
               conversationId={conversationId}
               disabled={chatBlocked}
