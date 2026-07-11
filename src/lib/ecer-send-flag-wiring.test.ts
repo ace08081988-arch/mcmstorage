@@ -88,7 +88,7 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     // Butuh keduanya: onClick + onPointerDown stopPropagation supaya
     // long-press card & onClickCapture card tidak membatalkan navigasi.
     expect(block!).toMatch(/onPointerDown=\{\s*\(e\)\s*=>\s*e\.stopPropagation\(\)\s*\}/);
-    expect(block!).toMatch(/onClick=\{\s*\(e\)\s*=>\s*e\.stopPropagation\(\)\s*\}/);
+    expect(block!).toMatch(/onClick=\{\s*\(e\)\s*=>\s*\{[\s\S]*?e\.stopPropagation\(\);[\s\S]*?\}\s*\}/);
   });
 
   it("/ecer: validateSearch mengenali `send` sebagai string opsional", () => {
