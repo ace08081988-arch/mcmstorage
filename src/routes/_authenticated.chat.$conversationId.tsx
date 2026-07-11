@@ -225,6 +225,13 @@ function sanitizePendingProducts(
     } else if (r.qty === undefined) {
       needsMigration = true;
     }
+    // Clamp ke rentang yang diizinkan; nilai di luar batas dianggap
+    // korupsi dan dinormalisasi (mis. hasil edit manual localStorage).
+    if (qty !== null) {
+      const clamped = clampQty(qty, baseUnit);
+      if (clamped !== qty) needsMigration = true;
+      qty = clamped;
+    }
     // ── variant / locationUrl ── (opsional, default null)
     const variant = typeof r.variant === "string" ? r.variant : null;
     if (r.variant === undefined) needsMigration = true;
