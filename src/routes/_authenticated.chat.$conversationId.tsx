@@ -730,7 +730,7 @@ function ChatRoomPage() {
   // pemanggil (bukan menunggu effect commit).
   const updatePendingProducts = useCallback(
     (next: PickedProductRow[] | ((prev: PickedProductRow[]) => PickedProductRow[])) => {
-      setPendingProducts((prev) => {
+      updatePendingProducts((prev) => {
         const computed = typeof next === "function"
           ? (next as (p: PickedProductRow[]) => PickedProductRow[])(prev)
           : next;
@@ -1983,7 +1983,7 @@ function ChatRoomPage() {
               <button
                 type="button"
                 className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
-                onClick={() => setPendingProducts([])}
+                onClick={() => updatePendingProducts([])}
               >
                 Bersihkan
               </button>
@@ -1997,7 +1997,7 @@ function ChatRoomPage() {
                   p.source !== "catalog" && p.qty !== null && p.baseUnit !== null;
                 const step = p.baseUnit === "g" ? 100 : 1;
                 const adjustQty = (delta: number) => {
-                  setPendingProducts((prev) =>
+                  updatePendingProducts((prev) =>
                     prev.map((row, i) => {
                       if (i !== idx) return row;
                       if (row.qty === null) return row;
@@ -2019,7 +2019,7 @@ function ChatRoomPage() {
                     toast.error(`Jumlah minimal ${step} ${unitLabel}.`);
                     return;
                   }
-                  setPendingProducts((prev) =>
+                  updatePendingProducts((prev) =>
                     prev.map((row, i) => (i === idx ? { ...row, qty: n } : row)),
                   );
                 };
@@ -2105,7 +2105,7 @@ function ChatRoomPage() {
                       aria-label={`Buang ${p.productName}`}
                       className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                       onClick={() =>
-                        setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
+                        updatePendingProducts((prev) => prev.filter((_, i) => i !== idx))
                       }
                     >
                       <X className="h-3.5 w-3.5" />
@@ -2196,7 +2196,7 @@ function ChatRoomPage() {
             disabled={chatBlocked}
             peerName={displayedPeerName}
             onSent={() => { void othersRead.refetch(); }}
-            onQueue={(row) => setPendingProducts((prev) => [...prev, row])}
+            onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
           />
           <CartComposer
             conversationId={conversationId}
