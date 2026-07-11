@@ -2580,9 +2580,34 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 to="/ecer"
                 search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" }}
                 onClick={(e) => e.stopPropagation()}
+                onClickCapture={(e) => {
+                  // Cegah navigasi langsung; buka modal konfirmasi dulu supaya
+                  // owner bisa memastikan jumlah kotak & lokasi sebelum masuk
+                  // ke halaman verifikasi pembayaran WA.
+                  e.preventDefault();
+                  const withLoc = r.worker_shots.filter((s) => s.location_url).length;
+                  void (async () => {
+                    const ok = await confirmDialog({
+                      title: "Konfirmasi kirim ke pembeli",
+                      description:
+                        `Paket: ${r.name}\n` +
+                        `Produk: ${r.product_name} · ${r.target_grams} ${r.unit_label}\n` +
+                        `Jumlah kotak siap: ${r.prep_count}\n` +
+                        `Lokasi terlampir: ${withLoc}/${r.worker_shots.length} kotak\n\n` +
+                        `Lanjut ke halaman verifikasi untuk memeriksa lokasi dan pesan WhatsApp sebelum benar-benar mengirim.`,
+                      confirmText: "Lanjut verifikasi",
+                      cancelText: "Batal",
+                    });
+                    if (!ok) return;
+                    navigate({
+                      to: "/ecer",
+                      search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" },
+                    });
+                  })();
+                }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label={`Kirim ${r.prep_count} kotak ke pembeli (verifikasi bayar dulu)`}
-                title="Verifikasi pembayaran dulu, lalu kirim ke WhatsApp"
+                title="Verifikasi lokasi dan pesan WA dulu, lalu kirim ke WhatsApp"
                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
               >
                 <Send className="h-3 w-3" /> Kirim ke pembeli
