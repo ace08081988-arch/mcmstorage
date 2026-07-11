@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatInviteCode } from "@/lib/invite";
+import { fmtBase } from "@/lib/stock-format";
 import {
   getConversationMeta,
   markConversationRead,
