@@ -26,6 +26,7 @@ function FriendRequestsPage() {
   const qc = useQueryClient();
   const [openingChatId, setOpeningChatId] = useState<string | null>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
+  const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   // Tampilkan juga baris yang baru saja "accepted"/"rejected" (bukan hanya
   // pending) supaya perubahan status terlihat real-time di kartu sebelum
   // baris menghilang. Filter tampilan tetap membatasi ke pending + status
@@ -123,6 +124,7 @@ function FriendRequestsPage() {
       return;
     }
     setPendingActionId(id);
+    const acceptToastId = `friend-accept-${id}`;
     try {
       const returnedStatus = await respond.mutateAsync({ requestId: id, accept: true });
       // Validasi hasil RPC: kalau server tidak mengembalikan "accepted",
@@ -138,30 +140,50 @@ function FriendRequestsPage() {
       // Optimistic: langsung tandai "accepted" agar kartu memperlihatkan
       // perubahan status sebelum server refetch selesai / realtime tiba.
       setRecentStatus((s) => ({ ...s, [id]: "accepted" }));
+      toast.success("Diterima — Buka Chat siap", {
+        id: acceptToastId,
+        description: `Permintaan dari ${name ?? "kontak"} sudah diterima. Tombol Buka Chat muncul di kartu.`,
+      });
       // Polling singkat sebagai jaring pengaman kalau realtime telat/mati:
       // invalidate cache lalu refetch setiap 1s (maks 6x). Berhenti begitu
       // server mengonfirmasi status "accepted". Optimistic `recentStatus`
       // sudah bikin tombol Buka Chat langsung muncul; polling ini memastikan
       // data server ikut segar sebelum user pindah halaman.
       void qc.invalidateQueries({ queryKey: ["friend-requests"] });
+      setSyncingIds((prev) => new Set(prev).add(id));
       void (async () => {
-        for (let i = 0; i < 6; i++) {
-          await new Promise((r) => setTimeout(r, 1000));
-          try {
-            const fresh = await refetch();
-            const row = fresh.data?.find((r) => r.id === id);
-            if (row?.status === "accepted") return;
-          } catch (verifyErr) {
-            console.error("[friend-accept] polling gagal", verifyErr);
+        try {
+          for (let i = 0; i < 6; i++) {
+            await new Promise((r) => setTimeout(r, 1000));
+            try {
+              const fresh = await refetch();
+              const row = fresh.data?.find((r) => r.id === id);
+              if (row?.status === "accepted") {
+                toast.success("Tersinkron dengan server", {
+                  id: acceptToastId,
+                  description: `Status ${name ?? "kontak"} sudah terverifikasi. Buka Chat siap digunakan.`,
+                });
+                return;
+              }
+            } catch (verifyErr) {
+              console.error("[friend-accept] polling gagal", verifyErr);
+            }
           }
+          toast.error("Gagal sinkron", {
+            id: acceptToastId,
+            description: realtimeOk
+              ? "Status di server belum berubah setelah beberapa detik. Coba refresh halaman."
+              : "Update realtime tidak tersedia dan polling belum mengonfirmasi. Coba refresh halaman.",
+            action: { label: "Refresh", onClick: () => window.location.reload() },
+          });
+        } finally {
+          setSyncingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
         }
-        toast.error(
-          realtimeOk
-            ? "Status di server belum berubah setelah beberapa detik. Coba refresh halaman."
-            : "Update realtime tidak tersedia dan polling belum mengonfirmasi. Coba refresh halaman.",
-        );
       })();
-      toast.success(`Permintaan dari ${name ?? "kontak"} diterima. Tombol Buka Chat sudah aktif.`);
       void qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
     } catch (e) {
       console.error("[friend-accept] RPC gagal", e);
@@ -267,6 +289,7 @@ function FriendRequestsPage() {
                   avatarUrl={r.peer_avatar_url}
                   createdAt={r.created_at}
                   statusHint={<StatusChip status={effective} />}
+                  isSyncing={syncingIds.has(r.id)}
                   actions={
                     effective === "accepted" ? (
                     <Button
@@ -346,6 +369,7 @@ function FriendRequestsPage() {
                   avatarUrl={r.peer_avatar_url}
                   createdAt={r.created_at}
                   statusHint={<StatusChip status={outEffective} />}
+                  isSyncing={syncingIds.has(r.id)}
                   actions={
                     outEffective === "accepted" ? (
                     <Button
@@ -393,6 +417,7 @@ function RequestCard(props: {
   createdAt: string;
   actions: React.ReactNode;
   statusHint?: React.ReactNode;
+  isSyncing?: boolean;
 }) {
   const initial = (props.name || "?").trim()[0]?.toUpperCase() || "?";
   const when = new Date(props.createdAt);
@@ -419,6 +444,11 @@ function RequestCard(props: {
           {whenLabel ? <span>· {whenLabel}</span> : null}
           {props.statusHint}
         </div>
+        {props.isSyncing && (
+          <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+            <Loader2 className="h-3 w-3 animate-spin" /> Menyinkronkan ke server…
+          </div>
+        )}
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">{props.actions}</div>
     </div>
