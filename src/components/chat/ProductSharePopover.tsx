@@ -313,7 +313,17 @@ export function ProductSharePopover({
           <Package className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" side="top" className="w-80 p-0" data-no-press>
+      <PopoverContent
+        align="end"
+        side="top"
+        className="w-80 p-0"
+        data-no-press
+        onOpenAutoFocus={(e) => {
+          // Jangan pindahkan fokus ke input pencarian saat popover terbuka;
+          // fokus otomatis akan memunculkan keyboard virtual dan menutupi daftar.
+          e.preventDefault();
+        }}
+      >
         <div className="border-b p-2">
           <div className="text-sm font-medium">
             {onQueue ? "Tambah produk ke pesan" : "Kirim produk ke chat"}
