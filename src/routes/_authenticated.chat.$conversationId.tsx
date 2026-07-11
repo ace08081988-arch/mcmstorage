@@ -13,7 +13,7 @@ import {
   History as HistoryIcon,
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
-  Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus,
+  Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus, Package,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
 import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { StickerPickerDialog, parseStickerFromBody } from "@/components/chat/StickerPickerDialog";
-import { ProductSharePopover } from "@/components/chat/ProductSharePopover";
+import { ProductSharePopover, sendProductRow, type PickedProductRow } from "@/components/chat/ProductSharePopover";
 import { CartComposer } from "@/components/chat/CartComposer";
 import {
   ConversationSearchDialog,
@@ -577,6 +577,9 @@ function ChatRoomPage() {
   }, [messages?.length]);
 
   const [body, setBody] = useState("");
+  // Antrian produk yang dipilih dari popover 📦. Tampil sebagai chip preview
+  // di atas textarea; baru terkirim saat user menekan tombol Kirim.
+  const [pendingProducts, setPendingProducts] = useState<PickedProductRow[]>([]);
 
   // Prefill komposer dari flow lain (mis. Penyiapan Request → Buka Chat MCM).
   // Handoff via localStorage key `mcm.chat.prefill.<convId>` supaya bisa
@@ -659,7 +662,7 @@ function ChatRoomPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
-    if (!t) return;
+    if (!t && pendingProducts.length === 0) return;
     if (sendingLockRef.current) return;
     sendingLockRef.current = true;
     setIsSending(true);
@@ -684,17 +687,40 @@ function ChatRoomPage() {
       );
       return;
     }
-    const item: OutboxItem = {
-      tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      body: t,
-      status: "sending",
-      createdAt: new Date().toISOString(),
-    };
     const replyId = replyTo?.id ?? null;
-    setOutbox((prev) => [...prev, item]);
+    // Kirim teks (kalau ada) via jalur outbox biasa.
+    if (t) {
+      const item: OutboxItem = {
+        tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        body: t,
+        status: "sending",
+        createdAt: new Date().toISOString(),
+      };
+      setOutbox((prev) => [...prev, item]);
+      void doSendWith(item, replyId);
+    }
+    // Kirim produk-produk yang di-queue secara berurutan supaya urutan
+    // pesan konsisten dan status/riwayat paket ter-update satu-satu.
+    if (pendingProducts.length > 0) {
+      const queue = pendingProducts.slice();
+      void (async () => {
+        for (const row of queue) {
+          try {
+            const ok = await sendProductRow(row, {
+              conversationId,
+              peerName: displayedPeerName,
+            });
+            if (ok) toast.success(`Terkirim: ${row.productName}`);
+          } catch (err) {
+            toast.error((err as Error)?.message || `Gagal mengirim: ${row.productName}`);
+          }
+        }
+        void othersRead.refetch();
+      })();
+    }
     setBody("");
     setReplyTo(null);
-    void doSendWith(item, replyId);
+    setPendingProducts([]);
   };
 
   // Auto-retry failed messages once the browser is back online.
@@ -1674,6 +1700,45 @@ function ChatRoomPage() {
             </Button>
           </div>
         ) : null}
+        {pendingProducts.length > 0 ? (
+          <div className="mb-2 space-y-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-primary">
+                Produk siap dikirim ({pendingProducts.length})
+              </span>
+              <button
+                type="button"
+                className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
+                onClick={() => setPendingProducts([])}
+              >
+                Bersihkan
+              </button>
+            </div>
+            <ul className="flex flex-wrap gap-1.5">
+              {pendingProducts.map((p, idx) => (
+                <li
+                  key={`${p.source}:${p.id}:${idx}`}
+                  className="inline-flex max-w-full items-center gap-1 rounded-full border bg-background px-2 py-0.5"
+                >
+                  <Package className="h-3 w-3 shrink-0 text-primary" />
+                  <span className="truncate text-[11px]" title={p.productName}>
+                    {p.productName}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Buang ${p.productName}`}
+                    className="ml-0.5 rounded-full text-muted-foreground hover:text-foreground"
+                    onClick={() =>
+                      setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div className="relative flex items-end gap-2">
           {qrQuery !== null ? (
             <QuickReplyPopover
@@ -1721,7 +1786,7 @@ function ChatRoomPage() {
           <Button
             type="submit"
             size="icon"
-            disabled={!body.trim() || chatBlocked || isSending}
+            disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending}
             aria-label="Kirim"
             aria-busy={isSending}
             className="h-10 w-10 shrink-0"
@@ -1733,13 +1798,14 @@ function ChatRoomPage() {
             disabled={chatBlocked}
             peerName={displayedPeerName}
             onSent={() => { void othersRead.refetch(); }}
+            onQueue={(row) => setPendingProducts((prev) => [...prev, row])}
           />
           <CartComposer
             conversationId={conversationId}
             disabled={chatBlocked}
             onSent={() => { void othersRead.refetch(); }}
           />
-          {!body.trim() ? (
+          {!body.trim() && pendingProducts.length === 0 ? (
             <VoiceRecorderButton
               conversationId={conversationId}
               disabled={chatBlocked}
