@@ -66,8 +66,9 @@ type Row = PickedProductRow;
  */
 export async function sendProductRow(
   row: Row,
-  opts: { conversationId: string; peerName?: string | null },
+  opts: { conversationId: string; peerName?: string | null; silent?: boolean },
 ): Promise<boolean> {
+  const silent = opts.silent ?? false;
   const shots: { id: string; file: File }[] = [];
   for (let i = 0; i < row.photoPaths.length; i++) {
     const p = row.photoPaths[i];
@@ -75,7 +76,7 @@ export async function sendProductRow(
       .from(row.bucket)
       .createSignedUrl(p, 3600);
     if (signErr || !signed?.signedUrl) {
-      toast.error(`Gagal mengambil foto: ${row.productName}`);
+      if (!silent) toast.error(`Gagal mengambil foto: ${row.productName}`);
       return false;
     }
     const file = await urlToFile(
@@ -104,7 +105,7 @@ export async function sendProductRow(
   });
 
   if (res.status === "failed") {
-    toast.error(res.error || `Gagal mengirim: ${row.productName}`);
+    if (!silent) toast.error(res.error || `Gagal mengirim: ${row.productName}`);
     return false;
   }
 
@@ -129,7 +130,7 @@ export async function sendProductRow(
       })
       .eq("id", row.id)).error;
   }
-  if (upErr) {
+  if (upErr && !silent) {
     toast.error(`Terkirim tapi gagal update status: ${friendlyError(upErr)}`);
   }
   return true;
