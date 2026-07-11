@@ -55,6 +55,7 @@ import { Route as AuthenticatedPanggilanRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
+import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedFiturRouteImport } from './routes/_authenticated.fitur'
@@ -371,6 +372,11 @@ const AuthenticatedLabelPreviewRoute =
     path: '/label-preview',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedKontakRoute = AuthenticatedKontakRouteImport.update({
+  id: '/kontak',
+  path: '/kontak',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedHutangPiutangRoute =
   AuthenticatedHutangPiutangRouteImport.update({
     id: '/hutang-piutang',
@@ -457,9 +463,9 @@ const AuthenticatedAdminDenialLogRoute =
   } as any)
 const AuthenticatedKontakIndexRoute =
   AuthenticatedKontakIndexRouteImport.update({
-    id: '/kontak/',
-    path: '/kontak/',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedKontakRoute,
   } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/',
@@ -634,9 +640,9 @@ const AuthenticatedStatusIdRoute = AuthenticatedStatusIdRouteImport.update({
 } as any)
 const AuthenticatedKontakPermintaanRoute =
   AuthenticatedKontakPermintaanRouteImport.update({
-    id: '/kontak/permintaan',
-    path: '/kontak/permintaan',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/permintaan',
+    path: '/permintaan',
+    getParentRoute: () => AuthenticatedKontakRoute,
   } as any)
 const AuthenticatedDevPressAuditDemoRoute =
   AuthenticatedDevPressAuditDemoRouteImport.update({
@@ -797,6 +803,7 @@ export interface FileRoutesByFullPath {
   '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
+  '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1030,6 +1037,7 @@ export interface FileRoutesById {
   '/_authenticated/fitur': typeof AuthenticatedFiturRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
+  '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1150,6 +1158,7 @@ export interface FileRouteTypes {
     | '/fitur'
     | '/gudang'
     | '/hutang-piutang'
+    | '/kontak'
     | '/label-preview'
     | '/link-pegawai'
     | '/notifikasi'
@@ -1382,6 +1391,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fitur'
     | '/_authenticated/gudang'
     | '/_authenticated/hutang-piutang'
+    | '/_authenticated/kontak'
     | '/_authenticated/label-preview'
     | '/_authenticated/link-pegawai'
     | '/_authenticated/notifikasi'
@@ -1855,6 +1865,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLabelPreviewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/kontak': {
+      id: '/_authenticated/kontak'
+      path: '/kontak'
+      fullPath: '/kontak'
+      preLoaderRoute: typeof AuthenticatedKontakRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/hutang-piutang': {
       id: '/_authenticated/hutang-piutang'
       path: '/hutang-piutang'
@@ -1969,10 +1986,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/kontak/': {
       id: '/_authenticated/kontak/'
-      path: '/kontak'
+      path: '/'
       fullPath: '/kontak/'
       preLoaderRoute: typeof AuthenticatedKontakIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedKontakRoute
     }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
@@ -2186,10 +2203,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/kontak/permintaan': {
       id: '/_authenticated/kontak/permintaan'
-      path: '/kontak/permintaan'
+      path: '/permintaan'
       fullPath: '/kontak/permintaan'
       preLoaderRoute: typeof AuthenticatedKontakPermintaanRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedKontakRoute
     }
     '/_authenticated/dev/press-audit-demo': {
       id: '/_authenticated/dev/press-audit-demo'
@@ -2388,6 +2405,19 @@ const AuthenticatedGudangRouteChildren: AuthenticatedGudangRouteChildren = {
 const AuthenticatedGudangRouteWithChildren =
   AuthenticatedGudangRoute._addFileChildren(AuthenticatedGudangRouteChildren)
 
+interface AuthenticatedKontakRouteChildren {
+  AuthenticatedKontakPermintaanRoute: typeof AuthenticatedKontakPermintaanRoute
+  AuthenticatedKontakIndexRoute: typeof AuthenticatedKontakIndexRoute
+}
+
+const AuthenticatedKontakRouteChildren: AuthenticatedKontakRouteChildren = {
+  AuthenticatedKontakPermintaanRoute: AuthenticatedKontakPermintaanRoute,
+  AuthenticatedKontakIndexRoute: AuthenticatedKontakIndexRoute,
+}
+
+const AuthenticatedKontakRouteWithChildren =
+  AuthenticatedKontakRoute._addFileChildren(AuthenticatedKontakRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminDenialLogRoute: typeof AuthenticatedAdminDenialLogRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
@@ -2405,6 +2435,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFiturRoute: typeof AuthenticatedFiturRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
+  AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
@@ -2439,10 +2470,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDebugSelectorRoute: typeof AuthenticatedDebugSelectorRoute
   AuthenticatedDevPressAuditCodesRoute: typeof AuthenticatedDevPressAuditCodesRoute
   AuthenticatedDevPressAuditDemoRoute: typeof AuthenticatedDevPressAuditDemoRoute
-  AuthenticatedKontakPermintaanRoute: typeof AuthenticatedKontakPermintaanRoute
   AuthenticatedStatusIdRoute: typeof AuthenticatedStatusIdRoute
   AuthenticatedStatusBaruRoute: typeof AuthenticatedStatusBaruRoute
-  AuthenticatedKontakIndexRoute: typeof AuthenticatedKontakIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -2462,6 +2491,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFiturRoute: AuthenticatedFiturRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
+  AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
@@ -2501,10 +2531,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDebugSelectorRoute: AuthenticatedDebugSelectorRoute,
   AuthenticatedDevPressAuditCodesRoute: AuthenticatedDevPressAuditCodesRoute,
   AuthenticatedDevPressAuditDemoRoute: AuthenticatedDevPressAuditDemoRoute,
-  AuthenticatedKontakPermintaanRoute: AuthenticatedKontakPermintaanRoute,
   AuthenticatedStatusIdRoute: AuthenticatedStatusIdRoute,
   AuthenticatedStatusBaruRoute: AuthenticatedStatusBaruRoute,
-  AuthenticatedKontakIndexRoute: AuthenticatedKontakIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
