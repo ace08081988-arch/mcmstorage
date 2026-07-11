@@ -1770,6 +1770,27 @@ function ChatRoomPage() {
             </ul>
           </div>
         ) : null}
+        {productSendProgress ? (
+          <div className="mb-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+              <span className="flex-1 font-medium text-primary">
+                Mengirim {productSendProgress.current}/{productSendProgress.total}: {productSendProgress.name}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {productSendProgress.done} ok · {productSendProgress.failed} gagal
+              </span>
+            </div>
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-background">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{
+                  width: `${Math.max(5, Math.round((productSendProgress.current / productSendProgress.total) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+        ) : null}
         <div className="relative flex items-end gap-2">
           {qrQuery !== null ? (
             <QuickReplyPopover
