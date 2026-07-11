@@ -85,7 +85,12 @@ export const CARD_SENTINEL = SENTINEL;
  */
 export function isCardBody(body: string | null | undefined): boolean {
   if (!body) return false;
-  return body.startsWith(SENTINEL);
+  // Toleran: sentinel boleh ada di awal ATAU di baris mana pun.
+  // Beberapa pesan lama tidak menempatkan sentinel di posisi 0 (mis.
+  // ada baris caption di atas payload) — tanpa toleransi ini, body
+  // JSON mentah akan bocor ke bubble chat.
+  if (body.startsWith(SENTINEL)) return true;
+  return body.includes(`\n${SENTINEL}`) || body.includes(`\n${SENTINEL}\n`);
 }
 
 export function encodeCard(card: Card, fallbackText?: string): string {
@@ -94,10 +99,17 @@ export function encodeCard(card: Card, fallbackText?: string): string {
 
 export function decodeCard(body: string | null | undefined): Card | null {
   if (!body) return null;
-  if (!body.startsWith(SENTINEL)) return null;
-  const nl = body.indexOf("\n");
-  if (nl < 0) return null;
-  const rest = body.slice(nl + 1);
+  // Cari baris sentinel di posisi mana pun, lalu ambil baris JSON tepat setelahnya.
+  const idx = body.startsWith(SENTINEL)
+    ? 0
+    : (() => {
+        const i = body.indexOf(`\n${SENTINEL}`);
+        return i < 0 ? -1 : i + 1;
+      })();
+  if (idx < 0) return null;
+  const afterSentinel = body.indexOf("\n", idx + SENTINEL.length);
+  if (afterSentinel < 0) return null;
+  const rest = body.slice(afterSentinel + 1);
   const end = rest.indexOf("\n");
   const json = end < 0 ? rest : rest.slice(0, end);
   try {
