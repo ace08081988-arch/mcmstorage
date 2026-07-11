@@ -2594,8 +2594,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                         `Produk: ${r.product_name} · ${r.target_grams} ${r.unit_label}\n` +
                         `Jumlah kotak siap: ${r.prep_count}\n` +
                         `Lokasi terlampir: ${withLoc}/${r.worker_shots.length} kotak\n\n` +
-                        `Lanjut ke halaman verifikasi untuk memeriksa lokasi dan pesan WhatsApp sebelum benar-benar mengirim.`,
-                      confirmText: "Lanjut verifikasi",
+                        `Langkah berikutnya di halaman verifikasi:\n` +
+                        `1. Pilih metode pembayaran (Lunas / Hutang / Bayar sebagian)\n` +
+                        `2. Periksa lokasi & isi pesan WhatsApp\n` +
+                        `3. Kirim ke pembeli\n\n` +
+                        `Pesan WA baru terkirim setelah pembayaran dicatat.`,
+                      confirmText: "Lanjut ke verifikasi bayar",
                       cancelText: "Batal",
                     });
                     if (!ok) return;
