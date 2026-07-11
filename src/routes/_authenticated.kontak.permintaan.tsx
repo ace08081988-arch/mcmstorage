@@ -415,6 +415,7 @@ function RequestCard(props: {
   createdAt: string;
   actions: React.ReactNode;
   statusHint?: React.ReactNode;
+  isSyncing?: boolean;
 }) {
   const initial = (props.name || "?").trim()[0]?.toUpperCase() || "?";
   const when = new Date(props.createdAt);
@@ -441,6 +442,11 @@ function RequestCard(props: {
           {whenLabel ? <span>· {whenLabel}</span> : null}
           {props.statusHint}
         </div>
+        {props.isSyncing && (
+          <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+            <Loader2 className="h-3 w-3 animate-spin" /> Menyinkronkan ke server…
+          </div>
+        )}
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">{props.actions}</div>
     </div>
