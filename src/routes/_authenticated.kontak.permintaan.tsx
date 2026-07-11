@@ -35,6 +35,7 @@ function FriendRequestsPage() {
   // realtime tidak tersedia (mis. WebSocket gagal / channel error) sehingga
   // ia paham kenapa daftar tidak langsung ter-refresh.
   const [realtimeOk, setRealtimeOk] = useState(true);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   useEffect(() => {
     // Realtime: setiap perubahan pada friend_requests yg menyangkut user
     // saat ini akan invalidate cache → daftar & status ikut update.
@@ -44,6 +45,7 @@ function FriendRequestsPage() {
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth.user?.id;
       if (!uid || cancelled) return;
+      setMyUserId(uid);
       channel = supabase
         .channel(`friend-requests:${uid}`)
         .on(
@@ -93,6 +95,12 @@ function FriendRequestsPage() {
   // `start_dm`, lalu navigate. Kalau start_dm gagal (mis. jaringan), tetap
   // tampil toast sukses karena permintaan sudah tercatat accepted di DB.
   async function accept(id: string, peerId: string, name: string | null) {
+    const row = incoming.find((r) => r.id === id);
+    if (!row || (myUserId && row.to_user !== myUserId)) {
+      toast.error("Permintaan ini bukan permintaan masuk untuk akun ini. Buka tab Masuk lalu coba Terima dari sana.");
+      await refetch();
+      return;
+    }
     try {
       const returnedStatus = await respond.mutateAsync({ requestId: id, accept: true });
       // Validasi hasil RPC: kalau server tidak mengembalikan "accepted",
