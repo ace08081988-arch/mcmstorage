@@ -705,6 +705,41 @@ function ChatRoomPage() {
   const pendingProductsKey = conversationId
     ? `mcm.chat.pendingProducts.${conversationId}`
     : null;
+  // Tulis nilai `pendingProducts` ke localStorage SEKARANG (tidak menunggu
+  // effect). Dipakai oleh handler +/− dan prompt qty supaya perubahan tetap
+  // aman walau tab langsung ditutup sebelum React sempat menjalankan effect
+  // penyimpan. StrictMode boleh memanggil setter dua kali di dev — tulisan
+  // idempoten sehingga aman.
+  const persistPendingRef = useRef<(next: PickedProductRow[]) => void>(() => {});
+  persistPendingRef.current = (next: PickedProductRow[]) => {
+    if (!pendingProductsKey) return;
+    if (typeof window === "undefined") return;
+    try {
+      if (next.length === 0) {
+        window.localStorage.removeItem(pendingProductsKey);
+      } else {
+        window.localStorage.setItem(
+          pendingProductsKey,
+          JSON.stringify({ v: PENDING_PRODUCTS_VERSION, items: next }),
+        );
+      }
+    } catch { /* ignore quota */ }
+  };
+  // Wrapper untuk update+persist dalam satu langkah. Menerima nilai baru
+  // atau updater fungsional; menulis ke localStorage sinkron di sisi
+  // pemanggil (bukan menunggu effect commit).
+  const updatePendingProducts = useCallback(
+    (next: PickedProductRow[] | ((prev: PickedProductRow[]) => PickedProductRow[])) => {
+      setPendingProducts((prev) => {
+        const computed = typeof next === "function"
+          ? (next as (p: PickedProductRow[]) => PickedProductRow[])(prev)
+          : next;
+        persistPendingRef.current(computed);
+        return computed;
+      });
+    },
+    [],
+  );
   const pendingHydratedRef = useRef(false);
   useEffect(() => {
     pendingHydratedRef.current = false;
