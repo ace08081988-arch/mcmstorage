@@ -1953,7 +1953,7 @@ function ChatRoomPage() {
                 Bersihkan
               </button>
             </div>
-            <ul className="flex flex-wrap gap-1.5">
+            <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
               {pendingProducts.map((p, idx) => {
                 // Catalog = referensi stok gudang (tidak boleh diedit dari
                 // chip). Untuk ready/self dengan qty numerik + baseUnit,
@@ -1991,20 +1991,30 @@ function ChatRoomPage() {
                 return (
                   <li
                     key={`${p.source}:${p.id}:${idx}`}
-                    className="inline-flex max-w-[240px] items-center gap-1.5 rounded-md border bg-background py-1 pl-1 pr-1"
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-md border bg-background p-1.5"
                   >
                     <PendingProductThumb path={p.photoPath} bucket={p.bucket} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[11px] font-medium leading-tight" title={p.productName}>
-                        {p.productName}
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span
+                          className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-foreground"
+                          title={p.productName}
+                        >
+                          {p.productName}
+                        </span>
+                        {p.source === "catalog" ? (
+                          <span className="shrink-0 rounded bg-primary/10 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-primary">
+                            katalog
+                          </span>
+                        ) : null}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] leading-tight text-muted-foreground">
+                      <div className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 text-[10px] leading-tight text-muted-foreground">
                         {editable ? (
-                          <span className="inline-flex items-center gap-0.5">
+                          <span className="inline-flex shrink-0 items-center gap-0.5">
                             <button
                               type="button"
                               aria-label={`Kurangi jumlah ${p.productName}`}
-                              className="inline-flex h-5 w-5 items-center justify-center rounded border bg-background text-foreground hover:bg-accent active:scale-95 disabled:opacity-40"
+                              className="inline-flex h-6 w-6 items-center justify-center rounded border bg-background text-foreground hover:bg-accent active:scale-95 disabled:opacity-40"
                               disabled={(p.qty ?? 0) <= step}
                               onClick={() => adjustQty(-step)}
                             >
@@ -2014,39 +2024,51 @@ function ChatRoomPage() {
                               type="button"
                               aria-label={`Ubah jumlah ${p.productName}`}
                               onClick={promptQty}
-                              className="min-w-[52px] rounded px-1 py-px text-center text-[10px] font-medium text-foreground hover:bg-accent"
+                              className="min-w-[56px] rounded px-1 py-0.5 text-center text-[11px] font-semibold tabular-nums text-foreground hover:bg-accent"
                             >
                               {fmtBase(p.qty!, p.baseUnit!)}
                             </button>
                             <button
                               type="button"
                               aria-label={`Tambah jumlah ${p.productName}`}
-                              className="inline-flex h-5 w-5 items-center justify-center rounded border bg-background text-foreground hover:bg-accent active:scale-95"
+                              className="inline-flex h-6 w-6 items-center justify-center rounded border bg-background text-foreground hover:bg-accent active:scale-95"
                               onClick={() => adjustQty(step)}
                             >
                               <Plus className="h-3 w-3" />
                             </button>
                           </span>
                         ) : p.qty !== null && p.baseUnit ? (
-                          <span>{fmtBase(p.qty, p.baseUnit)}</span>
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-foreground">
+                            {fmtBase(p.qty, p.baseUnit)}
+                          </span>
                         ) : (
-                          <span className="rounded bg-muted px-1 py-px text-[9px]">sendiri</span>
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+                            sendiri
+                          </span>
                         )}
-                        {p.variant ? (
-                          <span className="truncate" title={p.variant}>· {p.variant}</span>
-                        ) : null}
-                        {p.source === "catalog" ? (
-                          <span className="rounded bg-primary/10 px-1 py-px text-[9px] text-primary">katalog</span>
-                        ) : null}
-                        {p.locationUrl ? (
-                          <span className="text-[9px]">· lokasi</span>
-                        ) : null}
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          {p.variant ? (
+                            <span
+                              className="min-w-0 flex-1 truncate text-[10px]"
+                              title={p.variant}
+                            >
+                              {p.variant}
+                            </span>
+                          ) : (
+                            <span className="min-w-0 flex-1" />
+                          )}
+                          {p.locationUrl ? (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/70 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide">
+                              <MapPin className="h-2.5 w-2.5" /> lokasi
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                     <button
                       type="button"
                       aria-label={`Buang ${p.productName}`}
-                      className="ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                       onClick={() =>
                         setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
                       }
