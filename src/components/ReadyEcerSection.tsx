@@ -2579,11 +2579,11 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <Link
                 to="/ecer"
                 search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" }}
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={(e) => e.stopPropagation()}
+                onClickCapture={(e) => {
                   // Cegah navigasi langsung; buka modal konfirmasi dulu supaya
                   // owner bisa memastikan jumlah kotak & lokasi sebelum masuk
-                  // ke halaman verifikasi pembayaran.
+                  // ke halaman verifikasi pembayaran WA.
                   e.preventDefault();
                   const withLoc = r.worker_shots.filter((s) => s.location_url).length;
                   void (async () => {
