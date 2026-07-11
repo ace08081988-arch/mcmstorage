@@ -4599,11 +4599,13 @@ function SendEcerPrepsDialog({
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={handleSend} disabled={!canSend}>
               {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
-              {payMethod === "hutang"
-                ? "Kirim & catat piutang"
-                : payMethod === "partial"
-                  ? "Kirim & catat sebagian piutang"
-                  : "Kirim & catat penjualan"}
+              {payMethod === null
+                ? "Pilih metode bayar dulu"
+                : payMethod === "hutang"
+                  ? "Kirim & catat piutang"
+                  : payMethod === "partial"
+                    ? "Kirim & catat sebagian piutang"
+                    : "Kirim & catat penjualan"}
             </Button>
           </div>
         </DialogFooter>
