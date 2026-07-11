@@ -705,6 +705,41 @@ function ChatRoomPage() {
   const pendingProductsKey = conversationId
     ? `mcm.chat.pendingProducts.${conversationId}`
     : null;
+  // Tulis nilai `pendingProducts` ke localStorage SEKARANG (tidak menunggu
+  // effect). Dipakai oleh handler +/− dan prompt qty supaya perubahan tetap
+  // aman walau tab langsung ditutup sebelum React sempat menjalankan effect
+  // penyimpan. StrictMode boleh memanggil setter dua kali di dev — tulisan
+  // idempoten sehingga aman.
+  const persistPendingRef = useRef<(next: PickedProductRow[]) => void>(() => {});
+  persistPendingRef.current = (next: PickedProductRow[]) => {
+    if (!pendingProductsKey) return;
+    if (typeof window === "undefined") return;
+    try {
+      if (next.length === 0) {
+        window.localStorage.removeItem(pendingProductsKey);
+      } else {
+        window.localStorage.setItem(
+          pendingProductsKey,
+          JSON.stringify({ v: PENDING_PRODUCTS_VERSION, items: next }),
+        );
+      }
+    } catch { /* ignore quota */ }
+  };
+  // Wrapper untuk update+persist dalam satu langkah. Menerima nilai baru
+  // atau updater fungsional; menulis ke localStorage sinkron di sisi
+  // pemanggil (bukan menunggu effect commit).
+  const updatePendingProducts = useCallback(
+    (next: PickedProductRow[] | ((prev: PickedProductRow[]) => PickedProductRow[])) => {
+      updatePendingProducts((prev) => {
+        const computed = typeof next === "function"
+          ? (next as (p: PickedProductRow[]) => PickedProductRow[])(prev)
+          : next;
+        persistPendingRef.current(computed);
+        return computed;
+      });
+    },
+    [],
+  );
   const pendingHydratedRef = useRef(false);
   useEffect(() => {
     pendingHydratedRef.current = false;
@@ -959,7 +994,7 @@ function ChatRoomPage() {
     }
     setBody("");
     setReplyTo(null);
-    setPendingProducts([]);
+    updatePendingProducts([]);
   };
 
   // Auto-retry failed messages once the browser is back online.
@@ -1948,7 +1983,7 @@ function ChatRoomPage() {
               <button
                 type="button"
                 className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
-                onClick={() => setPendingProducts([])}
+                onClick={() => updatePendingProducts([])}
               >
                 Bersihkan
               </button>
@@ -1962,7 +1997,7 @@ function ChatRoomPage() {
                   p.source !== "catalog" && p.qty !== null && p.baseUnit !== null;
                 const step = p.baseUnit === "g" ? 100 : 1;
                 const adjustQty = (delta: number) => {
-                  setPendingProducts((prev) =>
+                  updatePendingProducts((prev) =>
                     prev.map((row, i) => {
                       if (i !== idx) return row;
                       if (row.qty === null) return row;
@@ -1984,7 +2019,7 @@ function ChatRoomPage() {
                     toast.error(`Jumlah minimal ${step} ${unitLabel}.`);
                     return;
                   }
-                  setPendingProducts((prev) =>
+                  updatePendingProducts((prev) =>
                     prev.map((row, i) => (i === idx ? { ...row, qty: n } : row)),
                   );
                 };
@@ -2070,7 +2105,7 @@ function ChatRoomPage() {
                       aria-label={`Buang ${p.productName}`}
                       className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                       onClick={() =>
-                        setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
+                        updatePendingProducts((prev) => prev.filter((_, i) => i !== idx))
                       }
                     >
                       <X className="h-3.5 w-3.5" />
@@ -2161,7 +2196,7 @@ function ChatRoomPage() {
             disabled={chatBlocked}
             peerName={displayedPeerName}
             onSent={() => { void othersRead.refetch(); }}
-            onQueue={(row) => setPendingProducts((prev) => [...prev, row])}
+            onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
           />
           <CartComposer
             conversationId={conversationId}
