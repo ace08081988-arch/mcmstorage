@@ -170,6 +170,12 @@ export function ProductSharePopover({
     );
   }, [rows, q]);
 
+  const grouped = useMemo(() => {
+    const paket = filtered.filter((r) => r.source !== "catalog");
+    const katalog = filtered.filter((r) => r.source === "catalog");
+    return { paket, katalog };
+  }, [filtered]);
+
   async function pickAndSend(row: Row) {
     if (sendingId) return;
     setSendingId(row.id);
@@ -300,45 +306,36 @@ export function ProductSharePopover({
           ) : filtered.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
               {rows.length === 0
-                ? "Belum ada paket siap kirim di gudang."
+                ? "Belum ada produk di gudang."
                 : "Tidak ada produk yang cocok."}
             </div>
           ) : (
-            <ul className="divide-y">
-              {filtered.map((row) => (
-                <li key={row.id}>
-                  <button
-                    type="button"
-                    onClick={() => void pickAndSend(row)}
-                    disabled={sendingId !== null}
-                    className="flex w-full items-center gap-2 p-2 text-left hover:bg-accent disabled:opacity-60"
-                  >
-                    <ProductThumb path={row.photoPath} bucket={row.bucket} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">
-                        {row.productName}
-                      </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-                        {row.qty !== null && row.baseUnit ? (
-                          <span>{fmtBase(row.qty, row.baseUnit)}</span>
-                        ) : (
-                          <span className="rounded bg-muted px-1 py-0.5 text-[10px]">sendiri</span>
-                        )}
-                        {row.variant ? <span>· {row.variant}</span> : null}
-                        {row.locationUrl ? (
-                          <span className="inline-flex items-center gap-0.5">
-                            <MapPin className="h-3 w-3" /> lokasi
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    {sendingId === row.id ? (
-                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div>
+              {grouped.paket.length > 0 ? (
+                <>
+                  <div className="sticky top-0 z-[1] bg-muted/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                    Paket siap kirim
+                  </div>
+                  <ul className="divide-y">
+                    {grouped.paket.map((row) => (
+                      <ProductRow key={row.id} row={row} sendingId={sendingId} onPick={pickAndSend} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              {grouped.katalog.length > 0 ? (
+                <>
+                  <div className="sticky top-0 z-[1] bg-muted/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                    Katalog gudang
+                  </div>
+                  <ul className="divide-y">
+                    {grouped.katalog.map((row) => (
+                      <ProductRow key={row.id} row={row} sendingId={sendingId} onPick={pickAndSend} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </div>
           )}
         </div>
       </PopoverContent>
