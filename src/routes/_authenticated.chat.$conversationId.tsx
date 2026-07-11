@@ -595,14 +595,36 @@ function ChatRoomPage() {
     try {
       const raw = window.localStorage.getItem(pendingProductsKey);
       if (raw) {
-        const parsed = JSON.parse(raw) as PickedProductRow[];
-        if (Array.isArray(parsed)) setPendingProducts(parsed);
-        else setPendingProducts([]);
+        const parsed = JSON.parse(raw) as unknown;
+        const { valid, dropped, malformed } = sanitizePendingProducts(parsed);
+        setPendingProducts(valid);
+        if (malformed) {
+          toast.error("Pratinjau produk rusak — daftar dikosongkan.", {
+            id: `pending-corrupt-${pendingProductsKey}`,
+            description: "Data tersimpan tidak dikenali dan sudah dibersihkan.",
+          });
+          try { window.localStorage.removeItem(pendingProductsKey); } catch { /* ignore */ }
+        } else if (dropped > 0) {
+          toast.warning(
+            `${dropped} pratinjau produk dilewati karena datanya tidak lengkap.`,
+            {
+              id: `pending-dropped-${pendingProductsKey}`,
+              description: "Silakan pilih ulang produk yang hilang dari 📦.",
+            },
+          );
+        }
       } else {
         setPendingProducts([]);
       }
     } catch {
       setPendingProducts([]);
+      if (pendingProductsKey) {
+        toast.error("Pratinjau produk rusak — daftar dikosongkan.", {
+          id: `pending-parse-${pendingProductsKey}`,
+          description: "File pratinjau tidak bisa dibaca.",
+        });
+        try { window.localStorage.removeItem(pendingProductsKey); } catch { /* ignore */ }
+      }
     }
     pendingHydratedRef.current = true;
   }, [pendingProductsKey]);
