@@ -90,11 +90,10 @@ function FriendRequestsPage() {
   const respond = useRespondFriendRequest();
   const cancel = useCancelFriendRequest();
 
-  // Setelah permintaan diterima, spec MCM: langsung buka halaman chat dengan
-  // kontak baru. Kita ambil peer_id dari request row, buka/create DM via RPC
-  // `start_dm`, lalu navigate. Kalau start_dm gagal (mis. jaringan), tetap
-  // tampil toast sukses karena permintaan sudah tercatat accepted di DB.
-  async function accept(id: string, peerId: string, name: string | null) {
+  // Terima hanya mengubah status permintaan. Navigasi ke percakapan sengaja
+  // dipisah ke tombol "Buka Chat" agar user tidak terpental ke jalur lain
+  // saat tujuan awalnya hanya menerima undangan.
+  async function accept(id: string, name: string | null) {
     const row = incoming.find((r) => r.id === id);
     if (!row || (myUserId && row.to_user !== myUserId)) {
       toast.error("Permintaan ini bukan permintaan masuk untuk akun ini. Buka tab Masuk lalu coba Terima dari sana.");
@@ -134,23 +133,8 @@ function FriendRequestsPage() {
           console.error("[friend-accept] verifikasi gagal", verifyErr);
         }
       }, 4000);
-      setOpeningChatId(id);
-      try {
-        const cid = await startDm.mutateAsync(peerId);
-        window.clearTimeout(verifyTimer);
-        if (cid) {
-          toast.success(`Permintaan diterima. Chat dengan ${name ?? "kontak"} dibuka.`);
-          navigate({ to: "/chat/$conversationId", params: { conversationId: cid } });
-          return;
-        }
-        toast.success(`Permintaan dari ${name ?? "kontak"} diterima.`);
-      } catch (dmErr) {
-        window.clearTimeout(verifyTimer);
-        console.error("[friend-accept] start_dm gagal", dmErr);
-        toast.error("Kontak diterima, tapi gagal membuka chat. Coba dari daftar chat.");
-      } finally {
-        setOpeningChatId(null);
-      }
+      toast.success(`Permintaan dari ${name ?? "kontak"} diterima. Tombol Buka Chat sudah aktif.`);
+      void qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
     } catch (e) {
       console.error("[friend-accept] RPC gagal", e);
       const msg = (e as Error).message || "Gagal menerima permintaan.";
@@ -268,7 +252,7 @@ function FriendRequestsPage() {
                       <Button
                         type="button"
                         size="sm"
-                        onClick={() => accept(r.id, r.peer_id, r.peer_display_name)}
+                        onClick={() => accept(r.id, r.peer_display_name)}
                         disabled={respond.isPending || openingChatId === r.id}
                         className="gap-1"
                       >

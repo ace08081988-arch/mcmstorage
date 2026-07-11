@@ -44,7 +44,7 @@ function hasAuthState(): boolean {
 test.describe("kontak → DM: wiring startDm + navigate($conversationId)", () => {
   test("halaman /kontak: tombol Chat pakai startDm.mutateAsync lalu navigate ke /chat/$conversationId", () => {
     const src = readFileSync(
-      resolve(process.cwd(), "src/routes/_authenticated.kontak.tsx"),
+      resolve(process.cwd(), "src/routes/_authenticated.kontak.index.tsx"),
       "utf8",
     );
     // Harus memakai mutateAsync (bukan mutate) supaya id percakapan
