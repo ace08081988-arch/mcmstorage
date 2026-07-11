@@ -138,24 +138,29 @@ function FriendRequestsPage() {
       // Optimistic: langsung tandai "accepted" agar kartu memperlihatkan
       // perubahan status sebelum server refetch selesai / realtime tiba.
       setRecentStatus((s) => ({ ...s, [id]: "accepted" }));
-      // Fallback verifikasi: kalau realtime tidak aktif ATAU cache belum
-      // memuat status accepted setelah beberapa detik, lakukan refetch
-      // manual dan peringatkan user supaya ia tahu update tidak instan.
-      const verifyTimer = window.setTimeout(async () => {
-        try {
-          const fresh = await refetch();
-          const row = fresh.data?.find((r) => r.id === id);
-          if (!row || row.status !== "accepted") {
-            toast.error(
-              realtimeOk
-                ? "Status di server belum berubah. Coba refresh halaman."
-                : "Update realtime tidak tersedia. Data direfresh manual — jika masih pending, coba lagi.",
-            );
+      // Polling singkat sebagai jaring pengaman kalau realtime telat/mati:
+      // invalidate cache lalu refetch setiap 1s (maks 6x). Berhenti begitu
+      // server mengonfirmasi status "accepted". Optimistic `recentStatus`
+      // sudah bikin tombol Buka Chat langsung muncul; polling ini memastikan
+      // data server ikut segar sebelum user pindah halaman.
+      void qc.invalidateQueries({ queryKey: ["friend-requests"] });
+      void (async () => {
+        for (let i = 0; i < 6; i++) {
+          await new Promise((r) => setTimeout(r, 1000));
+          try {
+            const fresh = await refetch();
+            const row = fresh.data?.find((r) => r.id === id);
+            if (row?.status === "accepted") return;
+          } catch (verifyErr) {
+            console.error("[friend-accept] polling gagal", verifyErr);
           }
-        } catch (verifyErr) {
-          console.error("[friend-accept] verifikasi gagal", verifyErr);
         }
-      }, 4000);
+        toast.error(
+          realtimeOk
+            ? "Status di server belum berubah setelah beberapa detik. Coba refresh halaman."
+            : "Update realtime tidak tersedia dan polling belum mengonfirmasi. Coba refresh halaman.",
+        );
+      })();
       toast.success(`Permintaan dari ${name ?? "kontak"} diterima. Tombol Buka Chat sudah aktif.`);
       void qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
     } catch (e) {
