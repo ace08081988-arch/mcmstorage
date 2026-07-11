@@ -83,49 +83,118 @@ import { ProductSharePopover, sendProductRow, type PickedProductRow } from "@/co
 
 /**
  * Validasi & rapikan array PickedProductRow yang dibaca dari localStorage.
- * - `valid`: baris yang lolos schema (id/source/bucket/productName wajib ada,
- *   photoPaths berupa array string, source ∈ ready|self|catalog, dst).
- * - `dropped`: jumlah baris yang dibuang karena tidak lengkap.
- * - `malformed`: `true` kalau root value bukan array sama sekali.
+ *
+ * Menerima dua bentuk storage:
+ *  1. Format baru: `{ v: 2, items: PickedProductRow[] }`
+ *  2. Format lama (v1): array `PickedProductRow[]` langsung — masih dibaca
+ *     agar chip yang tersimpan sebelum upgrade tidak hilang.
+ *
+ * Mengembalikan:
+ *  - `valid`: baris yang lolos schema (id/source/bucket/productName wajib
+ *    ada, photoPaths berupa array string, source ∈ ready|self|catalog).
+ *  - `dropped`: jumlah baris yang dibuang karena tidak lengkap.
+ *  - `migrated`: jumlah baris yang perlu dinormalisasi (mis. `photoPath`
+ *    tunggal → `photoPaths[]`, `qty` string → number, field baru diisi
+ *    default `null`). Digunakan untuk memberi tahu user bahwa data lama
+ *    sudah dirapikan.
+ *  - `malformed`: `true` kalau root value bukan array maupun envelope
+ *    yang dikenali.
+ *  - `fromLegacy`: `true` kalau data dibaca dari format v1 (array polos).
+ *    Setelah hydrate, penyimpan akan menulis ulang ke format v2.
  */
+export const PENDING_PRODUCTS_VERSION = 2 as const;
 function sanitizePendingProducts(
   raw: unknown,
-): { valid: PickedProductRow[]; dropped: number; malformed: boolean } {
-  if (!Array.isArray(raw)) return { valid: [], dropped: 0, malformed: true };
+): {
+  valid: PickedProductRow[];
+  dropped: number;
+  migrated: number;
+  malformed: boolean;
+  fromLegacy: boolean;
+} {
+  let items: unknown;
+  let fromLegacy = false;
+  if (Array.isArray(raw)) {
+    items = raw;
+    fromLegacy = true;
+  } else if (raw && typeof raw === "object" && Array.isArray((raw as { items?: unknown }).items)) {
+    items = (raw as { items: unknown[] }).items;
+    const v = (raw as { v?: unknown }).v;
+    if (typeof v !== "number" || v !== PENDING_PRODUCTS_VERSION) {
+      // Envelope dikenali tapi versi berbeda — perlakukan seperti legacy
+      // supaya penyimpan menulis ulang ke versi saat ini.
+      fromLegacy = true;
+    }
+  } else {
+    return { valid: [], dropped: 0, migrated: 0, malformed: true, fromLegacy: false };
+  }
   const allowedSource = new Set(["ready", "self", "catalog"]);
   const allowedBucket = new Set(["ready-packages", "self-prep-photos", "item-photos"]);
   const allowedUnit = new Set(["g", "pcs"]);
   const valid: PickedProductRow[] = [];
   let dropped = 0;
-  for (const item of raw) {
+  let migrated = 0;
+  for (const item of items as unknown[]) {
     if (!item || typeof item !== "object") { dropped++; continue; }
     const r = item as Record<string, unknown>;
-    const photoPaths = Array.isArray(r.photoPaths)
-      ? (r.photoPaths.filter((p): p is string => typeof p === "string"))
-      : [];
+    // ── photoPaths ──
+    // Legacy hanya menyimpan `photoPath` tunggal; hidupkan sebagai array
+    // 1-elemen supaya UI baru tetap merender thumbnail.
+    const hasPhotoPathsArr = Array.isArray(r.photoPaths);
+    let needsMigration = false;
+    const photoPaths = hasPhotoPathsArr
+      ? ((r.photoPaths as unknown[]).filter((p): p is string => typeof p === "string"))
+      : typeof r.photoPath === "string" && r.photoPath
+        ? (needsMigration = true, [r.photoPath])
+        : [];
     if (
       typeof r.id !== "string" || !r.id ||
       typeof r.source !== "string" || !allowedSource.has(r.source) ||
       typeof r.bucket !== "string" || !allowedBucket.has(r.bucket) ||
       typeof r.productName !== "string" || !r.productName
     ) { dropped++; continue; }
-    const baseUnit = r.baseUnit === null || (typeof r.baseUnit === "string" && allowedUnit.has(r.baseUnit))
-      ? (r.baseUnit as PickedProductRow["baseUnit"])
-      : null;
+    // ── baseUnit ──
+    let baseUnit: PickedProductRow["baseUnit"] = null;
+    if (r.baseUnit === null) {
+      baseUnit = null;
+    } else if (typeof r.baseUnit === "string" && allowedUnit.has(r.baseUnit)) {
+      baseUnit = r.baseUnit as PickedProductRow["baseUnit"];
+    } else if (r.baseUnit !== undefined) {
+      needsMigration = true;
+    } else {
+      needsMigration = true;
+    }
+    // ── qty ── (izinkan string angka legacy)
+    let qty: number | null = null;
+    if (typeof r.qty === "number" && Number.isFinite(r.qty)) {
+      qty = r.qty;
+    } else if (typeof r.qty === "string" && r.qty.trim() !== "") {
+      const n = Number(r.qty);
+      if (Number.isFinite(n)) { qty = n; needsMigration = true; }
+    } else if (r.qty === undefined) {
+      needsMigration = true;
+    }
+    // ── variant / locationUrl ── (opsional, default null)
+    const variant = typeof r.variant === "string" ? r.variant : null;
+    if (r.variant === undefined) needsMigration = true;
+    const locationUrl = typeof r.locationUrl === "string" ? r.locationUrl : null;
+    if (r.locationUrl === undefined) needsMigration = true;
+    if (!hasPhotoPathsArr) needsMigration = true;
+    if (needsMigration) migrated++;
     valid.push({
       id: r.id,
       source: r.source as PickedProductRow["source"],
       bucket: r.bucket as PickedProductRow["bucket"],
       productName: r.productName,
       baseUnit,
-      qty: typeof r.qty === "number" && Number.isFinite(r.qty) ? r.qty : null,
-      variant: typeof r.variant === "string" ? r.variant : null,
+      qty,
+      variant,
       photoPath: typeof r.photoPath === "string" ? r.photoPath : (photoPaths[0] ?? null),
       photoPaths,
-      locationUrl: typeof r.locationUrl === "string" ? r.locationUrl : null,
+      locationUrl,
     });
   }
-  return { valid, dropped, malformed: false };
+  return { valid, dropped, migrated, malformed: false, fromLegacy };
 }
 import { CartComposer } from "@/components/chat/CartComposer";
 import {
@@ -644,7 +713,8 @@ function ChatRoomPage() {
       const raw = window.localStorage.getItem(pendingProductsKey);
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
-        const { valid, dropped, malformed } = sanitizePendingProducts(parsed);
+        const { valid, dropped, migrated, malformed, fromLegacy } =
+          sanitizePendingProducts(parsed);
         setPendingProducts(valid);
         if (malformed) {
           toast.error("Pratinjau produk rusak — daftar dikosongkan.", {
@@ -660,6 +730,31 @@ function ChatRoomPage() {
               description: "Silakan pilih ulang produk yang hilang dari 📦.",
             },
           );
+        }
+        if (!malformed && (migrated > 0 || fromLegacy)) {
+          // Tulis ulang segera ke format v2 supaya kunjungan berikutnya
+          // tidak perlu migrasi lagi. Effect penyimpan juga akan menulis,
+          // tetapi menulis di sini menjamin envelope terbaru walau user
+          // langsung menutup tab.
+          try {
+            if (valid.length === 0) {
+              window.localStorage.removeItem(pendingProductsKey);
+            } else {
+              window.localStorage.setItem(
+                pendingProductsKey,
+                JSON.stringify({ v: PENDING_PRODUCTS_VERSION, items: valid }),
+              );
+            }
+          } catch { /* ignore quota */ }
+          if (migrated > 0) {
+            toast.info(
+              `${migrated} pratinjau produk diperbarui ke format baru.`,
+              {
+                id: `pending-migrated-${pendingProductsKey}`,
+                description: "Jumlah, unit, varian, dan lokasi kini ditampilkan bila tersedia.",
+              },
+            );
+          }
         }
       } else {
         setPendingProducts([]);
@@ -684,7 +779,10 @@ function ChatRoomPage() {
       if (pendingProducts.length === 0) {
         window.localStorage.removeItem(pendingProductsKey);
       } else {
-        window.localStorage.setItem(pendingProductsKey, JSON.stringify(pendingProducts));
+        window.localStorage.setItem(
+          pendingProductsKey,
+          JSON.stringify({ v: PENDING_PRODUCTS_VERSION, items: pendingProducts }),
+        );
       }
     } catch { /* ignore quota */ }
   }, [pendingProductsKey, pendingProducts]);
