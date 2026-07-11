@@ -720,6 +720,15 @@ function ChatRoomPage() {
   // aman walau tab langsung ditutup sebelum React sempat menjalankan effect
   // penyimpan. StrictMode boleh memanggil setter dua kali di dev — tulisan
   // idempoten sehingga aman.
+  // Jalankan kembali sanitizer melalui envelope versi saat ini. Ini
+  // menjamin: (a) row rusak yang entah bagaimana masuk state tidak ikut
+  // ditulis, (b) qty/baseUnit/variant/locationUrl tetap sesuai kontrak,
+  // (c) envelope yang ditulis selalu bernomor versi terkini — jadi
+  // refresh berulang tidak bisa "menua" ke bentuk legacy.
+  const normalizePending = useCallback((next: PickedProductRow[]): PickedProductRow[] => {
+    const { valid } = sanitizePendingProducts({ v: PENDING_PRODUCTS_VERSION, items: next });
+    return valid;
+  }, []);
   const persistPendingRef = useRef<(next: PickedProductRow[]) => void>(() => {});
   persistPendingRef.current = (next: PickedProductRow[]) => {
     if (!pendingProductsKey) return;
@@ -737,19 +746,21 @@ function ChatRoomPage() {
     } catch { /* ignore quota */ }
   };
   // Wrapper untuk update+persist dalam satu langkah. Menerima nilai baru
-  // atau updater fungsional; menulis ke localStorage sinkron di sisi
-  // pemanggil (bukan menunggu effect commit).
+  // atau updater fungsional; menormalkan hasilnya lewat sanitizer sebelum
+  // ditulis ke localStorage — jadi tiap perubahan qty menulis ulang
+  // envelope versi terbaru yang bersih.
   const updatePendingProducts = useCallback(
     (next: PickedProductRow[] | ((prev: PickedProductRow[]) => PickedProductRow[])) => {
-      updatePendingProducts((prev) => {
+      setPendingProducts((prev) => {
         const computed = typeof next === "function"
           ? (next as (p: PickedProductRow[]) => PickedProductRow[])(prev)
           : next;
-        persistPendingRef.current(computed);
-        return computed;
+        const normalized = normalizePending(computed);
+        persistPendingRef.current(normalized);
+        return normalized;
       });
     },
-    [],
+    [normalizePending],
   );
   const pendingHydratedRef = useRef(false);
   useEffect(() => () => {
