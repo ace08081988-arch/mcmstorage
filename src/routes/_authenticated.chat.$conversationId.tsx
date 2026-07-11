@@ -143,7 +143,7 @@ function sanitizePendingProducts(
     const hasPhotoPathsArr = Array.isArray(r.photoPaths);
     let needsMigration = false;
     const photoPaths = hasPhotoPathsArr
-      ? (r.photoPaths.filter((p): p is string => typeof p === "string"))
+      ? ((r.photoPaths as unknown[]).filter((p): p is string => typeof p === "string"))
       : typeof r.photoPath === "string" && r.photoPath
         ? (needsMigration = true, [r.photoPath])
         : [];
