@@ -347,7 +347,7 @@ export function ProductSharePopover({
 }
 
 const thumbCache = new Map<string, { url: string; exp: number }>();
-function ProductThumb({ path, bucket }: { path: string | null; bucket: "ready-packages" | "self-prep-photos" }) {
+function ProductThumb({ path, bucket }: { path: string | null; bucket: "ready-packages" | "self-prep-photos" | "item-photos" }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!path) return;
