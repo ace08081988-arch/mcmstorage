@@ -1580,9 +1580,9 @@ function ChatRoomPage() {
                     id={`msg-${m.id}`}
                     className={`flex transition-colors duration-200 ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
-                    <div className={`group relative flex min-w-0 max-w-[85%] items-start gap-1 sm:max-w-[75%] ${mine ? "flex-row-reverse" : "flex-row"}`}>
+                     <div className={`group relative flex min-w-0 max-w-[85%] items-start gap-1 sm:max-w-[75%] ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
-                        className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
+                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
                             ? `${mine ? "rounded-br-sm" : "rounded-bl-sm"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
@@ -1621,10 +1621,10 @@ function ChatRoomPage() {
                                 : "border-primary/60 bg-background/60"
                             }`}
                           >
-                            <div className="font-semibold opacity-80">
+                            <div className="truncate font-semibold opacity-80">
                               {replyMsg.sender_id === myId ? "Anda" : replySenderName}
                             </div>
-                            <div className="line-clamp-2 opacity-80">
+                            <div className="line-clamp-2 break-words [overflow-wrap:anywhere] opacity-80">
                               <MessagePreview message={replyMsg} />
                             </div>
                           </div>
@@ -1671,7 +1671,7 @@ function ChatRoomPage() {
                                   <UnknownCardBlock mine={mine} />
                                 ) : null}
                                 {!card && !isCardBody(m.body) && m.body ? (
-                                  <div className="whitespace-pre-wrap break-words">
+                                  <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                                     <Linkify text={m.body} />
                                   </div>
                                 ) : null}
@@ -2012,10 +2012,10 @@ function ChatRoomPage() {
       >
         {editing ? (
           <div className="mb-2 flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
-            <Pencil className="mt-0.5 h-3.5 w-3.5 text-primary" />
+            <Pencil className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-primary">Edit pesan</div>
-              <div className="line-clamp-2 text-muted-foreground">
+              <div className="line-clamp-2 break-words [overflow-wrap:anywhere] text-muted-foreground">
                 {previewText(editing.body) || "(kosong)"}
               </div>
             </div>
@@ -2023,7 +2023,7 @@ function ChatRoomPage() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-6 w-6 shrink-0"
               aria-label="Batal edit"
               onClick={() => {
                 setEditing(null);
@@ -2035,12 +2035,12 @@ function ChatRoomPage() {
           </div>
         ) : replyTo ? (
           <div className="mb-2 flex items-start gap-2 rounded-md border-l-2 border-primary bg-muted/60 px-2 py-1 text-xs">
-            <Reply className="mt-0.5 h-3.5 w-3.5 text-primary" />
+            <Reply className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <div className="font-semibold">
+              <div className="truncate font-semibold">
                 Balas {replyTo.sender_id === myId ? "Anda" : (profiles.data?.get(replyTo.sender_id)?.display_name || "Pengguna")}
               </div>
-              <div className="line-clamp-2 text-muted-foreground">
+              <div className="line-clamp-2 break-words [overflow-wrap:anywhere] text-muted-foreground">
                 <MessagePreview message={replyTo} />
               </div>
             </div>
@@ -2048,7 +2048,7 @@ function ChatRoomPage() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-6 w-6 shrink-0"
               aria-label="Batal balas"
               onClick={() => setReplyTo(null)}
             >
