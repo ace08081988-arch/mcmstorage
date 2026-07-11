@@ -2,10 +2,12 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Copy, Share2, QrCode, UserPlus, RefreshCcw, Check, Camera } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMyProfile } from "@/lib/profile";
 import { QrScannerDialog, handleScannedText } from "@/components/QrScannerDialog";
+import { useStartDm } from "@/lib/chat";
 import {
   addContactByInviteCode,
   buildInviteUrl,
@@ -23,6 +25,8 @@ export const Route = createFileRoute("/_authenticated/undang")({
 
 function UndangPage() {
   const router = useRouter();
+  const qc = useQueryClient();
+  const startDm = useStartDm();
   const { data: profile } = useMyProfile();
   const myCode = profile?.invite_code ?? "";
   const myUrl = useMemo(() => (myCode ? buildInviteUrl(myCode) : ""), [myCode]);
@@ -128,9 +132,21 @@ function UndangPage() {
       const r = await addContactByInviteCode(v.code);
       setInput("");
       setPreview(null);
+      qc.invalidateQueries({ queryKey: ["friend-requests"] });
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
       if (r.alreadyFriends) {
-        toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}.`);
-        router.navigate({ to: "/chat" });
+        toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}. Membuka chat…`);
+        try {
+          const cid = await startDm.mutateAsync(r.linkedUserId);
+          if (cid) {
+            router.navigate({ to: "/chat/$conversationId", params: { conversationId: cid } });
+            return;
+          }
+          router.navigate({ to: "/chat" });
+        } catch (e) {
+          console.error("[undang] start_dm failed", e);
+          router.navigate({ to: "/chat" });
+        }
       } else if (r.incomingReverseId) {
         toast.info(
           `${r.displayName ?? "Kontak"} sudah mengirim permintaan lebih dulu — buka daftar Permintaan untuk menerima.`,
