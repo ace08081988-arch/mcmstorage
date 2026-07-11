@@ -2391,3 +2391,48 @@ function ChatRoomPage() {
 
 // Keep a hint link in case the room URL is opened directly without context.
 export const ChatRoomFallbackLink = () => <Link to="/chat">Kembali ke daftar chat</Link>;
+
+const pendingThumbCache = new Map<string, { url: string; exp: number }>();
+
+function PendingProductThumb({
+  path,
+  bucket,
+}: {
+  path: string | null;
+  bucket: "ready-packages" | "self-prep-photos" | "item-photos";
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!path) return;
+    const key = `${bucket}:${path}`;
+    const c = pendingThumbCache.get(key);
+    if (c && c.exp > Date.now()) {
+      setUrl(c.url);
+      return;
+    }
+    let alive = true;
+    supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 3600)
+      .then(({ data }) => {
+        if (!alive || !data?.signedUrl) return;
+        pendingThumbCache.set(key, { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 });
+        setUrl(data.signedUrl);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [path, bucket]);
+  if (!path) {
+    return (
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded border border-dashed text-muted-foreground">
+        <Package className="h-3.5 w-3.5" />
+      </div>
+    );
+  }
+  return (
+    <div className="h-9 w-9 shrink-0 overflow-hidden rounded border bg-muted">
+      {url ? <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" /> : null}
+    </div>
+  );
+}
