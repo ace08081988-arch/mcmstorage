@@ -263,22 +263,22 @@ function FriendRequestsPage() {
                         type="button"
                         size="sm"
                         onClick={() => accept(r.id, r.peer_display_name)}
-                        disabled={respond.isPending}
+                        disabled={pendingActionId === r.id}
                         className="gap-1"
                       >
-                        {respond.isPending ? (
+                        {pendingActionId === r.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Check className="h-4 w-4" />
                         )}{" "}
-                        {respond.isPending ? "Menerima…" : "Terima"}
+                        {pendingActionId === r.id ? "Menerima…" : "Terima"}
                       </Button>
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => reject(r.id, r.peer_display_name)}
-                        disabled={respond.isPending}
+                        disabled={pendingActionId === r.id}
                         className="gap-1"
                       >
                         <X className="h-4 w-4" /> Tolak
