@@ -124,6 +124,7 @@ function FriendRequestsPage() {
       return;
     }
     setPendingActionId(id);
+    const acceptToastId = `friend-accept-${id}`;
     try {
       const returnedStatus = await respond.mutateAsync({ requestId: id, accept: true });
       // Validasi hasil RPC: kalau server tidak mengembalikan "accepted",
@@ -139,30 +140,50 @@ function FriendRequestsPage() {
       // Optimistic: langsung tandai "accepted" agar kartu memperlihatkan
       // perubahan status sebelum server refetch selesai / realtime tiba.
       setRecentStatus((s) => ({ ...s, [id]: "accepted" }));
+      toast.success("Diterima — Buka Chat siap", {
+        id: acceptToastId,
+        description: `Permintaan dari ${name ?? "kontak"} sudah diterima. Tombol Buka Chat muncul di kartu.`,
+      });
       // Polling singkat sebagai jaring pengaman kalau realtime telat/mati:
       // invalidate cache lalu refetch setiap 1s (maks 6x). Berhenti begitu
       // server mengonfirmasi status "accepted". Optimistic `recentStatus`
       // sudah bikin tombol Buka Chat langsung muncul; polling ini memastikan
       // data server ikut segar sebelum user pindah halaman.
       void qc.invalidateQueries({ queryKey: ["friend-requests"] });
+      setSyncingIds((prev) => new Set(prev).add(id));
       void (async () => {
-        for (let i = 0; i < 6; i++) {
-          await new Promise((r) => setTimeout(r, 1000));
-          try {
-            const fresh = await refetch();
-            const row = fresh.data?.find((r) => r.id === id);
-            if (row?.status === "accepted") return;
-          } catch (verifyErr) {
-            console.error("[friend-accept] polling gagal", verifyErr);
+        try {
+          for (let i = 0; i < 6; i++) {
+            await new Promise((r) => setTimeout(r, 1000));
+            try {
+              const fresh = await refetch();
+              const row = fresh.data?.find((r) => r.id === id);
+              if (row?.status === "accepted") {
+                toast.success("Tersinkron dengan server", {
+                  id: acceptToastId,
+                  description: `Status ${name ?? "kontak"} sudah terverifikasi. Buka Chat siap digunakan.`,
+                });
+                return;
+              }
+            } catch (verifyErr) {
+              console.error("[friend-accept] polling gagal", verifyErr);
+            }
           }
+          toast.error("Gagal sinkron", {
+            id: acceptToastId,
+            description: realtimeOk
+              ? "Status di server belum berubah setelah beberapa detik. Coba refresh halaman."
+              : "Update realtime tidak tersedia dan polling belum mengonfirmasi. Coba refresh halaman.",
+            action: { label: "Refresh", onClick: () => window.location.reload() },
+          });
+        } finally {
+          setSyncingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
         }
-        toast.error(
-          realtimeOk
-            ? "Status di server belum berubah setelah beberapa detik. Coba refresh halaman."
-            : "Update realtime tidak tersedia dan polling belum mengonfirmasi. Coba refresh halaman.",
-        );
       })();
-      toast.success(`Permintaan dari ${name ?? "kontak"} diterima. Tombol Buka Chat sudah aktif.`);
       void qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
     } catch (e) {
       console.error("[friend-accept] RPC gagal", e);
