@@ -344,6 +344,52 @@ export function ProductSharePopover({
 }
 
 const thumbCache = new Map<string, { url: string; exp: number }>();
+
+function ProductRow({
+  row,
+  sendingId,
+  onPick,
+}: {
+  row: Row;
+  sendingId: string | null;
+  onPick: (row: Row) => void | Promise<void>;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => void onPick(row)}
+        disabled={sendingId !== null}
+        className="flex w-full items-center gap-2 p-2 text-left hover:bg-accent disabled:opacity-60"
+      >
+        <ProductThumb path={row.photoPath} bucket={row.bucket} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium">{row.productName}</div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+            {row.qty !== null && row.baseUnit ? (
+              <span>{fmtBase(row.qty, row.baseUnit)}</span>
+            ) : (
+              <span className="rounded bg-muted px-1 py-0.5 text-[10px]">sendiri</span>
+            )}
+            {row.variant ? <span>· {row.variant}</span> : null}
+            {row.locationUrl ? (
+              <span className="inline-flex items-center gap-0.5">
+                <MapPin className="h-3 w-3" /> lokasi
+              </span>
+            ) : null}
+            {row.source === "catalog" ? (
+              <span className="rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary">katalog</span>
+            ) : null}
+          </div>
+        </div>
+        {sendingId === row.id ? (
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+        ) : null}
+      </button>
+    </li>
+  );
+}
+
 function ProductThumb({ path, bucket }: { path: string | null; bucket: "ready-packages" | "self-prep-photos" | "item-photos" }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
