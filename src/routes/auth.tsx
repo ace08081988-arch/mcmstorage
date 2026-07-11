@@ -13,6 +13,24 @@ import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { logAuthDebug } from "@/lib/auth-debug";
 
+const SAFE_POST_AUTH_PATH = /^\/(?!\/)[^\s\\]*$/;
+const FORBIDDEN_POST_AUTH_TARGETS = new Set(["/auth", "/auth-callback"]);
+
+function safePostAuthTarget(value: string | null | undefined): string {
+  if (!value || value.length > 512 || !SAFE_POST_AUTH_PATH.test(value) || /[\r\n]/.test(value)) {
+    return "/";
+  }
+  const pathOnly = value.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+  if (FORBIDDEN_POST_AUTH_TARGETS.has(pathOnly)) return "/";
+  return value;
+}
+
+function readPostAuthTarget(): string {
+  if (typeof window === "undefined") return "/";
+  const params = new URLSearchParams(window.location.search);
+  return safePostAuthTarget(params.get("redirect") ?? params.get("next"));
+}
+
 function AuthBrand() {
   const { full, logo } = useOrgName();
   return (
@@ -68,6 +86,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const [postAuthTarget] = useState(readPostAuthTarget);
   // Simpan pilihan intent/mode/email supaya konsisten saat user reload
   // aplikasi atau berpindah tab Masuk/Daftar. Password TIDAK disimpan.
   const LS_KEY = "mcm.authPrefs";
@@ -161,9 +180,9 @@ function AuthPage() {
       }
     }
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/", replace: true });
+      if (data.session) navigate({ to: postAuthTarget, replace: true });
     });
-  }, [navigate]);
+  }, [navigate, postAuthTarget]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -285,8 +304,8 @@ function AuthPage() {
     }
     toast.success("Berhasil masuk");
     clearPrefs();
-    logAuthDebug("signin", "navigating to /", { target: "/" });
-    navigate({ to: "/", replace: true });
+    logAuthDebug("signin", "navigating after sign-in", { target: postAuthTarget });
+    navigate({ to: postAuthTarget, replace: true });
   };
 
   const sendReset = async () => {
@@ -335,8 +354,9 @@ function AuthPage() {
 
   const signInWithApple = async () => {
     setLoading(true);
+    try { window.sessionStorage.setItem("mcm.postAuthRedirect", postAuthTarget); } catch { /* ignore */ }
     const result = await lovable.auth.signInWithOAuth("apple", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/auth-callback?redirect=${encodeURIComponent(postAuthTarget)}`,
     });
     if (result.error) {
       setLoading(false);
@@ -346,13 +366,14 @@ function AuthPage() {
     if (result.redirected) return;
     toast.success("Berhasil masuk");
     clearPrefs();
-    navigate({ to: "/", replace: true });
+    navigate({ to: postAuthTarget, replace: true });
   };
 
   const signInWithGoogle = async () => {
     setLoading(true);
+    try { window.sessionStorage.setItem("mcm.postAuthRedirect", postAuthTarget); } catch { /* ignore */ }
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/auth-callback?redirect=${encodeURIComponent(postAuthTarget)}`,
     });
     if (result.error) {
       setLoading(false);
@@ -362,7 +383,7 @@ function AuthPage() {
     if (result.redirected) return;
     toast.success("Berhasil masuk");
     clearPrefs();
-    navigate({ to: "/", replace: true });
+    navigate({ to: postAuthTarget, replace: true });
   };
 
   return (
