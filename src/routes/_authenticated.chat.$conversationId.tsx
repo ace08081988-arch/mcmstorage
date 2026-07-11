@@ -752,6 +752,9 @@ function ChatRoomPage() {
     [],
   );
   const pendingHydratedRef = useRef(false);
+  useEffect(() => () => {
+    if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+  }, []);
   useEffect(() => {
     pendingHydratedRef.current = false;
     if (!pendingProductsKey) return;
