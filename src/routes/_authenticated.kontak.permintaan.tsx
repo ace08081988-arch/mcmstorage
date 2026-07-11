@@ -369,6 +369,7 @@ function FriendRequestsPage() {
                   avatarUrl={r.peer_avatar_url}
                   createdAt={r.created_at}
                   statusHint={<StatusChip status={outEffective} />}
+                  isSyncing={syncingIds.has(r.id)}
                   actions={
                     outEffective === "accepted" ? (
                     <Button
