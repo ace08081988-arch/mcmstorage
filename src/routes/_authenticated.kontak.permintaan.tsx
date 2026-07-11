@@ -14,6 +14,7 @@ import {
 import { useStartDm } from "@/lib/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { respondFriendRequest } from "@/lib/invite";
 
 export const Route = createFileRoute("/_authenticated/kontak/permintaan")({
   component: FriendRequestsPage,
@@ -31,6 +32,10 @@ function FriendRequestsPage() {
   // sesaat lewat `recentStatus` di bawah.
   const { data, isLoading, isError, refetch } = useFriendRequests("all", false);
   const [recentStatus, setRecentStatus] = useState<Partial<Record<string, "accepted" | "rejected">>>({});
+  // Status koneksi realtime — dipakai untuk memberi tahu user jika update
+  // realtime tidak tersedia (mis. WebSocket gagal / channel error) sehingga
+  // ia paham kenapa daftar tidak langsung ter-refresh.
+  const [realtimeOk, setRealtimeOk] = useState(true);
   useEffect(() => {
     // Realtime: setiap perubahan pada friend_requests yg menyangkut user
     // saat ini akan invalidate cache → daftar & status ikut update.
@@ -52,7 +57,17 @@ function FriendRequestsPage() {
           { event: "*", schema: "public", table: "friend_requests", filter: `from_user=eq.${uid}` },
           () => qc.invalidateQueries({ queryKey: ["friend-requests"] }),
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") setRealtimeOk(true);
+          else if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
+            setRealtimeOk(false);
+            console.error("[friend-requests] realtime channel", status);
+          }
+        });
     })();
     return () => {
       cancelled = true;
@@ -80,13 +95,42 @@ function FriendRequestsPage() {
   // tampil toast sukses karena permintaan sudah tercatat accepted di DB.
   async function accept(id: string, peerId: string, name: string | null) {
     try {
-      await respond.mutateAsync({ requestId: id, accept: true });
+      const returnedStatus = await respond.mutateAsync({ requestId: id, accept: true });
+      // Validasi hasil RPC: kalau server tidak mengembalikan "accepted",
+      // artinya status tidak berubah sesuai harapan → beri tahu user
+      // dengan pesan diagnostik yang jelas, bukan sekadar "berhasil".
+      if (returnedStatus !== "accepted") {
+        console.error("[friend-accept] RPC tidak mengembalikan accepted", { id, returnedStatus });
+        toast.error(
+          `Gagal menerima permintaan: server mengembalikan status "${returnedStatus ?? "tidak diketahui"}". Coba lagi.`,
+        );
+        return;
+      }
       // Optimistic: langsung tandai "accepted" agar kartu memperlihatkan
       // perubahan status sebelum server refetch selesai / realtime tiba.
       setRecentStatus((s) => ({ ...s, [id]: "accepted" }));
+      // Fallback verifikasi: kalau realtime tidak aktif ATAU cache belum
+      // memuat status accepted setelah beberapa detik, lakukan refetch
+      // manual dan peringatkan user supaya ia tahu update tidak instan.
+      const verifyTimer = window.setTimeout(async () => {
+        try {
+          const fresh = await refetch();
+          const row = fresh.data?.find((r) => r.id === id);
+          if (!row || row.status !== "accepted") {
+            toast.error(
+              realtimeOk
+                ? "Status di server belum berubah. Coba refresh halaman."
+                : "Update realtime tidak tersedia. Data direfresh manual — jika masih pending, coba lagi.",
+            );
+          }
+        } catch (verifyErr) {
+          console.error("[friend-accept] verifikasi gagal", verifyErr);
+        }
+      }, 4000);
       setOpeningChatId(id);
       try {
         const cid = await startDm.mutateAsync(peerId);
+        window.clearTimeout(verifyTimer);
         if (cid) {
           toast.success(`Permintaan diterima. Chat dengan ${name ?? "kontak"} dibuka.`);
           navigate({ to: "/chat/$conversationId", params: { conversationId: cid } });
@@ -94,13 +138,16 @@ function FriendRequestsPage() {
         }
         toast.success(`Permintaan dari ${name ?? "kontak"} diterima.`);
       } catch (dmErr) {
+        window.clearTimeout(verifyTimer);
         console.error("[friend-accept] start_dm gagal", dmErr);
         toast.error("Kontak diterima, tapi gagal membuka chat. Coba dari daftar chat.");
       } finally {
         setOpeningChatId(null);
       }
     } catch (e) {
-      toast.error((e as Error).message || "Gagal menerima permintaan.");
+      console.error("[friend-accept] RPC gagal", e);
+      const msg = (e as Error).message || "Gagal menerima permintaan.";
+      toast.error(`Gagal menerima permintaan: ${msg}`);
     }
   }
   async function reject(id: string, name: string | null) {
