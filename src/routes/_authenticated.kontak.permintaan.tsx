@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, X, Clock, UserPlus, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Check, X, Clock, UserPlus, Loader2, CheckCircle2, XCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -167,6 +167,24 @@ function FriendRequestsPage() {
       toast.error((e as Error).message || "Gagal membatalkan permintaan.");
     }
   }
+  // Buka DM dengan peer setelah status berubah accepted (dipakai tombol
+  // "Buka Chat" pada kartu yang sudah diterima, baik incoming maupun outgoing).
+  async function openChat(id: string, peerId: string, name: string | null) {
+    setOpeningChatId(id);
+    try {
+      const cid = await startDm.mutateAsync(peerId);
+      if (cid) {
+        navigate({ to: "/chat/$conversationId", params: { conversationId: cid } });
+        return;
+      }
+      toast.error("Chat belum bisa dibuka. Coba dari daftar chat.");
+    } catch (dmErr) {
+      console.error("[friend-open-chat] start_dm gagal", dmErr);
+      toast.error(`Gagal membuka chat dengan ${name ?? "kontak"}. Coba lagi.`);
+    } finally {
+      setOpeningChatId(null);
+    }
+  }
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-background pb-24">
@@ -222,7 +240,22 @@ function FriendRequestsPage() {
                   createdAt={r.created_at}
                   statusHint={<StatusChip status={effective} />}
                   actions={
-                    effective !== "pending" ? null : (
+                    effective === "accepted" ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => openChat(r.id, r.peer_id, r.peer_display_name)}
+                      disabled={openingChatId === r.id}
+                      className="gap-1"
+                    >
+                      {openingChatId === r.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageCircle className="h-4 w-4" />
+                      )}{" "}
+                      {openingChatId === r.id ? "Membuka…" : "Buka Chat"}
+                    </Button>
+                    ) : effective !== "pending" ? null : (
                     <>
                       <Button
                         type="button"
@@ -268,28 +301,40 @@ function FriendRequestsPage() {
                 subtitle="Masukkan PIN teman di menu Undang untuk mengirim permintaan pertemanan."
               />
             ) : (
-              outgoingVisible.map((r) => (
+              outgoingVisible.map((r) => {
+                const outEffective: "pending" | "accepted" | "rejected" | "cancelled" =
+                  recentStatus[r.id] === "rejected"
+                    ? "cancelled"
+                    : r.status === "accepted"
+                      ? "accepted"
+                      : r.status === "rejected"
+                        ? "rejected"
+                        : "pending";
+                return (
                 <RequestCard
                   key={r.id}
                   name={r.peer_display_name}
                   pin={r.peer_invite_code}
                   avatarUrl={r.peer_avatar_url}
                   createdAt={r.created_at}
-                  statusHint={
-                    <StatusChip
-                      status={
-                        recentStatus[r.id] === "rejected"
-                          ? "cancelled"
-                          : r.status === "accepted"
-                            ? "accepted"
-                            : r.status === "rejected"
-                              ? "rejected"
-                              : "pending"
-                      }
-                    />
-                  }
+                  statusHint={<StatusChip status={outEffective} />}
                   actions={
-                    r.status !== "pending" ? null : (
+                    outEffective === "accepted" ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => openChat(r.id, r.peer_id, r.peer_display_name)}
+                      disabled={openingChatId === r.id}
+                      className="gap-1"
+                    >
+                      {openingChatId === r.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageCircle className="h-4 w-4" />
+                      )}{" "}
+                      {openingChatId === r.id ? "Membuka…" : "Buka Chat"}
+                    </Button>
+                    ) : outEffective !== "pending" ? null : (
                     <Button
                       type="button"
                       size="sm"
@@ -303,7 +348,8 @@ function FriendRequestsPage() {
                     )
                   }
                 />
-              ))
+                );
+              })
             )}
           </TabsContent>
         </Tabs>
