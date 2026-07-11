@@ -302,6 +302,13 @@ export function ProductSharePopover({
           aria-label="Kirim produk dari gudang"
           title="Kirim produk dari gudang"
           data-testid="chat-product-picker-trigger"
+          onPointerDown={(e) => {
+            // Jangan biarkan textarea composer tetap fokus saat tombol ini
+            // ditekan — keyboard virtual akan menutupi popover produk.
+            e.preventDefault();
+            const ae = document.activeElement as HTMLElement | null;
+            if (ae && ae !== e.currentTarget) ae.blur();
+          }}
         >
           <Package className="h-4 w-4" />
         </Button>
