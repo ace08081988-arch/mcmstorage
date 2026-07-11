@@ -60,6 +60,17 @@ function FriendRequestsPage() {
     };
   }, [qc]);
   const { incoming, outgoing } = useMemo(() => splitByDirection(data), [data]);
+  // Baris yg ditampilkan: semua pending + baris yg baru saja user-action di
+  // sesi ini (accepted/rejected/cancelled) supaya perubahan status terlihat
+  // dulu sebelum menghilang. Baris terminal lama dari server tidak dimunculkan.
+  const incomingVisible = useMemo(
+    () => incoming.filter((r) => r.status === "pending" || recentStatus[r.id]),
+    [incoming, recentStatus],
+  );
+  const outgoingVisible = useMemo(
+    () => outgoing.filter((r) => r.status === "pending" || recentStatus[r.id]),
+    [outgoing, recentStatus],
+  );
   const respond = useRespondFriendRequest();
   const cancel = useCancelFriendRequest();
 
@@ -104,6 +115,7 @@ function FriendRequestsPage() {
   async function doCancel(id: string, name: string | null) {
     try {
       await cancel.mutateAsync(id);
+      setRecentStatus((s) => ({ ...s, [id]: "rejected" }));
       toast.success(`Permintaan ke ${name ?? "kontak"} dibatalkan.`);
     } catch (e) {
       toast.error((e as Error).message || "Gagal membatalkan permintaan.");
@@ -152,7 +164,9 @@ function FriendRequestsPage() {
               />
             ) : (
               incomingVisible.map((r) => {
-                const effective = recentStatus[r.id] ?? (r.status === "pending" ? "pending" : r.status);
+                const effective: "pending" | "accepted" | "rejected" =
+                  recentStatus[r.id] ??
+                  (r.status === "accepted" ? "accepted" : r.status === "rejected" ? "rejected" : "pending");
                 return (
                 <RequestCard
                   key={r.id}
@@ -209,13 +223,25 @@ function FriendRequestsPage() {
               />
             ) : (
               outgoingVisible.map((r) => (
+                <React.Fragment key={r.id}>
                 <RequestCard
-                  key={r.id}
                   name={r.peer_display_name}
                   pin={r.peer_invite_code}
                   avatarUrl={r.peer_avatar_url}
                   createdAt={r.created_at}
-                  statusHint={<StatusChip status={r.status === "pending" ? "pending" : r.status} />}
+                  statusHint={
+                    <StatusChip
+                      status={
+                        recentStatus[r.id] === "rejected"
+                          ? "cancelled"
+                          : r.status === "accepted"
+                            ? "accepted"
+                            : r.status === "rejected"
+                              ? "rejected"
+                              : "pending"
+                      }
+                    />
+                  }
                   actions={
                     r.status !== "pending" ? null : (
                     <Button
@@ -231,6 +257,7 @@ function FriendRequestsPage() {
                     )
                   }
                 />
+                </React.Fragment>
               ))
             )}
           </TabsContent>
