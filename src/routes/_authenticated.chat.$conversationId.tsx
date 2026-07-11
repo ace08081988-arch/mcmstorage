@@ -713,7 +713,8 @@ function ChatRoomPage() {
       const raw = window.localStorage.getItem(pendingProductsKey);
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
-        const { valid, dropped, malformed } = sanitizePendingProducts(parsed);
+        const { valid, dropped, migrated, malformed, fromLegacy } =
+          sanitizePendingProducts(parsed);
         setPendingProducts(valid);
         if (malformed) {
           toast.error("Pratinjau produk rusak — daftar dikosongkan.", {
@@ -729,6 +730,31 @@ function ChatRoomPage() {
               description: "Silakan pilih ulang produk yang hilang dari 📦.",
             },
           );
+        }
+        if (!malformed && (migrated > 0 || fromLegacy)) {
+          // Tulis ulang segera ke format v2 supaya kunjungan berikutnya
+          // tidak perlu migrasi lagi. Effect penyimpan juga akan menulis,
+          // tetapi menulis di sini menjamin envelope terbaru walau user
+          // langsung menutup tab.
+          try {
+            if (valid.length === 0) {
+              window.localStorage.removeItem(pendingProductsKey);
+            } else {
+              window.localStorage.setItem(
+                pendingProductsKey,
+                JSON.stringify({ v: PENDING_PRODUCTS_VERSION, items: valid }),
+              );
+            }
+          } catch { /* ignore quota */ }
+          if (migrated > 0) {
+            toast.info(
+              `${migrated} pratinjau produk diperbarui ke format baru.`,
+              {
+                id: `pending-migrated-${pendingProductsKey}`,
+                description: "Jumlah, unit, varian, dan lokasi kini ditampilkan bila tersedia.",
+              },
+            );
+          }
         }
       } else {
         setPendingProducts([]);
@@ -753,7 +779,10 @@ function ChatRoomPage() {
       if (pendingProducts.length === 0) {
         window.localStorage.removeItem(pendingProductsKey);
       } else {
-        window.localStorage.setItem(pendingProductsKey, JSON.stringify(pendingProducts));
+        window.localStorage.setItem(
+          pendingProductsKey,
+          JSON.stringify({ v: PENDING_PRODUCTS_VERSION, items: pendingProducts }),
+        );
       }
     } catch { /* ignore quota */ }
   }, [pendingProductsKey, pendingProducts]);
