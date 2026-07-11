@@ -80,12 +80,33 @@ function FriendRequestsPage() {
   // Baris yg ditampilkan: semua pending + baris yg baru saja user-action di
   // sesi ini (accepted/rejected/cancelled) supaya perubahan status terlihat
   // dulu sebelum menghilang. Baris terminal lama dari server tidak dimunculkan.
+  // Setelah refresh, `recentStatus` kosong. Supaya tombol "Buka Chat"
+  // tetap muncul untuk permintaan yang sudah "accepted", ikutkan juga
+  // baris accepted yang masih baru (≤ 7 hari) di sisi incoming maupun
+  // outgoing. Baris rejected/cancelled hanya tampil sesaat via recentStatus.
+  const ACCEPTED_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+  const isRecentAccepted = (createdAt: string) => {
+    const t = new Date(createdAt).getTime();
+    return Number.isFinite(t) && Date.now() - t <= ACCEPTED_WINDOW_MS;
+  };
   const incomingVisible = useMemo(
-    () => incoming.filter((r) => r.status === "pending" || recentStatus[r.id]),
+    () =>
+      incoming.filter(
+        (r) =>
+          r.status === "pending" ||
+          recentStatus[r.id] ||
+          (r.status === "accepted" && isRecentAccepted(r.created_at)),
+      ),
     [incoming, recentStatus],
   );
   const outgoingVisible = useMemo(
-    () => outgoing.filter((r) => r.status === "pending" || recentStatus[r.id]),
+    () =>
+      outgoing.filter(
+        (r) =>
+          r.status === "pending" ||
+          recentStatus[r.id] ||
+          (r.status === "accepted" && isRecentAccepted(r.created_at)),
+      ),
     [outgoing, recentStatus],
   );
   const respond = useRespondFriendRequest();
