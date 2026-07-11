@@ -34,14 +34,15 @@ function FriendRequestsPage() {
   async function accept(id: string, peerId: string, name: string | null) {
     try {
       await respond.mutateAsync({ requestId: id, accept: true });
-      toast.success(`Permintaan dari ${name ?? "kontak"} diterima.`);
       setOpeningChatId(id);
       try {
         const cid = await startDm.mutateAsync(peerId);
         if (cid) {
+          toast.success(`Permintaan diterima. Chat dengan ${name ?? "kontak"} dibuka.`);
           navigate({ to: "/chat/$conversationId", params: { conversationId: cid } });
           return;
         }
+        toast.success(`Permintaan dari ${name ?? "kontak"} diterima.`);
       } catch (dmErr) {
         console.error("[friend-accept] start_dm gagal", dmErr);
         toast.error("Kontak diterima, tapi gagal membuka chat. Coba dari daftar chat.");
