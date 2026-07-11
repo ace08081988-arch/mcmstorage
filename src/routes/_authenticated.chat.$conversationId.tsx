@@ -78,7 +78,7 @@ import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
 import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { StickerPickerDialog, parseStickerFromBody } from "@/components/chat/StickerPickerDialog";
-import { ProductSharePopover } from "@/components/chat/ProductSharePopover";
+import { ProductSharePopover, sendProductRow, type PickedProductRow } from "@/components/chat/ProductSharePopover";
 import { CartComposer } from "@/components/chat/CartComposer";
 import {
   ConversationSearchDialog,
