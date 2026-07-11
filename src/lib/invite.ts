@@ -228,10 +228,23 @@ export async function respondFriendRequest(
     } as never,
   );
   if (error) {
+    const errObj = error as { details?: string; hint?: string; code?: string };
     if (/forbidden/i.test(error.message))
       throw new Error("Hanya penerima permintaan yang bisa merespon.");
+    if (/not_recipient/i.test(error.message))
+      throw new Error(
+        errObj.hint || "Permintaan ini ada di tab Terkirim. Hanya penerima yang bisa menekan Terima.",
+      );
     if (/not_found/i.test(error.message)) throw new Error("Permintaan sudah tidak berlaku.");
-    throw error;
+    const detail = [
+      error.message,
+      errObj.details,
+      errObj.hint,
+      errObj.code ? `(kode ${errObj.code})` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    throw new Error(detail || "Gagal merespon permintaan pertemanan.");
   }
   const row = (Array.isArray(data) ? data[0] : data) as
     | { status: FriendRequestStatus }
