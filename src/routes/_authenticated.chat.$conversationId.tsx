@@ -14,6 +14,7 @@ import {
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
   Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus, Package,
+  Minus, Plus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -1953,45 +1954,108 @@ function ChatRoomPage() {
               </button>
             </div>
             <ul className="flex flex-wrap gap-1.5">
-              {pendingProducts.map((p, idx) => (
-                <li
-                  key={`${p.source}:${p.id}:${idx}`}
-                  className="inline-flex max-w-[220px] items-center gap-1.5 rounded-md border bg-background py-1 pl-1 pr-1.5"
-                >
-                  <PendingProductThumb path={p.photoPath} bucket={p.bucket} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[11px] font-medium leading-tight" title={p.productName}>
-                      {p.productName}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] leading-tight text-muted-foreground">
-                      {p.qty !== null && p.baseUnit ? (
-                        <span>{fmtBase(p.qty, p.baseUnit)}</span>
-                      ) : (
-                        <span className="rounded bg-muted px-1 py-px text-[9px]">sendiri</span>
-                      )}
-                      {p.variant ? (
-                        <span className="truncate" title={p.variant}>· {p.variant}</span>
-                      ) : null}
-                      {p.source === "catalog" ? (
-                        <span className="rounded bg-primary/10 px-1 py-px text-[9px] text-primary">katalog</span>
-                      ) : null}
-                      {p.locationUrl ? (
-                        <span className="text-[9px]">· lokasi</span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    aria-label={`Buang ${p.productName}`}
-                    className="ml-0.5 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-                    onClick={() =>
-                      setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
-                    }
+              {pendingProducts.map((p, idx) => {
+                // Catalog = referensi stok gudang (tidak boleh diedit dari
+                // chip). Untuk ready/self dengan qty numerik + baseUnit,
+                // tampilkan tombol − / + dengan step sesuai unit.
+                const editable =
+                  p.source !== "catalog" && p.qty !== null && p.baseUnit !== null;
+                const step = p.baseUnit === "g" ? 100 : 1;
+                const adjustQty = (delta: number) => {
+                  setPendingProducts((prev) =>
+                    prev.map((row, i) => {
+                      if (i !== idx) return row;
+                      if (row.qty === null) return row;
+                      const next = Math.max(step, row.qty + delta);
+                      return { ...row, qty: next };
+                    }),
+                  );
+                };
+                const promptQty = () => {
+                  if (!editable || p.qty === null || !p.baseUnit) return;
+                  const unitLabel = p.baseUnit === "g" ? "gram" : "pcs";
+                  const input = window.prompt(
+                    `Ubah jumlah ${p.productName} (${unitLabel}):`,
+                    String(p.qty),
+                  );
+                  if (input === null) return;
+                  const n = Number(input.replace(",", "."));
+                  if (!Number.isFinite(n) || n < step) {
+                    toast.error(`Jumlah minimal ${step} ${unitLabel}.`);
+                    return;
+                  }
+                  setPendingProducts((prev) =>
+                    prev.map((row, i) => (i === idx ? { ...row, qty: n } : row)),
+                  );
+                };
+                return (
+                  <li
+                    key={`${p.source}:${p.id}:${idx}`}
+                    className="inline-flex max-w-[240px] items-center gap-1.5 rounded-md border bg-background py-1 pl-1 pr-1"
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </li>
-              ))}
+                    <PendingProductThumb path={p.photoPath} bucket={p.bucket} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[11px] font-medium leading-tight" title={p.productName}>
+                        {p.productName}
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] leading-tight text-muted-foreground">
+                        {editable ? (
+                          <span className="inline-flex items-center gap-0.5">
+                            <button
+                              type="button"
+                              aria-label={`Kurangi jumlah ${p.productName}`}
+                              className="inline-flex h-5 w-5 items-center justify-center rounded border bg-background text-foreground hover:bg-accent active:scale-95 disabled:opacity-40"
+                              disabled={(p.qty ?? 0) <= step}
+                              onClick={() => adjustQty(-step)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Ubah jumlah ${p.productName}`}
+                              onClick={promptQty}
+                              className="min-w-[52px] rounded px-1 py-px text-center text-[10px] font-medium text-foreground hover:bg-accent"
+                            >
+                              {fmtBase(p.qty!, p.baseUnit!)}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Tambah jumlah ${p.productName}`}
+                              className="inline-flex h-5 w-5 items-center justify-center rounded border bg-background text-foreground hover:bg-accent active:scale-95"
+                              onClick={() => adjustQty(step)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ) : p.qty !== null && p.baseUnit ? (
+                          <span>{fmtBase(p.qty, p.baseUnit)}</span>
+                        ) : (
+                          <span className="rounded bg-muted px-1 py-px text-[9px]">sendiri</span>
+                        )}
+                        {p.variant ? (
+                          <span className="truncate" title={p.variant}>· {p.variant}</span>
+                        ) : null}
+                        {p.source === "catalog" ? (
+                          <span className="rounded bg-primary/10 px-1 py-px text-[9px] text-primary">katalog</span>
+                        ) : null}
+                        {p.locationUrl ? (
+                          <span className="text-[9px]">· lokasi</span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Buang ${p.productName}`}
+                      className="ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                      onClick={() =>
+                        setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
+                      }
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}
