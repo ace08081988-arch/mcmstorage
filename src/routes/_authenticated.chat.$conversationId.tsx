@@ -659,6 +659,13 @@ function ChatRoomPage() {
 
   const sendingLockRef = useRef(false);
   const [isSending, setIsSending] = useState(false);
+  const [productSendProgress, setProductSendProgress] = useState<{
+    current: number;
+    total: number;
+    name: string;
+    done: number;
+    failed: number;
+  } | null>(null);
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
@@ -703,18 +710,43 @@ function ChatRoomPage() {
     // pesan konsisten dan status/riwayat paket ter-update satu-satu.
     if (pendingProducts.length > 0) {
       const queue = pendingProducts.slice();
+      setProductSendProgress({ current: 0, total: queue.length, name: "", done: 0, failed: 0 });
+      const progressToast = toast.loading(`Mengirim 0 dari ${queue.length} produk…`);
       void (async () => {
-        for (const row of queue) {
+        let done = 0;
+        let failed = 0;
+        for (let i = 0; i < queue.length; i++) {
+          const row = queue[i];
+          setProductSendProgress({ current: i + 1, total: queue.length, name: row.productName, done, failed });
+          toast.loading(`Mengirim ${i + 1}/${queue.length}: ${row.productName}…`, { id: progressToast });
           try {
             const ok = await sendProductRow(row, {
               conversationId,
               peerName: displayedPeerName,
+              silent: true,
             });
-            if (ok) toast.success(`Terkirim: ${row.productName}`);
+            if (ok) {
+              done++;
+              toast.success(`Terkirim: ${row.productName}`, { id: `prod-ok-${row.id}-${i}` });
+            } else {
+              failed++;
+              toast.error(`Gagal mengirim: ${row.productName}`, { id: `prod-err-${row.id}-${i}` });
+            }
           } catch (err) {
-            toast.error((err as Error)?.message || `Gagal mengirim: ${row.productName}`);
+            failed++;
+            toast.error((err as Error)?.message || `Gagal mengirim: ${row.productName}`, { id: `prod-err-${row.id}-${i}` });
           }
+          setProductSendProgress((prev) => (prev ? { ...prev, done, failed } : prev));
         }
+        toast.dismiss(progressToast);
+        if (failed === 0) {
+          toast.success(`${done} produk berhasil dikirim`);
+        } else if (done === 0) {
+          toast.error(`Semua ${queue.length} produk gagal dikirim`);
+        } else {
+          toast.warning(`${done} terkirim, ${failed} gagal dari ${queue.length} produk`);
+        }
+        setProductSendProgress(null);
         void othersRead.refetch();
       })();
     }
@@ -1739,6 +1771,27 @@ function ChatRoomPage() {
             </ul>
           </div>
         ) : null}
+        {productSendProgress ? (
+          <div className="mb-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+              <span className="flex-1 font-medium text-primary">
+                Mengirim {productSendProgress.current}/{productSendProgress.total}: {productSendProgress.name}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {productSendProgress.done} ok · {productSendProgress.failed} gagal
+              </span>
+            </div>
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-background">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{
+                  width: `${Math.max(5, Math.round((productSendProgress.current / productSendProgress.total) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+        ) : null}
         <div className="relative flex items-end gap-2">
           {qrQuery !== null ? (
             <QuickReplyPopover
@@ -1786,12 +1839,12 @@ function ChatRoomPage() {
           <Button
             type="submit"
             size="icon"
-            disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending}
+            disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending || !!productSendProgress}
             aria-label="Kirim"
-            aria-busy={isSending}
+            aria-busy={isSending || !!productSendProgress}
             className="h-10 w-10 shrink-0"
           >
-            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isSending || !!productSendProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
           <ProductSharePopover
             conversationId={conversationId}
