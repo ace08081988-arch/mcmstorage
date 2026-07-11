@@ -1,7 +1,12 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ProductSharePopover, type PickedProductRow } from "@/components/chat/ProductSharePopover";
 
-export default function TestProductButtonPage() {
+export const Route = createFileRoute("/test-product-button")({
+  component: TestProductButtonPage,
+});
+
+function TestProductButtonPage() {
   const [rows, setRows] = useState<PickedProductRow[]>([]);
   return (
     <div className="flex min-h-screen flex-col justify-end p-4">
