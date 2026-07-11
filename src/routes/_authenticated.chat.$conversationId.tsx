@@ -1580,9 +1580,9 @@ function ChatRoomPage() {
                     id={`msg-${m.id}`}
                     className={`flex transition-colors duration-200 ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
-                    <div className={`group relative flex min-w-0 max-w-[85%] items-start gap-1 sm:max-w-[75%] ${mine ? "flex-row-reverse" : "flex-row"}`}>
+                     <div className={`group relative flex min-w-0 max-w-[85%] items-start gap-1 sm:max-w-[75%] ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
-                        className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
+                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
                             ? `${mine ? "rounded-br-sm" : "rounded-bl-sm"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
@@ -1671,7 +1671,7 @@ function ChatRoomPage() {
                                   <UnknownCardBlock mine={mine} />
                                 ) : null}
                                 {!card && !isCardBody(m.body) && m.body ? (
-                                  <div className="whitespace-pre-wrap break-words">
+                                  <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                                     <Linkify text={m.body} />
                                   </div>
                                 ) : null}
