@@ -1621,10 +1621,10 @@ function ChatRoomPage() {
                                 : "border-primary/60 bg-background/60"
                             }`}
                           >
-                            <div className="font-semibold opacity-80">
+                            <div className="truncate font-semibold opacity-80">
                               {replyMsg.sender_id === myId ? "Anda" : replySenderName}
                             </div>
-                            <div className="line-clamp-2 opacity-80">
+                            <div className="line-clamp-2 break-words [overflow-wrap:anywhere] opacity-80">
                               <MessagePreview message={replyMsg} />
                             </div>
                           </div>
