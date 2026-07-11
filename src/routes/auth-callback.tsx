@@ -58,7 +58,16 @@ function AuthCallbackPage() {
     if (typeof window === "undefined") return "/";
     const params = new URLSearchParams(window.location.search);
     const redirect = safeTarget(params.get("redirect"));
-    return redirect !== "/" ? redirect : safeTarget(params.get("next"));
+    if (redirect !== "/") return redirect;
+    const next = safeTarget(params.get("next"));
+    if (next !== "/") return next;
+    try {
+      const stored = safeTarget(window.sessionStorage.getItem("mcm.postAuthRedirect"));
+      window.sessionStorage.removeItem("mcm.postAuthRedirect");
+      return stored;
+    } catch {
+      return "/";
+    }
   });
 
   useEffect(() => {
