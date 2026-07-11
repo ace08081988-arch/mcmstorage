@@ -577,6 +577,9 @@ function ChatRoomPage() {
   }, [messages?.length]);
 
   const [body, setBody] = useState("");
+  // Antrian produk yang dipilih dari popover 📦. Tampil sebagai chip preview
+  // di atas textarea; baru terkirim saat user menekan tombol Kirim.
+  const [pendingProducts, setPendingProducts] = useState<PickedProductRow[]>([]);
 
   // Prefill komposer dari flow lain (mis. Penyiapan Request → Buka Chat MCM).
   // Handoff via localStorage key `mcm.chat.prefill.<convId>` supaya bisa
