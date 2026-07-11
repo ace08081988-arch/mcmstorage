@@ -994,7 +994,7 @@ function ChatRoomPage() {
     }
     setBody("");
     setReplyTo(null);
-    setPendingProducts([]);
+    updatePendingProducts([]);
   };
 
   // Auto-retry failed messages once the browser is back online.
