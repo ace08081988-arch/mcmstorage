@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthDebug, readAuthDebug, clearAuthDebug, formatAuthDebug, type AuthDebugEvent } from "@/lib/auth-debug";
+import { readPendingInvitePath } from "@/lib/pending-invite";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,10 +65,15 @@ function AuthCallbackPage() {
     try {
       const stored = safeTarget(window.sessionStorage.getItem("mcm.postAuthRedirect"));
       window.sessionStorage.removeItem("mcm.postAuthRedirect");
-      return stored;
+      if (stored !== "/") return stored;
     } catch {
-      return "/";
+      /* ignore */
     }
+    // Fallback terakhir: undangan yang masih pending di localStorage supaya
+    // deep link `/i/<code>` tetap sampai walau URL `?redirect=` hilang di
+    // roundtrip OAuth/email-verify.
+    const pending = readPendingInvitePath();
+    return pending ? safeTarget(pending) : "/";
   });
 
   useEffect(() => {
