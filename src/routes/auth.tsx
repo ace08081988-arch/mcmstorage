@@ -12,6 +12,7 @@ import { useOrgName } from "@/lib/org-name";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { logAuthDebug } from "@/lib/auth-debug";
+import { readPendingInvitePath, clearPendingInvite } from "@/lib/pending-invite";
 
 const SAFE_POST_AUTH_PATH = /^\/(?!\/)[^\s\\]*$/;
 const FORBIDDEN_POST_AUTH_TARGETS = new Set(["/auth", "/auth-callback"]);
@@ -28,7 +29,12 @@ function safePostAuthTarget(value: string | null | undefined): string {
 function readPostAuthTarget(): string {
   if (typeof window === "undefined") return "/";
   const params = new URLSearchParams(window.location.search);
-  return safePostAuthTarget(params.get("redirect") ?? params.get("next"));
+  const fromUrl = safePostAuthTarget(params.get("redirect") ?? params.get("next"));
+  if (fromUrl !== "/") return fromUrl;
+  // Fallback: kalau user membuka /auth langsung (bookmark/refresh), tapi
+  // sebelumnya sempat mendarat di /i/<code>, bawa balik ke undangan itu.
+  const pending = readPendingInvitePath();
+  return pending ? safePostAuthTarget(pending) : "/";
 }
 
 function AuthBrand() {

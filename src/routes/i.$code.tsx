@@ -12,6 +12,7 @@ import {
   validateInviteCode,
   type InviteProfile,
 } from "@/lib/invite";
+import { savePendingInvite, clearPendingInvite } from "@/lib/pending-invite";
 
 /**
  * Deep link `/i/:code` — dibuka dari QR/link undangan. Bisa diakses tanpa
@@ -36,6 +37,14 @@ function InviteLandingPage() {
   >({ kind: "loading" });
   const [adding, setAdding] = useState(false);
 
+  // Persist invite code so /auth & /auth-callback can bring the user back
+  // here even after refresh, tab close, atau OAuth roundtrip yang membuang
+  // URL `?redirect=`. Dibersihkan setelah add-contact sukses / kontak sudah
+  // berteman.
+  useEffect(() => {
+    savePendingInvite(code);
+  }, [code]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -46,6 +55,8 @@ function InviteLandingPage() {
         ]);
         if (cancelled) return;
         if (!profile) {
+          // PIN tak valid — jangan biarkan nyangkut di storage.
+          clearPendingInvite();
           setState({ kind: "not_found" });
           return;
         }
@@ -74,14 +85,17 @@ function InviteLandingPage() {
     try {
       const r = await addContactByInviteCode(v.code);
       if (r.alreadyFriends) {
+        clearPendingInvite();
         toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}.`);
         router.navigate({ to: "/chat" });
       } else if (r.incomingReverseId) {
+        clearPendingInvite();
         toast.info(
           `${r.displayName ?? "Kontak"} sudah lebih dulu mengundang kamu. Buka “Permintaan pertemanan” untuk menerima.`,
         );
         router.navigate({ to: "/kontak/permintaan" as never });
       } else if (r.pending) {
+        clearPendingInvite();
         toast.success(
           r.alreadyExisted
             ? `Permintaan ke ${r.displayName ?? "kontak"} sudah dikirim — menunggu diterima.`
