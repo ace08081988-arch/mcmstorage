@@ -253,15 +253,15 @@ function FriendRequestsPage() {
                         type="button"
                         size="sm"
                         onClick={() => accept(r.id, r.peer_display_name)}
-                        disabled={respond.isPending || openingChatId === r.id}
+                        disabled={respond.isPending}
                         className="gap-1"
                       >
-                        {openingChatId === r.id ? (
+                        {respond.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Check className="h-4 w-4" />
                         )}{" "}
-                        {openingChatId === r.id ? "Membuka…" : "Terima"}
+                        {respond.isPending ? "Menerima…" : "Terima"}
                       </Button>
                       <Button
                         type="button"
