@@ -79,6 +79,53 @@ import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { StickerPickerDialog, parseStickerFromBody } from "@/components/chat/StickerPickerDialog";
 import { ProductSharePopover, sendProductRow, type PickedProductRow } from "@/components/chat/ProductSharePopover";
+
+/**
+ * Validasi & rapikan array PickedProductRow yang dibaca dari localStorage.
+ * - `valid`: baris yang lolos schema (id/source/bucket/productName wajib ada,
+ *   photoPaths berupa array string, source ∈ ready|self|catalog, dst).
+ * - `dropped`: jumlah baris yang dibuang karena tidak lengkap.
+ * - `malformed`: `true` kalau root value bukan array sama sekali.
+ */
+function sanitizePendingProducts(
+  raw: unknown,
+): { valid: PickedProductRow[]; dropped: number; malformed: boolean } {
+  if (!Array.isArray(raw)) return { valid: [], dropped: 0, malformed: true };
+  const allowedSource = new Set(["ready", "self", "catalog"]);
+  const allowedBucket = new Set(["ready-packages", "self-prep-photos", "item-photos"]);
+  const allowedUnit = new Set(["g", "pcs"]);
+  const valid: PickedProductRow[] = [];
+  let dropped = 0;
+  for (const item of raw) {
+    if (!item || typeof item !== "object") { dropped++; continue; }
+    const r = item as Record<string, unknown>;
+    const photoPaths = Array.isArray(r.photoPaths)
+      ? (r.photoPaths.filter((p): p is string => typeof p === "string"))
+      : [];
+    if (
+      typeof r.id !== "string" || !r.id ||
+      typeof r.source !== "string" || !allowedSource.has(r.source) ||
+      typeof r.bucket !== "string" || !allowedBucket.has(r.bucket) ||
+      typeof r.productName !== "string" || !r.productName
+    ) { dropped++; continue; }
+    const baseUnit = r.baseUnit === null || (typeof r.baseUnit === "string" && allowedUnit.has(r.baseUnit))
+      ? (r.baseUnit as PickedProductRow["baseUnit"])
+      : null;
+    valid.push({
+      id: r.id,
+      source: r.source as PickedProductRow["source"],
+      bucket: r.bucket as PickedProductRow["bucket"],
+      productName: r.productName,
+      baseUnit,
+      qty: typeof r.qty === "number" && Number.isFinite(r.qty) ? r.qty : null,
+      variant: typeof r.variant === "string" ? r.variant : null,
+      photoPath: typeof r.photoPath === "string" ? r.photoPath : (photoPaths[0] ?? null),
+      photoPaths,
+      locationUrl: typeof r.locationUrl === "string" ? r.locationUrl : null,
+    });
+  }
+  return { valid, dropped, malformed: false };
+}
 import { CartComposer } from "@/components/chat/CartComposer";
 import {
   ConversationSearchDialog,
