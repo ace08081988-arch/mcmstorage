@@ -1858,21 +1858,39 @@ function ChatRoomPage() {
               {pendingProducts.map((p, idx) => (
                 <li
                   key={`${p.source}:${p.id}:${idx}`}
-                  className="inline-flex max-w-full items-center gap-1 rounded-full border bg-background px-2 py-0.5"
+                  className="inline-flex max-w-[220px] items-center gap-1.5 rounded-md border bg-background py-1 pl-1 pr-1.5"
                 >
-                  <Package className="h-3 w-3 shrink-0 text-primary" />
-                  <span className="truncate text-[11px]" title={p.productName}>
-                    {p.productName}
-                  </span>
+                  <PendingProductThumb path={p.photoPath} bucket={p.bucket} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[11px] font-medium leading-tight" title={p.productName}>
+                      {p.productName}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-[10px] leading-tight text-muted-foreground">
+                      {p.qty !== null && p.baseUnit ? (
+                        <span>{fmtBase(p.qty, p.baseUnit)}</span>
+                      ) : (
+                        <span className="rounded bg-muted px-1 py-px text-[9px]">sendiri</span>
+                      )}
+                      {p.variant ? (
+                        <span className="truncate" title={p.variant}>· {p.variant}</span>
+                      ) : null}
+                      {p.source === "catalog" ? (
+                        <span className="rounded bg-primary/10 px-1 py-px text-[9px] text-primary">katalog</span>
+                      ) : null}
+                      {p.locationUrl ? (
+                        <span className="text-[9px]">· lokasi</span>
+                      ) : null}
+                    </div>
+                  </div>
                   <button
                     type="button"
                     aria-label={`Buang ${p.productName}`}
-                    className="ml-0.5 rounded-full text-muted-foreground hover:text-foreground"
+                    className="ml-0.5 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
                     onClick={() =>
                       setPendingProducts((prev) => prev.filter((_, i) => i !== idx))
                     }
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </li>
               ))}
