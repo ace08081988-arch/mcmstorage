@@ -26,6 +26,7 @@ function FriendRequestsPage() {
   const qc = useQueryClient();
   const [openingChatId, setOpeningChatId] = useState<string | null>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
+  const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   // Tampilkan juga baris yang baru saja "accepted"/"rejected" (bukan hanya
   // pending) supaya perubahan status terlihat real-time di kartu sebelum
   // baris menghilang. Filter tampilan tetap membatasi ke pending + status
