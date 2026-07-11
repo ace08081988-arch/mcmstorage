@@ -30,7 +30,7 @@ function FriendRequestsPage() {
   // baris menghilang. Filter tampilan tetap membatasi ke pending + status
   // sesaat lewat `recentStatus` di bawah.
   const { data, isLoading, isError, refetch } = useFriendRequests("all", false);
-  const [recentStatus, setRecentStatus] = useState<Record<string, "accepted" | "rejected">>({});
+  const [recentStatus, setRecentStatus] = useState<Partial<Record<string, "accepted" | "rejected">>>({});
   useEffect(() => {
     // Realtime: setiap perubahan pada friend_requests yg menyangkut user
     // saat ini akan invalidate cache → daftar & status ikut update.
@@ -223,8 +223,8 @@ function FriendRequestsPage() {
               />
             ) : (
               outgoingVisible.map((r) => (
-                <React.Fragment key={r.id}>
                 <RequestCard
+                  key={r.id}
                   name={r.peer_display_name}
                   pin={r.peer_invite_code}
                   avatarUrl={r.peer_avatar_url}
@@ -257,7 +257,6 @@ function FriendRequestsPage() {
                     )
                   }
                 />
-                </React.Fragment>
               ))
             )}
           </TabsContent>
