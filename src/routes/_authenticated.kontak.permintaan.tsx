@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { ArrowLeft, Check, X, Clock, UserPlus, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Check, X, Clock, UserPlus, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +12,8 @@ import {
   useRespondFriendRequest,
 } from "@/lib/friend-requests";
 import { useStartDm } from "@/lib/chat";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/kontak/permintaan")({
   component: FriendRequestsPage,
@@ -21,9 +23,54 @@ function FriendRequestsPage() {
   const router = useRouter();
   const navigate = useNavigate();
   const startDm = useStartDm();
+  const qc = useQueryClient();
   const [openingChatId, setOpeningChatId] = useState<string | null>(null);
-  const { data, isLoading, isError, refetch } = useFriendRequests("all", true);
+  // Tampilkan juga baris yang baru saja "accepted"/"rejected" (bukan hanya
+  // pending) supaya perubahan status terlihat real-time di kartu sebelum
+  // baris menghilang. Filter tampilan tetap membatasi ke pending + status
+  // sesaat lewat `recentStatus` di bawah.
+  const { data, isLoading, isError, refetch } = useFriendRequests("all", false);
+  const [recentStatus, setRecentStatus] = useState<Partial<Record<string, "accepted" | "rejected">>>({});
+  useEffect(() => {
+    // Realtime: setiap perubahan pada friend_requests yg menyangkut user
+    // saat ini akan invalidate cache → daftar & status ikut update.
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid || cancelled) return;
+      channel = supabase
+        .channel(`friend-requests:${uid}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "friend_requests", filter: `to_user=eq.${uid}` },
+          () => qc.invalidateQueries({ queryKey: ["friend-requests"] }),
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "friend_requests", filter: `from_user=eq.${uid}` },
+          () => qc.invalidateQueries({ queryKey: ["friend-requests"] }),
+        )
+        .subscribe();
+    })();
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [qc]);
   const { incoming, outgoing } = useMemo(() => splitByDirection(data), [data]);
+  // Baris yg ditampilkan: semua pending + baris yg baru saja user-action di
+  // sesi ini (accepted/rejected/cancelled) supaya perubahan status terlihat
+  // dulu sebelum menghilang. Baris terminal lama dari server tidak dimunculkan.
+  const incomingVisible = useMemo(
+    () => incoming.filter((r) => r.status === "pending" || recentStatus[r.id]),
+    [incoming, recentStatus],
+  );
+  const outgoingVisible = useMemo(
+    () => outgoing.filter((r) => r.status === "pending" || recentStatus[r.id]),
+    [outgoing, recentStatus],
+  );
   const respond = useRespondFriendRequest();
   const cancel = useCancelFriendRequest();
 
@@ -34,6 +81,9 @@ function FriendRequestsPage() {
   async function accept(id: string, peerId: string, name: string | null) {
     try {
       await respond.mutateAsync({ requestId: id, accept: true });
+      // Optimistic: langsung tandai "accepted" agar kartu memperlihatkan
+      // perubahan status sebelum server refetch selesai / realtime tiba.
+      setRecentStatus((s) => ({ ...s, [id]: "accepted" }));
       setOpeningChatId(id);
       try {
         const cid = await startDm.mutateAsync(peerId);
@@ -56,6 +106,7 @@ function FriendRequestsPage() {
   async function reject(id: string, name: string | null) {
     try {
       await respond.mutateAsync({ requestId: id, accept: false });
+      setRecentStatus((s) => ({ ...s, [id]: "rejected" }));
       toast.success(`Permintaan dari ${name ?? "kontak"} ditolak.`);
     } catch (e) {
       toast.error((e as Error).message || "Gagal menolak permintaan.");
@@ -64,6 +115,7 @@ function FriendRequestsPage() {
   async function doCancel(id: string, name: string | null) {
     try {
       await cancel.mutateAsync(id);
+      setRecentStatus((s) => ({ ...s, [id]: "rejected" }));
       toast.success(`Permintaan ke ${name ?? "kontak"} dibatalkan.`);
     } catch (e) {
       toast.error((e as Error).message || "Gagal membatalkan permintaan.");
@@ -105,20 +157,26 @@ function FriendRequestsPage() {
               <SkeletonList />
             ) : isError ? (
               <ErrorRetry onRetry={() => refetch()} />
-            ) : incoming.length === 0 ? (
+            ) : incomingVisible.length === 0 ? (
               <EmptyState
                 title="Belum ada permintaan masuk"
                 subtitle="Bagikan PIN kamu di menu Undang supaya teman bisa mengirim permintaan."
               />
             ) : (
-              incoming.map((r) => (
+              incomingVisible.map((r) => {
+                const effective: "pending" | "accepted" | "rejected" =
+                  recentStatus[r.id] ??
+                  (r.status === "accepted" ? "accepted" : r.status === "rejected" ? "rejected" : "pending");
+                return (
                 <RequestCard
                   key={r.id}
                   name={r.peer_display_name}
                   pin={r.peer_invite_code}
                   avatarUrl={r.peer_avatar_url}
                   createdAt={r.created_at}
+                  statusHint={<StatusChip status={effective} />}
                   actions={
+                    effective !== "pending" ? null : (
                     <>
                       <Button
                         type="button"
@@ -145,9 +203,11 @@ function FriendRequestsPage() {
                         <X className="h-4 w-4" /> Tolak
                       </Button>
                     </>
+                    )
                   }
                 />
-              ))
+                );
+              })
             )}
           </TabsContent>
 
@@ -156,13 +216,13 @@ function FriendRequestsPage() {
               <SkeletonList />
             ) : isError ? (
               <ErrorRetry onRetry={() => refetch()} />
-            ) : outgoing.length === 0 ? (
+            ) : outgoingVisible.length === 0 ? (
               <EmptyState
                 title="Belum ada permintaan terkirim"
                 subtitle="Masukkan PIN teman di menu Undang untuk mengirim permintaan pertemanan."
               />
             ) : (
-              outgoing.map((r) => (
+              outgoingVisible.map((r) => (
                 <RequestCard
                   key={r.id}
                   name={r.peer_display_name}
@@ -170,11 +230,20 @@ function FriendRequestsPage() {
                   avatarUrl={r.peer_avatar_url}
                   createdAt={r.created_at}
                   statusHint={
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-600">
-                      <Clock className="h-3 w-3" /> Menunggu diterima
-                    </span>
+                    <StatusChip
+                      status={
+                        recentStatus[r.id] === "rejected"
+                          ? "cancelled"
+                          : r.status === "accepted"
+                            ? "accepted"
+                            : r.status === "rejected"
+                              ? "rejected"
+                              : "pending"
+                      }
+                    />
                   }
                   actions={
+                    r.status !== "pending" ? null : (
                     <Button
                       type="button"
                       size="sm"
@@ -185,6 +254,7 @@ function FriendRequestsPage() {
                     >
                       <X className="h-4 w-4" /> Batalkan
                     </Button>
+                    )
                   }
                 />
               ))
@@ -261,5 +331,50 @@ function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
       <div className="text-sm font-medium">{title}</div>
       <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
     </div>
+  );
+}
+
+function StatusChip({
+  status,
+}: {
+  status: "pending" | "accepted" | "rejected" | "cancelled";
+}) {
+  if (status === "accepted") {
+    return (
+      <span
+        aria-label="Status: diterima"
+        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600"
+      >
+        <CheckCircle2 className="h-3 w-3" /> Diterima
+      </span>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <span
+        aria-label="Status: ditolak"
+        className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-600"
+      >
+        <XCircle className="h-3 w-3" /> Ditolak
+      </span>
+    );
+  }
+  if (status === "cancelled") {
+    return (
+      <span
+        aria-label="Status: dibatalkan"
+        className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+      >
+        <X className="h-3 w-3" /> Dibatalkan
+      </span>
+    );
+  }
+  return (
+    <span
+      aria-label="Status: menunggu diterima"
+      className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600"
+    >
+      <Clock className="h-3 w-3" /> Menunggu
+    </span>
   );
 }
