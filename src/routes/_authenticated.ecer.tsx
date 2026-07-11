@@ -4273,7 +4273,11 @@ function SendEcerPrepsDialog({
   const [customerId, setCustomerId] = useState<string>(customers[0]?.id ?? "");
   const [manualName, setManualName] = useState("");
   const [totalStr, setTotalStr] = useState("");
-  const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial">("kas");
+  // Metode bayar WAJIB dipilih eksplisit oleh owner sebelum tombol
+  // "Kirim WA" aktif. Default `null` (belum dipilih) — bukan "kas" —
+  // supaya tidak ada jalur tembus dimana owner main tekan Kirim tanpa
+  // sadar mencatat penjualan sebagai Lunas.
+  const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial" | null>(null);
   const [paidStr, setPaidStr] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -4285,7 +4289,7 @@ function SendEcerPrepsDialog({
     setCustomerId(customers[0]?.id ?? "");
     setManualName("");
     setTotalStr("");
-    setPayMethod("kas");
+    setPayMethod(null);
     setPaidStr("");
     setNote("");
   }, [open, customers, title.id, prepIdsKey]);
@@ -4297,7 +4301,7 @@ function SendEcerPrepsDialog({
     return parsePaymentAmountInput(paidStr);
   }, [paidStr]);
   const payment = useMemo(
-    () => getPaymentBreakdown(payMethod, totalAmount, paidAmount),
+    () => getPaymentBreakdown(payMethod ?? "kas", totalAmount, paidAmount),
     [payMethod, totalAmount, paidAmount],
   );
   const remaining = payment.remaining;
@@ -4311,7 +4315,16 @@ function SendEcerPrepsDialog({
     return { id: null as string | null, name: manualName.trim(), contact: null as string | null };
   }, [mode, customerId, manualName, customers]);
 
-  const canSend = !!party.name && totalAmount > 0 && preps.length > 0 && !busy && partialValid;
+  // Payment-first gate: tombol Kirim hanya aktif kalau metode bayar
+  // sudah dipilih (Lunas / Hutang / Bayar sebagian) DAN validasi lain
+  // lolos. Ini yang mencegah WA benar-benar terkirim tanpa verifikasi.
+  const canSend =
+    payMethod !== null &&
+    !!party.name &&
+    totalAmount > 0 &&
+    preps.length > 0 &&
+    !busy &&
+    partialValid;
 
   async function resolvePhotoUrl(prep: EcerPreparation) {
     if (!prep.photo_path) return null;
@@ -4507,7 +4520,14 @@ function SendEcerPrepsDialog({
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-medium">Metode bayar</label>
+            <label className="mb-1 flex items-center gap-1 text-[11px] font-medium">
+              Metode bayar <span className="text-destructive">*</span>
+              {payMethod === null && (
+                <span className="ml-1 text-[10px] font-normal text-destructive">
+                  wajib dipilih
+                </span>
+              )}
+            </label>
             <div className="flex gap-1">
               <button
                 type="button"
@@ -4531,6 +4551,11 @@ function SendEcerPrepsDialog({
                 <HandCoins className="h-3.5 w-3.5" /> Sebagian
               </button>
             </div>
+            {payMethod === null && (
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive">
+                Pilih Lunas / Hutang / Bayar sebagian dulu — pesan WA baru bisa dikirim setelah metode bayar dicatat.
+              </div>
+            )}
             {payMethod === "partial" && (
               <div className="mt-2 space-y-1">
                 <label className="text-[11px] text-muted-foreground">Dibayar sekarang (Rp)</label>
@@ -4574,11 +4599,13 @@ function SendEcerPrepsDialog({
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={handleSend} disabled={!canSend}>
               {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
-              {payMethod === "hutang"
-                ? "Kirim & catat piutang"
-                : payMethod === "partial"
-                  ? "Kirim & catat sebagian piutang"
-                  : "Kirim & catat penjualan"}
+              {payMethod === null
+                ? "Pilih metode bayar dulu"
+                : payMethod === "hutang"
+                  ? "Kirim & catat piutang"
+                  : payMethod === "partial"
+                    ? "Kirim & catat sebagian piutang"
+                    : "Kirim & catat penjualan"}
             </Button>
           </div>
         </DialogFooter>
