@@ -89,15 +89,14 @@ if (missingEnv.length) {
   );
 }
 
-if (!debugBundle && !existsSync(resolve(ANDROID_DIR, "keystore.properties"))) {
-  console.log(
-    "⚠ File `android/keystore.properties` tidak ditemukan.\n" +
-      "  Kalau `signingConfigs.release` di build.gradle tidak dikonfigurasi\n" +
-      "  dengan cara lain, `bundleRelease` akan menghasilkan AAB UNSIGNED\n" +
-      "  dan Play Console akan menolaknya. Lihat docs/BUILD_AAB.md → \"Signing key\".\n",
-  );
-}
 console.log("  ✓ lingkungan siap");
+
+// ─── 1b. Validasi keystore (khusus release) ───────────────────────────
+if (!debugBundle) {
+  step("1b/4 Validasi keystore signing (fail-fast sebelum Gradle)");
+  run("node", [resolve(ROOT, "scripts/validate-keystore.mjs")]);
+  console.log("  ✓ keystore lolos semua cek");
+}
 
 // ─── 2. Typecheck ─────────────────────────────────────────────────────
 if (!skipTypecheck) {
