@@ -13,10 +13,20 @@
  *   node scripts/fill-release-checklist.mjs --in-place
  *   node scripts/fill-release-checklist.mjs --print
  *   node scripts/fill-release-checklist.mjs --dry-run
+ *   node scripts/fill-release-checklist.mjs --aab dist/aab/mcm-full-vc45.aab
+ *   node scripts/fill-release-checklist.mjs --strict-aab           # gagal kalau AAB/bundletool tidak ada
+ *   node scripts/fill-release-checklist.mjs --skip-aab-check       # lewati validasi AAB
+ *
+ * Validasi AAB (opsional tapi default aktif):
+ *   Sebelum mengisi checklist, skrip memeriksa versionCode di dalam AAB
+ *   target dan memastikan cocok dengan versionCode di build.gradle.
+ *   Butuh `bundletool` di PATH atau env var BUNDLETOOL menunjuk ke jar.
+ *   Kalau AAB atau bundletool tidak tersedia, defaultnya WARN (skrip
+ *   tetap jalan). Pakai --strict-aab untuk fail-fast di CI.
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 
 const ROOT = resolve(process.cwd());
 const GRADLE = resolve(ROOT, "android/app/build.gradle");
@@ -38,6 +48,8 @@ const inPlace = args.has("--in-place");
 const tagOverride = flag("--tag");
 const outputPath = flag("--output");
 const aabPath = flag("--aab") ?? "dist/app-release.aab";
+const strictAab = args.has("--strict-aab");
+const skipAabCheck = args.has("--skip-aab-check");
 
 if (!existsSync(GRADLE)) {
   fail(`${GRADLE} tidak ditemukan. Pastikan project Android sudah di-sync.`);
@@ -49,6 +61,18 @@ if (!existsSync(TEMPLATE)) {
 const gradleSrc = readFileSync(GRADLE, "utf8");
 const { versionCode, versionName } = parseGradle(gradleSrc);
 const baseVersion = deriveBaseVersion(versionName);
+
+// ─── Validasi versionCode di AAB target ─────────────────────────────
+const aabCheck = skipAabCheck
+  ? { status: "skipped", message: "dilewati via --skip-aab-check" }
+  : validateAabVersionCode(resolve(ROOT, aabPath), versionCode);
+reportAabCheck(aabCheck);
+if (strictAab && aabCheck.status !== "ok") {
+  fail(
+    `Validasi AAB gagal (--strict-aab): ${aabCheck.message}\n` +
+      "Perbaiki AAB target atau install bundletool, lalu ulangi.",
+  );
+}
 
 const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]) ?? "unknown";
 const commit = git(["rev-parse", "--short", "HEAD"]) ?? "unknown";
@@ -90,6 +114,7 @@ const plan = {
   dateId,
   dateEn,
   aabPath,
+  aabCheck,
   output: inPlace
     ? "RELEASE_CHECKLIST.md"
     : outputPath ?? `RELEASE_CHECKLIST-${tagWithPrefix}.md`,
@@ -130,6 +155,7 @@ console.log(`  commit      : ${commit}`);
 console.log(`  tanggal ID  : ${dateId}`);
 console.log(`  tanggal EN  : ${dateEn}`);
 console.log(`  aab path    : ${aabPath}\n`);
+console.log(`  aab check   : ${aabCheck.status} — ${aabCheck.message}\n`);
 
 process.exit(0);
 
@@ -165,4 +191,94 @@ function git(args) {
 function fail(msg) {
   console.error(`\n✗ ${msg}\n`);
   process.exit(1);
+}
+
+// ─── Validasi AAB ─────────────────────────────────────────────────────
+/**
+ * Memeriksa versionCode di dalam AAB target dan membandingkannya dengan
+ * versionCode dari build.gradle. Return status:
+ *   - "ok"       cocok
+ *   - "mismatch" AAB ada, versionCode berbeda
+ *   - "missing"  file AAB tidak ada
+ *   - "notool"   bundletool tidak tersedia
+ *   - "error"    error saat menjalankan bundletool
+ */
+function validateAabVersionCode(aabAbs, expected) {
+  if (!existsSync(aabAbs)) {
+    return {
+      status: "missing",
+      message:
+        `AAB tidak ada di ${aabAbs}. Bangun dulu (mis. \`bun run aab:build:release\`) ` +
+        "atau tunjuk lewat --aab.",
+    };
+  }
+  const tool = resolveBundletool();
+  if (!tool) {
+    return {
+      status: "notool",
+      message:
+        "bundletool tidak ditemukan. Install (`brew install bundletool` / apt) " +
+        "atau set env BUNDLETOOL=/abs/path/bundletool.jar. " +
+        "Sementara ini versionCode di AAB tidak diverifikasi.",
+    };
+  }
+  const argv = [
+    ...tool.prefix,
+    "dump",
+    "manifest",
+    `--bundle=${aabAbs}`,
+    "--xpath=/manifest/@android:versionCode",
+  ];
+  const r = spawnSync(tool.cmd, argv, { encoding: "utf8" });
+  if (r.status !== 0) {
+    return {
+      status: "error",
+      message:
+        `bundletool gagal (exit ${r.status}). stderr: ` +
+        (r.stderr?.trim().slice(0, 200) || "(kosong)"),
+    };
+  }
+  const raw = (r.stdout || "").trim();
+  const m = /(\d+)/.exec(raw);
+  if (!m) {
+    return {
+      status: "error",
+      message: `Tidak bisa parse versionCode dari output bundletool: "${raw}"`,
+    };
+  }
+  const aabVc = Number.parseInt(m[1], 10);
+  if (aabVc !== expected) {
+    return {
+      status: "mismatch",
+      message:
+        `versionCode di AAB (${aabVc}) ≠ build.gradle (${expected}). ` +
+        "Rebuild AAB atau update build.gradle sebelum upload.",
+      aabVersionCode: aabVc,
+    };
+  }
+  return {
+    status: "ok",
+    message: `versionCode AAB = ${aabVc} (cocok dengan build.gradle)`,
+    aabVersionCode: aabVc,
+  };
+}
+
+function resolveBundletool() {
+  const jar = process.env.BUNDLETOOL;
+  if (jar && existsSync(jar)) {
+    return { cmd: "java", prefix: ["-jar", jar] };
+  }
+  const which = spawnSync(process.platform === "win32" ? "where" : "which", ["bundletool"], {
+    encoding: "utf8",
+  });
+  if (which.status === 0 && which.stdout.trim()) {
+    return { cmd: "bundletool", prefix: [] };
+  }
+  return null;
+}
+
+function reportAabCheck(c) {
+  const icon =
+    c.status === "ok" ? "✓" : c.status === "skipped" ? "↷" : c.status === "mismatch" ? "✗" : "⚠";
+  console.log(`${icon} AAB check [${c.status}]: ${c.message}`);
 }
