@@ -2147,14 +2147,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       aria-label={
         selectMode
           ? `${selected ? "Lepas pilihan" : "Pilih"} kartu ${r.name}`
-          : `Buka detail kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}${
-              view === "sent"
-                ? `, ${shots.length} kiriman terkirim`
-                : `, ${r.prep_count} kotak siap`
-            }`
+          : view === "sent"
+            ? `${expanded ? "Tutup" : "Buka"} detail riwayat kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}, ${shots.length} kiriman terkirim`
+            : `Buka detail kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}, ${r.prep_count} kotak siap`
       }
       aria-describedby={`ecer-card-desc-${r.id}`}
       aria-pressed={selectMode ? selected : undefined}
+      aria-expanded={selectMode ? undefined : view === "sent" ? expanded : undefined}
       onKeyDown={
         selectMode
           ? undefined
