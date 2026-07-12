@@ -53,6 +53,13 @@ const uploadTrack = (() => {
   const i = argv.indexOf("--upload-track");
   return i === -1 ? "internal" : argv[i + 1] ?? "internal";
 })();
+// Pass-through ke scripts/upload-play.mjs
+const releaseStatus = (() => {
+  const i = argv.indexOf("--release-status");
+  return i === -1 ? null : argv[i + 1] ?? null;
+})();
+const uploadDryRun = args.has("--upload-dry-run");
+const skipVersionCheck = args.has("--skip-version-check");
 
 const ROOT = resolve(process.cwd());
 const ANDROID_DIR = resolve(ROOT, "android");
@@ -155,13 +162,17 @@ if (doUpload) {
     console.log("⚠ --debug + --upload: skip upload (Play Console menolak debug AAB).");
   } else {
     step(`Upload AAB → Play Console (track: ${uploadTrack})`);
-    run("node", [
+    const uploadArgs = [
       resolve(ROOT, "scripts/upload-play.mjs"),
       "--variant",
       variant,
       "--track",
       uploadTrack,
-    ]);
+    ];
+    if (releaseStatus) uploadArgs.push("--release-status", releaseStatus);
+    if (uploadDryRun) uploadArgs.push("--dry-run");
+    if (skipVersionCheck) uploadArgs.push("--skip-version-check");
+    run("node", uploadArgs);
   }
 }
 
