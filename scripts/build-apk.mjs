@@ -8,6 +8,12 @@
  *   node scripts/build-apk.mjs --variant chat # varian MCM Chat
  *   node scripts/build-apk.mjs --open         # + buka Android Studio
  *   node scripts/build-apk.mjs --skip-typecheck  (kalau sudah dicek manual)
+ *   node scripts/build-apk.mjs --assemble          # + ./gradlew assembleDebug
+ *   node scripts/build-apk.mjs --release           # + assembleRelease (butuh signing)
+ *   node scripts/build-apk.mjs --install           # + adb install & verifikasi
+ *   node scripts/build-apk.mjs --install --launch  # + install & buka app
+ *   node scripts/build-apk.mjs --install --device <serial>
+ *   node scripts/build-apk.mjs --install --uninstall-first
  *
  * Tujuan:
  *   - Fail-fast sebelum masuk ke Gradle: typecheck dulu, baru build.
@@ -15,12 +21,19 @@
  *   - Cek `ANDROID_HOME` / `JAVA_HOME` — kalau kosong, kasih hint.
  *   - Semua langkah pakai script yang SUDAH ADA di package.json
  *     (`apk:full` / `apk:chat`) supaya tidak ada logic duplikat.
+ *   - Opsional: kalau --install, chain otomatis ke scripts/install-apk.mjs
+ *     (adb install -r -d + verifikasi package terdaftar & versionCode match).
  */
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
-const args = new Set(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const args = new Set(argv);
+function flagValue(name) {
+  const i = argv.indexOf(name);
+  return i === -1 ? undefined : argv[i + 1];
+}
 let variant = "full";
 for (const a of process.argv.slice(2)) {
   if (a.startsWith("--variant=")) variant = a.split("=")[1];
@@ -35,6 +48,13 @@ if (!["full", "chat"].includes(variant)) {
 
 const skipTypecheck = args.has("--skip-typecheck");
 const openStudio = args.has("--open");
+const doInstall = args.has("--install");
+const doLaunch = args.has("--launch");
+const doUninstallFirst = args.has("--uninstall-first");
+const isRelease = args.has("--release");
+// --assemble tersirat kalau --install (butuh .apk fisik) atau --release.
+const doAssemble = args.has("--assemble") || doInstall || isRelease;
+const deviceArg = flagValue("--device");
 const ROOT = resolve(process.cwd());
 
 banner(`Build APK · varian ${variant.toUpperCase()}`);
@@ -72,16 +92,53 @@ if (!skipTypecheck) {
 }
 
 // ─── 3. Build web + cap sync ──────────────────────────────────────────
-step(`3/4  Build web + cap sync (apk:${variant})`);
+const totalSteps = doAssemble ? (doInstall ? 6 : 5) : 4;
+step(`3/${totalSteps}  Build web + cap sync (apk:${variant})`);
 run("bun", ["run", `apk:${variant}`]);
 console.log(`  ✓ dist/ ter-generate & android/ ter-sync (varian ${variant})`);
 
-// ─── 4. Buka Android Studio (opsional) ────────────────────────────────
+// ─── 4. Gradle assemble (opsional) ────────────────────────────────────
+if (doAssemble) {
+  const gradleTask = isRelease ? "assembleRelease" : "assembleDebug";
+  step(`4/${totalSteps}  ./gradlew :app:${gradleTask}`);
+  const gradleCmd = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
+  const gradleRes = spawnSync(gradleCmd, [`:app:${gradleTask}`], {
+    stdio: "inherit",
+    cwd: resolve(ROOT, "android"),
+    shell: process.platform === "win32",
+  });
+  if (gradleRes.status !== 0) {
+    fail(
+      `Gradle ${gradleTask} gagal (exit ${gradleRes.status}).\n` +
+        (isRelease
+          ? "  Untuk release, pastikan keystore sudah setup:\n" +
+            "    bun run aab:validate-keystore"
+          : "  Cek log di atas — biasanya masalah SDK / JDK / Android licenses."),
+    );
+  }
+  const apkSubdir = isRelease ? "release" : "debug";
+  const apkName = isRelease ? "app-release.apk" : "app-debug.apk";
+  const apkPath = resolve(ROOT, `android/app/build/outputs/apk/${apkSubdir}/${apkName}`);
+  console.log(`  ✓ APK: ${apkPath}`);
+}
+
+// ─── 5. Install & verifikasi (opsional) ───────────────────────────────
+if (doInstall) {
+  step(`5/${totalSteps}  adb install + verifikasi pemasangan`);
+  const installArgs = ["run", "apk:install", "--", "--variant", variant];
+  if (isRelease) installArgs.push("--release");
+  if (doLaunch) installArgs.push("--launch");
+  if (doUninstallFirst) installArgs.push("--uninstall-first");
+  if (deviceArg) installArgs.push("--device", deviceArg);
+  run("bun", installArgs);
+}
+
+// ─── 6. Buka Android Studio (opsional) ────────────────────────────────
 if (openStudio) {
-  step("4/4  Buka Android Studio");
+  step(`${totalSteps}/${totalSteps}  Buka Android Studio`);
   run("bunx", ["cap", "open", "android"]);
-} else {
-  step("4/4  Selesai — langkah manual berikutnya");
+} else if (!doAssemble) {
+  step(`${totalSteps}/${totalSteps}  Selesai — langkah manual berikutnya`);
   console.log(
     "\n" +
       "  Buka Android Studio:  bunx cap open android\n" +
@@ -92,6 +149,10 @@ if (openStudio) {
       "  Output APK tersimpan di:\n" +
       "    android/app/build/outputs/apk/{debug|release}/*.apk\n",
   );
+} else if (doInstall) {
+  banner(`APK varian ${variant.toUpperCase()} terpasang & terverifikasi`);
+} else {
+  banner(`APK varian ${variant.toUpperCase()} berhasil di-build`);
 }
 
 // ─── util ─────────────────────────────────────────────────────────────
