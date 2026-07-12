@@ -147,7 +147,7 @@ function runPreBuild() {
   }
 
   step("5  proguardFiles memasukkan proguard-rules.pro");
-  if (/proguardFiles[^)]*proguard-rules\.pro/.test(releaseBlock)) {
+  if (/proguardFiles[^\n{}]*proguard-rules\.pro/.test(releaseBlock)) {
     ok("proguard-rules.pro ter-referensi");
   } else if (/minifyEnabled\s+true/.test(releaseBlock)) {
     warn(
