@@ -30,7 +30,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { PENDING_PRODUCTS_VERSION } from "@/routes/_authenticated.chat.$conversationId";
+import { PENDING_PRODUCTS_VERSION } from "@/lib/chat-queue-schema";
 
 export const Route = createFileRoute("/lovable/visual/chat-queue-network-drop")({
   head: () => ({
