@@ -1134,12 +1134,13 @@ function fmtAgo(ts: number, now: number = Date.now()): string {
   });
 }
 
-function SendStatusBadge({ status, error, view, lastSentAt, sentCount, onResend, resendLabel }: {
+function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onResend, resendLabel }: {
   status: "idle" | "sending" | "success" | "failed" | "cancelled";
   error: string | null;
   view: "active" | "sent";
   lastSentAt: number | null;
   sentCount: number;
+  now: number;
   onResend?: () => void;
   resendLabel?: string;
 }) {
@@ -1197,7 +1198,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, onResend,
     );
   }
   if (status === "success" || (view === "sent" && lastSentAt)) {
-    const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!)}`;
+    const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!, now)}`;
     return (
       <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
         <CheckCircle2 className="h-2.5 w-2.5" /> {label}
