@@ -61,6 +61,10 @@ const ANDROID_DIR = resolve(ROOT, "android");
 const PROPS_PATH = resolve(ANDROID_DIR, "keystore.properties");
 const FORCE = args.has("--force");
 const NON_INTERACTIVE = args.has("--non-interactive");
+// --env-only: JANGAN tulis password ke android/keystore.properties.
+// Sebagai gantinya, keluarkan snippet export untuk shell profile.
+// Aman untuk CI / komputer bersama.
+const ENV_ONLY = args.has("--env-only");
 
 banner("Wizard signing keystore MCM");
 
@@ -202,21 +206,43 @@ if (storeExists && !FORCE) {
 }
 
 // ─── 4. Tulis android/keystore.properties ─────────────────────────────
-step("4/6  Tulis android/keystore.properties");
+step("4/6  Tulis konfigurasi signing");
 if (!existsSync(ANDROID_DIR)) mkdirSync(ANDROID_DIR, { recursive: true });
 
-const propsBody =
-  `# Auto-generated oleh scripts/setup-keystore.mjs\n` +
-  `# JANGAN commit file ini. Sudah masuk .gitignore.\n` +
-  `storeFile=${storeFile}\n` +
-  `storePassword=${storePassword}\n` +
-  `keyAlias=${alias}\n` +
-  `keyPassword=${keyPassword}\n`;
-writeFileSync(PROPS_PATH, propsBody, { mode: 0o600 });
-try {
-  chmodSync(PROPS_PATH, 0o600);
-} catch {}
-console.log(`  ✓ ${relative(ROOT, PROPS_PATH)} (chmod 600)`);
+if (ENV_ONLY) {
+  // Tulis hanya path + alias (non-secret). Password harus dari env.
+  const propsBody =
+    `# Auto-generated oleh scripts/setup-keystore.mjs (--env-only)\n` +
+    `# Password TIDAK ditulis di sini — baca dari env KEYSTORE_STORE_PASS\n` +
+    `# & KEYSTORE_KEY_PASS saat build.\n` +
+    `storeFile=${storeFile}\n` +
+    `keyAlias=${alias}\n`;
+  writeFileSync(PROPS_PATH, propsBody, { mode: 0o600 });
+  try {
+    chmodSync(PROPS_PATH, 0o600);
+  } catch {}
+  console.log(`  ✓ ${relative(ROOT, PROPS_PATH)} (chmod 600, tanpa password)`);
+  console.log(
+    "\n  Tambahkan ke ~/.zshrc atau ~/.bashrc:\n" +
+      "    export KEYSTORE_STORE_PASS='<password store Anda>'\n" +
+      "    export KEYSTORE_KEY_PASS='<password key Anda>'\n" +
+      "\n  Lalu buka terminal baru sebelum jalankan `bun run aab:build`.\n",
+  );
+} else {
+  const propsBody =
+    `# Auto-generated oleh scripts/setup-keystore.mjs\n` +
+    `# JANGAN commit file ini. Sudah masuk .gitignore.\n` +
+    `# Alternatif: pakai --env-only + env var KEYSTORE_STORE_PASS/KEYSTORE_KEY_PASS.\n` +
+    `storeFile=${storeFile}\n` +
+    `storePassword=${storePassword}\n` +
+    `keyAlias=${alias}\n` +
+    `keyPassword=${keyPassword}\n`;
+  writeFileSync(PROPS_PATH, propsBody, { mode: 0o600 });
+  try {
+    chmodSync(PROPS_PATH, 0o600);
+  } catch {}
+  console.log(`  ✓ ${relative(ROOT, PROPS_PATH)} (chmod 600)`);
+}
 
 // ─── 5. Update .gitignore ─────────────────────────────────────────────
 step("5/6  Pastikan .gitignore memblokir file sensitif");
