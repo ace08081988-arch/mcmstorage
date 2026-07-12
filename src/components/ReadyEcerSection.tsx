@@ -1306,11 +1306,22 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
 function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, justMoved = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
   const cardRootRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
   const openCardDetail = () => {
     void navigate({
       to: "/ecer",
       search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined },
     });
+  };
+  // Di tab "Riwayat terkirim": tap kartu HANYA expand/collapse detail
+  // pengiriman di dalam kartu. Tidak pernah pindah ke /ecer supaya user
+  // bisa memeriksa riwayat tanpa keluar dari halaman index.
+  const handleCardOpen = () => {
+    if (view === "sent") {
+      setExpanded((v) => !v);
+    } else {
+      openCardDetail();
+    }
   };
   useEffect(() => {
     if (justMoved && cardRootRef.current) {
