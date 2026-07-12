@@ -41,7 +41,8 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { SignJWT, importPKCS8 } from "jose";
 
 const argv = process.argv.slice(2);
@@ -81,7 +82,10 @@ const runSummary = {
   outcome: "pending", // pending | success | dry-run | failed
   error: null,
 };
-process.on("exit", () => writeStepSummary(runSummary));
+process.on("exit", () => {
+  writeStepSummary(runSummary);
+  writeSummaryJson(runSummary);
+});
 
 const VALID_TRACKS = ["internal", "alpha", "beta", "production"];
 if (!VALID_TRACKS.includes(track)) fail(`--track harus salah satu: ${VALID_TRACKS.join(", ")}`);
