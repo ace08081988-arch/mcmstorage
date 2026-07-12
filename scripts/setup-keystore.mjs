@@ -266,6 +266,15 @@ console.log("  ✓ .gitignore up-to-date");
 step("6/6  Validasi keystore end-to-end");
 const val = spawnSync("node", [resolve(ROOT, "scripts/validate-keystore.mjs")], {
   stdio: "inherit",
+  env: {
+    ...process.env,
+    // Passthrough kredensial in-memory ke validator, terutama saat --env-only
+    // di mana android/keystore.properties tidak menyimpan password.
+    KEYSTORE_FILE: storeFile,
+    KEYSTORE_ALIAS: alias,
+    KEYSTORE_STORE_PASS: storePassword,
+    KEYSTORE_KEY_PASS: keyPassword,
+  },
 });
 if (val.status !== 0) {
   fail("Validator gagal. Cek output di atas.");
