@@ -50,17 +50,13 @@ const inPlace = args.has("--in-place");
 const tagOverride = flag("--tag");
 const outputPath = flag("--output");
 const aabPathFlag = flag("--aab");
-const autoAab = aabPathFlag ? null : findLatestAab(ROOT);
+const discovery = aabPathFlag ? null : findLatestAab(ROOT);
+const autoAab = discovery?.winner ?? null;
 const aabPath = aabPathFlag ?? autoAab?.rel ?? "dist/app-release.aab";
 const aabAutoDiscovered = !aabPathFlag && !!autoAab;
-if (aabAutoDiscovered) {
-  const ageMin = ((Date.now() - autoAab.mtimeMs) / 60_000).toFixed(1);
-  console.log(`↳ AAB auto-discover: ${autoAab.rel} (mtime ${ageMin} menit lalu)`);
-} else if (!aabPathFlag) {
-  console.log(
-    "↳ AAB auto-discover: tidak ada .aab ditemukan di dist/aab/ atau android/app/build/outputs/bundle/. Fallback: dist/app-release.aab",
-  );
-}
+const aabSource = aabPathFlag ? "--aab" : aabAutoDiscovered ? "auto-discover" : "default-fallback";
+const aabReason = buildAabReason({ aabPathFlag, discovery });
+printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab });
 const strictAab = args.has("--strict-aab");
 const skipAabCheck = args.has("--skip-aab-check");
 
@@ -128,6 +124,9 @@ const plan = {
   dateEn,
   aabPath,
   aabAutoDiscovered,
+  aabSource,
+  aabReason,
+  aabCandidates: discovery?.candidates ?? [],
   aabCheck,
   output: inPlace
     ? "RELEASE_CHECKLIST.md"
@@ -169,7 +168,8 @@ console.log(`  commit      : ${commit}`);
 console.log(`  tanggal ID  : ${dateId}`);
 console.log(`  tanggal EN  : ${dateEn}`);
 console.log(`  aab path    : ${aabPath}\n`);
-console.log(`  aab source  : ${aabAutoDiscovered ? "auto-discover" : aabPathFlag ? "--aab" : "default fallback"}\n`);
+console.log(`  aab source  : ${aabSource}`);
+console.log(`  aab reason  : ${aabReason}\n`);
 console.log(`  aab check   : ${aabCheck.status} — ${aabCheck.message}\n`);
 
 process.exit(0);
@@ -217,13 +217,27 @@ function fail(msg) {
  * Return { abs, rel, mtimeMs } atau null.
  */
 function findLatestAab(rootAbs) {
+  // Urutan folder ini juga menjadi prioritas tie-breaker: jika ada dua
+  // .aab dengan mtime persis sama (jarang tapi mungkin di CI), yang di
+  // folder lebih atas menang.
   const dirs = [
-    resolve(rootAbs, "dist/aab"),
-    resolve(rootAbs, "android/app/build/outputs/bundle/release"),
-    resolve(rootAbs, "android/app/build/outputs/bundle/debug"),
+    { abs: resolve(rootAbs, "dist/aab"), label: "dist/aab" },
+    {
+      abs: resolve(rootAbs, "android/app/build/outputs/bundle/release"),
+      label: "android/app/build/outputs/bundle/release",
+    },
+    {
+      abs: resolve(rootAbs, "android/app/build/outputs/bundle/debug"),
+      label: "android/app/build/outputs/bundle/debug",
+    },
   ];
+  const candidates = [];
+  const scanned = [];
   let best = null;
-  for (const dir of dirs) {
+  let bestPriority = Infinity;
+  for (let i = 0; i < dirs.length; i++) {
+    const { abs: dir, label } = dirs[i];
+    scanned.push({ dir: label, exists: existsSync(dir) });
     if (!existsSync(dir)) continue;
     let entries;
     try {
@@ -241,12 +255,66 @@ function findLatestAab(rootAbs) {
         continue;
       }
       if (!st.isFile()) continue;
-      if (!best || st.mtimeMs > best.mtimeMs) {
-        best = { abs, rel: relative(rootAbs, abs), mtimeMs: st.mtimeMs };
+      const entry = {
+        abs,
+        rel: relative(rootAbs, abs),
+        mtimeMs: st.mtimeMs,
+        dir: label,
+        priority: i,
+      };
+      candidates.push(entry);
+      if (
+        !best ||
+        st.mtimeMs > best.mtimeMs ||
+        (st.mtimeMs === best.mtimeMs && i < bestPriority)
+      ) {
+        best = entry;
+        bestPriority = i;
       }
     }
   }
-  return best;
+  return { winner: best, candidates, scanned };
+}
+
+function buildAabReason({ aabPathFlag, discovery }) {
+  if (aabPathFlag) return `dipilih eksplisit via --aab ${aabPathFlag}`;
+  if (!discovery || !discovery.winner) {
+    const dirs = discovery?.scanned?.map((s) => `${s.dir}${s.exists ? "" : " (tidak ada)"}`).join(", ");
+    return `tidak ada .aab ditemukan di [${dirs}]; fallback default dist/app-release.aab`;
+  }
+  const w = discovery.winner;
+  const total = discovery.candidates.length;
+  const ageMin = ((Date.now() - w.mtimeMs) / 60_000).toFixed(1);
+  if (total === 1) {
+    return `satu-satunya .aab yang ditemukan (di ${w.dir}, mtime ${ageMin} menit lalu)`;
+  }
+  const tied = discovery.candidates.filter((c) => c.mtimeMs === w.mtimeMs).length > 1;
+  if (tied) {
+    return `${total} kandidat; prioritas folder (${w.dir}) memenangkan tie mtime; mtime ${ageMin} menit lalu`;
+  }
+  return `mtime terbaru dari ${total} kandidat (${w.dir}, ${ageMin} menit lalu)`;
+}
+
+function printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab }) {
+  console.log("\n── AAB detection ────────────────────────────────────");
+  console.log(`  path   : ${aabPath}`);
+  console.log(`  source : ${aabSource}`);
+  console.log(`  reason : ${aabReason}`);
+  if (discovery && discovery.candidates.length > 0) {
+    console.log(`  kandidat (${discovery.candidates.length}):`);
+    const sorted = [...discovery.candidates].sort((a, b) => b.mtimeMs - a.mtimeMs);
+    for (const c of sorted) {
+      const ageMin = ((Date.now() - c.mtimeMs) / 60_000).toFixed(1);
+      const marker = autoAab && c.abs === autoAab.abs ? "★" : " ";
+      console.log(`    ${marker} ${c.rel}  (${c.dir}, mtime ${ageMin} mnt lalu)`);
+    }
+  } else if (discovery) {
+    console.log("  kandidat: (tidak ada)");
+    for (const s of discovery.scanned) {
+      console.log(`    - ${s.dir}${s.exists ? "" : " (tidak ada)"}`);
+    }
+  }
+  console.log("─────────────────────────────────────────────────────\n");
 }
 
 // ─── Validasi AAB ─────────────────────────────────────────────────────
