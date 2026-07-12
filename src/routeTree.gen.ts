@@ -50,6 +50,7 @@ import { Route as AuthenticatedPengaturanBahasaRouteImport } from './routes/_aut
 import { Route as AuthenticatedPengaturanAppModeRouteImport } from './routes/_authenticated.pengaturan-app-mode'
 import { Route as AuthenticatedPengaturanApkRouteImport } from './routes/_authenticated.pengaturan-apk'
 import { Route as AuthenticatedPengaturanAksesibilitasRouteImport } from './routes/_authenticated.pengaturan-aksesibilitas'
+import { Route as AuthenticatedPengaturanRouteImport } from './routes/_authenticated.pengaturan'
 import { Route as AuthenticatedPembaruanRouteImport } from './routes/_authenticated.pembaruan'
 import { Route as AuthenticatedPanggilanRouteImport } from './routes/_authenticated.panggilan'
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
@@ -345,6 +346,11 @@ const AuthenticatedPengaturanAksesibilitasRoute =
     path: '/pengaturan-aksesibilitas',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPengaturanRoute = AuthenticatedPengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPembaruanRoute = AuthenticatedPembaruanRouteImport.update({
   id: '/pembaruan',
   path: '/pembaruan',
@@ -809,6 +815,7 @@ export interface FileRoutesByFullPath {
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/panggilan': typeof AuthenticatedPanggilanRoute
   '/pembaruan': typeof AuthenticatedPembaruanRoute
+  '/pengaturan': typeof AuthenticatedPengaturanRoute
   '/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/pengaturan-apk': typeof AuthenticatedPengaturanApkRoute
   '/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
@@ -923,6 +930,7 @@ export interface FileRoutesByTo {
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/panggilan': typeof AuthenticatedPanggilanRoute
   '/pembaruan': typeof AuthenticatedPembaruanRoute
+  '/pengaturan': typeof AuthenticatedPengaturanRoute
   '/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/pengaturan-apk': typeof AuthenticatedPengaturanApkRoute
   '/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
@@ -1043,6 +1051,7 @@ export interface FileRoutesById {
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/_authenticated/panggilan': typeof AuthenticatedPanggilanRoute
   '/_authenticated/pembaruan': typeof AuthenticatedPembaruanRoute
+  '/_authenticated/pengaturan': typeof AuthenticatedPengaturanRoute
   '/_authenticated/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/_authenticated/pengaturan-apk': typeof AuthenticatedPengaturanApkRoute
   '/_authenticated/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
@@ -1164,6 +1173,7 @@ export interface FileRouteTypes {
     | '/notifikasi'
     | '/panggilan'
     | '/pembaruan'
+    | '/pengaturan'
     | '/pengaturan-aksesibilitas'
     | '/pengaturan-apk'
     | '/pengaturan-app-mode'
@@ -1278,6 +1288,7 @@ export interface FileRouteTypes {
     | '/notifikasi'
     | '/panggilan'
     | '/pembaruan'
+    | '/pengaturan'
     | '/pengaturan-aksesibilitas'
     | '/pengaturan-apk'
     | '/pengaturan-app-mode'
@@ -1397,6 +1408,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifikasi'
     | '/_authenticated/panggilan'
     | '/_authenticated/pembaruan'
+    | '/_authenticated/pengaturan'
     | '/_authenticated/pengaturan-aksesibilitas'
     | '/_authenticated/pengaturan-apk'
     | '/_authenticated/pengaturan-app-mode'
@@ -1828,6 +1840,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-aksesibilitas'
       fullPath: '/pengaturan-aksesibilitas'
       preLoaderRoute: typeof AuthenticatedPengaturanAksesibilitasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan': {
+      id: '/_authenticated/pengaturan'
+      path: '/pengaturan'
+      fullPath: '/pengaturan'
+      preLoaderRoute: typeof AuthenticatedPengaturanRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pembaruan': {
@@ -2441,6 +2460,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
   AuthenticatedPanggilanRoute: typeof AuthenticatedPanggilanRoute
   AuthenticatedPembaruanRoute: typeof AuthenticatedPembaruanRoute
+  AuthenticatedPengaturanRoute: typeof AuthenticatedPengaturanRoute
   AuthenticatedPengaturanAksesibilitasRoute: typeof AuthenticatedPengaturanAksesibilitasRoute
   AuthenticatedPengaturanApkRoute: typeof AuthenticatedPengaturanApkRoute
   AuthenticatedPengaturanAppModeRoute: typeof AuthenticatedPengaturanAppModeRoute
@@ -2497,6 +2517,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
   AuthenticatedPanggilanRoute: AuthenticatedPanggilanRoute,
   AuthenticatedPembaruanRoute: AuthenticatedPembaruanRoute,
+  AuthenticatedPengaturanRoute: AuthenticatedPengaturanRoute,
   AuthenticatedPengaturanAksesibilitasRoute:
     AuthenticatedPengaturanAksesibilitasRoute,
   AuthenticatedPengaturanApkRoute: AuthenticatedPengaturanApkRoute,
@@ -2629,13 +2650,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
