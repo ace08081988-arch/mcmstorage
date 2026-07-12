@@ -1331,5 +1331,25 @@ export default defineConfig({
         viewport: { width: 411, height: 740 },
       },
     },
+    {
+      // Skenario : Queue produk pada composer chat saat jaringan drop
+      //            di tengah pengiriman. Semua item WAJIB tetap di
+      //            composer dgn status "failed" + localStorage v2 utuh,
+      //            dan setelah reconnect + retry, queue kosong & key
+      //            localStorage dihapus.
+      // Harness  : /lovable/visual/chat-queue-network-drop (no-auth).
+      // Tujuan   : Regresi guard untuk hardening 12 Jul 2026 — sebelum
+      //            fix, kegagalan tengah-loop bisa menghilangkan chip
+      //            dari composer. Non-tautologi: harness mengimpor
+      //            `PENDING_PRODUCTS_VERSION` dari modul yang sama dgn
+      //            route produksi (`@/lib/chat-queue-schema`).
+      name: "chat-queue-network-drop-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-queue-network-drop\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+      },
+    },
   ],
 });
