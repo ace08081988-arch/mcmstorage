@@ -247,16 +247,26 @@ async function ensureBundletool() {
 }
 
 function readSigning() {
+  // Prioritas: env var > android/keystore.properties. Env var menang
+  // per-field, jadi bisa taruh path+alias di properties tapi password
+  // di env (aman: password tidak nyangkut di disk repo).
   const p = resolve(ROOT, "android/keystore.properties");
-  if (!existsSync(p)) return null;
-  const out = {};
-  for (const raw of readFileSync(p, "utf8").split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || line.startsWith("#")) continue;
-    const eq = line.indexOf("=");
-    if (eq === -1) continue;
-    out[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
+  const fromFile = {};
+  if (existsSync(p)) {
+    for (const raw of readFileSync(p, "utf8").split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line || line.startsWith("#")) continue;
+      const eq = line.indexOf("=");
+      if (eq === -1) continue;
+      fromFile[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
+    }
   }
+  const out = {
+    storeFile: process.env.KEYSTORE_FILE ?? fromFile.storeFile,
+    storePassword: process.env.KEYSTORE_STORE_PASS ?? fromFile.storePassword,
+    keyAlias: process.env.KEYSTORE_ALIAS ?? fromFile.keyAlias,
+    keyPassword: process.env.KEYSTORE_KEY_PASS ?? fromFile.keyPassword,
+  };
   if (!out.storeFile || !out.storePassword || !out.keyAlias || !out.keyPassword) return null;
   out.storeFile = resolveHome(out.storeFile);
   return out;
