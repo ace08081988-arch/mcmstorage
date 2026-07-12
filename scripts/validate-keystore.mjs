@@ -28,12 +28,17 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
+import { createInterface } from "node:readline";
 
 const argv = process.argv.slice(2);
 function flag(name) {
   const i = argv.indexOf(name);
   return i === -1 ? undefined : argv[i + 1];
 }
+const NON_INTERACTIVE =
+  new Set(argv).has("--non-interactive") ||
+  process.env.CI === "true" ||
+  !process.stdin.isTTY;
 
 const ROOT = resolve(process.cwd());
 const propsPath = resolve(ROOT, flag("--props") ?? "android/keystore.properties");
@@ -97,13 +102,21 @@ if (!storeFile || !storePassword || !keyAlias || !keyPassword) {
   keyPassword ??= parsed.keyPassword;
   source = source ? `${source} + keystore.properties` : `keystore.properties (${propsPath})`;
 }
-const missing = [];
-if (!storeFile) missing.push("storeFile");
-if (!storePassword) missing.push("storePassword");
-if (!keyAlias) missing.push("keyAlias");
-if (!keyPassword) missing.push("keyPassword");
+let missing = fieldsMissing();
 if (missing.length) {
-  fail(`Field kosong di ${source}: ${missing.join(", ")}`);
+  if (NON_INTERACTIVE) {
+    fail(
+      `Field kosong di ${source}: ${missing.join(", ")}.\n` +
+        "Non-interactive mode aktif (--non-interactive / CI=true / stdin bukan TTY).",
+    );
+  }
+  console.log(
+    `  ⚠ ${missing.length} field kosong (${missing.join(", ")}) — masuk mode prompt interaktif.`,
+  );
+  await promptForMissing();
+  missing = fieldsMissing();
+  if (missing.length) fail(`Masih kosong setelah prompt: ${missing.join(", ")}`);
+  source = `${source} + prompt interaktif`;
 }
 console.log(`  ✓ sumber: ${source}`);
 console.log(`  ✓ alias: ${keyAlias}`);
@@ -121,41 +134,56 @@ console.log(`  ✓ ${storeAbs}`);
 
 // ─── 4. storePassword benar? ──────────────────────────────────────────
 step("4/8  Verifikasi storePassword");
-const listAll = keytool(["-list", "-keystore", storeAbs, "-storepass", storePassword]);
+let listAll = keytool(["-list", "-keystore", storeAbs, "-storepass", storePassword]);
 if (listAll.status !== 0) {
-  const msg = (listAll.stderr || listAll.stdout || "").trim();
-  fail(
-    "storePassword SALAH — keytool tidak bisa membuka store.\n\n" +
-      truncate(msg, 400),
-  );
+  if (NON_INTERACTIVE) {
+    fail(
+      "storePassword SALAH — keytool tidak bisa membuka store.\n\n" +
+        truncate((listAll.stderr || listAll.stdout || "").trim(), 400),
+    );
+  }
+  for (let attempt = 1; attempt <= 3 && listAll.status !== 0; attempt++) {
+    console.log(`  ⚠ storePassword salah (percobaan ${attempt}/3). Prompt ulang…`);
+    storePassword = await askPassword("     Store password: ");
+    listAll = keytool(["-list", "-keystore", storeAbs, "-storepass", storePassword]);
+  }
+  if (listAll.status !== 0) fail("storePassword tetap salah setelah 3 percobaan.");
 }
 console.log("  ✓ store bisa dibuka");
 
 // ─── 5. Alias ADA di store? ───────────────────────────────────────────
 step("5/8  Cek alias di dalam store");
-const listAlias = keytool([
-  "-list",
-  "-keystore",
-  storeAbs,
-  "-storepass",
-  storePassword,
-  "-alias",
-  keyAlias,
+let listAlias = keytool([
+  "-list", "-keystore", storeAbs, "-storepass", storePassword, "-alias", keyAlias,
 ]);
 if (listAlias.status !== 0) {
   const aliases = extractAliases(listAll.stdout);
-  fail(
-    `Alias "${keyAlias}" TIDAK ADA di keystore.\n` +
-      (aliases.length
-        ? `Alias yang tersedia: ${aliases.join(", ")}`
-        : "Store ini tidak punya entry alias apa pun (kosong?)."),
-  );
+  if (NON_INTERACTIVE || aliases.length === 0) {
+    fail(
+      `Alias "${keyAlias}" TIDAK ADA di keystore.\n` +
+        (aliases.length
+          ? `Alias yang tersedia: ${aliases.join(", ")}`
+          : "Store ini tidak punya entry alias apa pun (kosong?)."),
+    );
+  }
+  console.log(`  ⚠ Alias "${keyAlias}" tidak ada. Alias di store: ${aliases.join(", ")}`);
+  if (aliases.length === 1) {
+    keyAlias = aliases[0];
+    console.log(`  → auto-pilih satu-satunya: "${keyAlias}"`);
+  } else {
+    const pick = await askChoice("     Pilih alias", aliases);
+    keyAlias = pick;
+  }
+  listAlias = keytool([
+    "-list", "-keystore", storeAbs, "-storepass", storePassword, "-alias", keyAlias,
+  ]);
+  if (listAlias.status !== 0) fail("Alias pilihan tidak bisa dibuka. Aneh — coba ulangi.");
 }
 console.log("  ✓ alias ditemukan");
 
 // ─── 6. keyPassword benar untuk alias tsb? ───────────────────────────
 step("6/8  Verifikasi keyPassword (ekspor sertifikat alias)");
-const exportCert = keytool([
+let exportCert = keytool([
   "-exportcert",
   "-keystore",
   storeAbs,
@@ -175,10 +203,22 @@ if (exportCert.status !== 0) {
   if (/PKCS12/i.test(msg) && storePassword === keyPassword) {
     console.log("  ⚠ store PKCS12 — key & store share password (OK)");
   } else {
-    fail(
-      "keyPassword SALAH untuk alias ini — Gradle akan gagal signing.\n\n" +
-        truncate(msg, 400),
-    );
+    if (NON_INTERACTIVE) {
+      fail(
+        "keyPassword SALAH untuk alias ini — Gradle akan gagal signing.\n\n" +
+          truncate(msg, 400),
+      );
+    }
+    for (let attempt = 1; attempt <= 3 && exportCert.status !== 0; attempt++) {
+      console.log(`  ⚠ keyPassword salah (percobaan ${attempt}/3). Prompt ulang…`);
+      keyPassword = await askPassword("     Key password: ");
+      exportCert = keytool([
+        "-exportcert", "-keystore", storeAbs, "-storepass", storePassword,
+        "-alias", keyAlias, "-keypass", keyPassword, "-rfc",
+      ]);
+    }
+    if (exportCert.status !== 0) fail("keyPassword tetap salah setelah 3 percobaan.");
+    console.log("  ✓ keyPassword valid (setelah prompt)");
   }
 } else {
   console.log("  ✓ keyPassword valid");
@@ -242,6 +282,7 @@ if (!existsSync(bg)) {
 }
 
 banner("Keystore siap — aman untuk ./gradlew :app:bundleRelease");
+__rl?.close();
 process.exit(0);
 
 // ─── util ─────────────────────────────────────────────────────────────
@@ -279,6 +320,75 @@ function extractAliases(text) {
 }
 function truncate(s, n) {
   return s.length <= n ? s : s.slice(0, n) + "\n… (dipotong)";
+}
+
+// ─── Interactive prompt helpers ──────────────────────────────────────
+let __rl;
+function rl() {
+  if (!__rl) __rl = createInterface({ input: process.stdin, output: process.stdout });
+  return __rl;
+}
+function ask(prompt, fallback) {
+  return new Promise((res) =>
+    rl().question(prompt, (a) => res(a.trim() || fallback || "")),
+  );
+}
+function askPassword(prompt) {
+  return new Promise((res) => {
+    const r = rl();
+    const origWrite = r._writeToOutput?.bind(r);
+    if (origWrite) {
+      r._writeToOutput = (s) => {
+        if (s.startsWith(prompt)) origWrite(s);
+        else origWrite("*");
+      };
+    }
+    r.question(prompt, (a) => {
+      if (origWrite) r._writeToOutput = origWrite;
+      process.stdout.write("\n");
+      res(a);
+    });
+  });
+}
+async function askChoice(prompt, options) {
+  console.log(`\n  ${prompt}:`);
+  options.forEach((o, i) => console.log(`     ${i + 1}) ${o}`));
+  while (true) {
+    const ans = (await ask("     Nomor pilihan: ")).trim();
+    const n = Number(ans);
+    if (Number.isInteger(n) && n >= 1 && n <= options.length) return options[n - 1];
+    if (options.includes(ans)) return ans;
+    console.log("     ⚠ pilihan tidak valid.");
+  }
+}
+function fieldsMissing() {
+  const m = [];
+  if (!storeFile) m.push("storeFile");
+  if (!storePassword) m.push("storePassword");
+  if (!keyAlias) m.push("keyAlias");
+  if (!keyPassword) m.push("keyPassword");
+  return m;
+}
+async function promptForMissing() {
+  if (!storeFile) {
+    const def = resolve(homedir(), "keys/mcm-release.keystore");
+    storeFile = resolveHome(await ask(`     Path .keystore [${def}]: `, def));
+  }
+  if (!keyAlias) {
+    keyAlias = await ask("     Alias [mcm]: ", "mcm");
+  }
+  if (!storePassword) {
+    storePassword = await askPassword("     Store password: ");
+  }
+  if (!keyPassword) {
+    const same = (await ask("     Key password sama dengan store password? [Y/n]: ", "Y"))
+      .trim()
+      .toLowerCase();
+    keyPassword =
+      same === "" || same === "y" || same === "yes"
+        ? storePassword
+        : await askPassword("     Key password: ");
+  }
 }
 function banner(msg) {
   const line = "═".repeat(msg.length + 4);
