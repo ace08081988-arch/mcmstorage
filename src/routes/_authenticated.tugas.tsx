@@ -1087,7 +1087,26 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.rpc as any)("prep_create_task", args);
-    if (error) { setBusy(false); return toast.error(error.message); }
+    if (error) {
+      setBusy(false);
+      const msg = String(error.message || "").toLowerCase();
+      if (msg.includes("forbidden")) {
+        return toast.error(
+          "Akun ini tidak berwenang membuat tugas penyiapan. Login sebagai admin (pemilik) lalu coba lagi.",
+          { duration: 6000 },
+        );
+      }
+      if (msg.includes("unauthenticated")) {
+        return toast.error("Sesi berakhir. Silakan login ulang.");
+      }
+      if (msg.includes("pin_too_short")) {
+        return toast.error("PIN minimal 4 digit.");
+      }
+      if (msg.includes("invalid_share_token")) {
+        return toast.error("Token share tidak valid. Coba ulangi.");
+      }
+      return toast.error(error.message);
+    }
     // Kumpulkan foto referensi tiap barang yang dipilih untuk dilampirkan ke WA.
     const photoFiles: File[] = [];
     const seen = new Set<string>();
