@@ -15,9 +15,11 @@
  *   node scripts/fill-release-checklist.mjs --dry-run
  *   node scripts/fill-release-checklist.mjs --aab dist/aab/mcm-full-vc45.aab
  *   # Tanpa --aab: skrip cari .aab terbaru (mtime) di dist/aab/ &
- *   # android/app/build/outputs/bundle/{release,debug}/ secara otomatis.
+ *   # android/app/build/outputs/bundle/release/ secara otomatis.
+ *   # Folder debug diabaikan kecuali pakai --debug.
  *   node scripts/fill-release-checklist.mjs --strict-aab           # gagal kalau AAB/bundletool tidak ada
  *   node scripts/fill-release-checklist.mjs --skip-aab-check       # lewati validasi AAB
+ *   node scripts/fill-release-checklist.mjs --debug                # paksa pilih AAB dari folder debug
  *
  * Validasi AAB (opsional tapi default aktif):
  *   Sebelum mengisi checklist, skrip memeriksa versionCode di dalam AAB
