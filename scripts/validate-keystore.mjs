@@ -282,6 +282,7 @@ if (!existsSync(bg)) {
 }
 
 banner("Keystore siap — aman untuk ./gradlew :app:bundleRelease");
+__rl?.close();
 process.exit(0);
 
 // ─── util ─────────────────────────────────────────────────────────────
