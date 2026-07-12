@@ -2453,7 +2453,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           to="/ecer"
           search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
           data-testid={`ready-ecer-card-${r.id}`}
-          aria-label={`Buka detail ${r.name} di halaman Ecer`}
+          aria-label={view === "sent" ? `${expanded ? "Tutup" : "Buka"} detail riwayat ${r.name}` : `Buka detail ${r.name} di halaman Ecer`}
+          aria-expanded={view === "sent" ? expanded : undefined}
+          onClick={view === "sent" ? (e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v); } : undefined}
           className="flex flex-col gap-0.5"
         >
           {shots.length === 0 && (
@@ -2554,7 +2556,19 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               {r.prep_count} kotak siap
             </span>
           </span>
+          {view === "sent" && (
+            <span className="mt-0.5 inline-flex items-center gap-1 self-start rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
+              {expanded ? "Sembunyikan detail" : `Lihat detail kiriman (${shots.length})`}
+            </span>
+          )}
         </Link>
+
+        {view === "sent" && expanded && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <SentDetailList shots={shots} details={sentDetails} />
+          </div>
+        )}
 
         {shots.length === 0 ? (
           <div className="flex flex-col items-center gap-1 rounded-md border border-dashed bg-muted/40 px-2 py-2.5 text-center">
