@@ -1,0 +1,161 @@
+name: Build & Release AAB
+
+# Jalankan manual dari tab Actions → "Build & Release AAB" → Run workflow.
+# Mode default = dry-run: build AAB + verifikasi versionCode vs Play Console,
+# TIDAK upload. Matikan `dry_run` untuk benar-benar upload ke track.
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "Varian app"
+        type: choice
+        default: full
+        options: [full, chat]
+      track:
+        description: "Play Console track"
+        type: choice
+        default: internal
+        options: [internal, alpha, beta, production]
+      release_status:
+        description: "Release status"
+        type: choice
+        default: draft
+        options: [draft, inProgress, halted, completed]
+      dry_run:
+        description: "Dry-run (build + cek versi, TANPA upload)"
+        type: boolean
+        default: true
+      skip_version_check:
+        description: "Lewati cek versionCode vs Play (TIDAK direkomendasikan)"
+        type: boolean
+        default: false
+
+  # Optional: jalankan otomatis tiap tag v* (selalu dry-run untuk keamanan).
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: aab-release-${{ github.ref }}-${{ github.event.inputs.variant || 'full' }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    name: aab:release (${{ github.event.inputs.variant || 'full' }} → ${{ github.event.inputs.track || 'internal' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Kredensial keystore — dibaca oleh scripts/validate-keystore.mjs
+      # dan scripts/aab-to-apk.mjs. Tidak pernah muncul di log (secrets di-mask).
+      KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+      KEYSTORE_STORE_PASS: ${{ secrets.KEYSTORE_STORE_PASS }}
+      KEYSTORE_KEY_PASS: ${{ secrets.KEYSTORE_KEY_PASS }}
+      # Service account Play Developer API — dibaca oleh scripts/upload-play.mjs.
+      PLAY_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON_B64 }}
+      # CI=true → validate-keystore.mjs skip prompt interaktif otomatis.
+      CI: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-34 build-tools;34.0.0"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Sanity check — required secrets present
+        run: |
+          missing=()
+          for name in KEYSTORE_BASE64 KEYSTORE_ALIAS KEYSTORE_STORE_PASS KEYSTORE_KEY_PASS PLAY_SERVICE_ACCOUNT_JSON_B64; do
+            if [ -z "${!name:-}" ]; then
+              # KEYSTORE_BASE64 baru dipakai di step berikutnya — cek dari secrets langsung.
+              if [ "$name" = "KEYSTORE_BASE64" ] && [ -z "${SECRET_KEYSTORE_BASE64:-}" ]; then
+                missing+=("$name")
+              elif [ "$name" != "KEYSTORE_BASE64" ]; then
+                missing+=("$name")
+              fi
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Secret berikut belum di-set di repo settings → Secrets and variables → Actions:"
+            printf '  - %s\n' "${missing[@]}"
+            echo ""
+            echo "Cara set:"
+            echo "  KEYSTORE_BASE64            = base64 -w0 android/mcm.keystore"
+            echo "  KEYSTORE_ALIAS             = alias di dalam keystore (mis. mcm)"
+            echo "  KEYSTORE_STORE_PASS        = password store"
+            echo "  KEYSTORE_KEY_PASS          = password key"
+            echo "  PLAY_SERVICE_ACCOUNT_JSON_B64 = base64 -w0 service-account.json"
+            exit 1
+          fi
+        env:
+          SECRET_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Materialize keystore file
+        run: |
+          mkdir -p android
+          echo "$KEYSTORE_BASE64" | base64 -d > android/mcm.keystore
+          # keystore.properties: storeFile + alias saja. Password tetap dari env
+          # var supaya tidak pernah tersimpan di file yang di-archive.
+          cat > android/keystore.properties <<EOF
+          storeFile=mcm.keystore
+          keyAlias=$KEYSTORE_ALIAS
+          EOF
+          ls -la android/mcm.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Validate keystore
+        run: bun run aab:validate-keystore -- --non-interactive
+
+      - name: Pre-flight release config
+        run: bun run aab:preflight:strict -- --variant ${{ github.event.inputs.variant || 'full' }}
+
+      - name: Build + release AAB
+        run: |
+          variant='${{ github.event.inputs.variant || 'full' }}'
+          track='${{ github.event.inputs.track || 'internal' }}'
+          status='${{ github.event.inputs.release_status || 'draft' }}'
+          dry='${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}'
+          skip='${{ github.event.inputs.skip_version_check || 'false' }}'
+
+          args=(--variant "$variant" --upload --track "$track" --release-status "$status")
+          [ "$dry" = "true" ] && args+=(--upload-dry-run)
+          [ "$skip" = "true" ] && args+=(--skip-version-check)
+
+          echo "▶ node scripts/build-aab.mjs ${args[*]}"
+          node scripts/build-aab.mjs "${args[@]}"
+
+      - name: Upload AAB artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aab-${{ github.event.inputs.variant || 'full' }}-${{ github.run_number }}
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            dist/aab/*.aab
+            dist/mapping/*.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Cleanup sensitive files
+        if: always()
+        run: |
+          rm -f android/mcm.keystore android/keystore.properties
+          echo "  ✓ keystore & keystore.properties dihapus dari runner"
