@@ -990,6 +990,12 @@ function ChatRoomPage() {
     done: number;
     failed: number;
   } | null>(null);
+  // Status kirim per-produk (keyed oleh row.id) supaya owner tahu kartu
+  // mana yang menunggu, sedang mengirim, atau gagal — item sukses langsung
+  // dibuang dari pratinjau, jadi tidak perlu state "success" persist.
+  const [productSendStatuses, setProductSendStatuses] = useState<
+    Record<string, "pending" | "sending" | "failed">
+  >({});
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
@@ -1035,6 +1041,12 @@ function ChatRoomPage() {
     if (pendingProducts.length > 0) {
       const queue = pendingProducts.slice();
       setProductSendProgress({ current: 0, total: queue.length, name: "", done: 0, failed: 0 });
+      // Reset status per-item: semua "menunggu" sebelum loop mulai.
+      setProductSendStatuses(() => {
+        const next: Record<string, "pending" | "sending" | "failed"> = {};
+        for (const r of queue) next[r.id] = "pending";
+        return next;
+      });
       const progressToast = toast.loading(`Mengirim 0 dari ${queue.length} produk…`);
       void (async () => {
         let done = 0;
@@ -1043,6 +1055,7 @@ function ChatRoomPage() {
         for (let i = 0; i < queue.length; i++) {
           const row = queue[i];
           setProductSendProgress({ current: i + 1, total: queue.length, name: row.productName, done, failed });
+          setProductSendStatuses((prev) => ({ ...prev, [row.id]: "sending" }));
           toast.loading(`Mengirim ${i + 1}/${queue.length}: ${row.productName}…`, { id: progressToast });
           try {
             const ok = await sendProductRow(row, {
@@ -1057,13 +1070,19 @@ function ChatRoomPage() {
               // yang tersisa di composer hanya item yang belum/gagal terkirim
               // dan owner bisa langsung retry tanpa menyusun ulang.
               updatePendingProducts((prev) => prev.filter((p) => p.id !== row.id));
+              setProductSendStatuses((prev) => {
+                const { [row.id]: _drop, ...rest } = prev;
+                return rest;
+              });
               toast.success(`Terkirim: ${row.productName}`, { id: `prod-ok-${row.id}-${i}` });
             } else {
               failed++;
+              setProductSendStatuses((prev) => ({ ...prev, [row.id]: "failed" }));
               toast.error(`Gagal mengirim: ${row.productName}`, { id: `prod-err-${row.id}-${i}` });
             }
           } catch (err) {
             failed++;
+            setProductSendStatuses((prev) => ({ ...prev, [row.id]: "failed" }));
             toast.error((err as Error)?.message || `Gagal mengirim: ${row.productName}`, { id: `prod-err-${row.id}-${i}` });
           }
           setProductSendProgress((prev) => (prev ? { ...prev, done, failed } : prev));
@@ -2084,6 +2103,7 @@ function ChatRoomPage() {
             </div>
             <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
               {pendingProducts.map((p, idx) => {
+                const sendStatus = productSendStatuses[p.id];
                 // Catalog = referensi stok gudang (tidak boleh diedit dari
                 // chip). Untuk ready/self dengan qty numerik + baseUnit,
                 // tampilkan tombol − / + dengan step sesuai unit.
@@ -2150,6 +2170,30 @@ function ChatRoomPage() {
                         {p.source === "catalog" ? (
                           <span className="shrink-0 rounded bg-primary/10 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-primary">
                             katalog
+                          </span>
+                        ) : null}
+                        {sendStatus === "sending" ? (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-primary"
+                            aria-label="Sedang mengirim"
+                          >
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                            mengirim
+                          </span>
+                        ) : sendStatus === "failed" ? (
+                          <span
+                            className="shrink-0 rounded bg-destructive/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-destructive"
+                            aria-label="Gagal terkirim — tekan Kirim untuk coba lagi"
+                            title="Gagal terkirim — tekan Kirim untuk coba lagi"
+                          >
+                            gagal
+                          </span>
+                        ) : sendStatus === "pending" ? (
+                          <span
+                            className="shrink-0 rounded bg-amber-500/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400"
+                            aria-label="Menunggu antrean kirim"
+                          >
+                            menunggu
                           </span>
                         ) : null}
                       </div>
