@@ -30,7 +30,7 @@ import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveSt
 import { WaShareButton, ChatShareButton } from "@/components/share/SaleShareButtons";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ExternalLink, History, Undo2 } from "lucide-react";
+import { ExternalLink, History, Undo2, ChevronDown } from "lucide-react";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
