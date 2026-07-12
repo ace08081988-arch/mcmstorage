@@ -98,6 +98,8 @@ if (ref) footerBits.push(`ref: \`${ref}\``);
 if (actor) footerBits.push(`by @${actor}`);
 if (footerBits.length) lines.push(`_${footerBits.join(" · ")}_`);
 if (runUrl) lines.push(`<${runUrl}|Lihat job di GitHub Actions →>`);
+const artifactUrl = process.env.ARTIFACT_URL;
+if (artifactUrl) lines.push(`<${artifactUrl}|📦 Download artifact (AAB + mapping.txt) →>`);
 
 const text = lines.join("\n");
 
