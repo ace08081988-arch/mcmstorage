@@ -134,41 +134,56 @@ console.log(`  ✓ ${storeAbs}`);
 
 // ─── 4. storePassword benar? ──────────────────────────────────────────
 step("4/8  Verifikasi storePassword");
-const listAll = keytool(["-list", "-keystore", storeAbs, "-storepass", storePassword]);
+let listAll = keytool(["-list", "-keystore", storeAbs, "-storepass", storePassword]);
 if (listAll.status !== 0) {
-  const msg = (listAll.stderr || listAll.stdout || "").trim();
-  fail(
-    "storePassword SALAH — keytool tidak bisa membuka store.\n\n" +
-      truncate(msg, 400),
-  );
+  if (NON_INTERACTIVE) {
+    fail(
+      "storePassword SALAH — keytool tidak bisa membuka store.\n\n" +
+        truncate((listAll.stderr || listAll.stdout || "").trim(), 400),
+    );
+  }
+  for (let attempt = 1; attempt <= 3 && listAll.status !== 0; attempt++) {
+    console.log(`  ⚠ storePassword salah (percobaan ${attempt}/3). Prompt ulang…`);
+    storePassword = await askPassword("     Store password: ");
+    listAll = keytool(["-list", "-keystore", storeAbs, "-storepass", storePassword]);
+  }
+  if (listAll.status !== 0) fail("storePassword tetap salah setelah 3 percobaan.");
 }
 console.log("  ✓ store bisa dibuka");
 
 // ─── 5. Alias ADA di store? ───────────────────────────────────────────
 step("5/8  Cek alias di dalam store");
-const listAlias = keytool([
-  "-list",
-  "-keystore",
-  storeAbs,
-  "-storepass",
-  storePassword,
-  "-alias",
-  keyAlias,
+let listAlias = keytool([
+  "-list", "-keystore", storeAbs, "-storepass", storePassword, "-alias", keyAlias,
 ]);
 if (listAlias.status !== 0) {
   const aliases = extractAliases(listAll.stdout);
-  fail(
-    `Alias "${keyAlias}" TIDAK ADA di keystore.\n` +
-      (aliases.length
-        ? `Alias yang tersedia: ${aliases.join(", ")}`
-        : "Store ini tidak punya entry alias apa pun (kosong?)."),
-  );
+  if (NON_INTERACTIVE || aliases.length === 0) {
+    fail(
+      `Alias "${keyAlias}" TIDAK ADA di keystore.\n` +
+        (aliases.length
+          ? `Alias yang tersedia: ${aliases.join(", ")}`
+          : "Store ini tidak punya entry alias apa pun (kosong?)."),
+    );
+  }
+  console.log(`  ⚠ Alias "${keyAlias}" tidak ada. Alias di store: ${aliases.join(", ")}`);
+  if (aliases.length === 1) {
+    keyAlias = aliases[0];
+    console.log(`  → auto-pilih satu-satunya: "${keyAlias}"`);
+  } else {
+    const pick = await askChoice("     Pilih alias", aliases);
+    keyAlias = pick;
+  }
+  listAlias = keytool([
+    "-list", "-keystore", storeAbs, "-storepass", storePassword, "-alias", keyAlias,
+  ]);
+  if (listAlias.status !== 0) fail("Alias pilihan tidak bisa dibuka. Aneh — coba ulangi.");
 }
 console.log("  ✓ alias ditemukan");
 
 // ─── 6. keyPassword benar untuk alias tsb? ───────────────────────────
 step("6/8  Verifikasi keyPassword (ekspor sertifikat alias)");
-const exportCert = keytool([
+let exportCert = keytool([
   "-exportcert",
   "-keystore",
   storeAbs,
@@ -188,10 +203,22 @@ if (exportCert.status !== 0) {
   if (/PKCS12/i.test(msg) && storePassword === keyPassword) {
     console.log("  ⚠ store PKCS12 — key & store share password (OK)");
   } else {
-    fail(
-      "keyPassword SALAH untuk alias ini — Gradle akan gagal signing.\n\n" +
-        truncate(msg, 400),
-    );
+    if (NON_INTERACTIVE) {
+      fail(
+        "keyPassword SALAH untuk alias ini — Gradle akan gagal signing.\n\n" +
+          truncate(msg, 400),
+      );
+    }
+    for (let attempt = 1; attempt <= 3 && exportCert.status !== 0; attempt++) {
+      console.log(`  ⚠ keyPassword salah (percobaan ${attempt}/3). Prompt ulang…`);
+      keyPassword = await askPassword("     Key password: ");
+      exportCert = keytool([
+        "-exportcert", "-keystore", storeAbs, "-storepass", storePassword,
+        "-alias", keyAlias, "-keypass", keyPassword, "-rfc",
+      ]);
+    }
+    if (exportCert.status !== 0) fail("keyPassword tetap salah setelah 3 percobaan.");
+    console.log("  ✓ keyPassword valid (setelah prompt)");
   }
 } else {
   console.log("  ✓ keyPassword valid");
