@@ -2364,11 +2364,13 @@ function ChatRoomPage() {
             disabled={chatBlocked}
             onSent={() => { void othersRead.refetch(); }}
           />
+          {/* Slot Voice selalu dirender agar row composer tidak reflow saat mengetik.
+              Saat body berisi / ada pending, slot menjadi invisible (menahan lebar). */}
           <div
             className={
               !body.trim() && pendingProducts.length === 0
                 ? "contents"
-                : "pointer-events-none absolute opacity-0"
+                : "pointer-events-none invisible"
             }
             aria-hidden={!(!body.trim() && pendingProducts.length === 0)}
           >
