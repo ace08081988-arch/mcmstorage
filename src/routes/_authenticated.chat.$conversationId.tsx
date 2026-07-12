@@ -1041,6 +1041,12 @@ function ChatRoomPage() {
     if (pendingProducts.length > 0) {
       const queue = pendingProducts.slice();
       setProductSendProgress({ current: 0, total: queue.length, name: "", done: 0, failed: 0 });
+      // Reset status per-item: semua "menunggu" sebelum loop mulai.
+      setProductSendStatuses(() => {
+        const next: Record<string, "pending" | "sending" | "failed"> = {};
+        for (const r of queue) next[r.id] = "pending";
+        return next;
+      });
       const progressToast = toast.loading(`Mengirim 0 dari ${queue.length} produk…`);
       void (async () => {
         let done = 0;
@@ -1049,6 +1055,7 @@ function ChatRoomPage() {
         for (let i = 0; i < queue.length; i++) {
           const row = queue[i];
           setProductSendProgress({ current: i + 1, total: queue.length, name: row.productName, done, failed });
+          setProductSendStatuses((prev) => ({ ...prev, [row.id]: "sending" }));
           toast.loading(`Mengirim ${i + 1}/${queue.length}: ${row.productName}…`, { id: progressToast });
           try {
             const ok = await sendProductRow(row, {
@@ -1063,13 +1070,19 @@ function ChatRoomPage() {
               // yang tersisa di composer hanya item yang belum/gagal terkirim
               // dan owner bisa langsung retry tanpa menyusun ulang.
               updatePendingProducts((prev) => prev.filter((p) => p.id !== row.id));
+              setProductSendStatuses((prev) => {
+                const { [row.id]: _drop, ...rest } = prev;
+                return rest;
+              });
               toast.success(`Terkirim: ${row.productName}`, { id: `prod-ok-${row.id}-${i}` });
             } else {
               failed++;
+              setProductSendStatuses((prev) => ({ ...prev, [row.id]: "failed" }));
               toast.error(`Gagal mengirim: ${row.productName}`, { id: `prod-err-${row.id}-${i}` });
             }
           } catch (err) {
             failed++;
+            setProductSendStatuses((prev) => ({ ...prev, [row.id]: "failed" }));
             toast.error((err as Error)?.message || `Gagal mengirim: ${row.productName}`, { id: `prod-err-${row.id}-${i}` });
           }
           setProductSendProgress((prev) => (prev ? { ...prev, done, failed } : prev));
