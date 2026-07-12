@@ -19,6 +19,8 @@
  *                      (dipakai hanya kalau --release-status inProgress)
  *   --notes id=path.txt,en-US=path.txt   Release notes per locale
  *   --dry-run          Auth + validasi saja, tanpa insert edit
+ *   --skip-version-check  Lewati verifikasi versionCode vs Play Console
+ *                         (TIDAK direkomendasikan — bikin upload gagal 403)
  *
  * Auth (SATU dari dua env harus di-set):
  *   PLAY_SERVICE_ACCOUNT_JSON      = path ke file service-account.json
@@ -61,6 +63,7 @@ const notesArg = flag("--notes");
 const dryRun = args.has("--dry-run");
 const aabOverride = flag("--aab");
 const packageOverride = flag("--package");
+const skipVersionCheck = args.has("--skip-version-check");
 
 const VALID_TRACKS = ["internal", "alpha", "beta", "production"];
 if (!VALID_TRACKS.includes(track)) fail(`--track harus salah satu: ${VALID_TRACKS.join(", ")}`);
@@ -69,14 +72,15 @@ if (!VALID_STATUS.includes(releaseStatus))
   fail(`--release-status harus salah satu: ${VALID_STATUS.join(", ")}`);
 
 banner(`Upload AAB ke Play Console · varian ${variant.toUpperCase()} · track ${track}`);
+const TOTAL = 7;
 
 // ─── 1. Load service account ──────────────────────────────────────────
-step("1/6  Load service account");
+step(`1/${TOTAL}  Load service account`);
 const sa = loadServiceAccount();
 console.log(`  ✓ client_email: ${sa.client_email}`);
 
 // ─── 2. Tentukan package name & AAB ───────────────────────────────────
-step("2/6  Cari AAB & tentukan packageName");
+step(`2/${TOTAL}  Cari AAB & tentukan packageName`);
 const packageName =
   packageOverride ?? (variant === "chat" ? "biz.mcmstorage.chat" : "biz.mcmstorage.app");
 console.log(`  ✓ packageName: ${packageName}`);
@@ -93,8 +97,14 @@ if (!existsSync(aabPath)) {
 const aabSize = statSync(aabPath).size;
 console.log(`  ✓ ${aabPath} (${(aabSize / 1024 / 1024).toFixed(1)} MB)`);
 
+// ─── 2b. Baca versionCode/versionName lokal dari build.gradle ────────
+const local = readLocalVersion();
+console.log(
+  `  ✓ lokal (build.gradle): versionCode=${local.versionCode} versionName=${local.versionName}`,
+);
+
 // ─── 3. Baca release notes (opsional) ─────────────────────────────────
-step("3/6  Baca release notes");
+step(`3/${TOTAL}  Baca release notes`);
 const releaseNotes = [];
 if (notesArg) {
   for (const pair of notesArg.split(",")) {
@@ -110,18 +120,73 @@ if (notesArg) {
 }
 
 // ─── 4. Ambil access token ────────────────────────────────────────────
-step("4/6  Auth ke Google (JWT bearer flow)");
+step(`4/${TOTAL}  Auth ke Google (JWT bearer flow)`);
 const accessToken = await getAccessToken(sa);
 console.log("  ✓ access_token diperoleh");
+
+// ─── 5. Verifikasi versionCode vs Play Console (PRE-UPLOAD) ───────────
+step(`5/${TOTAL}  Verifikasi versionCode/versionName vs Play Console`);
+if (skipVersionCheck) {
+  console.log("  ⚠ DILEWATI (--skip-version-check). Kalau versionCode ≤ Play, upload akan 403.");
+} else {
+  const probeEdit = await api("POST", `/edits`, { accessToken, packageName });
+  try {
+    const summary = await collectPlayVersions(accessToken, packageName, probeEdit.id);
+    reportPlaySummary(summary, track);
+    const conflicts = [];
+    if (summary.maxOverall != null && local.versionCode <= summary.maxOverall) {
+      conflicts.push(
+        `versionCode lokal (${local.versionCode}) ≤ versionCode tertinggi di Play (${summary.maxOverall}).\n` +
+          "    Play menolak upload duplikat/downgrade. Jalankan: bun run version:bump",
+      );
+    }
+    const trackInfo = summary.tracks[track];
+    if (trackInfo?.maxVersionCode != null && local.versionCode <= trackInfo.maxVersionCode) {
+      conflicts.push(
+        `versionCode lokal (${local.versionCode}) ≤ track "${track}" saat ini (${trackInfo.maxVersionCode}).`,
+      );
+    }
+    if (
+      trackInfo?.maxVersionName &&
+      local.versionName &&
+      compareSemver(local.versionName, trackInfo.maxVersionName) <= 0
+    ) {
+      // Warning saja — Play tidak menolak versionName duplikat, tapi bikin bingung tester.
+      console.log(
+        `  ⚠ versionName lokal "${local.versionName}" ≤ track "${track}" ("${trackInfo.maxVersionName}"). ` +
+          "Pertimbangkan naikkan versionName juga.",
+      );
+    }
+    if (conflicts.length) {
+      // Buang edit yang barusan dipakai untuk probing sebelum keluar.
+      await api("DELETE", `/edits/${probeEdit.id}`, { accessToken, packageName }).catch(() => {});
+      fail(
+        "Konflik versi vs Play Console:\n  • " +
+          conflicts.join("\n  • ") +
+          "\n\n  Pakai --skip-version-check kalau yakin ingin lanjut (upload biasanya akan 403).",
+      );
+    }
+    console.log(
+      `  ✓ versionCode ${local.versionCode} aman: lebih tinggi dari semua versi di Play Console.`,
+    );
+    // Re-use probe edit untuk step upload berikutnya supaya hemat 1 round-trip.
+    global.__probeEditId = probeEdit.id;
+  } catch (err) {
+    await api("DELETE", `/edits/${probeEdit.id}`, { accessToken, packageName }).catch(() => {});
+    throw err;
+  }
+}
 
 if (dryRun) {
   banner("Dry-run selesai — auth & validasi OK, tidak ada perubahan di Play Console");
   process.exit(0);
 }
 
-// ─── 5. Insert edit → upload bundle → update track ───────────────────
-step("5/6  Insert edit + upload bundle");
-const editId = await api("POST", `/edits`, { accessToken, packageName });
+// ─── 6. Insert edit → upload bundle → update track ───────────────────
+step(`6/${TOTAL}  Insert edit + upload bundle`);
+const editId = global.__probeEditId
+  ? { id: global.__probeEditId }
+  : await api("POST", `/edits`, { accessToken, packageName });
 console.log(`  ✓ editId: ${editId.id}`);
 
 const aabBuf = readFileSync(aabPath);
@@ -146,7 +211,7 @@ const uploaded = await upload.json();
 const versionCode = uploaded.versionCode;
 console.log(`  ✓ versionCode di Play: ${versionCode}, SHA1: ${uploaded.sha1?.slice(0, 12)}…`);
 
-step("6/6  Set track + commit");
+step(`7/${TOTAL}  Set track + commit`);
 const trackBody = {
   releases: [
     {
@@ -232,6 +297,78 @@ async function getAccessToken(sa) {
   const { access_token } = await res.json();
   if (!access_token) fail("Auth Google: response tidak berisi access_token.");
   return access_token;
+}
+
+function readLocalVersion() {
+  const p = resolve(ROOT, "android/app/build.gradle");
+  if (!existsSync(p)) {
+    fail(
+      "android/app/build.gradle tidak ada — tidak bisa baca versionCode lokal.\n" +
+        "Jalankan: bunx cap add android (sekali) lalu build ulang.",
+    );
+  }
+  const raw = readFileSync(p, "utf8");
+  const vc = /versionCode\s+(\d+)/.exec(raw)?.[1];
+  const vn = /versionName\s+"([^"]+)"/.exec(raw)?.[1];
+  if (!vc) fail("Tidak bisa parse versionCode dari android/app/build.gradle");
+  return { versionCode: Number(vc), versionName: vn ?? null };
+}
+
+async function collectPlayVersions(accessToken, packageName, editId) {
+  // Ambil semua bundle yang pernah di-upload (batas Play API ~1000 bundle).
+  const bundles = await api("GET", `/edits/${editId}/bundles`, { accessToken, packageName });
+  const codes = (bundles.bundles ?? [])
+    .map((b) => Number(b.versionCode))
+    .filter((n) => Number.isFinite(n));
+  const maxOverall = codes.length ? Math.max(...codes) : null;
+
+  const tracks = {};
+  for (const t of VALID_TRACKS) {
+    try {
+      const r = await api("GET", `/edits/${editId}/tracks/${t}`, { accessToken, packageName });
+      const codes = (r.releases ?? []).flatMap((rel) =>
+        (rel.versionCodes ?? []).map((v) => Number(v)),
+      );
+      const names = (r.releases ?? [])
+        .map((rel) => rel.name)
+        .filter((n) => typeof n === "string" && n.trim());
+      tracks[t] = {
+        maxVersionCode: codes.length ? Math.max(...codes) : null,
+        maxVersionName: names.length ? names.sort(compareSemver).slice(-1)[0] : null,
+        status: r.releases?.[0]?.status ?? null,
+      };
+    } catch {
+      tracks[t] = { maxVersionCode: null, maxVersionName: null, status: null };
+    }
+  }
+  return { maxOverall, tracks };
+}
+
+function reportPlaySummary(summary, targetTrack) {
+  console.log(
+    `  · versionCode tertinggi di Play (semua bundle): ${summary.maxOverall ?? "—"}`,
+  );
+  for (const t of VALID_TRACKS) {
+    const info = summary.tracks[t];
+    if (!info) continue;
+    const marker = t === targetTrack ? "→" : " ";
+    console.log(
+      `  ${marker} track ${t.padEnd(10)} vc=${info.maxVersionCode ?? "—"}  vn=${
+        info.maxVersionName ?? "—"
+      }${info.status ? `  (${info.status})` : ""}`,
+    );
+  }
+}
+
+function compareSemver(a, b) {
+  const pa = String(a).split(".").map((x) => parseInt(x, 10) || 0);
+  const pb = String(b).split(".").map((x) => parseInt(x, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d;
+  }
+  return 0;
 }
 
 async function api(method, pathSuffix, { accessToken, packageName, body }) {
