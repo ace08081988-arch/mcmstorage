@@ -570,17 +570,6 @@ export function ReadyEcerSection() {
   }, { ok: 0, fallback_grams: 0, fallback_wid: 0, self_only: 0, no_match: 0, no_wid: 0, empty: 0 });
   const visible = rowsAfterView.filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
 
-  function formatRelative(ts: number, now: number): string {
-    const diff = Math.max(0, now - ts);
-    const sec = Math.floor(diff / 1000);
-    if (sec < 10) return "baru saja";
-    if (sec < 60) return `${sec} dtk lalu`;
-    const min = Math.floor(sec / 60);
-    if (min < 60) return `${min} mnt lalu`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr} jam lalu`;
-    return new Date(ts).toLocaleString();
-  }
   function formatAbsolute(ts: number): string {
     return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   }
@@ -688,7 +677,7 @@ export function ReadyEcerSection() {
                 title={new Date(lastSyncedAt).toLocaleString()}
                 className="shrink-0 tabular-nums opacity-70"
               >
-                · {formatRelative(lastSyncedAt, nowTick)}
+                · {fmtAgo(lastSyncedAt, nowTick)}
               </time>
             )}
           </div>
@@ -899,6 +888,7 @@ export function ReadyEcerSection() {
                 view={view}
                 lastSentAt={r._lastSentAt}
                 sentDetails={sentDetails}
+                now={nowTick}
                 selectMode={selectMode}
                 selected={selectedIds.has(r.id)}
                 justMoved={justMovedRowId === r.id}
@@ -1092,6 +1082,7 @@ type EcerCardProps = {
   view: "active" | "sent";
   lastSentAt: number | null;
   sentDetails: Map<string, SentEntry>;
+  now: number;
   selectMode?: boolean;
   selected?: boolean;
   justMoved?: boolean;
@@ -1112,25 +1103,44 @@ const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> 
   empty:           { label: "Belum ada data",    cls: "bg-muted text-muted-foreground",                           dot: "bg-muted-foreground" },
 };
 
-function fmtAgo(ts: number, now = Date.now()): string {
-  const diff = Math.max(0, now - ts);
+/**
+ * Format timestamp relatif ("Terkirim · N mnt lalu") dengan pembulatan
+ * kanonik ala WhatsApp / Twitter:
+ *   - Clock skew (ts di masa depan) → "baru saja".
+ *   - < 10 dtk           → "baru saja"
+ *   - < 60 dtk           → "N dtk lalu"       (floor: 59.9s → 59)
+ *   - < 60 mnt           → "N mnt lalu"       (floor pada menit penuh)
+ *   - < 24 jam           → "N jam lalu"
+ *   - < 7 hari           → "N hari lalu"
+ *   - ≥ 7 hari           → tanggal absolut ("12 Jul 2026")
+ * Menerima `now` eksplisit supaya SEMUA badge di satu render pakai
+ * referensi waktu yang sama (konsistensi antar-item).
+ */
+function fmtAgo(ts: number, now: number = Date.now()): string {
+  const diff = now - ts;
+  if (diff < 10_000) return "baru saja"; // termasuk clock skew (diff < 0)
   const sec = Math.floor(diff / 1000);
-  if (sec < 10) return "baru saja";
   if (sec < 60) return `${sec} dtk lalu`;
   const min = Math.floor(sec / 60);
   if (min < 60) return `${min} mnt lalu`;
   const hr = Math.floor(min / 60);
   if (hr < 24) return `${hr} jam lalu`;
   const day = Math.floor(hr / 24);
-  return `${day} hari lalu`;
+  if (day < 7) return `${day} hari lalu`;
+  return new Date(ts).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-function SendStatusBadge({ status, error, view, lastSentAt, sentCount, onResend, resendLabel }: {
+function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onResend, resendLabel }: {
   status: "idle" | "sending" | "success" | "failed" | "cancelled";
   error: string | null;
   view: "active" | "sent";
   lastSentAt: number | null;
   sentCount: number;
+  now: number;
   onResend?: () => void;
   resendLabel?: string;
 }) {
@@ -1188,7 +1198,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, onResend,
     );
   }
   if (status === "success" || (view === "sent" && lastSentAt)) {
-    const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!)}`;
+    const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!, now)}`;
     return (
       <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
         <CheckCircle2 className="h-2.5 w-2.5" /> {label}
@@ -1303,7 +1313,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, justMoved = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, now, selectMode = false, selected = false, justMoved = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
   const cardRootRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
@@ -2474,6 +2484,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             view={view}
             lastSentAt={lastSentAt}
             sentCount={view === "sent" ? shots.length : 0}
+            now={now}
             resendLabel={lastSendChannel === "chat" ? "Kirim ulang Chat" : "Kirim ulang WA"}
             onResend={
               sending || chatSending || chatPreparing
