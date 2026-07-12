@@ -47,6 +47,11 @@ if (!["full", "chat"].includes(variant)) {
 }
 const skipTypecheck = args.has("--skip-typecheck");
 const debugBundle = args.has("--debug");
+const doUpload = args.has("--upload");
+const uploadTrack = (() => {
+  const i = argv.indexOf("--upload-track");
+  return i === -1 ? "internal" : argv[i + 1] ?? "internal";
+})();
 
 const ROOT = resolve(process.cwd());
 const ANDROID_DIR = resolve(ROOT, "android");
@@ -123,6 +128,21 @@ console.log(
     "Upload file `.aab` di folder tersebut ke Google Play Console →\n" +
     "  Release → Production (atau Internal testing) → Create new release → Upload.\n",
 );
+
+if (doUpload) {
+  if (debugBundle) {
+    console.log("⚠ --debug + --upload: skip upload (Play Console menolak debug AAB).");
+  } else {
+    step(`Upload AAB → Play Console (track: ${uploadTrack})`);
+    run("node", [
+      resolve(ROOT, "scripts/upload-play.mjs"),
+      "--variant",
+      variant,
+      "--track",
+      uploadTrack,
+    ]);
+  }
+}
 
 // ─── util ─────────────────────────────────────────────────────────────
 function banner(msg) {
