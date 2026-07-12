@@ -28,12 +28,17 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
+import { createInterface } from "node:readline";
 
 const argv = process.argv.slice(2);
 function flag(name) {
   const i = argv.indexOf(name);
   return i === -1 ? undefined : argv[i + 1];
 }
+const NON_INTERACTIVE =
+  new Set(argv).has("--non-interactive") ||
+  process.env.CI === "true" ||
+  !process.stdin.isTTY;
 
 const ROOT = resolve(process.cwd());
 const propsPath = resolve(ROOT, flag("--props") ?? "android/keystore.properties");
@@ -97,13 +102,21 @@ if (!storeFile || !storePassword || !keyAlias || !keyPassword) {
   keyPassword ??= parsed.keyPassword;
   source = source ? `${source} + keystore.properties` : `keystore.properties (${propsPath})`;
 }
-const missing = [];
-if (!storeFile) missing.push("storeFile");
-if (!storePassword) missing.push("storePassword");
-if (!keyAlias) missing.push("keyAlias");
-if (!keyPassword) missing.push("keyPassword");
+let missing = fieldsMissing();
 if (missing.length) {
-  fail(`Field kosong di ${source}: ${missing.join(", ")}`);
+  if (NON_INTERACTIVE) {
+    fail(
+      `Field kosong di ${source}: ${missing.join(", ")}.\n` +
+        "Non-interactive mode aktif (--non-interactive / CI=true / stdin bukan TTY).",
+    );
+  }
+  console.log(
+    `  ⚠ ${missing.length} field kosong (${missing.join(", ")}) — masuk mode prompt interaktif.`,
+  );
+  await promptForMissing();
+  missing = fieldsMissing();
+  if (missing.length) fail(`Masih kosong setelah prompt: ${missing.join(", ")}`);
+  source = `${source} + prompt interaktif`;
 }
 console.log(`  ✓ sumber: ${source}`);
 console.log(`  ✓ alias: ${keyAlias}`);
