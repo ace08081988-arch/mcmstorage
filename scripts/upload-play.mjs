@@ -41,7 +41,8 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
-import { appendFileSync } from "node:fs";
+import { appendFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { SignJWT, importPKCS8 } from "jose";
 
 const argv = process.argv.slice(2);
@@ -81,7 +82,10 @@ const runSummary = {
   outcome: "pending", // pending | success | dry-run | failed
   error: null,
 };
-process.on("exit", () => writeStepSummary(runSummary));
+process.on("exit", () => {
+  writeStepSummary(runSummary);
+  writeSummaryJson(runSummary);
+});
 
 const VALID_TRACKS = ["internal", "alpha", "beta", "production"];
 if (!VALID_TRACKS.includes(track)) fail(`--track harus salah satu: ${VALID_TRACKS.join(", ")}`);
@@ -508,5 +512,17 @@ function writeStepSummary(s) {
     appendFileSync(path, rows.join("\n") + "\n");
   } catch {
     // Jangan bikin process gagal hanya karena summary tidak bisa ditulis.
+  }
+}
+
+function writeSummaryJson(s) {
+  const out = process.env.UPLOAD_PLAY_SUMMARY_JSON;
+  if (!out) return;
+  try {
+    const full = resolveHome(out);
+    mkdirSync(dirname(full), { recursive: true });
+    writeFileSync(full, JSON.stringify(s, null, 2), "utf8");
+  } catch {
+    // best-effort — jangan ganggu exit code
   }
 }
