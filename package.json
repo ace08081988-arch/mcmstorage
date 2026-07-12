@@ -19,6 +19,7 @@
     "aab:build:chat": "node scripts/build-aab.mjs --variant chat",
     "aab:build:debug": "node scripts/build-aab.mjs --debug",
     "aab:validate-keystore": "node scripts/validate-keystore.mjs",
+    "aab:setup-keystore": "node scripts/setup-keystore.mjs",
     "audit:seo": "node scripts/audit-seo-routes.mjs",
     "prebuild": "node scripts/audit-seo-routes.mjs",
     "prebuild:dev": "node scripts/audit-seo-routes.mjs",
