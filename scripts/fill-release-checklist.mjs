@@ -105,14 +105,15 @@ if (!existsSync(TEMPLATE)) {
 }
 
 const gradleSrc = readFileSync(GRADLE, "utf8");
-const { versionCode, versionName } = parseGradle(gradleSrc);
+const { versionCode, versionName, applicationId } = parseGradle(gradleSrc);
 const baseVersion = deriveBaseVersion(versionName);
 
 // ─── Validasi versionCode di AAB target ─────────────────────────────
 const aabCheck = skipAabCheck
   ? { status: "skipped", message: "dilewati via --skip-aab-check" }
-  : validateAabManifest(resolve(ROOT, aabPath), versionCode, versionName);
+  : validateAabManifest(resolve(ROOT, aabPath), versionCode, versionName, applicationId);
 reportAabCheck(aabCheck);
+printAabManifest(aabCheck, { versionCode, versionName, applicationId });
 if (strictAab && aabCheck.status !== "ok") {
   fail(
     `Validasi AAB gagal (--strict-aab): ${aabCheck.message}\n` +
@@ -215,9 +216,11 @@ process.exit(0);
 function parseGradle(text) {
   const vc = /versionCode\s+(\d+)/.exec(text);
   const vn = /versionName\s+"([^"]+)"/.exec(text);
+  const appId = /applicationId\s+"([^"]+)"/.exec(text) || /namespace\s*=\s*"([^"]+)"/.exec(text);
   if (!vc) fail("Tidak menemukan `versionCode` di build.gradle.");
   if (!vn) fail("Tidak menemukan `versionName` di build.gradle.");
-  return { versionCode: Number(vc[1]), versionName: vn[1] };
+  if (!appId) fail("Tidak menemukan `applicationId`/`namespace` di build.gradle.");
+  return { versionCode: Number(vc[1]), versionName: vn[1], applicationId: appId[1] };
 }
 
 function deriveBaseVersion(name) {
@@ -410,7 +413,7 @@ function printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab, 
  *   - "notool"   bundletool tidak tersedia
  *   - "error"    error saat menjalankan bundletool
  */
-function validateAabManifest(aabAbs, expectedCode, expectedName) {
+function validateAabManifest(aabAbs, expectedCode, expectedName, expectedPackage) {
   if (!existsSync(aabAbs)) {
     return {
       status: "missing",
@@ -433,6 +436,8 @@ function validateAabManifest(aabAbs, expectedCode, expectedName) {
   if (codeRes.status !== "ok") return codeRes;
   const nameRes = dumpManifestAttr(tool, aabAbs, "/manifest/@android:versionName");
   if (nameRes.status !== "ok") return nameRes;
+  const pkgRes = dumpManifestAttr(tool, aabAbs, "/manifest/@package");
+  if (pkgRes.status !== "ok") return pkgRes;
   const codeMatch = /(\d+)/.exec(codeRes.raw);
   if (!codeMatch) {
     return {
@@ -442,10 +447,17 @@ function validateAabManifest(aabAbs, expectedCode, expectedName) {
   }
   const aabVc = Number.parseInt(codeMatch[1], 10);
   const aabVn = nameRes.raw.replace(/^["']|["']$/g, "").trim();
+  const aabPkg = pkgRes.raw.replace(/^["']|["']$/g, "").trim();
   if (!aabVn) {
     return {
       status: "error",
       message: `versionName di AAB kosong / tidak terbaca (raw: "${nameRes.raw}")`,
+    };
+  }
+  if (!aabPkg) {
+    return {
+      status: "error",
+      message: `packageName di AAB kosong / tidak terbaca (raw: "${pkgRes.raw}")`,
     };
   }
   if (aabVc !== expectedCode) {
@@ -456,6 +468,7 @@ function validateAabManifest(aabAbs, expectedCode, expectedName) {
         "Rebuild AAB atau update build.gradle sebelum upload.",
       aabVersionCode: aabVc,
       aabVersionName: aabVn,
+      aabPackageName: aabPkg,
     };
   }
   if (aabVn !== expectedName) {
@@ -466,13 +479,26 @@ function validateAabManifest(aabAbs, expectedCode, expectedName) {
         "Rebuild AAB atau update build.gradle sebelum upload.",
       aabVersionCode: aabVc,
       aabVersionName: aabVn,
+      aabPackageName: aabPkg,
+    };
+  }
+  if (aabPkg !== expectedPackage) {
+    return {
+      status: "mismatch",
+      message:
+        `packageName di AAB ("${aabPkg}") ≠ build.gradle ("${expectedPackage}"). ` +
+        "Rebuild AAB atau perbaiki applicationId sebelum upload.",
+      aabVersionCode: aabVc,
+      aabVersionName: aabVn,
+      aabPackageName: aabPkg,
     };
   }
   return {
     status: "ok",
-    message: `versionCode=${aabVc}, versionName="${aabVn}" di AAB cocok dengan build.gradle`,
+    message: `versionCode=${aabVc}, versionName="${aabVn}", packageName="${aabPkg}" di AAB cocok dengan build.gradle`,
     aabVersionCode: aabVc,
     aabVersionName: aabVn,
+    aabPackageName: aabPkg,
   };
 }
 
@@ -508,4 +534,21 @@ function reportAabCheck(c) {
   const icon =
     c.status === "ok" ? "✓" : c.status === "skipped" ? "↷" : c.status === "mismatch" ? "✗" : "⚠";
   console.log(`${icon} AAB check [${c.status}]: ${c.message}`);
+}
+
+function printAabManifest(c, expected) {
+  console.log("\n── AAB manifest vs build.gradle ─────────────────────");
+  const rows = [
+    { label: "versionCode", aab: c.aabVersionCode, gradle: expected.versionCode },
+    { label: "versionName", aab: c.aabVersionName, gradle: expected.versionName },
+    { label: "packageName", aab: c.aabPackageName, gradle: expected.applicationId },
+  ];
+  for (const r of rows) {
+    const aabVal = r.aab === undefined || r.aab === null ? "(n/a)" : String(r.aab);
+    const gradleVal = String(r.gradle);
+    const mark =
+      r.aab === undefined || r.aab === null ? "?" : String(r.aab) === gradleVal ? "✓" : "✗";
+    console.log(`  ${mark} ${r.label.padEnd(11)} AAB=${aabVal.padEnd(24)} gradle=${gradleVal}`);
+  }
+  console.log("─────────────────────────────────────────────────────\n");
 }
