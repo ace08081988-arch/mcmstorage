@@ -2320,26 +2320,28 @@ function ChatRoomPage() {
               emitTyping();
             }}
           />
-          <Textarea
-            value={body}
-            onChange={(e) => {
-              const v = e.target.value;
-              setBody(v);
-              if (v.length > 0) emitTyping();
-              const m = /\/(\w*)$/.exec(v);
-              setQrQuery(m ? m[1] : null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                onSubmit(e as unknown as React.FormEvent);
-              }
-            }}
-            placeholder="Tulis pesan…"
-            rows={1}
-            className="max-h-32 min-h-9 resize-none"
-            disabled={chatBlocked}
-          />
+          <div className="flex-1 min-w-0">
+            <Textarea
+              value={body}
+              onChange={(e) => {
+                const v = e.target.value;
+                setBody(v);
+                if (v.length > 0) emitTyping();
+                const m = /\/(\w*)$/.exec(v);
+                setQrQuery(m ? m[1] : null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  onSubmit(e as unknown as React.FormEvent);
+                }
+              }}
+              placeholder="Tulis pesan…"
+              rows={1}
+              className="max-h-32 min-h-10 w-full resize-none"
+              disabled={chatBlocked}
+            />
+          </div>
           <Button
             type="submit"
             size="icon"
@@ -2362,13 +2364,20 @@ function ChatRoomPage() {
             disabled={chatBlocked}
             onSent={() => { void othersRead.refetch(); }}
           />
-          {!body.trim() && pendingProducts.length === 0 ? (
+          <div
+            className={
+              !body.trim() && pendingProducts.length === 0
+                ? "contents"
+                : "pointer-events-none absolute opacity-0"
+            }
+            aria-hidden={!(!body.trim() && pendingProducts.length === 0)}
+          >
             <VoiceRecorderButton
               conversationId={conversationId}
-              disabled={chatBlocked}
+              disabled={chatBlocked || !!body.trim() || pendingProducts.length > 0}
               onSent={() => { void othersRead.refetch(); }}
             />
-          ) : null}
+          </div>
         </div>
         <p className="mt-1 hidden px-1 text-[10px] text-muted-foreground sm:block">
           Enter untuk kirim · Shift+Enter untuk baris baru
