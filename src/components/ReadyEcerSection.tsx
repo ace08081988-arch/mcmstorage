@@ -2484,6 +2484,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             view={view}
             lastSentAt={lastSentAt}
             sentCount={view === "sent" ? shots.length : 0}
+            now={now}
             resendLabel={lastSendChannel === "chat" ? "Kirim ulang Chat" : "Kirim ulang WA"}
             onResend={
               sending || chatSending || chatPreparing
