@@ -1112,17 +1112,35 @@ const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> 
   empty:           { label: "Belum ada data",    cls: "bg-muted text-muted-foreground",                           dot: "bg-muted-foreground" },
 };
 
-function fmtAgo(ts: number, now = Date.now()): string {
-  const diff = Math.max(0, now - ts);
+/**
+ * Format timestamp relatif ("Terkirim · N mnt lalu") dengan pembulatan
+ * kanonik ala WhatsApp / Twitter:
+ *   - Clock skew (ts di masa depan) → "baru saja".
+ *   - < 10 dtk           → "baru saja"
+ *   - < 60 dtk           → "N dtk lalu"       (floor: 59.9s → 59)
+ *   - < 60 mnt           → "N mnt lalu"       (floor pada menit penuh)
+ *   - < 24 jam           → "N jam lalu"
+ *   - < 7 hari           → "N hari lalu"
+ *   - ≥ 7 hari           → tanggal absolut ("12 Jul 2026")
+ * Menerima `now` eksplisit supaya SEMUA badge di satu render pakai
+ * referensi waktu yang sama (konsistensi antar-item).
+ */
+function fmtAgo(ts: number, now: number = Date.now()): string {
+  const diff = now - ts;
+  if (diff < 10_000) return "baru saja"; // termasuk clock skew (diff < 0)
   const sec = Math.floor(diff / 1000);
-  if (sec < 10) return "baru saja";
   if (sec < 60) return `${sec} dtk lalu`;
   const min = Math.floor(sec / 60);
   if (min < 60) return `${min} mnt lalu`;
   const hr = Math.floor(min / 60);
   if (hr < 24) return `${hr} jam lalu`;
   const day = Math.floor(hr / 24);
-  return `${day} hari lalu`;
+  if (day < 7) return `${day} hari lalu`;
+  return new Date(ts).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function SendStatusBadge({ status, error, view, lastSentAt, sentCount, onResend, resendLabel }: {
