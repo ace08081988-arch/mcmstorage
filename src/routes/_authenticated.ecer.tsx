@@ -4474,11 +4474,38 @@ function SendEcerPrepsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Send className="h-4 w-4 text-primary" /> Kirim ke pembeli
+            <span className="ml-auto text-[10px] font-normal text-muted-foreground">
+              Langkah {step} / 3
+            </span>
           </DialogTitle>
           <DialogDescription>
             {preps.length} kotak dari <b>{title.name}</b> · total {totalQty} {displayUnit(itemName, title.unit_label)}. Stok & piutang otomatis diperbarui.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Progress bar tipis — memberi sinyal visual owner sedang di langkah mana */}
+        <div className="mb-1 flex items-center gap-1">
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              className={`h-1 flex-1 rounded-full transition-colors ${
+                s <= step ? "bg-primary" : "bg-muted"
+              }`}
+              aria-hidden
+            />
+          ))}
+        </div>
+        <div className="mb-2 flex items-center justify-between text-[10px] font-medium">
+          <span className={step === 1 ? "text-primary" : "text-muted-foreground"}>
+            1. Pelanggan
+          </span>
+          <span className={step === 2 ? "text-primary" : "text-muted-foreground"}>
+            2. Verifikasi bayar
+          </span>
+          <span className={step === 3 ? "text-primary" : "text-muted-foreground"}>
+            3. Kirim WA
+          </span>
+        </div>
 
         <div className="space-y-3 text-xs">
           <div className="rounded-md border bg-muted/30 p-2">
@@ -4492,6 +4519,7 @@ function SendEcerPrepsDialog({
             </div>
           </div>
 
+          {step === 1 && (
           <div>
             <label className="mb-1 block text-[11px] font-medium">Pelanggan</label>
             <div className="mb-1 flex gap-1 text-[10px]">
@@ -4530,10 +4558,19 @@ function SendEcerPrepsDialog({
                 onChange={(e) => setManualName(e.target.value)}
                 placeholder="Nama pelanggan"
                 className="h-9 text-xs"
+                maxLength={100}
               />
             )}
+            {!canGoStep2 && (
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive">
+                Pilih pelanggan dari kontak atau isi nama manual dulu sebelum lanjut.
+              </div>
+            )}
           </div>
+          )}
 
+          {step === 2 && (
+          <>
           <div>
             <label className="mb-1 block text-[11px] font-medium">Total harga (Rp)</label>
             <Input
@@ -4541,6 +4578,7 @@ function SendEcerPrepsDialog({
               onChange={(e) => setTotalStr(e.target.value)}
               placeholder="Contoh: 25000"
               inputMode="numeric"
+              maxLength={15}
               className="h-9 tabular-nums text-xs"
             />
             {totalAmount > 0 && <div className="mt-1 text-[10px] text-muted-foreground">= {rupiah(totalAmount)}</div>}
@@ -4591,6 +4629,7 @@ function SendEcerPrepsDialog({
                   onChange={(e) => setPaidStr(e.target.value)}
                   placeholder="Contoh: 10000"
                   inputMode="numeric"
+                  maxLength={15}
                   className="h-9 tabular-nums text-xs"
                 />
                 <div className="text-[10px] text-muted-foreground">
@@ -4607,8 +4646,47 @@ function SendEcerPrepsDialog({
                 Seluruh total dicatat sebagai piutang atas <b>{party.name || "-"}</b>.
               </div>
             )}
+            {payMethod === "kas" && totalAmount > 0 && (
+              <div className="mt-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-1.5 text-[10px] text-emerald-800 dark:text-emerald-200">
+                Tercatat lunas — {rupiah(totalAmount)} langsung masuk kas.
+              </div>
+            )}
           </div>
+          {payValidationMessage && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive">
+              {payValidationMessage}
+            </div>
+          )}
+          </>
+          )}
 
+          {step === 3 && (
+          <>
+          {/* Ringkasan hasil verifikasi — read-only. Owner memastikan
+              sekali lagi sebelum WhatsApp dibuka. */}
+          <div className="rounded-md border bg-card p-2 text-[11px]">
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Ringkasan verifikasi
+            </div>
+            <div className="grid grid-cols-[80px_1fr] gap-y-1">
+              <span className="text-muted-foreground">Pelanggan</span>
+              <span className="font-medium">{party.name || "-"}{party.contact ? ` · ${party.contact}` : ""}</span>
+              <span className="text-muted-foreground">Total</span>
+              <span className="font-medium tabular-nums">{rupiah(totalAmount)}</span>
+              <span className="text-muted-foreground">Metode</span>
+              <span className="font-medium">
+                {payment.label}
+                {payment.method === "partial" && (
+                  <span className="text-muted-foreground">
+                    {" "}· Dibayar {rupiah(payment.paid)} · Sisa {rupiah(payment.remaining)}
+                  </span>
+                )}
+                {payment.method === "hutang" && (
+                  <span className="text-muted-foreground"> · Piutang {rupiah(payment.remaining)}</span>
+                )}
+              </span>
+            </div>
+          </div>
           <div>
             <label className="mb-1 block text-[11px] font-medium">Catatan (opsional)</label>
             <Textarea
@@ -4617,23 +4695,58 @@ function SendEcerPrepsDialog({
               rows={2}
               className="text-xs"
               placeholder="Mis. antar sore, titip di warung, dsb."
+              maxLength={500}
             />
           </div>
+          </>
+          )}
         </div>
 
         <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
-            <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
-            <Button size="sm" onClick={handleSend} disabled={!canSend}>
-              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
-              {payMethod === null
-                ? "Pilih metode bayar dulu"
-                : payMethod === "hutang"
-                  ? "Kirim & catat piutang"
-                  : payMethod === "partial"
-                    ? "Kirim & catat sebagian piutang"
-                    : "Kirim & catat penjualan"}
-            </Button>
+          <div className="grid w-full grid-cols-2 gap-2">
+            {step === 1 ? (
+              <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>
+                Batal
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setStep((s) => (s === 3 ? 2 : 1))}
+                disabled={busy}
+              >
+                <ChevronLeft className="mr-1 h-3.5 w-3.5" /> Kembali
+              </Button>
+            )}
+            {step === 1 && (
+              <Button
+                size="sm"
+                onClick={() => setStep(2)}
+                disabled={!canGoStep2}
+              >
+                Lanjut <ChevronRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            )}
+            {step === 2 && (
+              <Button
+                size="sm"
+                onClick={() => setStep(3)}
+                disabled={!canGoStep3}
+              >
+                {canGoStep3 ? "Verifikasi & Lanjut" : "Lengkapi bayar dulu"}
+                <ChevronRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            )}
+            {step === 3 && (
+              <Button size="sm" onClick={handleSend} disabled={!canSend}>
+                {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+                {payment.method === "hutang"
+                  ? "Kirim WA & catat piutang"
+                  : payment.method === "partial"
+                    ? "Kirim WA & catat sebagian"
+                    : "Kirim WA & catat lunas"}
+              </Button>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>
