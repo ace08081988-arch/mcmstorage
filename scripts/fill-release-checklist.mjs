@@ -213,27 +213,37 @@ function fail(msg) {
 
 // ─── Auto-discover AAB terbaru ───────────────────────────────────────
 /**
- * Mencari file .aab dengan mtime terbaru di folder-folder standar:
+ * Mencari file .aab dengan mtime terbaru di folder-folder standar.
+ *
+ * Mode default (debugMode=false):
  *   - dist/aab/                              (arsip hasil preflight)
  *   - android/app/build/outputs/bundle/release/
+ * Folder debug SENGAJA tidak disertakan agar checklist rilis tidak
+ * tertukar dengan build debug.
+ *
+ * Mode debug (debugMode=true):
  *   - android/app/build/outputs/bundle/debug/
+ *
  * Return { abs, rel, mtimeMs } atau null.
  */
-function findLatestAab(rootAbs) {
+function findLatestAab(rootAbs, debugMode = false) {
   // Urutan folder ini juga menjadi prioritas tie-breaker: jika ada dua
   // .aab dengan mtime persis sama (jarang tapi mungkin di CI), yang di
   // folder lebih atas menang.
-  const dirs = [
+  const releaseDirs = [
     { abs: resolve(rootAbs, "dist/aab"), label: "dist/aab" },
     {
       abs: resolve(rootAbs, "android/app/build/outputs/bundle/release"),
       label: "android/app/build/outputs/bundle/release",
     },
+  ];
+  const debugDirs = [
     {
       abs: resolve(rootAbs, "android/app/build/outputs/bundle/debug"),
       label: "android/app/build/outputs/bundle/debug",
     },
   ];
+  const dirs = debugMode ? debugDirs : releaseDirs;
   const candidates = [];
   const scanned = [];
   let best = null;
@@ -276,7 +286,7 @@ function findLatestAab(rootAbs) {
       }
     }
   }
-  return { winner: best, candidates, scanned };
+  return { winner: best, candidates, scanned, debugMode };
 }
 
 function buildAabReason({ aabPathFlag, discovery }) {
