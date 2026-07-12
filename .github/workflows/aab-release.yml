@@ -128,6 +128,7 @@ jobs:
         run: bun run aab:preflight:strict -- --variant ${{ github.event.inputs.variant || 'full' }}
 
       - name: Build + release AAB
+        id: release
         run: |
           variant='${{ github.event.inputs.variant || 'full' }}'
           track='${{ github.event.inputs.track || 'internal' }}'
@@ -141,6 +142,46 @@ jobs:
 
           echo "▶ node scripts/build-aab.mjs ${args[*]}"
           node scripts/build-aab.mjs "${args[@]}"
+
+      - name: Job summary header (context)
+        if: always()
+        run: |
+          # scripts/upload-play.mjs sudah append tabel versi/status via
+          # $GITHUB_STEP_SUMMARY. Prepend header konteks + status job biar
+          # halaman ringkasan langsung menampilkan variant/track/mode.
+          variant='${{ github.event.inputs.variant || 'full' }}'
+          track='${{ github.event.inputs.track || 'internal' }}'
+          status='${{ github.event.inputs.release_status || 'draft' }}'
+          dry='${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}'
+          skip='${{ github.event.inputs.skip_version_check || 'false' }}'
+          release_outcome='${{ steps.release.outcome }}'
+
+          case "$release_outcome" in
+            success) emoji="✅"; label="job berhasil" ;;
+            failure) emoji="❌"; label="job gagal" ;;
+            cancelled) emoji="⏹️"; label="job dibatalkan" ;;
+            *) emoji="ℹ️"; label="$release_outcome" ;;
+          esac
+
+          {
+            echo "# $emoji AAB Release — $label"
+            echo ""
+            echo "| Setting | Nilai |"
+            echo "| --- | --- |"
+            echo "| Trigger | \`${{ github.event_name }}\` |"
+            echo "| Ref | \`${{ github.ref_name }}\` |"
+            echo "| Varian | \`$variant\` |"
+            echo "| Track | \`$track\` |"
+            echo "| Release status | \`$status\` |"
+            echo "| Mode | $( [ "$dry" = "true" ] && echo '🧪 dry-run (build + cek versi, tanpa upload)' || echo '🚀 upload ke Play Console' ) |"
+            echo "| Skip version check | $skip |"
+            echo "| Actor | @${{ github.actor }} |"
+            echo ""
+            echo "_Detil versi lokal vs Play Console ada di bawah (ditulis oleh \`scripts/upload-play.mjs\`)._"
+            echo ""
+            echo "---"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload AAB artifact
         if: always()
