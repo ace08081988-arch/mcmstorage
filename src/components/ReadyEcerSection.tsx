@@ -1081,6 +1081,7 @@ type EcerCardProps = {
   view: "active" | "sent";
   lastSentAt: number | null;
   sentDetails: Map<string, SentEntry>;
+  now: number;
   selectMode?: boolean;
   selected?: boolean;
   justMoved?: boolean;
