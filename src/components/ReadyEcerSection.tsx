@@ -888,6 +888,7 @@ export function ReadyEcerSection() {
                 view={view}
                 lastSentAt={r._lastSentAt}
                 sentDetails={sentDetails}
+                now={nowTick}
                 selectMode={selectMode}
                 selected={selectedIds.has(r.id)}
                 justMoved={justMovedRowId === r.id}
