@@ -40,6 +40,7 @@ import {
   appendFileSync,
   mkdirSync,
   chmodSync,
+  unlinkSync,
   statSync,
 } from "node:fs";
 import { resolve, dirname, isAbsolute, relative } from "node:path";
@@ -167,7 +168,7 @@ if (storeExists && !FORCE) {
   if (storeExists && FORCE) {
     console.log(`  ⚠ --force: keystore lama di ${storeFile} akan ditimpa`);
     // keytool -genkeypair tidak overwrite file — hapus dulu.
-    require("node:fs").unlinkSync(storeFile);
+    unlinkSync(storeFile);
   }
   console.log(`  → membuat keystore baru di ${storeFile}`);
   runKeytool([
