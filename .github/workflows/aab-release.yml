@@ -135,7 +135,7 @@ jobs:
           dry='${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}'
           skip='${{ github.event.inputs.skip_version_check || 'false' }}'
 
-          args=(--variant "$variant" --upload --track "$track" --release-status "$status")
+          args=(--variant "$variant" --upload --upload-track "$track" --release-status "$status")
           [ "$dry" = "true" ] && args+=(--upload-dry-run)
           [ "$skip" = "true" ] && args+=(--skip-version-check)
 
