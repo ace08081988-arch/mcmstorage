@@ -189,6 +189,15 @@ template = template
   .replaceAll("{{ abc1234 }}", commit)
   .replaceAll("dist/app-release.aab", aabPath);
 
+// Sisipkan blok verifikasi manifest AAB tepat setelah tabel Metadata Rilis
+// (baris "AAB path"). Berisi hasil ekstraksi dari AAB + status ✓/✗/?.
+const manifestBlock = buildManifestBlock(aabCheck, {
+  versionCode,
+  versionName,
+  applicationId,
+});
+template = injectManifestBlock(template, aabPath, manifestBlock);
+
 if (printOnly) {
   console.log(template);
   process.exit(0);
@@ -534,6 +543,56 @@ function reportAabCheck(c) {
   const icon =
     c.status === "ok" ? "✓" : c.status === "skipped" ? "↷" : c.status === "mismatch" ? "✗" : "⚠";
   console.log(`${icon} AAB check [${c.status}]: ${c.message}`);
+}
+
+function markFor(aabVal, gradleVal) {
+  if (aabVal === undefined || aabVal === null || aabVal === "") return "?";
+  return String(aabVal) === String(gradleVal) ? "✓" : "✗";
+}
+
+function buildManifestBlock(c, expected) {
+  const rows = [
+    { label: "versionCode", aab: c.aabVersionCode, gradle: expected.versionCode },
+    { label: "versionName", aab: c.aabVersionName, gradle: expected.versionName },
+    { label: "packageName", aab: c.aabPackageName, gradle: expected.applicationId },
+  ];
+  const statusLabel =
+    c.status === "ok"
+      ? "✓ cocok"
+      : c.status === "skipped"
+      ? "↷ dilewati"
+      : c.status === "mismatch"
+      ? "✗ mismatch"
+      : `⚠ ${c.status}`;
+  const lines = [];
+  lines.push("");
+  lines.push("### Verifikasi AAB Manifest");
+  lines.push("");
+  lines.push(`Status: **${statusLabel}** — ${c.message}`);
+  lines.push("");
+  lines.push("| Field | AAB | build.gradle | Match |");
+  lines.push("|-------|-----|--------------|-------|");
+  for (const r of rows) {
+    const aabVal = r.aab === undefined || r.aab === null || r.aab === "" ? "(n/a)" : String(r.aab);
+    const gradleVal = String(r.gradle);
+    const mark = markFor(r.aab, r.gradle);
+    lines.push(`| \`${r.label}\` | \`${aabVal}\` | \`${gradleVal}\` | ${mark} |`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+function injectManifestBlock(text, aabPathValue, block) {
+  // Anchor: baris "AAB path" di tabel Metadata Rilis (setelah substitusi
+  // dist/app-release.aab → aabPathValue). Sisipkan setelah baris tersebut.
+  const anchor = `| AAB path | \`${aabPathValue}\` |`;
+  const idx = text.indexOf(anchor);
+  if (idx === -1) {
+    // Fallback: sisipkan di paling atas kalau anchor tidak ketemu.
+    return `${block}\n${text}`;
+  }
+  const insertAt = idx + anchor.length;
+  return text.slice(0, insertAt) + "\n" + block + text.slice(insertAt);
 }
 
 function printAabManifest(c, expected) {
