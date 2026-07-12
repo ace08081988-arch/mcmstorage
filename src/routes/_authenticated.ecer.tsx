@@ -32,7 +32,7 @@ import {
 import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
-  Share2, ExternalLink, Loader2, ChevronLeft, ChevronDown, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
+  Share2, ExternalLink, Loader2, ChevronLeft, ChevronRight, ChevronDown, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
   Calendar, Clock, Hash, CheckCircle2, Boxes, Send, Wallet, HandCoins,
   Search, LayoutGrid, PackageSearch, Sparkles,
 } from "lucide-react";
