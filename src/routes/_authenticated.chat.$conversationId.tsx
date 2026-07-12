@@ -418,12 +418,32 @@ function ChatRoomPage() {
 
   const longPressTimer = useRef<number | null>(null);
   const longPressFired = useRef(false);
+  // Menelan event `click` berikutnya di capture-phase setelah long-press
+  // terpicu. Tanpa ini, browser tetap mem-dispatch `click` saat jari
+  // diangkat — tidak hanya di bubble sumber, tapi bisa juga di elemen
+  // lain jika jari sudah bergeser. Guard di onClick lokal saja tidak
+  // cukup untuk menutup semua jalur.
+  const swallowNextClick = useCallback(() => {
+    const handler = (ev: MouseEvent) => {
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      ev.preventDefault();
+      window.removeEventListener("click", handler, true);
+    };
+    window.addEventListener("click", handler, true);
+    // Safety: jika `click` tidak pernah datang (mis. pointercancel),
+    // lepas listener setelah satu frame agar tidak menelan klik nyata.
+    window.setTimeout(() => {
+      window.removeEventListener("click", handler, true);
+    }, 350);
+  }, []);
   const startLongPress = useCallback((m: MessageRow) => {
     if (m.deleted_at) return;
     longPressFired.current = false;
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
     longPressTimer.current = window.setTimeout(() => {
       longPressFired.current = true;
+      swallowNextClick();
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         try { navigator.vibrate?.(15); } catch { /* noop */ }
       }
@@ -434,7 +454,7 @@ function ChatRoomPage() {
         return next;
       });
     }, 500);
-  }, []);
+  }, [swallowNextClick]);
   const cancelLongPress = useCallback(() => {
     if (longPressTimer.current) {
       window.clearTimeout(longPressTimer.current);
