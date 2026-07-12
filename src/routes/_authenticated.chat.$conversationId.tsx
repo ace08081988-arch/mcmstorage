@@ -1626,6 +1626,14 @@ function ChatRoomPage() {
                         onPointerLeave={cancelLongPress}
                         onPointerCancel={cancelLongPress}
                         onClick={() => {
+                          // Jika long-press baru saja terpicu, telan click
+                          // yang di-dispatch browser saat jari diangkat.
+                          // Tanpa ini, onClick men-toggle seleksi yang baru
+                          // dibuat → highlight/toolbar seleksi langsung hilang.
+                          if (longPressFired.current) {
+                            longPressFired.current = false;
+                            return;
+                          }
                           if (selectionMode) toggleSelect(m);
                         }}
                         onContextMenu={(e) => {
