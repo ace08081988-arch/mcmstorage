@@ -41,6 +41,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
+import { appendFileSync } from "node:fs";
 import { SignJWT, importPKCS8 } from "jose";
 
 const argv = process.argv.slice(2);
@@ -65,6 +66,23 @@ const aabOverride = flag("--aab");
 const packageOverride = flag("--package");
 const skipVersionCheck = args.has("--skip-version-check");
 
+// State untuk ringkasan GitHub Actions (ditulis ke $GITHUB_STEP_SUMMARY di akhir).
+const runSummary = {
+  variant,
+  packageName: null,
+  track,
+  releaseStatus,
+  dryRun,
+  skipVersionCheck,
+  local: null,
+  play: null, // { maxOverall, tracks:{...} }
+  uploaded: null, // { versionCode, sha1 }
+  committed: false,
+  outcome: "pending", // pending | success | dry-run | failed
+  error: null,
+};
+process.on("exit", () => writeStepSummary(runSummary));
+
 const VALID_TRACKS = ["internal", "alpha", "beta", "production"];
 if (!VALID_TRACKS.includes(track)) fail(`--track harus salah satu: ${VALID_TRACKS.join(", ")}`);
 const VALID_STATUS = ["draft", "inProgress", "halted", "completed"];
@@ -84,6 +102,7 @@ step(`2/${TOTAL}  Cari AAB & tentukan packageName`);
 const packageName =
   packageOverride ?? (variant === "chat" ? "biz.mcmstorage.chat" : "biz.mcmstorage.app");
 console.log(`  ✓ packageName: ${packageName}`);
+runSummary.packageName = packageName;
 
 const aabPath = aabOverride
   ? resolveHome(aabOverride)
@@ -102,6 +121,7 @@ const local = readLocalVersion();
 console.log(
   `  ✓ lokal (build.gradle): versionCode=${local.versionCode} versionName=${local.versionName}`,
 );
+runSummary.local = local;
 
 // ─── 3. Baca release notes (opsional) ─────────────────────────────────
 step(`3/${TOTAL}  Baca release notes`);
@@ -132,6 +152,7 @@ if (skipVersionCheck) {
   const probeEdit = await api("POST", `/edits`, { accessToken, packageName });
   try {
     const summary = await collectPlayVersions(accessToken, packageName, probeEdit.id);
+    runSummary.play = summary;
     reportPlaySummary(summary, track);
     const conflicts = [];
     if (summary.maxOverall != null && local.versionCode <= summary.maxOverall) {
@@ -178,6 +199,7 @@ if (skipVersionCheck) {
 }
 
 if (dryRun) {
+  runSummary.outcome = "dry-run";
   banner("Dry-run selesai — auth & validasi OK, tidak ada perubahan di Play Console");
   process.exit(0);
 }
@@ -209,6 +231,7 @@ if (!upload.ok) {
 }
 const uploaded = await upload.json();
 const versionCode = uploaded.versionCode;
+runSummary.uploaded = { versionCode, sha1: uploaded.sha1 ?? null };
 console.log(`  ✓ versionCode di Play: ${versionCode}, SHA1: ${uploaded.sha1?.slice(0, 12)}…`);
 
 step(`7/${TOTAL}  Set track + commit`);
@@ -233,6 +256,8 @@ await api("PUT", `/edits/${editId.id}/tracks/${track}`, {
 console.log(`  ✓ track "${track}" diset ke versionCode ${versionCode} (${releaseStatus})`);
 
 await api("POST", `/edits/${editId.id}:commit`, { accessToken, packageName });
+runSummary.committed = true;
+runSummary.outcome = "success";
 console.log("  ✓ edit di-commit");
 
 banner(`Selesai — AAB terkirim ke Play Console track "${track}"`);
@@ -404,6 +429,84 @@ function step(msg) {
   console.log(`\n▶ ${msg}`);
 }
 function fail(msg) {
+  if (runSummary.outcome === "pending") {
+    runSummary.outcome = "failed";
+    runSummary.error = String(msg).split("\n")[0];
+  }
   console.error(`\n✗ ${msg}\n`);
   process.exit(1);
+}
+
+function writeStepSummary(s) {
+  const path = process.env.GITHUB_STEP_SUMMARY;
+  if (!path) return;
+  try {
+    const emoji =
+      s.outcome === "success"
+        ? "✅"
+        : s.outcome === "dry-run"
+          ? "🧪"
+          : s.outcome === "failed"
+            ? "❌"
+            : "⏳";
+    const outcomeLabel =
+      s.outcome === "success"
+        ? "Uploaded & committed"
+        : s.outcome === "dry-run"
+          ? "Dry-run (tidak upload)"
+          : s.outcome === "failed"
+            ? "GAGAL"
+            : "belum selesai";
+    const localVc = s.local?.versionCode ?? "—";
+    const localVn = s.local?.versionName ?? "—";
+    const playMax = s.play?.maxOverall ?? "—";
+    const trackInfo = s.play?.tracks?.[s.track];
+    const trackVc = trackInfo?.maxVersionCode ?? "—";
+    const trackVn = trackInfo?.maxVersionName ?? "—";
+    const uploadedVc = s.uploaded?.versionCode ?? "—";
+    const sha1 = s.uploaded?.sha1 ? String(s.uploaded.sha1).slice(0, 12) + "…" : "—";
+
+    const rows = [];
+    rows.push(`## ${emoji} Play Console upload — ${outcomeLabel}`);
+    rows.push("");
+    rows.push(`**Package:** \`${s.packageName ?? "—"}\` · **Varian:** \`${s.variant}\``);
+    rows.push("");
+    rows.push("| Field | Nilai |");
+    rows.push("| --- | --- |");
+    rows.push(`| Track | \`${s.track}\` |`);
+    rows.push(`| Release status | \`${s.releaseStatus}\` |`);
+    rows.push(`| Mode | ${s.dryRun ? "🧪 dry-run" : "🚀 upload"}${s.skipVersionCheck ? " · ⚠ skip-version-check" : ""} |`);
+    rows.push(`| Committed | ${s.committed ? "yes" : "no"} |`);
+    if (s.error) rows.push(`| Error | \`${s.error.replace(/\|/g, "\\|")}\` |`);
+    rows.push("");
+    rows.push("### Versi lokal vs Play Console");
+    rows.push("");
+    rows.push("| | versionCode | versionName |");
+    rows.push("| --- | ---: | --- |");
+    rows.push(`| **Lokal (build.gradle)** | \`${localVc}\` | \`${localVn}\` |`);
+    rows.push(`| Play — tertinggi (semua bundle) | \`${playMax}\` | — |`);
+    rows.push(`| Play — track \`${s.track}\` | \`${trackVc}\` | \`${trackVn}\` |`);
+    if (s.uploaded) {
+      rows.push(`| **Terupload** | \`${uploadedVc}\` | (SHA1: \`${sha1}\`) |`);
+    }
+    // Semua track (bila probe berhasil).
+    if (s.play?.tracks) {
+      rows.push("");
+      rows.push("<details><summary>Semua track di Play Console</summary>");
+      rows.push("");
+      rows.push("| Track | versionCode | versionName | status |");
+      rows.push("| --- | ---: | --- | --- |");
+      for (const [name, info] of Object.entries(s.play.tracks)) {
+        rows.push(
+          `| ${name === s.track ? "**" + name + "**" : name} | \`${info?.maxVersionCode ?? "—"}\` | \`${info?.maxVersionName ?? "—"}\` | ${info?.status ?? "—"} |`,
+        );
+      }
+      rows.push("");
+      rows.push("</details>");
+    }
+    rows.push("");
+    appendFileSync(path, rows.join("\n") + "\n");
+  } catch {
+    // Jangan bikin process gagal hanya karena summary tidak bisa ditulis.
+  }
 }
