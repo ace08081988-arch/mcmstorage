@@ -2170,7 +2170,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               // Cegah scroll halaman saat Space ditekan di container kartu.
               e.preventDefault();
               e.stopPropagation();
-              openCardDetail();
+              handleCardOpen();
             }
       }
       className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm outline-none transition hover:border-primary/60 hover:shadow-md active:scale-[0.997] active:bg-accent/30 focus-visible:z-10 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer ${
@@ -2201,7 +2201,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               if (target && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [data-radix-collection-item]")) {
                 return;
               }
-              openCardDetail();
+              handleCardOpen();
             }
       }
       onPointerDown={selectMode ? undefined : startLongPress}
