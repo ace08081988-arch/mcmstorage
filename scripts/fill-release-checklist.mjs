@@ -65,7 +65,7 @@ const baseVersion = deriveBaseVersion(versionName);
 // ─── Validasi versionCode di AAB target ─────────────────────────────
 const aabCheck = skipAabCheck
   ? { status: "skipped", message: "dilewati via --skip-aab-check" }
-  : validateAabVersionCode(resolve(ROOT, aabPath), versionCode);
+  : validateAabManifest(resolve(ROOT, aabPath), versionCode, versionName);
 reportAabCheck(aabCheck);
 if (strictAab && aabCheck.status !== "ok") {
   fail(
@@ -203,7 +203,7 @@ function fail(msg) {
  *   - "notool"   bundletool tidak tersedia
  *   - "error"    error saat menjalankan bundletool
  */
-function validateAabVersionCode(aabAbs, expected) {
+function validateAabManifest(aabAbs, expectedCode, expectedName) {
   if (!existsSync(aabAbs)) {
     return {
       status: "missing",
@@ -219,48 +219,68 @@ function validateAabVersionCode(aabAbs, expected) {
       message:
         "bundletool tidak ditemukan. Install (`brew install bundletool` / apt) " +
         "atau set env BUNDLETOOL=/abs/path/bundletool.jar. " +
-        "Sementara ini versionCode di AAB tidak diverifikasi.",
+        "Sementara ini versionCode/versionName di AAB tidak diverifikasi.",
     };
   }
-  const argv = [
-    ...tool.prefix,
-    "dump",
-    "manifest",
-    `--bundle=${aabAbs}`,
-    "--xpath=/manifest/@android:versionCode",
-  ];
+  const codeRes = dumpManifestAttr(tool, aabAbs, "/manifest/@android:versionCode");
+  if (codeRes.status !== "ok") return codeRes;
+  const nameRes = dumpManifestAttr(tool, aabAbs, "/manifest/@android:versionName");
+  if (nameRes.status !== "ok") return nameRes;
+  const codeMatch = /(\d+)/.exec(codeRes.raw);
+  if (!codeMatch) {
+    return {
+      status: "error",
+      message: `Tidak bisa parse versionCode dari bundletool: "${codeRes.raw}"`,
+    };
+  }
+  const aabVc = Number.parseInt(codeMatch[1], 10);
+  const aabVn = nameRes.raw.replace(/^["']|["']$/g, "").trim();
+  if (!aabVn) {
+    return {
+      status: "error",
+      message: `versionName di AAB kosong / tidak terbaca (raw: "${nameRes.raw}")`,
+    };
+  }
+  if (aabVc !== expectedCode) {
+    return {
+      status: "mismatch",
+      message:
+        `versionCode di AAB (${aabVc}) ≠ build.gradle (${expectedCode}). ` +
+        "Rebuild AAB atau update build.gradle sebelum upload.",
+      aabVersionCode: aabVc,
+      aabVersionName: aabVn,
+    };
+  }
+  if (aabVn !== expectedName) {
+    return {
+      status: "mismatch",
+      message:
+        `versionName di AAB ("${aabVn}") ≠ build.gradle ("${expectedName}"). ` +
+        "Rebuild AAB atau update build.gradle sebelum upload.",
+      aabVersionCode: aabVc,
+      aabVersionName: aabVn,
+    };
+  }
+  return {
+    status: "ok",
+    message: `versionCode=${aabVc}, versionName="${aabVn}" di AAB cocok dengan build.gradle`,
+    aabVersionCode: aabVc,
+    aabVersionName: aabVn,
+  };
+}
+
+function dumpManifestAttr(tool, aabAbs, xpath) {
+  const argv = [...tool.prefix, "dump", "manifest", `--bundle=${aabAbs}`, `--xpath=${xpath}`];
   const r = spawnSync(tool.cmd, argv, { encoding: "utf8" });
   if (r.status !== 0) {
     return {
       status: "error",
       message:
-        `bundletool gagal (exit ${r.status}). stderr: ` +
+        `bundletool gagal (exit ${r.status}) saat baca ${xpath}. stderr: ` +
         (r.stderr?.trim().slice(0, 200) || "(kosong)"),
     };
   }
-  const raw = (r.stdout || "").trim();
-  const m = /(\d+)/.exec(raw);
-  if (!m) {
-    return {
-      status: "error",
-      message: `Tidak bisa parse versionCode dari output bundletool: "${raw}"`,
-    };
-  }
-  const aabVc = Number.parseInt(m[1], 10);
-  if (aabVc !== expected) {
-    return {
-      status: "mismatch",
-      message:
-        `versionCode di AAB (${aabVc}) ≠ build.gradle (${expected}). ` +
-        "Rebuild AAB atau update build.gradle sebelum upload.",
-      aabVersionCode: aabVc,
-    };
-  }
-  return {
-    status: "ok",
-    message: `versionCode AAB = ${aabVc} (cocok dengan build.gradle)`,
-    aabVersionCode: aabVc,
-  };
+  return { status: "ok", raw: (r.stdout || "").trim() };
 }
 
 function resolveBundletool() {
