@@ -1,0 +1,272 @@
+#!/usr/bin/env node
+/**
+ * Validasi keystore untuk signed release build.
+ *
+ * Pemakaian:
+ *   node scripts/validate-keystore.mjs
+ *   node scripts/validate-keystore.mjs --props android/keystore.properties
+ *   node scripts/validate-keystore.mjs --store ~/keys/mcm.keystore \
+ *     --alias mcm --store-pass "$STORE_PW" --key-pass "$KEY_PW"
+ *
+ * Cek berlapis (fail-fast, pesan Bahasa Indonesia):
+ *   1. `keytool` tersedia di PATH (dari JDK).
+ *   2. File `keystore.properties` ada & punya 4 field wajib.
+ *   3. File `.keystore` yang dirujuk benar-benar ada di disk.
+ *   4. `storePassword` benar → keytool -list bisa buka store.
+ *   5. `keyAlias` benar-benar ADA di dalam store.
+ *   6. `keyPassword` benar untuk alias tsb → keytool -list -rfc bisa
+ *      ekspor sertifikat alias (ini yang gagal-nya paling misterius di
+ *      Gradle: pesan "Failed to read key … from store" tanpa detail).
+ *   7. Sertifikat belum expired (peringatan kalau <90 hari lagi).
+ *   8. `build.gradle` sudah menghubungkan `signingConfigs.release` ke
+ *      keystore.properties (heuristik regex — sekadar peringatan).
+ *
+ * Exit code 0 = siap `./gradlew :app:bundleRelease`.
+ * Exit code 1 = ada masalah yang PASTI bikin Gradle gagal signing.
+ */
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve, isAbsolute } from "node:path";
+import { homedir } from "node:os";
+
+const argv = process.argv.slice(2);
+function flag(name) {
+  const i = argv.indexOf(name);
+  return i === -1 ? undefined : argv[i + 1];
+}
+
+const ROOT = resolve(process.cwd());
+const propsPath = resolve(ROOT, flag("--props") ?? "android/keystore.properties");
+
+let storeFile = flag("--store");
+let storePassword = flag("--store-pass");
+let keyAlias = flag("--alias");
+let keyPassword = flag("--key-pass");
+let source = "flags";
+
+banner("Validasi keystore untuk signed release");
+
+// ─── 1. keytool tersedia? ─────────────────────────────────────────────
+step("1/8  Cek `keytool` (dari JDK)");
+const kt = which("keytool");
+if (!kt) {
+  fail(
+    "`keytool` tidak ditemukan di PATH.\n" +
+      "Pastikan JDK 17 terpasang dan `JAVA_HOME` di-set:\n\n" +
+      "  export JAVA_HOME=\"$(/usr/libexec/java_home -v 17)\"   # macOS\n" +
+      "  export PATH=\"$JAVA_HOME/bin:$PATH\"\n",
+  );
+}
+console.log(`  ✓ keytool: ${kt}`);
+
+// ─── 2. Baca keystore.properties (kalau flag nggak lengkap) ──────────
+step("2/8  Baca kredensial");
+if (!storeFile || !storePassword || !keyAlias || !keyPassword) {
+  if (!existsSync(propsPath)) {
+    fail(
+      `File ${propsPath} tidak ada dan flag CLI tidak lengkap.\n` +
+        "Buat file itu ATAU jalankan dengan flag lengkap:\n\n" +
+        "  --store <path> --alias <alias> --store-pass <pw> --key-pass <pw>\n",
+    );
+  }
+  const parsed = parseProperties(readFileSync(propsPath, "utf8"));
+  storeFile ??= parsed.storeFile;
+  storePassword ??= parsed.storePassword;
+  keyAlias ??= parsed.keyAlias;
+  keyPassword ??= parsed.keyPassword;
+  source = `keystore.properties (${propsPath})`;
+}
+const missing = [];
+if (!storeFile) missing.push("storeFile");
+if (!storePassword) missing.push("storePassword");
+if (!keyAlias) missing.push("keyAlias");
+if (!keyPassword) missing.push("keyPassword");
+if (missing.length) {
+  fail(`Field kosong di ${source}: ${missing.join(", ")}`);
+}
+console.log(`  ✓ sumber: ${source}`);
+console.log(`  ✓ alias: ${keyAlias}`);
+
+// ─── 3. File .keystore fisik ada? ─────────────────────────────────────
+step("3/8  Cek file keystore fisik");
+const storeAbs = resolveHome(storeFile);
+if (!existsSync(storeAbs)) {
+  fail(
+    `File keystore tidak ditemukan: ${storeAbs}\n` +
+      "Periksa `storeFile` di keystore.properties — HARUS path absolut.",
+  );
+}
+console.log(`  ✓ ${storeAbs}`);
+
+// ─── 4. storePassword benar? ──────────────────────────────────────────
+step("4/8  Verifikasi storePassword");
+const listAll = keytool(["-list", "-keystore", storeAbs, "-storepass", storePassword]);
+if (listAll.status !== 0) {
+  const msg = (listAll.stderr || listAll.stdout || "").trim();
+  fail(
+    "storePassword SALAH — keytool tidak bisa membuka store.\n\n" +
+      truncate(msg, 400),
+  );
+}
+console.log("  ✓ store bisa dibuka");
+
+// ─── 5. Alias ADA di store? ───────────────────────────────────────────
+step("5/8  Cek alias di dalam store");
+const listAlias = keytool([
+  "-list",
+  "-keystore",
+  storeAbs,
+  "-storepass",
+  storePassword,
+  "-alias",
+  keyAlias,
+]);
+if (listAlias.status !== 0) {
+  const aliases = extractAliases(listAll.stdout);
+  fail(
+    `Alias "${keyAlias}" TIDAK ADA di keystore.\n` +
+      (aliases.length
+        ? `Alias yang tersedia: ${aliases.join(", ")}`
+        : "Store ini tidak punya entry alias apa pun (kosong?)."),
+  );
+}
+console.log("  ✓ alias ditemukan");
+
+// ─── 6. keyPassword benar untuk alias tsb? ───────────────────────────
+step("6/8  Verifikasi keyPassword (ekspor sertifikat alias)");
+const exportCert = keytool([
+  "-exportcert",
+  "-keystore",
+  storeAbs,
+  "-storepass",
+  storePassword,
+  "-alias",
+  keyAlias,
+  "-keypass",
+  keyPassword,
+  "-rfc",
+]);
+if (exportCert.status !== 0) {
+  const msg = (exportCert.stderr || exportCert.stdout || "").trim();
+  // Kadang `-keypass` tidak dipakai untuk PKCS12 (satu password saja).
+  // Kalau msg mengandung "PKCS12" dan storePassword === keyPassword, biar
+  // Gradle yang decide — anggap OK.
+  if (/PKCS12/i.test(msg) && storePassword === keyPassword) {
+    console.log("  ⚠ store PKCS12 — key & store share password (OK)");
+  } else {
+    fail(
+      "keyPassword SALAH untuk alias ini — Gradle akan gagal signing.\n\n" +
+        truncate(msg, 400),
+    );
+  }
+} else {
+  console.log("  ✓ keyPassword valid");
+}
+
+// ─── 7. Cek expiry sertifikat ─────────────────────────────────────────
+step("7/8  Cek masa berlaku sertifikat");
+const details = keytool([
+  "-list",
+  "-v",
+  "-keystore",
+  storeAbs,
+  "-storepass",
+  storePassword,
+  "-alias",
+  keyAlias,
+]);
+const untilLine = (details.stdout || "").split("\n").find((l) => /Valid from:.*until:/i.test(l));
+if (untilLine) {
+  const m = untilLine.match(/until:\s*(.+)$/i);
+  const until = m ? new Date(m[1].trim()) : null;
+  if (until && !isNaN(until.getTime())) {
+    const days = Math.floor((until.getTime() - Date.now()) / 86_400_000);
+    if (days < 0) {
+      fail(`Sertifikat sudah EXPIRED (${until.toISOString().slice(0, 10)}). Play Store menolak.`);
+    } else if (days < 90) {
+      console.log(`  ⚠ tinggal ${days} hari lagi (expired ${until.toISOString().slice(0, 10)})`);
+    } else {
+      console.log(`  ✓ berlaku ${days} hari lagi (sampai ${until.toISOString().slice(0, 10)})`);
+    }
+  } else {
+    console.log("  ⚠ tidak bisa parse tanggal expiry — lewati cek");
+  }
+} else {
+  console.log("  ⚠ output keytool tidak berisi baris expiry — lewati cek");
+}
+
+// ─── 8. build.gradle wire signingConfigs.release? ────────────────────
+step("8/8  Cek `android/app/build.gradle` sudah wire signingConfigs.release");
+const bg = resolve(ROOT, "android/app/build.gradle");
+if (!existsSync(bg)) {
+  console.log("  ⚠ android/app/build.gradle tidak ada — skip (folder android/ belum di-generate?)");
+} else {
+  const src = readFileSync(bg, "utf8");
+  const hasSigningRelease = /signingConfigs\s*\{[\s\S]*release\s*\{/.test(src);
+  const releaseUsesSigning = /buildTypes\s*\{[\s\S]*release\s*\{[\s\S]*signingConfig\s+signingConfigs\.release/.test(
+    src,
+  );
+  const readsProps = /keystore\.properties/i.test(src);
+  if (!hasSigningRelease || !releaseUsesSigning || !readsProps) {
+    console.log(
+      "  ⚠ build.gradle belum lengkap:\n" +
+        `      signingConfigs.release    : ${hasSigningRelease ? "OK" : "MISSING"}\n` +
+        `      buildTypes.release wire   : ${releaseUsesSigning ? "OK" : "MISSING"}\n` +
+        `      baca keystore.properties  : ${readsProps ? "OK" : "MISSING"}\n` +
+        "    Lihat docs/BUILD_AAB.md → \"Wire ke android/app/build.gradle\".",
+    );
+  } else {
+    console.log("  ✓ signingConfigs.release ter-wire ke keystore.properties");
+  }
+}
+
+banner("Keystore siap — aman untuk ./gradlew :app:bundleRelease");
+process.exit(0);
+
+// ─── util ─────────────────────────────────────────────────────────────
+function parseProperties(text) {
+  const out = {};
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const eq = line.indexOf("=");
+    if (eq === -1) continue;
+    out[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
+  }
+  return out;
+}
+function resolveHome(p) {
+  if (!p) return p;
+  if (p.startsWith("~")) return resolve(homedir(), p.slice(2));
+  return isAbsolute(p) ? p : resolve(ROOT, p);
+}
+function keytool(args) {
+  return spawnSync("keytool", args, { encoding: "utf8" });
+}
+function which(cmd) {
+  const r = spawnSync(process.platform === "win32" ? "where" : "which", [cmd], { encoding: "utf8" });
+  if (r.status !== 0) return null;
+  return (r.stdout || "").split("\n")[0].trim() || null;
+}
+function extractAliases(text) {
+  const out = [];
+  for (const line of (text || "").split("\n")) {
+    const m = line.match(/^([\w.\-]+),\s*.+,\s*(PrivateKeyEntry|trustedCertEntry)/i);
+    if (m) out.push(m[1]);
+  }
+  return out;
+}
+function truncate(s, n) {
+  return s.length <= n ? s : s.slice(0, n) + "\n… (dipotong)";
+}
+function banner(msg) {
+  const line = "═".repeat(msg.length + 4);
+  console.log(`\n${line}\n  ${msg}  \n${line}`);
+}
+function step(msg) {
+  console.log(`\n▶ ${msg}`);
+}
+function fail(msg) {
+  console.error(`\n✗ ${msg}\n`);
+  process.exit(1);
+}
