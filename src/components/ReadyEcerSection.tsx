@@ -30,7 +30,7 @@ import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveSt
 import { WaShareButton, ChatShareButton } from "@/components/share/SaleShareButtons";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ExternalLink, History, Undo2 } from "lucide-react";
+import { ExternalLink, History, Undo2, ChevronDown } from "lucide-react";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
@@ -1306,11 +1306,22 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
 function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, justMoved = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
   const cardRootRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
   const openCardDetail = () => {
     void navigate({
       to: "/ecer",
       search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined },
     });
+  };
+  // Di tab "Riwayat terkirim": tap kartu HANYA expand/collapse detail
+  // pengiriman di dalam kartu. Tidak pernah pindah ke /ecer supaya user
+  // bisa memeriksa riwayat tanpa keluar dari halaman index.
+  const handleCardOpen = () => {
+    if (view === "sent") {
+      setExpanded((v) => !v);
+    } else {
+      openCardDetail();
+    }
   };
   useEffect(() => {
     if (justMoved && cardRootRef.current) {
@@ -2136,14 +2147,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       aria-label={
         selectMode
           ? `${selected ? "Lepas pilihan" : "Pilih"} kartu ${r.name}`
-          : `Buka detail kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}${
-              view === "sent"
-                ? `, ${shots.length} kiriman terkirim`
-                : `, ${r.prep_count} kotak siap`
-            }`
+          : view === "sent"
+            ? `${expanded ? "Tutup" : "Buka"} detail riwayat kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}, ${shots.length} kiriman terkirim`
+            : `Buka detail kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}, ${r.prep_count} kotak siap`
       }
       aria-describedby={`ecer-card-desc-${r.id}`}
       aria-pressed={selectMode ? selected : undefined}
+      aria-expanded={selectMode ? undefined : view === "sent" ? expanded : undefined}
       onKeyDown={
         selectMode
           ? undefined
@@ -2159,7 +2169,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               // Cegah scroll halaman saat Space ditekan di container kartu.
               e.preventDefault();
               e.stopPropagation();
-              openCardDetail();
+              handleCardOpen();
             }
       }
       className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm outline-none transition hover:border-primary/60 hover:shadow-md active:scale-[0.997] active:bg-accent/30 focus-visible:z-10 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer ${
@@ -2190,7 +2200,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               if (target && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [data-radix-collection-item]")) {
                 return;
               }
-              openCardDetail();
+              handleCardOpen();
             }
       }
       onPointerDown={selectMode ? undefined : startLongPress}
@@ -2380,6 +2390,35 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         </button>
       )}
       {shots.length > 0 ? (
+        view === "sent" ? (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v); }}
+          aria-label={`${expanded ? "Tutup" : "Buka"} detail riwayat ${r.name} — ${shots.length} foto${thumbs[0]?.location_url ? ", dengan lokasi GPS" : ""}`}
+          aria-expanded={expanded}
+          className="relative block aspect-[4/3] w-full overflow-hidden bg-muted text-left"
+        >
+          {thumbs[0]?.thumb_url ? (
+            <img src={thumbs[0].thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
+            <div className="flex min-w-0 items-center gap-1 text-[11px] font-medium leading-none text-white/90">
+              <Scale className="h-2.5 w-2.5 shrink-0" />
+              <span className="min-w-0 flex-1 truncate" title={r.name}>{r.name}</span>
+            </div>
+          </div>
+          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-[11px] font-semibold leading-none text-white shadow-sm">
+            {shots.length} foto
+          </span>
+          {thumbs[0]?.location_url && (
+            <span className="absolute right-9 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-medium leading-none text-white backdrop-blur-sm">
+              <MapPin className="h-2.5 w-2.5" /> GPS
+            </span>
+          )}
+        </button>
+        ) : (
         <Link
           to="/ecer"
           search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
@@ -2406,6 +2445,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             </span>
           )}
         </Link>
+        )
       ) : null}
 
       <div className="flex flex-col gap-1.5 p-2">
@@ -2413,7 +2453,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           to="/ecer"
           search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
           data-testid={`ready-ecer-card-${r.id}`}
-          aria-label={`Buka detail ${r.name} di halaman Ecer`}
+          aria-label={view === "sent" ? `${expanded ? "Tutup" : "Buka"} detail riwayat ${r.name}` : `Buka detail ${r.name} di halaman Ecer`}
+          aria-expanded={view === "sent" ? expanded : undefined}
+          onClick={view === "sent" ? (e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v); } : undefined}
           className="flex flex-col gap-0.5"
         >
           {shots.length === 0 && (
@@ -2514,7 +2556,19 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               {r.prep_count} kotak siap
             </span>
           </span>
+          {view === "sent" && (
+            <span className="mt-0.5 inline-flex items-center gap-1 self-start rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
+              {expanded ? "Sembunyikan detail" : `Lihat detail kiriman (${shots.length})`}
+            </span>
+          )}
         </Link>
+
+        {view === "sent" && expanded && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <SentDetailList shots={shots} details={sentDetails} />
+          </div>
+        )}
 
         {shots.length === 0 ? (
           <div className="flex flex-col items-center gap-1 rounded-md border border-dashed bg-muted/40 px-2 py-2.5 text-center">
