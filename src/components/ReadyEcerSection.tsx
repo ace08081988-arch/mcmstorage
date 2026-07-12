@@ -677,7 +677,7 @@ export function ReadyEcerSection() {
                 title={new Date(lastSyncedAt).toLocaleString()}
                 className="shrink-0 tabular-nums opacity-70"
               >
-                · {formatRelative(lastSyncedAt, nowTick)}
+                · {fmtAgo(lastSyncedAt, nowTick)}
               </time>
             )}
           </div>
