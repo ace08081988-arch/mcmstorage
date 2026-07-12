@@ -318,6 +318,7 @@ function buildAabReason({ aabPathFlag, discovery, debugMode }) {
 
 function printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab, debugMode }) {
   console.log("\n── AAB detection ────────────────────────────────────");
+  console.log(`  mode   : ${debugMode ? "debug (--debug)" : "release"}`);
   console.log(`  path   : ${aabPath}`);
   console.log(`  source : ${aabSource}`);
   console.log(`  reason : ${aabReason}`);
