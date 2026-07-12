@@ -48,6 +48,7 @@ if (!["full", "chat"].includes(variant)) {
 const skipTypecheck = args.has("--skip-typecheck");
 const debugBundle = args.has("--debug");
 const doUpload = args.has("--upload");
+const skipBump = args.has("--skip-bump");
 const uploadTrack = (() => {
   const i = argv.indexOf("--upload-track");
   return i === -1 ? "internal" : argv[i + 1] ?? "internal";
@@ -101,6 +102,13 @@ if (!debugBundle) {
   step("1b/4 Validasi keystore signing (fail-fast sebelum Gradle)");
   run("node", [resolve(ROOT, "scripts/validate-keystore.mjs")]);
   console.log("  ✓ keystore lolos semua cek");
+}
+
+// ─── 1c. Bump versionCode/versionName (khusus release) ────────────────
+if (!debugBundle && !skipBump) {
+  step("1c/4 Bump versionCode/versionName otomatis");
+  run("node", [resolve(ROOT, "scripts/bump-version.mjs")]);
+  console.log("  ✓ version di build.gradle sudah maju");
 }
 
 // ─── 2. Typecheck ─────────────────────────────────────────────────────
