@@ -990,6 +990,12 @@ function ChatRoomPage() {
     done: number;
     failed: number;
   } | null>(null);
+  // Status kirim per-produk (keyed oleh row.id) supaya owner tahu kartu
+  // mana yang menunggu, sedang mengirim, atau gagal — item sukses langsung
+  // dibuang dari pratinjau, jadi tidak perlu state "success" persist.
+  const [productSendStatuses, setProductSendStatuses] = useState<
+    Record<string, "pending" | "sending" | "failed">
+  >({});
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
