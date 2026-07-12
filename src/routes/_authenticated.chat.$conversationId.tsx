@@ -2103,6 +2103,7 @@ function ChatRoomPage() {
             </div>
             <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
               {pendingProducts.map((p, idx) => {
+                const sendStatus = productSendStatuses[p.id];
                 // Catalog = referensi stok gudang (tidak boleh diedit dari
                 // chip). Untuk ready/self dengan qty numerik + baseUnit,
                 // tampilkan tombol − / + dengan step sesuai unit.
@@ -2169,6 +2170,30 @@ function ChatRoomPage() {
                         {p.source === "catalog" ? (
                           <span className="shrink-0 rounded bg-primary/10 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-primary">
                             katalog
+                          </span>
+                        ) : null}
+                        {sendStatus === "sending" ? (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-primary"
+                            aria-label="Sedang mengirim"
+                          >
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                            mengirim
+                          </span>
+                        ) : sendStatus === "failed" ? (
+                          <span
+                            className="shrink-0 rounded bg-destructive/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-destructive"
+                            aria-label="Gagal terkirim — tekan Kirim untuk coba lagi"
+                            title="Gagal terkirim — tekan Kirim untuk coba lagi"
+                          >
+                            gagal
+                          </span>
+                        ) : sendStatus === "pending" ? (
+                          <span
+                            className="shrink-0 rounded bg-amber-500/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400"
+                            aria-label="Menunggu antrean kirim"
+                          >
+                            menunggu
                           </span>
                         ) : null}
                       </div>
