@@ -90,6 +90,7 @@ import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovabl
 import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.visual.kemasan-badge'
 import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
 import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
+import { Route as LovableVisualChatQueueNetworkDropRouteImport } from './routes/lovable.visual.chat-queue-network-drop'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as LovableVisualCallVideoStageRouteImport } from './routes/lovable.visual.call-video-stage'
 import { Route as LovableVisualAutoSendCancelRouteImport } from './routes/lovable.visual.auto-send-cancel'
@@ -564,6 +565,12 @@ const LovableVisualDeliveryHistoryRoute =
     path: '/lovable/visual/delivery-history',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualChatQueueNetworkDropRoute =
+  LovableVisualChatQueueNetworkDropRouteImport.update({
+    id: '/lovable/visual/chat-queue-network-drop',
+    path: '/lovable/visual/chat-queue-network-drop',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualChatDeletedRoute =
   LovableVisualChatDeletedRouteImport.update({
     id: '/lovable/visual/chat-deleted',
@@ -868,6 +875,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
+  '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
@@ -984,6 +992,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
+  '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
@@ -1105,6 +1114,7 @@ export interface FileRoutesById {
   '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
+  '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
@@ -1226,6 +1236,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/auto-send-cancel'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
+    | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
@@ -1342,6 +1353,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/auto-send-cancel'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
+    | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
@@ -1462,6 +1474,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/auto-send-cancel'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
+    | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
@@ -1524,6 +1537,7 @@ export interface RootRouteChildren {
   LovableVisualAutoSendCancelRoute: typeof LovableVisualAutoSendCancelRoute
   LovableVisualCallVideoStageRoute: typeof LovableVisualCallVideoStageRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
+  LovableVisualChatQueueNetworkDropRoute: typeof LovableVisualChatQueueNetworkDropRoute
   LovableVisualDeliveryHistoryRoute: typeof LovableVisualDeliveryHistoryRoute
   LovableVisualKartonKonversiRoute: typeof LovableVisualKartonKonversiRoute
   LovableVisualKemasanBadgeRoute: typeof LovableVisualKemasanBadgeRoute
@@ -2122,6 +2136,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualDeliveryHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/chat-queue-network-drop': {
+      id: '/lovable/visual/chat-queue-network-drop'
+      path: '/lovable/visual/chat-queue-network-drop'
+      fullPath: '/lovable/visual/chat-queue-network-drop'
+      preLoaderRoute: typeof LovableVisualChatQueueNetworkDropRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/chat-deleted': {
       id: '/lovable/visual/chat-deleted'
       path: '/lovable/visual/chat-deleted'
@@ -2617,6 +2638,8 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualAutoSendCancelRoute: LovableVisualAutoSendCancelRoute,
   LovableVisualCallVideoStageRoute: LovableVisualCallVideoStageRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
+  LovableVisualChatQueueNetworkDropRoute:
+    LovableVisualChatQueueNetworkDropRoute,
   LovableVisualDeliveryHistoryRoute: LovableVisualDeliveryHistoryRoute,
   LovableVisualKartonKonversiRoute: LovableVisualKartonKonversiRoute,
   LovableVisualKemasanBadgeRoute: LovableVisualKemasanBadgeRoute,
@@ -2650,3 +2673,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

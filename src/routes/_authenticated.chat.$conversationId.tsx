@@ -153,7 +153,12 @@ import { ProductSharePopover, sendProductRow, type PickedProductRow } from "@/co
  *  - `fromLegacy`: `true` kalau data dibaca dari format v1 (array polos).
  *    Setelah hydrate, penyimpan akan menulis ulang ke format v2.
  */
-export const PENDING_PRODUCTS_VERSION = 2 as const;
+// Konstanta versi envelope diekspor ulang dari modul kecil supaya
+// harness / spec e2e bisa mengimpor value yang persis sama tanpa
+// perlu me-load seluruh route file. Local import di bawah tetap
+// dibutuhkan karena file ini juga memakainya di banyak tempat.
+import { PENDING_PRODUCTS_VERSION } from "@/lib/chat-queue-schema";
+export { PENDING_PRODUCTS_VERSION };
 function sanitizePendingProducts(
   raw: unknown,
 ): {
