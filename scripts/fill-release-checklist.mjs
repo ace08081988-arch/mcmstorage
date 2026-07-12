@@ -52,13 +52,14 @@ const inPlace = args.has("--in-place");
 const tagOverride = flag("--tag");
 const outputPath = flag("--output");
 const aabPathFlag = flag("--aab");
-const discovery = aabPathFlag ? null : findLatestAab(ROOT);
+const debugMode = args.has("--debug");
+const discovery = aabPathFlag ? null : findLatestAab(ROOT, debugMode);
 const autoAab = discovery?.winner ?? null;
 const aabPath = aabPathFlag ?? autoAab?.rel ?? "dist/app-release.aab";
 const aabAutoDiscovered = !aabPathFlag && !!autoAab;
 const aabSource = aabPathFlag ? "--aab" : aabAutoDiscovered ? "auto-discover" : "default-fallback";
-const aabReason = buildAabReason({ aabPathFlag, discovery });
-printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab });
+const aabReason = buildAabReason({ aabPathFlag, discovery, debugMode });
+printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab, debugMode });
 const strictAab = args.has("--strict-aab");
 const skipAabCheck = args.has("--skip-aab-check");
 
