@@ -30,6 +30,14 @@ on:
         description: "Lewati cek versionCode vs Play (TIDAK direkomendasikan)"
         type: boolean
         default: false
+      expected_version_code:
+        description: "Opsional — versionCode yang Anda harapkan (mis. 5). Kosongkan untuk skip. Kalau diisi & tidak cocok, workflow gagal."
+        type: string
+        default: ""
+      expected_version_name:
+        description: "Opsional — versionName yang Anda harapkan (mis. 1.2.0). Kosongkan untuk skip."
+        type: string
+        default: ""
 
   # Optional: jalankan otomatis tiap tag v* (selalu dry-run untuk keamanan).
   push:
@@ -92,6 +100,72 @@ jobs:
             exit 1
           fi
           echo "✓ Android scaffold lengkap: android/, android/build.gradle, android/gradle.properties, android/app/build.gradle"
+
+      - name: Show & validate app version
+        id: appver
+        env:
+          EXPECTED_VC: ${{ github.event.inputs.expected_version_code || '' }}
+          EXPECTED_VN: ${{ github.event.inputs.expected_version_name || '' }}
+        run: |
+          set -euo pipefail
+          GRADLE=android/app/build.gradle
+
+          # Parse versionCode & versionName dari build.gradle (defaultConfig).
+          VC=$(grep -Eo 'versionCode[[:space:]]+[0-9]+' "$GRADLE" | head -1 | awk '{print $2}')
+          VN=$(grep -Eo 'versionName[[:space:]]+"[^"]+"' "$GRADLE" | head -1 | sed -E 's/.*"([^"]+)"/\1/')
+
+          if [ -z "$VC" ] || [ -z "$VN" ]; then
+            echo "::error::Tidak bisa parse versionCode/versionName dari $GRADLE. Pastikan defaultConfig punya baris 'versionCode <n>' dan 'versionName \"x.y.z\"'."
+            exit 1
+          fi
+
+          # Validasi format: versionCode = integer positif; versionName = semver-ish (angka.titik).
+          if ! [[ "$VC" =~ ^[0-9]+$ ]] || [ "$VC" -lt 1 ]; then
+            echo "::error::versionCode='$VC' bukan integer positif. Play Console menolak versionCode <= 0 atau non-integer."
+            exit 1
+          fi
+          if ! [[ "$VN" =~ ^[0-9]+(\.[0-9]+){1,3}(-[A-Za-z0-9.-]+)?$ ]]; then
+            echo "::error::versionName='$VN' tidak mengikuti format semver (mis. 1.0, 1.2.3, 1.2.3-beta.1)."
+            exit 1
+          fi
+
+          echo "versionCode=$VC" >> "$GITHUB_OUTPUT"
+          echo "versionName=$VN" >> "$GITHUB_OUTPUT"
+
+          # Bandingkan dengan input user (kalau diisi).
+          MISMATCH=0
+          if [ -n "$EXPECTED_VC" ] && [ "$EXPECTED_VC" != "$VC" ]; then
+            echo "::error::versionCode di build.gradle ($VC) TIDAK cocok dengan yang Anda harapkan ($EXPECTED_VC). Update android/app/build.gradle atau perbaiki input workflow."
+            MISMATCH=1
+          fi
+          if [ -n "$EXPECTED_VN" ] && [ "$EXPECTED_VN" != "$VN" ]; then
+            echo "::error::versionName di build.gradle ($VN) TIDAK cocok dengan yang Anda harapkan ($EXPECTED_VN)."
+            MISMATCH=1
+          fi
+
+          # Tulis ringkasan ke halaman run — muncul SEBELUM build dijalankan.
+          {
+            echo "## 🔢 Versi yang akan di-build"
+            echo ""
+            echo "| Field | Nilai di \`android/app/build.gradle\` | Yang Anda harapkan | Status |"
+            echo "| --- | --- | --- | --- |"
+            vc_status="—"
+            vn_status="—"
+            [ -n "$EXPECTED_VC" ] && { [ "$EXPECTED_VC" = "$VC" ] && vc_status="✅ cocok" || vc_status="❌ beda"; }
+            [ -n "$EXPECTED_VN" ] && { [ "$EXPECTED_VN" = "$VN" ] && vn_status="✅ cocok" || vn_status="❌ beda"; }
+            echo "| versionCode | \`$VC\` | \`${EXPECTED_VC:-(tidak dicek)}\` | $vc_status |"
+            echo "| versionName | \`$VN\` | \`${EXPECTED_VN:-(tidak dicek)}\` | $vn_status |"
+            echo ""
+            echo "> Cek lanjutan (versionCode > yang di Play Console) dilakukan oleh step **Pre-flight release config** & **Build + release AAB** setelah ini."
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$MISMATCH" -eq 1 ]; then
+            echo "::error::Versi tidak cocok dengan input. Workflow dihentikan sebelum build supaya Anda tidak upload/instal versi yang salah."
+            exit 1
+          fi
+
+          echo "✓ versionCode=$VC, versionName=$VN — format valid & cocok dengan input (kalau ada)."
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
