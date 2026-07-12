@@ -1,70 +1,53 @@
-# Fix Tugas Penyiapan Barang — mobile 411px
+# Hardening 4 gejala chat — sequenced
 
-Publish tetap ditahan sampai smoke test ulang lulus. Tidak menyentuh DB/RLS/RPC/migration/permission model. Perubahan UI + guard runtime kecil di file yang sudah ada.
+4 gejala berbeda, 4 root cause potensial. Digabung dalam 1 patch = risiko regresi. Setiap slice: **diagnosa (baca file + reproduksi) → tunjukkan akar → fix → verifikasi**, lalu tunggu approval sebelum lanjut.
 
-## Diagnosis singkat (bukti lokasi kode)
+## Urutan slice
 
-- **App Lock muncul setelah Galeri/Kamera** — dua sumber:
-  1. `src/routes/_authenticated.tsx` (baris ~72–79): handler `visibilitychange` panggil `lockNow()` saat `document.visibilityState==="hidden"` bila `cfg.lockOnHide` aktif. Native picker Android memang bikin WebView "hidden" → app lock nyala waktu user kembali. Ini kena halaman `/tugas` (Siapkan Sendiri).
-  2. `src/routes/t.$token.tsx` (baris 310–370, 749–794): sesi PIN pegawai berbasis TTL. Waktu WebView di-recreate setelah picker native, sudah ada persistensi via `sessionStorage`, tapi bila TTL habis atau sessionStorage dibersihkan OEM, layar PIN kembali muncul. Butuh grace period saat picker terbuka.
-- **"Belum ada item tugas" tampil bersama Permintaan Paket** — `t.$token.tsx` baris 2110–2144 render empty-state tanpa memeriksa apakah `RequestSection` (baris 2168) punya paket aktif.
-- **Kemajuan 0/0** — `t.$token.tsx` baris 1593–1595, 1749–1780: dihitung hanya dari `items.length` (tugas satuan). Waktu `totalItems===0` tetap render "0 / 0".
-- **Aksi kirim paket kurang jelas di mobile** — `ReadyPackagesPanel.tsx` baris 876–929: tombol "Simpan paket" ada di dasar form panjang, tidak sticky.
-- **Unit copy** — sudah ada `humanBaseUnit()` sebagai SSOT setelah Batch A-2. Perlu sweep di `t.$token.tsx` dan `RequestSection` untuk memastikan tidak ada string "gr" / "botol" hardcoded.
+### Slice 1 — Composer chat tidak stabil saat menulis (411/390px + APK)
+Kandidat akar:
+- Textarea auto-resize memicu reflow parent → keyboard hide/show loop di Capacitor.
+- `visualViewport` / `resize` listener men-toggle sticky footer.
+- Focus-trap dialog atau `PromptInput` mengambil focus balik.
 
-## Perubahan yang dilakukan
+Diagnosa: baca `src/components/chat/*` (composer, PromptInput wrapper), cek listener `resize`/`visualViewport`, cek dynamic `height`/`maxHeight` pada composer. Reproduksi via Playwright headless 411px + inspeksi APK behavior lewat log.
 
-### 1. `src/lib/app-lock.ts` — API suppress picker
-- Tambah export baru:
-  - `SUPPRESS_LOCK_EVENT`
-  - `beginNativePicker(reasonMs=90_000)` — set flag `app-lock:suppress-until = now + reasonMs` di `localStorage`.
-  - `endNativePicker()` — hapus flag.
-  - `isLockSuppressed()` — baca flag, cek belum expired.
-- Tidak ubah struktur `LockConfig`, tidak ubah biometric API.
+### Slice 2 — ProductSharePopover menutup sendiri saat mengetik/scroll
+Kandidat akar:
+- Radix `Popover` `modal={false}` + `onInteractOutside` menutup saat klik input di popover.
+- Re-render parent (query invalidation / realtime tick) meng-unmount popover.
+- Focus keluar ke keyboard virtual → `onOpenChange(false)`.
 
-### 2. `src/routes/_authenticated.tsx` — hormati suppress flag
-Di handler `onVis` dan `resetIdle` cek `isLockSuppressed()`. Jika true, jangan panggil `lockNow()`. Guard 90 detik cukup untuk siklus buka picker → pilih foto → kembali; tetap kunci kalau user beneran keluar app lama.
+Diagnosa: baca komponen popover product-share + parent-nya, cek `open`/`onOpenChange`, cek apakah state disimpan di parent yang di-invalidate oleh React Query realtime.
 
-### 3. `src/routes/t.$token.tsx`
-- **Empty-state cerdas.** Ganti render tunggal empty-state jadi:
-  - Jika `totalItems===0` dan `RequestSection` melaporkan `packagesCount>0` → sembunyikan panel besar; ganti dengan strip tipis: "Tidak ada tugas satuan — lanjutkan lewat Permintaan Paket di bawah."
-  - Jika `totalItems===0` dan tidak ada paket → tampilkan copy sekarang.
-  - Sinyal `packagesCount` di-lift dari `RequestSection` via prop `onCountsChange({ pending, total })`.
-- **Progres.** `Kemajuan {done}/{total}` hanya render bila `totalItems>0`. Bila 0 tapi ada paket, ganti label jadi "Paket aktif: N".
-- **Grace period picker.** Sebelum `input.click()` di setiap tombol Kamera/Galeri (baris ~2877, ~4083 dan handler `openNativeCamera`/`openNativeGallery` di 2349/2373/3759/3783), panggil `beginNativePicker()`; pada handler `onChange` selesai atau `abort` panggil `endNativePicker()`. Bump `writeSession(pin)` (baris 352) supaya TTL restart.
-- **Unit copy.** Sweep string di label item tugas & paket: pakai `humanBaseUnit(package_type, base_unit)` yang sudah ada. Standarkan `gram` → `g` untuk konsistensi input suffix. `botol` tetap.
-- **Tombol yang diaudit.**
-  - "Sinkronkan ulang sekarang" (baris ~1798) → tetap, kecilkan ke ikon-only di ≤414px.
-  - "Tutup" pada card paket → tetap.
-  - "Kirim Paket" (baris 4278) → dipindah ke sticky bottom bar bila `openId` aktif.
+### Slice 3 — Dialog invite (AddContact) buka-tutup sendiri
+Kandidat akar:
+- Optimistic UI + reconciling poll (dari sprint sebelumnya) reset `open` state saat data refresh.
+- FAB re-mount karena parent list re-render.
+- `useEffect` yang men-set `open` dari server state.
 
-### 4. `src/components/RequestSection.tsx` (dipanggil dari `t.$token.tsx`)
-- Terima prop `onCountsChange?`. Emit `{ total, pending }` tiap kali daftar paket berubah.
-- Sticky action bar mobile: saat sebuah paket sedang dibuka (`activePackageId`), render `<div class="sticky bottom-0 ...">` berisi tombol utama "Kirim Paket" (disabled bila qty invalid / foto kosong, dengan alasan mikro "Butuh foto bukti" atau "Isi jumlah dulu"). Preview foto & tombol Kamera/Galeri tetap di dalam card.
+Diagnosa: baca `AddContactFab` + hook friend-request, cari `setOpen` dalam `useEffect` yang bergantung ke query data.
 
-### 5. `src/components/SiapkanSendiriSection.tsx`
-- Bungkus `input[type=file]` (baris 584): pasang `onClick={()=>beginNativePicker()}` + `onChange` yang panggil `endNativePicker()` setelah baca file (atau timeout 90s).
+### Slice 4 — List teman flicker / dialog konfirmasi reopen saat hapus/reject
+Kandidat akar:
+- Optimistic remove tanpa `keepPreviousData`, item hilang lalu muncul lagi saat realtime echo tiba.
+- Konfirmasi dialog `open` didorong oleh item id yang berubah referensi setelah refetch.
+- Race: mutation `onSuccess` invalidate → refetch → item lama sempat kembali sebelum server echo.
 
-## Yang TIDAK dilakukan (tanpa approval)
+Diagnosa: baca hook friend-list + reject/remove mutation, cek pola invalidate vs `setQueryData`.
 
-- Tidak refactor `RequestSection` atau `ReadyPackagesPanel` besar-besaran.
-- Tidak ubah TTL PIN worker portal (tetap `cfg.sessionTtlMs`).
-- Tidak sentuh RPC `prep_peek_task`, `submissions`, atau DB.
-- Tidak hapus tombol yang ada — hanya reposisi/hide berdasarkan state.
+## Cara kerja per slice
 
-## Verifikasi
+Per slice saya akan:
+1. Baca file terkait & tulis **temuan akar** singkat (bukan tebakan).
+2. Tunjukkan patch minimal.
+3. Verifikasi: build/typecheck + Playwright 411px reproduksi bila memungkinkan.
+4. Berhenti, tunggu Anda uji di APK 411/390px sebelum lanjut ke slice berikutnya.
 
-1. `bunx tsgo --noEmit` harus hijau.
-2. `bun run build` harus hijau.
-3. Smoke test mobile 411px & 390px:
-   - Buka `/tugas` → klik Galeri di Siapkan Sendiri → pilih foto → kembali → **tidak** minta PIN app-lock.
-   - Buka worker portal via link → PIN → buka paket PCG → klik Galeri → pilih foto → kembali → **tidak** minta PIN worker portal ulang.
-   - Buat link tugas tanpa item tapi dengan paket → buka → **tidak** ada empty state besar "Belum ada item tugas"; hanya strip tipis + paket.
-   - Item PASIR menampilkan `g`, GS menampilkan `botol`, tidak ada campuran `gr` / `botol` di item gram.
-   - Kirim paket → tombol jelas terlihat di sticky bar, disabled saat syarat kurang, aktif setelah foto+qty valid.
+## Yang **tidak** akan saya lakukan
+- Menyentuh business logic ecer / warehouse / payment gating.
+- Refactor besar composer ke AI Elements (kecuali Slice 1 memang butuh, dan itu akan saya angkat lagi untuk approval terpisah).
+- Publish. Tetap ditahan sampai Anda smoke-test on-device.
 
-## Laporan akhir (setelah implementasi)
-
-Format tetap: penyebab, file berubah, copy yang diganti, tombol yang direposisi, hasil typecheck, hasil build, risiko regresi, konfirmasi Publish ditahan.
-
-Konfirmasi lanjut?
+## Konfirmasi
+Setuju urutan **Slice 1 → 2 → 3 → 4**? Atau Anda mau mulai dari slice lain dulu (mis. Slice 3 kalau invite dialog paling mengganggu hari ini)?
