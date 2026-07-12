@@ -4281,6 +4281,11 @@ function SendEcerPrepsDialog({
   const [paidStr, setPaidStr] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  // Wizard 3 langkah: 1) Pelanggan  2) Verifikasi bayar  3) Konfirmasi & Kirim.
+  // Tombol WhatsApp hanya muncul di langkah 3, dan hanya aktif setelah
+  // langkah 2 lulus validasi (metode + nominal). Ini mencegah owner
+  // main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
 
   useEffect(() => {
@@ -4292,6 +4297,7 @@ function SendEcerPrepsDialog({
     setPayMethod(null);
     setPaidStr("");
     setNote("");
+    setStep(1);
   }, [open, customers, title.id, prepIdsKey]);
 
   const totalAmount = useMemo(() => {
@@ -4325,6 +4331,27 @@ function SendEcerPrepsDialog({
     preps.length > 0 &&
     !busy &&
     partialValid;
+
+  // Gate transisi antar langkah:
+  //  - Langkah 1 → 2: nama pelanggan sudah ada.
+  //  - Langkah 2 → 3: total > 0, metode bayar dipilih, dan (khusus
+  //    "sebagian") nominal dibayar valid (>0 dan < total).
+  const canGoStep2 = !!party.name;
+  const canGoStep3 =
+    payMethod !== null && totalAmount > 0 && partialValid;
+
+  // Validasi nominal per metode untuk pesan error yang informatif di
+  // langkah 2. Dipakai untuk menampilkan alasan kenapa tombol Lanjut
+  // dinonaktifkan, sehingga owner tahu apa yang perlu diperbaiki.
+  const payValidationMessage: string | null = (() => {
+    if (totalAmount <= 0) return "Isi total harga dulu (harus > 0).";
+    if (payMethod === null) return "Pilih metode bayar: Lunas, Hutang, atau Bayar sebagian.";
+    if (payMethod === "partial") {
+      if (paidAmount <= 0) return "Isi jumlah yang sudah dibayar (harus > 0).";
+      if (paidAmount >= totalAmount) return "Dibayar tidak boleh ≥ total. Pilih Lunas kalau memang lunas.";
+    }
+    return null;
+  })();
 
   async function resolvePhotoUrl(prep: EcerPreparation) {
     if (!prep.photo_path) return null;
