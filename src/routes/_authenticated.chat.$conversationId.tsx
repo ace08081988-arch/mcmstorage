@@ -1039,6 +1039,7 @@ function ChatRoomPage() {
       void (async () => {
         let done = 0;
         let failed = 0;
+        const sentIds: string[] = [];
         for (let i = 0; i < queue.length; i++) {
           const row = queue[i];
           setProductSendProgress({ current: i + 1, total: queue.length, name: row.productName, done, failed });
@@ -1051,6 +1052,11 @@ function ChatRoomPage() {
             });
             if (ok) {
               done++;
+              sentIds.push(row.id);
+              // Buang dari daftar pratinjau segera setelah sukses, supaya
+              // yang tersisa di composer hanya item yang belum/gagal terkirim
+              // dan owner bisa langsung retry tanpa menyusun ulang.
+              updatePendingProducts((prev) => prev.filter((p) => p.id !== row.id));
               toast.success(`Terkirim: ${row.productName}`, { id: `prod-ok-${row.id}-${i}` });
             } else {
               failed++;
@@ -1066,9 +1072,9 @@ function ChatRoomPage() {
         if (failed === 0) {
           toast.success(`${done} produk berhasil dikirim`);
         } else if (done === 0) {
-          toast.error(`Semua ${queue.length} produk gagal dikirim`);
+          toast.error(`Semua ${queue.length} produk gagal dikirim — masih di composer, tekan Kirim untuk coba lagi`);
         } else {
-          toast.warning(`${done} terkirim, ${failed} gagal dari ${queue.length} produk`);
+          toast.warning(`${done} terkirim, ${failed} gagal — item gagal masih di composer, tekan Kirim untuk coba lagi`);
         }
         setProductSendProgress(null);
         void othersRead.refetch();
@@ -1076,7 +1082,6 @@ function ChatRoomPage() {
     }
     setBody("");
     setReplyTo(null);
-    updatePendingProducts([]);
   };
 
   // Auto-retry failed messages once the browser is back online.
