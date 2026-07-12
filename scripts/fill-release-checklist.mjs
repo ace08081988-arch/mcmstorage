@@ -15,9 +15,11 @@
  *   node scripts/fill-release-checklist.mjs --dry-run
  *   node scripts/fill-release-checklist.mjs --aab dist/aab/mcm-full-vc45.aab
  *   # Tanpa --aab: skrip cari .aab terbaru (mtime) di dist/aab/ &
- *   # android/app/build/outputs/bundle/{release,debug}/ secara otomatis.
+ *   # android/app/build/outputs/bundle/release/ secara otomatis.
+ *   # Folder debug diabaikan kecuali pakai --debug.
  *   node scripts/fill-release-checklist.mjs --strict-aab           # gagal kalau AAB/bundletool tidak ada
  *   node scripts/fill-release-checklist.mjs --skip-aab-check       # lewati validasi AAB
+ *   node scripts/fill-release-checklist.mjs --debug                # paksa pilih AAB dari folder debug
  *
  * Validasi AAB (opsional tapi default aktif):
  *   Sebelum mengisi checklist, skrip memeriksa versionCode di dalam AAB
@@ -50,13 +52,14 @@ const inPlace = args.has("--in-place");
 const tagOverride = flag("--tag");
 const outputPath = flag("--output");
 const aabPathFlag = flag("--aab");
-const discovery = aabPathFlag ? null : findLatestAab(ROOT);
+const debugMode = args.has("--debug");
+const discovery = aabPathFlag ? null : findLatestAab(ROOT, debugMode);
 const autoAab = discovery?.winner ?? null;
 const aabPath = aabPathFlag ?? autoAab?.rel ?? "dist/app-release.aab";
 const aabAutoDiscovered = !aabPathFlag && !!autoAab;
 const aabSource = aabPathFlag ? "--aab" : aabAutoDiscovered ? "auto-discover" : "default-fallback";
-const aabReason = buildAabReason({ aabPathFlag, discovery });
-printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab });
+const aabReason = buildAabReason({ aabPathFlag, discovery, debugMode });
+printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab, debugMode });
 const strictAab = args.has("--strict-aab");
 const skipAabCheck = args.has("--skip-aab-check");
 
@@ -210,27 +213,37 @@ function fail(msg) {
 
 // ─── Auto-discover AAB terbaru ───────────────────────────────────────
 /**
- * Mencari file .aab dengan mtime terbaru di folder-folder standar:
+ * Mencari file .aab dengan mtime terbaru di folder-folder standar.
+ *
+ * Mode default (debugMode=false):
  *   - dist/aab/                              (arsip hasil preflight)
  *   - android/app/build/outputs/bundle/release/
+ * Folder debug SENGAJA tidak disertakan agar checklist rilis tidak
+ * tertukar dengan build debug.
+ *
+ * Mode debug (debugMode=true):
  *   - android/app/build/outputs/bundle/debug/
+ *
  * Return { abs, rel, mtimeMs } atau null.
  */
-function findLatestAab(rootAbs) {
+function findLatestAab(rootAbs, debugMode = false) {
   // Urutan folder ini juga menjadi prioritas tie-breaker: jika ada dua
   // .aab dengan mtime persis sama (jarang tapi mungkin di CI), yang di
   // folder lebih atas menang.
-  const dirs = [
+  const releaseDirs = [
     { abs: resolve(rootAbs, "dist/aab"), label: "dist/aab" },
     {
       abs: resolve(rootAbs, "android/app/build/outputs/bundle/release"),
       label: "android/app/build/outputs/bundle/release",
     },
+  ];
+  const debugDirs = [
     {
       abs: resolve(rootAbs, "android/app/build/outputs/bundle/debug"),
       label: "android/app/build/outputs/bundle/debug",
     },
   ];
+  const dirs = debugMode ? debugDirs : releaseDirs;
   const candidates = [];
   const scanned = [];
   let best = null;
@@ -273,30 +286,39 @@ function findLatestAab(rootAbs) {
       }
     }
   }
-  return { winner: best, candidates, scanned };
+  return { winner: best, candidates, scanned, debugMode };
 }
 
-function buildAabReason({ aabPathFlag, discovery }) {
+function buildAabReason({ aabPathFlag, discovery, debugMode }) {
   if (aabPathFlag) return `dipilih eksplisit via --aab ${aabPathFlag}`;
+  if (debugMode) {
+    if (!discovery || !discovery.winner) {
+      return "mode debug aktif; tidak ada .aab di android/app/build/outputs/bundle/debug/";
+    }
+    const w = discovery.winner;
+    const ageMin = ((Date.now() - w.mtimeMs) / 60_000).toFixed(1);
+    return `mode debug aktif; .aab dipilih dari folder debug (${w.rel}, mtime ${ageMin} menit lalu)`;
+  }
   if (!discovery || !discovery.winner) {
     const dirs = discovery?.scanned?.map((s) => `${s.dir}${s.exists ? "" : " (tidak ada)"}`).join(", ");
-    return `tidak ada .aab ditemukan di [${dirs}]; fallback default dist/app-release.aab`;
+    return `tidak ada .aab ditemukan di [${dirs}]; folder debug diabaikan; fallback default dist/app-release.aab`;
   }
   const w = discovery.winner;
   const total = discovery.candidates.length;
   const ageMin = ((Date.now() - w.mtimeMs) / 60_000).toFixed(1);
   if (total === 1) {
-    return `satu-satunya .aab yang ditemukan (di ${w.dir}, mtime ${ageMin} menit lalu)`;
+    return `satu-satunya .aab yang ditemukan (di ${w.dir}, mtime ${ageMin} menit lalu); folder debug diabaikan`;
   }
   const tied = discovery.candidates.filter((c) => c.mtimeMs === w.mtimeMs).length > 1;
   if (tied) {
-    return `${total} kandidat; prioritas folder (${w.dir}) memenangkan tie mtime; mtime ${ageMin} menit lalu`;
+    return `${total} kandidat; prioritas folder (${w.dir}) memenangkan tie mtime; folder debug diabaikan; mtime ${ageMin} menit lalu`;
   }
-  return `mtime terbaru dari ${total} kandidat (${w.dir}, ${ageMin} menit lalu)`;
+  return `mtime terbaru dari ${total} kandidat (${w.dir}, ${ageMin} menit lalu); folder debug diabaikan`;
 }
 
-function printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab }) {
+function printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab, debugMode }) {
   console.log("\n── AAB detection ────────────────────────────────────");
+  console.log(`  mode   : ${debugMode ? "debug (--debug)" : "release"}`);
   console.log(`  path   : ${aabPath}`);
   console.log(`  source : ${aabSource}`);
   console.log(`  reason : ${aabReason}`);
