@@ -188,6 +188,7 @@ jobs:
 
       - name: Upload AAB artifact
         if: always()
+        id: upload_artifact
         uses: actions/upload-artifact@v4
         with:
           name: aab-${{ github.event.inputs.variant || 'full' }}-${{ github.run_number }}
@@ -197,6 +198,30 @@ jobs:
             dist/mapping/*.txt
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Append artifact links to job summary
+        if: always() && steps.upload_artifact.outputs.artifact-url != ''
+        env:
+          ARTIFACT_NAME: aab-${{ github.event.inputs.variant || 'full' }}-${{ github.run_number }}
+          ARTIFACT_URL: ${{ steps.upload_artifact.outputs.artifact-url }}
+          RELEASE_OUTCOME: ${{ steps.release.outcome }}
+        run: |
+          {
+            echo ""
+            echo "---"
+            echo ""
+            echo "### 📦 Artifacts"
+            echo ""
+            echo "| Nama | Link |"
+            echo "| --- | --- |"
+            echo "| \`$ARTIFACT_NAME\` (AAB + mapping.txt) | [Download dari halaman run]($ARTIFACT_URL) |"
+            echo ""
+            echo "_Isi bundle: \`app-release.aab\` (varian aktif) + \`dist/aab/*.aab\` + \`dist/mapping/*.txt\` (ProGuard mapping). Retensi 30 hari._"
+            if [ "$RELEASE_OUTCOME" != "success" ]; then
+              echo ""
+              echo "> ⚠ Release step outcome: \`$RELEASE_OUTCOME\` — artifact mungkin tidak lengkap."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Notify Slack
         if: always() && env.SLACK_WEBHOOK_URL != ''
@@ -209,6 +234,7 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}
           SKIP_VERSION_CHECK: ${{ github.event.inputs.skip_version_check || 'false' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ARTIFACT_URL: ${{ steps.upload_artifact.outputs.artifact-url }}
         run: node scripts/notify-slack-release.mjs
 
       - name: Cleanup sensitive files
