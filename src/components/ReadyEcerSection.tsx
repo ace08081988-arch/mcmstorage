@@ -570,17 +570,6 @@ export function ReadyEcerSection() {
   }, { ok: 0, fallback_grams: 0, fallback_wid: 0, self_only: 0, no_match: 0, no_wid: 0, empty: 0 });
   const visible = rowsAfterView.filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
 
-  function formatRelative(ts: number, now: number): string {
-    const diff = Math.max(0, now - ts);
-    const sec = Math.floor(diff / 1000);
-    if (sec < 10) return "baru saja";
-    if (sec < 60) return `${sec} dtk lalu`;
-    const min = Math.floor(sec / 60);
-    if (min < 60) return `${min} mnt lalu`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr} jam lalu`;
-    return new Date(ts).toLocaleString();
-  }
   function formatAbsolute(ts: number): string {
     return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   }
