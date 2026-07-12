@@ -2364,22 +2364,18 @@ function ChatRoomPage() {
             disabled={chatBlocked}
             onSent={() => { void othersRead.refetch(); }}
           />
-          {/* Slot Voice selalu dirender agar row composer tidak reflow saat mengetik.
-              Saat body berisi / ada pending, slot menjadi invisible (menahan lebar). */}
-          <div
-            className={
-              !body.trim() && pendingProducts.length === 0
-                ? "contents"
-                : "pointer-events-none invisible"
-            }
-            aria-hidden={!(!body.trim() && pendingProducts.length === 0)}
-          >
+          {!body.trim() && pendingProducts.length === 0 ? (
             <VoiceRecorderButton
               conversationId={conversationId}
-              disabled={chatBlocked || !!body.trim() || pendingProducts.length > 0}
+              disabled={chatBlocked}
               onSent={() => { void othersRead.refetch(); }}
             />
-          </div>
+          ) : (
+            // Placeholder menahan lebar slot voice agar row composer tidak
+            // reflow saat user mulai/berhenti mengetik. Ukuran cocok dengan
+            // Button size="icon" (h-9 w-9) di VoiceRecorderButton idle state.
+            <div aria-hidden className="h-9 w-9 shrink-0" />
+          )}
         </div>
         <p className="mt-1 hidden px-1 text-[10px] text-muted-foreground sm:block">
           Enter untuk kirim · Shift+Enter untuk baris baru
