@@ -514,3 +514,15 @@ function writeStepSummary(s) {
     // Jangan bikin process gagal hanya karena summary tidak bisa ditulis.
   }
 }
+
+function writeSummaryJson(s) {
+  const out = process.env.UPLOAD_PLAY_SUMMARY_JSON;
+  if (!out) return;
+  try {
+    const full = resolveHome(out);
+    mkdirSync(dirname(full), { recursive: true });
+    writeFileSync(full, JSON.stringify(s, null, 2), "utf8");
+  } catch {
+    // best-effort — jangan ganggu exit code
+  }
+}
