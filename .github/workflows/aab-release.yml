@@ -63,6 +63,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Early validate Android scaffold
+        run: |
+          if [ ! -d "android" ]; then
+            echo "::error::Folder android/ belum ada. Jalankan 'bunx cap add android' di lokal, commit, dan push ke repo."
+            exit 1
+          fi
+          if [ ! -f "android/app/build.gradle" ]; then
+            echo "::error::android/app/build.gradle tidak ditemukan. Pastikan 'bunx cap add android' berhasil dan file sudah di-commit."
+            exit 1
+          fi
+          echo "✓ Android scaffold ditemukan: android/ dan android/app/build.gradle"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
