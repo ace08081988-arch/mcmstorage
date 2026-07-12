@@ -111,6 +111,13 @@ if (!debugBundle && !skipBump) {
   console.log("  ✓ version di build.gradle sudah maju");
 }
 
+// ─── 1d. Pre-flight minify/proguard/signing ──────────────────────────
+if (!debugBundle) {
+  step("1d/4 Pre-flight release (minify/proguard/signing)");
+  run("node", [resolve(ROOT, "scripts/preflight-release.mjs"), "--variant", variant]);
+  console.log("  ✓ konfigurasi release aman");
+}
+
 // ─── 2. Typecheck ─────────────────────────────────────────────────────
 if (!skipTypecheck) {
   step("2/4  Typecheck (tsgo --noEmit)");
@@ -128,6 +135,12 @@ console.log(`  ✓ dist/ ter-generate & android/ ter-sync (varian ${variant})`);
 // ─── 4. Gradle bundle ─────────────────────────────────────────────────
 step(`4/4  Gradle ${gradleTask}`);
 run(gradlew, [gradleTask], { cwd: ANDROID_DIR });
+
+// ─── Post-build: verifikasi mapping.txt + arsip ─────────────────────
+if (!debugBundle) {
+  step("Post-build  Verifikasi mapping.txt + arsip AAB");
+  run("node", [resolve(ROOT, "scripts/preflight-release.mjs"), "--post", "--variant", variant]);
+}
 
 const aabPath = join(ANDROID_DIR, "app", "build", "outputs", "bundle", outSubdir);
 banner("Selesai");
