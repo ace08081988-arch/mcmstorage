@@ -320,6 +320,75 @@ function extractAliases(text) {
 function truncate(s, n) {
   return s.length <= n ? s : s.slice(0, n) + "\n… (dipotong)";
 }
+
+// ─── Interactive prompt helpers ──────────────────────────────────────
+let __rl;
+function rl() {
+  if (!__rl) __rl = createInterface({ input: process.stdin, output: process.stdout });
+  return __rl;
+}
+function ask(prompt, fallback) {
+  return new Promise((res) =>
+    rl().question(prompt, (a) => res(a.trim() || fallback || "")),
+  );
+}
+function askPassword(prompt) {
+  return new Promise((res) => {
+    const r = rl();
+    const origWrite = r._writeToOutput?.bind(r);
+    if (origWrite) {
+      r._writeToOutput = (s) => {
+        if (s.startsWith(prompt)) origWrite(s);
+        else origWrite("*");
+      };
+    }
+    r.question(prompt, (a) => {
+      if (origWrite) r._writeToOutput = origWrite;
+      process.stdout.write("\n");
+      res(a);
+    });
+  });
+}
+async function askChoice(prompt, options) {
+  console.log(`\n  ${prompt}:`);
+  options.forEach((o, i) => console.log(`     ${i + 1}) ${o}`));
+  while (true) {
+    const ans = (await ask("     Nomor pilihan: ")).trim();
+    const n = Number(ans);
+    if (Number.isInteger(n) && n >= 1 && n <= options.length) return options[n - 1];
+    if (options.includes(ans)) return ans;
+    console.log("     ⚠ pilihan tidak valid.");
+  }
+}
+function fieldsMissing() {
+  const m = [];
+  if (!storeFile) m.push("storeFile");
+  if (!storePassword) m.push("storePassword");
+  if (!keyAlias) m.push("keyAlias");
+  if (!keyPassword) m.push("keyPassword");
+  return m;
+}
+async function promptForMissing() {
+  if (!storeFile) {
+    const def = resolve(homedir(), "keys/mcm-release.keystore");
+    storeFile = resolveHome(await ask(`     Path .keystore [${def}]: `, def));
+  }
+  if (!keyAlias) {
+    keyAlias = await ask("     Alias [mcm]: ", "mcm");
+  }
+  if (!storePassword) {
+    storePassword = await askPassword("     Store password: ");
+  }
+  if (!keyPassword) {
+    const same = (await ask("     Key password sama dengan store password? [Y/n]: ", "Y"))
+      .trim()
+      .toLowerCase();
+    keyPassword =
+      same === "" || same === "y" || same === "yes"
+        ? storePassword
+        : await askPassword("     Key password: ");
+  }
+}
 function banner(msg) {
   const line = "═".repeat(msg.length + 4);
   console.log(`\n${line}\n  ${msg}  \n${line}`);
