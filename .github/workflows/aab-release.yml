@@ -55,6 +55,9 @@ jobs:
       PLAY_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON_B64 }}
       # CI=true → validate-keystore.mjs skip prompt interaktif otomatis.
       CI: "true"
+      # Path tempat scripts/upload-play.mjs menulis ringkasan JSON.
+      # Dipakai step "Notify Slack" di bawah.
+      UPLOAD_PLAY_SUMMARY_JSON: ${{ github.workspace }}/dist/upload-play-summary.json
 
     steps:
       - name: Checkout
@@ -194,6 +197,19 @@ jobs:
             dist/mapping/*.txt
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Notify Slack
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RELEASE_OUTCOME: ${{ steps.release.outcome }}
+          VARIANT: ${{ github.event.inputs.variant || 'full' }}
+          TRACK: ${{ github.event.inputs.track || 'internal' }}
+          RELEASE_STATUS: ${{ github.event.inputs.release_status || 'draft' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}
+          SKIP_VERSION_CHECK: ${{ github.event.inputs.skip_version_check || 'false' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/notify-slack-release.mjs
 
       - name: Cleanup sensitive files
         if: always()
