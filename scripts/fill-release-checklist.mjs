@@ -14,6 +14,8 @@
  *   node scripts/fill-release-checklist.mjs --print
  *   node scripts/fill-release-checklist.mjs --dry-run
  *   node scripts/fill-release-checklist.mjs --aab dist/aab/mcm-full-vc45.aab
+ *   # Tanpa --aab: skrip cari .aab terbaru (mtime) di dist/aab/ &
+ *   # android/app/build/outputs/bundle/{release,debug}/ secara otomatis.
  *   node scripts/fill-release-checklist.mjs --strict-aab           # gagal kalau AAB/bundletool tidak ada
  *   node scripts/fill-release-checklist.mjs --skip-aab-check       # lewati validasi AAB
  *
@@ -24,8 +26,8 @@
  *   Kalau AAB atau bundletool tidak tersedia, defaultnya WARN (skrip
  *   tetap jalan). Pakai --strict-aab untuk fail-fast di CI.
  */
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, writeFileSync, existsSync, statSync, readdirSync } from "node:fs";
+import { resolve, relative } from "node:path";
 import { execSync, spawnSync } from "node:child_process";
 
 const ROOT = resolve(process.cwd());
@@ -47,7 +49,18 @@ const printOnly = args.has("--print");
 const inPlace = args.has("--in-place");
 const tagOverride = flag("--tag");
 const outputPath = flag("--output");
-const aabPath = flag("--aab") ?? "dist/app-release.aab";
+const aabPathFlag = flag("--aab");
+const autoAab = aabPathFlag ? null : findLatestAab(ROOT);
+const aabPath = aabPathFlag ?? autoAab?.rel ?? "dist/app-release.aab";
+const aabAutoDiscovered = !aabPathFlag && !!autoAab;
+if (aabAutoDiscovered) {
+  const ageMin = ((Date.now() - autoAab.mtimeMs) / 60_000).toFixed(1);
+  console.log(`↳ AAB auto-discover: ${autoAab.rel} (mtime ${ageMin} menit lalu)`);
+} else if (!aabPathFlag) {
+  console.log(
+    "↳ AAB auto-discover: tidak ada .aab ditemukan di dist/aab/ atau android/app/build/outputs/bundle/. Fallback: dist/app-release.aab",
+  );
+}
 const strictAab = args.has("--strict-aab");
 const skipAabCheck = args.has("--skip-aab-check");
 
@@ -114,6 +127,7 @@ const plan = {
   dateId,
   dateEn,
   aabPath,
+  aabAutoDiscovered,
   aabCheck,
   output: inPlace
     ? "RELEASE_CHECKLIST.md"
@@ -155,6 +169,7 @@ console.log(`  commit      : ${commit}`);
 console.log(`  tanggal ID  : ${dateId}`);
 console.log(`  tanggal EN  : ${dateEn}`);
 console.log(`  aab path    : ${aabPath}\n`);
+console.log(`  aab source  : ${aabAutoDiscovered ? "auto-discover" : aabPathFlag ? "--aab" : "default fallback"}\n`);
 console.log(`  aab check   : ${aabCheck.status} — ${aabCheck.message}\n`);
 
 process.exit(0);
@@ -191,6 +206,47 @@ function git(args) {
 function fail(msg) {
   console.error(`\n✗ ${msg}\n`);
   process.exit(1);
+}
+
+// ─── Auto-discover AAB terbaru ───────────────────────────────────────
+/**
+ * Mencari file .aab dengan mtime terbaru di folder-folder standar:
+ *   - dist/aab/                              (arsip hasil preflight)
+ *   - android/app/build/outputs/bundle/release/
+ *   - android/app/build/outputs/bundle/debug/
+ * Return { abs, rel, mtimeMs } atau null.
+ */
+function findLatestAab(rootAbs) {
+  const dirs = [
+    resolve(rootAbs, "dist/aab"),
+    resolve(rootAbs, "android/app/build/outputs/bundle/release"),
+    resolve(rootAbs, "android/app/build/outputs/bundle/debug"),
+  ];
+  let best = null;
+  for (const dir of dirs) {
+    if (!existsSync(dir)) continue;
+    let entries;
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const name of entries) {
+      if (!name.toLowerCase().endsWith(".aab")) continue;
+      const abs = resolve(dir, name);
+      let st;
+      try {
+        st = statSync(abs);
+      } catch {
+        continue;
+      }
+      if (!st.isFile()) continue;
+      if (!best || st.mtimeMs > best.mtimeMs) {
+        best = { abs, rel: relative(rootAbs, abs), mtimeMs: st.mtimeMs };
+      }
+    }
+  }
+  return best;
 }
 
 // ─── Validasi AAB ─────────────────────────────────────────────────────
