@@ -38,11 +38,25 @@ function flag(name) {
 const ROOT = resolve(process.cwd());
 const propsPath = resolve(ROOT, flag("--props") ?? "android/keystore.properties");
 
-let storeFile = flag("--store");
-let storePassword = flag("--store-pass");
-let keyAlias = flag("--alias");
-let keyPassword = flag("--key-pass");
-let source = "flags";
+// Prioritas: CLI flag > env var > keystore.properties
+// Env yang diakui:
+//   KEYSTORE_STORE_PASS, KEYSTORE_KEY_PASS
+//   KEYSTORE_FILE (path), KEYSTORE_ALIAS
+let storeFile = flag("--store") ?? process.env.KEYSTORE_FILE;
+let storePassword = flag("--store-pass") ?? process.env.KEYSTORE_STORE_PASS;
+let keyAlias = flag("--alias") ?? process.env.KEYSTORE_ALIAS;
+let keyPassword = flag("--key-pass") ?? process.env.KEYSTORE_KEY_PASS;
+const sources = [];
+if (flag("--store") || flag("--store-pass") || flag("--alias") || flag("--key-pass"))
+  sources.push("CLI flag");
+if (
+  process.env.KEYSTORE_STORE_PASS ||
+  process.env.KEYSTORE_KEY_PASS ||
+  process.env.KEYSTORE_FILE ||
+  process.env.KEYSTORE_ALIAS
+)
+  sources.push("env var");
+let source = sources.join(" + ") || "flags";
 
 banner("Validasi keystore untuk signed release");
 
@@ -64,9 +78,16 @@ step("2/8  Baca kredensial");
 if (!storeFile || !storePassword || !keyAlias || !keyPassword) {
   if (!existsSync(propsPath)) {
     fail(
-      `File ${propsPath} tidak ada dan flag CLI tidak lengkap.\n` +
-        "Buat file itu ATAU jalankan dengan flag lengkap:\n\n" +
-        "  --store <path> --alias <alias> --store-pass <pw> --key-pass <pw>\n",
+      `File ${propsPath} tidak ada dan flag CLI + env var tidak lengkap.\n` +
+        "Suplai kredensial via SALAH SATU cara:\n\n" +
+        "  a) Env var (recommended untuk CI):\n" +
+        "       export KEYSTORE_FILE=/path/ke/.keystore\n" +
+        "       export KEYSTORE_ALIAS=mcm\n" +
+        "       export KEYSTORE_STORE_PASS='…'\n" +
+        "       export KEYSTORE_KEY_PASS='…'\n\n" +
+        "  b) File android/keystore.properties (dari `bun run aab:setup-keystore`).\n\n" +
+        "  c) CLI flag lengkap:\n" +
+        "       --store <path> --alias <alias> --store-pass <pw> --key-pass <pw>\n",
     );
   }
   const parsed = parseProperties(readFileSync(propsPath, "utf8"));
@@ -74,7 +95,7 @@ if (!storeFile || !storePassword || !keyAlias || !keyPassword) {
   storePassword ??= parsed.storePassword;
   keyAlias ??= parsed.keyAlias;
   keyPassword ??= parsed.keyPassword;
-  source = `keystore.properties (${propsPath})`;
+  source = source ? `${source} + keystore.properties` : `keystore.properties (${propsPath})`;
 }
 const missing = [];
 if (!storeFile) missing.push("storeFile");

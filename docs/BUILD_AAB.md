@@ -50,6 +50,25 @@ keyAlias=mcm
 keyPassword=PASSWORD_KEY
 ```
 
+### Alternatif: password lewat environment variable (recommended untuk CI / komputer bersama)
+
+Password bisa ditaruh di env var supaya tidak tersimpan di disk:
+
+```bash
+export KEYSTORE_FILE=~/keys/mcm-release.keystore   # opsional
+export KEYSTORE_ALIAS=mcm                          # opsional
+export KEYSTORE_STORE_PASS='…'
+export KEYSTORE_KEY_PASS='…'
+```
+
+Prioritas resolusi (per-field, dari yang paling menang):
+`CLI flag → env var → android/keystore.properties`.
+
+Gunakan `bun run aab:setup-keystore -- --env-only` untuk generate keystore
+baru **tanpa** menulis password ke `keystore.properties` (file itu hanya
+akan berisi `storeFile` + `keyAlias`; password Anda simpan di shell profile
+atau CI secret store).
+
 ### 3. Wire ke `android/app/build.gradle`
 
 Tambahkan di **atas** `android { ... }`:
