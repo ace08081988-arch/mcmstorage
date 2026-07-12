@@ -73,7 +73,25 @@ jobs:
             echo "::error::android/app/build.gradle tidak ditemukan. Pastikan 'bunx cap add android' berhasil dan file sudah di-commit."
             exit 1
           fi
-          echo "✓ Android scaffold ditemukan: android/ dan android/app/build.gradle"
+          if [ ! -f "android/build.gradle" ]; then
+            echo "::error::android/build.gradle (top-level) tidak ditemukan. Scaffold Capacitor tidak lengkap — jalankan ulang 'bunx cap add android'."
+            exit 1
+          fi
+          if [ ! -f "android/gradle.properties" ]; then
+            echo "::error::android/gradle.properties tidak ditemukan. Scaffold Capacitor tidak lengkap — jalankan ulang 'bunx cap add android'."
+            exit 1
+          fi
+          # Minimal config check: android/build.gradle harus punya buildscript + classpath Android Gradle Plugin.
+          if ! grep -q "com.android.tools.build:gradle" android/build.gradle; then
+            echo "::error::android/build.gradle tidak memuat classpath 'com.android.tools.build:gradle'. File rusak atau bukan hasil scaffold Capacitor yang valid."
+            exit 1
+          fi
+          # Minimal config check: android/gradle.properties harus mengaktifkan AndroidX (wajib untuk Capacitor).
+          if ! grep -q "^android.useAndroidX=true" android/gradle.properties; then
+            echo "::error::android/gradle.properties tidak memuat 'android.useAndroidX=true'. Capacitor wajib pakai AndroidX — perbaiki file lalu commit ulang."
+            exit 1
+          fi
+          echo "✓ Android scaffold lengkap: android/, android/build.gradle, android/gradle.properties, android/app/build.gradle"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
