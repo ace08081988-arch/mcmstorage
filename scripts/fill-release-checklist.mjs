@@ -289,26 +289,34 @@ function findLatestAab(rootAbs, debugMode = false) {
   return { winner: best, candidates, scanned, debugMode };
 }
 
-function buildAabReason({ aabPathFlag, discovery }) {
+function buildAabReason({ aabPathFlag, discovery, debugMode }) {
   if (aabPathFlag) return `dipilih eksplisit via --aab ${aabPathFlag}`;
+  if (debugMode) {
+    if (!discovery || !discovery.winner) {
+      return "mode debug aktif; tidak ada .aab di android/app/build/outputs/bundle/debug/";
+    }
+    const w = discovery.winner;
+    const ageMin = ((Date.now() - w.mtimeMs) / 60_000).toFixed(1);
+    return `mode debug aktif; .aab dipilih dari folder debug (${w.rel}, mtime ${ageMin} menit lalu)`;
+  }
   if (!discovery || !discovery.winner) {
     const dirs = discovery?.scanned?.map((s) => `${s.dir}${s.exists ? "" : " (tidak ada)"}`).join(", ");
-    return `tidak ada .aab ditemukan di [${dirs}]; fallback default dist/app-release.aab`;
+    return `tidak ada .aab ditemukan di [${dirs}]; folder debug diabaikan; fallback default dist/app-release.aab`;
   }
   const w = discovery.winner;
   const total = discovery.candidates.length;
   const ageMin = ((Date.now() - w.mtimeMs) / 60_000).toFixed(1);
   if (total === 1) {
-    return `satu-satunya .aab yang ditemukan (di ${w.dir}, mtime ${ageMin} menit lalu)`;
+    return `satu-satunya .aab yang ditemukan (di ${w.dir}, mtime ${ageMin} menit lalu); folder debug diabaikan`;
   }
   const tied = discovery.candidates.filter((c) => c.mtimeMs === w.mtimeMs).length > 1;
   if (tied) {
-    return `${total} kandidat; prioritas folder (${w.dir}) memenangkan tie mtime; mtime ${ageMin} menit lalu`;
+    return `${total} kandidat; prioritas folder (${w.dir}) memenangkan tie mtime; folder debug diabaikan; mtime ${ageMin} menit lalu`;
   }
-  return `mtime terbaru dari ${total} kandidat (${w.dir}, ${ageMin} menit lalu)`;
+  return `mtime terbaru dari ${total} kandidat (${w.dir}, ${ageMin} menit lalu); folder debug diabaikan`;
 }
 
-function printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab }) {
+function printAabDetection({ aabPath, aabSource, aabReason, discovery, autoAab, debugMode }) {
   console.log("\n── AAB detection ────────────────────────────────────");
   console.log(`  path   : ${aabPath}`);
   console.log(`  source : ${aabSource}`);
