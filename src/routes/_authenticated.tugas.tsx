@@ -120,6 +120,213 @@ function clearCreateDraft() {
   } catch { /* ignore */ }
 }
 
+function fmtDateTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString("id-ID", {
+      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+  } catch { return "—"; }
+}
+
+function TokenStatusPanel({ tasks, loaded }: { tasks: Task[]; loaded: boolean }) {
+  const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<"all" | "valid" | "expired" | "revoked">("all");
+  const now = Date.now();
+
+  type Row = {
+    task: Task;
+    expiresMs: number;
+    isExpired: boolean;
+    isRevoked: boolean;
+    isValid: boolean;
+    pinChanged: boolean;
+  };
+
+  const rows: Row[] = useMemo(() => {
+    return tasks.map((t) => {
+      const expiresMs = t.expires_at ? new Date(t.expires_at).getTime() : 0;
+      const isExpired = expiresMs > 0 && expiresMs < now;
+      const isRevoked = t.status === "revoked" || t.status === "canceled";
+      const isValid = !isExpired && !isRevoked && t.status !== "completed";
+      const createdMs = new Date(t.created_at).getTime();
+      const pinMs = t.pin_updated_at ? new Date(t.pin_updated_at).getTime() : createdMs;
+      const pinChanged = pinMs - createdMs > 2000; // >2s dianggap perubahan nyata
+      return { task: t, expiresMs, isExpired, isRevoked, isValid, pinChanged };
+    });
+  }, [tasks, now]);
+
+  const filtered = useMemo(() => {
+    const ql = q.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (filter === "valid" && !r.isValid) return false;
+      if (filter === "expired" && !r.isExpired) return false;
+      if (filter === "revoked" && !r.isRevoked) return false;
+      if (!ql) return true;
+      return (
+        r.task.title.toLowerCase().includes(ql) ||
+        r.task.share_token.toLowerCase().includes(ql)
+      );
+    }).sort((a, b) => new Date(b.task.created_at).getTime() - new Date(a.task.created_at).getTime());
+  }, [rows, q, filter]);
+
+  const counts = useMemo(() => {
+    let valid = 0, expired = 0, revoked = 0;
+    for (const r of rows) {
+      if (r.isRevoked) revoked++;
+      else if (r.isExpired) expired++;
+      else if (r.isValid) valid++;
+    }
+    return { valid, expired, revoked, total: rows.length };
+  }, [rows]);
+
+  function fmtRelative(iso: string | null | undefined): string {
+    if (!iso) return "—";
+    const ms = new Date(iso).getTime();
+    const diff = ms - Date.now();
+    const abs = Math.abs(diff);
+    const min = Math.round(abs / 60000);
+    const hr = Math.round(abs / 3600000);
+    const day = Math.round(abs / 86400000);
+    const label = day >= 1 ? `${day} hari` : hr >= 1 ? `${hr} jam` : `${min} menit`;
+    return diff >= 0 ? `dalam ${label}` : `${label} lalu`;
+  }
+
+  return (
+    <section aria-labelledby="token-status-heading" className="mt-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border bg-background/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <ShieldCheck className="h-3 w-3 text-primary" /> Admin
+          </div>
+          <h2 id="token-status-heading" className="flex items-center gap-2 text-base font-bold tracking-tight sm:text-lg">
+            <ShieldAlert className="h-5 w-5 text-primary" /> Status Token & PIN Pegawai
+          </h2>
+          <p className="mt-0.5 max-w-xl text-[11px] leading-snug text-muted-foreground">
+            Cek keabsahan link share pegawai + kapan PIN terakhir diubah. Token dianggap valid selama belum kedaluwarsa dan status tugas belum dicabut/selesai.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="rounded-lg border bg-background p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</div>
+          <div className="text-lg font-bold tabular-nums">{counts.total}</div>
+        </div>
+        <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Valid</div>
+          <div className="text-lg font-bold tabular-nums text-emerald-700 dark:text-emerald-400">{counts.valid}</div>
+        </div>
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-400">Kedaluwarsa</div>
+          <div className="text-lg font-bold tabular-nums text-amber-700 dark:text-amber-400">{counts.expired}</div>
+        </div>
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-destructive">Dicabut/Selesai</div>
+          <div className="text-lg font-bold tabular-nums text-destructive">{counts.revoked}</div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Cari judul tugas atau token…"
+            className="h-9 w-full rounded-md border bg-background pl-7 pr-2 text-xs shadow-sm outline-none focus:border-primary"
+            aria-label="Cari status token"
+          />
+        </div>
+        <div role="tablist" aria-label="Filter status" className="inline-flex rounded-md border bg-background p-1 text-[11px] shadow-sm">
+          {([
+            { k: "all", label: "Semua" },
+            { k: "valid", label: "Valid" },
+            { k: "expired", label: "Kedaluwarsa" },
+            { k: "revoked", label: "Dicabut" },
+          ] as const).map((o) => (
+            <button
+              key={o.k}
+              role="tab"
+              aria-selected={filter === o.k}
+              onClick={() => setFilter(o.k)}
+              className={`rounded px-2 py-1 font-semibold transition ${filter === o.k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+            >{o.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {!loaded ? (
+        <div className="mt-4 rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">Memuat…</div>
+      ) : filtered.length === 0 ? (
+        <div className="mt-4 rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
+          {rows.length === 0 ? "Belum ada tugas pegawai." : "Tidak ada tugas yang cocok dengan filter."}
+        </div>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {filtered.map((r) => {
+            const t = r.task;
+            const statusLabel = r.isRevoked
+              ? (t.status === "completed" ? "Selesai" : "Dicabut")
+              : r.isExpired ? "Kedaluwarsa" : "Valid";
+            const statusClass = r.isValid
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+              : r.isExpired
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                : "border-destructive/40 bg-destructive/10 text-destructive";
+            return (
+              <li key={t.id} className="rounded-lg border bg-background p-3 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <div className="truncate text-sm font-semibold" title={t.title}>{t.title}</div>
+                      <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${statusClass}`}>
+                        {r.isValid ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 font-mono text-[10px] text-muted-foreground break-all">
+                      token: {t.share_token}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { void copyText(t.share_token); toast.success("Token disalin"); }}
+                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border bg-background px-2 text-[11px] font-semibold hover:bg-accent"
+                    aria-label="Salin token"
+                  >
+                    <Copy className="h-3 w-3" /> Salin
+                  </button>
+                </div>
+
+                <dl className="mt-2 grid grid-cols-1 gap-x-3 gap-y-1.5 text-[11px] sm:grid-cols-3">
+                  <div>
+                    <dt className="text-muted-foreground">Dibuat</dt>
+                    <dd className="font-medium tabular-nums">{fmtDateTime(t.created_at)}</dd>
+                    <dd className="text-[10px] text-muted-foreground">{fmtRelative(t.created_at)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Kedaluwarsa</dt>
+                    <dd className={`font-medium tabular-nums ${r.isExpired ? "text-amber-700 dark:text-amber-400" : ""}`}>{fmtDateTime(t.expires_at)}</dd>
+                    <dd className="text-[10px] text-muted-foreground">{fmtRelative(t.expires_at)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">PIN diubah</dt>
+                    <dd className="font-medium tabular-nums">{fmtDateTime(t.pin_updated_at ?? t.created_at)}</dd>
+                    <dd className="text-[10px] text-muted-foreground">
+                      {r.pinChanged ? `${fmtRelative(t.pin_updated_at)} (setelah dibuat)` : "Belum pernah diubah"}
+                    </dd>
+                  </div>
+                </dl>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [mode, setMode] = useState<"self" | "staff" | "tokens">("self");
