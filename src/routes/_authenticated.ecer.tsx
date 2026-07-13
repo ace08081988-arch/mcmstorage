@@ -2765,6 +2765,22 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={() => {
+                if (!linkedTask?.share_token) {
+                  toast.warning("Belum ada tugas pegawai terhubung ke judul ini. Buat tugas dulu di halaman Tugas.");
+                  return;
+                }
+                setQrOpen(true);
+              }}
+              aria-label="Tampilkan QR link pegawai"
+              title={linkedTask?.share_token ? "Tampilkan QR link pegawai" : "Belum ada tugas terhubung"}
+              className="text-sky-600 hover:text-sky-700"
+            >
+              <QrCode className="h-3.5 w-3.5" /> QR
+            </Button>
+            <Button
+              size="sm"
               onClick={sendWA}
               disabled={sending}
               aria-label={
