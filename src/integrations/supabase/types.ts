@@ -1990,6 +1990,7 @@ export type Database = {
           note: string | null
           owner_user_id: string
           pin_hash: string
+          pin_updated_at: string
           scheduled_at: string | null
           share_token: string
           status: string
@@ -2007,6 +2008,7 @@ export type Database = {
           note?: string | null
           owner_user_id: string
           pin_hash: string
+          pin_updated_at?: string
           scheduled_at?: string | null
           share_token: string
           status?: string
@@ -2024,6 +2026,7 @@ export type Database = {
           note?: string | null
           owner_user_id?: string
           pin_hash?: string
+          pin_updated_at?: string
           scheduled_at?: string | null
           share_token?: string
           status?: string
