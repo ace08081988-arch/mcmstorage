@@ -48,6 +48,27 @@ const CopyChatApkLinksButton = lazy(() =>
   import("@/components/CopyChatApkLinksButton").then((m) => ({ default: m.CopyChatApkLinksButton })),
 );
 
+// Mark saat modul landing pertama kali dievaluasi (proxy untuk "nav start").
+// Dipakai sebagai anchor untuk mengukur waktu sampai konten inti terlihat.
+perfMark("landing:module-eval");
+
+/**
+ * Sentinel kecil yang di-render di dalam Suspense children.
+ * Effect-nya hanya jalan setelah semua lazy child selesai resolve,
+ * jadi kita bisa memanggilnya sebagai "chunk Lainnya selesai mount".
+ */
+function LainnyaMountSentinel() {
+  useEffect(() => {
+    perfMark("landing:lainnya-mount-end");
+    perfMeasure(
+      "landing:lainnya-mount",
+      "landing:lainnya-mount-start",
+      "landing:lainnya-mount-end",
+    );
+  }, []);
+  return null;
+}
+
 export const Route = createFileRoute("/_authenticated/")({
   beforeLoad: async () => {
     // Mode chat-only via build flag / localStorage override.
