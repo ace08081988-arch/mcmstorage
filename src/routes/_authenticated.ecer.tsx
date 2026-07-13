@@ -2,6 +2,7 @@ import { createFileRoute, useRouter, useNavigate, Link } from "@tanstack/react-r
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "@/lib/ensure-session";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { Button } from "@/components/ui/button";
@@ -4188,9 +4189,9 @@ function NewProductDialog({ onClose, onCreated }: {
       toast.error("Isi/kemasan harus > 0"); return;
     }
     setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    const userId = u.user?.id;
-    if (!userId) { toast.error("Sesi tidak valid"); setBusy(false); return; }
+    let userId: string;
+    try { userId = (await ensureFreshSession()).userId; }
+    catch (e) { toast.error((e as Error).message || "Sesi berakhir. Silakan login ulang."); setBusy(false); return; }
     const { data, error } = await supabase.from("warehouse_items").insert({
       user_id: userId,
       name: name.trim(),

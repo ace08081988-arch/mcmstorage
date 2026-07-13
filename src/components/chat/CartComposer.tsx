@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { encodeCard, type CartCard } from "@/lib/chat-cards";
 import { notifyError } from "@/lib/friendly-error";
+import { ensureFreshSession } from "@/lib/ensure-session";
 import type { Json } from "@/integrations/supabase/types";
 
 type Line = { name: string; qty: string; price: string };
@@ -107,10 +108,11 @@ export function CartComposer({
         .filter(Boolean)
         .join("\n");
 
-      const { data: session } = await supabase.auth.getUser();
-      const senderId = session.user?.id;
-      if (!senderId) {
-        toast.error("Sesi tidak aktif.");
+      let senderId: string;
+      try {
+        senderId = (await ensureFreshSession()).userId;
+      } catch (e) {
+        toast.error((e as Error).message || "Sesi berakhir. Silakan login ulang.");
         return;
       }
 

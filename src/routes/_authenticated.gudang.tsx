@@ -16,6 +16,7 @@ import {
   PackageX,
 } from "lucide-react";
 import { notifyError } from "@/lib/friendly-error";
+import { ensureFreshSession } from "@/lib/ensure-session";
 import { StatusBadge } from "@/components/StatusBadge";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";
@@ -603,7 +604,10 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       if (error) { notifyError(error); return; }
       toast.success("Pelanggan diperbarui");
     } else {
-      const { error } = await supabase.from("customers").insert({ user_id: uid, ...payload });
+      let freshUid: string;
+      try { freshUid = (await ensureFreshSession()).userId; }
+      catch (e) { notifyError(e, { fallback: "Sesi berakhir. Silakan login ulang." }); return; }
+      const { error } = await supabase.from("customers").insert({ user_id: freshUid, ...payload });
       if (error) { notifyError(error); return; }
       toast.success("Pelanggan ditambahkan");
     }
@@ -2408,8 +2412,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (mode === "new") {
       if (!name.trim()) { toast.error("Nama barang wajib"); return; }
       if (packageType !== "pcs" && effectivePkgSize <= 0) { toast.error("Ukuran kemasan harus > 0"); return; }
+      let freshUid: string;
+      try { freshUid = (await ensureFreshSession()).userId; }
+      catch (e) { notifyError(e, { fallback: "Sesi berakhir. Silakan login ulang." }); return; }
       const { data, error } = await supabase.from("warehouse_items").insert({
-        user_id: uid,
+        user_id: freshUid,
         name: name.trim(),
         category: category.trim() || null,
         package_type: packageType,
