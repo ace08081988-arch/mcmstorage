@@ -883,9 +883,22 @@ function Index() {
             )}
           </section>
 
-          {/* Lainnya — dilipat agar tampilan awal hanya inti */}
-          <details className="group rounded-xl border border-[#c9a84c]/15 bg-[#101010] open:border-[#c9a84c]/30">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[12px] font-medium text-[#f5f0e0]/80 [&::-webkit-details-marker]:hidden">
+          {/* Lainnya — dilipat agar tampilan awal hanya inti.
+              onToggle memicu mount pertama kali sehingga chunk lazy baru
+              diunduh saat user benar-benar ingin melihat isinya. */}
+          <details
+            className="group rounded-xl border border-[#c9a84c]/15 bg-[#101010] open:border-[#c9a84c]/30"
+            onToggle={(e) => {
+              if ((e.currentTarget as HTMLDetailsElement).open && !lainnyaMounted) {
+                setLainnyaMounted(true);
+              }
+            }}
+          >
+            <summary
+              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[12px] font-medium text-[#f5f0e0]/80 [&::-webkit-details-marker]:hidden"
+              onPointerEnter={() => setLainnyaMounted(true)}
+              onFocus={() => setLainnyaMounted(true)}
+            >
               <span className="flex items-center gap-2">
                 <span className="h-px w-5 bg-[#c9a84c]/50" />
                 Lainnya
@@ -919,14 +932,28 @@ function Index() {
                     </span>
                   </Link>
                 ))}
-                <DownloadStorageApkShortcut />
-                <DownloadChatApkShortcut />
-                <CopyChatApkLinksButton />
+                {lainnyaMounted && (
+                  <Suspense fallback={null}>
+                    <DownloadStorageApkShortcut />
+                    <DownloadChatApkShortcut />
+                    <CopyChatApkLinksButton />
+                  </Suspense>
+                )}
               </div>
 
-              <ReadyEcerSection />
-              <ReadyRequestSection />
-              <ReadySelfPrepSection />
+              {lainnyaMounted && (
+                <Suspense
+                  fallback={
+                    <div className="rounded-lg border border-[#c9a84c]/10 bg-[#101010] px-3 py-4 text-center text-[11px] text-[#f5f0e0]/40">
+                      Memuat…
+                    </div>
+                  }
+                >
+                  <ReadyEcerSection />
+                  <ReadyRequestSection />
+                  <ReadySelfPrepSection />
+                </Suspense>
+              )}
 
               {(categories.length > 0 || items.length > 0) && (
                 <button
