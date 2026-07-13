@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { isChatOnly } from "@/lib/app-mode";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -25,12 +25,27 @@ import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
-import { ReadyEcerSection } from "@/components/ReadyEcerSection";
-import { ReadyRequestSection } from "@/components/ReadyRequestSection";
-import { ReadySelfPrepSection } from "@/components/ReadySelfPrepSection";
-import { DownloadStorageApkShortcut } from "@/components/DownloadStorageApkShortcut";
-import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
-import { CopyChatApkLinksButton } from "@/components/CopyChatApkLinksButton";
+// Bagian "Lainnya" hanya dipakai setelah user membuka <details>.
+// Dipecah jadi chunk terpisah lewat React.lazy agar landing inti (hero
+// stepper + form kategori) tidak menyeret JS ini di initial bundle.
+const ReadyEcerSection = lazy(() =>
+  import("@/components/ReadyEcerSection").then((m) => ({ default: m.ReadyEcerSection })),
+);
+const ReadyRequestSection = lazy(() =>
+  import("@/components/ReadyRequestSection").then((m) => ({ default: m.ReadyRequestSection })),
+);
+const ReadySelfPrepSection = lazy(() =>
+  import("@/components/ReadySelfPrepSection").then((m) => ({ default: m.ReadySelfPrepSection })),
+);
+const DownloadStorageApkShortcut = lazy(() =>
+  import("@/components/DownloadStorageApkShortcut").then((m) => ({ default: m.DownloadStorageApkShortcut })),
+);
+const DownloadChatApkShortcut = lazy(() =>
+  import("@/components/DownloadChatApkShortcut").then((m) => ({ default: m.DownloadChatApkShortcut })),
+);
+const CopyChatApkLinksButton = lazy(() =>
+  import("@/components/CopyChatApkLinksButton").then((m) => ({ default: m.CopyChatApkLinksButton })),
+);
 
 export const Route = createFileRoute("/_authenticated/")({
   beforeLoad: async () => {
