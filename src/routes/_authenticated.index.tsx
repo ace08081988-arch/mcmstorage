@@ -416,6 +416,17 @@ function Index() {
     }
   });
   const [newCatName, setNewCatName] = useState("");
+  useEffect(() => {
+    if (heroMeasuredRef.current) return;
+    if (!hydrated || activeCat) return;
+    heroMeasuredRef.current = true;
+    perfMark("landing:hero-visible");
+    perfMeasure(
+      "landing:time-to-hero",
+      "landing:module-eval",
+      "landing:hero-visible",
+    );
+  }, [hydrated, activeCat]);
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     const saved = window.localStorage.getItem("mcm_rail_open");
