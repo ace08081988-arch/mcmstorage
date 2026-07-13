@@ -627,6 +627,14 @@ function TugasPage() {
                   <MessageCircle className="h-4 w-4" />
                 </button>
                 <button
+                  onClick={() => setQrFor(t)}
+                  title="Tampilkan QR code link pegawai"
+                  aria-label="Tampilkan QR code link pegawai"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                >
+                  <QrCode className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() => resetPinAttempts(t.share_token, t.title)}
                   title="Reset percobaan PIN (pemilik / admin)"
                   aria-label="Reset percobaan PIN"
