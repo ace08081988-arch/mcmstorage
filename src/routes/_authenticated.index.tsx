@@ -382,6 +382,21 @@ function Index() {
     if (!lainnyaMounted) return;
     perfMark("landing:lainnya-mount-start");
   }, [lainnyaMounted]);
+  // Perf: hero (bagian inti) dianggap "visible" saat data ter-hydrate
+  // dan branch landing (tanpa activeCat) selesai render pertama kali.
+  // useEffect di sini menjamin browser sudah commit DOM-nya.
+  const heroMeasuredRef = useRef(false);
+  useEffect(() => {
+    if (heroMeasuredRef.current) return;
+    if (!hydrated || activeCat) return;
+    heroMeasuredRef.current = true;
+    perfMark("landing:hero-visible");
+    perfMeasure(
+      "landing:time-to-hero",
+      "landing:module-eval",
+      "landing:hero-visible",
+    );
+  }, [hydrated, activeCat]);
   // H11: skip the first save after hydration so mounting the page
   // doesn't upsert identical data back to user_storage.
   const skipNextSaveRef = useRef(false);
