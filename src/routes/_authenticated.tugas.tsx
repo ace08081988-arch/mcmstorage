@@ -1134,9 +1134,15 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     if (error) {
       setBusy(false);
       const msg = String(error.message || "").toLowerCase();
+      if (msg.includes("storage_account_required")) {
+        return toast.error(
+          "Akun ini masih MCM Chat. Upgrade ke MCM Storage dulu untuk membuat tugas penyiapan.",
+          { duration: 6000 },
+        );
+      }
       if (msg.includes("forbidden")) {
         return toast.error(
-          "Akun ini tidak berwenang membuat tugas penyiapan. Login sebagai admin (pemilik) lalu coba lagi.",
+          "Akun ini belum berwenang membuat tugas penyiapan. Pastikan akun sudah MCM Storage lalu coba lagi.",
           { duration: 6000 },
         );
       }
