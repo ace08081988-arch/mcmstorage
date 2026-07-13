@@ -996,6 +996,7 @@ function Index() {
                   <ReadyEcerSection />
                   <ReadyRequestSection />
                   <ReadySelfPrepSection />
+                  <LainnyaMountSentinel />
                 </Suspense>
               )}
 
