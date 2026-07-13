@@ -349,6 +349,10 @@ function Index() {
   };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  // Deferred mount: bagian "Lainnya" baru dimount saat user pertama kali
+  // membuka <details>. Chunk lazy di atas juga baru di-fetch pada momen
+  // ini, sehingga landing inti tidak terkena biaya JS-nya.
+  const [lainnyaMounted, setLainnyaMounted] = useState(false);
   // H11: skip the first save after hydration so mounting the page
   // doesn't upsert identical data back to user_storage.
   const skipNextSaveRef = useRef(false);
