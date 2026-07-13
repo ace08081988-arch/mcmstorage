@@ -22,6 +22,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Deep link: buka aplikasi lewat scheme biz.mcmstorage.app -->
+            <!-- Contoh: biz.mcmstorage.app://t/<share_token>?p=<pin> -->
+            <intent-filter android:label="MCM Storage Deep Link">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="biz.mcmstorage.app" />
+            </intent-filter>
+
+            <!-- Android App Link: link https://mcmstorage.biz/t/... otomatis
+                 dibuka di aplikasi bila terinstall. autoVerify membutuhkan
+                 file assetlinks.json di host mcmstorage.biz. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mcmstorage.biz" android:pathPrefix="/t/" />
+                <data android:scheme="https" android:host="www.mcmstorage.biz" android:pathPrefix="/t/" />
+            </intent-filter>
+
         </activity>
 
         <provider
