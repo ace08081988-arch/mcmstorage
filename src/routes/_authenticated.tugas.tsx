@@ -122,7 +122,7 @@ function clearCreateDraft() {
 
 function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
-  const [mode, setMode] = useState<"self" | "staff">("self");
+  const [mode, setMode] = useState<"self" | "staff" | "tokens">("self");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
