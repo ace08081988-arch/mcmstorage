@@ -9,7 +9,9 @@
 // /t/<share_token>#p=<pin> — route worker portal sudah menangani
 // pengisian PIN otomatis dari fragment tersebut.
 
-import type { Router } from "@tanstack/react-router";
+type DeepLinkRouter = {
+  navigate: (opts: { to: string; hash?: string }) => unknown;
+};
 
 function extractPin(u: URL): string | null {
   // Prioritas 1: query ?p=1234 (mudah diteruskan lewat scanner/OS).
@@ -47,7 +49,7 @@ export function parseDeepLink(rawUrl: string): { token: string; pin: string | nu
   }
 }
 
-export async function startDeepLinkListener(router: Router<never, never, never, never, never>) {
+export async function startDeepLinkListener(router: DeepLinkRouter) {
   if (typeof window === "undefined") return;
   let App: typeof import("@capacitor/app").App | null = null;
   try {
