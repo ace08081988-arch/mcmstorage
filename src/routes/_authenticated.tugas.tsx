@@ -5,12 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
 import { fmtItemQty } from "@/lib/stock-format";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown, RotateCcw, ListTodo, Clock, PlayCircle, Timer, Flame, CalendarClock, Users } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown, RotateCcw, ListTodo, Clock, PlayCircle, Timer, Flame, CalendarClock, Users, QrCode } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
 import { StaffContactsPanel } from "@/components/StaffContactsPanel";
 import { SharePinDialog } from "@/components/tugas/SharePinDialog";
+import { TaskQrCode } from "@/components/TaskQrCode";
 import { deriveTaskShortStatus, type TaskShortStatus } from "@/lib/prep-status";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
@@ -150,6 +151,7 @@ function TugasPage() {
   const [openAudit, setOpenAudit] = useState(false);
   const [pinAlerts, setPinAlerts] = useState<PinAlert[]>([]);
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
+  const [qrFor, setQrFor] = useState<Task | null>(null);
   const [progress, setProgress] = useState<Record<string, { items: number; submitted: number; approved: number }>>({});
   const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
   const [taskSearch, setTaskSearch] = useState("");
