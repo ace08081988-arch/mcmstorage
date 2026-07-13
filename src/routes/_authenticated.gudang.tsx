@@ -604,7 +604,10 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       if (error) { notifyError(error); return; }
       toast.success("Pelanggan diperbarui");
     } else {
-      const { error } = await supabase.from("customers").insert({ user_id: uid, ...payload });
+      let freshUid: string;
+      try { freshUid = (await ensureFreshSession()).userId; }
+      catch (e) { notifyError(e, { fallback: "Sesi berakhir. Silakan login ulang." }); return; }
+      const { error } = await supabase.from("customers").insert({ user_id: freshUid, ...payload });
       if (error) { notifyError(error); return; }
       toast.success("Pelanggan ditambahkan");
     }
