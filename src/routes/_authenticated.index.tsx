@@ -720,39 +720,39 @@ function Index() {
 
   if (!activeCat) {
     return (
-      <div className="min-h-screen bg-[#0d0d0d] text-[#f5f0e0]">
-        {/* Ambient gold glow */}
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Ambient accent glow — mengikuti warna primary tema aktif */}
         <div
           aria-hidden
           className="pointer-events-none fixed inset-x-0 top-0 -z-0 h-64 opacity-70"
           style={{
             background:
-              "radial-gradient(60% 100% at 50% 0%, rgba(201,168,76,0.18) 0%, rgba(201,168,76,0.06) 40%, transparent 75%)",
+              "radial-gradient(60% 100% at 50% 0%, color-mix(in oklab, var(--primary) 18%, transparent) 0%, color-mix(in oklab, var(--primary) 6%, transparent) 40%, transparent 75%)",
           }}
         />
 
-        <header className="relative border-b border-[#c9a84c]/15 bg-[#0d0d0d]/80 backdrop-blur">
+        <header className="relative border-b border-primary/15 bg-background/80 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 sm:px-6">
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
               <span
                 aria-hidden
-                className="grid h-8 w-8 place-items-center rounded-full border border-[#c9a84c]/60 bg-[#1a1a1a] text-[13px] font-semibold tracking-wider text-[#c9a84c] shadow-[0_0_18px_rgba(201,168,76,0.25)]"
+                className="grid h-8 w-8 place-items-center rounded-full border border-primary/60 bg-card text-[13px] font-semibold tracking-wider text-primary shadow-[0_0_18px_color-mix(in_oklab,var(--primary)_25%,transparent)]"
               >
                 M
               </span>
               <div className="min-w-0 leading-tight">
-                <p className="truncate text-[15px] font-semibold tracking-tight text-[#f0d78c]">
+                <p className="truncate text-[15px] font-semibold tracking-tight text-foreground">
                   MCM Storage
                 </p>
-                <p className="truncate text-[10px] uppercase tracking-[0.18em] text-[#c9a84c]/70">
+                <p className="truncate text-[10px] uppercase tracking-[0.18em] text-primary/70">
                   Retail Operations · Premium
                 </p>
               </div>
             </div>
-            {lockMenu(true, "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#c9a84c]/25 bg-[#141414] text-[#f0d78c] hover:border-[#c9a84c]/60")}
+            {lockMenu(true, "inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/25 bg-card text-foreground hover:border-primary/60")}
             <button
               onClick={signOut}
-              className="inline-flex h-8 items-center justify-center rounded-full border border-[#c9a84c]/25 bg-[#141414] px-3 text-[11px] font-medium text-[#f0d78c] hover:border-[#c9a84c]/60"
+              className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-3 text-[11px] font-medium text-foreground hover:border-primary/60"
             >
               Keluar
             </button>
@@ -762,17 +762,17 @@ function Index() {
         <main className="relative mx-auto w-full max-w-md space-y-6 px-4 pt-6 pb-10 sm:max-w-2xl sm:px-6">
           {/* Hero: alur kerja aplikasi */}
           <section
-            className="relative overflow-hidden rounded-2xl border border-[#c9a84c]/20 bg-gradient-to-b from-[#161616] to-[#0f0f0f] p-5 shadow-[0_20px_60px_-30px_rgba(201,168,76,0.35)]"
+            className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-background p-5 shadow-[0_20px_60px_-30px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
           >
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-[#c9a84c]/80">
-              <span className="h-px w-6 bg-[#c9a84c]/60" />
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-primary/80">
+              <span className="h-px w-6 bg-primary/60" />
               Alur Kerja
             </div>
-            <h1 className="mt-2 text-[22px] font-semibold leading-tight tracking-tight text-[#f5f0e0]">
-              Dari <span className="text-[#c9a84c]">stok</span> ke tangan pelanggan —
+            <h1 className="mt-2 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+              Dari <span className="text-primary">stok</span> ke tangan pelanggan —
               satu alur, tanpa kebocoran.
             </h1>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-[#f5f0e0]/60">
+            <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
               Empat langkah inti yang menjalankan MCM Storage setiap hari.
             </p>
 
@@ -787,22 +787,22 @@ function Index() {
                   <Link
                     to={step.to}
                     preload="intent"
-                    className="group flex items-center gap-3 rounded-xl border border-[#c9a84c]/15 bg-[#121212] px-3 py-3 transition-colors hover:border-[#c9a84c]/50 hover:bg-[#161616]"
+                    className="group flex items-center gap-3 rounded-xl border border-primary/15 bg-card px-3 py-3 transition-colors hover:border-primary/50 hover:bg-accent"
                   >
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#c9a84c]/40 bg-[#0d0d0d] font-serif text-[13px] tracking-wider text-[#c9a84c]">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/40 bg-background font-serif text-[13px] tracking-wider text-primary">
                       {step.n}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] font-semibold text-[#f5f0e0]">
+                      <span className="block text-[13px] font-semibold text-foreground">
                         {step.t}
                       </span>
-                      <span className="block truncate text-[11px] text-[#f5f0e0]/55">
+                      <span className="block truncate text-[11px] text-muted-foreground">
                         {step.d}
                       </span>
                     </span>
                     <span
                       aria-hidden
-                      className="text-[#c9a84c]/50 transition-transform group-hover:translate-x-0.5 group-hover:text-[#c9a84c]"
+                      className="text-primary/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
                     >
                       →
                     </span>
@@ -814,8 +814,8 @@ function Index() {
 
           {/* CTA inti: kategori */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-[#c9a84c]/70">
-              <span className="h-px w-6 bg-[#c9a84c]/50" />
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-primary/70">
+              <span className="h-px w-6 bg-primary/50" />
               {categories.length === 0 ? "Mulai" : "Kategori"}
             </div>
             <form
@@ -823,9 +823,9 @@ function Index() {
                 e.preventDefault();
                 addCategory(newCatName);
               }}
-              className="rounded-xl border border-[#c9a84c]/20 bg-[#111111] p-3"
+              className="rounded-xl border border-primary/20 bg-card p-3"
             >
-              <label className="mb-1.5 block text-[11px] font-medium text-[#f5f0e0]/70">
+              <label className="mb-1.5 block text-[11px] font-medium text-muted-foreground">
                 {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori"}
               </label>
               <div className="flex gap-2">
@@ -833,11 +833,11 @@ function Index() {
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   placeholder="Sembako, Pakaian, 1 gram…"
-                  className="w-full rounded-md border border-[#c9a84c]/20 bg-[#0d0d0d] px-2.5 py-2 text-[13px] text-[#f5f0e0] placeholder:text-[#f5f0e0]/30 outline-none focus:border-[#c9a84c]/60 focus:ring-1 focus:ring-[#c9a84c]/40"
+                  className="w-full rounded-md border border-primary/20 bg-background px-2.5 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
                 />
                 <button
                   type="submit"
-                  className="shrink-0 rounded-md bg-gradient-to-b from-[#e6c26a] to-[#c9a84c] px-4 text-[12px] font-semibold text-[#1a1a1a] shadow-[0_4px_14px_-4px_rgba(201,168,76,0.6)] hover:from-[#f0d78c] hover:to-[#c9a84c]"
+                  className="shrink-0 rounded-md bg-primary px-4 text-[12px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:bg-primary/90"
                 >
                   Buat
                 </button>
@@ -851,26 +851,26 @@ function Index() {
                   return (
                     <li
                       key={c}
-                      className="flex items-center gap-2 rounded-xl border border-[#c9a84c]/15 bg-[#111111] px-3 py-2.5 transition-colors hover:border-[#c9a84c]/40"
+                      className="flex items-center gap-2 rounded-xl border border-primary/15 bg-card px-3 py-2.5 transition-colors hover:border-primary/40"
                     >
                       <button
                         onClick={() => setActiveCat(c)}
                         className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                       >
-                        <span className="inline-flex shrink-0 items-center rounded border border-[#c9a84c]/40 bg-[#0d0d0d] px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-[#c9a84c]">
+                        <span className="inline-flex shrink-0 items-center rounded border border-primary/40 bg-background px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary">
                           {tagFor(c)}
                         </span>
-                        <span className="truncate text-[13px] font-medium text-[#f5f0e0]">
+                        <span className="truncate text-[13px] font-medium text-foreground">
                           {c}
                         </span>
-                        <span className="ml-auto shrink-0 text-[10px] text-[#f5f0e0]/40">
+                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                           {count} pesanan
                         </span>
                       </button>
                       <button
                         onClick={() => deleteCategory(c)}
                         disabled={categories.length <= 1}
-                        className="shrink-0 rounded-md border border-rose-500/30 px-2 py-1 text-[10px] font-medium text-rose-400 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-30"
+                        className="shrink-0 rounded-md border border-destructive/30 px-2 py-1 text-[10px] font-medium text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30"
                         title={categories.length <= 1 ? "Minimal harus ada 1 kategori" : `Hapus kategori ${c}`}
                         aria-label={`Hapus kategori ${c}`}
                       >
@@ -887,7 +887,7 @@ function Index() {
               onToggle memicu mount pertama kali sehingga chunk lazy baru
               diunduh saat user benar-benar ingin melihat isinya. */}
           <details
-            className="group rounded-xl border border-[#c9a84c]/15 bg-[#101010] open:border-[#c9a84c]/30"
+            className="group rounded-xl border border-primary/15 bg-card open:border-primary/30"
             onToggle={(e) => {
               if ((e.currentTarget as HTMLDetailsElement).open && !lainnyaMounted) {
                 setLainnyaMounted(true);
@@ -895,19 +895,19 @@ function Index() {
             }}
           >
             <summary
-              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[12px] font-medium text-[#f5f0e0]/80 [&::-webkit-details-marker]:hidden"
+              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[12px] font-medium text-foreground/80 [&::-webkit-details-marker]:hidden"
               onPointerEnter={() => setLainnyaMounted(true)}
               onFocus={() => setLainnyaMounted(true)}
             >
               <span className="flex items-center gap-2">
-                <span className="h-px w-5 bg-[#c9a84c]/50" />
+                <span className="h-px w-5 bg-primary/50" />
                 Lainnya
               </span>
-              <span className="text-[#c9a84c]/70 transition-transform group-open:rotate-180">
+              <span className="text-primary/70 transition-transform group-open:rotate-180">
                 ⌄
               </span>
             </summary>
-            <div className="space-y-4 border-t border-[#c9a84c]/10 p-4">
+            <div className="space-y-4 border-t border-primary/10 p-4">
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
@@ -921,13 +921,13 @@ function Index() {
                     key={s.to}
                     to={s.to}
                     preload="intent"
-                    className="flex flex-col gap-0.5 rounded-lg border border-[#c9a84c]/15 bg-[#121212] px-3 py-2.5 text-left hover:border-[#c9a84c]/40 hover:bg-[#161616]"
+                    className="flex flex-col gap-0.5 rounded-lg border border-primary/15 bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
                   >
                     <span className="text-base leading-none">{s.emoji}</span>
-                    <span className="mt-1 text-[11px] font-semibold leading-tight text-[#f5f0e0]">
+                    <span className="mt-1 text-[11px] font-semibold leading-tight text-foreground">
                       {s.label}
                     </span>
-                    <span className="text-[10px] leading-tight text-[#f5f0e0]/45">
+                    <span className="text-[10px] leading-tight text-muted-foreground">
                       {s.desc}
                     </span>
                   </Link>
@@ -944,7 +944,7 @@ function Index() {
               {lainnyaMounted && (
                 <Suspense
                   fallback={
-                    <div className="rounded-lg border border-[#c9a84c]/10 bg-[#101010] px-3 py-4 text-center text-[11px] text-[#f5f0e0]/40">
+                    <div className="rounded-lg border border-primary/10 bg-card px-3 py-4 text-center text-[11px] text-muted-foreground">
                       Memuat…
                     </div>
                   }
@@ -958,7 +958,7 @@ function Index() {
               {(categories.length > 0 || items.length > 0) && (
                 <button
                   onClick={resetAllData}
-                  className="w-full rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-[11px] font-semibold text-rose-400 hover:bg-rose-500/10"
+                  className="w-full rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] font-semibold text-destructive hover:bg-destructive/10"
                 >
                   🗑 Reset semua data saya
                 </button>
@@ -966,7 +966,7 @@ function Index() {
             </div>
           </details>
 
-          <p className="pt-2 text-center text-[10px] tracking-[0.2em] text-[#c9a84c]/40 uppercase">
+          <p className="pt-2 text-center text-[10px] tracking-[0.2em] text-primary/40 uppercase">
             · MCM · Barokah Rizki ·
           </p>
         </main>
