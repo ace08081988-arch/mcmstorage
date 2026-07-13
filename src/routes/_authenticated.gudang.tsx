@@ -16,6 +16,7 @@ import {
   PackageX,
 } from "lucide-react";
 import { notifyError } from "@/lib/friendly-error";
+import { ensureFreshSession } from "@/lib/ensure-session";
 import { StatusBadge } from "@/components/StatusBadge";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";
