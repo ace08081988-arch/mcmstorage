@@ -2,6 +2,7 @@ import { createFileRoute, useRouter, useNavigate, Link } from "@tanstack/react-r
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "@/lib/ensure-session";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { Button } from "@/components/ui/button";
