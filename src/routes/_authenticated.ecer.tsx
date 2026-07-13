@@ -2176,6 +2176,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [waSendingId, setWaSendingId] = useState<string | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
   const [chatPickShot, setChatPickShot] = useState<WorkerShot | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
   // SSOT Riwayat Terkirim: begitu folder pegawai ditandai terkirim (WA
   // atau Chat) lewat markSent, ia hilang dari grid aktif di section ini
   // dan pindah ke tab "Riwayat Terkirim" di ReadyEcerSection.
@@ -2764,6 +2765,22 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={() => {
+                if (!linkedTask?.share_token) {
+                  toast.warning("Belum ada tugas pegawai terhubung ke judul ini. Buat tugas dulu di halaman Tugas.");
+                  return;
+                }
+                setQrOpen(true);
+              }}
+              aria-label="Tampilkan QR link pegawai"
+              title={linkedTask?.share_token ? "Tampilkan QR link pegawai" : "Belum ada tugas terhubung"}
+              className="text-sky-600 hover:text-sky-700"
+            >
+              <QrCode className="h-3.5 w-3.5" /> QR
+            </Button>
+            <Button
+              size="sm"
               onClick={sendWA}
               disabled={sending}
               aria-label={
@@ -3090,6 +3107,40 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               {previewReq?.confirmText ?? "Kirim"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="truncate">QR link pegawai — {title.name}</DialogTitle>
+            <DialogDescription>
+              Pindai dari perangkat lain untuk membuka portal penyiapan. PIN diketik manual saat halaman terbuka.
+            </DialogDescription>
+          </DialogHeader>
+          {linkedTask?.share_token ? (
+            <div className="space-y-3">
+              <TaskQrCode
+                url={publicTaskUrl(linkedTask.share_token)}
+                title={`Penyiapan ${title.name}`}
+              />
+              <div>
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
+                <div className="mt-1 break-all rounded-md border bg-muted/40 p-2 text-[11px] font-mono">
+                  {publicTaskUrl(linkedTask.share_token)}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={async () => {
+                  await copyUrlWithToast(publicTaskUrl(linkedTask.share_token), "Link pegawai disalin");
+                }}
+              >
+                <Link2 className="mr-1 h-3.5 w-3.5" /> Salin link
+              </Button>
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </Card>
