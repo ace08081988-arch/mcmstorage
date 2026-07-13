@@ -375,6 +375,13 @@ function Index() {
   // membuka <details>. Chunk lazy di atas juga baru di-fetch pada momen
   // ini, sehingga landing inti tidak terkena biaya JS-nya.
   const [lainnyaMounted, setLainnyaMounted] = useState(false);
+  // Perf: catat momen user pertama kali men-trigger mount "Lainnya"
+  // (hover/focus/toggle). Pasangannya di-mark oleh <LainnyaMountSentinel/>
+  // di dalam Suspense children, sehingga durasinya = fetch chunk + render.
+  useEffect(() => {
+    if (!lainnyaMounted) return;
+    perfMark("landing:lainnya-mount-start");
+  }, [lainnyaMounted]);
   // H11: skip the first save after hydration so mounting the page
   // doesn't upsert identical data back to user_storage.
   const skipNextSaveRef = useRef(false);
