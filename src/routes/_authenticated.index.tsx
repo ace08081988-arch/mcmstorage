@@ -13,6 +13,7 @@ import {
   type LockConfig,
 } from "@/lib/app-lock";
 import { AppLockSetup } from "@/components/AppLockSetup";
+import { perfMark, perfMeasure } from "@/lib/perf-log";
 import {
   DropdownMenu,
   DropdownMenuContent,
