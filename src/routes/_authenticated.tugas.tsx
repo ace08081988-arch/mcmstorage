@@ -393,10 +393,18 @@ function TugasPage() {
           onClick={() => setMode("staff")}
           className={`rounded-md px-3 py-1.5 font-semibold transition ${mode === "staff" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
         >Via Pegawai</button>
+        <button
+          role="tab"
+          aria-selected={mode === "tokens"}
+          onClick={() => setMode("tokens")}
+          className={`rounded-md px-3 py-1.5 font-semibold transition ${mode === "tokens" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+        >Status Token & PIN</button>
       </div>
 
       {mode === "self" ? (
         <SiapkanSendiriSection uid={uid} />
+      ) : mode === "tokens" ? (
+        <TokenStatusPanel tasks={tasks} loaded={tasksLoaded} />
       ) : (
         ViaPegawaiBlock()
       )}
