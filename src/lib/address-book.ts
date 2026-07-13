@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "./ensure-session";
 import type { ImportedContact } from "./device-contacts";
 
 export type AddressBookRow = {
