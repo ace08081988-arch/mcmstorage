@@ -221,9 +221,7 @@ export async function applyProfileMatches(
 }
 
 export async function promoteToCustomer(row: AddressBookRow): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth.user?.id;
-  if (!uid) throw new Error("Tidak ada sesi pengguna.");
+  const { userId: uid } = await ensureFreshSession();
   const { error } = await supabase.from("customers").insert({
     user_id: uid,
     name: row.name,
@@ -234,9 +232,7 @@ export async function promoteToCustomer(row: AddressBookRow): Promise<void> {
 }
 
 export async function promoteToSupplier(row: AddressBookRow): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth.user?.id;
-  if (!uid) throw new Error("Tidak ada sesi pengguna.");
+  const { userId: uid } = await ensureFreshSession();
   const { error } = await supabase.from("suppliers").insert({
     user_id: uid,
     name: row.name,
