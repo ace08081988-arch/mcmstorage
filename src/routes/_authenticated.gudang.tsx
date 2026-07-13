@@ -2412,8 +2412,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (mode === "new") {
       if (!name.trim()) { toast.error("Nama barang wajib"); return; }
       if (packageType !== "pcs" && effectivePkgSize <= 0) { toast.error("Ukuran kemasan harus > 0"); return; }
+      let freshUid: string;
+      try { freshUid = (await ensureFreshSession()).userId; }
+      catch (e) { notifyError(e, { fallback: "Sesi berakhir. Silakan login ulang." }); return; }
       const { data, error } = await supabase.from("warehouse_items").insert({
-        user_id: uid,
+        user_id: freshUid,
         name: name.trim(),
         category: category.trim() || null,
         package_type: packageType,
