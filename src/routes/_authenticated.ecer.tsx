@@ -3109,6 +3109,40 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="truncate">QR link pegawai — {title.name}</DialogTitle>
+            <DialogDescription>
+              Pindai dari perangkat lain untuk membuka portal penyiapan. PIN diketik manual saat halaman terbuka.
+            </DialogDescription>
+          </DialogHeader>
+          {linkedTask?.share_token ? (
+            <div className="space-y-3">
+              <TaskQrCode
+                url={publicTaskUrl(linkedTask.share_token)}
+                title={`Penyiapan ${title.name}`}
+              />
+              <div>
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
+                <div className="mt-1 break-all rounded-md border bg-muted/40 p-2 text-[11px] font-mono">
+                  {publicTaskUrl(linkedTask.share_token)}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={async () => {
+                  await copyUrlWithToast(publicTaskUrl(linkedTask.share_token), "Link pegawai disalin");
+                }}
+              >
+                <Link2 className="mr-1 h-3.5 w-3.5" /> Salin link
+              </Button>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
