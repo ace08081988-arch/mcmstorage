@@ -284,6 +284,11 @@ function RootComponent() {
         },
       }).catch((e) => console.warn("[native-push]", e));
     }).catch(() => {});
+    // Deep link native (scheme biz.mcmstorage.app + App Link mcmstorage.biz/t/*)
+    import("@/lib/native-deeplink").then(({ startDeepLinkListener }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      startDeepLinkListener(router as any).catch((e) => console.warn("[deeplink]", e));
+    }).catch(() => {});
     applyCompactMode();
     applyReduceMotion();
     // Terapkan preferensi aksesibilitas (font scale, high contrast, reduce
