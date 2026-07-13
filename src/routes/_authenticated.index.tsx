@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { isChatOnly } from "@/lib/app-mode";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -25,12 +25,27 @@ import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
-import { ReadyEcerSection } from "@/components/ReadyEcerSection";
-import { ReadyRequestSection } from "@/components/ReadyRequestSection";
-import { ReadySelfPrepSection } from "@/components/ReadySelfPrepSection";
-import { DownloadStorageApkShortcut } from "@/components/DownloadStorageApkShortcut";
-import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
-import { CopyChatApkLinksButton } from "@/components/CopyChatApkLinksButton";
+// Bagian "Lainnya" hanya dipakai setelah user membuka <details>.
+// Dipecah jadi chunk terpisah lewat React.lazy agar landing inti (hero
+// stepper + form kategori) tidak menyeret JS ini di initial bundle.
+const ReadyEcerSection = lazy(() =>
+  import("@/components/ReadyEcerSection").then((m) => ({ default: m.ReadyEcerSection })),
+);
+const ReadyRequestSection = lazy(() =>
+  import("@/components/ReadyRequestSection").then((m) => ({ default: m.ReadyRequestSection })),
+);
+const ReadySelfPrepSection = lazy(() =>
+  import("@/components/ReadySelfPrepSection").then((m) => ({ default: m.ReadySelfPrepSection })),
+);
+const DownloadStorageApkShortcut = lazy(() =>
+  import("@/components/DownloadStorageApkShortcut").then((m) => ({ default: m.DownloadStorageApkShortcut })),
+);
+const DownloadChatApkShortcut = lazy(() =>
+  import("@/components/DownloadChatApkShortcut").then((m) => ({ default: m.DownloadChatApkShortcut })),
+);
+const CopyChatApkLinksButton = lazy(() =>
+  import("@/components/CopyChatApkLinksButton").then((m) => ({ default: m.CopyChatApkLinksButton })),
+);
 
 export const Route = createFileRoute("/_authenticated/")({
   beforeLoad: async () => {
@@ -334,6 +349,10 @@ function Index() {
   };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  // Deferred mount: bagian "Lainnya" baru dimount saat user pertama kali
+  // membuka <details>. Chunk lazy di atas juga baru di-fetch pada momen
+  // ini, sehingga landing inti tidak terkena biaya JS-nya.
+  const [lainnyaMounted, setLainnyaMounted] = useState(false);
   // H11: skip the first save after hydration so mounting the page
   // doesn't upsert identical data back to user_storage.
   const skipNextSaveRef = useRef(false);
@@ -864,9 +883,22 @@ function Index() {
             )}
           </section>
 
-          {/* Lainnya — dilipat agar tampilan awal hanya inti */}
-          <details className="group rounded-xl border border-[#c9a84c]/15 bg-[#101010] open:border-[#c9a84c]/30">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[12px] font-medium text-[#f5f0e0]/80 [&::-webkit-details-marker]:hidden">
+          {/* Lainnya — dilipat agar tampilan awal hanya inti.
+              onToggle memicu mount pertama kali sehingga chunk lazy baru
+              diunduh saat user benar-benar ingin melihat isinya. */}
+          <details
+            className="group rounded-xl border border-[#c9a84c]/15 bg-[#101010] open:border-[#c9a84c]/30"
+            onToggle={(e) => {
+              if ((e.currentTarget as HTMLDetailsElement).open && !lainnyaMounted) {
+                setLainnyaMounted(true);
+              }
+            }}
+          >
+            <summary
+              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[12px] font-medium text-[#f5f0e0]/80 [&::-webkit-details-marker]:hidden"
+              onPointerEnter={() => setLainnyaMounted(true)}
+              onFocus={() => setLainnyaMounted(true)}
+            >
               <span className="flex items-center gap-2">
                 <span className="h-px w-5 bg-[#c9a84c]/50" />
                 Lainnya
@@ -900,14 +932,28 @@ function Index() {
                     </span>
                   </Link>
                 ))}
-                <DownloadStorageApkShortcut />
-                <DownloadChatApkShortcut />
-                <CopyChatApkLinksButton />
+                {lainnyaMounted && (
+                  <Suspense fallback={null}>
+                    <DownloadStorageApkShortcut />
+                    <DownloadChatApkShortcut />
+                    <CopyChatApkLinksButton />
+                  </Suspense>
+                )}
               </div>
 
-              <ReadyEcerSection />
-              <ReadyRequestSection />
-              <ReadySelfPrepSection />
+              {lainnyaMounted && (
+                <Suspense
+                  fallback={
+                    <div className="rounded-lg border border-[#c9a84c]/10 bg-[#101010] px-3 py-4 text-center text-[11px] text-[#f5f0e0]/40">
+                      Memuat…
+                    </div>
+                  }
+                >
+                  <ReadyEcerSection />
+                  <ReadyRequestSection />
+                  <ReadySelfPrepSection />
+                </Suspense>
+              )}
 
               {(categories.length > 0 || items.length > 0) && (
                 <button
