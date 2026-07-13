@@ -701,85 +701,157 @@ function Index() {
 
   if (!activeCat) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card/95">
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-3 sm:px-6">
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold tracking-tight">
-                Pilih Kategori — MCM Storage
-              </h1>
-              <p className="text-[11px] text-muted-foreground">
-                Buat atau pilih kategori dulu sebelum masuk ke penyimpanan.
-              </p>
+      <div className="min-h-screen bg-[#0d0d0d] text-[#f5f0e0]">
+        {/* Ambient gold glow */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 top-0 -z-0 h-64 opacity-70"
+          style={{
+            background:
+              "radial-gradient(60% 100% at 50% 0%, rgba(201,168,76,0.18) 0%, rgba(201,168,76,0.06) 40%, transparent 75%)",
+          }}
+        />
+
+        <header className="relative border-b border-[#c9a84c]/15 bg-[#0d0d0d]/80 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 sm:px-6">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <span
+                aria-hidden
+                className="grid h-8 w-8 place-items-center rounded-full border border-[#c9a84c]/60 bg-[#1a1a1a] text-[13px] font-semibold tracking-wider text-[#c9a84c] shadow-[0_0_18px_rgba(201,168,76,0.25)]"
+              >
+                M
+              </span>
+              <div className="min-w-0 leading-tight">
+                <p className="truncate text-[15px] font-semibold tracking-tight text-[#f0d78c]">
+                  MCM Storage
+                </p>
+                <p className="truncate text-[10px] uppercase tracking-[0.18em] text-[#c9a84c]/70">
+                  Retail Operations · Premium
+                </p>
+              </div>
             </div>
-            {lockMenu(false)}
-            <AppearanceSettings />
+            {lockMenu(true, "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#c9a84c]/25 bg-[#141414] text-[#f0d78c] hover:border-[#c9a84c]/60")}
             <button
               onClick={signOut}
-              className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+              className="inline-flex h-8 items-center justify-center rounded-full border border-[#c9a84c]/25 bg-[#141414] px-3 text-[11px] font-medium text-[#f0d78c] hover:border-[#c9a84c]/60"
             >
               Keluar
             </button>
           </div>
         </header>
 
-        <main className="mx-auto max-w-md space-y-4 px-3 py-6 sm:px-6">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              addCategory(newCatName);
-            }}
-            className="space-y-2 rounded-lg border bg-card p-3"
+        <main className="relative mx-auto w-full max-w-md space-y-6 px-4 pt-6 pb-10 sm:max-w-2xl sm:px-6">
+          {/* Hero: alur kerja aplikasi */}
+          <section
+            className="relative overflow-hidden rounded-2xl border border-[#c9a84c]/20 bg-gradient-to-b from-[#161616] to-[#0f0f0f] p-5 shadow-[0_20px_60px_-30px_rgba(201,168,76,0.35)]"
           >
-            <label className="block text-xs font-medium text-foreground">
-              {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori baru"}
-            </label>
-            <div className="flex gap-2">
-              <input
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                placeholder="Contoh: Sembako, Pakaian, 1 gram"
-                className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
-              >
-                Buat
-              </button>
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-[#c9a84c]/80">
+              <span className="h-px w-6 bg-[#c9a84c]/60" />
+              Alur Kerja
             </div>
-          </form>
+            <h1 className="mt-2 text-[22px] font-semibold leading-tight tracking-tight text-[#f5f0e0]">
+              Dari <span className="text-[#c9a84c]">stok</span> ke tangan pelanggan —
+              satu alur, tanpa kebocoran.
+            </h1>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-[#f5f0e0]/60">
+              Empat langkah inti yang menjalankan MCM Storage setiap hari.
+            </p>
 
-          {categories.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Kategori kamu
-              </p>
+            <ol className="mt-5 space-y-2.5">
+              {[
+                { n: "01", to: "/gudang", t: "Gudang", d: "Kelola stok, pembelian, dan harga modal." },
+                { n: "02", to: "/ecer", t: "Siapkan Pesanan", d: "Ecer & request — timbang, kemas, verifikasi." },
+                { n: "03", to: "/tugas", t: "Tugas Pegawai", d: "Bagikan link + PIN untuk penyiapan lapangan." },
+                { n: "04", to: "/chat", t: "Kirim via MCM Chat", d: "Rangkuman order otomatis ke pelanggan." },
+              ].map((step) => (
+                <li key={step.n}>
+                  <Link
+                    to={step.to}
+                    preload="intent"
+                    className="group flex items-center gap-3 rounded-xl border border-[#c9a84c]/15 bg-[#121212] px-3 py-3 transition-colors hover:border-[#c9a84c]/50 hover:bg-[#161616]"
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#c9a84c]/40 bg-[#0d0d0d] font-serif text-[13px] tracking-wider text-[#c9a84c]">
+                      {step.n}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-semibold text-[#f5f0e0]">
+                        {step.t}
+                      </span>
+                      <span className="block truncate text-[11px] text-[#f5f0e0]/55">
+                        {step.d}
+                      </span>
+                    </span>
+                    <span
+                      aria-hidden
+                      className="text-[#c9a84c]/50 transition-transform group-hover:translate-x-0.5 group-hover:text-[#c9a84c]"
+                    >
+                      →
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* CTA inti: kategori */}
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-[#c9a84c]/70">
+              <span className="h-px w-6 bg-[#c9a84c]/50" />
+              {categories.length === 0 ? "Mulai" : "Kategori"}
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                addCategory(newCatName);
+              }}
+              className="rounded-xl border border-[#c9a84c]/20 bg-[#111111] p-3"
+            >
+              <label className="mb-1.5 block text-[11px] font-medium text-[#f5f0e0]/70">
+                {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori"}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="Sembako, Pakaian, 1 gram…"
+                  className="w-full rounded-md border border-[#c9a84c]/20 bg-[#0d0d0d] px-2.5 py-2 text-[13px] text-[#f5f0e0] placeholder:text-[#f5f0e0]/30 outline-none focus:border-[#c9a84c]/60 focus:ring-1 focus:ring-[#c9a84c]/40"
+                />
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-md bg-gradient-to-b from-[#e6c26a] to-[#c9a84c] px-4 text-[12px] font-semibold text-[#1a1a1a] shadow-[0_4px_14px_-4px_rgba(201,168,76,0.6)] hover:from-[#f0d78c] hover:to-[#c9a84c]"
+                >
+                  Buat
+                </button>
+              </div>
+            </form>
+
+            {categories.length > 0 && (
               <ul className="grid gap-1.5">
                 {categories.map((c) => {
                   const count = items.filter((i) => i.kategori === c).length;
                   return (
                     <li
                       key={c}
-                      className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2"
+                      className="flex items-center gap-2 rounded-xl border border-[#c9a84c]/15 bg-[#111111] px-3 py-2.5 transition-colors hover:border-[#c9a84c]/40"
                     >
                       <button
                         onClick={() => setActiveCat(c)}
-                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                       >
-                        <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                        <span className="inline-flex shrink-0 items-center rounded border border-[#c9a84c]/40 bg-[#0d0d0d] px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-[#c9a84c]">
                           {tagFor(c)}
                         </span>
-                        <span className="truncate text-sm font-medium">{c}</span>
-                        <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
+                        <span className="truncate text-[13px] font-medium text-[#f5f0e0]">
+                          {c}
+                        </span>
+                        <span className="ml-auto shrink-0 text-[10px] text-[#f5f0e0]/40">
                           {count} pesanan
                         </span>
                       </button>
                       <button
                         onClick={() => deleteCategory(c)}
                         disabled={categories.length <= 1}
-                        className="shrink-0 rounded-md border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                        className="shrink-0 rounded-md border border-rose-500/30 px-2 py-1 text-[10px] font-medium text-rose-400 hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-30"
                         title={categories.length <= 1 ? "Minimal harus ada 1 kategori" : `Hapus kategori ${c}`}
                         aria-label={`Hapus kategori ${c}`}
                       >
@@ -789,54 +861,68 @@ function Index() {
                   );
                 })}
               </ul>
-            </div>
-          )}
+            )}
+          </section>
 
-          {(categories.length > 0 || items.length > 0) && (
-            <button
-              onClick={resetAllData}
-              className="w-full rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/20"
-            >
-              🗑 Reset semua data saya
-            </button>
-          )}
+          {/* Lainnya — dilipat agar tampilan awal hanya inti */}
+          <details className="group rounded-xl border border-[#c9a84c]/15 bg-[#101010] open:border-[#c9a84c]/30">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[12px] font-medium text-[#f5f0e0]/80 [&::-webkit-details-marker]:hidden">
+              <span className="flex items-center gap-2">
+                <span className="h-px w-5 bg-[#c9a84c]/50" />
+                Lainnya
+              </span>
+              <span className="text-[#c9a84c]/70 transition-transform group-open:rotate-180">
+                ⌄
+              </span>
+            </summary>
+            <div className="space-y-4 border-t border-[#c9a84c]/10 p-4">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
+                  { to: "/kontak", label: "Pelanggan & Pemasok", emoji: "👥", desc: "Tautkan akun pengguna" },
+                  { to: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
+                  { to: "/label-preview", label: "Pratinjau Label", emoji: "🏷️", desc: "Cetak label produk" },
+                  { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
+                  { to: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font" },
+                ].map((s) => (
+                  <Link
+                    key={s.to}
+                    to={s.to}
+                    preload="intent"
+                    className="flex flex-col gap-0.5 rounded-lg border border-[#c9a84c]/15 bg-[#121212] px-3 py-2.5 text-left hover:border-[#c9a84c]/40 hover:bg-[#161616]"
+                  >
+                    <span className="text-base leading-none">{s.emoji}</span>
+                    <span className="mt-1 text-[11px] font-semibold leading-tight text-[#f5f0e0]">
+                      {s.label}
+                    </span>
+                    <span className="text-[10px] leading-tight text-[#f5f0e0]/45">
+                      {s.desc}
+                    </span>
+                  </Link>
+                ))}
+                <DownloadStorageApkShortcut />
+                <DownloadChatApkShortcut />
+                <CopyChatApkLinksButton />
+              </div>
 
-          <div className="space-y-1.5">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Pintasan
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { to: "/gudang", label: "Gudang & Supplier", emoji: "📦", desc: "Stok, pembelian, penjualan" },
-                { to: "/ecer", label: "Penyiapan Ecer", emoji: "⚖️", desc: "Judul & kotak penyiapan" },
-                { to: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
-                { to: "/tugas", label: "Tugas Pegawai", emoji: "📋", desc: "Buat & pantau penyiapan" },
-                { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
-                { to: "/kontak", label: "Pelanggan & Pemasok", emoji: "👥", desc: "Tautkan akun pengguna" },
-                { to: "/label-preview", label: "Pratinjau Label", emoji: "🏷️", desc: "Cetak label produk" },
-                { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
-                { to: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font, latar" },
-              ].map((s) => (
-                <Link
-                  key={s.to}
-                  to={s.to}
-                  preload="intent"
-                  className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
+              <ReadyEcerSection />
+              <ReadyRequestSection />
+              <ReadySelfPrepSection />
+
+              {(categories.length > 0 || items.length > 0) && (
+                <button
+                  onClick={resetAllData}
+                  className="w-full rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-[11px] font-semibold text-rose-400 hover:bg-rose-500/10"
                 >
-                  <span className="text-base leading-none">{s.emoji}</span>
-                  <span className="mt-1 text-xs font-semibold leading-tight">{s.label}</span>
-                  <span className="text-[10px] leading-tight text-muted-foreground">{s.desc}</span>
-                </Link>
-              ))}
-              <DownloadStorageApkShortcut />
-              <DownloadChatApkShortcut />
-              <CopyChatApkLinksButton />
+                  🗑 Reset semua data saya
+                </button>
+              )}
             </div>
-          </div>
+          </details>
 
-          <ReadyEcerSection />
-          <ReadyRequestSection />
-          <ReadySelfPrepSection />
+          <p className="pt-2 text-center text-[10px] tracking-[0.2em] text-[#c9a84c]/40 uppercase">
+            · MCM · Barokah Rizki ·
+          </p>
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
