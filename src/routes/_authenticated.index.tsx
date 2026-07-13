@@ -13,6 +13,7 @@ import {
   type LockConfig,
 } from "@/lib/app-lock";
 import { AppLockSetup } from "@/components/AppLockSetup";
+import { perfMark, perfMeasure } from "@/lib/perf-log";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +47,27 @@ const DownloadChatApkShortcut = lazy(() =>
 const CopyChatApkLinksButton = lazy(() =>
   import("@/components/CopyChatApkLinksButton").then((m) => ({ default: m.CopyChatApkLinksButton })),
 );
+
+// Mark saat modul landing pertama kali dievaluasi (proxy untuk "nav start").
+// Dipakai sebagai anchor untuk mengukur waktu sampai konten inti terlihat.
+perfMark("landing:module-eval");
+
+/**
+ * Sentinel kecil yang di-render di dalam Suspense children.
+ * Effect-nya hanya jalan setelah semua lazy child selesai resolve,
+ * jadi kita bisa memanggilnya sebagai "chunk Lainnya selesai mount".
+ */
+function LainnyaMountSentinel() {
+  useEffect(() => {
+    perfMark("landing:lainnya-mount-end");
+    perfMeasure(
+      "landing:lainnya-mount",
+      "landing:lainnya-mount-start",
+      "landing:lainnya-mount-end",
+    );
+  }, []);
+  return null;
+}
 
 export const Route = createFileRoute("/_authenticated/")({
   beforeLoad: async () => {
@@ -353,9 +375,20 @@ function Index() {
   // membuka <details>. Chunk lazy di atas juga baru di-fetch pada momen
   // ini, sehingga landing inti tidak terkena biaya JS-nya.
   const [lainnyaMounted, setLainnyaMounted] = useState(false);
+  // Perf: catat momen user pertama kali men-trigger mount "Lainnya"
+  // (hover/focus/toggle). Pasangannya di-mark oleh <LainnyaMountSentinel/>
+  // di dalam Suspense children, sehingga durasinya = fetch chunk + render.
+  useEffect(() => {
+    if (!lainnyaMounted) return;
+    perfMark("landing:lainnya-mount-start");
+  }, [lainnyaMounted]);
   // H11: skip the first save after hydration so mounting the page
   // doesn't upsert identical data back to user_storage.
   const skipNextSaveRef = useRef(false);
+  // Perf: hero (bagian inti) dianggap "visible" saat data ter-hydrate
+  // dan branch landing (tanpa activeCat) selesai render pertama kali.
+  // Effect memastikan browser sudah commit DOM-nya sebelum mengukur.
+  const heroMeasuredRef = useRef(false);
   const [filter, setFilter] = useState<"semua" | Status>(() => {
     if (typeof window === "undefined") return "semua";
     const v = window.localStorage.getItem("mcm_filter");
@@ -383,6 +416,17 @@ function Index() {
     }
   });
   const [newCatName, setNewCatName] = useState("");
+  useEffect(() => {
+    if (heroMeasuredRef.current) return;
+    if (!hydrated || activeCat) return;
+    heroMeasuredRef.current = true;
+    perfMark("landing:hero-visible");
+    perfMeasure(
+      "landing:time-to-hero",
+      "landing:module-eval",
+      "landing:hero-visible",
+    );
+  }, [hydrated, activeCat]);
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     const saved = window.localStorage.getItem("mcm_rail_open");
@@ -952,6 +996,7 @@ function Index() {
                   <ReadyEcerSection />
                   <ReadyRequestSection />
                   <ReadySelfPrepSection />
+                  <LainnyaMountSentinel />
                 </Suspense>
               )}
 
