@@ -709,6 +709,40 @@ function TugasPage() {
           onClose={() => setSharePinFor(null)}
         />
       )}
+      {qrFor && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`QR code untuk ${qrFor.title}`}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setQrFor(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-xl border bg-card p-4 shadow-xl"
+          >
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold [overflow-wrap:anywhere]">{qrFor.title}</div>
+                <div className="mt-0.5 text-[11px] text-muted-foreground">
+                  Pindai QR ini di perangkat lain untuk membuka halaman pegawai. PIN diketik manual saat halaman terbuka.
+                </div>
+              </div>
+              <button
+                onClick={() => setQrFor(null)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border hover:bg-accent"
+                aria-label="Tutup"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <TaskQrCode url={publicTaskUrl(qrFor.share_token)} title={qrFor.title} />
+            <div className="mt-2 break-all rounded-md border bg-muted/40 p-2 text-[11px] text-muted-foreground">
+              {publicTaskUrl(qrFor.share_token)}
+            </div>
+          </div>
+        </div>
+      )}
       {openVariantsHub && (
         <VariantsHub
           warehouse={warehouse}
