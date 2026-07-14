@@ -19,7 +19,7 @@ const buttonVariants = cva(
   // Dilepas mulai `sm:` supaya ukuran desktop (h-7/h-8/h-9) tetap.
   // Untuk icon button, `min-w-[44px]` menjaga area sentuh 44×44
   // walau className override memasang `h-7 w-7`.
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer select-none transition-[transform,background-color,color,box-shadow,filter] duration-150 min-h-[44px] sm:min-h-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.97] active:brightness-95 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:active:brightness-100 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-ms-2 whitespace-nowrap rounded-md text-ms-sm font-medium cursor-pointer select-none transition-[transform,background-color,color,box-shadow,filter] duration-150 min-h-[44px] sm:min-h-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.97] active:brightness-95 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:active:brightness-100 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -35,8 +35,8 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline active:scale-100 active:brightness-100 min-h-0",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
+        default: "h-9 px-ms-4 py-ms-2",
+        sm: "h-8 rounded-md px-ms-3 text-ms-xs",
         lg: "h-10 rounded-md px-8",
         icon: "h-9 w-9 min-w-[44px] sm:min-w-0",
       },
