@@ -2309,6 +2309,31 @@ function SendPrepToCustomerDialog({
         at: Date.now(),
       });
 
+      // Toast konfirmasi: penjualan (& piutang bila ada) sudah TERCATAT di
+      // database. Tampilkan ringkasan total + metode bayar SEBELUM foto/pesan
+      // dikirim ke pelanggan — supaya user punya bukti eksplisit bahwa
+      // pencatatan sudah aman meski pengiriman pesan gagal di tengah jalan.
+      const methodLabel =
+        payment.method === "kas"
+          ? "Lunas (kas)"
+          : payment.method === "hutang"
+            ? `Hutang penuh · piutang ${rupiah(payment.remaining)}`
+            : `Dibayar ${rupiah(payment.paid)} · sisa piutang ${rupiah(payment.remaining)}`;
+      const summaryLines = [
+        `Pelanggan: ${resolvedParty.name}`,
+        `Total: ${rupiah(payment.total)}`,
+        `Metode: ${methodLabel}`,
+        channel === "chat" && conv
+          ? `Tujuan: MCM Chat → ${conv.title}`
+          : `Tujuan: WhatsApp${resolvedParty.contact ? ` → ${resolvedParty.contact}` : ""}`,
+      ].join("\n");
+      toast.success(
+        payment.method === "kas"
+          ? "Penjualan tercatat — menyiapkan pesan…"
+          : "Penjualan & piutang tercatat — menyiapkan pesan…",
+        { description: summaryLines, duration: 6000 },
+      );
+
       // 2) Kirim ke kanal terpilih dengan foto asli terlampir.
       const files = await fetchPhotoFiles();
       const text = buildCaption();
