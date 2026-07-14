@@ -335,13 +335,13 @@ function GudangPage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground md:flex">
       {/* Sidebar — md+ */}
       <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r bg-card/80 backdrop-blur md:flex md:flex-col">
-        <div className="border-b px-ms-4 py-ms-4">
-          <Link to="/" className="text-[0.6875rem] text-muted-foreground hover:underline">← Beranda</Link>
-          <h1 className="mt-1 flex items-center gap-ms-1.5 text-ms-lg font-bold tracking-tight">
-            <Package className="h-4.5 w-4.5 text-primary" /> Gudang
+        <div className="border-b p-ms-4">
+          <Link to="/" className="text-ms-2xs text-muted-foreground hover:underline">← Beranda</Link>
+          <h1 className="mt-1 flex items-center gap-ms-1.5 text-ms-lg font-bold tracking-ms-tight">
+            <Package className="h-[18px] w-[18px] text-primary" /> Gudang
           </h1>
           <div className="mt-3 rounded-lg border bg-muted/30 px-ms-3 py-ms-2">
-            <p className="text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">Nilai stok</p>
+            <p className="text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Nilai stok</p>
             <p className="text-ms-sm font-bold tabular-nums">{rupiah(totalStokValue)}</p>
           </div>
         </div>
