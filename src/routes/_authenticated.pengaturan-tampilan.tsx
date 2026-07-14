@@ -553,7 +553,7 @@ function PengaturanTampilanPage() {
 
       <div className="space-ms-4 px-ms-4 pt-ms-2">
         {/* Info draft */}
-        <div className="rounded-md border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-2xs leading-snug text-muted-foreground">
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-2xs leading-ms-snug text-muted-foreground">
           Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
           Tampilan halaman lain tidak berubah sampai Anda menekan{" "}
           <span className="font-semibold text-foreground">Simpan</span> di bagian bawah.
@@ -579,7 +579,7 @@ function PengaturanTampilanPage() {
               >
                 <span className="text-ms-lg leading-none">{p.icon}</span>
                 <span className="text-ms-sm font-semibold">{p.label}</span>
-                <span className="text-ms-2xs leading-snug text-muted-foreground">{p.desc}</span>
+                <span className="text-ms-2xs leading-ms-snug text-muted-foreground">{p.desc}</span>
               </button>
             ))}
           </CardContent>
@@ -712,7 +712,7 @@ function PengaturanTampilanPage() {
             <div className="flex items-start justify-between gap-ms-4">
               <div>
                 <p className="text-ms-sm font-medium">Mode padat (compact)</p>
-                <p className="text-ms-2xs leading-snug text-muted-foreground">
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
                   Rapatkan padding & jarak agar lebih banyak konten terlihat.
                 </p>
               </div>
@@ -740,7 +740,7 @@ function PengaturanTampilanPage() {
             <div className="flex items-start justify-between gap-ms-4">
               <div>
                 <p className="text-ms-sm font-medium">Kurangi animasi</p>
-                <p className="text-ms-2xs leading-snug text-muted-foreground">
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
                   Hilangkan animasi non-esensial untuk tampilan lebih tenang.
                 </p>
               </div>
@@ -753,7 +753,7 @@ function PengaturanTampilanPage() {
             <div className="flex items-start justify-between gap-ms-4">
               <div>
                 <p className="text-ms-sm font-medium">Tingkatkan kontras</p>
-                <p className="text-ms-2xs leading-snug text-muted-foreground">
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
                   Perkuat border & ring fokus.
                 </p>
               </div>
@@ -957,7 +957,7 @@ function PengaturanTampilanPage() {
                 </div>
               </button>
             </div>
-            <p className="text-ms-2xs leading-snug text-muted-foreground">
+            <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
               Hasil impor hanya menimpa pratinjau di halaman ini — data akun, chat, dan
               gudang tidak terpengaruh. Tekan <span className="font-semibold text-foreground">Simpan</span>{" "}
               agar hasilnya diterapkan ke aplikasi.
@@ -968,7 +968,7 @@ function PengaturanTampilanPage() {
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                   Yang disimpan
                 </p>
-                <ul className="space-y-1 text-ms-2xs leading-snug text-muted-foreground">
+                <ul className="space-y-1 text-ms-2xs leading-ms-snug text-muted-foreground">
                   {[
                     "Tema (terang / gelap / ikut sistem)",
                     "Aksen warna & radius sudut",
@@ -991,7 +991,7 @@ function PengaturanTampilanPage() {
                   <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                   Yang tidak disimpan
                 </p>
-                <ul className="space-y-1 text-ms-2xs leading-snug text-muted-foreground">
+                <ul className="space-y-1 text-ms-2xs leading-ms-snug text-muted-foreground">
                   {[
                     "Akun, email, PIN & sesi login",
                     "Isi chat, kontak & lampiran",
