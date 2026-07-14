@@ -108,8 +108,11 @@
   --ms-space-8:  2rem;      /* 32 */
   --ms-space-10: 2.5rem;    /* 40 */
   --ms-space-12: 3rem;      /* 48 */
-  /* Target sentuh & radius kartu — jaga aksesibilitas mobile. */
-  --ms-tap:      2.75rem;   /* 44px min target */
+  /* Target sentuh & radius kartu — jaga aksesibilitas mobile.
+     `max()` memastikan tap target tetap ≥44px meski user memilih
+     font-size "sm" (rem menyusut). Ketika user memperbesar font,
+     tap target ikut membesar. */
+  --ms-tap:      max(2.75rem, 44px);
   --ms-radius-card: calc(var(--radius) + 4px);
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
@@ -298,13 +301,23 @@
 
   html {
     background-color: var(--color-background);
+    /* Aksesibilitas: font-size preferensi user (sm/md/lg/xl di
+       /pengaturan-tampilan) diterapkan pada <html> supaya semua utility
+       berbasis `rem` (termasuk token `--ms-*`) ikut menyusut/membesar.
+       Nilai literal `text-[Npx]` tidak ikut karena px adalah absolut —
+       gunakan token `text-ms-*` atau nilai `rem`/`em` di komponen. */
+    font-size: var(--app-font-size, 16px);
+    /* Cegah auto-zoom Safari iOS yang membuat body membengkak saat
+       user memiringkan device (menjaga skala tetap sesuai preferensi). */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     background-color: transparent;
     color: var(--color-foreground);
     font-family: var(--app-font-family, "Inter", system-ui, sans-serif);
-    font-size: var(--app-font-size, 16px);
+    /* Warisi dari <html> — biar preferensi font-size cascade lewat rem. */
     position: relative;
     min-height: 100vh;
   }
@@ -474,7 +487,9 @@ html[data-font-size="xl"] { --app-font-size: 20px; }
 /* Mode ringkas — fokus pada density tinggi tanpa memutus layout.
    Aman: hanya skala font + padding/gap halus + sembunyikan elemen yang
    sengaja ditandai data-compact-hide. */
-html.compact { font-size: 92%; }
+/* Compact mengalikan preferensi font-size, bukan menggantinya —
+   jadi user "lg" + compact tetap mengikuti skala lg × 0.92. */
+html.compact { font-size: calc(var(--app-font-size, 16px) * 0.92); }
 html.compact [data-compact-hide] { display: none !important; }
 html.compact .p-6 { padding: 0.875rem; }
 html.compact .p-5 { padding: 0.75rem; }

@@ -94,7 +94,7 @@ export function MobileBottomNav() {
               aria-current={active ? "page" : undefined}
               aria-label={badge && badge > 0 ? `${label}, ${badge} belum dibaca` : label}
               className={cn(
-                "group/tab relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[10.5px] leading-tight transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
+                "group/tab relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[0.65625rem] leading-tight transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
                 "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 active ? "text-primary" : "text-muted-foreground",
               )}
@@ -115,7 +115,7 @@ export function MobileBottomNav() {
                   )}
                 />
                 {badge && badge > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9.5px] font-semibold leading-none text-destructive-foreground shadow">
+                  <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[0.59375rem] font-semibold leading-none text-destructive-foreground shadow">
                     {badge > 99 ? "99+" : badge}
                   </span>
                 ) : null}
@@ -138,7 +138,7 @@ export function MobileBottomNav() {
           aria-label="Buka menu"
           aria-current={menuActive ? "page" : undefined}
           className={cn(
-            "relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[10.5px] leading-tight text-muted-foreground transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
+            "relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[0.65625rem] leading-tight text-muted-foreground transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
             "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             menuActive && "text-primary",
           )}
