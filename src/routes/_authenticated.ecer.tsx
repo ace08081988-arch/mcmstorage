@@ -2841,10 +2841,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 // Kalau belum → buka `/tugas-baru` dengan title_id agar
                 // owner bisa langsung bikin tugas untuk judul ini.
                 linkedTask?.share_token ? (
-                  <Link
-                    to="/tugas"
-                    search={{ q: linkedTask.share_token }}
-                  >
+                  <Link to="/tugas">
                     <MessageCircle className="h-3.5 w-3.5" />
                     Tugas pegawai
                   </Link>
