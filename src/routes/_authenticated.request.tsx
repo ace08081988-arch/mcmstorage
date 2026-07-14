@@ -439,6 +439,27 @@ function RequestPage() {
                 toast.error("Gagal hapus: " + (e as Error).message);
               }
             };
+            const activePrepCount = activePrepCountByTitle[t.id] ?? 0;
+            const canRequestReprep = activePrepCount > 0;
+            const requestReprep = async () => {
+              if (!confirm(
+                `Minta penyiapan ulang untuk "${t.name}"?\n\n` +
+                `Title ini akan muncul lagi di portal pegawai (task baru).\n` +
+                `Riwayat penyiapan lama TIDAK dihapus — hanya siklus penyiapan ` +
+                `di-reset. Aksi ini dicatat di riwayat title.`,
+              )) return;
+              try {
+                const { error } = await sb
+                  .from("request_titles")
+                  .update({ reprep_requested_at: new Date().toISOString() })
+                  .eq("id", t.id);
+                if (error) throw error;
+                toast.success("Permintaan penyiapan ulang tercatat");
+                void loadAll();
+              } catch (e) {
+                toast.error("Gagal minta penyiapan ulang: " + (e as Error).message);
+              }
+            };
             return (
               <button
                 key={t.id}
