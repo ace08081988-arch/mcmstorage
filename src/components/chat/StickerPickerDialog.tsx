@@ -136,7 +136,7 @@ export function StickerPickerDialog({
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             {view === "editor" && mode.kind !== "edit" ? (
               <Button type="button" size="icon" variant="ghost" className="h-7 w-7" aria-label="Kembali ke pustaka stiker" onClick={() => { setView("library"); setEditingSavedId(null); }}>
                 <ArrowLeft className="h-4 w-4" />
@@ -182,32 +182,32 @@ export function StickerPickerDialog({
             <TabsTrigger value="ai"><Sparkles className="mr-1 h-3 w-3" />AI</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="arrow" className="space-y-2">
+          <TabsContent value="arrow" className="space-ms-2">
             <ArrowPanel card={asArrow(card)} onChange={setCard} />
           </TabsContent>
-          <TabsContent value="bank" className="space-y-2">
+          <TabsContent value="bank" className="space-ms-2">
             <BankPanel card={asBank(card)} onChange={setCard} />
           </TabsContent>
-          <TabsContent value="text" className="space-y-2">
+          <TabsContent value="text" className="space-ms-2">
             <TextPanel card={asText(card)} onChange={setCard} />
           </TabsContent>
-          <TabsContent value="ai" className="space-y-2">
+          <TabsContent value="ai" className="space-ms-2">
             <AiPanel card={asAi(card)} conversationId={conversationId} onChange={setCard} />
           </TabsContent>
         </Tabs>
 
         <CommonControls card={card} onChange={setCard} />
 
-        <div className="rounded-lg border bg-muted/30 p-2">
-          <div className="mb-1 text-[10px] uppercase text-muted-foreground">Pratinjau</div>
+        <div className="rounded-lg border bg-muted/30 p-ms-2">
+          <div className="mb-1 text-ms-2xs uppercase text-muted-foreground">Pratinjau</div>
           <div className="flex justify-center">
             <StickerView card={card} mine />
           </div>
         </div>
 
         {mode.kind !== "edit" && !editingSavedId ? (
-          <label className="flex items-center justify-between rounded-md border px-2 py-1.5 text-xs">
-            <span className="flex items-center gap-1.5"><Bookmark className="h-3.5 w-3.5" /> Simpan ke koleksi setelah kirim</span>
+          <label className="flex items-center justify-between rounded-md border px-ms-2 py-1.5 text-ms-xs">
+            <span className="flex items-center gap-ms-1.5"><Bookmark className="h-3.5 w-3.5" /> Simpan ke koleksi setelah kirim</span>
             <Switch checked={saveOnSend} onCheckedChange={setSaveOnSend} />
           </label>
         ) : null}
@@ -262,11 +262,11 @@ function StickerLibraryPanel({
   const rest = useMemo(() => saved.filter((s) => !fav.has(s.id)), [saved, fav]);
   const empty = saved.length === 0 && recents.length === 0;
   return (
-    <div className="space-y-3">
+    <div className="space-ms-3">
       <Section title="Buat baru">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-ms-2">
           <button type="button" onClick={onNew}
-            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-xs hover:bg-accent">
+            className="flex aspect-square flex-col items-center justify-center gap-ms-1 rounded-xl border-2 border-dashed text-ms-xs hover:bg-accent">
             <Plus className="h-5 w-5 text-primary" />
             <span>Buat</span>
           </button>
@@ -288,7 +288,7 @@ function StickerLibraryPanel({
         </Section>
       ) : null}
       {empty ? (
-        <p className="rounded-md border border-dashed py-6 text-center text-xs text-muted-foreground">
+        <p className="rounded-md border border-dashed py-ms-6 text-center text-ms-xs text-muted-foreground">
           Belum ada stiker. Tekan <span className="font-medium">Buat</span> untuk membuat stiker pertama. Setelah dikirim, stiker otomatis tersimpan di sini.
         </p>
       ) : null}
@@ -299,7 +299,7 @@ function StickerLibraryPanel({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{title}</div>
+      <div className="mb-1 text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">{title}</div>
       {children}
     </div>
   );
@@ -314,14 +314,14 @@ function Grid({
   compact?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-4 gap-ms-2">
       {items.map((s) => {
         const isFav = fav.has(s.id);
         return (
           <div key={s.id} className="group relative">
             <button type="button" disabled={busy}
               onClick={() => onSend(s)}
-              className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted/30 p-1 transition active:scale-95 disabled:opacity-50">
+              className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted/30 p-ms-1 transition active:scale-95 disabled:opacity-50">
               <div className="pointer-events-none scale-[0.55] origin-center">
                 <StickerView card={s.card} mine />
               </div>
@@ -386,9 +386,9 @@ function asAi(c: StickerCard): Extract<StickerCard, { kind: "ai" }> {
 // --- Common controls (caption, rotation, scale) ---
 function CommonControls({ card, onChange }: { card: StickerCard; onChange: (c: StickerCard) => void }) {
   return (
-    <div className="space-y-2 rounded-lg border p-2">
+    <div className="space-ms-2 rounded-lg border p-ms-2">
       <div className="space-y-1">
-        <Label className="text-[11px] uppercase text-muted-foreground">Caption (opsional)</Label>
+        <Label className="text-ms-2xs uppercase text-muted-foreground">Caption (opsional)</Label>
         <Input
           value={card.caption ?? ""}
           maxLength={80}
@@ -396,24 +396,24 @@ function CommonControls({ card, onChange }: { card: StickerCard; onChange: (c: S
           onChange={(e) => onChange({ ...card, caption: e.target.value } as StickerCard)}
         />
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-ms-2">
         <div>
-          <Label className="text-[11px] uppercase text-muted-foreground">Rotasi {card.rotation ?? 0}°</Label>
+          <Label className="text-ms-2xs uppercase text-muted-foreground">Rotasi {card.rotation ?? 0}°</Label>
           <Slider min={-180} max={180} step={5}
             value={[card.rotation ?? 0]}
             onValueChange={(v) => onChange({ ...card, rotation: v[0] } as StickerCard)}
           />
         </div>
         <div>
-          <Label className="text-[11px] uppercase text-muted-foreground">Skala {(card.scale ?? 1).toFixed(2)}×</Label>
+          <Label className="text-ms-2xs uppercase text-muted-foreground">Skala {(card.scale ?? 1).toFixed(2)}×</Label>
           <Slider min={0.6} max={1.8} step={0.05}
             value={[card.scale ?? 1]}
             onValueChange={(v) => onChange({ ...card, scale: v[0] } as StickerCard)}
           />
         </div>
       </div>
-      <div className="flex gap-1">
-        <Button type="button" size="sm" variant="outline" className="h-7 text-xs"
+      <div className="flex gap-ms-1">
+        <Button type="button" size="sm" variant="outline" className="h-7 text-ms-xs"
           onClick={() => onChange({ ...card, rotation: 0, scale: 1 } as StickerCard)}>
           <RotateCw className="mr-1 h-3 w-3" /> Reset transformasi
         </Button>
@@ -427,9 +427,9 @@ function ArrowPanel({
   card, onChange,
 }: { card: Extract<StickerCard, { kind: "arrow" }>; onChange: (c: StickerCard) => void }) {
   return (
-    <div className="space-y-2">
-      <Label className="text-[11px] uppercase text-muted-foreground">Arah</Label>
-      <div className="grid grid-cols-3 gap-1">
+    <div className="space-ms-2">
+      <Label className="text-ms-2xs uppercase text-muted-foreground">Arah</Label>
+      <div className="grid grid-cols-3 gap-ms-1">
         {ARROW_DIRS.map((d, i) => {
           // empty middle cell
           if (i === 4) return <div key="mid" />;
@@ -439,7 +439,7 @@ function ArrowPanel({
           return (
             <button key={dir} type="button"
               onClick={() => onChange({ ...card, direction: dir })}
-              className={`flex h-12 items-center justify-center rounded border text-xs ${active ? "border-primary bg-primary/10" : "border-border hover:bg-accent"}`}
+              className={`flex h-12 items-center justify-center rounded border text-ms-xs ${active ? "border-primary bg-primary/10" : "border-border hover:bg-accent"}`}
               aria-label={`Arah ${dir}`}
             >
               <ArrowGlyph dir={dir} />
@@ -468,8 +468,8 @@ function BankPanel({
   card, onChange,
 }: { card: Extract<StickerCard, { kind: "bank" }>; onChange: (c: StickerCard) => void }) {
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2">
+    <div className="space-ms-2">
+      <div className="grid grid-cols-2 gap-ms-2">
         <div>
           <Label>Bank</Label>
           <Input value={card.bank} placeholder="BCA / Mandiri" onChange={(e) => onChange({ ...card, bank: e.target.value })} />
@@ -495,7 +495,7 @@ function TextPanel({
   card, onChange,
 }: { card: Extract<StickerCard, { kind: "text" }>; onChange: (c: StickerCard) => void }) {
   return (
-    <div className="space-y-2">
+    <div className="space-ms-2">
       <div>
         <Label>Teks stiker</Label>
         <Input maxLength={40} value={card.text} onChange={(e) => onChange({ ...card, text: e.target.value })} />
@@ -545,7 +545,7 @@ function AiPanel({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-ms-2">
       <Label>Deskripsi stiker</Label>
       <Textarea
         rows={2}
@@ -553,7 +553,7 @@ function AiPanel({
         placeholder="Mis. kucing oranye lucu memegang kardus"
         onChange={(e) => setPrompt(e.target.value)}
       />
-      <div className="flex gap-2">
+      <div className="flex gap-ms-2">
         <Button type="button" onClick={generate} disabled={generating} className="flex-1">
           {generating ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
           {hasStored ? "Buat ulang" : "Buat stiker"}
@@ -567,7 +567,7 @@ function AiPanel({
       {previewUrl && !hasStored ? (
         <img src={previewUrl} alt="pratinjau" className="mx-auto h-32 w-32 rounded-lg" />
       ) : null}
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-ms-2xs text-muted-foreground">
         Stiker dibuat oleh Lovable AI. Caption, rotasi, dan skala bisa diedit lagi setelahnya.
       </p>
     </div>
@@ -580,8 +580,8 @@ function ColorRow({ label, value, onChange, presets, allowTransparent }: {
 }) {
   return (
     <div className="space-y-1">
-      <Label className="text-[11px] uppercase text-muted-foreground">{label}</Label>
-      <div className="flex flex-wrap items-center gap-1">
+      <Label className="text-ms-2xs uppercase text-muted-foreground">{label}</Label>
+      <div className="flex flex-wrap items-center gap-ms-1">
         {presets.map((p) => (
           <button key={p} type="button"
             onClick={() => onChange(p)}
@@ -592,7 +592,7 @@ function ColorRow({ label, value, onChange, presets, allowTransparent }: {
         ))}
         {allowTransparent ? (
           <button type="button" onClick={() => onChange("transparent")}
-            className="rounded border px-1.5 text-[10px]">Tanpa latar</button>
+            className="rounded border px-1.5 text-ms-2xs">Tanpa latar</button>
         ) : null}
         <input
           type="color"

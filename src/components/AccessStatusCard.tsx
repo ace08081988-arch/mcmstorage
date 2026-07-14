@@ -252,7 +252,7 @@ export function AccessStatusCard() {
       }
     >
       <CardHeader>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           {loading ? (
             <ShieldCheck className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
           ) : isStorage ? (
@@ -260,12 +260,12 @@ export function AccessStatusCard() {
           ) : (
             <Lock className="h-5 w-5 text-amber-500" aria-hidden="true" />
           )}
-          <CardTitle id="access-status-title" className="text-base">
+          <CardTitle id="access-status-title" className="text-ms-base">
             Status izin akun
           </CardTitle>
           {liveSince && (
             <span
-              className="ml-1 inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400"
+              className="ml-1 inline-flex items-center gap-ms-1 text-ms-2xs text-emerald-600 dark:text-emerald-400"
               data-testid="access-status-live"
               title={`Realtime aktif sejak ${liveSince.toLocaleTimeString()}`}
             >
@@ -287,12 +287,12 @@ export function AccessStatusCard() {
           menampilkan tombol <b>Perbaiki Akses</b> yang membawa Anda ke sini.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-ms-3">
         {justChanged && (
           <div
             role="status"
             aria-live="polite"
-            className="flex items-start gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-2.5 text-[12px] text-emerald-800 dark:text-emerald-200"
+            className="flex items-start gap-ms-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-ms-2.5 text-ms-xs text-emerald-800 dark:text-emerald-200"
             data-testid="access-status-changed-banner"
           >
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -302,7 +302,7 @@ export function AccessStatusCard() {
           </div>
         )}
         {loading ? (
-          <div className="space-y-2">
+          <div className="space-ms-2">
             <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-4 w-3/5" />
@@ -310,13 +310,13 @@ export function AccessStatusCard() {
         ) : (
           <>
             <div
-              className="flex items-start gap-2 rounded-md border bg-muted/30 p-2.5"
+              className="flex items-start gap-ms-2 rounded-md border bg-muted/30 p-ms-2.5"
               data-testid="access-mode-summary"
             >
               <Info className="mt-0.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              <div className="min-w-0 text-sm">
+              <div className="min-w-0 text-ms-sm">
                 <div className="font-medium">{modeLabel}</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-2xs text-muted-foreground">
                   {isStorage
                     ? "Semua fitur MCM Storage terbuka. Tidak ada aksi yang perlu Anda lakukan di sini."
                     : "Akun ini didaftarkan sebagai MCM Chat. RLS di backend menolak tabel storage (warehouse_items, sales, purchases, debts, prep_*, dst). Upgrade di kartu di bawah untuk membuka semuanya."}
@@ -326,12 +326,12 @@ export function AccessStatusCard() {
 
             {!emailConfirmed && email && (
               <div
-                className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-amber-800 dark:text-amber-200"
+                className="flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2.5 text-amber-800 dark:text-amber-200"
                 data-testid="access-email-warning"
                 role="status"
               >
                 <MailWarning className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <div className="text-[12px]">
+                <div className="text-ms-xs">
                   Email <b>{email}</b> belum diverifikasi. Upgrade akan
                   dikunci sampai email dikonfirmasi — cek inbox atau kirim
                   ulang dari kartu upgrade di bawah.
@@ -355,7 +355,7 @@ export function AccessStatusCard() {
                       onClick={() => toggleArea(a.key)}
                       aria-expanded={open}
                       aria-controls={`access-area-${a.key}-detail`}
-                      className="flex w-full items-start gap-2 p-2 text-left"
+                      className="flex w-full items-start gap-ms-2 p-ms-2 text-left"
                       data-testid={`access-area-${a.key}-toggle`}
                     >
                       {ok ? (
@@ -370,14 +370,14 @@ export function AccessStatusCard() {
                         />
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium">{a.label}</div>
-                        <div className="text-[11px] text-muted-foreground">
+                        <div className="text-ms-sm font-medium">{a.label}</div>
+                        <div className="text-ms-2xs text-muted-foreground">
                           {ok ? "Terbuka — akun Anda diizinkan." : a.hint}
                         </div>
                       </div>
                       <Badge
                         variant={ok ? "secondary" : "outline"}
-                        className="ml-2 shrink-0 text-[10px]"
+                        className="ml-2 shrink-0 text-ms-2xs"
                       >
                         {ok ? "Terbuka" : "Terkunci"}
                       </Badge>
@@ -389,14 +389,14 @@ export function AccessStatusCard() {
                     {open && (
                       <div
                         id={`access-area-${a.key}-detail`}
-                        className="space-y-2 border-t bg-muted/20 px-3 py-2.5 text-[12px]"
+                        className="space-ms-2 border-t bg-muted/20 px-ms-3 py-ms-2.5 text-ms-xs"
                         data-testid={`access-area-${a.key}-detail`}
                       >
                         <div>
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <div className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Tabel / RPC diperiksa RLS
                           </div>
-                          <div className="mt-0.5 flex flex-wrap gap-1">
+                          <div className="mt-0.5 flex flex-wrap gap-ms-1">
                             {a.tables.map((t) => (
                               <code
                                 key={t}
@@ -408,7 +408,7 @@ export function AccessStatusCard() {
                           </div>
                         </div>
                         <div>
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <div className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Policy Postgres
                           </div>
                           <code className="mt-0.5 block break-words rounded bg-background px-1.5 py-1 text-[10.5px]">
@@ -416,12 +416,12 @@ export function AccessStatusCard() {
                           </code>
                         </div>
                         <div>
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <div className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Langkah perbaikan
                           </div>
                           <ol className="mt-1 space-y-1">
                             {a.steps.map((s, i) => (
-                              <li key={i} className="flex gap-1.5">
+                              <li key={i} className="flex gap-ms-1.5">
                                 <span className="shrink-0 font-semibold text-muted-foreground">
                                   {i + 1}.
                                 </span>
@@ -433,7 +433,7 @@ export function AccessStatusCard() {
                         {!ok && (
                           <a
                             href="#upgrade-to-storage"
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                            className="inline-flex items-center gap-ms-1 text-ms-2xs font-medium text-primary hover:underline"
                             data-testid={`access-area-${a.key}-cta`}
                           >
                             Menuju kartu upgrade
@@ -448,7 +448,7 @@ export function AccessStatusCard() {
             </ul>
 
             {!isStorage && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 Alasan penolakan yang akan Anda lihat di toast:
                 <br />
                 • <code>42501</code> — <i>permission denied</i> dari policy RLS Postgres.

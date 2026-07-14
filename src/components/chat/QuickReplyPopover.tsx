@@ -31,17 +31,17 @@ export function QuickReplyPopover({
   return (
     <div
       ref={wrapRef}
-      className="absolute bottom-full left-2 right-2 mb-2 max-h-60 overflow-y-auto rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg"
+      className="absolute bottom-full left-2 right-2 mb-2 max-h-60 overflow-y-auto rounded-lg border bg-popover p-ms-1 text-popover-foreground shadow-lg"
     >
-      <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">Balas cepat</div>
+      <div className="px-ms-2 py-1 text-ms-2xs uppercase tracking-wide text-muted-foreground">Balas cepat</div>
       {items.map((it) => (
         <button
           key={it.id}
           type="button"
           onClick={() => onPick(it)}
-          className="block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+          className="block w-full rounded px-ms-2 py-1.5 text-left text-ms-sm hover:bg-accent"
         >
-          <span className="font-mono text-xs text-primary">/{it.shortcut}</span>
+          <span className="font-mono text-ms-xs text-primary">/{it.shortcut}</span>
           <span className="ml-2 text-muted-foreground line-clamp-1">{it.body}</span>
         </button>
       ))}

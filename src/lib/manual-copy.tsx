@@ -122,7 +122,7 @@ export function ManualCopyHost() {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
-          <Label htmlFor="manual-copy-url" className="text-xs">
+          <Label htmlFor="manual-copy-url" className="text-ms-xs">
             URL
           </Label>
           <Input

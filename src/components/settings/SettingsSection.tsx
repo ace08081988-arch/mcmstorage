@@ -28,8 +28,8 @@ export function SettingsSection({
 }) {
   return (
     <Card className={cn("overflow-hidden border-border/70 shadow-sm", className)}>
-      <CardHeader className="gap-1 pb-3 sm:pb-4">
-        <div className="flex items-start gap-3">
+      <CardHeader className="gap-ms-1 pb-3 sm:pb-4">
+        <div className="flex items-start gap-ms-3">
           {Icon ? (
             <span
               aria-hidden
@@ -39,11 +39,11 @@ export function SettingsSection({
             </span>
           ) : null}
           <div className="min-w-0 flex-1">
-            <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+            <CardTitle className="text-ms-sm font-semibold tracking-tight sm:text-ms-base">
               {title}
             </CardTitle>
             {description ? (
-              <CardDescription className="mt-1 text-xs leading-relaxed">
+              <CardDescription className="mt-1 text-ms-xs leading-relaxed">
                 {description}
               </CardDescription>
             ) : null}

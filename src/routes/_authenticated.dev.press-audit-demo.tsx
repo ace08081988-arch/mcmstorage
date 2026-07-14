@@ -106,7 +106,7 @@ const EXAMPLES: Example[] = [
       <div role="menu">
         <div
           role="menuitem"
-          className="text-destructive px-3 py-2 rounded border"
+          className="text-destructive px-ms-3 py-ms-2 rounded border"
         >
           Hapus akun
         </div>
@@ -135,7 +135,7 @@ const EXAMPLES: Example[] = [
       <div
         data-dnd-handle
         aria-roledescription="sortable item"
-        className="px-3 py-2 rounded border cursor-grab"
+        className="px-ms-3 py-ms-2 rounded border cursor-grab"
       >
         ⋮⋮ Baris draggable
       </div>
@@ -458,11 +458,11 @@ function ExampleCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">{example.title}</CardTitle>
-        <p className="text-xs text-muted-foreground">{example.hint}</p>
+        <CardTitle className="text-ms-base">{example.title}</CardTitle>
+        <p className="text-ms-xs text-muted-foreground">{example.hint}</p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex flex-wrap gap-2">
+      <CardContent className="space-ms-3">
+        <div className="flex flex-wrap gap-ms-2">
           {example.presets.map((p, i) => (
             <Button
               key={p.label}
@@ -483,12 +483,12 @@ function ExampleCard({
           data-press-scope="on"
           data-testid={`pa-demo-${example.id}`}
           {...attrs}
-          className="rounded border border-dashed p-3 bg-muted/30"
+          className="rounded border border-dashed p-ms-3 bg-muted/30"
         >
           {example.renderInner()}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           <Button size="sm" onClick={verifyAll} disabled={running}>
             {running ? "Menjalankan…" : "Verifikasi semua preset"}
           </Button>
@@ -563,7 +563,7 @@ function ExampleCard({
         </div>
 
         {results && (
-          <ul className="text-xs space-y-1" data-testid={`pa-demo-${example.id}-results`}>
+          <ul className="text-ms-xs space-y-1" data-testid={`pa-demo-${example.id}-results`}>
             {results.map((r) => (
               <li
                 key={r.preset}
@@ -580,10 +580,10 @@ function ExampleCard({
 
         {traces && (
           <div
-            className="text-xs space-y-2 rounded border bg-background/60 p-2"
+            className="text-ms-xs space-ms-2 rounded border bg-background/60 p-ms-2"
             data-testid={`pa-demo-${example.id}-trace`}
           >
-            <div className="text-[10px] text-muted-foreground">
+            <div className="text-ms-2xs text-muted-foreground">
               Elemen ancestor pemenang disorot langsung di preview di atas
               (garis putus-putus). Warna:{" "}
               <span className="text-destructive">merah</span> = block
@@ -605,7 +605,7 @@ function ExampleCard({
                   {(() => {
                     const s = pickWinnerStep(t);
                     return s?.hostTag ? (
-                      <span className="ml-2 text-[10px] text-muted-foreground font-mono">
+                      <span className="ml-2 text-ms-2xs text-muted-foreground font-mono">
                         winner: {s.name} @{s.hostTag}
                       </span>
                     ) : null;
@@ -625,20 +625,20 @@ function ExampleCard({
 
         {diffRows && (
           <div
-            className="text-xs rounded border bg-background/60 p-2"
+            className="text-ms-xs rounded border bg-background/60 p-ms-2"
             data-testid={`pa-demo-${example.id}-diff`}
             data-diff-match={diffAllMatch ? "1" : "0"}
           >
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-ms-2 mb-2">
               <span className="font-medium">Diff efektif</span>
               <Badge variant={diffAllMatch ? "default" : "destructive"}>
                 {diffAllMatch ? "cocok" : "beda"}
               </Badge>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-ms-2xs text-muted-foreground">
                 preset: <b>{activePreset.label}</b>
               </span>
             </div>
-            <table className="w-full font-mono text-[11px]">
+            <table className="w-full font-mono text-ms-2xs">
               <thead className="text-muted-foreground">
                 <tr className="text-left">
                   <th className="pr-2">Kode</th>
@@ -755,10 +755,10 @@ function PressAuditDemoPage() {
   }, []);
 
   return (
-    <div className="p-4 space-y-4 max-w-3xl mx-auto">
+    <div className="p-ms-4 space-ms-4 max-w-3xl mx-auto">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Demo Press-Audit</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-ms-xl font-semibold">Demo Press-Audit</h1>
+        <p className="text-ms-sm text-muted-foreground">
           Verifikasi otomatis contoh HTML di{" "}
           <code>docs/press-scope.md</code>. Setiap kartu memasang
           kombinasi <code>data-press-audit</code> / <code>-skip</code> /{" "}
@@ -768,13 +768,13 @@ function PressAuditDemoPage() {
         </p>
       </div>
       <div
-        className="rounded border bg-muted/30 p-3 text-xs"
+        className="rounded border bg-muted/30 p-ms-3 text-ms-xs"
         data-testid="pa-demo-legend"
         aria-label="Legend warna dan gaya sorotan ancestor pemenang"
       >
         <div className="font-medium mb-2">Legend sorotan</div>
-        <ul className="grid gap-2 sm:grid-cols-3">
-          <li className="flex items-center gap-2">
+        <ul className="grid gap-ms-2 sm:grid-cols-3">
+          <li className="flex items-center gap-ms-2">
             <span
               aria-hidden="true"
               className="inline-block h-4 w-8 rounded"
@@ -788,7 +788,7 @@ function PressAuditDemoPage() {
               <b className="text-emerald-600">Hijau</b> — allow (on / allow-match / scope.allow)
             </span>
           </li>
-          <li className="flex items-center gap-2">
+          <li className="flex items-center gap-ms-2">
             <span
               aria-hidden="true"
               className="inline-block h-4 w-8 rounded"
@@ -802,7 +802,7 @@ function PressAuditDemoPage() {
               <b className="text-destructive">Merah</b> — block / deny / skip / off / allowlist-miss
             </span>
           </li>
-          <li className="flex items-center gap-2">
+          <li className="flex items-center gap-ms-2">
             <span
               aria-hidden="true"
               className="inline-block h-4 w-8 rounded border-2 border-dashed border-muted-foreground/70"
@@ -814,13 +814,13 @@ function PressAuditDemoPage() {
         </ul>
       </div>
       <div
-        className="rounded border bg-background p-3 text-xs space-y-2"
+        className="rounded border bg-background p-ms-3 text-ms-xs space-ms-2"
         data-testid="pa-demo-summary"
         aria-label="Ringkasan cocok vs beda seluruh kartu"
       >
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center justify-between gap-ms-2 flex-wrap">
           <div className="font-medium">Ringkasan verifikasi seluruh kartu</div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-ms-2">
             <Badge
               variant={summary.totalDiff === 0 ? "default" : "destructive"}
               data-testid="pa-demo-summary-badge"
@@ -836,11 +836,11 @@ function PressAuditDemoPage() {
             </span>
           </div>
         </div>
-        <ul className="grid gap-1 sm:grid-cols-2">
+        <ul className="grid gap-ms-1 sm:grid-cols-2">
           {summary.cards.map((c) => (
             <li
               key={c.id}
-              className="flex items-center justify-between gap-2 rounded border bg-muted/30 px-2 py-1"
+              className="flex items-center justify-between gap-ms-2 rounded border bg-muted/30 px-ms-2 py-1"
               data-testid={`pa-demo-summary-row-${c.id}`}
               data-status={
                 !c.verified ? "pending" : c.diff === 0 ? "match" : "diff"
@@ -862,7 +862,7 @@ function PressAuditDemoPage() {
           ))}
         </ul>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-ms-2">
         <Button
           size="sm"
           variant="secondary"
@@ -875,7 +875,7 @@ function PressAuditDemoPage() {
           Verifikasi semua kartu
         </Button>
       </div>
-      <div className="grid gap-4" key={runAll}>
+      <div className="grid gap-ms-4" key={runAll}>
         {EXAMPLES.map((ex) => (
           <ExampleCard
             key={ex.id}

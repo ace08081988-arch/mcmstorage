@@ -50,7 +50,7 @@ export function KartonRumusPopover({
           className="max-w-xs whitespace-normal bg-popover text-popover-foreground border shadow-md"
           data-testid="karton-rumus-content"
         >
-          <div className="space-y-1 text-[11px] leading-relaxed">
+          <div className="space-y-1 text-ms-2xs leading-relaxed">
             <div className="font-semibold">Rumus konversi karton</div>
             <div>
               1 karton = <b>{per}</b> botol{" "}

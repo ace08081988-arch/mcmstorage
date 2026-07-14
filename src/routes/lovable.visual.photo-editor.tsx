@@ -103,7 +103,7 @@ function Harness() {
         )
       )}
       {(saved || cancelled) && (
-        <div className="p-6 text-sm">
+        <div className="p-ms-6 text-ms-sm">
           {saved ? (
             <div data-testid="harness-saved">
               Tersimpan: {saved.bytes} byte, dataUrl {saved.dataUrlLen} char
@@ -112,7 +112,7 @@ function Harness() {
             <div data-testid="harness-cancelled">Dibatalkan</div>
           )}
           <button
-            className="mt-3 inline-flex h-9 items-center rounded-md border bg-background px-3 text-sm"
+            className="mt-3 inline-flex h-9 items-center rounded-md border bg-background px-ms-3 text-ms-sm"
             onClick={() => {
               setSaved(null);
               setCancelled(false);

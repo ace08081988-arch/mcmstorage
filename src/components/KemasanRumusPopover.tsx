@@ -120,7 +120,7 @@ export function KemasanRumusPopover({
           className="max-w-xs whitespace-normal border bg-popover text-popover-foreground shadow-md"
           data-testid="kemasan-rumus-content"
         >
-          <div className="space-y-1 text-[11px] leading-relaxed">
+          <div className="space-y-1 text-ms-2xs leading-relaxed">
             <div className="font-semibold">Rumus konversi kemasan</div>
             {isBotol ? (
               <div>

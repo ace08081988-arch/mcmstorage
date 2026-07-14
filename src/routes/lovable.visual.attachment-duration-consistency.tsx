@@ -82,21 +82,21 @@ function Harness() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <h1 className="mb-2 text-sm font-semibold">
+    <div className="min-h-screen bg-background p-ms-4">
+      <h1 className="mb-2 text-ms-sm font-semibold">
         Attachment duration consistency
       </h1>
       <button
         type="button"
         data-testid="ad-remount"
         onClick={() => setMountKey((k) => k + 1)}
-        className="mb-2 rounded border px-2 py-1 text-xs"
+        className="mb-2 rounded border px-ms-2 py-1 text-ms-xs"
       >
         Remount rows
       </button>
       <div
         data-testid="ad-scroll"
-        className="flex flex-col gap-3 overflow-y-auto rounded border p-2"
+        className="flex flex-col gap-ms-3 overflow-y-auto rounded border p-ms-2"
         style={{ height: 640 }}
       >
         {url ? (
@@ -112,16 +112,16 @@ function Harness() {
                 data-ad-index={i}
                 data-ad-raw={String(raw)}
                 data-ad-expected={vrbLabel}
-                className="grid grid-cols-3 gap-2 rounded border p-2"
+                className="grid grid-cols-3 gap-ms-2 rounded border p-ms-2"
               >
                 <div data-surface="vnp">
-                  <div className="mb-1 text-[10px] text-muted-foreground">
+                  <div className="mb-1 text-ms-2xs text-muted-foreground">
                     VoiceNotePlayer
                   </div>
                   <VoiceNotePlayer url={url} mine={false} durationSec={raw} />
                 </div>
                 <div data-surface="msg">
-                  <div className="mb-1 text-[10px] text-muted-foreground">
+                  <div className="mb-1 text-ms-2xs text-muted-foreground">
                     MessageAttachment (audio branch)
                   </div>
                   {/*
@@ -134,12 +134,12 @@ function Harness() {
                   <VoiceNotePlayer url={url} mine={false} durationSec={raw} />
                 </div>
                 <div data-surface="vrb">
-                  <div className="mb-1 text-[10px] text-muted-foreground">
+                  <div className="mb-1 text-ms-2xs text-muted-foreground">
                     VoiceRecorderButton (sent)
                   </div>
                   <span
                     data-testid="vrb-label"
-                    className="text-xs tabular-nums text-muted-foreground"
+                    className="text-ms-xs tabular-nums text-muted-foreground"
                   >
                     {vrbLabel}
                   </span>
@@ -148,7 +148,7 @@ function Harness() {
             );
           })
         ) : (
-          <div className="text-xs text-muted-foreground">Menyiapkan sampel…</div>
+          <div className="text-ms-xs text-muted-foreground">Menyiapkan sampel…</div>
         )}
       </div>
     </div>

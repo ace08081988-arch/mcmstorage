@@ -31,35 +31,35 @@ export const Route = createFileRoute(
 
 function ApkAvailabilityShortcutsHarness() {
   return (
-    <div className="mx-auto max-w-md space-y-4 p-4">
-      <h1 className="text-lg font-semibold">
+    <div className="mx-auto max-w-md space-ms-4 p-ms-4">
+      <h1 className="text-ms-lg font-semibold">
         APK availability shortcuts (harness)
       </h1>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-ms-xs text-muted-foreground">
         Halaman ini hanya untuk E2E; jangan diindeks.
       </p>
 
       <section
         data-testid="apk-shortcut-download-chat"
-        className="rounded-md border p-3"
+        className="rounded-md border p-ms-3"
       >
-        <div className="mb-2 text-xs font-medium">Download APK Chat</div>
+        <div className="mb-2 text-ms-xs font-medium">Download APK Chat</div>
         <DownloadChatApkShortcut />
       </section>
 
       <section
         data-testid="apk-shortcut-download-storage"
-        className="rounded-md border p-3"
+        className="rounded-md border p-ms-3"
       >
-        <div className="mb-2 text-xs font-medium">Download APK Storage</div>
+        <div className="mb-2 text-ms-xs font-medium">Download APK Storage</div>
         <DownloadStorageApkShortcut />
       </section>
 
       <section
         data-testid="apk-shortcut-copy-chat-links"
-        className="rounded-md border p-3"
+        className="rounded-md border p-ms-3"
       >
-        <div className="mb-2 text-xs font-medium">Copy semua link APK Chat</div>
+        <div className="mb-2 text-ms-xs font-medium">Copy semua link APK Chat</div>
         <CopyChatApkLinksButton variant="shortcut" />
       </section>
     </div>

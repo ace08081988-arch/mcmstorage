@@ -125,7 +125,7 @@ function BuatStatusPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-background">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background/95 px-3 py-3 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center gap-ms-2 border-b bg-background/95 px-ms-3 py-ms-3 backdrop-blur">
         <Button
           variant="ghost"
           size="icon"
@@ -134,10 +134,10 @@ function BuatStatusPage() {
         >
           <ArrowLeft className="size-5" />
         </Button>
-        <h1 className="text-lg font-semibold">Buat Status</h1>
+        <h1 className="text-ms-lg font-semibold">Buat Status</h1>
       </header>
-      <main className="flex-1 space-y-4 p-4">
-        <div className="flex gap-2">
+      <main className="flex-1 space-ms-4 p-ms-4">
+        <div className="flex gap-ms-2">
           <Button
             variant={mode === "media" ? "default" : "outline"}
             onClick={() => setMode("media")}
@@ -156,21 +156,21 @@ function BuatStatusPage() {
           </Button>
         </div>
 
-        <fieldset className="rounded-2xl border p-3">
-          <legend className="px-1 text-xs font-medium text-muted-foreground">
+        <fieldset className="rounded-2xl border p-ms-3">
+          <legend className="px-1 text-ms-xs font-medium text-muted-foreground">
             Siapa yang bisa melihat
           </legend>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-ms-2">
             <button
               type="button"
               onClick={() => setVisibility("public")}
               aria-pressed={visibility === "public"}
-              className="flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm aria-[pressed=true]:border-primary aria-[pressed=true]:bg-primary/10"
+              className="flex items-center gap-ms-2 rounded-xl border px-ms-3 py-ms-2 text-left text-ms-sm aria-[pressed=true]:border-primary aria-[pressed=true]:bg-primary/10"
             >
               <Globe className="size-4" />
               <div>
                 <div className="font-medium">Semua orang</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-2xs text-muted-foreground">
                   Semua pengguna aplikasi
                 </div>
               </div>
@@ -179,18 +179,18 @@ function BuatStatusPage() {
               type="button"
               onClick={() => setVisibility("friends")}
               aria-pressed={visibility === "friends"}
-              className="flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm aria-[pressed=true]:border-primary aria-[pressed=true]:bg-primary/10"
+              className="flex items-center gap-ms-2 rounded-xl border px-ms-3 py-ms-2 text-left text-ms-sm aria-[pressed=true]:border-primary aria-[pressed=true]:bg-primary/10"
             >
               <Users className="size-4" />
               <div>
                 <div className="font-medium">Teman saja</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-2xs text-muted-foreground">
                   Kontak yang diterima
                 </div>
               </div>
             </button>
           </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">
+          <p className="mt-2 text-ms-2xs text-muted-foreground">
             Ubah default di{" "}
             <button
               type="button"
@@ -224,7 +224,7 @@ function BuatStatusPage() {
                   <img src={previewUrl} alt="Preview" className="size-full object-cover" />
                 )
               ) : (
-                <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-col items-center gap-ms-2 text-ms-sm text-muted-foreground">
                   <ImagePlus className="size-8" />
                   Ketuk untuk pilih foto/video
                 </div>
@@ -240,7 +240,7 @@ function BuatStatusPage() {
         ) : (
           <>
             <div
-              className="flex min-h-[280px] items-center justify-center rounded-2xl p-6 text-center text-2xl font-semibold text-white"
+              className="flex min-h-[280px] items-center justify-center rounded-2xl p-ms-6 text-center text-ms-2xl font-semibold text-white"
               style={{ background: bg }}
             >
               {caption || "Tulis sesuatu…"}
@@ -252,7 +252,7 @@ function BuatStatusPage() {
               maxLength={500}
               rows={4}
             />
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-ms-2">
               {["#0f172a", "#1e293b", "#065f46", "#7c2d12", "#4c1d95", "#831843"].map(
                 (c) => (
                   <button

@@ -27,9 +27,9 @@ const UPDATED_AT = "21 Juni 2026";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <div className="mt-2 space-y-2 text-sm text-muted-foreground">{children}</div>
+    <section className="rounded-lg border border-border bg-card p-ms-5 shadow-sm">
+      <h2 className="text-ms-lg font-semibold text-foreground">{title}</h2>
+      <div className="mt-2 space-ms-2 text-ms-sm text-muted-foreground">{children}</div>
     </section>
   );
 }
@@ -38,17 +38,17 @@ function TermsPage() {
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
-      <main className="mx-auto max-w-3xl px-4 py-10">
+      <main className="mx-auto max-w-3xl px-ms-4 py-10">
         <header className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-ms-3xl font-bold tracking-tight text-foreground">
             Syarat &amp; Ketentuan
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-ms-sm text-muted-foreground">
             Terakhir diperbarui: {UPDATED_AT}
           </p>
         </header>
 
-        <div className="space-y-4">
+        <div className="space-ms-4">
           <Section title="1. Penjual">
             <p>
               Layanan MCM Storage (selanjutnya "<strong>Layanan</strong>")

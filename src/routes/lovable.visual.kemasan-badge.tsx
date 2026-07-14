@@ -54,17 +54,17 @@ function KemasanBadgeHarness() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 font-sans text-sm text-foreground">
-      <div className="mx-auto max-w-xl space-y-3">
-        <h1 className="text-lg font-semibold">
+    <div className="min-h-screen bg-background p-ms-4 font-sans text-ms-sm text-foreground">
+      <div className="mx-auto max-w-xl space-ms-3">
+        <h1 className="text-ms-lg font-semibold">
           Harness: Kemasan Badge &amp; Popover
         </h1>
 
-        <div className="grid grid-cols-2 gap-2 rounded-lg border p-3">
+        <div className="grid grid-cols-2 gap-ms-2 rounded-lg border p-ms-3">
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">package_type</span>
+            <span className="text-ms-2xs text-muted-foreground">package_type</span>
             <select
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               data-testid="kb-package-type"
               value={packageType}
               onChange={(e) => setPackageType(e.target.value as PT)}
@@ -76,9 +76,9 @@ function KemasanBadgeHarness() {
             </select>
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">package_size</span>
+            <span className="text-ms-2xs text-muted-foreground">package_size</span>
             <input
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               inputMode="numeric"
               data-testid="kb-package-size"
               value={packageSize}
@@ -86,9 +86,9 @@ function KemasanBadgeHarness() {
             />
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">base_unit</span>
+            <span className="text-ms-2xs text-muted-foreground">base_unit</span>
             <select
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               data-testid="kb-base-unit"
               value={baseUnit}
               onChange={(e) => setBaseUnit(e.target.value as BU)}
@@ -98,9 +98,9 @@ function KemasanBadgeHarness() {
             </select>
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">qty</span>
+            <span className="text-ms-2xs text-muted-foreground">qty</span>
             <input
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               inputMode="numeric"
               data-testid="kb-qty"
               value={qty}
@@ -108,9 +108,9 @@ function KemasanBadgeHarness() {
             />
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">mode</span>
+            <span className="text-ms-2xs text-muted-foreground">mode</span>
             <select
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               data-testid="kb-mode"
               value={mode}
               onChange={(e) => setMode(e.target.value as Mode)}
@@ -122,8 +122,8 @@ function KemasanBadgeHarness() {
           </label>
         </div>
 
-        <div className="rounded-lg border p-3">
-          <div className="text-[11px] text-muted-foreground">Popover trigger (hint)</div>
+        <div className="rounded-lg border p-ms-3">
+          <div className="text-ms-2xs text-muted-foreground">Popover trigger (hint)</div>
           <div className="mt-1">
             <KemasanRumusPopover
               packageType={packageType}
@@ -138,8 +138,8 @@ function KemasanBadgeHarness() {
           </div>
         </div>
 
-        <div className="rounded-lg border p-3">
-          <div className="text-[11px] text-muted-foreground">Badge breakdown</div>
+        <div className="rounded-lg border p-ms-3">
+          <div className="text-ms-2xs text-muted-foreground">Badge breakdown</div>
           <div className="mt-1">
             <KemasanKonversiBadge
               packageType={packageType}
@@ -152,8 +152,8 @@ function KemasanBadgeHarness() {
           </div>
         </div>
 
-        <div className="rounded-lg border p-3">
-          <div className="text-[11px] text-muted-foreground">
+        <div className="rounded-lg border p-ms-3">
+          <div className="text-ms-2xs text-muted-foreground">
             fmtItemQty(stok_base) — Kolom Stok gudang
           </div>
           <div

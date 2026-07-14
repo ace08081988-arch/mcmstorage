@@ -15,7 +15,7 @@ import { VoiceNotePlayer } from "@/components/chat/VoiceNotePlayer";
 export function UnknownCardBlock({ mine }: { mine: boolean }) {
   return (
     <div
-      className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-xs ${
+      className={`flex items-center gap-ms-2 rounded-lg border px-ms-2 py-ms-2 text-ms-xs ${
         mine
           ? "border-primary-foreground/30 bg-primary-foreground/10"
           : "border-border bg-background/70"
@@ -76,21 +76,21 @@ export function MessageAttachment(props: {
         <img src={url} alt={props.name ?? "foto"} className="h-auto max-h-72 w-full max-w-full object-cover sm:max-w-xs" loading="lazy" />
       </a>
     ) : (
-      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat foto…</div>
+      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-ms-2xs text-muted-foreground">Memuat foto…</div>
     );
   }
   if (mime.startsWith("video/")) {
     return url ? (
       <video src={url} controls preload="metadata" className="max-h-72 w-full max-w-full rounded-lg bg-black sm:max-w-xs" />
     ) : (
-      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-[10px] text-muted-foreground">Memuat video…</div>
+      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-ms-2xs text-muted-foreground">Memuat video…</div>
     );
   }
   if (mime.startsWith("audio/")) {
     return url ? (
       <VoiceNotePlayer url={url} mine={props.mine} durationSec={props.durationSec ?? null} />
     ) : (
-      <div className="grid h-10 w-52 animate-pulse place-items-center rounded-full bg-muted/60 text-[10px] text-muted-foreground">
+      <div className="grid h-10 w-52 animate-pulse place-items-center rounded-full bg-muted/60 text-ms-2xs text-muted-foreground">
         Memuat voice note…
       </div>
     );
@@ -100,12 +100,12 @@ export function MessageAttachment(props: {
       href={url ?? "#"}
       target="_blank"
       rel="noreferrer"
-      className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-xs ${props.mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}
+      className={`flex items-center gap-ms-2 rounded-lg border px-ms-2 py-ms-2 text-ms-xs ${props.mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}
     >
       <FileText className="h-5 w-5 shrink-0 opacity-70" />
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium">{props.name ?? "Berkas"}</div>
-        <div className="text-[10px] opacity-70">{mime || "berkas"} {props.size ? `· ${bytes(props.size)}` : ""}</div>
+        <div className="text-ms-2xs opacity-70">{mime || "berkas"} {props.size ? `· ${bytes(props.size)}` : ""}</div>
       </div>
       <Download className="h-4 w-4 opacity-70" />
     </a>
@@ -118,10 +118,10 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
     const map = `https://www.google.com/maps/search/?api=1&query=${card.lat},${card.lng}`;
     const embed = `https://www.openstreetmap.org/export/embed.html?bbox=${card.lng - 0.005},${card.lat - 0.004},${card.lng + 0.005},${card.lat + 0.004}&layer=mapnik&marker=${card.lat},${card.lng}`;
     return (
-      <div className={`max-w-full overflow-hidden rounded-lg border text-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
+      <div className={`max-w-full overflow-hidden rounded-lg border text-ms-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
         <iframe title="peta" src={embed} className="h-32 w-full max-w-full sm:max-w-xs" />
-        <div className="px-2 py-1.5">
-          <div className="flex items-center gap-1 font-semibold">
+        <div className="px-ms-2 py-1.5">
+          <div className="flex items-center gap-ms-1 font-semibold">
             {liveActive ? <Navigation className="h-3.5 w-3.5 animate-pulse text-primary" /> : <MapPin className="h-3.5 w-3.5" />}
             {liveActive ? "Live location" : (card.label || "Lokasi")}
           </div>
@@ -129,7 +129,7 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
             <div className="opacity-70">Berakhir {new Date(card.live_until!).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</div>
           ) : null}
           <div className="truncate opacity-70">{card.lat.toFixed(5)}, {card.lng.toFixed(5)}</div>
-          <a href={map} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-primary underline">
+          <a href={map} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-ms-1 truncate text-primary underline">
             Buka di Maps
           </a>
         </div>
@@ -139,16 +139,16 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
   if (card.type === "contact") {
     const waPhone = card.phone.replace(/[^0-9]/g, "");
     return (
-      <div className={`rounded-lg border px-2 py-2 text-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
+      <div className={`rounded-lg border px-ms-2 py-ms-2 text-ms-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
         <div className="font-semibold">👤 {card.name}</div>
         <div className="opacity-80">WA: {card.phone}</div>
         {card.pin ? <div className="font-mono text-primary">PIN chat MCM: {card.pin}</div> : null}
         {card.note ? <div className="opacity-70">{card.note}</div> : null}
-        <div className="mt-1 flex gap-2">
-          <a href={`tel:${card.phone}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 hover:bg-accent">
+        <div className="mt-1 flex gap-ms-2">
+          <a href={`tel:${card.phone}`} className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-0.5 hover:bg-accent">
             <Phone className="h-3 w-3" /> Telepon
           </a>
-          <a href={`https://wa.me/${waPhone}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 hover:bg-accent">
+          <a href={`https://wa.me/${waPhone}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-0.5 hover:bg-accent">
             <MessageCircle className="h-3 w-3" /> WA
           </a>
         </div>
@@ -157,8 +157,8 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
   }
   if (card.type === "product") {
     return (
-      <div className={`rounded-lg border px-2 py-2 text-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
-        <div className="flex items-center gap-1 font-semibold">
+      <div className={`rounded-lg border px-ms-2 py-ms-2 text-ms-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
+        <div className="flex items-center gap-ms-1 font-semibold">
           <Package className="h-3.5 w-3.5" /> {card.name}
         </div>
         {card.package ? <div className="opacity-80">{card.package}</div> : null}
@@ -174,7 +174,7 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
         <Link
           to="/ecer"
           search={{ item: card.id, title: undefined, highlight: undefined, send: undefined }}
-          className="mt-1 inline-flex items-center gap-1 text-primary underline"
+          className="mt-1 inline-flex items-center gap-ms-1 text-primary underline"
         >
           Buka produk
         </Link>
@@ -198,13 +198,13 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
     }
     return (
       <div
-        className={`min-w-[16rem] max-w-xs rounded-lg border px-2 py-2 text-xs ${
+        className={`min-w-[16rem] max-w-xs rounded-lg border px-ms-2 py-ms-2 text-ms-xs ${
           mine
             ? "border-primary-foreground/30 bg-primary-foreground/10"
             : "border-border bg-background/70"
         }`}
       >
-        <div className="mb-1 flex items-center gap-1 font-semibold">
+        <div className="mb-1 flex items-center gap-ms-1 font-semibold">
           <ShoppingCart className="h-3.5 w-3.5" /> Keranjang
           <span className="ml-auto opacity-70">
             {card.lines.length} item
@@ -212,7 +212,7 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
         </div>
         <ul className="divide-y divide-current/10">
           {card.lines.map((l, i) => (
-            <li key={i} className="flex items-start gap-2 py-1">
+            <li key={i} className="flex items-start gap-ms-2 py-1">
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{l.name}</div>
                 <div className="opacity-70">
@@ -237,7 +237,7 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
         {card.note ? (
           <div className="mt-1 whitespace-pre-wrap opacity-80">Catatan: {card.note}</div>
         ) : null}
-        <div className="mt-1 text-[10px] opacity-60">
+        <div className="mt-1 text-ms-2xs opacity-60">
           Pesanan otomatis tercatat di daftar pesanan.
         </div>
       </div>

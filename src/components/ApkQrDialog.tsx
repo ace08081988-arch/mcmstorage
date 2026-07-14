@@ -71,8 +71,8 @@ export function ApkQrDialog({
             {target?.meta ? ` · ${target.meta}` : ""}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative grid h-[276px] w-[276px] place-items-center rounded-lg border bg-white p-2">
+        <div className="flex flex-col items-center gap-ms-3">
+          <div className="relative grid h-[276px] w-[276px] place-items-center rounded-lg border bg-white p-ms-2">
             <canvas ref={canvasRef} className="h-[260px] w-[260px]" />
             {rendering && (
               <div className="absolute inset-0 grid place-items-center bg-white/60">
@@ -80,11 +80,11 @@ export function ApkQrDialog({
               </div>
             )}
           </div>
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-center text-ms-xs text-muted-foreground">
             Buka kamera atau pemindai QR di perangkat lain untuk membuka link unduhan APK.
           </p>
-          <div className="flex w-full items-center gap-2 rounded-md border bg-muted/40 px-2 py-1.5">
-            <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+          <div className="flex w-full items-center gap-ms-2 rounded-md border bg-muted/40 px-ms-2 py-1.5">
+            <span className="min-w-0 flex-1 truncate text-ms-2xs text-muted-foreground">
               {target?.url}
             </span>
             <button

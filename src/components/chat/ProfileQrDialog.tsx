@@ -213,7 +213,7 @@ export function ProfileQrDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={fullscreen ? "h-svh max-w-none w-svw rounded-none p-0" : "max-w-md"}>
-        <DialogHeader className={fullscreen ? "px-4 pt-4" : ""}>
+        <DialogHeader className={fullscreen ? "px-ms-4 pt-4" : ""}>
           <DialogTitle>Kode QR profil</DialogTitle>
           <DialogDescription className="truncate">
             {name}
@@ -221,13 +221,13 @@ export function ProfileQrDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className={fullscreen ? "flex flex-1 items-center justify-center p-4" : "flex items-center justify-center py-2"}>
+        <div className={fullscreen ? "flex flex-1 items-center justify-center p-ms-4" : "flex items-center justify-center py-ms-2"}>
           {error ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-ms-3 py-ms-2 text-ms-sm text-destructive">
               {error}
             </div>
           ) : (
-            <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-border">
+            <div className="rounded-2xl bg-white p-ms-4 shadow-sm ring-1 ring-border">
               <canvas
                 ref={canvasRef}
                 aria-label={`Kode QR untuk ${name}`}
@@ -238,12 +238,12 @@ export function ProfileQrDialog({
         </div>
 
         {(phone || smsPhone) && (
-          <div className={fullscreen ? "px-4" : ""}>
+          <div className={fullscreen ? "px-ms-4" : ""}>
             {showSmsField ? (
-              <div className="space-y-1.5 rounded-md border bg-muted/30 p-2">
+              <div className="space-y-1.5 rounded-md border bg-muted/30 p-ms-2">
                 <Label
                   htmlFor="qr-sms-body"
-                  className="flex items-center gap-1.5 text-[11px] font-medium"
+                  className="flex items-center gap-ms-1.5 text-ms-2xs font-medium"
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
                   Pesan SMS awal (otomatis terisi saat QR dipindai)
@@ -254,9 +254,9 @@ export function ProfileQrDialog({
                   onChange={(e) => setSmsDraft(e.target.value.slice(0, 500))}
                   placeholder={`Halo ${name}, saya ingin bertanya…`}
                   rows={2}
-                  className="text-xs"
+                  className="text-ms-xs"
                 />
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <div className="flex items-center justify-between text-ms-2xs text-muted-foreground">
                   <span>Kirim ke: {smsPhone || phone}</span>
                   <span className="tabular-nums">{smsDraft.length}/500</span>
                 </div>
@@ -265,7 +265,7 @@ export function ProfileQrDialog({
               <button
                 type="button"
                 onClick={() => setShowSmsField(true)}
-                className="flex items-center gap-1.5 text-[11px] text-primary underline"
+                className="flex items-center gap-ms-1.5 text-ms-2xs text-primary underline"
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 Tambah pesan SMS awal
@@ -274,18 +274,18 @@ export function ProfileQrDialog({
           </div>
         )}
 
-        <div className={fullscreen ? "flex flex-wrap gap-2 border-t bg-background px-4 py-3" : "flex flex-wrap gap-2 pt-2"}>
-          <Button type="button" onClick={handleDownload} disabled={!dataUrl} className="gap-2">
+        <div className={fullscreen ? "flex flex-wrap gap-ms-2 border-t bg-background px-ms-4 py-ms-3" : "flex flex-wrap gap-ms-2 pt-2"}>
+          <Button type="button" onClick={handleDownload} disabled={!dataUrl} className="gap-ms-2">
             <Download className="h-4 w-4" /> Unduh PNG
           </Button>
-          <Button type="button" variant="secondary" onClick={handleShare} disabled={!dataUrl} className="gap-2">
+          <Button type="button" variant="secondary" onClick={handleShare} disabled={!dataUrl} className="gap-ms-2">
             <Share2 className="h-4 w-4" /> Bagikan
           </Button>
           <Button
             type="button"
             variant="outline"
             onClick={() => setScanOpen(true)}
-            className="gap-2"
+            className="gap-ms-2"
             aria-label="Pindai QR dengan kamera"
           >
             <Camera className="h-4 w-4" /> Pindai QR
@@ -294,7 +294,7 @@ export function ProfileQrDialog({
             type="button"
             variant="ghost"
             onClick={() => setFullscreen((v) => !v)}
-            className="ml-auto gap-2"
+            className="ml-auto gap-ms-2"
             aria-pressed={fullscreen}
           >
             {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}

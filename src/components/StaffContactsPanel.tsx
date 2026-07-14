@@ -37,7 +37,7 @@ function normalizePhone(input: string): string {
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-2 rounded-md border bg-background/50 p-2">
+    <div className="flex items-center gap-ms-2 rounded-md border bg-background/50 p-ms-2">
       <div className="min-w-0 flex-1 space-y-1.5">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-3 w-1/2" />
@@ -153,11 +153,11 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-3 shadow-sm">
-      <div className="flex items-center gap-2">
+    <div className="rounded-xl border bg-card p-ms-3 shadow-sm">
+      <div className="flex items-center gap-ms-2">
         <Users className="h-4 w-4" />
-        <div className="text-sm font-semibold">Kontak Pegawai</div>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="text-ms-sm font-semibold">Kontak Pegawai</div>
+        <div className="ml-auto flex items-center gap-ms-1.5">
           <button
             onClick={() => { invalidateCache(); void load(true); }}
             disabled={refreshing}
@@ -169,7 +169,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
           </button>
           <button aria-label="Tambah"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs"
+            className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs"
           >
             <Plus className="h-3.5 w-3.5" /> {open ? "Batal" : "Tambah"}
           </button>
@@ -177,23 +177,23 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
       </div>
 
       {open && (
-        <div className="mt-3 grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-[1fr_1fr_auto] sm:grid-rows-2">
+        <div className="mt-3 grid grid-cols-1 gap-ms-2 rounded-md border bg-muted/30 p-ms-2 sm:grid-cols-[1fr_1fr_auto] sm:grid-rows-2">
           <input
             value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama pegawai"
-            className="h-9 rounded-md border bg-background px-2 text-sm"
+            className="h-9 rounded-md border bg-background px-ms-2 text-ms-sm"
           />
           <input
             value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Nomor WA (08… / 628…)"
-            inputMode="tel" className="h-9 rounded-md border bg-background px-2 text-sm"
+            inputMode="tel" className="h-9 rounded-md border bg-background px-ms-2 text-ms-sm"
           />
           <button
             onClick={onAdd} disabled={busy}
-            className="h-9 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50 sm:row-span-2"
+            className="h-9 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50 sm:row-span-2"
           >Simpan</button>
           <input
             value={pinChatMcm} onChange={(e) => setPinChatMcm(e.target.value)} placeholder="PIN chat MCM (opsional)"
             inputMode="text" autoCapitalize="characters" maxLength={10}
-            className="col-span-1 sm:col-span-2 h-9 rounded-md border bg-background px-2 text-sm font-mono tracking-widest"
+            className="col-span-1 sm:col-span-2 h-9 rounded-md border bg-background px-ms-2 text-ms-sm font-mono tracking-widest"
           />
         </div>
       )}
@@ -209,7 +209,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Cari nama, nomor, atau PIN…"
             aria-label="Cari kontak pegawai"
-            className="h-9 w-full rounded-md border bg-background pl-7 pr-8 text-sm"
+            className="h-9 w-full rounded-md border bg-background pl-7 pr-8 text-ms-sm"
           />
           {query && (
             <button
@@ -224,7 +224,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
         </div>
       )}
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 space-ms-2">
         {refreshing && rows.length > 0 && (
           <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
             <div className="h-full w-1/3 animate-[shimmer_1.2s_infinite] bg-primary/60" />
@@ -237,21 +237,21 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
             <SkeletonRow />
           </>
         ) : rows.length === 0 ? (
-          <div className="rounded-md border border-dashed p-3 text-center text-[11px] text-muted-foreground">
+          <div className="rounded-md border border-dashed p-ms-3 text-center text-ms-2xs text-muted-foreground">
             Belum ada kontak pegawai. Tambah dulu agar mudah kirim link tugas via WA.
           </div>
         ) : filteredRows.length === 0 ? (
-          <div className="rounded-md border border-dashed p-3 text-center text-[11px] text-muted-foreground">
+          <div className="rounded-md border border-dashed p-ms-3 text-center text-ms-2xs text-muted-foreground">
             Tidak ada kontak yang cocok dengan “{debounced}”.
           </div>
         ) : (
           filteredRows.map((c) => (
-            <div key={c.id} className="flex items-center gap-2 rounded-md border bg-background p-2">
+            <div key={c.id} className="flex items-center gap-ms-2 rounded-md border bg-background p-ms-2">
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold">{c.name}</div>
-                <div className="text-[11px] text-muted-foreground">WA: +{c.wa_phone}</div>
+                <div className="truncate text-ms-sm font-semibold">{c.name}</div>
+                <div className="text-ms-2xs text-muted-foreground">WA: +{c.wa_phone}</div>
                 {c.pin_chat_mcm ? (
-                  <div className="text-[11px] font-mono text-primary">PIN MCM: {c.pin_chat_mcm}</div>
+                  <div className="text-ms-2xs font-mono text-primary">PIN MCM: {c.pin_chat_mcm}</div>
                 ) : null}
               </div>
               <a

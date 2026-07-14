@@ -193,7 +193,7 @@ export function AppHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-2 px-2 backdrop-blur-md",
+        "sticky top-0 z-30 flex h-14 items-center gap-ms-2 px-ms-2 backdrop-blur-md",
         "border-b border-primary/15 bg-background/85 supports-[backdrop-filter]:bg-background/70",
       )}
       style={{
@@ -212,7 +212,7 @@ export function AppHeader() {
       {/* Breadcrumb — hidden on very narrow screens, visible from sm up */}
       <nav
         aria-label="Breadcrumb"
-        className="hidden min-w-0 flex-1 items-center gap-1 text-sm sm:flex"
+        className="hidden min-w-0 flex-1 items-center gap-ms-1 text-ms-sm sm:flex"
       >
         <Link
           to="/"
@@ -224,16 +224,16 @@ export function AppHeader() {
         {crumbs.map((c, i) => {
           const isLast = i === crumbs.length - 1;
           return (
-            <div key={i} className="flex min-w-0 items-center gap-1">
+            <div key={i} className="flex min-w-0 items-center gap-ms-1">
               <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
               {c.group && !isLast ? (
-                <span className="hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground md:inline">
+                <span className="hidden text-ms-2xs font-medium uppercase tracking-wider text-muted-foreground md:inline">
                   {c.group}
                 </span>
               ) : null}
               <span
                 className={cn(
-                  "truncate rounded-md px-2 py-1 text-sm",
+                  "truncate rounded-md px-ms-2 py-1 text-ms-sm",
                   isLast
                     ? "bg-primary/8 font-semibold text-foreground"
                     : "text-muted-foreground",
@@ -249,7 +249,7 @@ export function AppHeader() {
 
       {/* Mobile: page title, centered, tracking tight untuk kesan premium */}
       <div className="flex min-w-0 flex-1 items-center justify-center sm:hidden">
-        <span className="truncate text-[15px] font-semibold tracking-tight">
+        <span className="truncate text-ms-base font-semibold tracking-tight">
           {crumbs[crumbs.length - 1]?.label ?? "MCM Storage"}
         </span>
       </div>
@@ -259,7 +259,7 @@ export function AppHeader() {
         type="button"
         onClick={() => setCmdOpen(true)}
         className={cn(
-          "group ml-auto hidden h-9 items-center gap-2 rounded-lg border bg-muted/40 px-3 text-sm text-muted-foreground shadow-sm transition-all",
+          "group ml-auto hidden h-9 items-center gap-ms-2 rounded-lg border bg-muted/40 px-ms-3 text-ms-sm text-muted-foreground shadow-sm transition-all",
           "hover:border-primary/40 hover:bg-muted hover:text-foreground",
           "md:inline-flex md:w-64 lg:w-80",
         )}
@@ -267,7 +267,7 @@ export function AppHeader() {
       >
         <Search className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate text-left">Cari menu…</span>
-        <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+        <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border bg-background px-1.5 font-mono text-ms-2xs font-medium text-muted-foreground opacity-100">
           <CommandIcon className="h-3 w-3" />K
         </kbd>
       </button>
@@ -295,50 +295,50 @@ export function AppHeader() {
           >
             <Avatar className="h-8 w-8">
               {me.avatar ? <AvatarImage src={me.avatar} alt="" /> : null}
-              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-[11px] font-semibold text-primary-foreground">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-ms-2xs font-semibold text-primary-foreground">
                 {initialsFor(me.name, me.email)}
               </AvatarFallback>
             </Avatar>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuLabel className="flex items-center gap-3 py-2">
+          <DropdownMenuLabel className="flex items-center gap-ms-3 py-ms-2">
             <Avatar className="h-9 w-9">
               {me.avatar ? <AvatarImage src={me.avatar} alt="" /> : null}
-              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-[11px] font-semibold text-primary-foreground">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-ms-2xs font-semibold text-primary-foreground">
                 {initialsFor(me.name, me.email)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold">
+              <div className="truncate text-ms-sm font-semibold">
                 {me.name || me.email?.split("@")[0] || "Pengguna"}
               </div>
-              <div className="truncate text-[11px] font-normal text-muted-foreground">
+              <div className="truncate text-ms-2xs font-normal text-muted-foreground">
                 {me.email || org.full}
               </div>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link to="/profil" className="flex items-center gap-2">
+            <Link to="/profil" className="flex items-center gap-ms-2">
               <UserIcon className="h-4 w-4 text-muted-foreground" />
               <span>Profil Akun</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/pengaturan-kunci" className="flex items-center gap-2">
+            <Link to="/pengaturan-kunci" className="flex items-center gap-ms-2">
               <Lock className="h-4 w-4 text-muted-foreground" />
               <span>Pengaturan Kunci</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/sesi" className="flex items-center gap-2">
+            <Link to="/sesi" className="flex items-center gap-ms-2">
               <MonitorSmartphone className="h-4 w-4 text-muted-foreground" />
               <span>Sesi &amp; Perangkat</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/dashboard" className="flex items-center gap-2">
+            <Link to="/dashboard" className="flex items-center gap-ms-2">
               <Sparkles className="h-4 w-4 text-muted-foreground" />
               <span>Dasbor</span>
             </Link>
@@ -368,11 +368,11 @@ export function AppHeader() {
                     key={it.url}
                     value={`${it.label} ${it.url} ${it.hint ?? ""}`}
                     onSelect={() => go(it.url)}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-ms-2"
                   >
                     <Settings className="h-4 w-4 text-muted-foreground" />
                     <span className="flex-1 truncate">{it.label}</span>
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <span className="text-ms-2xs uppercase tracking-wider text-muted-foreground">
                       {it.url}
                     </span>
                   </CommandItem>

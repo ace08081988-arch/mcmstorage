@@ -5,13 +5,13 @@ import { cn } from "@/lib/utils";
  * Komponen tipografi reusable untuk halaman detail ecer.
  *
  * Hirarki tetap (jangan ditimpa dengan utility ukuran/berat berbeda):
- * - <EcerTitle>     judul hero / nama judul ecer        text-base sm:text-xl font-bold
- * - <EcerSection>   judul kartu / section               text-sm    font-semibold
- * - <EcerValue>     nilai utama baris detail (angka)    text-sm    font-semibold
- * - <EcerBody>      paragraf / catatan                  text-xs    leading-snug
- * - <EcerMeta>      sub-keterangan kecil di bawah nilai text-[11px] leading-snug muted
- * - <EcerLabel>     label kolom (ALL CAPS)              text-[11px] uppercase tracking-wider muted
- * - <EcerMono>      kode/ref/ID                         text-[11px] font-mono
+ * - <EcerTitle>     judul hero / nama judul ecer        text-ms-base sm:text-ms-xl font-bold
+ * - <EcerSection>   judul kartu / section               text-ms-sm    font-semibold
+ * - <EcerValue>     nilai utama baris detail (angka)    text-ms-sm    font-semibold
+ * - <EcerBody>      paragraf / catatan                  text-ms-xs    leading-snug
+ * - <EcerMeta>      sub-keterangan kecil di bawah nilai text-ms-2xs leading-snug muted
+ * - <EcerLabel>     label kolom (ALL CAPS)              text-ms-2xs uppercase tracking-wider muted
+ * - <EcerMono>      kode/ref/ID                         text-ms-2xs font-mono
  */
 
 type TextProps<T extends React.ElementType> = {
@@ -41,35 +41,35 @@ function makeText<DefaultTag extends React.ElementType>(
 
 export const EcerTitle = makeText(
   "h2",
-  "break-words text-base font-bold leading-snug sm:text-xl",
+  "break-words text-ms-base font-bold leading-snug sm:text-ms-xl",
 );
 
 export const EcerSection = makeText(
   "h3",
-  "text-sm font-semibold leading-snug",
+  "text-ms-sm font-semibold leading-snug",
 );
 
 export const EcerValue = makeText(
   "span",
-  "text-sm font-semibold leading-snug text-foreground",
+  "text-ms-sm font-semibold leading-snug text-foreground",
 );
 
 export const EcerBody = makeText(
   "p",
-  "text-xs leading-snug text-foreground",
+  "text-ms-xs leading-snug text-foreground",
 );
 
 export const EcerMeta = makeText(
   "span",
-  "text-[11px] leading-snug text-muted-foreground",
+  "text-ms-2xs leading-snug text-muted-foreground",
 );
 
 export const EcerLabel = makeText(
   "span",
-  "text-[11px] font-medium uppercase leading-snug tracking-wider text-muted-foreground",
+  "text-ms-2xs font-medium uppercase leading-snug tracking-wider text-muted-foreground",
 );
 
 export const EcerMono = makeText(
   "span",
-  "font-mono text-[11px] leading-snug",
+  "font-mono text-ms-2xs leading-snug",
 );

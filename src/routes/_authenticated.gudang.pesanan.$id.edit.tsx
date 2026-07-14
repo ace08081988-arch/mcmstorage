@@ -97,32 +97,32 @@ function PesananEditPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-3">
-          <button onClick={() => navigate({ to: "/gudang/pesanan/$id", params: { id } })} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">← Kembali</button>
-          <h1 className="text-base font-bold">✏️ Edit Pesanan</h1>
+        <div className="mx-auto flex max-w-3xl items-center gap-ms-2 px-ms-3 py-ms-3">
+          <button onClick={() => navigate({ to: "/gudang/pesanan/$id", params: { id } })} className="rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent">← Kembali</button>
+          <h1 className="text-ms-base font-bold">✏️ Edit Pesanan</h1>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl space-y-3 p-3">
+      <main className="mx-auto max-w-3xl space-ms-3 p-ms-3">
         {loading ? (
-          <div className="text-sm text-muted-foreground">Memuat…</div>
+          <div className="text-ms-sm text-muted-foreground">Memuat…</div>
         ) : !order ? (
-          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
             Pesanan tidak ditemukan.<br />
             <Link to="/gudang" className="text-primary underline">Kembali ke Gudang</Link>
           </div>
         ) : (
-          <form onSubmit={save} className="space-y-3 rounded-lg border bg-card p-3">
+          <form onSubmit={save} className="space-ms-3 rounded-lg border bg-card p-ms-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold">Pelanggan</label>
-              <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="w-full rounded border bg-background px-2 py-2 text-sm">
+              <label className="text-ms-xs font-semibold">Pelanggan</label>
+              <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm">
                 <option value="">— Tanpa pelanggan —</option>
                 {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold">Barang</label>
-              <select value={itemId} onChange={(e) => setItemId(e.target.value)} className="w-full rounded border bg-background px-2 py-2 text-sm" required>
+              <label className="text-ms-xs font-semibold">Barang</label>
+              <select value={itemId} onChange={(e) => setItemId(e.target.value)} className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm" required>
                 <option value="">— Pilih barang —</option>
                 {items.map((i) => (
                   <option key={i.id} value={i.id}>
@@ -131,47 +131,47 @@ function PesananEditPage() {
                 ))}
               </select>
               {selectedItem && (
-                <div className="text-[11px] text-muted-foreground">Stok: {fmtItemQty(selectedItem.stock_base, selectedItem)}</div>
+                <div className="text-ms-2xs text-muted-foreground">Stok: {fmtItemQty(selectedItem.stock_base, selectedItem)}</div>
               )}
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold">Satuan pesanan</label>
-              <div className="flex gap-2">
+              <label className="text-ms-xs font-semibold">Satuan pesanan</label>
+              <div className="flex gap-ms-2">
                 <button type="button" onClick={() => setQtyMode("base")}
-                  className={`flex-1 rounded border px-3 py-2 text-xs ${qtyMode === "base" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                  className={`flex-1 rounded border px-ms-3 py-ms-2 text-ms-xs ${qtyMode === "base" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
                   Per {selectedItem?.base_unit ?? "gram"}
                 </button>
                 <button type="button" onClick={() => setQtyMode("package")}
-                  className={`flex-1 rounded border px-3 py-2 text-xs ${qtyMode === "package" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                  className={`flex-1 rounded border px-ms-3 py-ms-2 text-ms-xs ${qtyMode === "package" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
                   Per {selectedItem?.package_type ?? "botol"}
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-ms-2">
               <div className="space-y-1">
-                <label className="text-xs font-semibold">Jumlah ({unitLabel || "—"})</label>
-                <input type="number" step="any" min="0" value={qty} onChange={(e) => setQty(e.target.value)} className="w-full rounded border bg-background px-2 py-2 text-sm" required />
+                <label className="text-ms-xs font-semibold">Jumlah ({unitLabel || "—"})</label>
+                <input type="number" step="any" min="0" value={qty} onChange={(e) => setQty(e.target.value)} className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm" required />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold">Harga {modeLabel}</label>
-                <input type="number" step="any" min="0" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full rounded border bg-background px-2 py-2 text-sm" placeholder="Opsional" />
+                <label className="text-ms-xs font-semibold">Harga {modeLabel}</label>
+                <input type="number" step="any" min="0" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm" placeholder="Opsional" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold">Catatan</label>
-              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full rounded border bg-background px-2 py-2 text-sm" placeholder="Catatan untuk pesanan ini…" />
+              <label className="text-ms-xs font-semibold">Catatan</label>
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm" placeholder="Catatan untuk pesanan ini…" />
             </div>
 
-            <div className="flex gap-2 pt-1">
-              <button type="submit" disabled={saving} className="flex-1 rounded bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            <div className="flex gap-ms-2 pt-1">
+              <button type="submit" disabled={saving} className="flex-1 rounded bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground disabled:opacity-50">
                 {saving ? "Menyimpan…" : "💾 Simpan perubahan"}
               </button>
-              <button type="button" onClick={() => navigate({ to: "/gudang/pesanan/$id", params: { id } })} className="rounded border px-3 py-2 text-sm hover:bg-accent">Batal</button>
+              <button type="button" onClick={() => navigate({ to: "/gudang/pesanan/$id", params: { id } })} className="rounded border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">Batal</button>
             </div>
-            <div className="text-[11px] text-muted-foreground">Status saat ini: <b>{order.status}</b> (ubah status dari halaman detail).</div>
+            <div className="text-ms-2xs text-muted-foreground">Status saat ini: <b>{order.status}</b> (ubah status dari halaman detail).</div>
           </form>
         )}
       </main>

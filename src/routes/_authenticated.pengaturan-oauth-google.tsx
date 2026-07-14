@@ -435,7 +435,7 @@ function OAuthGooglePage() {
 
   if (adminLoading) {
     return (
-      <main className="mx-auto min-h-dvh max-w-2xl bg-background px-4 pt-10 text-sm text-muted-foreground">
+      <main className="mx-auto min-h-dvh max-w-2xl bg-background px-ms-4 pt-10 text-ms-sm text-muted-foreground">
         Memeriksa akses admin…
       </main>
     );
@@ -445,7 +445,7 @@ function OAuthGooglePage() {
       <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
         <SettingsHeader title="OAuth Google (BYOK)" subtitle="Panduan admin" icon={KeyRound} />
         <Card className="mx-4 mt-2 border-destructive/40">
-          <CardContent className="flex items-start gap-3 py-4 text-sm">
+          <CardContent className="flex items-start gap-ms-3 py-ms-4 text-ms-sm">
             <ShieldAlert className="mt-0.5 h-4 w-4 text-destructive" />
             <div>
               Halaman ini khusus admin. Minta admin membuka pengaturan ini di perangkat mereka.
@@ -463,9 +463,9 @@ function OAuthGooglePage() {
         subtitle="Ganti kredensial bawaan agar layar consent tampil sebagai MCM Storage"
         icon={KeyRound}
       />
-      <div className="space-y-4 px-4 pt-2">
+      <div className="space-ms-4 px-ms-4 pt-2">
         <Card className="border-amber-500/40 bg-amber-500/5">
-          <CardContent className="py-4 text-xs leading-snug text-muted-foreground">
+          <CardContent className="py-ms-4 text-ms-xs leading-snug text-muted-foreground">
             Kredensial (Client ID & Secret) tidak disimpan di aplikasi ini. Setelah dibuat di
             Google Cloud Console, tempel ke <b>Backend → Users → Auth Settings → Google</b>.
             Broker OAuth Lovable Cloud akan otomatis memakai kredensial baru untuk semua
@@ -476,17 +476,17 @@ function OAuthGooglePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Progres</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-ms-base">Progres</CardTitle>
+            <CardDescription className="text-ms-xs">
               {doneCount}/{STEPS.length} langkah selesai.
               {complete ? " Siap uji." : " Ceklis tersimpan di perangkat ini."}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-ms-2">
             {STEPS.map((s, i) => (
               <label
                 key={s.id}
-                className={`flex cursor-pointer items-start gap-3 rounded-md border p-2 hover:bg-muted/50 ${
+                className={`flex cursor-pointer items-start gap-ms-3 rounded-md border p-ms-2 hover:bg-muted/50 ${
                   flaggedSteps.has(s.id)
                     ? "border-amber-500/60 bg-amber-500/10"
                     : "border-border/50"
@@ -498,7 +498,7 @@ function OAuthGooglePage() {
                   aria-label={s.label}
                   className="mt-0.5"
                 />
-                <span className="flex-1 text-sm leading-snug">
+                <span className="flex-1 text-ms-sm leading-snug">
                   <span className="mr-1 text-muted-foreground">{i + 1}.</span>
                   {s.label}
                   {flaggedSteps.has(s.id) && STEP_CONSOLE_URL[s.id] && (
@@ -507,7 +507,7 @@ function OAuthGooglePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="ml-2 inline-flex items-center gap-1 rounded border border-amber-500/60 bg-background px-1.5 py-0.5 text-[11px] font-medium text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
+                      className="ml-2 inline-flex items-center gap-ms-1 rounded border border-amber-500/60 bg-background px-1.5 py-0.5 text-ms-2xs font-medium text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
                     >
                       <ExternalLink className="h-3 w-3" />
                       Buka Cloud Console
@@ -517,7 +517,7 @@ function OAuthGooglePage() {
                 {flaggedSteps.has(s.id) && (
                   <Badge
                     variant="outline"
-                    className="mt-0.5 gap-1 border-amber-500/60 text-[11px] text-amber-600"
+                    className="mt-0.5 gap-ms-1 border-amber-500/60 text-ms-2xs text-amber-600"
                   >
                     <AlertTriangle className="h-3 w-3" />
                     cek ini
@@ -531,12 +531,12 @@ function OAuthGooglePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Nilai untuk Google Cloud Console</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-ms-base">Nilai untuk Google Cloud Console</CardTitle>
+            <CardDescription className="text-ms-xs">
               Salin nilai berikut satu per satu ke halaman OAuth di Google Cloud Console.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-ms-4">
             <ListBlock
               label="Authorized redirect URIs"
               values={redirectUris}
@@ -572,19 +572,19 @@ function OAuthGooglePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Kredensial Google OAuth</CardTitle>
-            <CardDescription className="text-xs leading-snug">
+            <CardTitle className="text-ms-base">Kredensial Google OAuth</CardTitle>
+            <CardDescription className="text-ms-xs leading-snug">
               Validasi Client ID & Secret sebelum ditempel ke Backend. <b>Client Secret
               tidak disimpan</b> di aplikasi — hanya divalidasi lalu tersedia tombol Salin.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-ms-4">
             {/* Client ID */}
             <div className="space-y-1.5">
-              <Label htmlFor="google-client-id" className="text-sm">
+              <Label htmlFor="google-client-id" className="text-ms-sm">
                 Client ID
                 {savedClientId && (
-                  <Badge variant="outline" className="ml-2 text-[11px]">
+                  <Badge variant="outline" className="ml-2 text-ms-2xs">
                     tersimpan
                   </Badge>
                 )}
@@ -606,22 +606,22 @@ function OAuthGooglePage() {
               {clientIdError ? (
                 <p
                   id="google-client-id-error"
-                  className="text-xs leading-snug text-destructive"
+                  className="text-ms-xs leading-snug text-destructive"
                 >
                   {clientIdError}
                 </p>
               ) : (
-                <p className="text-xs leading-snug text-muted-foreground">
+                <p className="text-ms-xs leading-snug text-muted-foreground">
                   Aman disimpan di perangkat — nilai ini publik pada request OAuth.
                 </p>
               )}
-              <div className="flex flex-wrap gap-2 pt-1">
+              <div className="flex flex-wrap gap-ms-2 pt-1">
                 <Button
                   type="button"
                   size="sm"
                   onClick={handleSaveClientId}
                   disabled={!clientIdDirty || clientId.trim().length === 0}
-                  className="gap-1.5"
+                  className="gap-ms-1.5"
                 >
                   <Save className="h-3.5 w-3.5" />
                   Simpan
@@ -630,7 +630,7 @@ function OAuthGooglePage() {
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="gap-1.5"
+                  className="gap-ms-1.5"
                   onClick={() => copy(clientId.trim(), "Client ID")}
                   disabled={!clientId.trim()}
                 >
@@ -642,7 +642,7 @@ function OAuthGooglePage() {
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="gap-1.5 text-destructive hover:text-destructive"
+                    className="gap-ms-1.5 text-destructive hover:text-destructive"
                     onClick={handleClearClientId}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -654,9 +654,9 @@ function OAuthGooglePage() {
 
             {/* Client Secret */}
             <div className="space-y-1.5 border-t border-border/50 pt-4">
-              <Label htmlFor="google-client-secret" className="text-sm">
+              <Label htmlFor="google-client-secret" className="text-ms-sm">
                 Client Secret
-                <Badge variant="outline" className="ml-2 text-[11px]">
+                <Badge variant="outline" className="ml-2 text-ms-2xs">
                   tidak disimpan
                 </Badge>
               </Label>
@@ -680,7 +680,7 @@ function OAuthGooglePage() {
                   type="button"
                   onClick={() => setShowSecret((v) => !v)}
                   aria-label={showSecret ? "Sembunyikan" : "Tampilkan"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-ms-1 text-muted-foreground hover:text-foreground"
                 >
                   {showSecret ? (
                     <EyeOff className="h-4 w-4" />
@@ -692,23 +692,23 @@ function OAuthGooglePage() {
               {secretError ? (
                 <p
                   id="google-client-secret-error"
-                  className="text-xs leading-snug text-destructive"
+                  className="text-ms-xs leading-snug text-destructive"
                 >
                   {secretError}
                 </p>
               ) : (
-                <p className="text-xs leading-snug text-muted-foreground">
+                <p className="text-ms-xs leading-snug text-muted-foreground">
                   Nilai dibersihkan setelah disalin. Tempel langsung ke Backend → Auth
                   Settings → Google.
                 </p>
               )}
-              <div className="flex flex-wrap gap-2 pt-1">
+              <div className="flex flex-wrap gap-ms-2 pt-1">
                 <Button
                   type="button"
                   size="sm"
                   onClick={handleCopySecret}
                   disabled={clientSecret.trim().length === 0}
-                  className="gap-1.5"
+                  className="gap-ms-1.5"
                 >
                   <Copy className="h-3.5 w-3.5" />
                   Validasi &amp; salin
@@ -718,7 +718,7 @@ function OAuthGooglePage() {
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="gap-1.5 text-destructive hover:text-destructive"
+                    className="gap-ms-1.5 text-destructive hover:text-destructive"
                     onClick={handleClearSecret}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -732,20 +732,20 @@ function OAuthGooglePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Uji Login Google</CardTitle>
-            <CardDescription className="text-xs leading-snug">
+            <CardTitle className="text-ms-base">Uji Login Google</CardTitle>
+            <CardDescription className="text-ms-xs leading-snug">
               Jalankan flow consent nyata untuk memverifikasi Client ID & Secret sudah
               aktif di Backend. Layar consent seharusnya bermerek <b>MCM Storage</b>.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
+          <CardContent className="space-ms-3">
+            <div className="flex flex-wrap items-center gap-ms-2">
               <Button
                 type="button"
                 size="sm"
                 onClick={runGoogleTest}
                 disabled={testState.status === "running"}
-                className="gap-1.5"
+                className="gap-ms-1.5"
               >
                 {testState.status === "running" ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -767,16 +767,16 @@ function OAuthGooglePage() {
             </div>
 
             {testState.status === "idle" && (
-              <p className="text-xs leading-snug text-muted-foreground">
+              <p className="text-ms-xs leading-snug text-muted-foreground">
                 Tombol ini membuka popup consent Google. Jika berjalan di WebView APK,
                 flow akan berpindah halaman lalu kembali otomatis.
               </p>
             )}
 
             {testState.status === "success" && (
-              <div className="flex items-start gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-3">
+              <div className="flex items-start gap-ms-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-ms-3">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                <div className="min-w-0 space-y-0.5 text-xs leading-snug">
+                <div className="min-w-0 space-y-0.5 text-ms-xs leading-snug">
                   <div className="font-medium text-foreground">Login Google berhasil</div>
                   {testState.email && (
                     <div className="text-muted-foreground">
@@ -796,9 +796,9 @@ function OAuthGooglePage() {
             )}
 
             {testState.status === "redirected" && (
-              <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+              <div className="flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-3">
                 <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-500" />
-                <div className="text-xs leading-snug text-muted-foreground">
+                <div className="text-ms-xs leading-snug text-muted-foreground">
                   Browser sedang berpindah ke Google. Setelah kembali ke halaman ini,
                   buka ulang menu <b>OAuth Google</b> untuk melihat hasil.
                 </div>
@@ -806,14 +806,14 @@ function OAuthGooglePage() {
             )}
 
             {testState.status === "error" && (
-              <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3">
+              <div className="flex items-start gap-ms-2 rounded-md border border-destructive/40 bg-destructive/5 p-ms-3">
                 <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                <div className="min-w-0 space-y-1 text-xs leading-snug">
+                <div className="min-w-0 space-y-1 text-ms-xs leading-snug">
                   <div className="font-medium text-destructive">Uji gagal</div>
                   <code className="block break-all rounded bg-background/60 px-1.5 py-1 text-foreground">
                     {testState.message}
                   </code>
-                  <div className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-foreground">
+                  <div className="flex items-start gap-ms-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-foreground">
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
                     <div>
                       <div className="font-medium">Kemungkinan penyebab</div>
@@ -834,18 +834,18 @@ function OAuthGooglePage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Selanjutnya</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-ms-base">Selanjutnya</CardTitle>
+            <CardDescription className="text-ms-xs">
               Setelah Client ID & Secret dibuat, tempel di Backend. Aplikasi tidak perlu
               di-deploy ulang.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
+          <CardContent className="flex flex-wrap gap-ms-2">
             <Button
               asChild
               variant="outline"
               size="sm"
-              className="gap-1.5"
+              className="gap-ms-1.5"
             >
               <a
                 href="https://console.cloud.google.com/apis/credentials"
@@ -860,7 +860,7 @@ function OAuthGooglePage() {
               asChild
               variant="outline"
               size="sm"
-              className="gap-1.5"
+              className="gap-ms-1.5"
             >
               <a
                 href="https://console.cloud.google.com/apis/credentials/consent"
@@ -891,13 +891,13 @@ function FieldBlock({
 }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">{label}</span>
+      <div className="mb-1 flex items-center justify-between gap-ms-2">
+        <span className="text-ms-sm font-medium">{label}</span>
         <Button
           type="button"
           size="sm"
           variant="ghost"
-          className="h-7 gap-1.5 px-2"
+          className="h-7 gap-ms-1.5 px-ms-2"
           onClick={onCopy}
           disabled={!value}
         >
@@ -905,7 +905,7 @@ function FieldBlock({
           Salin
         </Button>
       </div>
-      <code className="block break-all rounded-md border border-border/50 bg-muted/50 px-2 py-1.5 text-xs">
+      <code className="block break-all rounded-md border border-border/50 bg-muted/50 px-ms-2 py-1.5 text-ms-xs">
         {value || <span className="text-muted-foreground">{placeholder}</span>}
       </code>
     </div>
@@ -933,17 +933,17 @@ function ListBlock({
     <div
       className={
         flagged
-          ? "-mx-2 rounded-md border border-amber-500/50 bg-amber-500/5 p-2"
+          ? "-mx-2 rounded-md border border-amber-500/50 bg-amber-500/5 p-ms-2"
           : undefined
       }
     >
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-sm font-medium">
+      <div className="mb-1 flex items-center justify-between gap-ms-2">
+        <span className="flex items-center gap-ms-1.5 text-ms-sm font-medium">
           {label}
           {flagged && (
             <Badge
               variant="outline"
-              className="gap-1 border-amber-500/60 text-[11px] text-amber-600"
+              className="gap-ms-1 border-amber-500/60 text-ms-2xs text-amber-600"
             >
               <AlertTriangle className="h-3 w-3" />
               cek ini
@@ -954,7 +954,7 @@ function ListBlock({
           type="button"
           size="sm"
           variant="ghost"
-          className="h-7 gap-1.5 px-2"
+          className="h-7 gap-ms-1.5 px-ms-2"
           onClick={onCopyAll}
           disabled={values.length === 0}
         >
@@ -964,34 +964,34 @@ function ListBlock({
       </div>
       <div className="space-y-1">
         {values.length === 0 && emptyText && (
-          <div className="rounded-md border border-border/50 bg-muted/50 px-2 py-1.5 text-xs text-muted-foreground">
+          <div className="rounded-md border border-border/50 bg-muted/50 px-ms-2 py-1.5 text-ms-xs text-muted-foreground">
             {emptyText}
           </div>
         )}
         {values.map((v, i) => (
           <div
             key={v}
-            className="flex items-center justify-between gap-2 rounded-md border border-border/50 bg-muted/50 px-2 py-1.5"
+            className="flex items-center justify-between gap-ms-2 rounded-md border border-border/50 bg-muted/50 px-ms-2 py-1.5"
           >
-            <code className="break-all text-xs">{v}</code>
-            <div className="flex shrink-0 items-center gap-1.5">
+            <code className="break-all text-ms-xs">{v}</code>
+            <div className="flex shrink-0 items-center gap-ms-1.5">
               {i === primaryIndex && (
-                <Badge className="text-[11px]">wajib</Badge>
+                <Badge className="text-ms-2xs">wajib</Badge>
               )}
               {onCopyItem ? (
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="h-6 gap-1 px-1.5"
+                  className="h-6 gap-ms-1 px-1.5"
                   onClick={() => onCopyItem(v)}
                   aria-label={`Salin ${v}`}
                 >
                   <Copy className="h-3 w-3" />
-                  <span className="text-[11px]">Salin</span>
+                  <span className="text-ms-2xs">Salin</span>
                 </Button>
               ) : (
-                <Badge variant="outline" className="text-[11px]">
+                <Badge variant="outline" className="text-ms-2xs">
                   siap
                 </Badge>
               )}

@@ -14,11 +14,11 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
       style={{ borderBottomColor: "var(--primary)" }}
     >
       <div
-        className={`mx-auto flex max-w-3xl items-center gap-3 px-4 ${
-          compact ? "py-2" : "py-3"
+        className={`mx-auto flex max-w-3xl items-center gap-ms-3 px-ms-4 ${
+          compact ? "py-ms-2" : "py-ms-3"
         }`}
       >
-        <Link to="/" className="flex items-center gap-2 group" aria-label={full}>
+        <Link to="/" className="flex items-center gap-ms-2 group" aria-label={full}>
           {logo ? (
             <img
               src={logo}
@@ -29,13 +29,13 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
             />
           ) : (
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold text-primary-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-ms-xs font-bold text-primary-foreground"
               style={{ backgroundColor: "var(--primary)" }}
             >
               {short}
             </span>
           )}
-          <span className="text-sm font-semibold tracking-tight group-hover:underline">
+          <span className="text-ms-sm font-semibold tracking-tight group-hover:underline">
             {full}
           </span>
         </Link>

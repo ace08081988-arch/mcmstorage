@@ -151,9 +151,9 @@ function Harness() {
   ] as unknown as any;
 
   return (
-    <div className="mx-auto max-w-md space-y-4 p-4">
-      <h1 className="text-lg font-semibold">Harness · Auto-send cancel</h1>
-      <p className="text-xs text-muted-foreground">
+    <div className="mx-auto max-w-md space-ms-4 p-ms-4">
+      <h1 className="text-ms-lg font-semibold">Harness · Auto-send cancel</h1>
+      <p className="text-ms-xs text-muted-foreground">
         Membuka modal konfirmasi auto-send lalu memicu Batal — dialog
         pembayaran TIDAK BOLEH muncul dan tidak ada request pembayaran.
       </p>
@@ -161,7 +161,7 @@ function Harness() {
       <button
         type="button"
         data-testid="open-auto-send-confirm"
-        className="rounded-md border px-3 py-2 text-sm"
+        className="rounded-md border px-ms-3 py-ms-2 text-ms-sm"
         onClick={() => setConfirmState({ preps })}
       >
         Buka modal konfirmasi auto-send
@@ -170,7 +170,7 @@ function Harness() {
       <div
         data-testid="payment-open-state"
         data-open={paymentOpen ? "1" : "0"}
-        className="text-xs text-muted-foreground"
+        className="text-ms-xs text-muted-foreground"
       >
         payment-open={paymentOpen ? "1" : "0"} · ever-opened=
         {paymentEverOpened.current ? "1" : "0"}
@@ -178,7 +178,7 @@ function Harness() {
 
       <div
         data-testid="payment-fetch-log"
-        className="whitespace-pre rounded border bg-muted/30 p-2 text-[10px]"
+        className="whitespace-pre rounded border bg-muted/30 p-ms-2 text-ms-2xs"
       >
         {fetchLog.join("\n")}
       </div>
@@ -190,13 +190,13 @@ function Harness() {
         <div
           role="dialog"
           data-testid="payment-dialog-ecer"
-          className="rounded border border-emerald-300 bg-emerald-50 p-3 text-sm"
+          className="rounded border border-emerald-300 bg-emerald-50 p-ms-3 text-ms-sm"
         >
           Dialog verifikasi pembayaran (stub)
           <button
             type="button"
             data-testid="payment-dialog-close"
-            className="ml-2 rounded border px-2 py-0.5"
+            className="ml-2 rounded border px-ms-2 py-0.5"
             onClick={() => setPaymentOpen(false)}
           >
             Tutup

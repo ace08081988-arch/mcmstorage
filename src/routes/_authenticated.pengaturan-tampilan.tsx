@@ -575,7 +575,7 @@ function PengaturanTampilanPage() {
                 key={p.id}
                 type="button"
                 onClick={() => applyPreset(p)}
-                className="group flex flex-col gap-1 rounded-lg border bg-card px-ms-3 py-ms-3 text-left transition-all duration-150 hover:border-primary/50 hover:bg-accent active:scale-[0.98]"
+                className="group flex flex-col gap-ms-1 rounded-lg border bg-card px-ms-3 py-ms-3 text-left transition-all duration-150 hover:border-primary/50 hover:bg-accent active:scale-[0.98]"
               >
                 <span className="text-ms-lg leading-none">{p.icon}</span>
                 <span className="text-ms-sm font-semibold">{p.label}</span>
@@ -602,7 +602,7 @@ function PengaturanTampilanPage() {
                 <button
                   key={v}
                   onClick={() => patch({ theme: v })}
-                  className={`flex flex-col items-center gap-1 rounded-md border px-ms-2 py-ms-3 text-ms-xs font-medium transition-all hover:bg-accent active:scale-[0.97] ${draft.theme === v ? "border-primary bg-accent" : ""}`}
+                  className={`flex flex-col items-center gap-ms-1 rounded-md border px-ms-2 py-ms-3 text-ms-xs font-medium transition-all hover:bg-accent active:scale-[0.97] ${draft.theme === v ? "border-primary bg-accent" : ""}`}
                 >
                   <Icon className="h-4 w-4" />
                   {label}
@@ -964,7 +964,7 @@ function PengaturanTampilanPage() {
             </p>
             <div className="grid grid-cols-1 gap-ms-2 rounded-md border bg-muted/30 p-ms-3 sm:grid-cols-2">
               <div>
-                <p className="mb-1.5 flex items-center gap-1.5 text-ms-2xs font-semibold text-foreground">
+                <p className="mb-1.5 flex items-center gap-ms-1.5 text-ms-2xs font-semibold text-foreground">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                   Yang disimpan
                 </p>
@@ -979,7 +979,7 @@ function PengaturanTampilanPage() {
                     "Foto latar, overlay, blur",
                     "Versi skema (untuk kompatibilitas)",
                   ].map((t) => (
-                    <li key={t} className="flex gap-1.5">
+                    <li key={t} className="flex gap-ms-1.5">
                       <CheckCircle2 className="mt-[2px] h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
                       <span>{t}</span>
                     </li>
@@ -987,7 +987,7 @@ function PengaturanTampilanPage() {
                 </ul>
               </div>
               <div>
-                <p className="mb-1.5 flex items-center gap-1.5 text-ms-2xs font-semibold text-foreground">
+                <p className="mb-1.5 flex items-center gap-ms-1.5 text-ms-2xs font-semibold text-foreground">
                   <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                   Yang tidak disimpan
                 </p>
@@ -1002,7 +1002,7 @@ function PengaturanTampilanPage() {
                     "Notifikasi & izin perangkat",
                     "Password / kunci akses",
                   ].map((t) => (
-                    <li key={t} className="flex gap-1.5">
+                    <li key={t} className="flex gap-ms-1.5">
                       <XCircle className="mt-[2px] h-3 w-3 shrink-0 text-red-600 dark:text-red-400" />
                       <span>{t}</span>
                     </li>

@@ -52,7 +52,7 @@ export function DeletedPreview({
 }): ReactNode {
   const attach = hasAttachment(message);
   return (
-    <span className={className ?? "inline-flex items-center gap-1 italic"}>
+    <span className={className ?? "inline-flex items-center gap-ms-1 italic"}>
       <Ban className={iconClassName} />
       {DELETED_PLACEHOLDER}
       {attach ? ` · ${DELETED_ATTACHMENT_PLACEHOLDER}` : ""}

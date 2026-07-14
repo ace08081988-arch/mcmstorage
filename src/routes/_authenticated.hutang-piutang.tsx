@@ -109,8 +109,8 @@ function FinanceStatCard({
     muted: "from-muted/60 to-muted/20 text-foreground",
   };
   return (
-    <div className="rounded-2xl border bg-card p-3 shadow-sm">
-      <div className="flex items-start gap-2">
+    <div className="rounded-2xl border bg-card p-ms-3 shadow-sm">
+      <div className="flex items-start gap-ms-2">
         <div
           className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${tones[tone]}`}
         >
@@ -120,7 +120,7 @@ function FinanceStatCard({
           <div className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
             {label}
           </div>
-          <div className="mt-0.5 truncate text-[13px] font-bold leading-tight tabular-nums">
+          <div className="mt-0.5 truncate text-ms-sm font-bold leading-tight tabular-nums">
             {value}
           </div>
           {hint && (
@@ -537,7 +537,7 @@ function HutangPiutangPage() {
       data-press-scope="on"
     >
       <header className="sticky top-0 z-10 border-b bg-card/85 backdrop-blur-md">
-        <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 sm:px-6">
+        <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
           <Link
             to="/"
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border bg-background/60 hover:bg-accent"
@@ -546,10 +546,10 @@ function HutangPiutangPage() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold leading-tight">
+            <h1 className="truncate text-ms-base font-semibold leading-tight">
               Hutang &amp; Piutang
             </h1>
-            <p className="truncate text-[11px] text-muted-foreground">
+            <p className="truncate text-ms-2xs text-muted-foreground">
               Kelola arus tagihan &amp; pelunasan
             </p>
           </div>
@@ -571,16 +571,16 @@ function HutangPiutangPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 px-3 py-4 sm:px-6">
+      <main className="mx-auto max-w-3xl space-ms-4 px-ms-3 py-ms-4 sm:px-ms-6">
         <section
           aria-label="Ringkasan keuangan"
-          className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm"
+          className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-ms-4 shadow-sm"
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary">
+          <div className="flex flex-wrap items-center gap-ms-2">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-primary/12 px-ms-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary">
               <Sparkles className="h-3 w-3" /> Modul Keuangan
             </span>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-ms-2xs text-muted-foreground">
               Selisih bersih{" "}
               <span
                 className={
@@ -592,7 +592,7 @@ function HutangPiutangPage() {
               </span>
             </span>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-3 grid grid-cols-2 gap-ms-2 sm:grid-cols-3 lg:grid-cols-5">
             <FinanceStatCard
               label="Total Piutang"
               value={rupiah(overall.piutangSisa)}
@@ -631,10 +631,10 @@ function HutangPiutangPage() {
           </div>
         </section>
 
-        <div className="rounded-2xl border bg-card p-3 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="rounded-2xl border bg-card p-ms-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-ms-2 text-ms-xs">
             <span className="font-medium text-muted-foreground">Periode:</span>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-ms-1">
               {([
                 { v: "all", l: "Semua" },
                 { v: "week", l: "7 hari" },
@@ -647,7 +647,7 @@ function HutangPiutangPage() {
                   onClick={() => setPeriod(opt.v)}
                   aria-pressed={period === opt.v}
                   className={
-                    "rounded-full border px-3 py-1 text-xs transition-colors " +
+                    "rounded-full border px-ms-3 py-1 text-ms-xs transition-colors " +
                     (period === opt.v
                       ? "border-primary bg-primary text-primary-foreground shadow-sm"
                       : "border-transparent bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground")
@@ -663,13 +663,13 @@ function HutangPiutangPage() {
                   draftFrom && draftTo && draftFrom > draftTo,
                 );
                 return (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-ms-2">
                 <Input
                   type="date"
                   value={draftFrom}
                   onChange={(e) => setDraftFrom(e.target.value)}
                   className={
-                    "h-9 w-auto rounded-lg text-xs" +
+                    "h-9 w-auto rounded-lg text-ms-xs" +
                     (invalidRange ? " border-destructive" : "")
                   }
                 />
@@ -679,14 +679,14 @@ function HutangPiutangPage() {
                   value={draftTo}
                   onChange={(e) => setDraftTo(e.target.value)}
                   className={
-                    "h-9 w-auto rounded-lg text-xs" +
+                    "h-9 w-auto rounded-lg text-ms-xs" +
                     (invalidRange ? " border-destructive" : "")
                   }
                 />
                 <Button
                   type="button"
                   size="sm"
-                  className="h-9 rounded-lg px-3 text-xs"
+                  className="h-9 rounded-lg px-ms-3 text-ms-xs"
                   onClick={() => {
                     setCustomFrom(draftFrom);
                     setCustomTo(draftTo);
@@ -702,7 +702,7 @@ function HutangPiutangPage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-9 rounded-lg px-3 text-xs"
+                  className="h-9 rounded-lg px-ms-3 text-ms-xs"
                   onClick={() => {
                     setDraftFrom("");
                     setDraftTo("");
@@ -714,7 +714,7 @@ function HutangPiutangPage() {
                   Reset
                 </Button>
                 {invalidRange && (
-                  <span className="w-full text-xs text-destructive">
+                  <span className="w-full text-ms-xs text-destructive">
                     Tanggal mulai tidak boleh lebih besar dari tanggal selesai.
                   </span>
                 )}
@@ -727,36 +727,36 @@ function HutangPiutangPage() {
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="grid w-full grid-cols-3 rounded-xl">
-            <TabsTrigger value="hutang" className="rounded-lg gap-1.5">
+            <TabsTrigger value="hutang" className="rounded-lg gap-ms-1.5">
               <ArrowUpCircle className="h-3.5 w-3.5" /> Hutang
             </TabsTrigger>
-            <TabsTrigger value="piutang" className="rounded-lg gap-1.5">
+            <TabsTrigger value="piutang" className="rounded-lg gap-ms-1.5">
               <ArrowDownCircle className="h-3.5 w-3.5" /> Piutang
             </TabsTrigger>
-            <TabsTrigger value="laporan" className="rounded-lg gap-1.5">
+            <TabsTrigger value="laporan" className="rounded-lg gap-ms-1.5">
               <Scale className="h-3.5 w-3.5" /> Laporan
             </TabsTrigger>
           </TabsList>
 
           {(["hutang", "piutang"] as const).map((k) => (
-            <TabsContent key={k} value={k} className="mt-3 space-y-3">
-              <div className="grid grid-cols-3 gap-2 rounded-2xl border bg-card p-3 text-center text-xs shadow-sm">
-                <div className="rounded-xl bg-muted/40 p-2">
-                  <div className="flex items-center justify-center gap-1 text-muted-foreground">
+            <TabsContent key={k} value={k} className="mt-3 space-ms-3">
+              <div className="grid grid-cols-3 gap-ms-2 rounded-2xl border bg-card p-ms-3 text-center text-ms-xs shadow-sm">
+                <div className="rounded-xl bg-muted/40 p-ms-2">
+                  <div className="flex items-center justify-center gap-ms-1 text-muted-foreground">
                     <Wallet className="h-3 w-3" /> Total
                   </div>
                   <div className="mt-0.5 font-semibold tabular-nums">{rupiah(totals.total)}</div>
                 </div>
-                <div className="rounded-xl bg-emerald-500/10 p-2">
-                  <div className="flex items-center justify-center gap-1 text-emerald-700 dark:text-emerald-300">
+                <div className="rounded-xl bg-emerald-500/10 p-ms-2">
+                  <div className="flex items-center justify-center gap-ms-1 text-emerald-700 dark:text-emerald-300">
                     <CheckCircle2 className="h-3 w-3" /> Terbayar
                   </div>
                   <div className="mt-0.5 font-semibold tabular-nums text-emerald-600">
                     {rupiah(totals.paid)}
                   </div>
                 </div>
-                <div className="rounded-xl bg-amber-500/10 p-2">
-                  <div className="flex items-center justify-center gap-1 text-amber-700 dark:text-amber-300">
+                <div className="rounded-xl bg-amber-500/10 p-ms-2">
+                  <div className="flex items-center justify-center gap-ms-1 text-amber-700 dark:text-amber-300">
                     <Coins className="h-3 w-3" /> Sisa
                   </div>
                   <div className="mt-0.5 font-semibold tabular-nums text-amber-600">
@@ -766,11 +766,11 @@ function HutangPiutangPage() {
               </div>
 
               {loading ? (
-                <ul className="space-y-3" aria-busy="true" aria-live="polite">
+                <ul className="space-ms-3" aria-busy="true" aria-live="polite">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <li key={i} className="rounded-2xl border bg-card p-3 shadow-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1 space-y-2">
+                    <li key={i} className="rounded-2xl border bg-card p-ms-3 shadow-sm">
+                      <div className="flex items-center justify-between gap-ms-3">
+                        <div className="min-w-0 flex-1 space-ms-2">
                           <Skeleton className="h-4 w-2/5" />
                           <Skeleton className="h-3 w-1/3" />
                         </div>
@@ -781,7 +781,7 @@ function HutangPiutangPage() {
                   ))}
                 </ul>
               ) : filtered.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card/40 py-12 text-center text-sm text-muted-foreground">
+                <div className="flex flex-col items-center gap-ms-3 rounded-2xl border border-dashed bg-card/40 py-12 text-center text-ms-sm text-muted-foreground">
                   <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary">
                     {k === "hutang" ? (
                       <ArrowUpCircle className="h-6 w-6" />
@@ -790,7 +790,7 @@ function HutangPiutangPage() {
                     )}
                   </div>
                   <p className="font-semibold text-foreground">Belum ada catatan {k}</p>
-                  <p className="mx-auto max-w-xs text-xs leading-relaxed">
+                  <p className="mx-auto max-w-xs text-ms-xs leading-relaxed">
                     Catat {k} secara manual atau tunggu {k === "hutang" ? "pembelian" : "penjualan"}{" "}
                     masuk otomatis.
                   </p>
@@ -807,7 +807,7 @@ function HutangPiutangPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-ms-4">
                   {groupedByParty.map((group) => {
                     let gTotal = 0;
                     let gPaid = 0;
@@ -821,12 +821,12 @@ function HutangPiutangPage() {
                         key={group.key}
                         className="overflow-hidden rounded-2xl border bg-card shadow-sm"
                       >
-                        <header className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-3 py-2.5">
+                        <header className="flex flex-wrap items-center gap-ms-2 border-b bg-muted/30 px-ms-3 py-ms-2.5">
                           <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-semibold text-foreground">
+                            <div className="truncate text-ms-sm font-semibold text-foreground">
                               {group.name}
                             </div>
-                            <div className="text-[11px] text-muted-foreground">
+                            <div className="text-ms-2xs text-muted-foreground">
                               {group.items.length} catatan · sisa{" "}
                               <span className="font-semibold tabular-nums text-amber-600">
                                 {rupiah(gSisa)}
@@ -874,13 +874,13 @@ function HutangPiutangPage() {
                       <li
                         key={d.id}
                         className={
-                          "p-3 text-sm transition-colors " +
+                          "p-ms-3 text-ms-sm transition-colors " +
                           (overdue
                             ? "bg-destructive/[0.04] hover:bg-destructive/[0.07]"
                             : "hover:bg-muted/30")
                         }
                       >
-                        <div className="flex items-start gap-2">
+                        <div className="flex items-start gap-ms-2">
                           <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                               <span className="min-w-0 max-w-full truncate font-medium">
@@ -902,13 +902,13 @@ function HutangPiutangPage() {
                               ) : null}
                             </div>
                             {d.note && (
-                              <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                              <div className="mt-0.5 truncate text-ms-xs text-muted-foreground">
                                 {d.note}
                               </div>
                             )}
                             <div
                               className={
-                                "mt-1 flex items-center gap-1 text-xs " +
+                                "mt-1 flex items-center gap-ms-1 text-ms-xs " +
                                 (overdue ? "text-destructive" : "text-muted-foreground")
                               }
                             >
@@ -925,13 +925,13 @@ function HutangPiutangPage() {
                               {rupiah(Number(d.amount))}
                             </div>
                             {paid > 0 && (
-                              <div className="text-[11px] tabular-nums text-muted-foreground">
+                              <div className="text-ms-2xs tabular-nums text-muted-foreground">
                                 terbayar {rupiah(paid)}
                               </div>
                             )}
                             <div
                               className={
-                                "text-[11px] font-medium tabular-nums " +
+                                "text-ms-2xs font-medium tabular-nums " +
                                 (lunas
                                   ? "text-emerald-600"
                                   : overdue
@@ -943,7 +943,7 @@ function HutangPiutangPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
+                        <div className="mt-2 flex flex-wrap gap-ms-1.5">
                           {!lunas && (
                             <Button
                               size="sm"
@@ -1002,7 +1002,7 @@ function HutangPiutangPage() {
             </TabsContent>
           ))}
 
-          <TabsContent value="laporan" className="mt-3 space-y-3">
+          <TabsContent value="laporan" className="mt-3 space-ms-3">
             <PaymentsReport
               debts={debts}
               payments={payments}
@@ -1104,7 +1104,7 @@ function PaymentHistory({
   const [open, setOpen] = useState(false);
   if (payments.length === 0) return null;
   return (
-    <div className="mt-2 border-t pt-2 text-xs">
+    <div className="mt-2 border-t pt-2 text-ms-xs">
       <button
         type="button"
         className="text-muted-foreground hover:underline"
@@ -1120,13 +1120,13 @@ function PaymentHistory({
             .map((p) => (
               <li
                 key={p.id}
-                className="flex items-center justify-between gap-2"
+                className="flex items-center justify-between gap-ms-2"
               >
                 <span>
                   {new Date(p.paid_at).toLocaleDateString("id-ID")}
                   {p.note ? ` · ${p.note}` : ""}
                 </span>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-ms-2">
                   <span className="font-medium text-emerald-600">
                     {rupiah(Number(p.amount))}
                   </span>
@@ -1214,12 +1214,12 @@ function PaymentsReport({
   }, [filtered]);
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-lg border bg-card p-3">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-ms-3">
+      <div className="rounded-lg border bg-card p-ms-3">
+        <div className="flex flex-wrap items-center gap-ms-2">
           <div className="flex-1">
-            <div className="text-sm font-semibold">Riwayat pembayaran</div>
-            <div className="text-[11px] text-muted-foreground">
+            <div className="text-ms-sm font-semibold">Riwayat pembayaran</div>
+            <div className="text-ms-2xs text-muted-foreground">
               {filtered.length} pembayaran sesuai periode
             </div>
           </div>
@@ -1233,7 +1233,7 @@ function PaymentsReport({
             Kirim laporan MCM
           </Button>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="mt-3 grid grid-cols-3 gap-ms-2 text-center text-ms-xs">
           <div>
             <div className="text-muted-foreground">Uang masuk</div>
             <div className="font-semibold text-emerald-600">
@@ -1261,14 +1261,14 @@ function PaymentsReport({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border border-dashed py-12 text-center text-ms-sm text-muted-foreground">
           Belum ada pembayaran pada periode ini.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-ms-3">
           {grouped.map(([day, list]) => (
             <section key={day} className="rounded-lg border bg-card">
-              <header className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
+              <header className="border-b px-ms-3 py-ms-2 text-ms-xs font-medium text-muted-foreground">
                 {new Date(day + "T00:00:00").toLocaleDateString("id-ID", {
                   weekday: "long",
                   day: "numeric",
@@ -1283,13 +1283,13 @@ function PaymentsReport({
                   return (
                     <li
                       key={p.id}
-                      className="flex items-start gap-2 px-3 py-2 text-sm"
+                      className="flex items-start gap-ms-2 px-ms-3 py-ms-2 text-ms-sm"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">
                           {d?.party_name ?? "—"}
                         </div>
-                        <div className="text-[11px] text-muted-foreground">
+                        <div className="text-ms-2xs text-muted-foreground">
                           {d
                             ? d.kind === "hutang"
                               ? "Bayar hutang"
@@ -1309,7 +1309,7 @@ function PaymentsReport({
                         </div>
                         <button
                           type="button"
-                          className="text-[11px] text-destructive hover:underline"
+                          className="text-ms-2xs text-destructive hover:underline"
                           onClick={() => void onRemovePayment(p.id)}
                         >
                           Hapus
@@ -1434,8 +1434,8 @@ function AddDebtDialog({
             Catat hutang atau piutang baru secara manual.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-ms-3">
+          <div className="grid grid-cols-2 gap-ms-2">
             <Button
               type="button"
               variant={kind === "hutang" ? "default" : "outline"}
@@ -1455,10 +1455,10 @@ function AddDebtDialog({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">
+            <Label className="text-ms-xs">
               Pihak {kind === "hutang" ? "(supplier/orang)" : "(customer/orang)"}
             </Label>
-            <div className="flex gap-2">
+            <div className="flex gap-ms-2">
               <Button
                 type="button"
                 size="sm"
@@ -1500,7 +1500,7 @@ function AddDebtDialog({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Jumlah (Rp)</Label>
+            <Label className="text-ms-xs">Jumlah (Rp)</Label>
             <Input
               inputMode="numeric"
               value={amount}
@@ -1510,7 +1510,7 @@ function AddDebtDialog({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Jatuh tempo (opsional)</Label>
+            <Label className="text-ms-xs">Jatuh tempo (opsional)</Label>
             <Input
               type="date"
               value={due}
@@ -1519,7 +1519,7 @@ function AddDebtDialog({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Catatan (opsional)</Label>
+            <Label className="text-ms-xs">Catatan (opsional)</Label>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -1603,9 +1603,9 @@ function PaymentDialog({
             )}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div className="space-y-1">
-            <Label className="text-xs">Jumlah (Rp)</Label>
+            <Label className="text-ms-xs">Jumlah (Rp)</Label>
             <Input
               inputMode="numeric"
               value={amount}
@@ -1613,7 +1613,7 @@ function PaymentDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Tanggal</Label>
+            <Label className="text-ms-xs">Tanggal</Label>
             <Input
               type="date"
               value={paidAt}
@@ -1621,7 +1621,7 @@ function PaymentDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Catatan (opsional)</Label>
+            <Label className="text-ms-xs">Catatan (opsional)</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
@@ -1733,9 +1733,9 @@ function ReminderDialog({
             )}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div className="space-y-1">
-            <Label className="text-xs">Jumlah bayar (Rp) — opsional</Label>
+            <Label className="text-ms-xs">Jumlah bayar (Rp) — opsional</Label>
             <Input
               inputMode="numeric"
               placeholder="Kosongkan bila hanya menagih"
@@ -1743,13 +1743,13 @@ function ReminderDialog({
               onChange={(e) => setAmount(e.target.value)}
             />
             {hasAmt && amt > sisa && (
-              <p className="text-[11px] text-amber-600">
+              <p className="text-ms-2xs text-amber-600">
                 Melebihi sisa ({rupiah(sisa)}). Tetap dapat disimpan.
               </p>
             )}
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Tanggal</Label>
+            <Label className="text-ms-xs">Tanggal</Label>
             <Input
               type="date"
               value={paidAt}
@@ -1757,7 +1757,7 @@ function ReminderDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Catatan (opsional)</Label>
+            <Label className="text-ms-xs">Catatan (opsional)</Label>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -1765,7 +1765,7 @@ function ReminderDialog({
             />
           </div>
         </div>
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
+        <DialogFooter className="flex-col gap-ms-2 sm:flex-row">
           <Button
             variant="outline"
             onClick={onClose}
@@ -1914,9 +1914,9 @@ function EditDebtDialog({
               : ""}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div className="space-y-1">
-            <Label className="text-xs">Nama pihak</Label>
+            <Label className="text-ms-xs">Nama pihak</Label>
             <Input
               value={partyName}
               onChange={(e) => setPartyName(e.target.value)}
@@ -1924,7 +1924,7 @@ function EditDebtDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Jumlah (Rp)</Label>
+            <Label className="text-ms-xs">Jumlah (Rp)</Label>
             <Input
               inputMode="numeric"
               value={amount}
@@ -1932,13 +1932,13 @@ function EditDebtDialog({
               placeholder="0"
             />
             {minAmount > 0 && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 Minimal {rupiah(minAmount)} (sudah terbayar).
               </p>
             )}
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Jatuh tempo (opsional)</Label>
+            <Label className="text-ms-xs">Jatuh tempo (opsional)</Label>
             <Input
               type="date"
               value={due}
@@ -1946,7 +1946,7 @@ function EditDebtDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Catatan (opsional)</Label>
+            <Label className="text-ms-xs">Catatan (opsional)</Label>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}

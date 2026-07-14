@@ -25,52 +25,52 @@ function PressScopeHarness() {
   return (
     <main
       data-press-scope="on"
-      className="min-h-[100dvh] space-y-6 bg-background p-6 text-foreground"
+      className="min-h-[100dvh] space-ms-6 bg-background p-ms-6 text-foreground"
     >
-      <h1 className="text-lg font-semibold">Press scope opt-out harness</h1>
+      <h1 className="text-ms-lg font-semibold">Press scope opt-out harness</h1>
 
       {/* Baseline — HARUS ikut animasi (kontrol positif). */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">Baseline (opt-in scope)</h2>
-        <button data-testid="press-yes" className="rounded bg-primary px-3 py-2 text-primary-foreground">
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">Baseline (opt-in scope)</h2>
+        <button data-testid="press-yes" className="rounded bg-primary px-ms-3 py-ms-2 text-primary-foreground">
           Ikut animasi
         </button>
       </section>
 
       {/* Opt-out sederhana. */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">Opt-out via data-no-press</h2>
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">Opt-out via data-no-press</h2>
         <button
           data-testid="press-no"
           data-no-press
-          className="rounded bg-primary px-3 py-2 text-primary-foreground"
+          className="rounded bg-primary px-ms-3 py-ms-2 text-primary-foreground"
         >
           Tidak ikut
         </button>
       </section>
 
       {/* Sortable handle imitasi. */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">Sortable handle</h2>
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">Sortable handle</h2>
         <button
           data-testid="press-sortable-handle"
           data-no-press
           aria-label="Drag handle"
-          className="rounded border px-3 py-2"
+          className="rounded border px-ms-3 py-ms-2"
         >
           ⋮⋮ Handle
         </button>
       </section>
 
       {/* Radix Dialog: Trigger, Overlay, Content, Close semuanya opt-out. */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">Radix Dialog</h2>
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">Radix Dialog</h2>
         <Dialog.Root open={open} onOpenChange={setOpen}>
           <Dialog.Trigger asChild>
             <button
               data-testid="press-dialog-trigger"
               data-no-press
-              className="rounded bg-primary px-3 py-2 text-primary-foreground"
+              className="rounded bg-primary px-ms-3 py-ms-2 text-primary-foreground"
             >
               Buka dialog
             </button>
@@ -84,10 +84,10 @@ function PressScopeHarness() {
             <Dialog.Content
               data-testid="press-dialog-content"
               data-no-press
-              className="fixed left-1/2 top-1/2 z-50 w-80 -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-background p-4 shadow-lg"
+              className="fixed left-1/2 top-1/2 z-50 w-80 -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-background p-ms-4 shadow-lg"
             >
-              <Dialog.Title className="text-sm font-semibold">Dialog</Dialog.Title>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <Dialog.Title className="text-ms-sm font-semibold">Dialog</Dialog.Title>
+              <p className="mt-1 text-ms-xs text-muted-foreground">
                 Trigger/overlay/content bebas dari animasi press.
               </p>
               <div className="mt-3 flex justify-end">
@@ -95,7 +95,7 @@ function PressScopeHarness() {
                   <button
                     data-testid="press-dialog-close"
                     data-no-press
-                    className="rounded border px-3 py-1.5 text-sm"
+                    className="rounded border px-ms-3 py-1.5 text-ms-sm"
                   >
                     Tutup
                   </button>

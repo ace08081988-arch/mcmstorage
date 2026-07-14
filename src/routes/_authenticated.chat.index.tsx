@@ -257,11 +257,11 @@ function ChatListPage() {
     <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
       {selecting ? (
         <header
-          className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b bg-primary px-3 py-3 text-primary-foreground shadow-sm"
+          className="sticky top-0 z-20 flex items-center justify-between gap-ms-2 border-b bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
           role="toolbar"
           aria-label="Mode pilih percakapan"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-ms-2">
             <Button
               variant="ghost"
               size="icon"
@@ -271,9 +271,9 @@ function ChatListPage() {
             >
               <X className="h-5 w-5" />
             </Button>
-            <span className="text-base font-semibold">{selectedIds.size} dipilih</span>
+            <span className="text-ms-base font-semibold">{selectedIds.size} dipilih</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-ms-1">
             <Button
               variant="ghost"
               size="icon"
@@ -305,18 +305,18 @@ function ChatListPage() {
           </div>
         </header>
       ) : (
-      <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-2 border-b px-4 py-3">
-        <div className="flex items-center gap-2">
+      <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-ms-2 border-b px-ms-4 py-ms-3">
+        <div className="flex items-center gap-ms-2">
           <span
             aria-hidden
-            className="grid h-8 w-8 place-items-center rounded-lg text-[13px] font-bold text-white shadow-sm"
+            className="grid h-8 w-8 place-items-center rounded-lg text-ms-sm font-bold text-white shadow-sm"
             style={{ backgroundColor: "var(--mcm-brand)" }}
           >
             M
           </span>
-          <h1 className="text-2xl font-bold tracking-tight">MCM</h1>
+          <h1 className="text-ms-2xl font-bold tracking-tight">MCM</h1>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-ms-1">
           <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Siapkan kontak">
             <Link to="/kontak"><Camera className="h-5 w-5" /></Link>
           </Button>
@@ -353,7 +353,7 @@ function ChatListPage() {
                 const renderItem = (it: Item, key: string) => {
                   const active = "to" in it && isPathActive(it.to);
                   const cls =
-                    "flex items-center justify-between gap-2 " +
+                    "flex items-center justify-between gap-ms-2 " +
                     (active
                       ? "bg-primary/10 font-medium text-primary focus:bg-primary/15 focus:text-primary"
                       : "");
@@ -395,9 +395,9 @@ function ChatListPage() {
       </header>
       )}
 
-      <div className="flex-1 space-y-3 px-3 py-3">
+      <div className="flex-1 space-ms-3 px-ms-3 py-ms-3">
       {isError && (conversations?.length ?? 0) > 0 ? (
-        <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
+        <div className="flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-xs text-amber-900 dark:text-amber-200">
           <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="font-medium">Menampilkan data offline</p>
@@ -405,7 +405,7 @@ function ChatListPage() {
               Tidak bisa menyegarkan daftar chat: {error instanceof Error ? error.message : "jaringan bermasalah"}.
             </p>
           </div>
-          <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" disabled={isFetching} onClick={() => refetch()}>
+          <Button size="sm" variant="outline" className="h-7 px-ms-2 text-ms-2xs" disabled={isFetching} onClick={() => refetch()}>
             {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Coba lagi"}
           </Button>
         </div>
@@ -436,7 +436,7 @@ function ChatListPage() {
         <div
           role="tablist"
           aria-label="Filter percakapan"
-          className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="-mx-1 flex items-center gap-ms-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {([
             { id: "all" as const, label: "Semua" },
@@ -479,7 +479,7 @@ function ChatListPage() {
                 aria-selected={isActive}
                 onClick={() => setFilter(chipId)}
                 className={
-                  "wa-chip whitespace-nowrap inline-flex items-center gap-1.5 " +
+                  "wa-chip whitespace-nowrap inline-flex items-center gap-ms-1.5 " +
                   (isActive ? "wa-chip-active font-medium" : "")
                 }
                 title={l.name}
@@ -492,11 +492,11 @@ function ChatListPage() {
           })}
           <Link
             to="/daftar"
-            className="wa-chip whitespace-nowrap inline-flex items-center gap-1"
+            className="wa-chip whitespace-nowrap inline-flex items-center gap-ms-1"
             aria-label="Kelola daftar"
             title="Kelola daftar"
           >
-            <span className="text-base leading-none">+</span> Daftar
+            <span className="text-ms-base leading-none">+</span> Daftar
           </Link>
         </div>
       ) : null}
@@ -504,7 +504,7 @@ function ChatListPage() {
       {pendingRequests > 0 ? (
         <Link
           to={"/kontak/permintaan" as never}
-          className="mt-2 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-3 py-2 text-sm hover:bg-primary/10"
+          className="mt-2 flex items-center gap-ms-3 rounded-2xl border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-sm hover:bg-primary/10"
           aria-label="Buka permintaan pertemanan"
         >
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
@@ -514,11 +514,11 @@ function ChatListPage() {
             <div className="truncate font-medium">
               {pendingRequests} permintaan pertemanan baru
             </div>
-            <div className="truncate text-xs text-muted-foreground">
+            <div className="truncate text-ms-xs text-muted-foreground">
               Terima dulu supaya bisa chat & panggilan.
             </div>
           </div>
-          <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+          <span className="inline-flex items-center rounded-full bg-primary px-ms-2 py-0.5 text-ms-xs font-semibold text-primary-foreground">
             {pendingRequests}
           </span>
         </Link>
@@ -527,11 +527,11 @@ function ChatListPage() {
       {q.trim().length >= 2 ? (
         <div className="rounded-lg border">
           {search.isLoading ? (
-            <div className="flex items-center justify-center p-6 text-xs text-muted-foreground">
+            <div className="flex items-center justify-center p-ms-6 text-ms-xs text-muted-foreground">
               <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Mencari…
             </div>
           ) : (search.data ?? []).length === 0 ? (
-            <div className="p-6 text-center text-xs text-muted-foreground">
+            <div className="p-ms-6 text-center text-ms-xs text-muted-foreground">
               Tidak ada pesan yang cocok dengan "{q}".
             </div>
           ) : (
@@ -543,17 +543,17 @@ function ChatListPage() {
                     <button
                       type="button"
                       onClick={() => navigate({ to: "/chat/$conversationId", params: { conversationId: m.conversation_id } })}
-                      className="flex w-full items-start gap-3 px-3 py-3 text-left hover:bg-accent/50"
+                      className="flex w-full items-start gap-ms-3 px-ms-3 py-ms-3 text-left hover:bg-accent/50"
                     >
                       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                         <Search className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate text-sm font-medium">{conv?.display_title ?? "Percakapan"}</span>
-                          <span className="shrink-0 text-[10px] text-muted-foreground">{timeShort(m.created_at)}</span>
+                        <div className="flex items-center justify-between gap-ms-2">
+                          <span className="truncate text-ms-sm font-medium">{conv?.display_title ?? "Percakapan"}</span>
+                          <span className="shrink-0 text-ms-2xs text-muted-foreground">{timeShort(m.created_at)}</span>
                         </div>
-                        <p className="line-clamp-2 text-xs text-muted-foreground">{highlight(previewText(m.body) ?? "", q)}</p>
+                        <p className="line-clamp-2 text-ms-xs text-muted-foreground">{highlight(previewText(m.body) ?? "", q)}</p>
                       </div>
                     </button>
                   </li>
@@ -565,22 +565,22 @@ function ChatListPage() {
       ) : (
         <Tabs defaultValue="all">
           <TabsList className="grid w-full grid-cols-5 bg-transparent">
-            <TabsTrigger value="all" className="text-[11px] sm:text-xs">
+            <TabsTrigger value="all" className="text-ms-2xs sm:text-ms-xs">
               Semua{active.length ? ` (${active.length})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="customer" className="text-[11px] sm:text-xs">
+            <TabsTrigger value="customer" className="text-ms-2xs sm:text-ms-xs">
               {CHAT_CATEGORY_LABEL_ID.customer}
               {byCategory.customer.length ? ` (${byCategory.customer.length})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="employee" className="text-[11px] sm:text-xs">
+            <TabsTrigger value="employee" className="text-ms-2xs sm:text-ms-xs">
               {CHAT_CATEGORY_LABEL_ID.employee}
               {byCategory.employee.length ? ` (${byCategory.employee.length})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="internal" className="text-[11px] sm:text-xs">
+            <TabsTrigger value="internal" className="text-ms-2xs sm:text-ms-xs">
               {CHAT_CATEGORY_LABEL_ID.internal}
               {byCategory.internal.length ? ` (${byCategory.internal.length})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="archived" className="text-[11px] sm:text-xs">
+            <TabsTrigger value="archived" className="text-ms-2xs sm:text-ms-xs">
               Arsip{byCategory.archived.length ? ` (${byCategory.archived.length})` : ""}
             </TabsTrigger>
           </TabsList>
@@ -598,14 +598,14 @@ function ChatListPage() {
               onLongPressStart={toggleSelect}
               onRowTap={toggleSelect}
               empty={
-                <div className="space-y-2 p-8 text-center">
+                <div className="space-ms-2 p-8 text-center">
                   <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm font-medium">Belum ada percakapan</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-ms-sm font-medium">Belum ada percakapan</p>
+                  <p className="text-ms-xs text-muted-foreground">
                     Mulai chat dengan kontak yang akunnya sudah tertaut, atau buat grup baru.
                   </p>
                   <div className="pt-2">
-                    <Button asChild size="sm" className="gap-1.5">
+                    <Button asChild size="sm" className="gap-ms-1.5">
                       <Link to="/kontak">
                         <Link2 className="h-4 w-4" /> Siapkan kontak chat
                       </Link>
@@ -638,7 +638,7 @@ function ChatListPage() {
           </TabsContent>
           <TabsContent value="customer">
             {customerGroups.groups.length === 0 && customerGroups.ungrouped.length === 0 ? (
-              <div className="rounded-lg border p-6 text-center text-xs text-muted-foreground">
+              <div className="rounded-lg border p-ms-6 text-center text-ms-xs text-muted-foreground">
                 Belum ada chat pelanggan.
               </div>
             ) : (
@@ -647,7 +647,7 @@ function ChatListPage() {
                   <Accordion type="multiple" className="mb-2">
                     {customerGroups.groups.map((g) => (
                       <AccordionItem key={g.key} value={g.key} className="border-b">
-                        <AccordionTrigger className="px-1 py-2 text-xs font-medium">
+                        <AccordionTrigger className="px-1 py-ms-2 text-ms-xs font-medium">
                           <span className="truncate">
                             {g.label}{" "}
                             <span className="ml-1 text-muted-foreground">
@@ -693,7 +693,7 @@ function ChatListPage() {
                 ) : null}
                 {customerGroups.ungrouped.length > 0 ? (
                   <div>
-                    <div className="px-1 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <div className="px-1 py-ms-2 text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">
                       Tanpa Order
                     </div>
                     <ConvList
@@ -740,7 +740,7 @@ function ChatListPage() {
               onLongPressStart={toggleSelect}
               onRowTap={toggleSelect}
               empty={
-                <div className="p-8 text-center text-xs text-muted-foreground">
+                <div className="p-8 text-center text-ms-xs text-muted-foreground">
                   Belum ada chat karyawan.
                 </div>
               }
@@ -776,7 +776,7 @@ function ChatListPage() {
               onLongPressStart={toggleSelect}
               onRowTap={toggleSelect}
               empty={
-                <div className="p-8 text-center text-xs text-muted-foreground">
+                <div className="p-8 text-center text-ms-xs text-muted-foreground">
                   Belum ada catatan internal.
                 </div>
               }
@@ -812,7 +812,7 @@ function ChatListPage() {
               onLongPressStart={toggleSelect}
               onRowTap={toggleSelect}
               empty={
-                <div className="p-8 text-center text-xs text-muted-foreground">
+                <div className="p-8 text-center text-ms-xs text-muted-foreground">
                   Belum ada percakapan yang diarsipkan.
                 </div>
               }
@@ -879,7 +879,7 @@ function ConvList({
   if (isLoading) {
     return (
       <div className="rounded-lg border">
-        <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center p-8 text-ms-sm text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
         </div>
       </div>
@@ -909,8 +909,8 @@ function ConvList({
                 onTapWhileSelecting={() => onRowTap(c.id)}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1 truncate text-[15px] font-medium">
+                  <div className="flex items-center justify-between gap-ms-2">
+                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-base font-medium">
                       {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 wa-muted" /> : null}
                       <span className="truncate">{c.display_title}</span>
                       {isMuted ? <BellOff className="h-3 w-3 shrink-0 wa-muted" /> : null}
@@ -918,10 +918,10 @@ function ConvList({
                         <StatusBadge lifecycle="archived" className="shrink-0" />
                       ) : null}
                     </span>
-                    <span className={`shrink-0 text-[11px] ${c.unread > 0 ? "text-[var(--wa-green)] font-medium" : "wa-muted"}`}>{timeShort(c.last_at)}</span>
+                    <span className={`shrink-0 text-ms-2xs ${c.unread > 0 ? "text-[var(--wa-green)] font-medium" : "wa-muted"}`}>{timeShort(c.last_at)}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1 truncate text-[13px] wa-muted">
+                  <div className="flex items-center justify-between gap-ms-2">
+                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-sm wa-muted">
                       {c.last_body ? (
                         <>
                           {c.last_delivered ? (
@@ -938,7 +938,7 @@ function ConvList({
                       )}
                     </span>
                     {c.unread > 0 ? (
-                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full wa-badge px-1.5 text-[11px] font-semibold">
+                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full wa-badge px-1.5 text-ms-2xs font-semibold">
                         {c.unread > 99 ? "99+" : c.unread}
                       </span>
                     ) : null}
@@ -1091,7 +1091,7 @@ function ConvRow({
   );
 
   const avatar = (
-    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
+    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-ms-sm font-semibold uppercase">
       {(conv.display_title ?? "?").trim().charAt(0) || "?"}
     </div>
   );
@@ -1105,7 +1105,7 @@ function ConvRow({
   );
 
   const rowClass =
-    "flex items-center gap-3 px-4 py-2.5 pr-12 hover:bg-[var(--wa-surface-2)] " +
+    "flex items-center gap-ms-3 px-ms-4 py-ms-2.5 pr-12 hover:bg-[var(--wa-surface-2)] " +
     (selecting ? "cursor-pointer select-none" : "");
 
   if (selecting) {

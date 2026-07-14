@@ -93,7 +93,7 @@ export function UrlPreviewList({ text, mine = false }: { text: string; mine?: bo
   const urls = extractUrls(text);
   if (urls.length === 0) return null;
   return (
-    <div className="mt-1 flex flex-col gap-1">
+    <div className="mt-1 flex flex-col gap-ms-1">
       {urls.map((u) => {
         const { kind, emoji } = labelFor(u.host);
         return (
@@ -104,14 +104,14 @@ export function UrlPreviewList({ text, mine = false }: { text: string; mine?: bo
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className={
-              "flex items-center gap-2 rounded-md border px-2 py-1.5 text-[11px] leading-tight no-underline hover:opacity-90 " +
+              "flex items-center gap-ms-2 rounded-md border px-ms-2 py-1.5 text-ms-2xs leading-tight no-underline hover:opacity-90 " +
               (mine
                 ? "border-primary-foreground/25 bg-primary-foreground/10 text-primary-foreground"
                 : "border-border bg-background/70 text-foreground")
             }
             title={u.href}
           >
-            <span aria-hidden className="text-base leading-none">{emoji}</span>
+            <span aria-hidden className="text-ms-base leading-none">{emoji}</span>
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">{kind}</span>
               <span className="block truncate opacity-80">
@@ -119,7 +119,7 @@ export function UrlPreviewList({ text, mine = false }: { text: string; mine?: bo
                 {u.path ? truncate(u.path, 48) : ""}
               </span>
             </span>
-            <span className="shrink-0 text-[10px] opacity-70">Buka ↗</span>
+            <span className="shrink-0 text-ms-2xs opacity-70">Buka ↗</span>
           </a>
         );
       })}

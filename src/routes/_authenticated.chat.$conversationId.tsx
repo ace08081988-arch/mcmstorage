@@ -1195,10 +1195,10 @@ function ChatRoomPage() {
         <div
           role="alert"
           data-testid="chat-not-found"
-          className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center"
+          className="flex h-full flex-col items-center justify-center gap-ms-3 p-ms-6 text-center"
         >
-          <div className="text-[15px] font-semibold">Percakapan tidak ditemukan</div>
-          <div className="text-[13px] leading-snug text-muted-foreground">
+          <div className="text-ms-base font-semibold">Percakapan tidak ditemukan</div>
+          <div className="text-ms-sm leading-snug text-muted-foreground">
             Tautan ini mungkin sudah kedaluwarsa atau kamu tidak punya akses ke percakapan ini.
           </div>
           <Button variant="secondary" onClick={() => navigate({ to: "/chat" })}>
@@ -1282,7 +1282,7 @@ function ChatRoomPage() {
           }}
         />
       ) : (
-      <header className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-1 border-b px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-2">
+      <header className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-ms-1 border-b px-1.5 py-1 sm:gap-ms-2 sm:px-ms-2 sm:py-ms-2">
         <Button
           variant="ghost"
           size="icon"
@@ -1297,18 +1297,18 @@ function ChatRoomPage() {
             type="button"
             aria-label={`Lihat profil ${displayedPeerName}`}
             onClick={() => setPeerProfileOpen(true)}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase transition hover:opacity-80 active:scale-95 sm:h-10 sm:w-10"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-ms-sm font-semibold uppercase transition hover:opacity-80 active:scale-95 sm:h-10 sm:w-10"
           >
             {displayedPeerName.trim().charAt(0) || "?"}
           </button>
         ) : (
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase sm:h-10 sm:w-10">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-ms-sm font-semibold uppercase sm:h-10 sm:w-10">
             {(meta.data?.kind === "dm" ? displayedPeerName : headerTitle || "?").trim().charAt(0) || "?"}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <div className="truncate text-[15px] font-semibold">
+          <div className="flex items-center gap-ms-1">
+            <div className="truncate text-ms-base font-semibold">
               {meta.data?.kind === "dm" ? displayedPeerName : headerTitle}
             </div>
             {meta.data?.category === "archived" || meta.data?.archived_at ? (
@@ -1326,7 +1326,7 @@ function ChatRoomPage() {
               </Button>
             ) : null}
           </div>
-          <div className="truncate text-[11px] text-muted-foreground">
+          <div className="truncate text-ms-2xs text-muted-foreground">
             {typingNames.length > 0 ? (
               <span className="italic text-primary">
                 {meta.data?.kind === "dm"
@@ -1334,7 +1334,7 @@ function ChatRoomPage() {
                   : `${typingNames.join(", ")} sedang menulis…`}
               </span>
             ) : !online ? (
-              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <span className="inline-flex items-center gap-ms-1 text-amber-600 dark:text-amber-400">
                 <WifiOff className="h-3 w-3" /> Offline · pesan akan dikirim saat online
               </span>
             ) : meta.data?.kind === "dm" ? (
@@ -1584,20 +1584,20 @@ function ChatRoomPage() {
         />
       ) : null}
 
-      <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg relative flex-1 space-y-3 overflow-y-auto p-3">
+      <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg relative flex-1 space-ms-3 overflow-y-auto p-ms-3">
         {isLoading ? (
-          <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center p-8 text-ms-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat pesan…
           </div>
         ) : (messages ?? []).length === 0 ? (
-          <div className="grid place-items-center p-12 text-center text-xs text-muted-foreground">
+          <div className="grid place-items-center p-12 text-center text-ms-xs text-muted-foreground">
             Belum ada pesan. Sapa dulu yuk.
           </div>
         ) : (
           grouped.map((g) => (
-            <div key={g.day} className="space-y-2">
+            <div key={g.day} className="space-ms-2">
               <div className="my-2 flex justify-center">
-                <span className="rounded-md bg-[var(--wa-header)] px-2.5 py-1 text-[11px] font-medium wa-muted shadow-sm">{g.day}</span>
+                <span className="rounded-md bg-[var(--wa-header)] px-ms-2.5 py-1 text-ms-2xs font-medium wa-muted shadow-sm">{g.day}</span>
               </div>
               {g.items.map((m) => {
                 const mine = m.sender_id === myId;
@@ -1629,9 +1629,9 @@ function ChatRoomPage() {
                     id={`msg-${m.id}`}
                     className={`flex transition-colors duration-200 ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
-                     <div className={`group relative flex min-w-0 max-w-[85%] items-start gap-1 sm:max-w-[75%] ${mine ? "flex-row-reverse" : "flex-row"}`}>
+                     <div className={`group relative flex min-w-0 max-w-[85%] items-start gap-ms-1 sm:max-w-[75%] ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
-                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
+                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-1.5 text-ms-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
                             ? `${mine ? "rounded-br-sm" : "rounded-bl-sm"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
@@ -1663,16 +1663,16 @@ function ChatRoomPage() {
                         }}
                       >
                         {showSender ? (
-                          <div className="mb-0.5 text-[10px] font-semibold opacity-80">{senderName}</div>
+                          <div className="mb-0.5 text-ms-2xs font-semibold opacity-80">{senderName}</div>
                         ) : null}
                         {m.pinned_at && !m.deleted_at ? (
-                          <div className={`mb-0.5 inline-flex items-center gap-1 text-[10px] ${mine ? "text-primary-foreground/80" : "text-amber-600 dark:text-amber-400"}`}>
+                          <div className={`mb-0.5 inline-flex items-center gap-ms-1 text-ms-2xs ${mine ? "text-primary-foreground/80" : "text-amber-600 dark:text-amber-400"}`}>
                             <Pin className="h-3 w-3" /> Disematkan
                           </div>
                         ) : null}
                         {replyMsg ? (
                           <div
-                            className={`mb-1 rounded-md border-l-2 px-2 py-1 text-[11px] ${
+                            className={`mb-1 rounded-md border-l-2 px-ms-2 py-1 text-ms-2xs ${
                               mine
                                 ? "border-primary-foreground/60 bg-primary-foreground/10"
                                 : "border-primary/60 bg-background/60"
@@ -1696,12 +1696,12 @@ function ChatRoomPage() {
                                 aria-label={label}
                                 title={`Dihapus ${new Date(m.deleted_at).toLocaleString("id-ID")}`}
                               >
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-ms-1.5">
                                   <Ban className="h-3.5 w-3.5 shrink-0 opacity-80" />
                                   <span>{label}</span>
                                 </div>
                                 {hadAttachment ? (
-                                  <div className="ml-5 text-[11px] not-italic opacity-80">
+                                  <div className="ml-5 text-ms-2xs not-italic opacity-80">
                                     Lampiran ikut dihapus
                                   </div>
                                 ) : null}
@@ -1740,7 +1740,7 @@ function ChatRoomPage() {
                           })()
                         )}
                         <div
-                          className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${
+                          className={`mt-0.5 flex items-center justify-end gap-ms-1 text-ms-2xs ${
                             m.deleted_at
                               ? "text-muted-foreground/80"
                               : mine
@@ -1771,7 +1771,7 @@ function ChatRoomPage() {
                           ) : null}
                         </div>
                         {reactionEntries.length > 0 ? (
-                          <div className={`mt-1 flex flex-wrap gap-1 ${mine ? "justify-end" : "justify-start"}`}>
+                          <div className={`mt-1 flex flex-wrap gap-ms-1 ${mine ? "justify-end" : "justify-start"}`}>
                             {reactionEntries.map((r) => (
                               <button
                                 key={r.emoji}
@@ -1779,7 +1779,7 @@ function ChatRoomPage() {
                                 onClick={() =>
                                   react.mutate({ messageId: m.id, emoji: r.emoji, on: !r.mine })
                                 }
-                                className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] leading-none transition ${
+                                className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-ms-2xs leading-none transition ${
                                   r.mine
                                     ? "border-primary bg-primary/20 text-foreground"
                                     : "border-border bg-background/70 text-foreground hover:bg-accent"
@@ -1793,7 +1793,7 @@ function ChatRoomPage() {
                         ) : null}
                       </div>
                       {!m.deleted_at ? (
-                        <div className="flex items-center gap-1 self-center opacity-0 transition-opacity group-hover:opacity-100 data-[open=true]:opacity-100">
+                        <div className="flex items-center gap-ms-1 self-center opacity-0 transition-opacity group-hover:opacity-100 data-[open=true]:opacity-100">
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
@@ -1805,13 +1805,13 @@ function ChatRoomPage() {
                               <Smile className="h-3.5 w-3.5" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-1" align={mine ? "end" : "start"}>
-                            <div className="flex gap-1">
+                          <PopoverContent className="w-auto p-ms-1" align={mine ? "end" : "start"}>
+                            <div className="flex gap-ms-1">
                               {REACTION_SET.map((e) => (
                                 <button
                                   key={e}
                                   type="button"
-                                  className={`grid h-8 w-8 place-items-center rounded-md text-lg hover:bg-accent ${
+                                  className={`grid h-8 w-8 place-items-center rounded-md text-ms-lg hover:bg-accent ${
                                     myReactions.has(e) ? "bg-primary/15" : ""
                                   }`}
                                   onClick={() =>
@@ -1983,12 +1983,12 @@ function ChatRoomPage() {
         )}
 
         {outbox.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-ms-2">
             {outbox.map((o) => (
               <div key={o.tempId} className="flex justify-end">
-                <div className="flex min-w-0 max-w-[85%] flex-row-reverse items-start gap-1 sm:max-w-[75%]">
+                <div className="flex min-w-0 max-w-[85%] flex-row-reverse items-start gap-ms-1 sm:max-w-[75%]">
                   <div
-                    className={`rounded-2xl rounded-br-sm px-3 py-1.5 text-sm leading-snug shadow-sm ${
+                    className={`rounded-2xl rounded-br-sm px-ms-3 py-1.5 text-ms-sm leading-snug shadow-sm ${
                       o.status === "failed"
                         ? "bg-destructive/15 text-foreground ring-1 ring-destructive/40"
                         : "bg-primary/80 text-primary-foreground"
@@ -2007,12 +2007,12 @@ function ChatRoomPage() {
                         </>
                       );
                     })()}
-                    <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] opacity-90">
+                    <div className="mt-0.5 flex items-center justify-end gap-ms-1 text-ms-2xs opacity-90">
                       <span>{fmtTime(o.createdAt)}</span>
                       {o.status === "sending" ? (
                         <Check className="h-3.5 w-3.5 opacity-80" aria-label="Belum terkirim" />
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-destructive">
+                        <span className="inline-flex items-center gap-ms-1 text-destructive">
                           <AlertCircle className="h-3.5 w-3.5" aria-label="Gagal" />
                           Gagal
                         </span>
@@ -2020,7 +2020,7 @@ function ChatRoomPage() {
                     </div>
                   </div>
                   {o.status === "failed" ? (
-                    <div className="flex flex-col gap-1 self-center">
+                    <div className="flex flex-col gap-ms-1 self-center">
                       <Button
                         type="button"
                         size="icon"
@@ -2051,11 +2051,11 @@ function ChatRoomPage() {
       </div>
 
       {hasNewBelow ? (
-        <div className="pointer-events-none sticky bottom-20 z-30 flex justify-center px-2 sm:bottom-16">
+        <div className="pointer-events-none sticky bottom-20 z-30 flex justify-center px-ms-2 sm:bottom-16">
           <button
             type="button"
             onClick={() => scrollToBottom("smooth")}
-            className="pointer-events-auto inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg ring-1 ring-primary/40 backdrop-blur hover:opacity-95 active:scale-95"
+            className="pointer-events-auto inline-flex items-center gap-ms-1 rounded-full bg-primary px-ms-3.5 py-1.5 text-ms-xs font-semibold text-primary-foreground shadow-lg ring-1 ring-primary/40 backdrop-blur hover:opacity-95 active:scale-95"
             aria-label="Lompat ke pesan terbaru"
           >
             ↓ Pesan baru
@@ -2064,11 +2064,11 @@ function ChatRoomPage() {
       ) : null}
       <form
         onSubmit={onSubmit}
-        className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur"
+        className="sticky bottom-0 z-10 border-t bg-background/95 p-ms-2 backdrop-blur"
         style={{ paddingBottom: `max(env(safe-area-inset-bottom), 0.5rem)` }}
       >
         {editing ? (
-          <div className="mb-2 flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
+          <div className="mb-2 flex items-start gap-ms-2 rounded-md border border-primary/40 bg-primary/5 px-ms-2 py-1 text-ms-xs">
             <Pencil className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-primary">Edit pesan</div>
@@ -2091,7 +2091,7 @@ function ChatRoomPage() {
             </Button>
           </div>
         ) : replyTo ? (
-          <div className="mb-2 flex items-start gap-2 rounded-md border-l-2 border-primary bg-muted/60 px-2 py-1 text-xs">
+          <div className="mb-2 flex items-start gap-ms-2 rounded-md border-l-2 border-primary bg-muted/60 px-ms-2 py-1 text-ms-xs">
             <Reply className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">
@@ -2114,9 +2114,9 @@ function ChatRoomPage() {
           </div>
         ) : null}
         {pendingProducts.length > 0 ? (
-          <div className="mb-2 space-y-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
+          <div className="mb-2 space-y-1 rounded-md border border-primary/30 bg-primary/5 px-ms-2 py-1.5 text-ms-xs">
             <div className="flex items-center justify-between">
-              <div className="flex min-w-0 items-center gap-1.5">
+              <div className="flex min-w-0 items-center gap-ms-1.5">
                 <span className="font-semibold text-primary">
                   Produk siap dikirim ({pendingProducts.length})
                 </span>
@@ -2128,13 +2128,13 @@ function ChatRoomPage() {
               </div>
               <button
                 type="button"
-                className="text-[10px] text-muted-foreground underline-offset-2 hover:underline"
+                className="text-ms-2xs text-muted-foreground underline-offset-2 hover:underline"
                 onClick={() => updatePendingProducts([])}
               >
                 Bersihkan
               </button>
             </div>
-            <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-ms-1.5 sm:grid-cols-2 xl:grid-cols-3">
               {pendingProducts.map((p, idx) => {
                 const sendStatus = productSendStatuses[p.id];
                 // Catalog = referensi stok gudang (tidak boleh diedit dari
@@ -2189,13 +2189,13 @@ function ChatRoomPage() {
                 return (
                   <li
                     key={`${p.source}:${p.id}:${idx}`}
-                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-md border bg-background p-1.5"
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-2 rounded-md border bg-background p-ms-1.5"
                   >
                     <PendingProductThumb path={p.photoPath} bucket={p.bucket} />
                     <div className="min-w-0">
-                      <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="flex min-w-0 items-center gap-ms-1.5">
                         <span
-                          className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-foreground"
+                          className="min-w-0 flex-1 truncate text-ms-xs font-medium leading-tight text-foreground"
                           title={p.productName}
                         >
                           {p.productName}
@@ -2230,7 +2230,7 @@ function ChatRoomPage() {
                           </span>
                         ) : null}
                       </div>
-                      <div className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 text-[10px] leading-tight text-muted-foreground">
+                      <div className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 text-ms-2xs leading-tight text-muted-foreground">
                         {editable ? (
                           <span className="inline-flex shrink-0 items-center gap-0.5">
                             <button
@@ -2246,7 +2246,7 @@ function ChatRoomPage() {
                               type="button"
                               aria-label={`Ubah jumlah ${p.productName}`}
                               onClick={promptQty}
-                              className="min-w-[56px] rounded px-1 py-0.5 text-center text-[11px] font-semibold tabular-nums text-foreground hover:bg-accent"
+                              className="min-w-[56px] rounded px-1 py-0.5 text-center text-ms-2xs font-semibold tabular-nums text-foreground hover:bg-accent"
                             >
                               {fmtBase(p.qty!, p.baseUnit!)}
                             </button>
@@ -2260,18 +2260,18 @@ function ChatRoomPage() {
                             </button>
                           </span>
                         ) : p.qty !== null && p.baseUnit ? (
-                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-foreground">
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-ms-2xs font-semibold tabular-nums text-foreground">
                             {fmtBase(p.qty, p.baseUnit)}
                           </span>
                         ) : (
-                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-ms-2xs font-medium uppercase tracking-wide">
                             sendiri
                           </span>
                         )}
-                        <div className="flex min-w-0 items-center gap-1.5">
+                        <div className="flex min-w-0 items-center gap-ms-1.5">
                           {p.variant ? (
                             <span
-                              className="min-w-0 flex-1 truncate text-[10px]"
+                              className="min-w-0 flex-1 truncate text-ms-2xs"
                               title={p.variant}
                             >
                               {p.variant}
@@ -2304,13 +2304,13 @@ function ChatRoomPage() {
           </div>
         ) : null}
         {productSendProgress ? (
-          <div className="mb-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs">
-            <div className="flex items-center gap-2">
+          <div className="mb-2 rounded-md border border-primary/30 bg-primary/5 px-ms-2 py-1.5 text-ms-xs">
+            <div className="flex items-center gap-ms-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
               <span className="flex-1 font-medium text-primary">
                 Mengirim {productSendProgress.current}/{productSendProgress.total}: {productSendProgress.name}
               </span>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-ms-2xs text-muted-foreground">
                 {productSendProgress.done} ok · {productSendProgress.failed} gagal
               </span>
             </div>
@@ -2324,7 +2324,7 @@ function ChatRoomPage() {
             </div>
           </div>
         ) : null}
-        <div className="relative flex items-end gap-2">
+        <div className="relative flex items-end gap-ms-2">
           {qrQuery !== null ? (
             <QuickReplyPopover
               query={qrQuery}
@@ -2405,7 +2405,7 @@ function ChatRoomPage() {
             <div aria-hidden className="h-9 w-9 shrink-0" />
           )}
         </div>
-        <p className="mt-1 hidden px-1 text-[10px] text-muted-foreground sm:block">
+        <p className="mt-1 hidden px-1 text-ms-2xs text-muted-foreground sm:block">
           Enter untuk kirim · Shift+Enter untuk baris baru
         </p>
       </form>
@@ -2462,7 +2462,7 @@ function ChatRoomPage() {
                 : "Pesan ini bukan milik Anda, jadi hanya bisa disembunyikan di perangkat Anda."}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-2">
+          <div className="space-ms-2">
             <Button
               variant="outline"
               className="w-full justify-start"
@@ -2619,7 +2619,7 @@ function ChatRoomPage() {
               Pilih cara penghapusan. “Hapus untuk semua orang” hanya berlaku untuk pesan yang Anda kirim.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-2">
+          <div className="space-ms-2">
             <Button
               variant="outline"
               className="w-full justify-start"

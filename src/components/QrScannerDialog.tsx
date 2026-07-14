@@ -140,7 +140,7 @@ export function QrScannerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <Camera className="h-4 w-4" /> {title}
           </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -148,7 +148,7 @@ export function QrScannerDialog({
 
         <div className="relative overflow-hidden rounded-lg bg-black aspect-square">
           {err ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center text-sm text-white">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-ms-2 p-ms-4 text-center text-ms-sm text-white">
               <span>{err}</span>
               <Button
                 type="button"
@@ -174,7 +174,7 @@ export function QrScannerDialog({
               <canvas ref={canvasRef} className="hidden" />
               <div className="pointer-events-none absolute inset-6 rounded-lg border-2 border-white/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
               {starting ? (
-                <div className="absolute inset-x-0 bottom-3 text-center text-[11px] text-white/80">
+                <div className="absolute inset-x-0 bottom-3 text-center text-ms-2xs text-white/80">
                   Menyalakan kamera…
                 </div>
               ) : null}
@@ -182,13 +182,13 @@ export function QrScannerDialog({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap gap-ms-2 pt-1">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}
-            className="gap-1.5"
+            className="gap-ms-1.5"
           >
             <RefreshCcw className="h-3.5 w-3.5" />
             {facing === "environment" ? "Pakai kamera depan" : "Pakai kamera belakang"}
@@ -198,7 +198,7 @@ export function QrScannerDialog({
             variant="ghost"
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="ml-auto gap-1.5"
+            className="ml-auto gap-ms-1.5"
           >
             <X className="h-3.5 w-3.5" /> Tutup
           </Button>

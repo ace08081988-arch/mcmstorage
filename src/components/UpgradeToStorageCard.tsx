@@ -172,9 +172,9 @@ export function UpgradeToStorageCard() {
   return (
     <Card className="border-primary/40">
       <CardHeader>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           <ArrowUpCircle className="h-5 w-5 text-primary" aria-hidden="true" />
-          <CardTitle className="text-base">Upgrade ke MCM Storage</CardTitle>
+          <CardTitle className="text-ms-base">Upgrade ke MCM Storage</CardTitle>
           <Badge variant="secondary" className="ml-auto">Chat-only</Badge>
         </div>
         <CardDescription>
@@ -183,25 +183,25 @@ export function UpgradeToStorageCard() {
           penyiapan pegawai, dll). Data chat tetap utuh.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-ms-3">
         {/* Checklist syarat upgrade — status real-time */}
-        <div className="rounded-md border bg-muted/30 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="rounded-md border bg-muted/30 p-ms-3">
+          <div className="mb-2 flex items-center justify-between gap-ms-2">
+            <div className="text-ms-xs font-medium uppercase tracking-wide text-muted-foreground">
               Syarat upgrade
             </div>
             <Badge
               variant={remaining === 0 ? "default" : "secondary"}
-              className="gap-1 text-[10px]"
+              className="gap-ms-1 text-ms-2xs"
             >
               {remaining === 0
                 ? "Siap upgrade"
                 : `${requirements.length - remaining}/${requirements.length} terpenuhi`}
             </Badge>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-ms-2">
             {requirements.map((r) => (
-              <li key={r.key} className="flex items-start gap-2">
+              <li key={r.key} className="flex items-start gap-ms-2">
                 {r.done ? (
                   <CheckCircle2
                     className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
@@ -217,19 +217,19 @@ export function UpgradeToStorageCard() {
                   <div
                     className={
                       r.done
-                        ? "text-sm text-foreground"
-                        : "text-sm text-foreground"
+                        ? "text-ms-sm text-foreground"
+                        : "text-ms-sm text-foreground"
                     }
                   >
                     {r.label}
                   </div>
-                  <div className="text-[11px] text-muted-foreground">{r.hint}</div>
+                  <div className="text-ms-2xs text-muted-foreground">{r.hint}</div>
                   {r.key === "email" && !r.done && userEmail && (
                     <Button
                       type="button"
                       variant="link"
                       size="sm"
-                      className="h-auto px-0 py-0.5 text-[11px]"
+                      className="h-auto px-0 py-0.5 text-ms-2xs"
                       onClick={resendVerification}
                       disabled={resending}
                     >
@@ -242,7 +242,7 @@ export function UpgradeToStorageCard() {
             ))}
           </ul>
           {!emailConfirmed && (
-            <div className="mt-2 flex items-start gap-1.5 rounded border border-amber-500/40 bg-amber-500/10 p-1.5 text-[11px] text-amber-700 dark:text-amber-300">
+            <div className="mt-2 flex items-start gap-ms-1.5 rounded border border-amber-500/40 bg-amber-500/10 p-ms-1.5 text-ms-2xs text-amber-700 dark:text-amber-300">
               <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
               <span>Upgrade dikunci sampai email diverifikasi agar akses tidak diblokir setelahnya.</span>
             </div>
@@ -250,7 +250,7 @@ export function UpgradeToStorageCard() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="upgrade-password" className="text-sm">
+          <Label htmlFor="upgrade-password" className="text-ms-sm">
             Konfirmasi password
           </Label>
           <Input
@@ -262,12 +262,12 @@ export function UpgradeToStorageCard() {
             onChange={(e) => setPassword(e.target.value)}
             disabled={submitting}
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-ms-2xs text-muted-foreground">
             Password digunakan hanya untuk verifikasi — tidak disimpan.
           </p>
         </div>
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <div className="flex items-center justify-between gap-ms-3 pt-1">
+          <p className="flex items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
             Verifikasi password + email
           </p>
@@ -275,7 +275,7 @@ export function UpgradeToStorageCard() {
             type="button"
             disabled={!canSubmit}
             onClick={() => setConfirmOpen(true)}
-            className="gap-2"
+            className="gap-ms-2"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

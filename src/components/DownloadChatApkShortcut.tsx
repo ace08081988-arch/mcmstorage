@@ -192,12 +192,12 @@ export function DownloadChatApkShortcut() {
           }
           setOpen(true);
         }}
-        className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+        className="group flex flex-col gap-0.5 rounded-md border bg-card px-ms-3 py-ms-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
       >
-        <span className="text-base leading-none">
+        <span className="text-ms-base leading-none">
           {busy || isChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "💬"}
         </span>
-        <span className="mt-1 text-xs font-semibold leading-tight">
+        <span className="mt-1 text-ms-xs font-semibold leading-tight">
           {busy
             ? stage ?? "Memproses…"
             : isChecking
@@ -206,7 +206,7 @@ export function DownloadChatApkShortcut() {
                 ? "Belum tersedia"
                 : "Unduh APK Chat"}
         </span>
-        <span className="text-[10px] leading-tight text-muted-foreground">
+        <span className="text-ms-2xs leading-tight text-muted-foreground">
           {busy
             ? cooldown > 0
               ? `Menunggu browser… ${cooldown}s`

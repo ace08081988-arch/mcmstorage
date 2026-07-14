@@ -325,11 +325,11 @@ export function ProductSharePopover({
           e.preventDefault();
         }}
       >
-        <div className="border-b p-2">
-          <div className="text-sm font-medium">
+        <div className="border-b p-ms-2">
+          <div className="text-ms-sm font-medium">
             {onQueue ? "Tambah produk ke pesan" : "Kirim produk ke chat"}
           </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-ms-2xs text-muted-foreground">
             {onQueue
               ? "Ketuk untuk menambah ke pratinjau di composer — belum terkirim sampai Anda tekan Kirim."
               : "Ketuk paket siap kirim untuk mengirim foto + lokasi (pindah ke Riwayat). Ketuk katalog gudang untuk mengirim foto + info stok tanpa mengubah stok."}
@@ -340,18 +340,18 @@ export function ProductSharePopover({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Cari nama produk / varian…"
-              className="h-8 pl-7 text-sm"
+              className="h-8 pl-7 text-ms-sm"
             />
           </div>
         </div>
 
         <div className="max-h-80 overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 p-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-ms-2 p-ms-6 text-ms-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Memuat…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">
+            <div className="p-ms-6 text-center text-ms-sm text-muted-foreground">
               {rows.length === 0
                 ? "Belum ada produk di gudang."
                 : "Tidak ada produk yang cocok."}
@@ -360,7 +360,7 @@ export function ProductSharePopover({
             <div>
               {grouped.paket.length > 0 ? (
                 <>
-                  <div className="sticky top-0 z-[1] bg-muted/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                  <div className="sticky top-0 z-[1] bg-muted/80 px-ms-2 py-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
                     Paket siap kirim
                   </div>
                   <ul className="divide-y">
@@ -372,7 +372,7 @@ export function ProductSharePopover({
               ) : null}
               {grouped.katalog.length > 0 ? (
                 <>
-                  <div className="sticky top-0 z-[1] bg-muted/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                  <div className="sticky top-0 z-[1] bg-muted/80 px-ms-2 py-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
                     Katalog gudang
                   </div>
                   <ul className="divide-y">
@@ -407,16 +407,16 @@ function ProductRow({
         type="button"
         onClick={() => void onPick(row)}
         disabled={sendingId !== null}
-        className="flex w-full items-center gap-2 p-2 text-left hover:bg-accent disabled:opacity-60"
+        className="flex w-full items-center gap-ms-2 p-ms-2 text-left hover:bg-accent disabled:opacity-60"
       >
         <ProductThumb path={row.photoPath} bucket={row.bucket} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium">{row.productName}</div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+          <div className="truncate text-ms-sm font-medium">{row.productName}</div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-ms-2xs text-muted-foreground">
             {row.qty !== null && row.baseUnit ? (
               <span>{fmtBase(row.qty, row.baseUnit)}</span>
             ) : (
-              <span className="rounded bg-muted px-1 py-0.5 text-[10px]">sendiri</span>
+              <span className="rounded bg-muted px-1 py-0.5 text-ms-2xs">sendiri</span>
             )}
             {row.variant ? <span>· {row.variant}</span> : null}
             {row.locationUrl ? (
@@ -425,7 +425,7 @@ function ProductRow({
               </span>
             ) : null}
             {row.source === "catalog" ? (
-              <span className="rounded bg-primary/10 px-1 py-0.5 text-[10px] text-primary">katalog</span>
+              <span className="rounded bg-primary/10 px-1 py-0.5 text-ms-2xs text-primary">katalog</span>
             ) : null}
           </div>
         </div>

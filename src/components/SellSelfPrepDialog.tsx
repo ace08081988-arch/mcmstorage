@@ -320,7 +320,7 @@ export function SellSelfPrepDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
             <Send className="h-4 w-4 text-primary" /> Jual — {selfPrepTitle}
           </DialogTitle>
           <DialogDescription>
@@ -328,27 +328,27 @@ export function SellSelfPrepDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 text-xs">
+        <div className="space-ms-3 text-ms-xs">
           {/* Pelanggan */}
           <div>
-            <Label className="mb-1 block text-[11px] font-medium">Pelanggan</Label>
-            <div className="mb-1 flex gap-1 text-[10px]">
+            <Label className="mb-1 block text-ms-2xs font-medium">Pelanggan</Label>
+            <div className="mb-1 flex gap-ms-1 text-ms-2xs">
               <button
                 type="button"
                 onClick={() => setMode("link")}
-                className={`flex-1 rounded-md border px-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 font-semibold text-primary" : "hover:bg-accent"}`}
+                className={`flex-1 rounded-md border px-ms-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 font-semibold text-primary" : "hover:bg-accent"}`}
               >Pilih dari daftar</button>
               <button
                 type="button"
                 onClick={() => setMode("manual")}
-                className={`flex-1 rounded-md border px-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 font-semibold text-primary" : "hover:bg-accent"}`}
+                className={`flex-1 rounded-md border px-ms-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 font-semibold text-primary" : "hover:bg-accent"}`}
               >Ketik manual</button>
             </div>
             {mode === "link" ? (
               <select
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
-                className="w-full rounded-md border bg-background px-2 py-1.5 text-[12px]"
+                className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-xs"
               >
                 {customers.length === 0 ? (
                   <option value="">(Belum ada pelanggan — ketik manual)</option>
@@ -363,7 +363,7 @@ export function SellSelfPrepDialog({
                 value={manualName}
                 onChange={(e) => setManualName(e.target.value)}
                 placeholder="Nama pembeli"
-                className="h-8 text-[12px]"
+                className="h-8 text-ms-xs"
               />
             )}
           </div>
@@ -371,23 +371,23 @@ export function SellSelfPrepDialog({
           {/* Baris item */}
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <Label className="text-[11px] font-medium">Barang dijual</Label>
-              <Button type="button" size="sm" variant="outline" onClick={addLine} className="h-7 px-2 text-[11px]">
+              <Label className="text-ms-2xs font-medium">Barang dijual</Label>
+              <Button type="button" size="sm" variant="outline" onClick={addLine} className="h-7 px-ms-2 text-ms-2xs">
                 <Plus className="mr-1 h-3 w-3" /> Baris
               </Button>
             </div>
-            <div className="space-y-2">
+            <div className="space-ms-2">
               {lines.map((l, idx) => {
                 const it = itemMap.get(l.itemId);
                 const g = parseNum(l.gramsStr);
                 const overStock = it ? g > Number(it.stock_base) : false;
                 return (
-                  <div key={l.key} className="space-y-1 rounded-md border bg-muted/20 p-2">
-                    <div className="flex items-center gap-1">
+                  <div key={l.key} className="space-y-1 rounded-md border bg-muted/20 p-ms-2">
+                    <div className="flex items-center gap-ms-1">
                       <select
                         value={l.itemId}
                         onChange={(e) => updateLine(idx, { itemId: e.target.value })}
-                        className="min-w-0 flex-1 rounded-md border bg-background px-2 py-1 text-[12px]"
+                        className="min-w-0 flex-1 rounded-md border bg-background px-ms-2 py-1 text-ms-xs"
                       >
                         <option value="">(Pilih produk)</option>
                         {warehouseItems.map((wi) => (
@@ -405,9 +405,9 @@ export function SellSelfPrepDialog({
                         </Button>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-1">
+                    <div className="grid grid-cols-2 gap-ms-1">
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">
+                        <Label className="text-ms-2xs text-muted-foreground">
                           {it ? (it.base_unit === "g" ? "Gram" : "Pcs") : "Qty"}
                         </Label>
                         <Input
@@ -415,11 +415,11 @@ export function SellSelfPrepDialog({
                           onChange={(e) => updateLine(idx, { gramsStr: e.target.value })}
                           inputMode="decimal"
                           placeholder="0"
-                          className={`h-8 text-[12px] ${overStock ? "border-destructive" : ""}`}
+                          className={`h-8 text-ms-xs ${overStock ? "border-destructive" : ""}`}
                         />
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">
+                        <Label className="text-ms-2xs text-muted-foreground">
                           Harga/{it ? it.base_unit : "unit"}
                         </Label>
                         <Input
@@ -427,12 +427,12 @@ export function SellSelfPrepDialog({
                           onChange={(e) => updateLine(idx, { priceStr: e.target.value })}
                           inputMode="decimal"
                           placeholder="0"
-                          className="h-8 text-[12px]"
+                          className="h-8 text-ms-xs"
                         />
                       </div>
                     </div>
                     {it && (
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <div className="flex items-center justify-between text-ms-2xs text-muted-foreground">
                         <span>Stok: {fmtItemQty(it.stock_base, it)}</span>
                         <span className="font-semibold text-foreground">Subtotal: {rupiah(subtotals[idx])}</span>
                       </div>
@@ -442,7 +442,7 @@ export function SellSelfPrepDialog({
               })}
             </div>
             {stockIssues.length > 0 && (
-              <div className="mt-1 flex items-start gap-1 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive">
+              <div className="mt-1 flex items-start gap-ms-1 rounded-md border border-destructive/40 bg-destructive/10 p-ms-2 text-ms-2xs text-destructive">
                 <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                 <div className="space-y-0.5">
                   {stockIssues.map((m, i) => <div key={i}>{m}</div>)}
@@ -452,23 +452,23 @@ export function SellSelfPrepDialog({
           </div>
 
           {/* Total */}
-          <div className="rounded-md border bg-muted/30 p-2">
+          <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">Total</span>
-              <span className="text-sm font-bold text-primary">{rupiah(totalAmount)}</span>
+              <span className="text-ms-2xs text-muted-foreground">Total</span>
+              <span className="text-ms-sm font-bold text-primary">{rupiah(totalAmount)}</span>
             </div>
           </div>
 
           {/* Metode bayar */}
           <div>
-            <Label className="mb-1 block text-[11px] font-medium">Metode Bayar</Label>
-            <div className="grid grid-cols-3 gap-1 text-[11px]">
+            <Label className="mb-1 block text-ms-2xs font-medium">Metode Bayar</Label>
+            <div className="grid grid-cols-3 gap-ms-1 text-ms-2xs">
               {(["kas", "hutang", "partial"] as PaymentMethod[]).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setPayMethod(m)}
-                  className={`rounded-md border px-2 py-1.5 font-semibold ${payMethod === m ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"}`}
+                  className={`rounded-md border px-ms-2 py-1.5 font-semibold ${payMethod === m ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"}`}
                 >
                   {m === "kas" ? "Lunas" : m === "hutang" ? "Hutang" : "Sebagian"}
                 </button>
@@ -476,23 +476,23 @@ export function SellSelfPrepDialog({
             </div>
             {payMethod === "partial" && (
               <div className="mt-2">
-                <Label className="text-[10px] text-muted-foreground">Jumlah dibayar</Label>
+                <Label className="text-ms-2xs text-muted-foreground">Jumlah dibayar</Label>
                 <Input
                   value={paidStr}
                   onChange={(e) => setPaidStr(e.target.value)}
                   inputMode="decimal"
                   placeholder="0"
-                  className={`h-8 text-[12px] ${!payment.partialValid ? "border-destructive" : ""}`}
+                  className={`h-8 text-ms-xs ${!payment.partialValid ? "border-destructive" : ""}`}
                 />
                 {!payment.partialValid && paidStr && (
-                  <div className="mt-0.5 text-[10px] text-destructive">
+                  <div className="mt-0.5 text-ms-2xs text-destructive">
                     Harus &gt; 0 dan &lt; {formatPaymentRupiah(totalAmount)}
                   </div>
                 )}
               </div>
             )}
             {(payment.method === "hutang" || (payment.method === "partial" && payment.partialValid)) && (
-              <div className="mt-1 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-[11px] text-amber-800 dark:text-amber-200">
+              <div className="mt-1 rounded-md border border-amber-500/30 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-800 dark:text-amber-200">
                 Sisa piutang: <b>{formatPaymentRupiah(payment.remaining)}</b>
                 {party.name ? <> · atas nama <b>{party.name}</b></> : null}
               </div>
@@ -500,7 +500,7 @@ export function SellSelfPrepDialog({
           </div>
         </div>
 
-        <DialogFooter className="mt-2 gap-2">
+        <DialogFooter className="mt-2 gap-ms-2">
           <Button variant="outline" onClick={onClose} disabled={busy} size="sm">Batal</Button>
           <Button
             onClick={handleSubmit}

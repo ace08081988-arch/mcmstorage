@@ -29,7 +29,7 @@ export function SyncSourceBadge({
     <span
       title={title}
       aria-label={title}
-      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none ${tone} ${className}`}
+      className={`inline-flex items-center gap-ms-1 rounded-full border px-1.5 py-0.5 text-ms-2xs font-medium leading-none ${tone} ${className}`}
     >
       <Icon className="h-3 w-3" aria-hidden />
       <span>{label}</span>

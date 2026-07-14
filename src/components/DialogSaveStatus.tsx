@@ -124,8 +124,8 @@ export function DialogSaveStatus({
       role="status"
       aria-live="polite"
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium",
-        compact ? "text-[10px]" : "text-[11px]",
+        "inline-flex items-center gap-ms-1 rounded-full border px-ms-2 py-0.5 font-medium",
+        compact ? "text-ms-2xs" : "text-ms-2xs",
         s.wrap,
         className,
       )}

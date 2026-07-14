@@ -303,7 +303,7 @@ function Index() {
           <button
             className={
               triggerClassName ??
-              `inline-flex h-8 items-center justify-center rounded-md border px-2 text-[0.6875rem] font-medium hover:bg-accent ${
+              `inline-flex h-8 items-center justify-center rounded-md border px-ms-2 text-[0.6875rem] font-medium hover:bg-accent ${
                 lockCfg ? "bg-accent" : ""
               }`
             }
@@ -756,7 +756,7 @@ function Index() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-background text-ms-sm text-muted-foreground">
         Memuat…
       </div>
     );
@@ -776,8 +776,8 @@ function Index() {
         />
 
         <header className="relative border-b border-primary/15 bg-background/80 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 sm:px-6">
-            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <div className="mx-auto flex max-w-6xl items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
+            <div className="flex min-w-0 flex-1 items-center gap-ms-2.5">
               <span
                 aria-hidden
                 className="grid h-8 w-8 place-items-center rounded-full border border-primary/60 bg-card text-[0.8125rem] font-semibold tracking-wider text-primary shadow-[0_0_18px_color-mix(in_oklab,var(--primary)_25%,transparent)]"
@@ -796,19 +796,19 @@ function Index() {
             {lockMenu(true, "inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/25 bg-card text-foreground hover:border-primary/60")}
             <button
               onClick={signOut}
-              className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-3 text-[0.6875rem] font-medium text-foreground hover:border-primary/60"
+              className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-ms-3 text-[0.6875rem] font-medium text-foreground hover:border-primary/60"
             >
               Keluar
             </button>
           </div>
         </header>
 
-        <main className="relative mx-auto w-full max-w-md space-y-7 px-4 pt-6 pb-12 sm:max-w-2xl sm:px-6 sm:pt-8">
+        <main className="relative mx-auto w-full max-w-md space-y-7 px-ms-4 pt-6 pb-12 sm:max-w-2xl sm:px-ms-6 sm:pt-8">
           {/* Hero: alur kerja aplikasi */}
           <section
-            className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-background p-5 shadow-[0_20px_60px_-30px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:p-6"
+            className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-background p-ms-5 shadow-[0_20px_60px_-30px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:p-ms-6"
           >
-            <div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
+            <div className="flex items-center gap-ms-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
               <span className="h-px w-6 bg-primary/60" />
               Alur Kerja
             </div>
@@ -820,7 +820,7 @@ function Index() {
               Empat langkah inti yang menjalankan MCM Storage setiap hari.
             </p>
 
-            <ol className="mt-6 space-y-2.5">
+            <ol className="mt-6 space-ms-2.5">
               {[
                 { n: "01", to: "/gudang", t: "Gudang", d: "Kelola stok, pembelian, dan harga modal." },
                 { n: "02", to: "/ecer", t: "Siapkan Pesanan", d: "Ecer & request — timbang, kemas, verifikasi." },
@@ -831,7 +831,7 @@ function Index() {
                   <Link
                     to={step.to}
                     preload="intent"
-                    className="group flex items-center gap-3 rounded-xl border border-primary/15 bg-card px-3.5 py-3 transition-all hover:border-primary/50 hover:bg-accent hover:translate-x-0.5"
+                    className="group flex items-center gap-ms-3 rounded-xl border border-primary/15 bg-card px-ms-3.5 py-ms-3 transition-all hover:border-primary/50 hover:bg-accent hover:translate-x-0.5"
                   >
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-background font-serif text-[0.84375rem] tracking-wider text-primary">
                       {step.n}
@@ -857,8 +857,8 @@ function Index() {
           </section>
 
           {/* CTA inti: kategori */}
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
+          <section className="space-ms-3">
+            <div className="flex items-center gap-ms-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
               <span className="h-px w-6 bg-primary/50" />
               {categories.length === 0 ? "Mulai" : "Kategori"}
             </div>
@@ -867,21 +867,21 @@ function Index() {
                 e.preventDefault();
                 addCategory(newCatName);
               }}
-              className="rounded-xl border border-primary/20 bg-card p-3.5"
+              className="rounded-xl border border-primary/20 bg-card p-ms-3.5"
             >
               <label className="mb-2 block text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">
                 {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori"}
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-ms-2">
                 <input
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   placeholder="Sembako, Pakaian, 1 gram…"
-                  className="h-10 w-full rounded-lg border border-primary/20 bg-background px-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                  className="h-10 w-full rounded-lg border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
                 />
                 <button
                   type="submit"
-                  className="h-10 shrink-0 rounded-lg bg-primary px-4 text-[0.78125rem] font-semibold tracking-tight text-primary-foreground shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
+                  className="h-10 shrink-0 rounded-lg bg-primary px-ms-4 text-[0.78125rem] font-semibold tracking-tight text-primary-foreground shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
                 >
                   Buat
                 </button>
@@ -889,17 +889,17 @@ function Index() {
             </form>
 
             {categories.length > 0 && (
-              <ul className="grid gap-2">
+              <ul className="grid gap-ms-2">
                 {categories.map((c) => {
                   const count = items.filter((i) => i.kategori === c).length;
                   return (
                     <li
                       key={c}
-                      className="flex items-center gap-2 rounded-xl border border-primary/15 bg-card px-3 py-3 transition-colors hover:border-primary/40"
+                      className="flex items-center gap-ms-2 rounded-xl border border-primary/15 bg-card px-ms-3 py-ms-3 transition-colors hover:border-primary/40"
                     >
                       <button
                         onClick={() => setActiveCat(c)}
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        className="flex min-w-0 flex-1 items-center gap-ms-3 text-left"
                       >
                         <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.08em] text-primary">
                           {tagFor(c)}
@@ -914,7 +914,7 @@ function Index() {
                       <button
                         onClick={() => deleteCategory(c)}
                         disabled={categories.length <= 1}
-                        className="shrink-0 rounded-md border border-destructive/30 px-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30"
+                        className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30"
                         title={categories.length <= 1 ? "Minimal harus ada 1 kategori" : `Hapus kategori ${c}`}
                         aria-label={`Hapus kategori ${c}`}
                       >
@@ -939,11 +939,11 @@ function Index() {
             }}
           >
             <summary
-              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3.5 text-[0.78125rem] font-medium tracking-tight text-foreground/80 [&::-webkit-details-marker]:hidden"
+              className="flex cursor-pointer list-none items-center justify-between gap-ms-2 px-ms-4 py-ms-3.5 text-[0.78125rem] font-medium tracking-tight text-foreground/80 [&::-webkit-details-marker]:hidden"
               onPointerEnter={() => setLainnyaMounted(true)}
               onFocus={() => setLainnyaMounted(true)}
             >
-              <span className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
+              <span className="flex items-center gap-ms-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
                 <span className="h-px w-5 bg-primary/50" />
                 Lainnya
               </span>
@@ -951,8 +951,8 @@ function Index() {
                 ⌄
               </span>
             </summary>
-            <div className="space-y-4 border-t border-primary/10 p-4">
-              <div className="grid grid-cols-2 gap-2.5">
+            <div className="space-ms-4 border-t border-primary/10 p-ms-4">
+              <div className="grid grid-cols-2 gap-ms-2.5">
                 {[
                   { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
                   { to: "/kontak", label: "Pelanggan & Pemasok", emoji: "👥", desc: "Tautkan akun pengguna" },
@@ -965,7 +965,7 @@ function Index() {
                     key={s.to}
                     to={s.to}
                     preload="intent"
-                    className="flex flex-col gap-0.5 rounded-xl border border-primary/15 bg-card px-3 py-3 text-left transition-all hover:border-primary/40 hover:bg-accent hover:-translate-y-0.5"
+                    className="flex flex-col gap-0.5 rounded-xl border border-primary/15 bg-card px-ms-3 py-ms-3 text-left transition-all hover:border-primary/40 hover:bg-accent hover:-translate-y-0.5"
                   >
                     <span className="text-[1.0625rem] leading-none">{s.emoji}</span>
                     <span className="mt-1.5 text-[0.71875rem] font-semibold leading-tight tracking-tight text-foreground">
@@ -988,7 +988,7 @@ function Index() {
               {lainnyaMounted && (
                 <Suspense
                   fallback={
-                    <div className="rounded-lg border border-primary/10 bg-card px-3 py-4 text-center text-[0.6875rem] text-muted-foreground">
+                    <div className="rounded-lg border border-primary/10 bg-card px-ms-3 py-ms-4 text-center text-[0.6875rem] text-muted-foreground">
                       Memuat…
                     </div>
                   }
@@ -1003,7 +1003,7 @@ function Index() {
               {(categories.length > 0 || items.length > 0) && (
                 <button
                   onClick={resetAllData}
-                  className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[0.71875rem] font-semibold tracking-tight text-destructive transition-colors hover:bg-destructive/10"
+                  className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-ms-3 py-ms-2.5 text-[0.71875rem] font-semibold tracking-tight text-destructive transition-colors hover:bg-destructive/10"
                 >
                   🗑 Reset semua data saya
                 </button>
@@ -1032,7 +1032,7 @@ function Index() {
       )}
       {/* Vertical action rail */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-14 flex-col items-center gap-1.5 border-r bg-card/95 px-1 py-3 backdrop-blur transition-transform duration-200 sm:sticky sm:top-0 sm:z-20 sm:transition-[width,transform] ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-14 flex-col items-center gap-ms-1.5 border-r bg-card/95 px-1 py-ms-3 backdrop-blur transition-transform duration-200 sm:sticky sm:top-0 sm:z-20 sm:transition-[width,transform] ${
           railOpen
             ? "translate-x-0 sm:w-14"
             : "-translate-x-full sm:translate-x-0 sm:w-0 sm:overflow-hidden sm:border-r-0 sm:px-0"
@@ -1045,7 +1045,7 @@ function Index() {
             setSelected(new Set());
             setOpenId(null);
           }}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Ganti kategori"
           title="Ganti kategori"
         >
@@ -1058,7 +1058,7 @@ function Index() {
           onClick={addProduk}
           title="Tambah produk"
           aria-label="Tambah produk"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-ms-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
         >
           +
         </button>
@@ -1069,7 +1069,7 @@ function Index() {
           }}
           title={selectMode ? "Selesai memilih" : "Pilih beberapa"}
           aria-label={selectMode ? "Selesai memilih" : "Pilih beberapa"}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             selectMode
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -1081,7 +1081,7 @@ function Index() {
           onClick={resetStatus}
           title="Reset status terkirim"
           aria-label="Reset status terkirim"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
         >
           ↺
         </button>
@@ -1089,7 +1089,7 @@ function Index() {
           onClick={reset}
           title="Hapus semua"
           aria-label="Hapus semua"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base text-destructive transition-colors hover:bg-destructive/10"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base text-destructive transition-colors hover:bg-destructive/10"
         >
           🗑
         </button>
@@ -1098,7 +1098,7 @@ function Index() {
 
         <button
           onClick={() => setViewMode("list")}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             viewMode === "list"
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -1110,7 +1110,7 @@ function Index() {
         </button>
         <button
           onClick={() => setViewMode("grid")}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             viewMode === "grid"
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -1125,7 +1125,7 @@ function Index() {
 
         <AppearanceSettings
           compact
-          triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base leading-none transition-colors hover:bg-accent"
+          triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none transition-colors hover:bg-accent"
         />
         <button
           onClick={() => {
@@ -1139,7 +1139,7 @@ function Index() {
             );
             toast.success("Tampilan menu dikembalikan ke default");
           }}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Reset tampilan menu"
           title="Reset tampilan menu"
         >
@@ -1147,13 +1147,13 @@ function Index() {
         </button>
         {lockMenu(
           true,
-          `inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent ${
+          `inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent ${
             lockCfg ? "bg-accent" : ""
           }`,
         )}
         <button
           onClick={signOut}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Keluar"
           title="Keluar"
         >
@@ -1164,18 +1164,18 @@ function Index() {
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-          <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
-            <div className="flex items-center gap-3">
+          <div className="mx-auto max-w-6xl px-ms-3 py-ms-3 sm:px-ms-6">
+            <div className="flex items-center gap-ms-3">
               <button
                 onClick={() => setRailOpen((v) => !v)}
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-card text-base transition-colors hover:bg-accent"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-card text-ms-base transition-colors hover:bg-accent"
                 aria-label={railOpen ? "Sembunyikan menu" : "Tampilkan menu"}
                 title={railOpen ? "Sembunyikan menu" : "Tampilkan menu"}
               >
                 ☰
               </button>
               <div className="min-w-0 flex-1">
-                <h1 className="truncate text-base font-semibold tracking-tight">
+                <h1 className="truncate text-ms-base font-semibold tracking-tight">
                   {activeCat} · MCM Storage
                 </h1>
                 <p className="text-[0.6875rem] text-muted-foreground">
@@ -1195,7 +1195,7 @@ function Index() {
                           ? "Belum dikirim"
                           : "Sudah dikirim"
                       }
-                      className={`inline-flex shrink-0 items-center justify-center px-3 text-[0.6875rem] font-medium transition-colors ${
+                      className={`inline-flex shrink-0 items-center justify-center px-ms-3 text-[0.6875rem] font-medium transition-colors ${
                         i > 0 ? "border-l" : ""
                       } ${
                         filter === f
@@ -1221,7 +1221,7 @@ function Index() {
                   setOpenId(null);
                   toast.success("Filter dikembalikan ke default");
                 }}
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-base transition-colors hover:bg-accent"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-ms-base transition-colors hover:bg-accent"
                 aria-label="Reset filter"
                 title="Reset filter"
               >
@@ -1231,7 +1231,7 @@ function Index() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-6">
+        <main className="mx-auto w-full max-w-6xl px-ms-3 py-ms-3 sm:px-ms-6">
         <SecurityScanReminder />
         <SecurityFindingsBanner />
         {(() => {
@@ -1247,9 +1247,9 @@ function Index() {
             byUnit.set(s, (byUnit.get(s) ?? 0) + (it.jumlah ?? 0));
           }
           return (
-            <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-card p-2.5 text-[0.6875rem] sm:grid-cols-4">
+            <div className="mb-3 grid grid-cols-2 gap-ms-2 rounded-lg border bg-card p-ms-2.5 text-[0.6875rem] sm:grid-cols-4">
               <div
-                className="col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-2 sm:col-span-4"
+                className="col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-ms-2 sm:col-span-4"
                 role="status"
                 aria-live="polite"
                 title="Penjualan hari ini = jumlah harga semua pesanan yang ditandai Sudah Dikirim pada tanggal kalender lokal hari ini."
@@ -1257,7 +1257,7 @@ function Index() {
                 <p className="text-[0.65625rem] font-medium uppercase tracking-wide text-[#0F7A6C]">
                   Total penjualan hari ini
                 </p>
-                <p className="mt-0.5 text-lg font-bold tabular-nums text-[#0F7A6C]">
+                <p className="mt-0.5 text-ms-lg font-bold tabular-nums text-[#0F7A6C]">
                   {rupiah(omzetHariIni)}
                 </p>
                 <p className="text-[0.65625rem] text-[#0F7A6C]/80">
@@ -1267,26 +1267,26 @@ function Index() {
               </div>
               <div>
                 <p className="text-muted-foreground">Total pesanan</p>
-                <p className="text-sm font-semibold tabular-nums">{total}</p>
+                <p className="text-ms-sm font-semibold tabular-nums">{total}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Belum dikirim</p>
-                <p className="text-sm font-semibold tabular-nums">{belum}</p>
+                <p className="text-ms-sm font-semibold tabular-nums">{belum}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Terjual</p>
-                <p className="text-sm font-semibold tabular-nums text-[#128C7E]">
+                <p className="text-ms-sm font-semibold tabular-nums text-[#128C7E]">
                   {terkirim.length}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Omzet total</p>
-                <p className="text-sm font-semibold tabular-nums">{rupiah(omzet)}</p>
+                <p className="text-ms-sm font-semibold tabular-nums">{rupiah(omzet)}</p>
               </div>
               {byUnit.size > 0 && (
                 <div className="col-span-2 sm:col-span-4">
                   <p className="text-muted-foreground">Terjual per satuan</p>
-                  <p className="text-xs font-medium tabular-nums">
+                  <p className="text-ms-xs font-medium tabular-nums">
                     {Array.from(byUnit.entries())
                       .map(([s, j]) => formatJumlah(j, s))
                       .join(" · ")}
@@ -1300,8 +1300,8 @@ function Index() {
         <ul
           className={
             viewMode === "grid"
-              ? "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
-              : "grid gap-1.5"
+              ? "grid grid-cols-2 gap-ms-2 sm:grid-cols-3 lg:grid-cols-4"
+              : "grid gap-ms-1.5"
           }
         >
           {filtered.map((p) => {
@@ -1328,7 +1328,7 @@ function Index() {
                     {thumb ? (
                       <img src={thumb} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl text-muted-foreground">
+                      <div className="flex h-full w-full items-center justify-center text-ms-2xl text-muted-foreground">
                         📦
                       </div>
                     )}
@@ -1353,7 +1353,7 @@ function Index() {
                     )}
                   </button>
                 )}
-                <div className="flex min-h-[44px] items-center gap-2 px-2.5 py-2 leading-snug">
+                <div className="flex min-h-[44px] items-center gap-ms-2 px-ms-2.5 py-ms-2 leading-snug">
                   {selectMode && viewMode === "list" ? (
                     <input
                       type="checkbox"
@@ -1386,14 +1386,14 @@ function Index() {
                     onClick={() =>
                       selectMode ? toggleSelect(p.id) : setOpenId(open ? null : p.id)
                     }
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    className="flex min-w-0 flex-1 items-center gap-ms-2 text-left"
                   >
                     {viewMode === "list" && (
                       <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[0.625rem] font-medium text-secondary-foreground">
                         {tagFor(p.kategori)}
                       </span>
                     )}
-                     <span className="truncate text-sm font-medium leading-snug">{p.nama}</span>
+                     <span className="truncate text-ms-sm font-medium leading-snug">{p.nama}</span>
                     {viewMode === "list" && p.satuan && (
                       <span className="shrink-0 whitespace-nowrap text-[0.6875rem] leading-snug text-muted-foreground">
                         · {formatJumlah(p.jumlah ?? 0, p.satuan)}
@@ -1407,7 +1407,7 @@ function Index() {
                     {viewMode === "list" && fotoCount > 0 && (
                       <span className="shrink-0 whitespace-nowrap text-[0.6875rem] leading-snug text-muted-foreground">📷{fotoCount}</span>
                     )}
-                    <span className="ml-auto shrink-0 whitespace-nowrap text-xs leading-snug tabular-nums text-muted-foreground">
+                    <span className="ml-auto shrink-0 whitespace-nowrap text-ms-xs leading-snug tabular-nums text-muted-foreground">
                       {rupiah(p.harga)}
                     </span>
                   </button>
@@ -1416,7 +1416,7 @@ function Index() {
                       href={waUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 rounded-md bg-[#25D366] px-2 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
+                      className="shrink-0 rounded-md bg-[#25D366] px-ms-2 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
                       onClick={(e) => e.stopPropagation()}
                     >
                       MCM
@@ -1425,7 +1425,7 @@ function Index() {
                   {!selectMode && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
-                      className="shrink-0 rounded-md border px-2 py-1 text-[0.6875rem] font-medium hover:bg-accent"
+                      className="shrink-0 rounded-md border px-ms-2 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       aria-label="Edit lengkap"
                       title="Edit lengkap"
                     >
@@ -1434,8 +1434,8 @@ function Index() {
                   )}
                 </div>
                 {viewMode === "grid" && (
-                  <div className="flex min-h-[40px] items-center gap-2 border-t px-2.5 py-1.5 leading-snug">
-                    <label className="flex items-center gap-1.5 text-[0.6875rem]">
+                  <div className="flex min-h-[40px] items-center gap-ms-2 border-t px-ms-2.5 py-1.5 leading-snug">
+                    <label className="flex items-center gap-ms-1.5 text-[0.6875rem]">
                       <input
                         type="checkbox"
                         checked={sent}
@@ -1456,7 +1456,7 @@ function Index() {
                     </label>
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
-                      className="ml-auto rounded-md border px-2 py-1 text-[0.6875rem] font-medium hover:bg-accent"
+                      className="ml-auto rounded-md border px-ms-2 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                     >
                       ✎ Edit
                     </button>
@@ -1464,14 +1464,14 @@ function Index() {
                 )}
 
                 {open && (
-                  <div className="space-y-2 border-t px-2.5 py-2.5">
-                    <div className="flex gap-2">
+                  <div className="space-ms-2 border-t px-ms-2.5 py-ms-2.5">
+                    <div className="flex gap-ms-2">
                       <select
                         value={p.kategori}
                         onChange={(e) =>
                           update(p.id, { kategori: e.target.value as Kategori })
                         }
-                        className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                         aria-label="Kategori"
                       >
                         {categories.map((k) => (
@@ -1484,10 +1484,10 @@ function Index() {
                         value={p.nama}
                         onChange={(e) => update(p.id, { nama: e.target.value })}
                         placeholder="Nama produk"
-                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
-                    <label className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
+                    <label className="flex items-center gap-ms-2 rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm">
                       <span className="text-muted-foreground">Rp</span>
                       <input
                         type="number"
@@ -1511,11 +1511,11 @@ function Index() {
                         className="w-full bg-transparent tabular-nums outline-none"
                         placeholder="Harga"
                       />
-                      <span className="text-xs text-muted-foreground tabular-nums">
+                      <span className="text-ms-xs text-muted-foreground tabular-nums">
                         {rupiah(p.harga)}
                       </span>
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-ms-2">
                       <select
                         value={p.satuan ?? "pcs"}
                         onChange={(e) => {
@@ -1525,7 +1525,7 @@ function Index() {
                           const clamped = Math.min(b.max, Math.max(b.min, cur));
                           update(p.id, { satuan: next, jumlah: clamped });
                         }}
-                        className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                         aria-label="Satuan"
                       >
                         {SATUAN_LIST.map((s) => (
@@ -1538,7 +1538,7 @@ function Index() {
                         const s = p.satuan ?? "pcs";
                         const b = satuanBounds(s);
                         return (
-                          <label className="flex w-full items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
+                          <label className="flex w-full items-center gap-ms-2 rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm">
                             <span className="text-muted-foreground">Jumlah</span>
                             <input
                               type="number"
@@ -1556,7 +1556,7 @@ function Index() {
                               className="w-full bg-transparent tabular-nums outline-none"
                               placeholder="Jumlah"
                             />
-                            <span className="shrink-0 text-xs text-muted-foreground">
+                            <span className="shrink-0 text-ms-xs text-muted-foreground">
                               {formatJumlah(p.jumlah ?? b.min, s)}
                             </span>
                           </label>
@@ -1567,14 +1567,14 @@ function Index() {
                       Gram: 0.01 – 5000 · Kg: 0.001 – 5 · lainnya pakai bilangan bulat.
                     </p>
                     <div
-                      className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-[0.6875rem] transition-colors ${
+                      className={`flex items-center justify-between gap-ms-2 rounded-md border px-ms-2.5 py-1.5 text-[0.6875rem] transition-colors ${
                         flashId === p.id
                           ? "border-[#25D366] bg-[#25D366]/10 text-[#128C7E]"
                           : "bg-background text-muted-foreground"
                       }`}
                       aria-live="polite"
                     >
-                      <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-ms-1.5">
                         <span
                           className={`inline-block h-1.5 w-1.5 rounded-full ${
                             flashId === p.id ? "bg-[#25D366] animate-pulse" : "bg-[#25D366]/60"
@@ -1588,21 +1588,21 @@ function Index() {
                         {flashId === p.id ? "memperbarui…" : "live"}
                       </span>
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="grid gap-ms-2 sm:grid-cols-2">
                       <input
                         value={p.keterangan}
                         onChange={(e) => update(p.id, { keterangan: e.target.value })}
                         placeholder="Keterangan"
-                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                       />
                       <input
                         value={p.lokasi}
                         onChange={(e) => update(p.id, { lokasi: e.target.value })}
                         placeholder="Link Lokasi"
-                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-ms-1.5">
                       <button
                         onClick={() => {
                           if (!navigator.geolocation) {
@@ -1623,7 +1623,7 @@ function Index() {
                             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
                           );
                         }}
-                        className="rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
+                        className="rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         📍 Ambil lokasi sekarang
                       </button>
@@ -1634,13 +1634,13 @@ function Index() {
                             .then(() => toast.success("Link lokasi disalin"))
                             .catch(() => toast.error("Gagal menyalin"));
                         }}
-                        className="rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
+                        className="rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         Salin link
                       </button>
                     </div>
 
-                    <div className="flex flex-wrap items-start gap-1.5">
+                    <div className="flex flex-wrap items-start gap-ms-1.5">
                       {p.foto && (
                         <div className="relative">
                           <img src={p.foto} alt="" className="h-16 w-16 rounded-md border object-cover" />
@@ -1691,12 +1691,12 @@ function Index() {
                       </label>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5 pt-1">
+                    <div className="flex flex-wrap gap-ms-1.5 pt-1">
                       <a
                         href={p.lokasi}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
+                        className="inline-flex items-center rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         📍 Lokasi
                       </a>
@@ -1705,7 +1705,7 @@ function Index() {
                           href={waUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center rounded-md bg-[#25D366] px-2.5 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
+                          className="inline-flex items-center rounded-md bg-[#25D366] px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
                         >
                           KIRIM MCM
                         </a>
@@ -1715,13 +1715,13 @@ function Index() {
                           setOpenId(null);
                           toast.success("Tersimpan");
                         }}
-                        className="inline-flex items-center rounded-md border border-primary bg-primary px-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground hover:opacity-90"
+                        className="inline-flex items-center rounded-md border border-primary bg-primary px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground hover:opacity-90"
                       >
                         💾 Simpan
                       </button>
                       <button
                         onClick={() => removeItem(p.id)}
-                        className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-2.5 py-1 text-[0.6875rem] font-medium text-destructive hover:bg-destructive/10"
+                        className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-ms-2.5 py-1 text-[0.6875rem] font-medium text-destructive hover:bg-destructive/10"
                       >
                         🗑 Hapus
                       </button>
@@ -1735,15 +1735,15 @@ function Index() {
 
         {filtered.length === 0 && (
           <div className="rounded-xl border border-dashed p-8 text-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-ms-sm text-muted-foreground">
               {scopedItems.length === 0
                 ? `Belum ada pesanan di kategori "${activeCat}".`
                 : "Tidak ada pesanan untuk filter ini."}
             </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <div className="mt-4 flex flex-wrap justify-center gap-ms-2">
               <button
                 onClick={addProduk}
-                className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                className="rounded-md bg-primary px-ms-3 py-1.5 text-ms-xs font-semibold text-primary-foreground hover:opacity-90"
               >
                 + Tambah produk
               </button>
@@ -1754,7 +1754,7 @@ function Index() {
                   setSelected(new Set());
                   setOpenId(null);
                 }}
-                className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                className="rounded-md border px-ms-3 py-1.5 text-ms-xs font-medium hover:bg-accent"
               >
                 Kelola kategori
               </button>
@@ -1767,10 +1767,10 @@ function Index() {
 
       {selectMode && (
         <div className="sticky bottom-0 z-10 border-t bg-card/95 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-3 py-2 sm:px-6">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-ms-2 px-ms-3 py-ms-2 sm:px-ms-6">
             <button
               onClick={selectAllVisible}
-              className="rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
+              className="rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
             >
               {filtered.every((i) => selected.has(i.id)) && filtered.length > 0
                 ? "Batal semua"
@@ -1779,11 +1779,11 @@ function Index() {
             <span className="text-[0.6875rem] text-muted-foreground">
               {selected.size} dipilih · {rupiah(bulkTotal)}
             </span>
-            <div className="ml-auto flex gap-1.5">
+            <div className="ml-auto flex gap-ms-1.5">
               <button
                 onClick={bulkMarkSent}
                 disabled={selected.size === 0}
-                className="rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent disabled:opacity-40"
+                className="rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent disabled:opacity-40"
               >
                 Tandai terkirim
               </button>
@@ -1795,7 +1795,7 @@ function Index() {
                 onClick={(e) => {
                   if (selected.size === 0) e.preventDefault();
                 }}
-                className={`inline-flex items-center rounded-md bg-[#25D366] px-3 py-1 text-[0.6875rem] font-semibold text-white ${
+                className={`inline-flex items-center rounded-md bg-[#25D366] px-ms-3 py-1 text-[0.6875rem] font-semibold text-white ${
                   selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
                 }`}
               >

@@ -17,33 +17,33 @@ export function SendLogViewer({ entries, defaultOpen = false }: { entries: SendL
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[12px] font-medium hover:bg-muted/50"
+        className="flex w-full items-center gap-ms-2 px-ms-2.5 py-1.5 text-left text-ms-xs font-medium hover:bg-muted/50"
         aria-expanded={open}
       >
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         <ListOrdered className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="flex-1">Lihat log kiriman sebelumnya</span>
-        <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs text-muted-foreground">
           {entries.length} langkah{errorCount > 0 ? ` · ${errorCount} error` : ""}
         </span>
       </button>
       {open ? (
-        <ol className="max-h-56 space-y-1 overflow-auto border-t bg-background/40 px-2.5 py-2 text-[11.5px]">
+        <ol className="max-h-56 space-y-1 overflow-auto border-t bg-background/40 px-ms-2.5 py-ms-2 text-[11.5px]">
           {entries.map((e, i) => {
             const Icon = e.kind === "error" ? XCircle : e.kind === "outcome" ? AlertCircle : e.kind === "info" ? Info : CheckCircle2;
             const tone = e.kind === "error" ? "text-destructive" : e.kind === "outcome" ? "text-amber-600 dark:text-amber-400" : e.kind === "info" ? "text-muted-foreground" : "text-emerald-600 dark:text-emerald-400";
             return (
-              <li key={i} className="flex items-start gap-2">
+              <li key={i} className="flex items-start gap-ms-2">
                 <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${tone}`} />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
+                  <div className="flex items-baseline justify-between gap-ms-2">
                     <span className="break-words font-medium">{e.label}</span>
-                    <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                    <span className="shrink-0 font-mono text-ms-2xs text-muted-foreground">
                       {new Date(e.at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                     </span>
                   </div>
                   {e.detail ? (
-                    <pre className="mt-0.5 whitespace-pre-wrap break-words rounded bg-muted/60 p-1 font-mono text-[10.5px] text-muted-foreground">
+                    <pre className="mt-0.5 whitespace-pre-wrap break-words rounded bg-muted/60 p-ms-1 font-mono text-[10.5px] text-muted-foreground">
                       {e.detail}
                     </pre>
                   ) : null}

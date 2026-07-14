@@ -453,13 +453,13 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const sent = rows.filter((r) => r.status === "sent");
 
   return (
-    <div className="space-y-4">
+    <div className="space-ms-4">
       {lightboxIdx !== null && previewUrls[lightboxIdx] && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Pratinjau foto ukuran penuh"
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-ms-4"
           onClick={() => setLightboxIdx(null)}
           onWheel={(e) => { e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.1 : 1 / 1.1); }}
         >
@@ -472,11 +472,11 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
             <X className="h-5 w-5" />
           </button>
           <div
-            className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-white"
+            className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-ms-1 rounded-full bg-black/60 px-ms-2 py-1 text-white"
             onClick={(e) => e.stopPropagation()}
           >
             <button type="button" onClick={() => zoomBy(1 / 1.25)} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10" aria-label="Perkecil"><ZoomOut className="h-4 w-4" /></button>
-            <span className="min-w-[3rem] text-center text-xs tabular-nums">{Math.round(zoom * 100)}%</span>
+            <span className="min-w-[3rem] text-center text-ms-xs tabular-nums">{Math.round(zoom * 100)}%</span>
             <button type="button" onClick={() => zoomBy(1.25)} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10" aria-label="Perbesar"><ZoomIn className="h-4 w-4" /></button>
             <button type="button" onClick={resetView} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10" aria-label="Reset zoom"><RotateCcw className="h-4 w-4" /></button>
           </div>
@@ -557,28 +557,28 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
             }}
             onTouchEnd={(e) => { if (e.touches.length < 2) pinchRef.current = null; }}
           />
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-ms-3 py-1 text-ms-xs text-white">
             {lightboxIdx + 1} / {previewUrls.length}
           </div>
         </div>
       )}
       {/* Form */}
-      <div className="rounded-xl border bg-card p-3 shadow-sm space-y-3">
-        <div className="text-sm font-semibold">Siapkan produk sendiri</div>
+      <div className="rounded-xl border bg-card p-ms-3 shadow-sm space-ms-3">
+        <div className="text-ms-sm font-semibold">Siapkan produk sendiri</div>
         <div>
-          <label className="text-[11px] font-medium text-muted-foreground">Judul / nama produk</label>
+          <label className="text-ms-2xs font-medium text-muted-foreground">Judul / nama produk</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Mis. Beras Pandan 5 kg"
-            className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
+            className="mt-1 h-9 w-full rounded-md border bg-background px-ms-2 text-ms-sm"
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2">
           <div>
-            <label className="text-[11px] font-medium text-muted-foreground">Foto produk</label>
-            <div className="mt-1 flex items-center gap-2">
+            <label className="text-ms-2xs font-medium text-muted-foreground">Foto produk</label>
+            <div className="mt-1 flex items-center gap-ms-2">
             <input
               ref={fileRef}
               type="file"
@@ -593,15 +593,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 import("@/lib/app-lock").then((m) => m.endNativePicker());
                 if (picked.length) setFiles((prev) => [...prev, ...picked]);
               }}
-              className="block w-full text-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-2 file:py-1.5 file:text-xs"
+              className="block w-full text-ms-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-ms-2 file:py-1.5 file:text-ms-xs"
             />
             </div>
-            <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+            <div className="mt-1 flex items-center gap-ms-2 text-ms-2xs text-muted-foreground">
               <Camera className="h-3 w-3" /> kamera HP <span>•</span> <ImageIcon className="h-3 w-3" /> galeri <span>•</span> bisa pilih beberapa foto
             </div>
             {previewUrls.length > 0 && (
-              <div className="mt-2 space-y-2">
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="mt-2 space-ms-2">
+                <div className="flex items-center justify-between text-ms-2xs text-muted-foreground">
                   <span>{previewUrls.length} foto dipilih</span>
                   <button
                     type="button"
@@ -609,12 +609,12 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                       setFiles([]);
                       if (fileRef.current) fileRef.current.value = "";
                     }}
-                    className="inline-flex h-6 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[11px] text-destructive hover:bg-destructive/10"
+                    className="inline-flex h-6 items-center gap-ms-1 rounded-md border border-destructive/40 px-ms-2 text-ms-2xs text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-3 w-3" /> Hapus semua
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-ms-2">
                   {previewUrls.map((url, idx) => (
                     <div key={url} className="relative">
                       <button
@@ -641,7 +641,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                         <Trash2 className="h-3 w-3" />
                       </button>
                       {idx === 0 && (
-                        <span className="absolute bottom-1 left-1 rounded bg-primary/90 px-1 text-[11px] font-semibold text-primary-foreground">
+                        <span className="absolute bottom-1 left-1 rounded bg-primary/90 px-1 text-ms-2xs font-semibold text-primary-foreground">
                           Utama
                         </span>
                       )}
@@ -653,14 +653,14 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           </div>
 
           <div>
-            <label className="text-[11px] font-medium text-muted-foreground">Link lokasi (paste)</label>
-            <div className="mt-1 flex items-center gap-1">
+            <label className="text-ms-2xs font-medium text-muted-foreground">Link lokasi (paste)</label>
+            <div className="mt-1 flex items-center gap-ms-1">
               <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
               <input
                 value={locationUrl}
                 onChange={(e) => setLocationUrl(e.target.value)}
                 placeholder="https://maps.app.goo.gl/…"
-                className="h-9 w-full min-w-0 rounded-md border bg-background px-2 text-sm"
+                className="h-9 w-full min-w-0 rounded-md border bg-background px-ms-2 text-ms-sm"
                 inputMode="url"
               />
               <button
@@ -683,7 +683,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 disabled={gpsBusy}
                 title="Ambil lokasi GPS saat ini"
                 aria-label="Ambil lokasi GPS saat ini"
-                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 text-xs font-medium text-primary hover:bg-primary/20 disabled:opacity-60"
+                className="inline-flex h-9 shrink-0 items-center gap-ms-1 rounded-md border border-primary/40 bg-primary/10 px-ms-2 text-ms-xs font-medium text-primary hover:bg-primary/20 disabled:opacity-60"
               >
                 {gpsBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crosshair className="h-3.5 w-3.5" />}
                 <span>GPS</span>
@@ -699,7 +699,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat},${coords.lng}`;
                 return (
                   <div className="mt-2 space-y-1">
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                    <div className="flex items-center justify-between text-ms-2xs text-muted-foreground">
                       <span>Pratinjau lokasi</span>
                       <span className="tabular-nums">{coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</span>
                     </div>
@@ -715,7 +715,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                       href={validUrl ? trimmed : `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=16/${coords.lat}/${coords.lng}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-primary underline"
+                      className="inline-flex items-center gap-ms-1 text-ms-2xs text-primary underline"
                     >
                       <ExternalLink className="h-3 w-3" /> Buka di peta
                     </a>
@@ -723,36 +723,36 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 );
               }
               return (
-                <div className="mt-2 rounded-md border border-dashed bg-muted/30 p-2 text-[11px] text-muted-foreground">
+                <div className="mt-2 rounded-md border border-dashed bg-muted/30 p-ms-2 text-ms-2xs text-muted-foreground">
                   {validUrl
                     ? "Link tersimpan, tapi koordinat tidak terdeteksi otomatis. Pratinjau peta tidak tersedia — pastikan link Google Maps memuat koordinat (mis. /@lat,lng atau ?q=lat,lng)."
                     : "Tempel link Google Maps yang valid (https://) untuk melihat pratinjau peta."}
                 </div>
               );
             })()}
-            <label className="mt-2 block text-[11px] font-medium text-muted-foreground">Catatan (opsional)</label>
+            <label className="mt-2 block text-ms-2xs font-medium text-muted-foreground">Catatan (opsional)</label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
               placeholder="Catatan tambahan…"
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
             />
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-ms-2">
           <button
             type="button"
             onClick={resetForm}
-            className="h-9 rounded-md border px-3 text-xs"
+            className="h-9 rounded-md border px-ms-3 text-ms-xs"
             disabled={busy}
           >Reset</button>
           <button
             type="button"
             onClick={onSave}
             disabled={busy || !title.trim()}
-            className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             Simpan
@@ -762,17 +762,17 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
 
       {/* Siap Dikirim */}
       <section>
-        <h2 className="mb-2 text-sm font-semibold">Siap Dikirim ({ready.length})</h2>
+        <h2 className="mb-2 text-ms-sm font-semibold">Siap Dikirim ({ready.length})</h2>
         {loading && rows.length === 0 ? (
-          <div className="rounded-xl border bg-card p-4 text-center text-xs text-muted-foreground">Memuat…</div>
+          <div className="rounded-xl border bg-card p-ms-4 text-center text-ms-xs text-muted-foreground">Memuat…</div>
         ) : ready.length === 0 ? (
-          <div className="rounded-xl border border-dashed bg-card p-4 text-center text-xs text-muted-foreground">
+          <div className="rounded-xl border border-dashed bg-card p-ms-4 text-center text-ms-xs text-muted-foreground">
             Belum ada produk siap kirim. Isi form di atas dan klik Simpan.
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-ms-2">
             {ready.map((r) => (
-              <li key={r.id} className="flex gap-3 rounded-xl border bg-card p-3 shadow-sm">
+              <li key={r.id} className="flex gap-ms-3 rounded-xl border bg-card p-ms-3 shadow-sm">
                 {r.photo_path && thumbs[r.photo_path] ? (
                   <img src={thumbs[r.photo_path]} alt="" className="h-16 w-16 shrink-0 rounded-md border object-cover" />
                 ) : (
@@ -781,20 +781,20 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold">{r.title}</div>
+                  <div className="truncate text-ms-sm font-semibold">{r.title}</div>
                   {r.location_url && (
                     <a href={r.location_url} target="_blank" rel="noreferrer"
-                      className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-primary underline">
+                      className="mt-0.5 inline-flex items-center gap-ms-1 text-ms-2xs text-primary underline">
                       <MapPin className="h-3 w-3" /> Lihat lokasi <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
-                  {r.note && <div className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{r.note}</div>}
-                  <div className="mt-1 text-[11px] text-muted-foreground">
+                  {r.note && <div className="mt-0.5 line-clamp-2 text-ms-2xs text-muted-foreground">{r.note}</div>}
+                  <div className="mt-1 text-ms-2xs text-muted-foreground">
                     Dibuat {new Date(r.created_at).toLocaleString("id-ID")}
                   </div>
                   {r.sold_at && (
-                    <div className="mt-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-800 dark:text-emerald-200">
-                      <div className="flex items-center gap-1 font-semibold">
+                    <div className="mt-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-ms-2 py-1 text-ms-2xs text-emerald-800 dark:text-emerald-200">
+                      <div className="flex items-center gap-ms-1 font-semibold">
                         {r.sold_payment_method === "kas" ? <Wallet className="h-3 w-3" /> : <HandCoins className="h-3 w-3" />}
                         {formatSoldPaymentSummary(
                           r.sold_payment_method,
@@ -802,16 +802,16 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                           Number(r.sold_paid_amount ?? 0),
                         )}
                       </div>
-                      <div className="text-[10px] text-emerald-900/80 dark:text-emerald-100/80">
+                      <div className="text-ms-2xs text-emerald-900/80 dark:text-emerald-100/80">
                         {new Date(r.sold_at).toLocaleString("id-ID")}
                       </div>
                     </div>
                   )}
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-2 flex flex-wrap gap-ms-2">
                     {!r.sold_at ? (
                       <button
                         onClick={() => setSellTarget(r)}
-                        className="inline-flex h-8 items-center gap-1 rounded-md border border-primary bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm"
+                        className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-primary bg-primary px-ms-2 text-ms-2xs font-semibold text-primary-foreground shadow-sm"
                       >
                         <Send className="h-3.5 w-3.5" /> Jual (catat penjualan)
                       </button>
@@ -841,7 +841,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     })()}
                     <button
                       onClick={() => onRemove(r)}
-                      className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] text-destructive"
+                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Hapus
                     </button>
@@ -855,15 +855,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
 
       {/* Riwayat Terkirim */}
       <section>
-        <h2 className="mb-2 text-sm font-semibold">Riwayat Terkirim ({sent.length})</h2>
+        <h2 className="mb-2 text-ms-sm font-semibold">Riwayat Terkirim ({sent.length})</h2>
         {sent.length === 0 ? (
-          <div className="rounded-xl border border-dashed bg-card p-4 text-center text-xs text-muted-foreground">
+          <div className="rounded-xl border border-dashed bg-card p-ms-4 text-center text-ms-xs text-muted-foreground">
             Belum ada riwayat kiriman.
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-ms-2">
             {sent.map((r) => (
-              <li key={r.id} className="flex gap-3 rounded-xl border bg-card p-3 shadow-sm opacity-90">
+              <li key={r.id} className="flex gap-ms-3 rounded-xl border bg-card p-ms-3 shadow-sm opacity-90">
                 {r.photo_path && thumbs[r.photo_path] ? (
                   <img src={thumbs[r.photo_path]} alt="" className="h-14 w-14 shrink-0 rounded-md border object-cover" />
                 ) : (
@@ -872,15 +872,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold">{r.title}</div>
-                  <div className="text-[11px] text-muted-foreground">
+                  <div className="truncate text-ms-sm font-semibold">{r.title}</div>
+                  <div className="text-ms-2xs text-muted-foreground">
                     Dikirim {r.sent_at ? new Date(r.sent_at).toLocaleString("id-ID") : "—"}
                   </div>
                   {r.sent_channel && (
-                    <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
+                    <div className="mt-1 flex flex-wrap items-center gap-ms-1 text-ms-2xs">
                       <span
                         className={
-                          "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-semibold " +
+                          "inline-flex items-center gap-ms-1 rounded-full border px-1.5 py-0.5 font-semibold " +
                           (r.sent_channel === "chat"
                             ? "border-primary/40 bg-primary/10 text-primary"
                             : "border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]")
@@ -900,24 +900,24 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     </div>
                   )}
                   {r.sent_summary && (
-                    <div className="mt-1 line-clamp-2 whitespace-pre-wrap rounded-md border border-dashed bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground" title={r.sent_summary}>
+                    <div className="mt-1 line-clamp-2 whitespace-pre-wrap rounded-md border border-dashed bg-muted/40 px-ms-2 py-1 text-ms-2xs text-muted-foreground" title={r.sent_summary}>
                       {r.sent_summary}
                     </div>
                   )}
                   {r.location_url && (
                     <a href={r.location_url} target="_blank" rel="noreferrer"
-                      className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-primary underline">
+                      className="mt-0.5 inline-flex items-center gap-ms-1 text-ms-2xs text-primary underline">
                       <MapPin className="h-3 w-3" /> Lokasi
                     </a>
                   )}
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-2 flex flex-wrap gap-ms-2">
                     <button
                       onClick={() => onUnsend(r)}
-                      className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px]"
+                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs"
                     >↩ Tandai belum terkirim</button>
                     <button
                       onClick={() => onRemove(r)}
-                      className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] text-destructive"
+                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Hapus
                     </button>
@@ -970,18 +970,18 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Kirim bukti ke pembeli?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-1 text-sm">
+              <div className="space-y-1 text-ms-sm">
                 <div>
                   Penjualan <span className="font-semibold text-foreground">{postSalePromptRow?.title}</span> tercatat.
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-ms-xs text-muted-foreground">
                   Bukti pembayaran (gambar) + ringkasan penjualan akan
                   otomatis dilampirkan.
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+          <AlertDialogFooter className="flex-col gap-ms-2 sm:flex-row sm:justify-end">
             <AlertDialogCancel className="sm:mr-auto">Nanti saja</AlertDialogCancel>
             <WaShareButton
               size="md"

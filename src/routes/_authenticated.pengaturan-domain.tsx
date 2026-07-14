@@ -152,15 +152,15 @@ function DomainSettingsPage() {
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-10">
       <SettingsHeader title="Pengaturan Domain" subtitle="Checklist DNS untuk custom domain" icon={GlobeIcon} />
-      <div className="space-y-4 px-4 pt-2">
+      <div className="space-ms-4 px-ms-4 pt-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Domain</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-ms-base">Domain</CardTitle>
+            <CardDescription className="text-ms-xs">
               Masukkan domain apex (tanpa https:// dan tanpa www). Kami periksa 3 record via DNS-over-HTTPS Cloudflare.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-ms-3">
             <Input
               value={domain}
               onChange={(e) => setDomain(e.target.value.trim().toLowerCase())}
@@ -170,8 +170,8 @@ function DomainSettingsPage() {
               spellCheck={false}
               inputMode="url"
             />
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">{summary}</span>
+            <div className="flex items-center justify-between gap-ms-2">
+              <span className="text-ms-xs text-muted-foreground">{summary}</span>
               <Button size="sm" onClick={runAll} disabled={!domain.trim() || busy}>
                 {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1 h-4 w-4" />}
                 Periksa semua
@@ -185,22 +185,22 @@ function DomainSettingsPage() {
           return (
             <Card key={c.key}>
               <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-ms-3">
                   <div className="min-w-0">
-                    <CardTitle className="truncate text-sm">{c.label}</CardTitle>
-                    <CardDescription className="text-xs">
+                    <CardTitle className="truncate text-ms-sm">{c.label}</CardTitle>
+                    <CardDescription className="text-ms-xs">
                       Tipe {c.type} · nilai target <span className="font-mono">{c.expectedHint}</span>
                     </CardDescription>
                   </div>
-                  <Badge className={`shrink-0 gap-1 ${s.badge}`} variant="secondary">
+                  <Badge className={`shrink-0 gap-ms-1 ${s.badge}`} variant="secondary">
                     {s.icon}
                     {s.label}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 truncate rounded border bg-muted/50 px-2 py-1 font-mono text-xs">
+              <CardContent className="space-ms-3">
+                <div className="flex items-center gap-ms-2">
+                  <code className="flex-1 truncate rounded border bg-muted/50 px-ms-2 py-1 font-mono text-ms-xs">
                     {c.host || "—"}
                   </code>
                   <Button
@@ -215,9 +215,9 @@ function DomainSettingsPage() {
                   </Button>
                 </div>
                 {c.found.length > 0 ? (
-                  <ul className="space-y-1 text-xs">
+                  <ul className="space-y-1 text-ms-xs">
                     {c.found.map((v, i) => (
-                      <li key={`${c.key}-${i}`} className="flex items-center gap-2 font-mono">
+                      <li key={`${c.key}-${i}`} className="flex items-center gap-ms-2 font-mono">
                         {c.type === "A" && v === LOVABLE_IP ? (
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                         ) : c.type === "TXT" && v.toLowerCase().startsWith("lovable_verify=") ? (
@@ -230,9 +230,9 @@ function DomainSettingsPage() {
                     ))}
                   </ul>
                 ) : null}
-                {c.note ? <p className="text-xs text-muted-foreground">{c.note}</p> : null}
+                {c.note ? <p className="text-ms-xs text-muted-foreground">{c.note}</p> : null}
                 {c.resolver && c.checkedAt ? (
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-ms-2xs text-muted-foreground">
                     Resolver: {c.resolver} · {new Date(c.checkedAt).toLocaleTimeString()}
                   </p>
                 ) : null}
@@ -243,9 +243,9 @@ function DomainSettingsPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Petunjuk singkat</CardTitle>
+            <CardTitle className="text-ms-sm">Petunjuk singkat</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-xs text-muted-foreground">
+          <CardContent className="space-ms-2 text-ms-xs text-muted-foreground">
             <p>1. Di registrar (mis. name.com), tambahkan record berikut:</p>
             <ul className="ml-4 list-disc space-y-1">
               <li><span className="font-mono">A @ → {LOVABLE_IP}</span></li>

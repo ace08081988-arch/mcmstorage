@@ -154,18 +154,18 @@ function PhotoPicker({ value, onChange, uid }: { value: string | null; onChange:
   return (
     <div className="space-y-1">
       <div className="text-[0.6875rem] text-muted-foreground">Foto barang (opsional)</div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-ms-2">
         {value ? (
           <SignedImg path={value} className="h-16 w-16 rounded-md border object-cover bg-muted" />
         ) : (
           <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed text-[0.6875rem] text-muted-foreground">Tidak ada</div>
         )}
-        <label className="flex-1 cursor-pointer rounded-md border bg-background px-2 py-1.5 text-center text-xs hover:bg-accent">
+        <label className="flex-1 cursor-pointer rounded-md border bg-background px-ms-2 py-1.5 text-center text-ms-xs hover:bg-accent">
           {busy ? "Mengunggah…" : "📷 Ambil / Pilih foto"}
           <input type="file" accept="image/*" capture="environment" className="hidden" onChange={pick} disabled={busy} />
         </label>
         {value && (
-          <button type="button" onClick={() => onChange(null)} className="rounded-md border px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10">Hapus</button>
+          <button type="button" onClick={() => onChange(null)} className="rounded-md border px-ms-2 py-1.5 text-ms-xs text-destructive hover:bg-destructive/10">Hapus</button>
         )}
       </div>
     </div>
@@ -214,7 +214,7 @@ function SummaryCard({
   };
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-b from-card to-background p-ms-3 elev-sm backdrop-blur transition-all hover:border-primary/40 hover:elev-md md:p-ms-4">
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-ms-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground md:text-[0.6875rem]">
             {label}
@@ -239,9 +239,9 @@ function SummaryCard({
 
 function GudangLoadingSkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="space-ms-3">
       <div className="h-10 w-full animate-pulse rounded-lg bg-muted/60" />
-      <div className="space-y-2">
+      <div className="space-ms-2">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="h-16 w-full animate-pulse rounded-lg bg-muted/50" />
         ))}
@@ -375,24 +375,24 @@ function GudangPage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground md:flex">
       {/* Sidebar — md+ */}
       <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r bg-card/80 backdrop-blur md:flex md:flex-col">
-        <div className="border-b px-4 py-4">
+        <div className="border-b px-ms-4 py-ms-4">
           <Link to="/" className="text-[0.6875rem] text-muted-foreground hover:underline">← Beranda</Link>
-          <h1 className="mt-1 flex items-center gap-1.5 text-lg font-bold tracking-tight">
+          <h1 className="mt-1 flex items-center gap-ms-1.5 text-ms-lg font-bold tracking-tight">
             <Package className="h-4.5 w-4.5 text-primary" /> Gudang
           </h1>
-          <div className="mt-3 rounded-lg border bg-muted/30 px-3 py-2">
+          <div className="mt-3 rounded-lg border bg-muted/30 px-ms-3 py-ms-2">
             <p className="text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground">Nilai stok</p>
-            <p className="text-sm font-bold tabular-nums">{rupiah(totalStokValue)}</p>
+            <p className="text-ms-sm font-bold tabular-nums">{rupiah(totalStokValue)}</p>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-ms-2">
           {navItems.map(({ k, label, icon: Icon }) => {
             const active = tab === k;
             return (
               <button
                 key={k}
                 onClick={() => setTab(k)}
-                className={`group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-all duration-200 ${
+                className={`group relative flex w-full items-center gap-ms-2.5 rounded-lg px-ms-3 py-ms-2 text-left text-ms-sm font-medium transition-all duration-200 ${
                   active
                     ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-sm"
                     : "text-foreground/75 hover:bg-accent hover:text-foreground"
@@ -412,16 +412,16 @@ function GudangPage() {
       {/* Mobile header + horizontal nav */}
       <div className="flex-1 min-w-0">
         <header className="sticky top-0 z-10 border-b border-primary/15 bg-background/85 backdrop-blur-xl md:hidden">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-ms-4 py-ms-3">
-            <div className="flex min-w-0 items-center gap-2.5">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-ms-2 px-ms-4 py-ms-3">
+            <div className="flex min-w-0 items-center gap-ms-2.5">
               <Link
                 to="/"
-                className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-3 text-[0.6875rem] font-medium text-foreground hover:border-primary/60"
+                className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-ms-3 text-[0.6875rem] font-medium text-foreground hover:border-primary/60"
               >
                 ← Beranda
               </Link>
               <div className="min-w-0 leading-tight">
-                <p className="flex min-w-0 items-center gap-1.5 text-ms-base font-semibold tracking-ms-tight text-foreground">
+                <p className="flex min-w-0 items-center gap-ms-1.5 text-ms-base font-semibold tracking-ms-tight text-foreground">
                   <Package className="h-4 w-4 shrink-0 text-primary" />
                   <span className="truncate">Gudang</span>
                 </p>
@@ -442,7 +442,7 @@ function GudangPage() {
             <nav
               role="tablist"
               aria-label="Bagian Gudang"
-              className="flex gap-1.5 overflow-x-auto scroll-smooth px-ms-4 pb-2.5 text-ms-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex gap-ms-1.5 overflow-x-auto scroll-smooth px-ms-4 pb-2.5 text-ms-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {navItems.map(({ k, label, icon: Icon }) => (
                 <button
@@ -450,7 +450,7 @@ function GudangPage() {
                   role="tab"
                   aria-selected={tab === k}
                   onClick={() => setTab(k)}
-                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-medium tracking-ms-tight transition-colors ${tab === k ? "border-primary bg-primary text-primary-foreground elev-sm" : "border-primary/20 bg-card/70 text-foreground/80 hover:border-primary/50 hover:bg-accent"}`}
+                  className={`inline-flex shrink-0 items-center gap-ms-1.5 rounded-full border px-ms-3.5 py-1.5 font-medium tracking-ms-tight transition-colors ${tab === k ? "border-primary bg-primary text-primary-foreground elev-sm" : "border-primary/20 bg-card/70 text-foreground/80 hover:border-primary/50 hover:bg-accent"}`}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {label}
@@ -468,7 +468,7 @@ function GudangPage() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-3xl space-ms-5 px-ms-4 py-ms-5 md:max-w-4xl md:p-6">
+        <main className="mx-auto max-w-3xl space-ms-5 px-ms-4 py-ms-5 md:max-w-4xl md:p-ms-6">
         {/* Inventory summary — always visible */}
         <section aria-label="Ringkasan inventaris" className="grid grid-cols-2 gap-ms-3 md:grid-cols-4">
           <SummaryCard
@@ -635,40 +635,40 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
     else { toast.success("Pelanggan dihapus"); if (editingId === id) resetForm(); onChanged(); }
   }
   return (
-    <div className="space-y-3">
-      <form onSubmit={submit} className="space-y-2 rounded-lg border bg-card p-3">
-        <div className="text-xs font-semibold">{editingId ? "Edit Pelanggan" : "Tambah Pelanggan"}</div>
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan *" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. MCM / kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={50} />
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200} />
+    <div className="space-ms-3">
+      <form onSubmit={submit} className="space-ms-2 rounded-lg border bg-card p-ms-3">
+        <div className="text-ms-xs font-semibold">{editingId ? "Edit Pelanggan" : "Tambah Pelanggan"}</div>
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Nama pelanggan *" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. MCM / kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={50} />
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200} />
         <button
           type="button"
           onClick={useMyContact}
           disabled={!canUseMyContact}
-          className="w-full rounded-md border border-dashed px-3 py-1.5 text-[0.6875rem] text-muted-foreground hover:bg-accent disabled:opacity-50"
+          className="w-full rounded-md border border-dashed px-ms-3 py-1.5 text-[0.6875rem] text-muted-foreground hover:bg-accent disabled:opacity-50"
           title={canUseMyContact ? "Isi nama & no. MCM dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
         >
           👤 Pakai kontak akun saya
         </button>
-        <div className="flex gap-2">
-          <button className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">{editingId ? "Perbarui" : "Simpan"}</button>
-          {editingId && <button type="button" onClick={resetForm} className="rounded-md border px-3 py-2 text-sm hover:bg-accent">Batal</button>}
+        <div className="flex gap-ms-2">
+          <button className="flex-1 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground">{editingId ? "Perbarui" : "Simpan"}</button>
+          {editingId && <button type="button" onClick={resetForm} className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">Batal</button>}
         </div>
       </form>
       {customers.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada pelanggan.</div>
+        <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada pelanggan.</div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-ms-2">
           {customers.map((c) => (
-            <li key={c.id} className="flex items-start justify-between gap-2 rounded-lg border bg-card p-3">
+            <li key={c.id} className="flex items-start justify-between gap-ms-2 rounded-lg border bg-card p-ms-3">
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold" title={c.name}>{c.name}</div>
+                <div className="truncate text-ms-sm font-semibold" title={c.name}>{c.name}</div>
                 {c.contact && <div className="text-[0.6875rem] text-muted-foreground">📞 {c.contact}</div>}
                 {c.notes && <div className="text-[0.6875rem] text-muted-foreground">{c.notes}</div>}
               </div>
-              <div className="flex shrink-0 gap-1">
-                <button onClick={() => startEdit(c)} className={`rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent ${editingId === c.id ? "border-primary text-primary" : ""}`}>Edit</button>
-                <button onClick={() => remove(c.id, c.name)} className="rounded border px-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
+              <div className="flex shrink-0 gap-ms-1">
+                <button onClick={() => startEdit(c)} className={`rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent ${editingId === c.id ? "border-primary text-primary" : ""}`}>Edit</button>
+                <button onClick={() => remove(c.id, c.name)} className="rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
               </div>
             </li>
           ))}
@@ -731,22 +731,22 @@ function PiutangTab({
 
   if (groups.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+      <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
         Belum ada catatan piutang/kelebihan pelanggan. Jual dengan cara bayar <b>Hutang</b> di tab Jual untuk mulai mencatat.
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 text-[0.6875rem]">
-        <div className="rounded-md border bg-card p-2">
+    <div className="space-ms-3">
+      <div className="grid grid-cols-2 gap-ms-2 text-[0.6875rem]">
+        <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
-          <div className="text-sm font-semibold text-amber-600 dark:text-amber-400">{rupiah(totals.owed)}</div>
+          <div className="text-ms-sm font-semibold text-amber-600 dark:text-amber-400">{rupiah(totals.owed)}</div>
         </div>
-        <div className="rounded-md border bg-card p-2">
+        <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total kelebihan/deposit</div>
-          <div className="text-sm font-semibold text-sky-600 dark:text-sky-400">{rupiah(totals.credit)}</div>
+          <div className="text-ms-sm font-semibold text-sky-600 dark:text-sky-400">{rupiah(totals.credit)}</div>
         </div>
       </div>
 
@@ -754,7 +754,7 @@ function PiutangTab({
         const status: "hutang" | "lunas" | "kelebihan" =
           g.balance > 0.001 ? "hutang" : g.balance < -0.001 ? "kelebihan" : "lunas";
         return (
-          <div key={g.customer.id} className="space-y-2 rounded-lg border bg-card p-3">
+          <div key={g.customer.id} className="space-ms-2 rounded-lg border bg-card p-ms-3">
             <PiutangCustomerHeader
               customer={g.customer}
               totalHutang={g.totalHutang}
@@ -891,24 +891,24 @@ function PiutangCustomerHeader({
 
   if (editing) {
     return (
-      <div className="space-y-1.5 rounded border border-primary/40 bg-primary/5 p-2">
+      <div className="space-y-1.5 rounded border border-primary/40 bg-primary/5 p-ms-2">
         <div className="text-[0.6875rem] font-semibold text-primary">Edit pelanggan</div>
-        <input className="w-full rounded border bg-background px-2 py-1 text-xs"
+        <input className="w-full rounded border bg-background px-ms-2 py-1 text-ms-xs"
           placeholder="Nama pelanggan *" value={name} maxLength={100}
           onChange={(e) => setName(e.target.value)} />
-        <input className="w-full rounded border bg-background px-2 py-1 text-xs"
+        <input className="w-full rounded border bg-background px-ms-2 py-1 text-ms-xs"
           placeholder="No. MCM / kontak (opsional)" value={contact} maxLength={50}
           onChange={(e) => setContact(e.target.value)} />
-        <input className="w-full rounded border bg-background px-2 py-1 text-xs"
+        <input className="w-full rounded border bg-background px-ms-2 py-1 text-ms-xs"
           placeholder="Catatan (opsional)" value={notes} maxLength={200}
           onChange={(e) => setNotes(e.target.value)} />
-        <div className="flex gap-1.5">
+        <div className="flex gap-ms-1.5">
           <button type="button" disabled={busy} onClick={save}
-            className="rounded bg-primary px-2 py-1 text-[0.6875rem] font-semibold text-primary-foreground disabled:opacity-50">
+            className="rounded bg-primary px-ms-2 py-1 text-[0.6875rem] font-semibold text-primary-foreground disabled:opacity-50">
             Simpan
           </button>
           <button type="button" disabled={busy} onClick={cancel}
-            className="rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent">
+            className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent">
             Batal
           </button>
         </div>
@@ -917,10 +917,10 @@ function PiutangCustomerHeader({
   }
 
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center justify-between gap-ms-2">
       <div className="min-w-0">
-        <div className="flex items-center gap-1.5">
-          <div className="truncate text-sm font-semibold" title={customer.name}>{customer.name}</div>
+        <div className="flex items-center gap-ms-1.5">
+          <div className="truncate text-ms-sm font-semibold" title={customer.name}>{customer.name}</div>
           <button type="button" onClick={() => setEditing(true)}
             className="shrink-0 rounded border px-1.5 py-0.5 text-[0.625rem] hover:bg-accent"
             title="Edit info pelanggan">
@@ -1011,38 +1011,38 @@ function EditableSaleRow({
 
   if (editing) {
     return (
-      <li className="rounded border border-primary/40 bg-primary/5 p-2 text-xs">
+      <li className="rounded border border-primary/40 bg-primary/5 p-ms-2 text-ms-xs">
         <div className="mb-1 truncate text-[0.6875rem] font-semibold">
           {item?.name || "(barang dihapus)"}
         </div>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-ms-1.5">
           <label className="text-[0.625rem] text-muted-foreground">
             Nominal
             <input type="number" step="1" min="0" value={total}
               onChange={(e) => setTotal(e.target.value)}
-              className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+              className="mt-0.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
           </label>
           <label className="text-[0.625rem] text-muted-foreground">
             Tanggal
             <input type="date" value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+              className="mt-0.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
           </label>
         </div>
         <input type="text" placeholder="Catatan (opsional)" maxLength={200}
           value={note} onChange={(e) => setNote(e.target.value)}
-          className="mt-1.5 w-full rounded border bg-background px-2 py-1 text-xs" />
-        <div className="mt-1.5 flex gap-1.5">
+          className="mt-1.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
+        <div className="mt-1.5 flex gap-ms-1.5">
           <button type="button" disabled={busy} onClick={save}
-            className="rounded bg-primary px-2 py-1 text-[0.6875rem] font-semibold text-primary-foreground disabled:opacity-50">
+            className="rounded bg-primary px-ms-2 py-1 text-[0.6875rem] font-semibold text-primary-foreground disabled:opacity-50">
             Simpan
           </button>
           <button type="button" disabled={busy} onClick={cancel}
-            className="rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent">
+            className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent">
             Batal
           </button>
           <button type="button" disabled={busy} onClick={remove}
-            className="ml-auto rounded border px-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">
+            className="ml-auto rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">
             Hapus
           </button>
         </div>
@@ -1054,8 +1054,8 @@ function EditableSaleRow({
   }
 
   return (
-    <li className="rounded border bg-background p-2 text-xs">
-      <div className="flex items-start justify-between gap-2">
+    <li className="rounded border bg-background p-ms-2 text-ms-xs">
+      <div className="flex items-start justify-between gap-ms-2">
         <div className="min-w-0">
           <div className="truncate font-semibold" title={item?.name || "(barang dihapus)"}>
             {item?.name || "(barang dihapus)"}
@@ -1140,36 +1140,36 @@ function EditablePaymentRow({
 
   if (editing) {
     return (
-      <li className="rounded border border-primary/40 bg-primary/5 p-2 text-xs">
+      <li className="rounded border border-primary/40 bg-primary/5 p-ms-2 text-ms-xs">
         <div className="mb-1 text-[0.6875rem] font-semibold text-primary">Edit pembayaran</div>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-ms-1.5">
           <label className="text-[0.625rem] text-muted-foreground">
             Nominal
             <input type="number" step="1" min="0" value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+              className="mt-0.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
           </label>
           <label className="text-[0.625rem] text-muted-foreground">
             Tanggal
             <input type="date" value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+              className="mt-0.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
           </label>
         </div>
         <input type="text" placeholder="Catatan (opsional)" maxLength={200}
           value={note} onChange={(e) => setNote(e.target.value)}
-          className="mt-1.5 w-full rounded border bg-background px-2 py-1 text-xs" />
-        <div className="mt-1.5 flex gap-1.5">
+          className="mt-1.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
+        <div className="mt-1.5 flex gap-ms-1.5">
           <button type="button" disabled={busy} onClick={save}
-            className="rounded bg-primary px-2 py-1 text-[0.6875rem] font-semibold text-primary-foreground disabled:opacity-50">
+            className="rounded bg-primary px-ms-2 py-1 text-[0.6875rem] font-semibold text-primary-foreground disabled:opacity-50">
             Simpan
           </button>
           <button type="button" disabled={busy} onClick={cancel}
-            className="rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent">
+            className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent">
             Batal
           </button>
           <button type="button" disabled={busy} onClick={remove}
-            className="ml-auto rounded border px-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">
+            className="ml-auto rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">
             Hapus
           </button>
         </div>
@@ -1178,13 +1178,13 @@ function EditablePaymentRow({
   }
 
   return (
-    <li className="flex items-center justify-between gap-2 text-[0.6875rem]">
+    <li className="flex items-center justify-between gap-ms-2 text-[0.6875rem]">
       <span className="min-w-0 truncate">
         {new Date(payment.created_at).toLocaleDateString("id-ID")} ·{" "}
         <b className="text-emerald-600 dark:text-emerald-400">{rupiah(Number(payment.amount))}</b>
         {payment.note && <span className="text-muted-foreground"> · {payment.note}</span>}
       </span>
-      <div className="flex shrink-0 gap-1">
+      <div className="flex shrink-0 gap-ms-1">
         <button type="button" onClick={() => setEditing(true)}
           className="rounded border px-1.5 py-0.5 text-[0.6875rem] hover:bg-accent">
           Edit
@@ -1240,29 +1240,29 @@ function CustomerPayForm({
   const payDisabled = busy || isEmpty || isInvalid;
 
   return (
-    <div className="space-y-1.5 rounded border border-dashed p-2">
-      <div className="flex gap-1.5">
+    <div className="space-y-1.5 rounded border border-dashed p-ms-2">
+      <div className="flex gap-ms-1.5">
         <input
           type="number" step="1" min="0"
           placeholder="Nominal terima (Rp)"
-          className={`flex-1 rounded border bg-background px-2 py-1 text-xs ${errorMsg ? "border-destructive" : ""}`}
+          className={`flex-1 rounded border bg-background px-ms-2 py-1 text-ms-xs ${errorMsg ? "border-destructive" : ""}`}
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
         <button type="button" disabled={payDisabled} onClick={() => pay(parsed)}
-          className="rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-50">
+          className="rounded bg-primary px-ms-2 py-1 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50">
           Terima
         </button>
         {balance > 0.001 && (
           <button type="button" disabled={busy} onClick={() => pay(balance)}
-            className="rounded border border-emerald-500 px-2 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400">
+            className="rounded border border-emerald-500 px-ms-2 py-1 text-ms-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400">
             Lunasi
           </button>
         )}
       </div>
       {errorMsg && <div className="text-[0.6875rem] text-destructive">{errorMsg}</div>}
       <input type="text" placeholder="Catatan (opsional)" maxLength={200}
-        className="w-full rounded border bg-background px-2 py-1 text-xs"
+        className="w-full rounded border bg-background px-ms-2 py-1 text-ms-xs"
         value={note} onChange={(e) => setNote(e.target.value)} />
     </div>
   );
@@ -1392,32 +1392,32 @@ function ShareCustomer({
   ];
 
   return (
-    <div className="rounded-md border border-dashed bg-muted/30 p-2">
-      <div className="flex items-center justify-between gap-2">
+    <div className="rounded-md border border-dashed bg-muted/30 p-ms-2">
+      <div className="flex items-center justify-between gap-ms-2">
         <div className="text-[0.6875rem] text-muted-foreground">
           {customer.contact ? <>📞 {customer.contact}</> : <>Tidak ada nomor kontak — pesan tetap bisa dikirim</>}
         </div>
         <button type="button" onClick={() => setOpen((v) => !v)}
-          className="rounded-md bg-primary px-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground">
+          className="rounded-md bg-primary px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground">
           {open ? "Tutup" : balance > 0.001 ? "📤 Ingatkan tagihan" : "📤 Kirim catatan"}
         </button>
       </div>
       {open && (
-        <div className="mt-2 space-y-2">
-          <textarea readOnly value={message} className="h-32 w-full resize-none rounded border bg-background p-2 text-[0.6875rem]" />
-          <div className="flex flex-wrap gap-1.5">
+        <div className="mt-2 space-ms-2">
+          <textarea readOnly value={message} className="h-32 w-full resize-none rounded border bg-background p-ms-2 text-[0.6875rem]" />
+          <div className="flex flex-wrap gap-ms-1.5">
             {links.map((l) => (
               <button key={l.label} type="button" onClick={() => openLink(l.href)}
-                className={`rounded-md border px-2 py-1 text-[0.6875rem] font-semibold ${l.cls}`}>
+                className={`rounded-md border px-ms-2 py-1 text-[0.6875rem] font-semibold ${l.cls}`}>
                 {l.emoji} {l.label}
               </button>
             ))}
             <button type="button" onClick={copyText}
-              className="rounded-md border px-2 py-1 text-[0.6875rem] font-semibold hover:bg-accent">
+              className="rounded-md border px-ms-2 py-1 text-[0.6875rem] font-semibold hover:bg-accent">
               📋 Salin
             </button>
             <button type="button" onClick={shareWithPhotos} disabled={sharing || uniqueImagePaths.length === 0}
-              className="rounded-md border border-fuchsia-500 px-2 py-1 text-[0.6875rem] font-semibold text-fuchsia-600 hover:bg-fuchsia-500/10 disabled:opacity-50 dark:text-fuchsia-400">
+              className="rounded-md border border-fuchsia-500 px-ms-2 py-1 text-[0.6875rem] font-semibold text-fuchsia-600 hover:bg-fuchsia-500/10 disabled:opacity-50 dark:text-fuchsia-400">
               {sharing ? "Menyiapkan…" : `📷 Bagikan + Foto (${uniqueImagePaths.length})`}
             </button>
           </div>
@@ -1520,34 +1520,34 @@ function ShareDebt({
   ];
 
   return (
-    <div className="rounded-md border border-dashed bg-muted/30 p-2">
-      <div className="flex items-center justify-between gap-2">
+    <div className="rounded-md border border-dashed bg-muted/30 p-ms-2">
+      <div className="flex items-center justify-between gap-ms-2">
         <div className="text-[0.6875rem] text-muted-foreground">
           {supplier.contact ? <>📞 {supplier.contact}</> : <>Tidak ada nomor kontak — pesan tetap bisa dikirim</>}
         </div>
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="rounded-md bg-primary px-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground"
+          className="rounded-md bg-primary px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground"
         >
           {open ? "Tutup" : "📤 Kirim tagihan"}
         </button>
       </div>
 
       {open && (
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 space-ms-2">
           <textarea
             readOnly
             value={message}
-            className="h-28 w-full resize-none rounded border bg-background p-2 text-[0.6875rem]"
+            className="h-28 w-full resize-none rounded border bg-background p-ms-2 text-[0.6875rem]"
           />
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-ms-1.5">
             {links.map((l) => (
               <button
                 key={l.label}
                 type="button"
                 onClick={() => openLink(l.href)}
-                className={`rounded-md border px-2 py-1 text-[0.6875rem] font-semibold ${l.cls}`}
+                className={`rounded-md border px-ms-2 py-1 text-[0.6875rem] font-semibold ${l.cls}`}
               >
                 {l.emoji} {l.label}
               </button>
@@ -1555,7 +1555,7 @@ function ShareDebt({
             <button
               type="button"
               onClick={copyText}
-              className="rounded-md border px-2 py-1 text-[0.6875rem] font-semibold hover:bg-accent"
+              className="rounded-md border px-ms-2 py-1 text-[0.6875rem] font-semibold hover:bg-accent"
             >
               📋 Salin
             </button>
@@ -1583,7 +1583,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
   }
   if (items.length === 0)
     return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+      <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
         Belum ada barang. Tambahkan saat mencatat pembelian pertama di tab <b>Beli</b>.
       </div>
     );
@@ -1621,12 +1621,12 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
     {/* Ringkasan profesional */}
     <section className="rounded-xl border bg-card shadow-sm">
       <div className="flex items-stretch">
-        <div className="flex flex-1 items-center px-4 py-3">
+        <div className="flex flex-1 items-center px-ms-4 py-ms-3">
           <div className="min-w-0">
             <div className="text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
               Inventaris Gudang
             </div>
-            <div className="mt-0.5 truncate text-sm font-semibold tabular-nums">
+            <div className="mt-0.5 truncate text-ms-sm font-semibold tabular-nums">
               {rupiah(totalValue)}
             </div>
           </div>
@@ -1636,13 +1636,13 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
           <Stat label="Kategori" value={totalCategories.toLocaleString("id-ID")} />
         </div>
       </div>
-      <div className="border-t p-2">
+      <div className="border-t p-ms-2">
         <input
           type="search"
           placeholder="Cari nama atau kategori…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none ring-primary/20 focus:ring-2"
+          className="w-full rounded-md border bg-background px-ms-3 py-1.5 text-ms-sm outline-none ring-primary/20 focus:ring-2"
         />
       </div>
     </section>
@@ -1665,7 +1665,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
       if (rows.length === 0) return null;
       return (
         <section className="mt-3 overflow-hidden rounded-xl border bg-card shadow-sm">
-          <header className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
+          <header className="flex items-center justify-between border-b bg-muted/40 px-ms-3 py-ms-2">
             <h3 className="min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
               Total per Kategori
             </h3>
@@ -1676,15 +1676,15 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
               <span className="min-w-0 truncate whitespace-nowrap">{rows.length} kategori</span>
             </span>
           </header>
-          <ul className="divide-y text-sm">
+          <ul className="divide-y text-ms-sm">
             {rows.map(([cat, { count, value }]) => {
               const pct = totalValue > 0 ? (value / totalValue) * 100 : 0;
               return (
                 <li
                   key={cat}
-                  className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 px-3 py-2 hover:bg-muted/30"
+                  className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 px-ms-3 py-ms-2 hover:bg-muted/30"
                 >
-                  <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-ms-2">
                     <span
                       aria-hidden
                       className={`inline-block h-2 w-2 shrink-0 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
@@ -1698,7 +1698,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                     </span>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold tabular-nums">{rupiah(value)}</div>
+                    <div className="text-ms-sm font-semibold tabular-nums">{rupiah(value)}</div>
                     <div className="text-[0.6875rem] text-muted-foreground tabular-nums">
                       {pct.toFixed(pct >= 10 ? 0 : 1)}%
                     </div>
@@ -1718,13 +1718,13 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
     })()}
 
     {filtered.length === 0 && (
-      <div className="mt-3 rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+      <div className="mt-3 rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
         Tidak ada barang cocok dengan pencarian.
       </div>
     )}
 
     {/* Daftar dikelompokkan per kategori */}
-    <div className="mt-3 space-y-3">
+    <div className="mt-3 space-ms-3">
       {groupKeys.map((cat) => {
         const list = groups.get(cat)!;
         const catValue = list.reduce((s, i) => s + i.stock_base * i.avg_cost_per_base, 0);
@@ -1732,15 +1732,15 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
         return (
           <section key={cat} className="overflow-hidden rounded-xl border bg-card shadow-sm">
             <header
-              className="flex cursor-pointer items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2"
+              className="flex cursor-pointer items-center justify-between gap-ms-2 border-b bg-muted/40 px-ms-3 py-ms-2"
               onClick={() => setCollapsed((c) => ({ ...c, [cat]: !c[cat] }))}
             >
-              <div className="flex min-w-0 flex-1 items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-ms-2">
                 <span
                   aria-hidden
                   className={`inline-block h-2 w-2 shrink-0 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
                 />
-                <h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug" title={cat}>{cat}</h3>
+                <h3 className="min-w-0 flex-1 truncate text-ms-sm font-semibold leading-snug" title={cat}>{cat}</h3>
                 <span
                   className="inline-flex h-5 max-w-[7rem] shrink-0 items-center rounded-full border bg-background px-1.5 text-[0.6875rem] font-medium leading-none text-muted-foreground tabular-nums"
                   title={`${list.length} item`}
@@ -1748,7 +1748,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                   <span className="min-w-0 truncate whitespace-nowrap">{list.length} item</span>
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-2 text-[0.6875rem] leading-snug">
+              <div className="flex shrink-0 items-center gap-ms-2 text-[0.6875rem] leading-snug">
                 <span className="hidden text-muted-foreground sm:inline">Nilai</span>
                 <span className="whitespace-nowrap font-semibold tabular-nums">{rupiah(catValue)}</span>
                 <span className="text-muted-foreground">{isCollapsed ? "▸" : "▾"}</span>
@@ -1757,39 +1757,39 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
             {!isCollapsed && (
               <ul className="divide-y">
                 {list.map((i) => (
-                  <li key={i.id} className="p-3 transition-colors hover:bg-muted/30">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 flex-1 gap-2">
+                  <li key={i.id} className="p-ms-3 transition-colors hover:bg-muted/30">
+                    <div className="flex items-start justify-between gap-ms-2">
+                      <div className="flex min-w-0 flex-1 gap-ms-2">
                         {i.image_path ? (
                           <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
                         ) : (
                           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[0.6875rem] text-muted-foreground">📷</div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="line-clamp-2 break-words text-sm font-semibold leading-snug [overflow-wrap:anywhere]">{i.name}</div>
+                          <div className="line-clamp-2 break-words text-ms-sm font-semibold leading-snug [overflow-wrap:anywhere]">{i.name}</div>
                           <div className="mt-0.5 text-[0.6875rem] leading-snug text-muted-foreground">
                             per {i.package_type}
                             {i.package_type !== "pcs" && ` (${i.package_size} ${humanBaseUnit(i.package_type, i.base_unit)}/kemasan)`}
                           </div>
                         </div>
                       </div>
-                      <div className="flex shrink-0 gap-1">
+                      <div className="flex shrink-0 gap-ms-1">
                         <button
                           onClick={() => setEditing(i)}
-                          className="rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent"
+                          className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => remove(i.id, i.name)}
-                          className="rounded border px-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10"
+                          className="rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10"
                         >
                           Hapus
                         </button>
                       </div>
                     </div>
-                    <div className="mt-2 grid grid-cols-3 gap-2 text-[0.6875rem] leading-snug">
-                      <div className="min-w-0 rounded bg-muted/50 p-2">
+                    <div className="mt-2 grid grid-cols-3 gap-ms-2 text-[0.6875rem] leading-snug">
+                      <div className="min-w-0 rounded bg-muted/50 p-ms-2">
                         <div className="truncate text-muted-foreground">Stok</div>
                         {i.package_type === "botol" ? (
                           <KartonRumusPopover
@@ -1803,11 +1803,11 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                           <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</div>
                         )}
                       </div>
-                      <div className="min-w-0 rounded bg-muted/50 p-2">
+                      <div className="min-w-0 rounded bg-muted/50 p-ms-2">
                         <div className="truncate text-muted-foreground">HPP / {humanBaseUnit(i.package_type, i.base_unit)}</div>
                         <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.avg_cost_per_base)}</div>
                       </div>
-                      <div className="min-w-0 rounded bg-muted/50 p-2">
+                      <div className="min-w-0 rounded bg-muted/50 p-ms-2">
                         <div className="truncate text-muted-foreground">Nilai</div>
                         <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
                       </div>
@@ -1846,11 +1846,11 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col justify-center px-3 py-2 sm:px-4">
+    <div className="flex flex-col justify-center px-ms-3 py-ms-2 sm:px-ms-4">
       <div className="text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </div>
-      <div className="text-sm font-semibold tabular-nums">{value}</div>
+      <div className="text-ms-sm font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
@@ -1906,22 +1906,22 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-3" onClick={onClose}>
-      <div className="w-full max-w-md rounded-lg border bg-card p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
-        <div className="text-sm font-semibold">Edit Barang</div>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-ms-3" onClick={onClose}>
+      <div className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3" onClick={(e) => e.stopPropagation()}>
+        <div className="text-ms-sm font-semibold">Edit Barang</div>
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">Nama</span>
-          <input className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <PhotoPicker value={imagePath} onChange={setImagePath} uid={uid} />
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">Kategori</span>
-          <input className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={category} onChange={(e) => setCategory(e.target.value)} />
+          <input className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={category} onChange={(e) => setCategory(e.target.value)} />
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-ms-2">
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">Jenis kemasan</span>
-            <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageType} onChange={(e) => setPackageType(e.target.value as PackageType)}>
+            <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={packageType} onChange={(e) => setPackageType(e.target.value as PackageType)}>
               <option value="gram">gram (curah, ecer: gram)</option>
               <option value="botol">botol (ecer: botol · 1 karton = 100 botol)</option>
               <option value="sachet">sachet (ecer: sachet)</option>
@@ -1936,17 +1936,17 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
                   value={packageSize}
                   onChange={setPackageSize}
                   baseUnit="g"
-                  className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                  className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
                   min={0.01}
                   ariaLabel="Isi per kemasan (gram/kg/ons)"
                 />
               ) : (
-                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
               )}
             </label>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-ms-2">
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">Stok ({baseUnit})</span>
             {baseUnit === "g" ? (
@@ -1954,40 +1954,40 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
                 value={stockBase}
                 onChange={setStockBase}
                 baseUnit="g"
-                className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
                 min={0}
                 ariaLabel="Stok saat ini (gram/kg/ons)"
               />
             ) : (
-              <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={stockBase} onChange={(e) => setStockBase(e.target.value)} />
+              <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={stockBase} onChange={(e) => setStockBase(e.target.value)} />
             )}
           </label>
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">HPP / {baseUnit} (Rp)</span>
-            <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={avgCost} onChange={(e) => setAvgCost(e.target.value)} />
+            <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={avgCost} onChange={(e) => setAvgCost(e.target.value)} />
           </label>
         </div>
         <div className="text-[0.6875rem] text-amber-500">
           ⚠️ Mengubah stok / HPP manual akan menimpa nilai dari riwayat pembelian.
         </div>
         {baseUnitChanged && (
-          <div className="rounded-md border border-destructive bg-destructive/10 p-2 text-[0.6875rem] text-destructive">
+          <div className="rounded-md border border-destructive bg-destructive/10 p-ms-2 text-[0.6875rem] text-destructive">
             🚨 Anda mengubah satuan dasar <b>{originalBaseUnit}</b> → <b>{baseUnit}</b>. Stok & HPP
             TIDAK dikonversi otomatis, dan histori pembelian/penjualan akan terbaca dalam satuan baru.
             Untuk barang yang sudah punya transaksi, sebaiknya buat <b>barang baru</b> daripada mengganti
             jenis kemasan antara <i>gram</i> dan <i>botol/sachet/pcs</i>.
           </div>
         )}
-        <div className="flex gap-2 pt-1">
-          <button disabled={saving} onClick={save} className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+        <div className="flex gap-ms-2 pt-1">
+          <button disabled={saving} onClick={save} className="flex-1 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground disabled:opacity-50">
             {saving ? "Menyimpan..." : "Simpan"}
           </button>
-          <button onClick={onClose} className="rounded-md border px-3 py-2 text-sm hover:bg-accent">Batal</button>
+          <button onClick={onClose} className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">Batal</button>
         </div>
         <button
           type="button"
           onClick={() => setShowPackages(true)}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-xs font-semibold hover:bg-accent"
+          className="mt-1 w-full rounded-md border bg-background px-ms-3 py-ms-2 text-ms-xs font-semibold hover:bg-accent"
         >
           📦 Paket Siap Kirim
         </button>
@@ -2091,45 +2091,45 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
     }
   }
   return (
-    <div className="space-y-3">
-      <form onSubmit={submit} className="space-y-2 rounded-lg border bg-card p-3">
-        <div className="text-xs font-semibold">{editingId ? "Edit Supplier" : "Tambah Supplier"}</div>
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama supplier *" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} />
-        <input type="email" className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Email (opsional)" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="CC (pisahkan dengan koma, opsional)" value={emailCc} onChange={(e) => setEmailCc(e.target.value)} />
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="BCC (pisahkan dengan koma, opsional)" value={emailBcc} onChange={(e) => setEmailBcc(e.target.value)} />
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+    <div className="space-ms-3">
+      <form onSubmit={submit} className="space-ms-2 rounded-lg border bg-card p-ms-3">
+        <div className="text-ms-xs font-semibold">{editingId ? "Edit Supplier" : "Tambah Supplier"}</div>
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Nama supplier *" value={name} onChange={(e) => setName(e.target.value)} required />
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} />
+        <input type="email" className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Email (opsional)" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="CC (pisahkan dengan koma, opsional)" value={emailCc} onChange={(e) => setEmailCc(e.target.value)} />
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="BCC (pisahkan dengan koma, opsional)" value={emailBcc} onChange={(e) => setEmailBcc(e.target.value)} />
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
         <button
           type="button"
           onClick={useMyContact}
           disabled={!canUseMyContact}
-          className="w-full rounded-md border border-dashed px-3 py-1.5 text-[0.6875rem] text-muted-foreground hover:bg-accent disabled:opacity-50"
+          className="w-full rounded-md border border-dashed px-ms-3 py-1.5 text-[0.6875rem] text-muted-foreground hover:bg-accent disabled:opacity-50"
           title={canUseMyContact ? "Isi nama & no. MCM dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
         >
           👤 Pakai kontak akun saya
         </button>
-        <div className="flex gap-2">
-          <button className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
+        <div className="flex gap-ms-2">
+          <button className="flex-1 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground">
             {editingId ? "Perbarui" : "Simpan"}
           </button>
           {editingId && (
-            <button type="button" onClick={resetForm} className="rounded-md border px-3 py-2 text-sm hover:bg-accent">
+            <button type="button" onClick={resetForm} className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">
               Batal
             </button>
           )}
         </div>
       </form>
       {suppliers.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada supplier.</div>
+        <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada supplier.</div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-ms-2">
           {suppliers.map((s) => (
-            <li key={s.id} className="flex items-start justify-between gap-2 rounded-lg border bg-card p-3">
+            <li key={s.id} className="flex items-start justify-between gap-ms-2 rounded-lg border bg-card p-ms-3">
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold" title={s.name}>{s.name}</div>
+                <div className="truncate text-ms-sm font-semibold" title={s.name}>{s.name}</div>
                 {s.contact && (
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-1 flex flex-wrap items-center gap-ms-1.5">
                     <span className="text-[0.6875rem] text-muted-foreground">📞 {s.contact}</span>
                     {(() => {
                       const digits = s.contact.replace(/\D/g, "");
@@ -2160,7 +2160,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                   </div>
                 )}
                 {s.email && (
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-1 flex flex-wrap items-center gap-ms-1.5">
                     <span className="truncate text-[0.6875rem] text-muted-foreground" title={s.email}>📧 {s.email}</span>
                     <a
                       href={buildMailto({ to: s.email, cc: s.email_cc, bcc: s.email_bcc }).href}
@@ -2195,14 +2195,14 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                 })()}
                 {s.notes && <div className="mt-1 text-[0.6875rem] text-muted-foreground">{s.notes}</div>}
               </div>
-              <div className="flex shrink-0 gap-1">
+              <div className="flex shrink-0 gap-ms-1">
                 <button
                   onClick={() => startEdit(s)}
-                  className={`rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent ${editingId === s.id ? "border-primary text-primary" : ""}`}
+                  className={`rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent ${editingId === s.id ? "border-primary text-primary" : ""}`}
                 >
                   Edit
                 </button>
-                <button onClick={() => remove(s.id, s.name)} className="rounded border px-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
+                <button onClick={() => remove(s.id, s.name)} className="rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
               </div>
             </li>
           ))}
@@ -2462,13 +2462,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-lg border bg-card p-3">
+    <form onSubmit={submit} className="space-ms-3 rounded-lg border bg-card p-ms-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold">Catat Pembelian</div>
+        <div className="text-ms-xs font-semibold">Catat Pembelian</div>
         <button
           type="button"
           onClick={resetBeliForm}
-          className="rounded border px-2 py-1 text-[0.6875rem] hover:bg-muted"
+          className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-muted"
           aria-label="Reset form pembelian"
         >
           Reset
@@ -2477,26 +2477,26 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 
       <label className="block">
         <span className="text-[0.6875rem] text-muted-foreground">Supplier</span>
-        <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+        <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
           <option value="">— Tanpa supplier —</option>
           {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       </label>
 
-      <div className="flex gap-1 text-xs">
-        <button type="button" onClick={() => setMode("new")} className={`flex-1 rounded border px-2 py-1 ${mode === "new" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Barang baru</button>
-        <button type="button" onClick={() => setMode("existing")} className={`flex-1 rounded border px-2 py-1 ${mode === "existing" ? "bg-primary text-primary-foreground border-primary" : ""}`} disabled={items.length === 0}>Barang yang ada</button>
+      <div className="flex gap-ms-1 text-ms-xs">
+        <button type="button" onClick={() => setMode("new")} className={`flex-1 rounded border px-ms-2 py-1 ${mode === "new" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Barang baru</button>
+        <button type="button" onClick={() => setMode("existing")} className={`flex-1 rounded border px-ms-2 py-1 ${mode === "existing" ? "bg-primary text-primary-foreground border-primary" : ""}`} disabled={items.length === 0}>Barang yang ada</button>
       </div>
 
       {mode === "new" ? (
-        <div className="space-y-2">
-          <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama barang *" value={name} onChange={(e) => setName(e.target.value)} required />
-          <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Kategori (opsional, mis. Minuman)" value={category} onChange={(e) => setCategory(e.target.value)} />
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-ms-2">
+          <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Nama barang *" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Kategori (opsional, mis. Minuman)" value={category} onChange={(e) => setCategory(e.target.value)} />
+          <div className="grid grid-cols-2 gap-ms-2">
             <label className="block">
               <span className="text-[0.6875rem] text-muted-foreground">Jenis kemasan</span>
               <select
-                className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
                 value={packageType === "botol" && inputKarton ? "karton" : packageType}
                 onChange={(e) => {
                   const v = e.target.value;
@@ -2527,13 +2527,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
                     value={packageSize}
                     onChange={setPackageSize}
                     baseUnit="g"
-                    className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                    className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
                     required
                     min={0.01}
                     ariaLabel="Isi per kemasan (gram/kg/ons)"
                   />
                 ) : (
-                  <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} required />
+                  <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} required />
                 )}
               </label>
             )}
@@ -2556,7 +2556,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       ) : (
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">Pilih barang</span>
-          <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)} required>
+          <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={itemId} onChange={(e) => setItemId(e.target.value)} required>
             {items.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name} ({i.package_type}{i.package_type !== "pcs" ? ` ${i.package_size} ${humanBaseUnit(i.package_type, i.base_unit)}` : ""}) · stok {fmtItemQty(i.stock_base, i)}
@@ -2566,7 +2566,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </label>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-ms-2">
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">
             Jumlah {kartonActive
@@ -2575,25 +2575,25 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
                   ? displayPackageType
                   : displayHumanBase || "unit")}
           </span>
-          <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageQty} onChange={(e) => setPackageQty(e.target.value)} required />
+          <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={packageQty} onChange={(e) => setPackageQty(e.target.value)} required />
         </label>
         {priceMode === "package" ? (
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">
               Harga beli / {kartonActive ? "karton" : displayPackageType} (Rp)
             </span>
-            <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
+            <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
           </label>
         ) : (
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">Harga beli / {displayHumanBase} (Rp)</span>
-            <input type="number" step="0.01" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
+            <input type="number" step="0.01" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
           </label>
         )}
       </div>
 
       {displayPackageType === "botol" && (
-        <label className="flex items-center gap-2 text-[0.6875rem] text-muted-foreground">
+        <label className="flex items-center gap-ms-2 text-[0.6875rem] text-muted-foreground">
           <input
             type="checkbox"
             checked={inputKarton}
@@ -2610,11 +2610,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       )}
 
       {displayPackageType !== "pcs" && !packageDuplicatesBase && (
-        <div className="flex gap-1 text-xs">
-          <button type="button" onClick={() => setPriceMode("package")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+        <div className="flex gap-ms-1 text-ms-xs">
+          <button type="button" onClick={() => setPriceMode("package")} className={`flex-1 rounded border px-ms-2 py-1 ${priceMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
             Harga per {displayPackageType}
           </button>
-          <button type="button" onClick={() => setPriceMode("base")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+          <button type="button" onClick={() => setPriceMode("base")} className={`flex-1 rounded border px-ms-2 py-1 ${priceMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
             Harga per {displayBaseUnit}
           </button>
         </div>
@@ -2622,18 +2622,18 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 
       <div>
         <div className="text-[0.6875rem] text-muted-foreground mb-1">Cara bayar</div>
-        <div className="flex gap-1 text-xs">
+        <div className="flex gap-ms-1 text-ms-xs">
           <button
             type="button"
             onClick={() => setPaymentMethod("kas")}
-            className={`flex-1 rounded border px-2 py-1.5 ${paymentMethod === "kas" ? "bg-primary text-primary-foreground border-primary" : ""}`}
+            className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "kas" ? "bg-primary text-primary-foreground border-primary" : ""}`}
           >
             💵 Kas (lunas)
           </button>
           <button
             type="button"
             onClick={() => setPaymentMethod("hutang")}
-            className={`flex-1 rounded border px-2 py-1.5 ${paymentMethod === "hutang" ? "bg-amber-500 text-white border-amber-500" : ""}`}
+            className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-amber-500 text-white border-amber-500" : ""}`}
           >
             📝 Hutang
           </button>
@@ -2641,7 +2641,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       </div>
 
       <div
-        className="rounded-md border bg-muted/50 p-2 text-[0.6875rem] space-y-1"
+        className="rounded-md border bg-muted/50 p-ms-2 text-[0.6875rem] space-y-1"
         aria-live="polite"
         aria-label="Ringkasan pembelian"
       >
@@ -2751,12 +2751,12 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 
       {warnings.length > 0 && (
         <ul
-          className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-2 text-[0.6875rem] text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+          className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-ms-2 text-[0.6875rem] text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
           role="alert"
           aria-label="Peringatan pembelian"
         >
           {warnings.map((w) => (
-            <li key={w.code} className="flex gap-1.5">
+            <li key={w.code} className="flex gap-ms-1.5">
               <span aria-hidden>⚠️</span>
               <span>{w.message}</span>
             </li>
@@ -2767,7 +2767,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </ul>
       )}
 
-      <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan pembelian</button>
+      <button className="w-full rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground">Simpan pembelian</button>
     </form>
   );
 }
@@ -2874,16 +2874,16 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
   }
 
   if (items.length === 0) {
-    return <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada barang. Catat pembelian dulu di tab <b>Beli</b>.</div>;
+    return <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada barang. Catat pembelian dulu di tab <b>Beli</b>.</div>;
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3 rounded-lg border bg-card p-3">
-      <div className="text-xs font-semibold">Catat Penjualan</div>
+    <form onSubmit={submit} className="space-ms-3 rounded-lg border bg-card p-ms-3">
+      <div className="text-ms-xs font-semibold">Catat Penjualan</div>
 
       <label className="block">
         <span className="text-[0.6875rem] text-muted-foreground">Barang</span>
-        <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+        <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
           {items.map((i) => (
             <option key={i.id} value={i.id}>
               {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base", i.name)} · HPP {rupiah(i.avg_cost_per_base)}/{humanBaseUnit(i.package_type, i.base_unit)}
@@ -2928,17 +2928,17 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         const packageLabelForQty = showPackageBtn ? pkgLabel : humU;
         return (
         <>
-          <div className="flex gap-1 text-xs">
-            <button type="button" onClick={() => setSellMode("base")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+          <div className="flex gap-ms-1 text-ms-xs">
+            <button type="button" onClick={() => setSellMode("base")} className={`flex-1 rounded border px-ms-2 py-1 ${sellMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
               Jual per {humU}
             </button>
             {showPackageBtn && (
-              <button type="button" onClick={() => setSellMode("package")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+              <button type="button" onClick={() => setSellMode("package")} className={`flex-1 rounded border px-ms-2 py-1 ${sellMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
                 Jual per {pkgLabel}
               </button>
             )}
             {showKartonBtn && (
-              <button type="button" onClick={() => setSellMode("karton")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "karton" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+              <button type="button" onClick={() => setSellMode("karton")} className={`flex-1 rounded border px-ms-2 py-1 ${sellMode === "karton" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
                 Jual per karton
               </button>
             )}
@@ -2980,7 +2980,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-ms-2">
             <label className="block">
               <span className="text-[0.6875rem] text-muted-foreground">
                 Jumlah ({sellMode === "base" ? humU : sellMode === "karton" ? "karton" : packageLabelForQty})
@@ -2990,35 +2990,35 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
                   value={qty}
                   onChange={setQty}
                   baseUnit="g"
-                  className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                  className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
                   required
                   min={0.01}
                   ariaLabel="Jumlah jual (gram/kg/ons)"
                 />
               ) : (
-                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
               )}
             </label>
             {sellMode === "base" ? (
               <label className="block">
                 <span className="text-[0.6875rem] text-muted-foreground">Harga / {humU} (Rp)</span>
-                <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
+                <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
               </label>
             ) : (
               <label className="block">
                 <span className="text-[0.6875rem] text-muted-foreground">
                   Harga / {sellMode === "karton" ? "karton" : packageLabelForQty} (Rp)
                 </span>
-                <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
+                <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
               </label>
             )}
           </div>
 
-          <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={note} onChange={(e) => setNote(e.target.value)} />
+          <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Catatan (opsional)" value={note} onChange={(e) => setNote(e.target.value)} />
 
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">Pelanggan {paymentMethod === "hutang" && <span className="text-destructive">*</span>}</span>
-            <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+            <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
               <option value="">— Tanpa pelanggan —</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               <option value="__new__">+ Pelanggan baru…</option>
@@ -3026,9 +3026,9 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
           </label>
 
           {customerId === "__new__" && (
-            <div className="grid grid-cols-1 gap-2 rounded-md border border-dashed bg-muted/30 p-2">
-              <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
-              <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. MCM / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
+            <div className="grid grid-cols-1 gap-ms-2 rounded-md border border-dashed bg-muted/30 p-ms-2">
+              <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
+              <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. MCM / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
               <div className="text-[0.6875rem] text-muted-foreground">Pelanggan & nomor MCM akan otomatis tersimpan ke daftar pelanggan.</div>
             </div>
           )}
@@ -3037,7 +3037,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             const c = customers.find((x) => x.id === customerId);
             if (!c) return null;
             return (
-              <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1.5 text-[0.6875rem] text-muted-foreground">
+              <div className="rounded-md border border-dashed bg-muted/30 px-ms-2 py-1.5 text-[0.6875rem] text-muted-foreground">
                 No. MCM pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
               </div>
             );
@@ -3045,9 +3045,9 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
 
           <div>
             <div className="text-[0.6875rem] text-muted-foreground mb-1">Cara bayar</div>
-            <div className="flex gap-1 text-xs">
-              <button type="button" onClick={() => setPaymentMethod("kas")} className={`flex-1 rounded border px-2 py-1.5 ${paymentMethod === "kas" ? "bg-primary text-primary-foreground border-primary" : ""}`}>💵 Kas (lunas)</button>
-              <button type="button" onClick={() => setPaymentMethod("hutang")} className={`flex-1 rounded border px-2 py-1.5 ${paymentMethod === "hutang" ? "bg-amber-500 text-white border-amber-500" : ""}`}>📝 Hutang pelanggan</button>
+            <div className="flex gap-ms-1 text-ms-xs">
+              <button type="button" onClick={() => setPaymentMethod("kas")} className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "kas" ? "bg-primary text-primary-foreground border-primary" : ""}`}>💵 Kas (lunas)</button>
+              <button type="button" onClick={() => setPaymentMethod("hutang")} className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-amber-500 text-white border-amber-500" : ""}`}>📝 Hutang pelanggan</button>
             </div>
           </div>
 
@@ -3056,7 +3056,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             const sisa = item.stock_base - qtyBase;
             const dispMode: "base" | "package" = sellMode === "base" ? "base" : "package";
             return (
-              <div className="rounded-md bg-muted/50 p-2 text-[0.6875rem] space-y-0.5">
+              <div className="rounded-md bg-muted/50 p-ms-2 text-[0.6875rem] space-y-0.5">
                 <div>
                   Akan kurangi stok: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, dispMode, item.name)}</b>
                 </div>
@@ -3076,7 +3076,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             );
           })()}
 
-          <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan penjualan</button>
+          <button className="w-full rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground">Simpan penjualan</button>
         </>
         );
       })()}
@@ -3114,48 +3114,48 @@ function RiwayatTab({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2 text-[0.6875rem]">
-        <div className="rounded-md border bg-card p-2">
+    <div className="space-ms-3">
+      <div className="grid grid-cols-3 gap-ms-2 text-[0.6875rem]">
+        <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Pendapatan</div>
-          <div className="text-sm font-semibold">{rupiah(totalRevenue)}</div>
+          <div className="text-ms-sm font-semibold">{rupiah(totalRevenue)}</div>
         </div>
-        <div className="rounded-md border bg-card p-2">
+        <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Modal terjual</div>
-          <div className="text-sm font-semibold">{rupiah(totalCost)}</div>
+          <div className="text-ms-sm font-semibold">{rupiah(totalCost)}</div>
         </div>
-        <div className="rounded-md border bg-card p-2">
+        <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Laba</div>
-          <div className={`text-sm font-semibold ${totalRevenue - totalCost >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
+          <div className={`text-ms-sm font-semibold ${totalRevenue - totalCost >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
             {rupiah(totalRevenue - totalCost)}
           </div>
         </div>
       </div>
 
-      <div className="flex gap-1 text-xs">
-        <button onClick={() => setSub("jual")} className={`flex-1 rounded border px-2 py-1 ${sub === "jual" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Penjualan</button>
-        <button onClick={() => setSub("beli")} className={`flex-1 rounded border px-2 py-1 ${sub === "beli" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Pembelian</button>
+      <div className="flex gap-ms-1 text-ms-xs">
+        <button onClick={() => setSub("jual")} className={`flex-1 rounded border px-ms-2 py-1 ${sub === "jual" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Penjualan</button>
+        <button onClick={() => setSub("beli")} className={`flex-1 rounded border px-ms-2 py-1 ${sub === "beli" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Pembelian</button>
       </div>
 
       {sub === "jual" ? (
         sales.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada penjualan.</div>
+          <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada penjualan.</div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-ms-2">
             {sales.map((s) => {
               const it = itemMap[s.item_id];
               return (
-                <li key={s.id} className="rounded-lg border bg-card p-3 text-xs">
-                  <div className="flex items-start justify-between gap-2">
+                <li key={s.id} className="rounded-lg border bg-card p-ms-3 text-ms-xs">
+                  <div className="flex items-start justify-between gap-ms-2">
                     <div className="min-w-0">
                       <div className="truncate font-semibold" title={it?.name || "(barang dihapus)"}>{it?.name || "(barang dihapus)"}</div>
                       <div className="text-[0.6875rem] text-muted-foreground">
                         {new Date(s.created_at).toLocaleString("id-ID")} {s.note && `· ${s.note}`}
                       </div>
                     </div>
-                    <button onClick={() => delSale(s.id)} className="shrink-0 rounded border px-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
+                    <button onClick={() => delSale(s.id)} className="shrink-0 rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
                   </div>
-                  <div className="mt-1 grid grid-cols-3 gap-2">
+                  <div className="mt-1 grid grid-cols-3 gap-ms-2">
                     <div><span className="text-muted-foreground">Jumlah </span><b>{fmtItemQty(Number(s.qty_base), it)}</b></div>
                     <div><span className="text-muted-foreground">Harga </span><b>{fmtItemPrice(Number(s.price_per_base), it)}</b></div>
                     <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(s.total_revenue))}</b></div>
@@ -3167,29 +3167,29 @@ function RiwayatTab({
         )
       ) : (
         purchases.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada pembelian.</div>
+          <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada pembelian.</div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-ms-2">
             {purchases.map((p) => {
               const it = itemMap[p.item_id];
               const sup = p.supplier_id ? supMap[p.supplier_id] : null;
               return (
-                <li key={p.id} className="rounded-lg border bg-card p-3 text-xs">
-                  <div className="flex items-start justify-between gap-2">
+                <li key={p.id} className="rounded-lg border bg-card p-ms-3 text-ms-xs">
+                  <div className="flex items-start justify-between gap-ms-2">
                     <div className="min-w-0">
                       <div className="truncate font-semibold" title={it?.name || "(barang dihapus)"}>{it?.name || "(barang dihapus)"}</div>
                       <div className="text-[0.6875rem] text-muted-foreground">
                         {new Date(p.created_at).toLocaleString("id-ID")} · dari {sup?.name || "—"}
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
+                    <div className="flex shrink-0 flex-col items-end gap-ms-1">
                       <StatusBadge size="xs" variant={p.payment_method === "hutang" ? "hutang" : "lunas"}>
                         {p.payment_method === "hutang" ? "📝 Hutang" : "💵 Kas"}
                       </StatusBadge>
-                      <button onClick={() => delPurchase(p.id)} className="rounded border px-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
+                      <button onClick={() => delPurchase(p.id)} className="rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
                     </div>
                   </div>
-                  <div className="mt-1 grid grid-cols-3 gap-2">
+                  <div className="mt-1 grid grid-cols-3 gap-ms-2">
                   <div><span className="text-muted-foreground">Kemasan </span><b>{Number(p.package_qty)} × {Number(p.package_size_snapshot)}{it ? humanBaseUnit(it.package_type, it.base_unit) : ""}</b></div>
                     <div><span className="text-muted-foreground">Harga </span><b>{rupiah(Number(p.price_per_package))}</b></div>
                     <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(p.total_cost))}</b></div>
@@ -3270,14 +3270,14 @@ function HutangTab({
 
   if (debts.length === 0) {
     return (
-      <div className="space-y-3">
+      <div className="space-ms-3">
         <button
           onClick={onAddDebt}
-          className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          className="w-full rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground hover:opacity-90"
         >
           ➕ Tambah hutang (catat pembelian)
         </button>
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
           Tidak ada hutang ke supplier. Pembelian dengan cara bayar <b>Hutang</b> akan muncul di sini.
         </div>
       </div>
@@ -3285,32 +3285,32 @@ function HutangTab({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-ms-3">
       <button
         onClick={onAddDebt}
-        className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        className="w-full rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground hover:opacity-90"
       >
         ➕ Tambah hutang (catat pembelian)
       </button>
-      <div className="grid grid-cols-3 gap-2 text-[0.6875rem]">
-        <div className="rounded-md border bg-card p-2">
+      <div className="grid grid-cols-3 gap-ms-2 text-[0.6875rem]">
+        <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total hutang</div>
-          <div className="text-sm font-semibold">{rupiah(totals.total)}</div>
+          <div className="text-ms-sm font-semibold">{rupiah(totals.total)}</div>
         </div>
-        <div className="rounded-md border bg-card p-2">
+        <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sudah dibayar</div>
-          <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{rupiah(totals.paid)}</div>
+          <div className="text-ms-sm font-semibold text-emerald-600 dark:text-emerald-400">{rupiah(totals.paid)}</div>
         </div>
-        <div className="rounded-md border bg-card p-2">
+        <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sisa</div>
-          <div className="text-sm font-semibold text-amber-600 dark:text-amber-400">{rupiah(totals.remaining)}</div>
+          <div className="text-ms-sm font-semibold text-amber-600 dark:text-amber-400">{rupiah(totals.remaining)}</div>
         </div>
       </div>
 
       {groups.map((g, idx) => (
-        <div key={g.supplier?.id || `_none-${idx}`} className="space-y-2 rounded-lg border bg-card p-3">
+        <div key={g.supplier?.id || `_none-${idx}`} className="space-ms-2 rounded-lg border bg-card p-ms-3">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-semibold">{g.supplier?.name || "(tanpa supplier)"}</div>
+            <div className="text-ms-sm font-semibold">{g.supplier?.name || "(tanpa supplier)"}</div>
             <div className="text-[0.6875rem]">
               Sisa: <span className="font-semibold text-amber-600 dark:text-amber-400">{rupiah(g.remaining)}</span>
               <span className="text-muted-foreground"> / {rupiah(g.total)}</span>
@@ -3327,15 +3327,15 @@ function HutangTab({
               remaining={g.remaining}
             />
           )}
-          <ul className="space-y-2">
+          <ul className="space-ms-2">
             {g.debts.map((d) => {
               const it = itemMap[d.item_id];
               const paid = paidByPurchase[d.id] || 0;
               const remaining = Math.max(0, Number(d.total_cost) - paid);
               const isPaid = remaining <= 0;
               return (
-                <li key={d.id} className="rounded-md border bg-background p-2 text-xs">
-                  <div className="flex items-start justify-between gap-2">
+                <li key={d.id} className="rounded-md border bg-background p-ms-2 text-ms-xs">
+                  <div className="flex items-start justify-between gap-ms-2">
                     <div className="min-w-0">
                       <div className="truncate font-semibold" title={it?.name || "(barang dihapus)"}>{it?.name || "(barang dihapus)"}</div>
                       <div className="text-[0.6875rem] text-muted-foreground">
@@ -3346,7 +3346,7 @@ function HutangTab({
                       {isPaid ? "✓ Lunas" : "Hutang"}
                     </StatusBadge>
                   </div>
-                  <div className="mt-1 grid grid-cols-3 gap-2 text-[0.6875rem]">
+                  <div className="mt-1 grid grid-cols-3 gap-ms-2 text-[0.6875rem]">
                     <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(d.total_cost))}</b></div>
                     <div><span className="text-muted-foreground">Bayar </span><b className="text-emerald-600 dark:text-emerald-400">{rupiah(paid)}</b></div>
                     <div><span className="text-muted-foreground">Sisa </span><b className="text-amber-600 dark:text-amber-400">{rupiah(remaining)}</b></div>
@@ -3357,7 +3357,7 @@ function HutangTab({
                   {(paymentsByPurchase[d.id]?.length ?? 0) > 0 && (
                     <ul className="mt-2 space-y-1 border-t pt-1.5">
                       {paymentsByPurchase[d.id]!.map((pay) => (
-                        <li key={pay.id} className="flex items-center justify-between gap-2 text-[0.6875rem]">
+                        <li key={pay.id} className="flex items-center justify-between gap-ms-2 text-[0.6875rem]">
                           <span className="truncate">
                             {new Date(pay.created_at).toLocaleDateString("id-ID")} ·{" "}
                             <b className="text-emerald-600 dark:text-emerald-400">{rupiah(Number(pay.amount))}</b>
@@ -3448,15 +3448,15 @@ function PayForm({
   const payDisabled = busy || isEmpty || isInvalid || isOver;
 
   return (
-    <div className="mt-2 space-y-1.5 rounded border border-dashed p-2">
-      <div className="flex gap-1.5">
+    <div className="mt-2 space-y-1.5 rounded border border-dashed p-ms-2">
+      <div className="flex gap-ms-1.5">
         <input
           type="number"
           step="1"
           min="0"
           max={remaining}
           placeholder="Nominal bayar (Rp)"
-          className={`flex-1 rounded border bg-background px-2 py-1 text-xs ${errorMsg ? "border-destructive" : ""}`}
+          className={`flex-1 rounded border bg-background px-ms-2 py-1 text-ms-xs ${errorMsg ? "border-destructive" : ""}`}
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
@@ -3464,7 +3464,7 @@ function PayForm({
           type="button"
           disabled={payDisabled}
           onClick={() => pay(parsed)}
-          className="rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+          className="rounded bg-primary px-ms-2 py-1 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50"
         >
           Bayar
         </button>
@@ -3472,7 +3472,7 @@ function PayForm({
           type="button"
           disabled={busy}
           onClick={() => pay(remaining)}
-          className="rounded border border-emerald-500 px-2 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400"
+          className="rounded border border-emerald-500 px-ms-2 py-1 text-ms-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400"
         >
           Lunas
         </button>
@@ -3481,7 +3481,7 @@ function PayForm({
       <input
         type="text"
         placeholder="Catatan (opsional)"
-        className="w-full rounded border bg-background px-2 py-1 text-xs"
+        className="w-full rounded border bg-background px-ms-2 py-1 text-ms-xs"
         value={note}
         onChange={(e) => setNote(e.target.value)}
         maxLength={200}
@@ -3672,17 +3672,17 @@ function PesananTab({
   }
 
   if (items.length === 0) {
-    return <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada barang. Tambah di tab <b>Beli</b> dulu.</div>;
+    return <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada barang. Tambah di tab <b>Beli</b> dulu.</div>;
   }
 
   return (
-    <div className="space-y-3">
-      <form onSubmit={submit} className="space-y-3 rounded-lg border bg-card p-3">
-        <div className="text-xs font-semibold">📝 Tambah Pesanan</div>
+    <div className="space-ms-3">
+      <form onSubmit={submit} className="space-ms-3 rounded-lg border bg-card p-ms-3">
+        <div className="text-ms-xs font-semibold">📝 Tambah Pesanan</div>
 
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">Pelanggan (opsional)</span>
-          <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+          <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
             <option value="">— Tanpa pelanggan —</option>
             {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             <option value="__new__">+ Pelanggan baru…</option>
@@ -3690,9 +3690,9 @@ function PesananTab({
         </label>
 
         {customerId === "__new__" && (
-          <div className="grid grid-cols-1 gap-2 rounded-md border border-dashed bg-muted/30 p-2">
-            <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
-            <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. MCM / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
+          <div className="grid grid-cols-1 gap-ms-2 rounded-md border border-dashed bg-muted/30 p-ms-2">
+            <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
+            <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. MCM / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
             <div className="text-[0.6875rem] text-muted-foreground">Pelanggan & nomor MCM akan otomatis tersimpan ke daftar pelanggan.</div>
           </div>
         )}
@@ -3701,7 +3701,7 @@ function PesananTab({
           const c = customers.find((x) => x.id === customerId);
           if (!c) return null;
           return (
-            <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1.5 text-[0.6875rem] text-muted-foreground">
+            <div className="rounded-md border border-dashed bg-muted/30 px-ms-2 py-1.5 text-[0.6875rem] text-muted-foreground">
               No. MCM pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
             </div>
           );
@@ -3709,7 +3709,7 @@ function PesananTab({
 
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">Barang</span>
-          <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+          <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
             {items.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base", i.name)}
@@ -3720,17 +3720,17 @@ function PesananTab({
 
         {item && (
           <>
-            <div className="flex gap-1 text-xs">
-              <button type="button" onClick={() => setQtyMode("base")} className={`flex-1 rounded border px-2 py-1 ${qtyMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+            <div className="flex gap-ms-1 text-ms-xs">
+              <button type="button" onClick={() => setQtyMode("base")} className={`flex-1 rounded border px-ms-2 py-1 ${qtyMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
                 Per {humanBaseUnit(item.package_type, item.base_unit)}
               </button>
               {item.package_type !== "pcs" && (
-                <button type="button" onClick={() => setQtyMode("package")} className={`flex-1 rounded border px-2 py-1 ${qtyMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+                <button type="button" onClick={() => setQtyMode("package")} className={`flex-1 rounded border px-ms-2 py-1 ${qtyMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
                   Per {item.package_type}
                 </button>
               )}
               {item.package_type === "botol" && (
-                <button type="button" onClick={() => setQtyMode("karton")} className={`flex-1 rounded border px-2 py-1 ${qtyMode === "karton" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+                <button type="button" onClick={() => setQtyMode("karton")} className={`flex-1 rounded border px-ms-2 py-1 ${qtyMode === "karton" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
                   Per karton
                 </button>
               )}
@@ -3760,7 +3760,7 @@ function PesananTab({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-ms-2">
               <label className="block">
                 <span className="text-[0.6875rem] text-muted-foreground">
                   Jumlah ({qtyMode === "base" ? humanBaseUnit(item.package_type, item.base_unit) : qtyMode === "karton" ? "karton" : item.package_type})
@@ -3770,26 +3770,26 @@ function PesananTab({
                     value={qty}
                     onChange={setQty}
                     baseUnit="g"
-                    className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                    className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
                     required
                     min={0.01}
                     ariaLabel="Jumlah pesanan (gram/kg/ons)"
                   />
                 ) : (
-                  <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                  <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
                 )}
               </label>
               <label className="block">
                 <span className="text-[0.6875rem] text-muted-foreground">
                   Harga / {qtyMode === "base" ? humanBaseUnit(item.package_type, item.base_unit) : qtyMode === "karton" ? "karton" : item.package_type} (opsional)
                 </span>
-                <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={price} onChange={(e) => setPrice(e.target.value)} />
+                <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={price} onChange={(e) => setPrice(e.target.value)} />
               </label>
             </div>
 
-            <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (mis. dijemput sore)" value={note} onChange={(e) => setNote(e.target.value)} />
+            <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Catatan (mis. dijemput sore)" value={note} onChange={(e) => setNote(e.target.value)} />
 
-            <div className={`rounded-md p-2 text-[0.6875rem] space-y-0.5 ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
+            <div className={`rounded-md p-ms-2 text-[0.6875rem] space-y-0.5 ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
               <div>Butuh siapkan: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, qtyMode === "base" ? "base" : "package", item.name)}</b></div>
               <div>Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, qtyMode === "base" ? "base" : "package", item.name)}</b></div>
               {!enough && <div className="font-semibold">Kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)}</div>}
@@ -3797,26 +3797,26 @@ function PesananTab({
           </>
         )}
 
-        <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan pesanan</button>
+        <button className="w-full rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground">Simpan pesanan</button>
       </form>
 
-      <div className="flex gap-1 text-xs">
-        <button onClick={() => setFilter("aktif")} className={`flex-1 rounded border px-2 py-1 ${filter === "aktif" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Aktif</button>
-        <button onClick={() => setFilter("semua")} className={`flex-1 rounded border px-2 py-1 ${filter === "semua" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Semua</button>
+      <div className="flex gap-ms-1 text-ms-xs">
+        <button onClick={() => setFilter("aktif")} className={`flex-1 rounded border px-ms-2 py-1 ${filter === "aktif" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Aktif</button>
+        <button onClick={() => setFilter("semua")} className={`flex-1 rounded border px-ms-2 py-1 ${filter === "semua" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Semua</button>
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Tidak ada pesanan.</div>
+        <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Tidak ada pesanan.</div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-ms-2">
           {visible.map((o) => {
             const it = itemMap[o.item_id];
             const cust = o.customer_id ? custMap[o.customer_id] : null;
             return (
-              <li key={o.id} className="rounded-lg border bg-card p-3 space-y-2">
-                <div className="flex items-start justify-between gap-2">
+              <li key={o.id} className="rounded-lg border bg-card p-ms-3 space-ms-2">
+                <div className="flex items-start justify-between gap-ms-2">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold" title={it?.name ?? "?"}>{it?.name ?? "?"}</div>
+                    <div className="truncate text-ms-sm font-semibold" title={it?.name ?? "?"}>{it?.name ?? "?"}</div>
                     <div className="text-[0.6875rem] text-muted-foreground">
                       {cust?.name ?? "Tanpa pelanggan"} · {new Date(o.created_at).toLocaleString("id-ID")}
                     </div>
@@ -3828,18 +3828,18 @@ function PesananTab({
                   </div>
                   <StatusBadge status={o.status} />
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-ms-1">
                   {o.status === "menunggu" && (
-                    <button onClick={() => tandaiSiap(o)} className="rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent">✅ Tandai Siap</button>
+                    <button onClick={() => tandaiSiap(o)} className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent">✅ Tandai Siap</button>
                   )}
                   {o.status === "siap" && (
-                    <button onClick={() => setStatus(o.id, "menunggu")} className="rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent">↩️ Batal Siap</button>
+                    <button onClick={() => setStatus(o.id, "menunggu")} className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent">↩️ Batal Siap</button>
                   )}
                   {o.status !== "selesai" && (
-                    <button onClick={() => konversiKePenjualan(o)} className="rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent">💰 Jadikan Penjualan</button>
+                    <button onClick={() => konversiKePenjualan(o)} className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent">💰 Jadikan Penjualan</button>
                   )}
-                  <Link to="/gudang/pesanan/$id" params={{ id: o.id }} className="ml-auto rounded border px-2 py-1 text-[0.6875rem] hover:bg-accent">🔍 Detail</Link>
-                  <button onClick={() => hapus(o.id)} className="rounded border px-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
+                  <Link to="/gudang/pesanan/$id" params={{ id: o.id }} className="ml-auto rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent">🔍 Detail</Link>
+                  <button onClick={() => hapus(o.id)} className="rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10">Hapus</button>
                 </div>
               </li>
             );

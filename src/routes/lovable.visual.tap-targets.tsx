@@ -34,22 +34,22 @@ const SIZES = ["default", "sm", "lg", "icon"] as const;
 
 function TapTargetsHarness() {
   return (
-    <main className="mx-auto max-w-md space-y-6 p-4 text-sm">
+    <main className="mx-auto max-w-md space-ms-6 p-ms-4 text-ms-sm">
       <header>
-        <h1 className="text-lg font-bold">Tap Target Audit</h1>
-        <p className="text-xs text-muted-foreground">
+        <h1 className="text-ms-lg font-bold">Tap Target Audit</h1>
+        <p className="text-ms-xs text-muted-foreground">
           Semua tombol di halaman ini harus ≥44px tinggi di HP (≥44px lebar untuk icon).
           Baris <code>[data-action-row]</code> harus punya gap ≥8px.
         </p>
       </header>
 
       <section aria-label="matrix">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="mb-2 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Matriks variant × size
         </h2>
-        <div className="space-y-2">
+        <div className="space-ms-2">
           {VARIANTS.map((v) => (
-            <div key={v} data-action-row className="flex flex-wrap items-center gap-2">
+            <div key={v} data-action-row className="flex flex-wrap items-center gap-ms-2">
               {SIZES.map((s) => (
                 <Button
                   key={s}
@@ -68,7 +68,7 @@ function TapTargetsHarness() {
       </section>
 
       <section aria-label="action-row-2col">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="mb-2 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Baris aksi 2 kolom (Batal / Simpan)
         </h2>
         {/*
@@ -79,7 +79,7 @@ function TapTargetsHarness() {
         */}
         <div
           data-action-row
-          className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-[44px] sm:[&>*]:min-h-9"
+          className="grid grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-[44px] sm:[&>*]:min-h-9"
         >
           <Button variant="outline" size="sm" data-tap-target data-tap-target-kind="text">
             Batal
@@ -91,10 +91,10 @@ function TapTargetsHarness() {
       </section>
 
       <section aria-label="icon-chip-row">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="mb-2 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Chip ikon kartu (ecer / catatan)
         </h2>
-        <div data-action-row className="flex items-center gap-2">
+        <div data-action-row className="flex items-center gap-ms-2">
           <Button
             size="icon"
             variant="ghost"
@@ -129,10 +129,10 @@ function TapTargetsHarness() {
       </section>
 
       <section aria-label="single-column-footer">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="mb-2 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Footer dialog 1 kolom
         </h2>
-        <div data-action-row className="flex flex-col gap-2">
+        <div data-action-row className="flex flex-col gap-ms-2">
           <Button data-tap-target data-tap-target-kind="text">Simpan perubahan</Button>
           <Button variant="outline" data-tap-target data-tap-target-kind="text">
             Batal

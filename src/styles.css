@@ -76,20 +76,20 @@
      Mobile design tokens — typography & spacing scale.
      SATU sumber kebenaran untuk semua halaman (411/390px sebagai anchor).
      Pakai utility `text-ms-*`, `p-ms-*`, `gap-ms-*`, `space-ms-*` (di bawah)
-     alih-alih hardcode `text-[13px]` / `p-3.5`. Skala mengikuti `--app-font-size`
+     alih-alih hardcode `text-ms-sm` / `p-ms-3.5`. Skala mengikuti `--app-font-size`
      sehingga preset "sm/md/lg/xl" di /pengaturan-tampilan tetap konsisten.
      ========================================================================== */
   /* Type scale (line-height dipasangkan agar tidak drift). */
   --ms-text-2xs: 0.6875rem;  /* 11px */
-  --ms-text-xs:  0.75rem;    /* 12px */
-  --ms-text-sm:  0.8125rem;  /* 13px */
-  --ms-text-base:0.9375rem;  /* 15px — body mobile */
+  --ms-text-ms-xs:  0.75rem;    /* 12px */
+  --ms-text-ms-sm:  0.8125rem;  /* 13px */
+  --ms-text-ms-base:0.9375rem;  /* 15px — body mobile */
   --ms-text-md:  1rem;       /* 16px */
-  --ms-text-lg:  1.125rem;   /* 18px */
-  --ms-text-xl:  1.25rem;    /* 20px */
-  --ms-text-2xl: 1.5rem;     /* 24px — heading kartu */
-  --ms-text-3xl: 1.75rem;    /* 28px — heading halaman */
-  --ms-text-4xl: 2.125rem;   /* 34px — hero */
+  --ms-text-ms-lg:  1.125rem;   /* 18px */
+  --ms-text-ms-xl:  1.25rem;    /* 20px */
+  --ms-text-ms-2xl: 1.5rem;     /* 24px — heading kartu */
+  --ms-text-ms-3xl: 1.75rem;    /* 28px — heading halaman */
+  --ms-text-ms-4xl: 2.125rem;   /* 34px — hero */
   --ms-leading-tight:  1.15;
   --ms-leading-snug:   1.3;
   --ms-leading-normal: 1.5;
@@ -244,15 +244,15 @@
             <div className="p-ms-4 gap-ms-3"/>
    ========================================================================== */
 @utility text-ms-2xs  { font-size: var(--ms-text-2xs);  line-height: var(--ms-leading-snug); }
-@utility text-ms-xs   { font-size: var(--ms-text-xs);   line-height: var(--ms-leading-snug); }
-@utility text-ms-sm   { font-size: var(--ms-text-sm);   line-height: var(--ms-leading-normal); }
-@utility text-ms-base { font-size: var(--ms-text-base); line-height: var(--ms-leading-normal); }
+@utility text-ms-xs   { font-size: var(--ms-text-ms-xs);   line-height: var(--ms-leading-snug); }
+@utility text-ms-sm   { font-size: var(--ms-text-ms-sm);   line-height: var(--ms-leading-normal); }
+@utility text-ms-base { font-size: var(--ms-text-ms-base); line-height: var(--ms-leading-normal); }
 @utility text-ms-md   { font-size: var(--ms-text-md);   line-height: var(--ms-leading-normal); }
-@utility text-ms-lg   { font-size: var(--ms-text-lg);   line-height: var(--ms-leading-snug); }
-@utility text-ms-xl   { font-size: var(--ms-text-xl);   line-height: var(--ms-leading-snug); letter-spacing: var(--ms-tracking-tight); }
-@utility text-ms-2xl  { font-size: var(--ms-text-2xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
-@utility text-ms-3xl  { font-size: var(--ms-text-3xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
-@utility text-ms-4xl  { font-size: var(--ms-text-4xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-lg   { font-size: var(--ms-text-ms-lg);   line-height: var(--ms-leading-snug); }
+@utility text-ms-xl   { font-size: var(--ms-text-ms-xl);   line-height: var(--ms-leading-snug); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-2xl  { font-size: var(--ms-text-ms-2xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-3xl  { font-size: var(--ms-text-ms-3xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-4xl  { font-size: var(--ms-text-ms-4xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
 @utility leading-ms-tight   { line-height: var(--ms-leading-tight); }
 @utility leading-ms-snug    { line-height: var(--ms-leading-snug); }
 @utility leading-ms-normal  { line-height: var(--ms-leading-normal); }
@@ -491,15 +491,15 @@ html[data-font-size="xl"] { --app-font-size: 20px; }
    jadi user "lg" + compact tetap mengikuti skala lg × 0.92. */
 html.compact { font-size: calc(var(--app-font-size, 16px) * 0.92); }
 html.compact [data-compact-hide] { display: none !important; }
-html.compact .p-6 { padding: 0.875rem; }
-html.compact .p-5 { padding: 0.75rem; }
-html.compact .p-4 { padding: 0.625rem; }
-html.compact .py-6 { padding-top: 0.875rem; padding-bottom: 0.875rem; }
-html.compact .py-4 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-html.compact .gap-6 { gap: 0.75rem; }
-html.compact .gap-4 { gap: 0.5rem; }
-html.compact .space-y-6 > * + * { margin-top: 0.75rem; }
-html.compact .space-y-4 > * + * { margin-top: 0.5rem; }
+html.compact .p-ms-6 { padding: 0.875rem; }
+html.compact .p-ms-5 { padding: 0.75rem; }
+html.compact .p-ms-4 { padding: 0.625rem; }
+html.compact .py-ms-6 { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+html.compact .py-ms-4 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+html.compact .gap-ms-6 { gap: 0.75rem; }
+html.compact .gap-ms-4 { gap: 0.5rem; }
+html.compact .space-ms-6 > * + * { margin-top: 0.75rem; }
+html.compact .space-ms-4 > * + * { margin-top: 0.5rem; }
 
 /* === Kurangi animasi (manual override prefers-reduced-motion) ===
    Diaktifkan via class `reduce-motion` di <html>, ditulis oleh

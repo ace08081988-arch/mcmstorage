@@ -122,21 +122,21 @@ function TugasDaftarPage() {
   }, [tasks, q, filter]);
 
   if (isCheckingAdmin) {
-    return <div className="mx-auto max-w-3xl px-3 py-8 text-center text-sm text-muted-foreground">Memeriksa izin akses…</div>;
+    return <div className="mx-auto max-w-3xl px-ms-3 py-8 text-center text-ms-sm text-muted-foreground">Memeriksa izin akses…</div>;
   }
 
   if (!isAdmin) {
     return (
-      <div className="mx-auto max-w-2xl px-3 py-6">
-        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm">
-          <div className="mb-2 flex items-center gap-2 font-semibold text-destructive">
+      <div className="mx-auto max-w-2xl px-ms-3 py-ms-6">
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-ms-5 text-ms-sm">
+          <div className="mb-2 flex items-center gap-ms-2 font-semibold text-destructive">
             <ShieldAlert className="h-5 w-5" /> Akses ditolak
           </div>
           <p className="text-foreground">
             Halaman <b>Daftar Tugas Penyiapan</b> hanya bisa diakses oleh pengguna dengan peran <b>admin</b>.
           </p>
           <div className="mt-3">
-            <Link to="/tugas" className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-xs font-semibold">
+            <Link to="/tugas" className="inline-flex h-9 items-center gap-ms-1 rounded-md border bg-background px-ms-3 text-ms-xs font-semibold">
               <ArrowLeft className="h-4 w-4" /> Kembali ke Penyiapan
             </Link>
           </div>
@@ -153,46 +153,46 @@ function TugasDaftarPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4">
-      <div className="flex items-center justify-between gap-2">
+    <div className="mx-auto max-w-3xl space-ms-4 p-ms-4">
+      <div className="flex items-center justify-between gap-ms-2">
         <div>
-          <h1 className="text-lg font-semibold">Daftar Tugas Penyiapan</h1>
-          <p className="text-xs text-muted-foreground">Ringkasan tugas yang Anda buat — tanggal, jadwal, dan catatan.</p>
+          <h1 className="text-ms-lg font-semibold">Daftar Tugas Penyiapan</h1>
+          <p className="text-ms-xs text-muted-foreground">Ringkasan tugas yang Anda buat — tanggal, jadwal, dan catatan.</p>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-ms-1.5">
           <button
             type="button"
             onClick={() => void load()}
             disabled={refreshing}
-            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+            className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent disabled:opacity-50"
             title="Muat ulang daftar tugas"
           >
             {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Refresh
           </button>
-          <Link to="/tugas-baru" className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
+          <Link to="/tugas-baru" className="inline-flex items-center gap-ms-1 rounded-md bg-primary px-ms-2.5 py-1.5 text-ms-xs font-medium text-primary-foreground hover:opacity-90">
             <Plus className="h-3.5 w-3.5" /> Tugas baru
           </Link>
-          <Link to="/tugas" className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
+          <Link to="/tugas" className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent">
             <ArrowLeft className="h-3.5 w-3.5" /> Penyiapan
           </Link>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3">
+      <div className="flex flex-wrap items-center gap-ms-2 rounded-lg border bg-card p-ms-3">
         <div className="relative flex-1 min-w-[180px]">
           <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Cari judul, catatan, atau token…"
-            className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-sm"
+            className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-ms-sm"
           />
         </div>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as FilterMode)}
-          className="rounded-md border bg-background px-2 py-1.5 text-sm"
+          className="rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
           aria-label="Filter jadwal / status"
         >
           <option value="all">Semua</option>
@@ -204,71 +204,71 @@ function TugasDaftarPage() {
       </div>
 
       {loadErr ? (
-        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-ms-3 text-ms-xs text-destructive">
           Gagal memuat: {loadErr}
         </div>
       ) : null}
 
       {tasks === null ? (
-        <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">Memuat…</div>
+        <div className="rounded-lg border bg-card p-ms-6 text-center text-ms-sm text-muted-foreground">Memuat…</div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border border-dashed bg-card p-ms-6 text-center text-ms-sm text-muted-foreground">
           {tasks.length === 0
             ? "Belum ada tugas. Buat lewat tombol Tugas baru."
             : "Tidak ada tugas yang cocok dengan filter."}
         </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-ms-2">
           {filtered.map((t) => {
             const sched = scheduleBadge(t.scheduled_at);
             const stat = statusBadge(t.status);
             const noteFull = (t.note ?? "").trim();
             const noteShort = noteFull.length > 140 ? noteFull.slice(0, 140).trimEnd() + "…" : noteFull;
             return (
-              <li key={t.id} className="rounded-lg border bg-card p-3 text-sm">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+              <li key={t.id} className="rounded-lg border bg-card p-ms-3 text-ms-sm">
+                <div className="flex flex-wrap items-start justify-between gap-ms-2">
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{t.title}</div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-ms-1">
                         <CalendarClock className="h-3 w-3" /> Dibuat {fmtDate(t.created_at)}
                       </span>
                       {t.scheduled_at ? (
-                        <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-ms-1">
                           · Jadwal {fmtDate(t.scheduled_at)}
                         </span>
                       ) : null}
                       {t.completed_at ? (
-                        <span className="inline-flex items-center gap-1">· Selesai {fmtDate(t.completed_at)}</span>
+                        <span className="inline-flex items-center gap-ms-1">· Selesai {fmtDate(t.completed_at)}</span>
                       ) : null}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${sched.className}`}>{sched.label}</span>
-                    <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${stat.className}`}>{stat.label}</span>
+                  <div className="flex flex-wrap items-center gap-ms-1">
+                    <span className={`rounded-md px-1.5 py-0.5 text-ms-2xs font-medium ${sched.className}`}>{sched.label}</span>
+                    <span className={`rounded-md px-1.5 py-0.5 text-ms-2xs font-medium ${stat.className}`}>{stat.label}</span>
                   </div>
                 </div>
 
                 {noteShort ? (
-                  <div className="mt-2 flex items-start gap-1.5 rounded-md bg-muted/50 px-2 py-1.5 text-[12px] text-foreground/90">
+                  <div className="mt-2 flex items-start gap-ms-1.5 rounded-md bg-muted/50 px-ms-2 py-1.5 text-ms-xs text-foreground/90">
                     <StickyNote className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
                     <p className="whitespace-pre-wrap break-words">{noteShort}</p>
                   </div>
                 ) : null}
 
                 {t.completion_note && t.completion_note.trim().length > 0 ? (
-                  <div className="mt-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1.5 text-[12px] text-emerald-900 dark:text-emerald-200">
-                    <div className="text-[10px] font-semibold uppercase tracking-wide">Catatan penyelesaian</div>
+                  <div className="mt-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-ms-2 py-1.5 text-ms-xs text-emerald-900 dark:text-emerald-200">
+                    <div className="text-ms-2xs font-semibold uppercase tracking-wide">Catatan penyelesaian</div>
                     <p className="whitespace-pre-wrap break-words">{t.completion_note}</p>
                   </div>
                 ) : null}
 
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
-                  <code className="truncate rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">{t.share_token}</code>
+                <div className="mt-2 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs">
+                  <code className="truncate rounded bg-muted px-1.5 py-0.5 font-mono text-ms-2xs">{t.share_token}</code>
                   <button
                     type="button"
                     onClick={() => handleCopy(t.share_token)}
-                    className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] hover:bg-accent"
+                    className="inline-flex items-center gap-ms-1 rounded-md border px-1.5 py-0.5 text-ms-2xs hover:bg-accent"
                     title="Salin URL pegawai"
                   >
                     <Copy className="h-3 w-3" /> Salin URL
@@ -277,7 +277,7 @@ function TugasDaftarPage() {
                     href={publicTaskUrl(t.share_token)}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] hover:bg-accent"
+                    className="inline-flex items-center gap-ms-1 rounded-md border px-1.5 py-0.5 text-ms-2xs hover:bg-accent"
                     title="Buka URL pegawai"
                   >
                     <ExternalLink className="h-3 w-3" /> Buka
@@ -290,7 +290,7 @@ function TugasDaftarPage() {
       )}
 
       {tasks && tasks.length > 0 ? (
-        <div className="text-center text-[11px] text-muted-foreground">
+        <div className="text-center text-ms-2xs text-muted-foreground">
           Menampilkan {filtered.length} dari {tasks.length} tugas.
         </div>
       ) : null}

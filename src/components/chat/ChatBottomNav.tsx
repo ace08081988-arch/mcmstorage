@@ -57,7 +57,7 @@ export function ChatBottomNav() {
                   : label
             }
             className={
-              "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[11px] leading-snug transition-colors duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
+              "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-ms-2 py-1.5 text-ms-2xs leading-snug transition-colors duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
               (active
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground")
@@ -78,7 +78,7 @@ export function ChatBottomNav() {
                 />
               ) : badge && badge > 0 ? (
                 <span
-                  className="absolute right-[calc(50%-1.75rem)] top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white"
+                  className="absolute right-[calc(50%-1.75rem)] top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-ms-2xs font-semibold text-white"
                   aria-hidden="true"
                 >
                   {badge > 99 ? "99+" : badge}

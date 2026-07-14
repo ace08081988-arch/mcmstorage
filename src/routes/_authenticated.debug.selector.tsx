@@ -217,11 +217,11 @@ function DebugSelectorPage() {
   const ecerFiltered = applyFilter(ecerRows);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-3 pb-24">
-      <div className="flex items-center justify-between gap-2">
+    <div className="mx-auto max-w-4xl space-ms-4 p-ms-3 pb-24">
+      <div className="flex items-center justify-between gap-ms-2">
         <Link
           to="/"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-ms-1 text-ms-xs text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Beranda
         </Link>
@@ -230,7 +230,7 @@ function DebugSelectorPage() {
           variant="outline"
           onClick={() => void load()}
           disabled={loading}
-          className="h-8 gap-1"
+          className="h-8 gap-ms-1"
         >
           <RefreshCw className={"h-3.5 w-3.5 " + (loading ? "animate-spin" : "")} />
           Muat ulang
@@ -238,35 +238,35 @@ function DebugSelectorPage() {
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-lg font-semibold">Debug Selector — Active vs Sent per title_id</h1>
-        <p className="text-xs text-muted-foreground">
+        <h1 className="text-ms-lg font-semibold">Debug Selector — Active vs Sent per title_id</h1>
+        <p className="text-ms-xs text-muted-foreground">
           Sumber: <code className="rounded bg-muted px-1">countActiveByTitle</code> +{" "}
           <code className="rounded bg-muted px-1">filterSentPreps</code>. Angka di sini
           adalah patokan; kalau badge di layar lain berbeda, badge-nya yang salah.
         </p>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-ms-2xs text-muted-foreground">
           Tombol <span className="font-medium">Buka</span> pada tiap baris membuka halaman
           domain di tab baru dengan judul terkait sudah terfilter — pakai untuk
           Tandai/Batalkan Terkirim. Saat kembali ke tab ini, angka dimuat ulang otomatis.
         </p>
         {lastLoadedAt && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-ms-2xs text-muted-foreground">
             Terakhir dimuat: {new Date(lastLoadedAt).toLocaleTimeString("id-ID")}
           </p>
         )}
       </header>
 
-      <div className="flex flex-col gap-2 rounded-md border bg-card p-2 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-ms-2 rounded-md border bg-card p-ms-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Cari nama judul atau title_id…"
-            className="h-8 w-full rounded-md border bg-background pl-7 pr-2 text-xs"
+            className="h-8 w-full rounded-md border bg-background pl-7 pr-2 text-ms-xs"
           />
         </div>
-        <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <label className="flex items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
           <input
             type="checkbox"
             checked={orphanOnly}
@@ -329,34 +329,34 @@ function DomainSection({
   // kembali ke tab debug, angka otomatis di-refetch (visibilitychange).
   const domainPath = domain === "request" ? "/request" : "/ecer";
   return (
-    <section className="space-y-2">
+    <section className="space-ms-2">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold">{label}</h2>
-        <p className="text-[11px] text-muted-foreground">
+        <h2 className="text-ms-sm font-semibold">{label}</h2>
+        <p className="text-ms-2xs text-muted-foreground">
           {totalPreps} prep · <span className="text-emerald-600 dark:text-emerald-400">{totalActive} aktif</span> ·{" "}
           <span className="text-amber-600 dark:text-amber-400">{totalSent} terkirim</span>
         </p>
       </div>
-      <p className="rounded border border-amber-500/30 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-700 dark:text-amber-300">
+      <p className="rounded border border-amber-500/30 bg-amber-500/5 px-ms-2 py-1 text-ms-2xs text-amber-700 dark:text-amber-300">
         Debug-only: tombol Tandai/Batalkan pada tabel ini menulis <code>sold_at</code> langsung
         pada 1 prep dari <code>title_id</code> tersebut — TIDAK mencatat penjualan/hutang.
         Gunakan hanya untuk uji konsistensi angka selector. Untuk alur nyata pakai tombol Buka.
       </p>
 
       {rows.length === 0 ? (
-        <div className="rounded-md border border-dashed bg-card p-3 text-center text-[11px] text-muted-foreground">
+        <div className="rounded-md border border-dashed bg-card p-ms-3 text-center text-ms-2xs text-muted-foreground">
           Tidak ada baris untuk ditampilkan.
         </div>
       ) : (
         <div className="overflow-hidden rounded-md border bg-card">
-          <table className="w-full border-collapse text-xs">
-            <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <table className="w-full border-collapse text-ms-xs">
+            <thead className="bg-muted/50 text-ms-2xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-2 py-1.5 text-left">Judul</th>
-                <th className="px-2 py-1.5 text-right">Aktif</th>
-                <th className="px-2 py-1.5 text-right">Terkirim</th>
-                <th className="px-2 py-1.5 text-right">Total</th>
-                <th className="px-2 py-1.5 text-right">Aksi</th>
+                <th className="px-ms-2 py-1.5 text-left">Judul</th>
+                <th className="px-ms-2 py-1.5 text-right">Aktif</th>
+                <th className="px-ms-2 py-1.5 text-right">Terkirim</th>
+                <th className="px-ms-2 py-1.5 text-right">Total</th>
+                <th className="px-ms-2 py-1.5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -369,35 +369,35 @@ function DomainSection({
                   className={"border-t " + (busy ? "bg-muted/40" : "")}
                   data-testid={`row-${domain}-${r.title_id}`}
                 >
-                  <td className="px-2 py-1.5">
+                  <td className="px-ms-2 py-1.5">
                     <div className="truncate font-medium">{r.name}</div>
-                    <div className="truncate font-mono text-[10px] text-muted-foreground">
+                    <div className="truncate font-mono text-ms-2xs text-muted-foreground">
                       {r.title_id}
                     </div>
                   </td>
                   <td
                     data-testid={`cell-active-${domain}-${r.title_id}`}
-                    className={"px-2 py-1.5 text-right tabular-nums " + (r.active > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}
+                    className={"px-ms-2 py-1.5 text-right tabular-nums " + (r.active > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}
                   >
                     {r.active}
                   </td>
                   <td
                     data-testid={`cell-sent-${domain}-${r.title_id}`}
-                    className={"px-2 py-1.5 text-right tabular-nums " + (r.sent > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}
+                    className={"px-ms-2 py-1.5 text-right tabular-nums " + (r.sent > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}
                   >
                     {r.sent}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">
+                  <td className="px-ms-2 py-1.5 text-right tabular-nums text-muted-foreground">
                     {r.total}
                   </td>
-                  <td className="px-2 py-1.5 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                  <td className="px-ms-2 py-1.5 text-right">
+                    <div className="flex items-center justify-end gap-ms-1">
                       <button
                         type="button"
                         data-testid={`debug-mark-${domain}-${r.title_id}`}
                         disabled={busy || r.active <= 0}
                         onClick={() => void onQuickAction(domain, r.title_id, "mark")}
-                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-40 dark:text-emerald-300"
+                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-ms-2xs text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-40 dark:text-emerald-300"
                         title="Tandai 1 prep aktif → terkirim (debug: tanpa mencatat sales/hutang)"
                       >
                         <Check className="h-3 w-3" /> Tandai
@@ -407,7 +407,7 @@ function DomainSection({
                         data-testid={`debug-cancel-${domain}-${r.title_id}`}
                         disabled={busy || r.sent <= 0}
                         onClick={() => void onQuickAction(domain, r.title_id, "cancel")}
-                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] text-amber-700 hover:bg-amber-500/10 disabled:opacity-40 dark:text-amber-300"
+                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-ms-2xs text-amber-700 hover:bg-amber-500/10 disabled:opacity-40 dark:text-amber-300"
                         title="Batalkan 1 prep terkirim → aktif (debug: tidak menyentuh sales/hutang)"
                       >
                         <Undo2 className="h-3 w-3" /> Batalkan
@@ -418,7 +418,7 @@ function DomainSection({
                       target="_blank"
                       rel="noopener"
                         data-testid={`debug-open-${domain}-${r.title_id}`}
-                      className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                      className="inline-flex items-center gap-ms-1 rounded border px-1.5 py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted hover:text-foreground"
                       title="Buka di tab baru untuk Tandai/Batalkan Terkirim. Angka di sini otomatis dimuat ulang saat kembali."
                     >
                       Buka <ExternalLink className="h-3 w-3" />

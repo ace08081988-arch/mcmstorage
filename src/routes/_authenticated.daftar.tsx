@@ -42,7 +42,7 @@ function DaftarPage() {
 
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col bg-background">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background px-2 py-2">
+      <header className="sticky top-0 z-10 flex items-center gap-ms-2 border-b bg-background px-ms-2 py-ms-2">
         <Button
           variant="ghost"
           size="icon"
@@ -52,32 +52,32 @@ function DaftarPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold">Daftar</h1>
+        <h1 className="text-ms-xl font-semibold">Daftar</h1>
       </header>
 
-      <div className="px-4 py-3">
-        <p className="text-sm text-muted-foreground">
+      <div className="px-ms-4 py-ms-3">
+        <p className="text-ms-sm text-muted-foreground">
           Gunakan daftar untuk menyusun urutan tampilan di tab Chat.
         </p>
       </div>
 
-      <div className="px-2 pb-4">
+      <div className="px-ms-2 pb-4">
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <button
               type="button"
-              className="flex w-full items-center gap-4 rounded-2xl px-2 py-3 text-left hover:bg-muted/60"
+              className="flex w-full items-center gap-ms-4 rounded-2xl px-ms-2 py-ms-3 text-left hover:bg-muted/60"
             >
               <span className="grid h-12 w-12 place-items-center rounded-full bg-muted text-foreground">
                 <Plus className="h-6 w-6" />
               </span>
-              <span className="text-base font-medium">Daftar baru</span>
+              <span className="text-ms-base font-medium">Daftar baru</span>
             </button>
           </DialogTrigger>
           <CreateListDialog onClose={() => setCreateOpen(false)} />
         </Dialog>
 
-        <div className="mt-2 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="mt-2 px-ms-3 text-ms-xs font-medium uppercase tracking-wide text-muted-foreground">
           Daftar Anda
         </div>
 
@@ -106,7 +106,7 @@ function DaftarPage() {
           />
 
           {isLoading ? (
-            <li className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
+            <li className="flex items-center gap-ms-2 px-ms-3 py-ms-4 text-ms-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Memuat daftar…
             </li>
           ) : null}
@@ -116,7 +116,7 @@ function DaftarPage() {
               <button
                 type="button"
                 onClick={() => setEditing(l)}
-                className="flex w-full items-center gap-4 rounded-2xl px-2 py-3 text-left hover:bg-muted/60"
+                className="flex w-full items-center gap-ms-4 rounded-2xl px-ms-2 py-ms-3 text-left hover:bg-muted/60"
               >
                 <span
                   className="grid h-12 w-12 place-items-center rounded-full text-white"
@@ -125,8 +125,8 @@ function DaftarPage() {
                   <ChatListIcon name={l.icon} className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base font-medium">{l.name}</span>
-                  <span className="block text-sm text-muted-foreground">
+                  <span className="block truncate text-ms-base font-medium">{l.name}</span>
+                  <span className="block text-ms-sm text-muted-foreground">
                     {l.member_count} anggota
                   </span>
                 </span>
@@ -135,7 +135,7 @@ function DaftarPage() {
           ))}
         </ul>
 
-        <div className="mt-6 border-t px-3 pt-4 text-xs text-muted-foreground">
+        <div className="mt-6 border-t px-ms-3 pt-4 text-ms-xs text-muted-foreground">
           <div className="mb-1 font-medium uppercase tracking-wide">Preset yang tersedia</div>
           <p>
             Preset seperti "Belum dibaca", "Favorit", dan "Grup" selalu tersedia sebagai filter
@@ -164,7 +164,7 @@ function PresetRow({
     <li>
       <Link
         to="/chat"
-        className="flex items-center gap-4 rounded-2xl px-2 py-3 hover:bg-muted/60"
+        className="flex items-center gap-ms-4 rounded-2xl px-ms-2 py-ms-3 hover:bg-muted/60"
       >
         <span
           className="grid h-12 w-12 place-items-center rounded-full text-white"
@@ -173,11 +173,11 @@ function PresetRow({
           {icon}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-base font-medium">{title}</span>
-          <span className="block text-sm text-muted-foreground">{subtitle}</span>
+          <span className="block truncate text-ms-base font-medium">{title}</span>
+          <span className="block text-ms-sm text-muted-foreground">{subtitle}</span>
         </span>
         {count > 0 ? (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          <span className="rounded-full bg-muted px-ms-2 py-0.5 text-ms-xs text-muted-foreground">
             {count}
           </span>
         ) : null}
@@ -220,9 +220,9 @@ function CreateListDialog({ onClose }: { onClose: () => void }) {
       <DialogHeader>
         <DialogTitle>Daftar baru</DialogTitle>
       </DialogHeader>
-      <div className="space-y-4">
+      <div className="space-ms-4">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Nama daftar</label>
+          <label className="text-ms-sm font-medium">Nama daftar</label>
           <Input
             autoFocus
             value={name}
@@ -233,8 +233,8 @@ function CreateListDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Warna</label>
-          <div className="flex flex-wrap gap-2">
+          <label className="text-ms-sm font-medium">Warna</label>
+          <div className="flex flex-wrap gap-ms-2">
             {CHAT_LIST_COLORS.map((c) => (
               <button
                 key={c}
@@ -255,8 +255,8 @@ function CreateListDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Ikon</label>
-          <div className="flex flex-wrap gap-2">
+          <label className="text-ms-sm font-medium">Ikon</label>
+          <div className="flex flex-wrap gap-ms-2">
             {CHAT_LIST_ICONS.map((n) => (
               <button
                 key={n}
@@ -275,7 +275,7 @@ function CreateListDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Tambahkan chat (opsional)</label>
+          <label className="text-ms-sm font-medium">Tambahkan chat (opsional)</label>
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -287,7 +287,7 @@ function CreateListDialog({ onClose }: { onClose: () => void }) {
           </div>
           <ul className="max-h-52 overflow-auto rounded-md border">
             {filtered.length === 0 ? (
-              <li className="p-3 text-center text-xs text-muted-foreground">
+              <li className="p-ms-3 text-center text-ms-xs text-muted-foreground">
                 Tidak ada chat cocok.
               </li>
             ) : (
@@ -383,15 +383,15 @@ function EditListDialog({
         <DialogHeader>
           <DialogTitle>Ubah daftar</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-ms-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Nama daftar</label>
+            <label className="text-ms-sm font-medium">Nama daftar</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Warna</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-ms-sm font-medium">Warna</label>
+            <div className="flex flex-wrap gap-ms-2">
               {CHAT_LIST_COLORS.map((c) => (
                 <button
                   key={c}
@@ -412,8 +412,8 @@ function EditListDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Ikon</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-ms-sm font-medium">Ikon</label>
+            <div className="flex flex-wrap gap-ms-2">
               {CHAT_LIST_ICONS.map((n) => (
                 <button
                   key={n}
@@ -432,7 +432,7 @@ function EditListDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Anggota ({selected.size})</label>
+            <label className="text-ms-sm font-medium">Anggota ({selected.size})</label>
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -444,7 +444,7 @@ function EditListDialog({
             </div>
             <ul className="max-h-52 overflow-auto rounded-md border">
               {filtered.length === 0 ? (
-                <li className="p-3 text-center text-xs text-muted-foreground">
+                <li className="p-ms-3 text-center text-ms-xs text-muted-foreground">
                   Tidak ada chat cocok.
                 </li>
               ) : (
@@ -467,7 +467,7 @@ function EditListDialog({
             </ul>
           </div>
         </div>
-        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+        <DialogFooter className="flex-col-reverse gap-ms-2 sm:flex-row sm:justify-between">
           <Button
             variant="ghost"
             className="text-destructive hover:text-destructive"
@@ -476,7 +476,7 @@ function EditListDialog({
           >
             <Trash2 className="mr-2 h-4 w-4" /> Hapus daftar
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-ms-2">
             <Button variant="ghost" onClick={onClose}>
               <X className="mr-2 h-4 w-4" /> Batal
             </Button>
@@ -509,7 +509,7 @@ function ConversationCheckRow({
         type="button"
         onClick={onToggle}
         className={
-          "flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-muted/60 " +
+          "flex w-full items-center gap-ms-3 px-ms-3 py-ms-2 text-left hover:bg-muted/60 " +
           (checked ? "bg-primary/5" : "")
         }
       >
@@ -522,8 +522,8 @@ function ConversationCheckRow({
           {checked ? <Check className="h-3.5 w-3.5" /> : null}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium">{conv.display_title}</span>
-          <span className="block truncate text-xs text-muted-foreground">
+          <span className="block truncate text-ms-sm font-medium">{conv.display_title}</span>
+          <span className="block truncate text-ms-xs text-muted-foreground">
             {conv.kind === "group" ? "Grup" : conv.kind === "order" ? "Order" : "Chat"}
             {conv.pinned_at ? " · Favorit" : ""}
           </span>

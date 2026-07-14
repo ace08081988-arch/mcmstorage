@@ -84,17 +84,17 @@ export function ApkDownloadBanner() {
   return (
     <a
       href={apk.url}
-      className="flex items-start gap-3 rounded-xl border border-emerald-300/60 bg-emerald-50 p-3 text-emerald-900 transition hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/60"
+      className="flex items-start gap-ms-3 rounded-xl border border-emerald-300/60 bg-emerald-50 p-ms-3 text-emerald-900 transition hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-950/60"
     >
-      <div className="rounded-lg bg-emerald-600/10 p-2 text-emerald-700 dark:text-emerald-300">
+      <div className="rounded-lg bg-emerald-600/10 p-ms-2 text-emerald-700 dark:text-emerald-300">
         <Smartphone className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-sm font-semibold">
+        <div className="flex items-center gap-ms-1.5 text-ms-sm font-semibold">
           Unduh aplikasi Android
           <Download className="h-3.5 w-3.5" />
         </div>
-        <div className="mt-0.5 text-[11px] text-emerald-900/80 dark:text-emerald-100/80">
+        <div className="mt-0.5 text-ms-2xs text-emerald-900/80 dark:text-emerald-100/80">
           MCM Storage untuk HP
           {apk.sizeMB ? ` · ${apk.sizeMB} MB` : ""}
           {apk.updatedAt

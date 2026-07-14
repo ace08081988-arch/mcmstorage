@@ -184,7 +184,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
         <button
           className={
             triggerClassName ??
-            "inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+            "inline-flex h-8 items-center justify-center rounded-md border px-ms-2 text-ms-2xs font-medium hover:bg-accent"
           }
           title="Pengaturan tampilan"
           aria-label="Pengaturan tampilan"
@@ -198,9 +198,9 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           <DialogDescription>Atur tema, font, ukuran, warna aksen, dan kelengkungan sudut.</DialogDescription>
         </DialogHeader>
 
-        <section className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground">Tema</p>
-          <div className="grid grid-cols-3 gap-2">
+        <section className="space-ms-2">
+          <p className="text-ms-xs font-semibold text-muted-foreground">Tema</p>
+          <div className="grid grid-cols-3 gap-ms-2">
             {([
               { v: "light",  label: "☀️ Terang" },
               { v: "dark",   label: "🌙 Gelap" },
@@ -209,7 +209,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
               <button
                 key={o.v}
                 onClick={() => { setTheme(o.v); save(LS.theme, o.v); }}
-                className={`rounded-md border px-2 py-1.5 text-xs font-medium hover:bg-accent ${theme === o.v ? "border-primary bg-accent" : ""}`}
+                className={`rounded-md border px-ms-2 py-1.5 text-ms-xs font-medium hover:bg-accent ${theme === o.v ? "border-primary bg-accent" : ""}`}
               >
                 {o.label}
               </button>
@@ -217,9 +217,9 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           </div>
         </section>
 
-        <section className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground">Jenis font</p>
-          <div className="grid grid-cols-2 gap-2">
+        <section className="space-ms-2">
+          <p className="text-ms-xs font-semibold text-muted-foreground">Jenis font</p>
+          <div className="grid grid-cols-2 gap-ms-2">
             {([
               { v: "sans",    label: "Sans (Inter)",        family: "Inter, system-ui, sans-serif" },
               { v: "serif",   label: "Serif (Merriweather)", family: "Merriweather, Georgia, serif" },
@@ -230,7 +230,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
                 key={o.v}
                 onClick={() => { setFont(o.v); save(LS.font, o.v); }}
                 style={{ fontFamily: o.family }}
-                className={`rounded-md border px-2 py-2 text-left text-xs font-medium hover:bg-accent ${font === o.v ? "border-primary bg-accent" : ""}`}
+                className={`rounded-md border px-ms-2 py-ms-2 text-left text-ms-xs font-medium hover:bg-accent ${font === o.v ? "border-primary bg-accent" : ""}`}
               >
                 {o.label}
               </button>
@@ -238,9 +238,9 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           </div>
         </section>
 
-        <section className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground">Ukuran teks</p>
-          <div className="grid grid-cols-4 gap-2">
+        <section className="space-ms-2">
+          <p className="text-ms-xs font-semibold text-muted-foreground">Ukuran teks</p>
+          <div className="grid grid-cols-4 gap-ms-2">
             {([
               { v: "sm", label: "A−" },
               { v: "md", label: "A" },
@@ -250,7 +250,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
               <button
                 key={o.v}
                 onClick={() => { setSize(o.v); save(LS.size, o.v); }}
-                className={`rounded-md border px-2 py-1.5 text-xs font-semibold hover:bg-accent ${size === o.v ? "border-primary bg-accent" : ""}`}
+                className={`rounded-md border px-ms-2 py-1.5 text-ms-xs font-semibold hover:bg-accent ${size === o.v ? "border-primary bg-accent" : ""}`}
               >
                 {o.label}
               </button>
@@ -258,9 +258,9 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           </div>
         </section>
 
-        <section className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground">Warna aksen</p>
-          <div className="flex flex-wrap gap-2">
+        <section className="space-ms-2">
+          <p className="text-ms-xs font-semibold text-muted-foreground">Warna aksen</p>
+          <div className="flex flex-wrap gap-ms-2">
             {ACCENTS.map((a) => (
               <button
                 key={a.id}
@@ -274,8 +274,8 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           </div>
         </section>
 
-        <section className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground">Kelengkungan sudut: {radius.toFixed(2)}rem</p>
+        <section className="space-ms-2">
+          <p className="text-ms-xs font-semibold text-muted-foreground">Kelengkungan sudut: {radius.toFixed(2)}rem</p>
           <input
             type="range"
             min={0}
@@ -291,14 +291,14 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           />
         </section>
 
-        <section className="space-y-2">
+        <section className="space-ms-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-muted-foreground">Foto latar</p>
-            <div className="flex items-center gap-3">
+            <p className="text-ms-xs font-semibold text-muted-foreground">Foto latar</p>
+            <div className="flex items-center gap-ms-3">
               <button
                 ref={resetBtnRef}
                 onClick={handleResetBg}
-                className="text-[11px] font-medium text-muted-foreground hover:text-foreground hover:underline"
+                className="text-ms-2xs font-medium text-muted-foreground hover:text-foreground hover:underline"
                 title="Reset preset, overlay, dan blur ke default"
                 aria-label="Reset foto latar, kegelapan overlay, dan blur ke default"
                 aria-controls="appearance-bg-preview"
@@ -314,7 +314,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
                     flashAnnouncement("Foto latar dihapus.");
                     requestAnimationFrame(() => resetBtnRef.current?.focus());
                   }}
-                  className="text-[11px] font-medium text-destructive hover:underline"
+                  className="text-ms-2xs font-medium text-destructive hover:underline"
                   aria-label="Hapus foto latar"
                   aria-controls="appearance-bg-preview"
                 >
@@ -358,9 +358,9 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
               />
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <p className="text-sm font-semibold text-foreground">Pratinjau langsung</p>
+              <p className="text-ms-sm font-semibold text-foreground">Pratinjau langsung</p>
               <p
-                className="text-[11px] text-muted-foreground"
+                className="text-ms-2xs text-muted-foreground"
                 role="status"
                 aria-live="polite"
                 aria-atomic="true"
@@ -372,7 +372,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-ms-2">
             {BG_PRESETS.map((p) => {
               const active = (p.url === "" && !bgImage) || bgImage === p.url;
               return (
@@ -383,7 +383,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
                     if (p.url) save(LS.bgImage, p.url);
                     else { localStorage.removeItem(LS.bgImage); applyAppearance(); }
                   }}
-                  className={`relative h-14 overflow-hidden rounded-md border text-[10px] font-medium hover:opacity-90 ${active ? "border-primary ring-2 ring-primary" : "border-muted"}`}
+                  className={`relative h-14 overflow-hidden rounded-md border text-ms-2xs font-medium hover:opacity-90 ${active ? "border-primary ring-2 ring-primary" : "border-muted"}`}
                   style={p.url ? { backgroundImage: `url("${p.url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
                   title={p.label}
                 >
@@ -395,7 +395,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
             })}
           </div>
 
-          <label className="mt-1 inline-flex w-full cursor-pointer items-center justify-center rounded-md border border-dashed px-3 py-2 text-xs font-medium hover:bg-accent">
+          <label className="mt-1 inline-flex w-full cursor-pointer items-center justify-center rounded-md border border-dashed px-ms-3 py-ms-2 text-ms-xs font-medium hover:bg-accent">
             📷 Unggah foto dari perangkat
             <input
               type="file"
@@ -408,7 +408,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           {bgImage && (
             <>
               <div className="space-y-1">
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-ms-2xs text-muted-foreground">
                   Kegelapan overlay: {Math.round(bgOverlay * 100)}%
                 </p>
                 <input
@@ -426,7 +426,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-ms-2xs text-muted-foreground">
                   Blur foto: {bgBlur}px
                 </p>
                 <input
@@ -453,7 +453,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
             applyAppearance();
             setOpen(false);
           }}
-          className="mt-2 w-full rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+          className="mt-2 w-full rounded-md border px-ms-3 py-1.5 text-ms-xs font-medium hover:bg-accent"
         >
           Kembalikan ke bawaan
         </button>

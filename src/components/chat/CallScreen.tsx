@@ -1347,23 +1347,23 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         ) : null}
         {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="grid h-24 w-24 place-items-center rounded-full bg-white/10 text-3xl font-semibold uppercase">
+            <div className="flex flex-col items-center gap-ms-3 text-center">
+              <div className="grid h-24 w-24 place-items-center rounded-full bg-white/10 text-ms-3xl font-semibold uppercase">
                 {peerName.trim().charAt(0) || "?"}
               </div>
-              <p className="text-lg font-semibold">{peerName}</p>
-              <p className="text-sm text-white/70">{status}</p>
+              <p className="text-ms-lg font-semibold">{peerName}</p>
+              <p className="text-ms-sm text-white/70">{status}</p>
             </div>
           </div>
         ) : null}
         {kind === "audio" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="grid h-28 w-28 place-items-center rounded-full bg-white/10 text-4xl font-semibold uppercase">
+            <div className="flex flex-col items-center gap-ms-3 text-center">
+              <div className="grid h-28 w-28 place-items-center rounded-full bg-white/10 text-ms-4xl font-semibold uppercase">
                 {peerName.trim().charAt(0) || "?"}
               </div>
-              <p className="text-xl font-semibold">{peerName}</p>
-              <p className="text-sm text-white/70">{status}</p>
+              <p className="text-ms-xl font-semibold">{peerName}</p>
+              <p className="text-ms-sm text-white/70">{status}</p>
             </div>
           </div>
         ) : null}
@@ -1396,13 +1396,13 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               {...(swapped ? cropDragHandlersBig : {})}
             />
             {!swapped ? (
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 rounded-b-lg bg-black/50 px-1.5 py-1 backdrop-blur">
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-ms-1 rounded-b-lg bg-black/50 px-1.5 py-1 backdrop-blur">
                 <button
                   type="button"
                   aria-label="Tukar video besar/kecil"
                   title="Tukar besar/kecil"
                   onClick={() => setSwapped((s) => !s)}
-                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                  className="rounded p-ms-1 text-white/90 hover:bg-white/10"
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
                 </button>
@@ -1412,7 +1412,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   title="Perkecil PiP"
                   onClick={() => setPipMinimized(true)}
                   data-testid="call-pip-minimize"
-                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                  className="rounded p-ms-1 text-white/90 hover:bg-white/10"
                 >
                   <Minimize2 className="h-3.5 w-3.5" />
                 </button>
@@ -1422,7 +1422,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   title="Sembunyikan PiP"
                   onClick={() => setPipHidden(true)}
                   data-testid="call-pip-hide"
-                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                  className="rounded p-ms-1 text-white/90 hover:bg-white/10"
                 >
                   <EyeOff className="h-3.5 w-3.5" />
                 </button>
@@ -1431,7 +1431,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   aria-label="Ubah ukuran preview"
                   title={`Ukuran: ${pipSize.toUpperCase()}`}
                   onClick={cyclePipSize}
-                  className="flex items-center gap-1 rounded p-1 text-[10px] font-semibold text-white/90 hover:bg-white/10"
+                  className="flex items-center gap-ms-1 rounded p-ms-1 text-ms-2xs font-semibold text-white/90 hover:bg-white/10"
                 >
                   <Maximize2 className="h-3.5 w-3.5" />
                   <span>{pipSize.toUpperCase()}</span>
@@ -1450,7 +1450,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             title="Perbesar PiP"
             onClick={() => setPipMinimized(false)}
             data-testid="call-pip-expand"
-            className={`absolute ${pipCornerClass} z-10 flex h-9 items-center gap-1 rounded-full bg-black/60 px-2.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/80`}
+            className={`absolute ${pipCornerClass} z-10 flex h-9 items-center gap-ms-1 rounded-full bg-black/60 px-ms-2.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/80`}
           >
             <Maximize2 className="h-3.5 w-3.5" />
             <span>PiP</span>
@@ -1464,7 +1464,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             title="Tampilkan PiP"
             onClick={() => setPipHidden(false)}
             data-testid="call-pip-show"
-            className={`absolute ${pipCornerClass} z-10 flex h-9 items-center gap-1 rounded-full bg-black/60 px-2.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/80`}
+            className={`absolute ${pipCornerClass} z-10 flex h-9 items-center gap-ms-1 rounded-full bg-black/60 px-ms-2.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/80`}
           >
             <Eye className="h-3.5 w-3.5" />
             <span>PiP</span>
@@ -1476,25 +1476,25 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             aria-label="Kembalikan tampilan video"
             title="Tukar besar/kecil"
             onClick={() => setSwapped(false)}
-            className="absolute bottom-28 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/70"
+            className="absolute bottom-28 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-ms-3 py-1.5 text-ms-xs text-white backdrop-blur hover:bg-black/70"
           >
             <ArrowLeftRight className="mr-1 inline h-3.5 w-3.5" /> Tukar
           </button>
         ) : null}
 
         {/* Status bar atas */}
-        <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-4">
+        <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-ms-4">
           <button
             type="button"
             onClick={() => toast.info(statusHint)}
             title={statusHint}
             aria-label={statusHint}
-            className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs backdrop-blur hover:bg-black/60"
+            className="flex items-center gap-ms-1.5 rounded-full bg-black/40 px-ms-3 py-1 text-ms-xs backdrop-blur hover:bg-black/60"
           >
             <StatusIcon className={`h-3.5 w-3.5 ${statusIconClass}`} />
             <span>{status}</span>
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-ms-2">
             {phase === "in-call" && netStats.tier !== "unknown" ? (
               <span
                 data-testid="call-net-quality"
@@ -1518,7 +1518,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   (netStats.lossPct !== null ? `, packet loss ${netStats.lossPct.toFixed(1)} persen` : "")
                 }
                 className={
-                  "flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[11px] backdrop-blur " +
+                  "flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1 text-ms-2xs backdrop-blur " +
                   (netStats.tier === "good"
                     ? "text-emerald-300"
                     : netStats.tier === "fair"
@@ -1536,7 +1536,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             {activeDevice && phase === "in-call" ? (
               <span
                 data-testid="call-active-device"
-                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[11px] text-white/80 backdrop-blur"
+                className="flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1 text-ms-2xs text-white/80 backdrop-blur"
                 title={activeDevice.label}
               >
                 <span aria-hidden>{iconForKind(activeKind)}</span>
@@ -1554,7 +1554,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 aria-pressed={videoFit === "contain"}
                 title={videoFit === "cover" ? "Mode: Crop — ketuk untuk Fit" : "Mode: Fit — ketuk untuk Crop"}
                 data-testid="call-fit-toggle"
-                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+                className="flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/60"
               >
                 {videoFit === "cover" ? (
                   <Crop className="h-3.5 w-3.5" />
@@ -1572,7 +1572,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 title={`Pusat frame: ${videoPosLabel} — ketuk untuk ubah`}
                 data-testid="call-pos-toggle"
                 data-pos={videoPos}
-                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+                className="flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/60"
               >
                 <Move className="h-3.5 w-3.5" />
                 <span>{videoPosLabel}</span>
@@ -1585,7 +1585,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 aria-label="Reset Crop/Fit dan posisi crop ke default untuk kamera depan dan belakang"
                 title="Reset Crop/Fit dan posisi crop ke default untuk kamera depan dan belakang"
                 data-testid="call-pos-reset"
-                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+                className="flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/60"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 <span>Reset Crop/Fit</span>
@@ -1599,7 +1599,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 title={`Kualitas: ${videoQualityLabel} — ${videoQualityHint}`}
                 data-testid="call-quality-toggle"
                 data-quality={videoQuality}
-                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+                className="flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/60"
               >
                 <Signal className="h-3.5 w-3.5" />
                 <span>{videoQualityLabel}</span>
@@ -1613,7 +1613,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 aria-pressed={isFullscreen}
                 title={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
                 data-testid="call-fullscreen-toggle"
-                className="rounded-full bg-black/40 p-1.5 text-white/90 backdrop-blur hover:bg-black/60"
+                className="rounded-full bg-black/40 p-ms-1.5 text-white/90 backdrop-blur hover:bg-black/60"
               >
                 {isFullscreen ? (
                   <Minimize className="h-4 w-4" />
@@ -1629,7 +1629,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 aria-label="Reset semua setelan tampilan panggilan (Crop/Fit, posisi crop, kualitas video, PiP, kamera) ke default"
                 title="Reset semua setelan tampilan (Crop/Fit, posisi, kualitas, PiP, kamera) ke default"
                 data-testid="call-reset-all"
-                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+                className="flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/60"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 <span>Reset semua</span>
@@ -1642,7 +1642,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 aria-label="Ekspor setelan panggilan ke file JSON"
                 title="Ekspor setelan (Crop/Fit, posisi, kualitas, PiP, kamera) ke JSON"
                 data-testid="call-export-settings"
-                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+                className="flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/60"
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>Ekspor</span>
@@ -1655,7 +1655,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 aria-label="Impor setelan panggilan dari file JSON"
                 title="Impor setelan dari JSON (Crop/Fit, posisi, kualitas, PiP, kamera)"
                 data-testid="call-import-settings"
-                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+                className="flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1.5 text-ms-2xs text-white/90 backdrop-blur hover:bg-black/60"
               >
                 <Upload className="h-3.5 w-3.5" />
                 <span>Impor</span>
@@ -1680,7 +1680,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           <div
             role="note"
             data-testid="call-turn-warning"
-            className="absolute inset-x-4 top-14 flex items-start gap-2 rounded-md bg-amber-500/15 px-3 py-2 text-[11px] text-amber-100 backdrop-blur"
+            className="absolute inset-x-4 top-14 flex items-start gap-ms-2 rounded-md bg-amber-500/15 px-ms-3 py-ms-2 text-ms-2xs text-amber-100 backdrop-blur"
           >
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
@@ -1693,9 +1693,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
       </div>
 
       {/* Kontrol */}
-      <div className="flex flex-col gap-3 border-t border-white/10 bg-black/60 px-4 py-4">
+      <div className="flex flex-col gap-ms-3 border-t border-white/10 bg-black/60 px-ms-4 py-ms-4">
         {/* Baris kontrol audio: output picker · speakerphone · volume */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-ms-2">
           <button
             type="button"
             data-testid="call-output-picker"
@@ -1706,7 +1706,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 ? `Perangkat output aktif: ${activeDevice.label}. Ketuk untuk mengganti.`
                 : "Pilih perangkat output audio"
             }
-            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20 disabled:opacity-50"
+            className="flex items-center gap-ms-1.5 rounded-full bg-white/10 px-ms-3 py-1.5 text-ms-xs hover:bg-white/20 disabled:opacity-50"
           >
             <span aria-hidden>{iconForKind(activeKind)}</span>
             <span className="max-w-[7rem] truncate">
@@ -1724,7 +1724,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 ? "Matikan speaker keras"
                 : "Nyalakan speaker keras"
             }
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs ${
+            className={`flex items-center gap-ms-1.5 rounded-full px-ms-3 py-1.5 text-ms-xs ${
               activeKind === "speaker"
                 ? "bg-white text-black"
                 : "bg-white/10 hover:bg-white/20"
@@ -1733,7 +1733,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             <span aria-hidden>🔊</span>
             <span>Speaker</span>
           </button>
-          <div className="flex flex-1 items-center gap-2 px-2">
+          <div className="flex flex-1 items-center gap-ms-2 px-ms-2">
             {volume === 0 ? (
               <VolumeX className="h-4 w-4 text-white/70" />
             ) : volume < 0.5 ? (
@@ -1755,7 +1755,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-ms-4">
         <Button
           type="button"
           variant="ghost"
@@ -1836,7 +1836,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           </SheetHeader>
           <ul className="mt-4 space-y-1">
             {outputs.length === 0 ? (
-              <li className="rounded-md px-3 py-2 text-sm text-white/60">
+              <li className="rounded-md px-ms-3 py-ms-2 text-ms-sm text-white/60">
                 Tidak ada perangkat terdeteksi.
               </li>
             ) : (
@@ -1849,15 +1849,15 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                       setActiveSinkId(d.deviceId);
                       setOutputSheetOpen(false);
                     }}
-                    className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-white/10 ${
+                    className={`flex w-full items-center justify-between rounded-md px-ms-3 py-ms-2 text-left text-ms-sm hover:bg-white/10 ${
                       d.deviceId === activeSinkId ? "bg-white/10" : ""
                     }`}
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-ms-2">
                       <span aria-hidden>{iconForKind(guessDeviceKind(d.label))}</span>
                       <span className="truncate">{d.label}</span>
                     </span>
-                    <span className="text-[11px] text-white/50">
+                    <span className="text-ms-2xs text-white/50">
                       {labelForKind(d.kind)}
                     </span>
                   </button>

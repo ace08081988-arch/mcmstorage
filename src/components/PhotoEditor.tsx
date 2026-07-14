@@ -1061,11 +1061,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       onPointerDown={(e) => e.stopPropagation()}
       aria-busy={activeOverlay !== null && activeOverlay !== "error"}
     >
-      <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2 shadow-sm">
-        <button onClick={onCancel} className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-sm transition hover:bg-muted">
+      <div className="flex items-center justify-between gap-ms-2 border-b bg-card px-ms-3 py-ms-2 shadow-sm">
+        <button onClick={onCancel} className="inline-flex h-9 items-center gap-ms-1 rounded-md border bg-background px-ms-3 text-ms-sm transition hover:bg-muted">
           <X className="h-4 w-4" /> Batal
         </button>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-ms-1">
           <button onClick={undo} aria-label="Undo" disabled={!history.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Undo2 className="h-4 w-4" /></button>
           <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
           <button aria-label="Putar 90°" onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted"><RotateCw className="h-4 w-4" /></button>
@@ -1073,7 +1073,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         <button
           onClick={exportImage}
           disabled={exporting || !canvasReady}
-          className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground transition disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           {exporting ? "Menyimpan…" : "Simpan"}
@@ -1083,14 +1083,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           disabled={exporting || !canvasReady}
           title="Simpan salinan ke galeri / unduhan perangkat"
           aria-label="Simpan ke galeri"
-          className="inline-flex h-9 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 text-sm font-semibold text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-9 items-center gap-ms-1 rounded-md border border-primary/40 bg-primary/10 px-ms-3 text-ms-sm font-semibold text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">Ke galeri</span>
         </button>
       </div>
 
-      <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-muted p-2">
+      <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-muted p-ms-2">
         {img && view.w > 0 && loadStatus === "ready" && (
           <div
             className="relative overflow-hidden rounded shadow-lg"
@@ -1123,11 +1123,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 aria-atomic="true"
                 aria-label="Menyiapkan kanvas"
                 tabIndex={-1}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-ms-2 bg-background/70 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Loader2 className="h-7 w-7 animate-spin" />
-                <div className="text-xs font-medium">Menyiapkan kanvas…</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-xs font-medium">Menyiapkan kanvas…</div>
+                <div className="text-ms-2xs text-muted-foreground">
                   Foto sudah dimuat. Sedang dirasterisasi ke kanvas.
                 </div>
                 <Button
@@ -1144,7 +1144,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               <div
                 role="status"
                 aria-live="polite"
-                className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/90 px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-md"
+                className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 items-center gap-ms-1.5 rounded-full border border-primary/40 bg-primary/90 px-ms-2.5 py-1 text-ms-2xs font-medium text-primary-foreground shadow-md"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground/70 opacity-75" />
@@ -1166,11 +1166,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 aria-atomic="true"
                 aria-label="Menyimpan foto"
                 tabIndex={-1}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-ms-2 bg-background/80 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Loader2 className="h-7 w-7 animate-spin text-primary" />
-                <div className="text-xs font-medium">Menyimpan foto…</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-xs font-medium">Menyimpan foto…</div>
+                <div className="text-ms-2xs text-muted-foreground">
                   Menggabungkan coretan ke resolusi asli.
                 </div>
                 <Button
@@ -1197,11 +1197,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             aria-atomic="true"
             aria-label="Memuat foto"
             tabIndex={-1}
-            className="flex flex-col items-center gap-3 text-center text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md p-2"
+            className="flex flex-col items-center gap-ms-3 text-center text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md p-ms-2"
           >
             <Loader2 className="h-8 w-8 animate-spin" />
-            <div className="text-sm font-medium">Memuat foto…</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-ms-sm font-medium">Memuat foto…</div>
+            <div className="text-ms-xs text-muted-foreground">
               {srcKind(src) === "http"
                 ? "Mengunduh dari server. Periksa koneksi bila terasa lama."
                 : srcKind(src) === "blob"
@@ -1225,23 +1225,23 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             aria-live="assertive"
             aria-atomic="true"
             tabIndex={-1}
-            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-left shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-ms-4 text-left shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <div className="mb-2 flex items-start gap-2">
+            <div className="mb-2 flex items-start gap-ms-2">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
-              <div className="text-sm font-semibold text-foreground">
+              <div className="text-ms-sm font-semibold text-foreground">
                 {loadError?.title ?? "Foto gagal ditampilkan"}
               </div>
             </div>
-            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+            <p className="mb-3 text-ms-xs leading-relaxed text-muted-foreground">
               {loadError?.reason ?? "Terjadi kesalahan saat memuat foto."}
             </p>
             {loadError?.nextSteps && loadError.nextSteps.length > 0 && (
               <div className="mb-3">
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
+                <div className="mb-1 text-ms-2xs font-semibold uppercase tracking-wide text-foreground/80">
                   Langkah berikutnya
                 </div>
-                <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                <ul className="list-disc space-y-0.5 pl-4 text-ms-xs text-muted-foreground">
                   {loadError.nextSteps.map((step, idx) => (
                     <li key={idx}>{step}</li>
                   ))}
@@ -1249,16 +1249,16 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               </div>
             )}
             {loadError?.technical && (
-              <details className="mb-3 rounded border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+              <details className="mb-3 rounded border bg-muted/40 px-ms-2 py-1 text-ms-2xs text-muted-foreground">
                 <summary className="cursor-pointer select-none font-medium">
                   Detail teknis
                 </summary>
-                <code className="mt-1 block break-all font-mono text-[10px]">
+                <code className="mt-1 block break-all font-mono text-ms-2xs">
                   {loadError.technical}
                 </code>
               </details>
             )}
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-ms-2">
               <Button
                 size="sm"
                 variant="secondary"
@@ -1344,7 +1344,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           topShadow && bottomShadow ? "both" : topShadow ? "top" : bottomShadow ? "bottom" : "none"
         }
         aria-busy={!canvasReady && loadStatus === "ready"}
-        className="max-h-[55vh] overflow-y-auto border-t bg-card px-2 py-2 text-xs shadow-sm"
+        className="max-h-[55vh] overflow-y-auto border-t bg-card px-ms-2 py-ms-2 text-ms-xs shadow-sm"
         style={{
           paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
         }}
@@ -1354,14 +1354,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             role="status"
             aria-live="polite"
             data-testid="tool-panel-loading"
-            className="mb-2 flex items-center gap-2 rounded-md border border-muted-foreground/20 bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground"
+            className="mb-2 flex items-center gap-ms-2 rounded-md border border-muted-foreground/20 bg-muted/40 px-ms-2 py-1 text-ms-2xs text-muted-foreground"
           >
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             <span>Menyiapkan kanvas — tombol siap sebentar lagi.</span>
           </div>
         )}
         {/* Color + thickness row */}
-        <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="mb-2 flex flex-wrap items-center gap-ms-2">
           <span className="text-muted-foreground">Warna:</span>
           {COLORS.map((c) => (
             <button
@@ -1378,7 +1378,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             />
           ))}
           <label
-            className="ml-auto flex items-center gap-1"
+            className="ml-auto flex items-center gap-ms-1"
             title="Ketebalan garis untuk coret, panah, kotak, dan lingkaran"
           >
             <span>Ketebalan</span>
@@ -1400,7 +1400,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             <span className="w-6 text-right tabular-nums">{thickness}</span>
           </label>
           <label
-            className="flex items-center gap-1"
+            className="flex items-center gap-ms-1"
             title="Transparansi lapisan (10%–100%)"
           >
             <span>Opacity</span>
@@ -1424,7 +1424,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         </div>
 
         {(tool === "rect" || tool === "circle") && (
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-ms-2">
             <span className="text-muted-foreground">Mode:</span>
             <button
               type="button"
@@ -1439,7 +1439,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               }}
               title={shapeFill ? "Mode isi: bentuk akan diisi penuh" : "Mode garis: hanya tepi bentuk yang terlihat"}
               aria-label={shapeFill ? "Mode isi aktif, ketuk untuk beralih ke mode garis" : "Mode garis aktif, ketuk untuk beralih ke mode isi"}
-              className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${shapeFill ? "border-primary bg-primary/10 text-primary" : "border-input bg-background"}`}
+              className={`inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${shapeFill ? "border-primary bg-primary/10 text-primary" : "border-input bg-background"}`}
             >
               {shapeFill ? "Isi" : "Garis"}
             </button>
@@ -1450,7 +1450,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         )}
 
         {tool === "arrow" && (
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-ms-2">
             <span className="text-muted-foreground">Arah:</span>
             {([
               ["up", ArrowUp, "Atas"], ["down", ArrowDown, "Bawah"], ["left", ArrowLeft, "Kiri"], ["right", ArrowRight, "Kanan"],
@@ -1488,9 +1488,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </div>
         )}
         {tool === "emoji" && (
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-ms-2">
             <span className="text-muted-foreground">Stiker:</span>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-ms-1">
               {EMOJIS.map((em) => (
                 <button
                   key={em}
@@ -1518,13 +1518,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                       setSelectedId(l.id);
                     }
                   }}
-                  className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
+                  className={`h-9 w-9 rounded border bg-background text-ms-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
               ))}
             </div>
           </div>
         )}
         {tool === "text" && (
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-ms-2">
             <button
               type="button"
               title="Tambahkan teks baru di tengah kanvas"
@@ -1535,12 +1535,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 const cy = v.h ? v.h / 2 : 100;
                 setTextPrompt({ open: true, x: cx, y: cy, value: "" });
               }}
-              className="inline-flex h-8 items-center gap-1 rounded-md border border-primary bg-primary/10 px-2 text-[11px] font-medium transition hover:bg-primary/20"
+              className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-primary bg-primary/10 px-ms-2 text-ms-2xs font-medium transition hover:bg-primary/20"
             >
               <Type className="h-3.5 w-3.5" /> Tambah teks di tengah
             </button>
             <label
-              className="flex items-center gap-1"
+              className="flex items-center gap-ms-1"
               title="Ukuran font teks (14–96 px)"
             >
               <span>Ukuran font</span>
@@ -1579,7 +1579,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             role="status"
             aria-live="polite"
             aria-atomic="true"
-            className="mb-2 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px] pr-1"
+            className="mb-2 flex items-center gap-ms-2 rounded-md border border-primary/30 bg-primary/5 px-ms-2.5 py-1.5 text-ms-2xs pr-1"
           >
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
@@ -1605,7 +1605,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         <div
           role="toolbar"
           aria-label="Toolbar editor foto"
-          className="flex flex-wrap items-center gap-1"
+          className="flex flex-wrap items-center gap-ms-1"
         >
           <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" shortcut={TOOL_SHORTCUTS.select} disabled={!canvasReady} />
           <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" shortcut={TOOL_SHORTCUTS.draw} disabled={!canvasReady} />
@@ -1625,7 +1625,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             <HelpCircle className="h-4 w-4" />
           </button>
           {selected && (
-            <div className="ml-auto flex items-center gap-1">
+            <div className="ml-auto flex items-center gap-ms-1">
               <button aria-label="Turunkan lapisan" type="button" onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><MoveDown className="h-4 w-4" /></button>
               <button aria-label="Naikkan lapisan" type="button" onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><MoveUp className="h-4 w-4" /></button>
               <button aria-label="Duplikat" type="button" onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><CopyIcon className="h-4 w-4" /></button>
@@ -1634,7 +1634,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           )}
         </div>
         {helpOpen && (
-          <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] leading-snug">
+          <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-2xs leading-snug">
             <div className="mb-1 flex items-center justify-between">
               <span className="font-semibold text-primary">Panduan singkat</span>
               <button
@@ -1677,12 +1677,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 Panduan muncul saat pertama kali memilih tool ini atau setelah tidak dipakai {GUIDE_RETURN_DAYS} hari.
               </DialogDescription>
             </DialogHeader>
-            <ol className="my-2 list-decimal space-y-1.5 pl-5 text-sm text-foreground">
+            <ol className="my-2 list-decimal space-y-1.5 pl-5 text-ms-sm text-foreground">
               {TOOL_GUIDES[guideTool]!.steps.map((step, i) => (
                 <li key={i}>{step}</li>
               ))}
             </ol>
-            <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-xs text-primary">
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-xs text-primary">
               <span className="font-semibold">Tip:</span>{" "}
               {TOOL_GUIDES[guideTool]!.tip}
             </div>
@@ -1704,14 +1704,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <button
             type="button"
             onClick={() => { setZoomLevel(1); setPreviewZoom(true); }}
-            className="flex w-full items-center gap-3 rounded-md border bg-muted/40 p-2 text-left transition hover:bg-muted"
+            className="flex w-full items-center gap-ms-3 rounded-md border bg-muted/40 p-ms-2 text-left transition hover:bg-muted"
           >
             <img
               src={src}
               alt="Pratinjau foto"
               className="h-14 w-14 flex-shrink-0 rounded object-cover"
             />
-            <div className="min-w-0 flex-1 text-xs text-muted-foreground">
+            <div className="min-w-0 flex-1 text-ms-xs text-muted-foreground">
               <div className="font-medium text-foreground">Pratinjau foto</div>
               <div className="truncate">Ketuk untuk memperbesar pratinjau.</div>
             </div>
@@ -1738,12 +1738,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         <DialogContent
           className={
             previewFullscreen
-              ? "h-screen w-screen max-w-none rounded-none border-0 p-3 sm:max-w-none"
-              : "max-w-[95vw] p-3 sm:max-w-2xl"
+              ? "h-screen w-screen max-w-none rounded-none border-0 p-ms-3 sm:max-w-none"
+              : "max-w-[95vw] p-ms-3 sm:max-w-2xl"
           }
         >
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+            <DialogTitle className="flex items-center justify-between gap-ms-2 pr-6">
               <span>Pratinjau Foto</span>
               <Button
                 variant="outline"
@@ -1777,8 +1777,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               draggable={false}
             />
           </div>
-          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
-            <div className="flex items-center gap-1">
+          <DialogFooter className="flex-row items-center justify-between gap-ms-2 sm:justify-between">
+            <div className="flex items-center gap-ms-1">
               <Button
                 variant="outline"
                 size="icon"
@@ -1788,7 +1788,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
-              <span className="w-12 text-center text-xs tabular-nums">{Math.round(zoomLevel * 100)}%</span>
+              <span className="w-12 text-center text-ms-xs tabular-nums">{Math.round(zoomLevel * 100)}%</span>
               <Button
                 variant="outline"
                 size="icon"
@@ -1831,7 +1831,7 @@ function ToolBtn({
       data-testid={`photo-editor-tool-${label.toLowerCase()}`}
       data-photo-editor-tool={label}
       data-state={disabled ? "loading" : active ? "active" : "ready"}
-      className={`relative inline-flex h-8 min-w-11 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-background ${active ? "border-primary bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--tw-shadow-color)] shadow-primary/40 ring-1 ring-primary/40" : ""}`}
+      className={`relative inline-flex h-8 min-w-11 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-background ${active ? "border-primary bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--tw-shadow-color)] shadow-primary/40 ring-1 ring-primary/40" : ""}`}
     >
       {icon}<span>{label}</span>
       {active && !disabled && (

@@ -162,15 +162,15 @@ function PengaturanAksesibilitasPage() {
         subtitle="Skala teks, kontras, dan animasi"
         icon={Accessibility}
       />
-      <div className="space-y-4 px-4 pt-2">
+      <div className="space-ms-4 px-ms-4 pt-2">
         {/* Badge status "Belum disimpan" — hanya tampil kalau draft ≠ snapshot */}
         <div
-          className="flex items-center gap-2 text-xs"
+          className="flex items-center gap-ms-2 text-ms-xs"
           role="status"
           aria-live="polite"
         >
           {dirty ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 font-medium text-amber-700 dark:text-amber-300">
+            <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-ms-2.5 py-1 font-medium text-amber-700 dark:text-amber-300">
               <span
                 className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"
                 aria-hidden="true"
@@ -178,7 +178,7 @@ function PengaturanAksesibilitasPage() {
               Belum disimpan
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300">
+            <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-ms-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300">
               <span
                 className="h-1.5 w-1.5 rounded-full bg-emerald-500"
                 aria-hidden="true"
@@ -188,7 +188,7 @@ function PengaturanAksesibilitasPage() {
           )}
         </div>
 
-        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] leading-snug text-muted-foreground">
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-2xs leading-snug text-muted-foreground">
           Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
           Tampilan tersimpan tidak berubah sampai Anda menekan{" "}
           <span className="font-semibold text-foreground">Simpan</span> di bagian bawah.
@@ -196,23 +196,23 @@ function PengaturanAksesibilitasPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
               Skala teks
               {draft.fontScale !== snapshot.fontScale && (
                 <UnsavedDot title={`Tersimpan: ${Math.round(snapshot.fontScale * 100)}%`} />
               )}
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-ms-xs">
               Perbesar teks di seluruh aplikasi. Diterapkan lewat variabel CSS <code>--app-font-scale</code>.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-ms-3">
             <div className="flex items-baseline justify-between">
-              <span className="text-sm">Kecil</span>
-              <span className="text-sm tabular-nums font-semibold">
+              <span className="text-ms-sm">Kecil</span>
+              <span className="text-ms-sm tabular-nums font-semibold">
                 {Math.round(draft.fontScale * 100)}%
               </span>
-              <span className="text-sm">Besar</span>
+              <span className="text-ms-sm">Besar</span>
             </div>
             <Slider
               value={[draft.fontScale]}
@@ -223,7 +223,7 @@ function PengaturanAksesibilitasPage() {
               aria-label="Skala teks"
             />
             <div
-              className="rounded-md border bg-muted/30 p-3 text-muted-foreground"
+              className="rounded-md border bg-muted/30 p-ms-3 text-muted-foreground"
               style={{ fontSize: `${draft.fontScale}rem` }}
             >
               Pratinjau — teks pesan chat, tombol, dan header ikut menyesuaikan.
@@ -233,9 +233,9 @@ function PengaturanAksesibilitasPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Kontras & animasi</CardTitle>
+            <CardTitle className="text-ms-base">Kontras & animasi</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-ms-4">
             <ToggleRow
               label="Tingkatkan kontras"
               unsaved={draft.highContrast !== snapshot.highContrast}
@@ -280,20 +280,20 @@ function PengaturanAksesibilitasPage() {
         role="region"
         aria-label="Simpan preferensi aksesibilitas"
       >
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
-          <p className="text-xs text-muted-foreground">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-ms-2 px-ms-4 py-ms-3">
+          <p className="text-ms-xs text-muted-foreground">
             Ada perubahan belum disimpan. Aplikasi utama belum berubah.
             <span className="ml-1 hidden sm:inline">
               Pintasan:{" "}
-              <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">Ctrl</kbd>
+              <kbd className="rounded border bg-muted px-1 py-0.5 text-ms-2xs font-mono">Ctrl</kbd>
               <span className="mx-0.5">+</span>
-              <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">S</kbd>
+              <kbd className="rounded border bg-muted px-1 py-0.5 text-ms-2xs font-mono">S</kbd>
               {" "}menyimpan,{" "}
-              <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">Esc</kbd>
+              <kbd className="rounded border bg-muted px-1 py-0.5 text-ms-2xs font-mono">Esc</kbd>
               {" "}membatalkan.
             </span>
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-ms-2">
             <Button variant="outline" size="sm" onClick={commitCancel} aria-label="Batalkan perubahan" title="Esc">
               <X className="mr-1.5 h-3.5 w-3.5" />
               Batalkan
@@ -313,7 +313,7 @@ function PengaturanAksesibilitasPage() {
       }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+            <AlertDialogTitle className="flex items-center gap-ms-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
               Perubahan belum disimpan
             </AlertDialogTitle>
@@ -351,13 +351,13 @@ function ToggleRow({
 }) {
   const id = `t-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-ms-4">
       <div className="min-w-0 flex-1">
-        <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium">
+        <label htmlFor={id} className="flex items-center gap-ms-2 text-ms-sm font-medium">
           {label}
           {unsaved && <UnsavedDot />}
         </label>
-        <p className="text-[11px] leading-snug text-muted-foreground">{help}</p>
+        <p className="text-ms-2xs leading-snug text-muted-foreground">{help}</p>
       </div>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </div>
@@ -367,7 +367,7 @@ function ToggleRow({
 function UnsavedDot({ title }: { title?: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300"
+      className="inline-flex items-center gap-ms-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-ms-2xs font-medium text-amber-700 dark:text-amber-300"
       title={title ?? "Nilai berbeda dari yang tersimpan"}
     >
       <span

@@ -73,7 +73,7 @@ function PrivasiPage() {
         aria-pressed={active}
         disabled={saving !== null}
         className={cn(
-          "group flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition-all",
+          "group flex w-full items-start gap-ms-3 rounded-2xl border p-ms-3.5 text-left transition-all",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           "disabled:opacity-70",
           active
@@ -93,8 +93,8 @@ function PrivasiPage() {
           <Icon className="h-4.5 w-4.5" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold tracking-tight">{title}</span>
+          <div className="flex items-center gap-ms-2">
+            <span className="text-ms-sm font-semibold tracking-tight">{title}</span>
             {saving === v ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
             ) : null}
@@ -123,24 +123,24 @@ function PrivasiPage() {
         subtitle="Atur siapa yang dapat melihat status Anda"
         icon={ShieldCheck}
       />
-      <div className="space-y-4 px-4 pt-4 sm:pt-5">
+      <div className="space-ms-4 px-ms-4 pt-4 sm:pt-5">
         <Card className="overflow-hidden border-border/70 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+            <CardTitle className="text-ms-sm font-semibold tracking-tight sm:text-ms-base">
               Default status
             </CardTitle>
-            <CardDescription className="mt-1 text-xs leading-relaxed">
+            <CardDescription className="mt-1 text-ms-xs leading-relaxed">
               Pilihan ini dipakai untuk status baru. Anda tetap bisa mengubahnya
               per status saat mengunggah.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 pt-0">
+          <CardContent className="space-ms-2 pt-0">
             {visibility === null ? (
-              <div className="space-y-2 py-1" aria-busy>
+              <div className="space-ms-2 py-1" aria-busy>
                 {[0, 1].map((k) => (
                   <div
                     key={k}
-                    className="flex items-center gap-3 rounded-2xl border border-border/70 p-3.5"
+                    className="flex items-center gap-ms-3 rounded-2xl border border-border/70 p-ms-3.5"
                   >
                     <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-muted" />
                     <div className="flex-1 space-y-1.5">
@@ -170,7 +170,7 @@ function PrivasiPage() {
           </CardContent>
         </Card>
 
-        <div className="flex items-start gap-2.5 rounded-xl border border-border/70 bg-muted/30 p-3">
+        <div className="flex items-start gap-ms-2.5 rounded-xl border border-border/70 bg-muted/30 p-ms-3">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           <p className="text-[11.5px] leading-snug text-muted-foreground">
             Status yang sudah terlanjur diunggah tetap memakai pengaturan saat

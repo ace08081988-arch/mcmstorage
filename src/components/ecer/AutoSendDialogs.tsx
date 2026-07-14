@@ -237,7 +237,7 @@ export function AutoSendConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Konfirmasi kirim ke pembeli</AlertDialogTitle>
           <AlertDialogDescription asChild>
-            <div className="space-y-1 text-sm">
+            <div className="space-y-1 text-ms-sm">
               <div><span className="text-muted-foreground">Produk:</span> <span className="font-medium text-foreground">{itemName}</span></div>
               <div><span className="text-muted-foreground">Judul:</span> <span className="font-medium text-foreground">{title.name}</span></div>
               <div>
@@ -269,7 +269,7 @@ export function AutoSendConfirmDialog({
                   >
                     {rupiah(totalPrice)}
                   </span>{" "}
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-ms-2xs text-muted-foreground">
                     ({totalGrams} {unit} × {rupiah(unitPrice)}/{unit})
                   </span>
                 </div>
@@ -280,11 +280,11 @@ export function AutoSendConfirmDialog({
         <div
           data-testid="auto-send-product-breakdown"
           data-group-count={productBreakdown.length}
-          className="rounded-md border bg-muted/20 px-3 py-2 text-xs"
+          className="rounded-md border bg-muted/20 px-ms-3 py-ms-2 text-ms-xs"
         >
-          <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+          <div className="mb-1 flex items-center justify-between text-ms-2xs font-medium text-muted-foreground">
             <span>Ringkasan per produk</span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-ms-1">
               <span className="tabular-nums">
                 {productBreakdown.length} produk · {preps.length} kotak
               </span>
@@ -292,7 +292,7 @@ export function AutoSendConfirmDialog({
                 type="button"
                 data-testid="auto-send-export-csv"
                 aria-label="Ekspor ringkasan ke CSV"
-                className="ml-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium hover:bg-muted disabled:opacity-50"
+                className="ml-1 inline-flex items-center gap-ms-1 rounded border px-1.5 py-0.5 text-ms-2xs font-medium hover:bg-muted disabled:opacity-50"
                 disabled={exporting !== null}
                 onClick={() => {
                   setExporting("csv");
@@ -328,7 +328,7 @@ export function AutoSendConfirmDialog({
                 type="button"
                 data-testid="auto-send-export-pdf"
                 aria-label="Ekspor ringkasan ke PDF"
-                className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium hover:bg-muted disabled:opacity-50"
+                className="inline-flex items-center gap-ms-1 rounded border px-1.5 py-0.5 text-ms-2xs font-medium hover:bg-muted disabled:opacity-50"
                 disabled={exporting !== null}
                 onClick={async () => {
                   setExporting("pdf");
@@ -370,7 +370,7 @@ export function AutoSendConfirmDialog({
                 data-testid="auto-send-product-breakdown-row"
                 data-item-id={g.key}
                 data-other={g.isOther ? "true" : undefined}
-                className={`flex items-center justify-between gap-2 tabular-nums ${
+                className={`flex items-center justify-between gap-ms-2 tabular-nums ${
                   g.isOther ? "text-destructive" : "text-foreground"
                 }`}
               >
@@ -408,7 +408,7 @@ export function AutoSendConfirmDialog({
             ))}
           </ul>
           {unitPrice > 0 && productBreakdown.some((g) => g.isOther) && (
-            <div className="mt-1 text-[10px] text-destructive/80">
+            <div className="mt-1 text-ms-2xs text-destructive/80">
               * Harga produk lain dihitung memakai tarif produk utama —
               perbaiki seleksi sebelum lanjut.
             </div>
@@ -417,9 +417,9 @@ export function AutoSendConfirmDialog({
         <div
           data-testid="auto-send-location-breakdown"
           data-group-count={locationBreakdown.length}
-          className="rounded-md border bg-muted/20 px-3 py-2 text-xs"
+          className="rounded-md border bg-muted/20 px-ms-3 py-ms-2 text-ms-xs"
         >
-          <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+          <div className="mb-1 flex items-center justify-between text-ms-2xs font-medium text-muted-foreground">
             <span>Ringkasan per lokasi / link</span>
             <span className="tabular-nums">
               {locationBreakdown.length} lokasi · {preps.length} kotak
@@ -436,11 +436,11 @@ export function AutoSendConfirmDialog({
                   key={g.key}
                   data-testid="auto-send-location-breakdown-row"
                   data-location-url={g.url ?? ""}
-                  className={`flex items-center justify-between gap-2 tabular-nums ${
+                  className={`flex items-center justify-between gap-ms-2 tabular-nums ${
                     hasUrl ? "text-foreground" : "text-amber-600 dark:text-amber-400"
                   }`}
                 >
-                  <span className="flex min-w-0 items-center gap-1">
+                  <span className="flex min-w-0 items-center gap-ms-1">
                     <MapPin className="h-3 w-3 shrink-0" aria-hidden />
                     {hasUrl ? (
                       <a
@@ -465,7 +465,7 @@ export function AutoSendConfirmDialog({
             })}
           </ul>
           {locationBreakdown.some((g) => !g.url) && (
-            <div className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">
+            <div className="mt-1 text-ms-2xs text-amber-600 dark:text-amber-400">
               Ada kotak tanpa link lokasi — pembeli tidak akan menerima titik pengambilan untuk kotak tersebut.
             </div>
           )}
@@ -475,9 +475,9 @@ export function AutoSendConfirmDialog({
             role="alert"
             data-testid="auto-send-invalid-banner"
             data-invalid-count={invalidCount}
-            className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+            className="rounded-md border border-destructive/40 bg-destructive/5 px-ms-3 py-ms-2 text-ms-xs text-destructive"
           >
-            <div className="flex items-center gap-1.5 font-medium">
+            <div className="flex items-center gap-ms-1.5 font-medium">
               <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
               <span>
                 {invalidCount} kotak tidak valid — perbaiki atau hapus sebelum
@@ -513,7 +513,7 @@ export function AutoSendConfirmDialog({
             <button
               type="button"
               data-testid="auto-send-toggle-list"
-              className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-xs font-medium hover:bg-muted"
+              className="flex w-full items-center justify-between rounded-md border px-ms-3 py-ms-2 text-left text-ms-xs font-medium hover:bg-muted"
             >
               <span>Daftar kotak ({preps.length})</span>
               <ChevronDown
@@ -526,7 +526,7 @@ export function AutoSendConfirmDialog({
             data-testid="auto-send-list"
             className="mt-2 max-h-56 overflow-y-auto rounded-md border"
           >
-            <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background px-2 py-1.5">
+            <div className="sticky top-0 z-10 flex items-center gap-ms-2 border-b bg-background px-ms-2 py-1.5">
               <Search className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
               <Input
                 type="search"
@@ -535,7 +535,7 @@ export function AutoSendConfirmDialog({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari ID pendek (misal a1b2c3d4)"
-                className="h-7 flex-1 text-xs"
+                className="h-7 flex-1 text-ms-xs"
                 aria-label="Cari kotak berdasarkan ID pendek"
               />
               {search && (
@@ -544,7 +544,7 @@ export function AutoSendConfirmDialog({
                   onClick={() => setSearch("")}
                   aria-label="Kosongkan pencarian"
                   data-testid="auto-send-search-clear"
-                  className="rounded p-1 text-muted-foreground hover:bg-muted"
+                  className="rounded p-ms-1 text-muted-foreground hover:bg-muted"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -554,7 +554,7 @@ export function AutoSendConfirmDialog({
               <div
                 data-testid="auto-send-search-summary"
                 data-match-count={filteredPreps.length}
-                className="border-b bg-muted/30 px-3 py-1 text-[10px] text-muted-foreground"
+                className="border-b bg-muted/30 px-ms-3 py-1 text-ms-2xs text-muted-foreground"
               >
                 {filteredPreps.length} dari {preps.length} kotak cocok
                 {filteredInvalid > 0 && ` · ${filteredInvalid} tidak valid`}
@@ -564,7 +564,7 @@ export function AutoSendConfirmDialog({
               {filteredPreps.length === 0 && (
                 <li
                   data-testid="auto-send-search-empty"
-                  className="px-3 py-4 text-center text-[11px] text-muted-foreground"
+                  className="px-ms-3 py-ms-4 text-center text-ms-2xs text-muted-foreground"
                 >
                   Tidak ada kotak yang cocok dengan "{search.trim()}".
                 </li>
@@ -581,13 +581,13 @@ export function AutoSendConfirmDialog({
                     data-testid="auto-send-list-item"
                     data-prep-id={p.id}
                     data-invalid={isInvalid ? "true" : undefined}
-                    className={`flex flex-col gap-1 px-3 py-1.5 text-xs ${
+                    className={`flex flex-col gap-ms-1 px-ms-3 py-1.5 text-ms-xs ${
                       isInvalid
                         ? "bg-destructive/5 ring-1 ring-inset ring-destructive/30"
                         : ""
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-ms-2">
                       <span className="min-w-0 truncate text-muted-foreground">
                         #{i + 1} ·{" "}
                         <span className="font-mono">
@@ -601,14 +601,14 @@ export function AutoSendConfirmDialog({
                         )}
                       </span>
                     {isEditing ? (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-ms-1">
                         <Input
                           data-testid="auto-send-item-grams-input"
                           type="number"
                           inputMode="decimal"
                           value={editingValue}
                           onChange={(e) => setEditingValue(e.target.value)}
-                          className="h-7 w-20 text-xs"
+                          className="h-7 w-20 text-ms-xs"
                           min={1}
                           step="0.01"
                           disabled={isSaving}
@@ -619,7 +619,7 @@ export function AutoSendConfirmDialog({
                           type="button"
                           aria-label="Simpan berat"
                           data-testid="auto-send-item-save"
-                          className="rounded p-1 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                          className="rounded p-ms-1 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
                           onClick={() => void commitEdit(p)}
                           disabled={isSaving}
                         >
@@ -633,7 +633,7 @@ export function AutoSendConfirmDialog({
                           type="button"
                           aria-label="Batal ubah"
                           data-testid="auto-send-item-edit-cancel"
-                          className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-50"
+                          className="rounded p-ms-1 text-muted-foreground hover:bg-muted disabled:opacity-50"
                           onClick={cancelEdit}
                           disabled={isSaving}
                         >
@@ -641,7 +641,7 @@ export function AutoSendConfirmDialog({
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-ms-1">
                         <span
                           className={`font-medium tabular-nums ${
                             isInvalid ? "text-destructive" : ""
@@ -655,7 +655,7 @@ export function AutoSendConfirmDialog({
                             type="button"
                             aria-label={`Ubah berat kotak #${i + 1}`}
                             data-testid="auto-send-item-edit"
-                            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            className="rounded p-ms-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                             onClick={() => startEdit(p)}
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -666,7 +666,7 @@ export function AutoSendConfirmDialog({
                             type="button"
                             aria-label={`Hapus kotak #${i + 1} dari seleksi`}
                             data-testid="auto-send-item-remove"
-                            className="rounded p-1 text-destructive/80 hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+                            className="rounded p-ms-1 text-destructive/80 hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
                             onClick={() => onRemove(p.id)}
                             disabled={preps.length <= 1}
                             title={
@@ -684,7 +684,7 @@ export function AutoSendConfirmDialog({
                     {isInvalid && (
                       <div
                         data-testid="auto-send-item-invalid-reason"
-                        className="text-[10px] font-medium text-destructive"
+                        className="text-ms-2xs font-medium text-destructive"
                       >
                         {rowReasons.join(" · ")}
                       </div>
@@ -719,12 +719,12 @@ export function AutoSendConfirmDialog({
                       return (
                         <div
                           data-testid="auto-send-item-meta"
-                          className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground"
+                          className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-ms-2xs text-muted-foreground"
                         >
                           <span
                             data-testid="auto-send-item-product"
                             data-other-product={isOtherProduct ? "true" : undefined}
-                            className={`inline-flex items-center gap-1 ${
+                            className={`inline-flex items-center gap-ms-1 ${
                               isOtherProduct ? "text-destructive font-medium" : ""
                             }`}
                           >
@@ -742,7 +742,7 @@ export function AutoSendConfirmDialog({
                               target="_blank"
                               rel="noopener noreferrer"
                               data-testid="auto-send-item-location-link"
-                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                              className="inline-flex items-center gap-ms-1 text-primary hover:underline"
                             >
                               <MapPin className="h-3 w-3" aria-hidden />
                               <span className="truncate max-w-[10rem]">
@@ -753,7 +753,7 @@ export function AutoSendConfirmDialog({
                           ) : (
                             <span
                               data-testid="auto-send-item-location-missing"
-                              className="inline-flex items-center gap-1 italic"
+                              className="inline-flex items-center gap-ms-1 italic"
                             >
                               <MapPin className="h-3 w-3" aria-hidden />
                               {locLabel}
@@ -767,7 +767,7 @@ export function AutoSendConfirmDialog({
               })}
             </ul>
             {canMutate && (
-              <div className="border-t bg-muted/30 px-3 py-1.5 text-[10px] text-muted-foreground">
+              <div className="border-t bg-muted/30 px-ms-3 py-1.5 text-ms-2xs text-muted-foreground">
                 Ubah berat atau hapus kotak dari seleksi sebelum lanjut.
                 Minimal satu kotak harus tersisa.
               </div>
@@ -776,9 +776,9 @@ export function AutoSendConfirmDialog({
         </Collapsible>
         <div
           data-testid="auto-send-grand-total"
-          className="mt-2 flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm"
+          className="mt-2 flex items-center justify-between gap-ms-2 rounded-md border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-sm"
         >
-          <div className="flex flex-col text-[11px] text-muted-foreground">
+          <div className="flex flex-col text-ms-2xs text-muted-foreground">
             <span className="font-medium uppercase tracking-wide">
               Total keseluruhan
             </span>
@@ -793,7 +793,7 @@ export function AutoSendConfirmDialog({
             {unitPrice > 0 ? (
               rupiah(totalPrice)
             ) : (
-              <span className="text-xs font-normal text-muted-foreground">
+              <span className="text-ms-xs font-normal text-muted-foreground">
                 Harga diisi di langkah pembayaran
               </span>
             )}
@@ -882,7 +882,7 @@ export function AutoSendCancelReasonDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Alasan pembatalan auto-Kirim</AlertDialogTitle>
           <AlertDialogDescription asChild>
-            <div className="space-y-1 text-sm">
+            <div className="space-y-1 text-ms-sm">
               <div>
                 <span className="text-muted-foreground">Produk:</span>{" "}
                 <span className="font-medium text-foreground">{itemName}</span>
@@ -900,7 +900,7 @@ export function AutoSendCancelReasonDialog({
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <RadioGroup
             value={reason}
             onValueChange={setReason}
@@ -909,7 +909,7 @@ export function AutoSendCancelReasonDialog({
             {AUTO_SEND_CANCEL_REASONS.map((r) => (
               <label
                 key={r.value}
-                className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted"
+                className="flex cursor-pointer items-center gap-ms-2 rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-muted"
                 data-testid={`auto-send-cancel-reason-${r.value}`}
               >
                 <RadioGroupItem value={r.value} />
@@ -918,7 +918,7 @@ export function AutoSendCancelReasonDialog({
             ))}
           </RadioGroup>
           <div className="space-y-1">
-            <Label htmlFor="auto-send-cancel-detail" className="text-xs">
+            <Label htmlFor="auto-send-cancel-detail" className="text-ms-xs">
               Detail (opsional)
             </Label>
             <Textarea

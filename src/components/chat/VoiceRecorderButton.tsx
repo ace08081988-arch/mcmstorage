@@ -188,9 +188,9 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
 
   if (state === "recording") {
     return (
-      <div className="flex items-center gap-2 rounded-full border bg-destructive/10 px-2 py-1">
+      <div className="flex items-center gap-ms-2 rounded-full border bg-destructive/10 px-ms-2 py-1">
         <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-destructive" aria-hidden />
-        <span className="text-xs tabular-nums text-destructive-foreground/80">{formatDurationMMSS(seconds)}</span>
+        <span className="text-ms-xs tabular-nums text-destructive-foreground/80">{formatDurationMMSS(seconds)}</span>
         <Button
           type="button"
           size="icon"
@@ -216,8 +216,8 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
 
   // preview / sending
   return (
-    <div className="flex items-center gap-2 rounded-full border bg-accent/40 px-2 py-1">
-      <span className="text-xs tabular-nums text-muted-foreground">{formatDurationMMSS(seconds)}</span>
+    <div className="flex items-center gap-ms-2 rounded-full border bg-accent/40 px-ms-2 py-1">
+      <span className="text-ms-xs tabular-nums text-muted-foreground">{formatDurationMMSS(seconds)}</span>
       {previewUrl ? (
         <audio src={previewUrl} controls preload="metadata" className="h-8 max-w-[10rem]" />
       ) : null}

@@ -135,13 +135,13 @@ function Harness() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-4 p-6">
-      <h1 className="text-lg font-semibold">
+    <div className="mx-auto max-w-xl space-ms-4 p-ms-6">
+      <h1 className="text-ms-lg font-semibold">
         message_hidden — persist across refresh
       </h1>
 
       {!verifyId && (
-        <section className="space-y-2">
+        <section className="space-ms-2">
           <Button
             data-testid="run-prepare"
             onClick={runPrepare}
@@ -151,7 +151,7 @@ function Harness() {
           </Button>
           {prep && (
             <dl
-              className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm"
+              className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-ms-sm"
               data-testid="prepare-block"
             >
               <dt>ok</dt>
@@ -174,8 +174,8 @@ function Harness() {
       )}
 
       {verifyId && (
-        <section className="space-y-2">
-          <p className="text-xs text-muted-foreground">
+        <section className="space-ms-2">
+          <p className="text-ms-xs text-muted-foreground">
             Verify mode — id: <code>{verifyId}</code>
           </p>
           <Button
@@ -187,7 +187,7 @@ function Harness() {
           </Button>
           {verify && (
             <dl
-              className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm"
+              className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-ms-sm"
               data-testid="verify-block"
             >
               <dt>ok</dt>
@@ -207,7 +207,7 @@ function Harness() {
             3. Cleanup
           </Button>
           {cleanupState && (
-            <p className="text-xs" data-testid="cleanup-state">
+            <p className="text-ms-xs" data-testid="cleanup-state">
               cleanup: {cleanupState}
             </p>
           )}

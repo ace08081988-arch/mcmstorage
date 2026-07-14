@@ -52,12 +52,12 @@ export const Route = createFileRoute("/download/$variant")({
   },
   component: DetailPage,
   errorComponent: () => (
-    <div className="p-6 text-center text-sm text-red-600">
+    <div className="p-ms-6 text-center text-ms-sm text-red-600">
       Gagal memuat detail rilis.
     </div>
   ),
   notFoundComponent: () => (
-    <div className="p-6 text-center text-sm">Varian tidak ditemukan.</div>
+    <div className="p-ms-6 text-center text-ms-sm">Varian tidak ditemukan.</div>
   ),
 });
 
@@ -77,27 +77,27 @@ function DetailPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PublicHeader />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-ms-4 px-ms-4 py-ms-6">
         <Link
           to="/download"
-          className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          className="inline-flex w-fit items-center gap-ms-1 text-ms-xs text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3 w-3" />
           Kembali ke daftar unduhan
         </Link>
 
         {isLoading ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-ms-2 rounded-2xl border border-dashed p-ms-6 text-ms-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Memuat detail rilis...
           </div>
         ) : isError || !data ? (
-          <div className="rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
+          <div className="rounded-2xl border border-red-300 bg-red-50 p-ms-4 text-ms-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
             <p>Tidak dapat memuat detail rilis.</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="mt-2 text-xs font-semibold underline"
+              className="mt-2 text-ms-xs font-semibold underline"
             >
               Coba lagi
             </button>
@@ -162,23 +162,23 @@ function HeaderCard({
       : "bg-sky-600 hover:bg-sky-700";
 
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="mb-3 flex items-center gap-3">
-        <div className={`rounded-xl p-3 ${badge}`}>{icon}</div>
+    <div className="rounded-2xl border bg-card p-ms-5 shadow-sm">
+      <div className="mb-3 flex items-center gap-ms-3">
+        <div className={`rounded-xl p-ms-3 ${badge}`}>{icon}</div>
         <div>
-          <h1 className="text-base font-semibold leading-tight">{title}</h1>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+          <h1 className="text-ms-base font-semibold leading-tight">{title}</h1>
+          <p className="text-ms-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
 
       {!latest ? (
-        <div className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
+        <div className="rounded-lg border border-dashed p-ms-4 text-center text-ms-xs text-muted-foreground">
           Belum ada rilis APK yang tersedia untuk varian ini.
         </div>
       ) : (
         <>
           {latest.belowMinimum && (
-            <div className="mb-3 flex items-start gap-1.5 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11px] leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+            <div className="mb-3 flex items-start gap-ms-1.5 rounded-lg border border-amber-300 bg-amber-50 p-ms-2.5 text-ms-2xs leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <div>
                 <strong className="font-semibold">Build ini lebih lama</strong>{" "}
@@ -198,10 +198,10 @@ function HeaderCard({
               </div>
             </div>
           )}
-          <div className="flex items-stretch gap-2">
+          <div className="flex items-stretch gap-ms-2">
             <a
               href={latest.url}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow transition ${btn}`}
+              className={`flex flex-1 items-center justify-center gap-ms-2 rounded-xl px-ms-4 py-ms-3 text-ms-sm font-semibold text-white shadow transition ${btn}`}
             >
               <Download className="h-4 w-4" />
               Unduh versi terbaru
@@ -213,7 +213,7 @@ function HeaderCard({
               variant="solid"
             />
           </div>
-          <dl className="mt-3 space-y-1 text-[11px] text-muted-foreground">
+          <dl className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
             {(latest.versionName || latest.versionCode !== null) && (
               <Row label="Versi">
                 <span className="font-mono">
@@ -246,14 +246,14 @@ function HeaderCard({
 
 function ChangelogCard({ changelog }: { changelog: string | null }) {
   return (
-    <section className="rounded-2xl border bg-card p-5 shadow-sm">
-      <h2 className="mb-2 text-sm font-semibold">Changelog</h2>
+    <section className="rounded-2xl border bg-card p-ms-5 shadow-sm">
+      <h2 className="mb-2 text-ms-sm font-semibold">Changelog</h2>
       {changelog ? (
-        <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-lg bg-muted p-3 text-[11px] leading-relaxed text-foreground">
+        <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-lg bg-muted p-ms-3 text-ms-2xs leading-relaxed text-foreground">
           {changelog}
         </pre>
       ) : (
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <p className="text-ms-2xs leading-relaxed text-muted-foreground">
           Belum ada catatan changelog. Unggah berkas{" "}
           <span className="font-mono">changelog-storage.md</span> atau{" "}
           <span className="font-mono">changelog-chat.md</span> ke bucket rilis
@@ -279,12 +279,12 @@ function ReleaseHistoryCard({
       ? "text-emerald-700 dark:text-emerald-300"
       : "text-sky-700 dark:text-sky-300";
   return (
-    <section className="rounded-2xl border bg-card p-5 shadow-sm">
-      <h2 className="mb-2 text-sm font-semibold">
+    <section className="rounded-2xl border bg-card p-ms-5 shadow-sm">
+      <h2 className="mb-2 text-ms-sm font-semibold">
         Riwayat rilis ({releases.length})
       </h2>
       {min && (min.min_version_name || min.min_version_code !== null) && (
-        <p className="mb-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+        <p className="mb-2 flex items-center gap-ms-1 text-ms-2xs text-muted-foreground">
           <History className="h-3 w-3" />
           Minimum: {min.min_version_name ? `v${min.min_version_name}` : ""}
           {min.min_version_code !== null ? ` build ${min.min_version_code}` : ""}
@@ -292,9 +292,9 @@ function ReleaseHistoryCard({
       )}
       <ul className="divide-y">
         {releases.map((r, i) => (
-          <li key={r.name} className="flex items-center gap-3 py-2 text-xs">
+          <li key={r.name} className="flex items-center gap-ms-3 py-ms-2 text-ms-xs">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-ms-2">
                 <span className="font-mono font-semibold">
                   {r.versionName ?? "?"}
                 </span>
@@ -304,18 +304,18 @@ function ReleaseHistoryCard({
                   </span>
                 )}
                 {i === 0 && (
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-ms-2xs font-semibold uppercase text-muted-foreground">
                     terbaru
                   </span>
                 )}
                 {r.belowMinimum && (
-                  <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-700 dark:text-amber-300">
+                  <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/15 px-1.5 py-0.5 text-ms-2xs font-semibold uppercase text-amber-700 dark:text-amber-300">
                     <AlertTriangle className="h-2.5 w-2.5" />
                     lawas
                   </span>
                 )}
               </div>
-              <div className="text-[11px] text-muted-foreground">
+              <div className="text-ms-2xs text-muted-foreground">
                 {r.updatedAt
                   ? new Date(r.updatedAt).toLocaleString("id-ID")
                   : "Tanggal tidak diketahui"}
@@ -323,10 +323,10 @@ function ReleaseHistoryCard({
               </div>
             </div>
             {r.url && (
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 items-center gap-ms-1">
                 <a
                   href={r.url}
-                  className={`text-xs font-semibold ${
+                  className={`text-ms-xs font-semibold ${
                     r.belowMinimum ? "text-amber-700 dark:text-amber-300" : linkColor
                   } hover:underline`}
                   onClick={(e) => {
@@ -364,7 +364,7 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex justify-between gap-2">
+    <div className="flex justify-between gap-ms-2">
       <dt>{label}</dt>
       <dd className="min-w-0 text-right">{children}</dd>
     </div>
@@ -398,7 +398,7 @@ function CopyLinkButton({
         onClick={onCopy}
         aria-label={`Salin link unduh ${label}`}
         title="Salin link unduh"
-        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border bg-background px-3 text-sm font-semibold hover:bg-accent"
+        className="inline-flex shrink-0 items-center justify-center gap-ms-1.5 rounded-xl border bg-background px-ms-3 text-ms-sm font-semibold hover:bg-accent"
       >
         {copied ? (
           <Check className="h-4 w-4 text-emerald-600" />
@@ -578,28 +578,28 @@ function ApkDownloadQr({
   };
 
   return (
-    <section className="rounded-2xl border bg-card p-5 text-center shadow-sm">
-      <div className="mb-2 flex items-center justify-center gap-1.5 text-sm font-semibold">
+    <section className="rounded-2xl border bg-card p-ms-5 text-center shadow-sm">
+      <div className="mb-2 flex items-center justify-center gap-ms-1.5 text-ms-sm font-semibold">
         <QrIcon className="h-4 w-4 text-sky-600" />
         Pindai untuk unduh APK Chat
       </div>
-      <p className="mb-3 text-[11px] text-muted-foreground">
+      <p className="mb-3 text-ms-2xs text-muted-foreground">
         Arahkan kamera HP ke QR code untuk membuka link unduh
         {versionName ? ` v${versionName}` : ""} langsung — tanpa mengetik URL.
       </p>
       <div className="flex justify-center">
         <canvas
           ref={canvasRef}
-          className="rounded bg-white p-2"
+          className="rounded bg-white p-ms-2"
           aria-label="QR code unduh APK MCM Chat"
         />
       </div>
       {err && (
-        <p className="mt-2 text-[11px] text-destructive">Gagal membuat QR: {err}</p>
+        <p className="mt-2 text-ms-2xs text-destructive">Gagal membuat QR: {err}</p>
       )}
       {remainingMs !== null && (
         <div
-          className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${
+          className={`mt-3 inline-flex items-center gap-ms-1.5 rounded-full border px-ms-2.5 py-1 text-ms-2xs font-medium ${
             isExpired
               ? "border-destructive/40 bg-destructive/10 text-destructive"
               : warn
@@ -626,11 +626,11 @@ function ApkDownloadQr({
         type="button"
         onClick={savePng}
         disabled={!dataUrl}
-        className="mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+        className="mt-3 inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent disabled:opacity-50"
       >
         <Download className="h-3.5 w-3.5" /> Simpan QR (PNG)
       </button>
-      <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/80">
+      <p className="mt-2 text-ms-2xs leading-relaxed text-muted-foreground/80">
         Link ini kedaluwarsa dalam ±1 jam. Muat ulang halaman untuk QR baru.
       </p>
     </section>

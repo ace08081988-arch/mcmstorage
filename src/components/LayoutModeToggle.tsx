@@ -93,14 +93,14 @@ export function useLayoutMode(key: string, initial: LayoutMode = "list"): [Layou
 export function layoutGridClass(mode: LayoutMode): string {
   switch (mode) {
     case "grid":
-      return "grid grid-cols-2 gap-2";
+      return "grid grid-cols-2 gap-ms-2";
     case "dense":
-      return "grid grid-cols-2 sm:grid-cols-3 gap-1.5";
+      return "grid grid-cols-2 sm:grid-cols-3 gap-ms-1.5";
     case "compact":
-      return "grid grid-cols-1 gap-1";
+      return "grid grid-cols-1 gap-ms-1";
     case "list":
     default:
-      return "grid grid-cols-1 gap-2 sm:grid-cols-2";
+      return "grid grid-cols-1 gap-ms-2 sm:grid-cols-2";
   }
 }
 
@@ -116,8 +116,8 @@ export function layoutGridClass(mode: LayoutMode): string {
  * kolom agar tidak memaksa input jadi terlalu sempit.
  */
 export function layoutFieldPairClass(mode: LayoutMode): string {
-  if (mode === "compact") return "grid grid-cols-1 gap-2";
-  return "grid grid-cols-1 gap-2 sm:grid-cols-2";
+  if (mode === "compact") return "grid grid-cols-1 gap-ms-2";
+  return "grid grid-cols-1 gap-ms-2 sm:grid-cols-2";
 }
 
 export function LayoutModeToggle({

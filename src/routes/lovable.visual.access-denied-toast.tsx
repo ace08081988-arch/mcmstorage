@@ -49,8 +49,8 @@ function AccessDeniedToastHarness() {
   }, []);
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-3 px-4 py-6">
-      <h1 className="text-lg font-semibold">Harness: Access denied toast</h1>
+    <div className="mx-auto flex max-w-md flex-col gap-ms-3 px-ms-4 py-ms-6">
+      <h1 className="text-ms-lg font-semibold">Harness: Access denied toast</h1>
       <div id="assign-sink" data-last-assign="" className="sr-only" />
 
       <Button

@@ -150,48 +150,48 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
         </DialogHeader>
 
         {step === "method" && (
-          <div className="space-y-3">
+          <div className="space-ms-3">
             {existing && (
-              <div className="rounded-md border bg-muted/30 p-2 text-[11px]">
+              <div className="rounded-md border bg-muted/30 p-ms-2 text-ms-2xs">
                 Saat ini aktif: <b>{existing.method.toUpperCase()}</b>
                 {existing.biometric ? " + Sidik jari" : ""}
               </div>
             )}
             <button
               onClick={() => goCreate("pin")}
-              className="flex w-full items-center justify-between rounded-md border p-3 text-left hover:bg-accent"
+              className="flex w-full items-center justify-between rounded-md border p-ms-3 text-left hover:bg-accent"
             >
               <div>
-                <div className="text-sm font-medium">🔢 PIN</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-sm font-medium">🔢 PIN</div>
+                <div className="text-ms-2xs text-muted-foreground">
                   4-8 digit angka
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground">Pilih →</span>
+              <span className="text-ms-xs text-muted-foreground">Pilih →</span>
             </button>
             <button
               onClick={() => goCreate("pattern")}
-              className="flex w-full items-center justify-between rounded-md border p-3 text-left hover:bg-accent"
+              className="flex w-full items-center justify-between rounded-md border p-ms-3 text-left hover:bg-accent"
             >
               <div>
-                <div className="text-sm font-medium">⬣ Pola</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-sm font-medium">⬣ Pola</div>
+                <div className="text-ms-2xs text-muted-foreground">
                   Hubungkan minimal 4 titik
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground">Pilih →</span>
+              <span className="text-ms-xs text-muted-foreground">Pilih →</span>
             </button>
             <button
               onClick={() => setStep("options")}
-              className="flex w-full items-center justify-between rounded-md border p-3 text-left hover:bg-accent"
+              className="flex w-full items-center justify-between rounded-md border p-ms-3 text-left hover:bg-accent"
             >
               <div>
-                <div className="text-sm font-medium">⚙️ Opsi Lain</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-sm font-medium">⚙️ Opsi Lain</div>
+                <div className="text-ms-2xs text-muted-foreground">
                   Sidik jari, auto-lock, dll.
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground">Buka →</span>
+              <span className="text-ms-xs text-muted-foreground">Buka →</span>
             </button>
             {existing && (
               <Button
@@ -206,7 +206,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
         )}
 
         {step === "create" && method === "pin" && (
-          <div className="space-y-3">
+          <div className="space-ms-3">
             <Label>Buat PIN baru (4-8 digit)</Label>
             <Input
               type="password"
@@ -217,7 +217,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
               onChange={(e) => setPin1(e.target.value.replace(/\D/g, ""))}
               placeholder="••••"
             />
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-ms-2">
               <Button variant="outline" onClick={() => setStep("method")}>
                 Kembali
               </Button>
@@ -237,7 +237,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
         )}
 
         {step === "create" && method === "pattern" && (
-          <div className="space-y-3">
+          <div className="space-ms-3">
             <Label>Buat pola baru (≥ 4 titik)</Label>
             <div className="flex justify-center">
               <PatternPad
@@ -246,7 +246,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
                 onChange={setPat1}
               />
             </div>
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-ms-2">
               <Button variant="outline" onClick={() => setStep("method")}>
                 Kembali
               </Button>
@@ -277,7 +277,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
         )}
 
         {step === "confirm" && method === "pin" && (
-          <div className="space-y-3">
+          <div className="space-ms-3">
             <Label>Ulangi PIN</Label>
             <Input
               type="password"
@@ -288,7 +288,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
               onChange={(e) => setPin2(e.target.value.replace(/\D/g, ""))}
               placeholder="••••"
             />
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-ms-2">
               <Button variant="outline" onClick={() => setStep("create")}>
                 Kembali
               </Button>
@@ -298,7 +298,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
         )}
 
         {step === "confirm" && method === "pattern" && (
-          <div className="space-y-3">
+          <div className="space-ms-3">
             <Label>Ulangi pola</Label>
             <div className="flex justify-center">
               <PatternPad
@@ -307,7 +307,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
                 onChange={setPat2}
               />
             </div>
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-ms-2">
               <Button variant="outline" onClick={() => setStep("create")}>
                 Kembali
               </Button>
@@ -326,11 +326,11 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
         )}
 
         {step === "options" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
+          <div className="space-ms-4">
+            <div className="flex items-center justify-between gap-ms-3">
               <div>
                 <Label>Sidik jari</Label>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-ms-2xs text-muted-foreground">
                   {bioChecking
                     ? "Memeriksa perangkat…"
                     : bioAvailable
@@ -340,7 +340,7 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
                 {!bioAvailable && !bioChecking && (
                   <button
                     type="button"
-                    className="mt-1 text-[11px] font-medium text-primary underline"
+                    className="mt-1 text-ms-2xs font-medium text-primary underline"
                     onClick={() => {
                       setBioChecking(true);
                       checkBiometricStatus().then((s) => {
@@ -361,10 +361,10 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
                 onCheckedChange={setBiometric}
               />
             </div>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-ms-3">
               <div>
                 <Label>Kunci saat aplikasi keluar fokus</Label>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-ms-2xs text-muted-foreground">
                   Tab/aplikasi disembunyikan → langsung terkunci
                 </p>
               </div>
@@ -379,9 +379,9 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
                 value={idleMin}
                 onChange={(e) => setIdleMin(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
               />
-              <p className="text-[11px] text-muted-foreground">0 = nonaktif</p>
+              <p className="text-ms-2xs text-muted-foreground">0 = nonaktif</p>
             </div>
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-ms-2">
               <Button variant="outline" onClick={() => setStep("method")}>
                 Kembali
               </Button>

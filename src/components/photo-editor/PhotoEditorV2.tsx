@@ -476,13 +476,13 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground" data-testid="photo-editor-v2">
       {/* Top bar */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b px-2">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b px-ms-2">
         <Button variant="ghost" size="sm" onClick={onCancel}>Batal</Button>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-ms-1">
           <Button variant="ghost" size="icon" disabled={!canUndo(history)} onClick={doUndo} aria-label="Undo"><Undo2 className="h-5 w-5" /></Button>
           <Button variant="ghost" size="icon" disabled={!canRedo(history)} onClick={doRedo} aria-label="Redo"><Redo2 className="h-5 w-5" /></Button>
           <Button variant="ghost" size="icon" onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))} aria-label="Zoom out"><ZoomOut className="h-5 w-5" /></Button>
-          <span className="text-xs tabular-nums w-10 text-center">{Math.round(zoom * 100)}%</span>
+          <span className="text-ms-xs tabular-nums w-10 text-center">{Math.round(zoom * 100)}%</span>
           <Button variant="ghost" size="icon" onClick={() => setZoom((z) => Math.min(4, z + 0.25))} aria-label="Zoom in"><ZoomIn className="h-5 w-5" /></Button>
           <Button variant="ghost" size="icon" onClick={() => setShowLayers((v) => !v)} aria-label="Layer"><Layers className="h-5 w-5" /></Button>
         </div>
@@ -490,7 +490,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
       </div>
 
       {/* Transform sub-bar */}
-      <div className="flex h-10 shrink-0 items-center gap-1 border-b px-2 overflow-x-auto">
+      <div className="flex h-10 shrink-0 items-center gap-ms-1 border-b px-ms-2 overflow-x-auto">
         <Button variant="outline" size="sm" onClick={rotate90}><RotateCw className="mr-1 h-4 w-4" />Putar</Button>
         <Button variant="outline" size="sm" onClick={flipH}><FlipHorizontal2 className="mr-1 h-4 w-4" />Flip H</Button>
         <Button variant="outline" size="sm" onClick={flipV}><FlipVertical2 className="mr-1 h-4 w-4" />Flip V</Button>
@@ -540,21 +540,21 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
         {/* Object action bar (when selected) */}
         {selectedObj && (
-          <div className="pointer-events-auto absolute left-1/2 top-2 -translate-x-1/2 flex items-center gap-1 rounded-full border bg-background/95 px-2 py-1 shadow">
-            <button className="p-2" aria-label="Duplikat" onClick={() => duplicateObject(selectedObj.id)}><Copy className="h-4 w-4" /></button>
-            <button className="p-2" aria-label="Ke depan" onClick={() => bringForward(selectedObj.id)}>↑</button>
-            <button className="p-2" aria-label="Ke belakang" onClick={() => sendBackward(selectedObj.id)}>↓</button>
-            <button className="p-2" aria-label="Kunci" onClick={() => updateObject(selectedObj.id, { locked: !selectedObj.locked })}>
+          <div className="pointer-events-auto absolute left-1/2 top-2 -translate-x-1/2 flex items-center gap-ms-1 rounded-full border bg-background/95 px-ms-2 py-1 shadow">
+            <button className="p-ms-2" aria-label="Duplikat" onClick={() => duplicateObject(selectedObj.id)}><Copy className="h-4 w-4" /></button>
+            <button className="p-ms-2" aria-label="Ke depan" onClick={() => bringForward(selectedObj.id)}>↑</button>
+            <button className="p-ms-2" aria-label="Ke belakang" onClick={() => sendBackward(selectedObj.id)}>↓</button>
+            <button className="p-ms-2" aria-label="Kunci" onClick={() => updateObject(selectedObj.id, { locked: !selectedObj.locked })}>
               {selectedObj.locked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
             </button>
-            <button className="p-2 text-destructive" aria-label="Hapus" onClick={() => deleteObject(selectedObj.id)}><Trash2 className="h-4 w-4" /></button>
+            <button className="p-ms-2 text-destructive" aria-label="Hapus" onClick={() => deleteObject(selectedObj.id)}><Trash2 className="h-4 w-4" /></button>
           </div>
         )}
       </div>
 
       {/* Color + width sub-bar */}
-      <div className="flex h-12 shrink-0 items-center gap-2 border-t px-2 overflow-x-auto">
-        <div className="flex items-center gap-1">
+      <div className="flex h-12 shrink-0 items-center gap-ms-2 border-t px-ms-2 overflow-x-auto">
+        <div className="flex items-center gap-ms-1">
           {MCM_PALETTE.map((c) => (
             <button
               key={c}
@@ -575,15 +575,15 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           ))}
           <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-7 w-8 rounded border" aria-label="Warna kustom" />
         </div>
-        <div className="ml-2 flex items-center gap-2">
-          <span className="text-xs">Tebal</span>
+        <div className="ml-2 flex items-center gap-ms-2">
+          <span className="text-ms-xs">Tebal</span>
           <input
             type="range" min={1} max={40} value={strokeWidth}
             onChange={(e) => setStrokeWidth(Number(e.target.value))}
             className="w-24"
             aria-label="Ketebalan"
           />
-          <span className="text-xs">Opacity</span>
+          <span className="text-ms-xs">Opacity</span>
           <input
             type="range" min={0.1} max={1} step={0.05} value={opacity}
             onChange={(e) => setOpacity(Number(e.target.value))}
@@ -612,12 +612,12 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
       {/* Sticker sheet */}
       {showStickers && (
-        <div className="absolute inset-x-0 bottom-24 z-10 rounded-t-2xl border bg-background p-3 shadow-lg">
+        <div className="absolute inset-x-0 bottom-24 z-10 rounded-t-2xl border bg-background p-ms-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium">Stiker</div>
-            <button onClick={() => setShowStickers(false)} className="p-1"><X className="h-4 w-4" /></button>
+            <div className="text-ms-sm font-medium">Stiker</div>
+            <button onClick={() => setShowStickers(false)} className="p-ms-1"><X className="h-4 w-4" /></button>
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-ms-2">
             {Object.entries(STICKER_PRESETS).map(([key, preset]) => {
               const Ic = preset.Icon;
               return (
@@ -625,12 +625,12 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   key={key}
                   type="button"
                   onClick={() => addSticker(key)}
-                  className="flex flex-col items-center gap-1 rounded-lg border p-3 hover:bg-accent"
+                  className="flex flex-col items-center gap-ms-1 rounded-lg border p-ms-3 hover:bg-accent"
                 >
                   <div className="grid h-10 w-10 place-items-center rounded-full text-white" style={{ backgroundColor: preset.defaultColor }}>
                     <Ic className="h-5 w-5" />
                   </div>
-                  <span className="text-xs">{preset.label}</span>
+                  <span className="text-ms-xs">{preset.label}</span>
                 </button>
               );
             })}
@@ -643,24 +643,24 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         const obj = scene.objects.find((o) => o.id === showText.id && o.kind === "text") as TextObj | undefined;
         if (!obj) return null;
         return (
-          <div className="absolute inset-x-0 bottom-0 z-20 rounded-t-2xl border bg-background p-3 shadow-lg">
+          <div className="absolute inset-x-0 bottom-0 z-20 rounded-t-2xl border bg-background p-ms-3 shadow-lg">
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-sm font-medium">Ubah Teks</div>
-              <button onClick={() => setShowText(null)} className="p-1"><X className="h-4 w-4" /></button>
+              <div className="text-ms-sm font-medium">Ubah Teks</div>
+              <button onClick={() => setShowText(null)} className="p-ms-1"><X className="h-4 w-4" /></button>
             </div>
             <textarea
-              className="w-full rounded border bg-background p-2 text-sm"
+              className="w-full rounded border bg-background p-ms-2 text-ms-sm"
               rows={3}
               value={obj.text}
               onChange={(e) => updateObject(obj.id, { text: e.target.value })}
               autoFocus
             />
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <button className={cn("h-9 px-3 rounded border text-sm font-bold", obj.bold && "bg-accent")} onClick={() => updateObject(obj.id, { bold: !obj.bold })}>B</button>
-              <button className={cn("h-9 px-3 rounded border text-sm italic", obj.italic && "bg-accent")} onClick={() => updateObject(obj.id, { italic: !obj.italic })}>I</button>
-              <button className={cn("h-9 px-3 rounded border text-sm", obj.outline && "bg-accent")} onClick={() => updateObject(obj.id, { outline: obj.outline ? undefined : "#000000" })}>Outline</button>
-              <button className={cn("h-9 px-3 rounded border text-sm", obj.shadow && "bg-accent")} onClick={() => updateObject(obj.id, { shadow: !obj.shadow })}>Shadow</button>
-              <select className="h-9 rounded border bg-background px-2 text-sm" value={obj.align} onChange={(e) => updateObject(obj.id, { align: e.target.value as TextObj["align"] })}>
+            <div className="mt-2 flex flex-wrap items-center gap-ms-2">
+              <button className={cn("h-9 px-ms-3 rounded border text-ms-sm font-bold", obj.bold && "bg-accent")} onClick={() => updateObject(obj.id, { bold: !obj.bold })}>B</button>
+              <button className={cn("h-9 px-ms-3 rounded border text-ms-sm italic", obj.italic && "bg-accent")} onClick={() => updateObject(obj.id, { italic: !obj.italic })}>I</button>
+              <button className={cn("h-9 px-ms-3 rounded border text-ms-sm", obj.outline && "bg-accent")} onClick={() => updateObject(obj.id, { outline: obj.outline ? undefined : "#000000" })}>Outline</button>
+              <button className={cn("h-9 px-ms-3 rounded border text-ms-sm", obj.shadow && "bg-accent")} onClick={() => updateObject(obj.id, { shadow: !obj.shadow })}>Shadow</button>
+              <select className="h-9 rounded border bg-background px-ms-2 text-ms-sm" value={obj.align} onChange={(e) => updateObject(obj.id, { align: e.target.value as TextObj["align"] })}>
                 <option value="left">Kiri</option>
                 <option value="center">Tengah</option>
                 <option value="right">Kanan</option>
@@ -673,14 +673,14 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
       {/* Layers sheet */}
       {showLayers && (
-        <div className="absolute inset-x-0 bottom-24 z-10 max-h-[50vh] overflow-auto rounded-t-2xl border bg-background p-3 shadow-lg">
+        <div className="absolute inset-x-0 bottom-24 z-10 max-h-[50vh] overflow-auto rounded-t-2xl border bg-background p-ms-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-medium">Layer ({scene.objects.length})</div>
-            <button onClick={() => setShowLayers(false)} className="p-1"><X className="h-4 w-4" /></button>
+            <div className="text-ms-sm font-medium">Layer ({scene.objects.length})</div>
+            <button onClick={() => setShowLayers(false)} className="p-ms-1"><X className="h-4 w-4" /></button>
           </div>
           <ul className="space-y-1">
             {[...scene.objects].reverse().map((o) => (
-              <li key={o.id} className={cn("flex items-center gap-2 rounded border p-2 text-sm", selectedId === o.id && "bg-accent")}>
+              <li key={o.id} className={cn("flex items-center gap-ms-2 rounded border p-ms-2 text-ms-sm", selectedId === o.id && "bg-accent")}>
                 <button className="flex-1 text-left" onClick={() => setSelectedId(o.id)}>{layerLabel(o)}</button>
                 <button aria-label="Sembunyikan" onClick={() => updateObject(o.id, { visible: o.visible === false })}>
                   {o.visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -692,7 +692,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 <button aria-label="Hapus" onClick={() => deleteObject(o.id)}><Trash2 className="h-4 w-4 text-destructive" /></button>
               </li>
             ))}
-            {scene.objects.length === 0 && <li className="text-xs text-muted-foreground">Belum ada objek</li>}
+            {scene.objects.length === 0 && <li className="text-ms-xs text-muted-foreground">Belum ada objek</li>}
           </ul>
         </div>
       )}
@@ -710,7 +710,7 @@ function ToolBtn(props: { active: boolean; onClick: () => void; label: string; I
       aria-pressed={active}
       data-testid={testId}
       className={cn(
-        "flex min-h-[48px] flex-col items-center justify-center gap-0.5 text-[10px]",
+        "flex min-h-[48px] flex-col items-center justify-center gap-0.5 text-ms-2xs",
         active ? "bg-accent text-accent-foreground" : "text-foreground/80",
       )}
     >

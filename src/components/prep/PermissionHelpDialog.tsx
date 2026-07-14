@@ -16,35 +16,35 @@ export function PermissionHelpDialog({ open, onClose, kind }: Props) {
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
             <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden />
             <span>{guide.title}</span>
           </DialogTitle>
-          <DialogDescription className="text-xs leading-relaxed">
+          <DialogDescription className="text-ms-xs leading-relaxed">
             {guide.intro}
           </DialogDescription>
         </DialogHeader>
-        <ol className="ml-5 list-decimal space-y-1.5 text-xs leading-relaxed text-foreground">
+        <ol className="ml-5 list-decimal space-y-1.5 text-ms-xs leading-relaxed text-foreground">
           {guide.steps.map((s, i) => (
             <li key={i}>{s}</li>
           ))}
         </ol>
         {guide.hint && (
-          <p className="rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] leading-relaxed text-primary">
+          <p className="rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-2xs leading-relaxed text-primary">
             {guide.hint}
           </p>
         )}
-        <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between">
+        <DialogFooter className="flex-col gap-ms-2 sm:flex-row sm:justify-between">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => { if (typeof window !== "undefined") window.location.reload(); }}
-            className="gap-1.5"
+            className="gap-ms-1.5"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Muat ulang halaman
           </Button>
-          <Button type="button" size="sm" onClick={onClose} className="gap-1.5">
+          <Button type="button" size="sm" onClick={onClose} className="gap-ms-1.5">
             <ExternalLink className="h-3.5 w-3.5" /> Sudah, coba lagi
           </Button>
         </DialogFooter>

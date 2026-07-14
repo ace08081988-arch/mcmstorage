@@ -8,8 +8,8 @@ export function PublicFooter() {
       className="mt-10 border-t bg-muted/30"
       style={{ borderTopColor: "var(--primary)" }}
     >
-      <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+      <div className="mx-auto flex max-w-3xl flex-col gap-ms-3 px-ms-4 py-ms-6 text-ms-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-ms-2">
           {logo ? (
             <img
               src={logo}
@@ -20,7 +20,7 @@ export function PublicFooter() {
             />
           ) : (
             <span
-              className="flex h-6 w-6 items-center justify-center rounded text-[10px] font-bold text-primary-foreground"
+              className="flex h-6 w-6 items-center justify-center rounded text-ms-2xs font-bold text-primary-foreground"
               style={{ backgroundColor: "var(--primary)" }}
             >
               {short}

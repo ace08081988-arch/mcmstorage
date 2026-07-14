@@ -8,10 +8,10 @@ export { layoutFieldPairClass } from "@/components/LayoutModeToggle";
 
 /**
  * Ukuran label per konteks:
- *  - "default": text-sm (default Label shadcn) — dialog form utama.
- *  - "xs":      text-xs — dialog padat (mis. PIN, form ecer).
- *  - "compact": text-[11px] — kartu / mini dialog.
- *  - "micro":   text-[10px] uppercase — chip readonly (Link/PIN).
+ *  - "default": text-ms-sm (default Label shadcn) — dialog form utama.
+ *  - "xs":      text-ms-xs — dialog padat (mis. PIN, form ecer).
+ *  - "compact": text-ms-2xs — kartu / mini dialog.
+ *  - "micro":   text-ms-2xs uppercase — chip readonly (Link/PIN).
  *
  * Tujuannya bukan menyeragamkan visual paksa, tapi menghilangkan
  * boilerplate `<div><Label className="…">…</Label>{control}</div>`
@@ -21,9 +21,9 @@ type FieldSize = "default" | "xs" | "compact" | "micro";
 
 const LABEL_CLS: Record<FieldSize, string> = {
   default: "",
-  xs: "text-xs",
-  compact: "text-[11px]",
-  micro: "text-[10px] uppercase tracking-wide text-muted-foreground",
+  xs: "text-ms-xs",
+  compact: "text-ms-2xs",
+  micro: "text-ms-2xs uppercase tracking-wide text-muted-foreground",
 };
 
 export function Field({
@@ -57,7 +57,7 @@ export function Field({
         {required ? <span className="ml-0.5 text-destructive">*</span> : null}
       </Label>
       {children}
-      {hint ? <div className="text-[10px] text-muted-foreground">{hint}</div> : null}
+      {hint ? <div className="text-ms-2xs text-muted-foreground">{hint}</div> : null}
     </div>
   );
 }

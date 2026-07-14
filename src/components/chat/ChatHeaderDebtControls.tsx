@@ -172,7 +172,7 @@ export function ChatHeaderDebtControls({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold transition hover:bg-accent ${
+          className={`inline-flex max-w-full items-center gap-ms-1 whitespace-nowrap rounded-full border px-ms-2 py-0.5 text-ms-2xs font-semibold transition hover:bg-accent ${
             dominantKind === "piutang"
               ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
               : "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
@@ -198,11 +198,11 @@ export function ChatHeaderDebtControls({
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-3">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <PopoverContent align="end" className="w-72 p-ms-3">
+        <div className="mb-2 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
           Tagihan dengan {peerName}
         </div>
-        <div className="space-y-2">
+        <div className="space-ms-2">
           <KindRow
             label="Piutang (dia berhutang)"
             balance={summary.piutang}
@@ -234,7 +234,7 @@ export function ChatHeaderDebtControls({
             }
           />
         </div>
-        <p className="mt-3 text-[10px] leading-snug text-muted-foreground">
+        <p className="mt-3 text-ms-2xs leading-snug text-muted-foreground">
           <ArrowRight className="mr-1 inline h-2.5 w-2.5" />
           Tersinkron langsung ke Hutang & Piutang MCM Storage.
         </p>
@@ -274,8 +274,8 @@ function KindRow({
   };
 
   return (
-    <div className="rounded-lg border p-2">
-      <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px]">
+    <div className="rounded-lg border p-ms-2">
+      <div className="mb-1.5 flex items-center justify-between gap-ms-2 text-ms-2xs">
         <span className="text-muted-foreground">{label}</span>
         <span
           className={`font-mono font-semibold ${
@@ -287,7 +287,7 @@ function KindRow({
           {rupiah(balance)}
         </span>
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-ms-1.5">
         <Button
           type="button"
           size="icon"
@@ -305,7 +305,7 @@ function KindRow({
           onChange={(e) => setRaw(e.target.value.replace(/[^\d]/g, ""))}
           inputMode="numeric"
           placeholder="0"
-          className="h-8 flex-1 text-right font-mono text-xs"
+          className="h-8 flex-1 text-right font-mono text-ms-xs"
           disabled={busy}
         />
         <Button

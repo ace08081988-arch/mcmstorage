@@ -139,8 +139,8 @@ function StatusDetailPage() {
   }
   if (!status) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-background p-4 text-center">
-        <p className="text-sm text-muted-foreground">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-ms-3 bg-background p-ms-4 text-center">
+        <p className="text-ms-sm text-muted-foreground">
           Status tidak ditemukan atau sudah kedaluwarsa.
         </p>
         <Button onClick={() => navigate({ to: "/pembaruan" })} variant="outline">
@@ -152,7 +152,7 @@ function StatusDetailPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-background">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background/95 px-2 py-2 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center gap-ms-2 border-b bg-background/95 px-ms-2 py-ms-2 backdrop-blur">
         <Button
           variant="ghost"
           size="icon"
@@ -161,7 +161,7 @@ function StatusDetailPage() {
         >
           <ArrowLeft className="size-5" />
         </Button>
-        <div className="mr-auto text-sm text-muted-foreground">
+        <div className="mr-auto text-ms-sm text-muted-foreground">
           {new Date(status.created_at).toLocaleString("id-ID")}
         </div>
         <Button
@@ -194,7 +194,7 @@ function StatusDetailPage() {
         )}
         {status.media_type === "text" && (
           <div
-            className="flex min-h-[50dvh] w-full items-center justify-center p-6 text-center text-2xl font-semibold text-white"
+            className="flex min-h-[50dvh] w-full items-center justify-center p-ms-6 text-center text-ms-2xl font-semibold text-white"
             style={{ background: status.bg_color || "#0f172a" }}
           >
             {status.caption}
@@ -203,13 +203,13 @@ function StatusDetailPage() {
       </div>
 
       {status.caption && status.media_type !== "text" && (
-        <p className="border-b px-4 py-3 text-sm">{status.caption}</p>
+        <p className="border-b px-ms-4 py-ms-3 text-ms-sm">{status.caption}</p>
       )}
 
-      <div className="flex items-center gap-4 px-4 py-3">
+      <div className="flex items-center gap-ms-4 px-ms-4 py-ms-3">
         <button
           onClick={onLike}
-          className="flex items-center gap-1.5 text-sm"
+          className="flex items-center gap-ms-1.5 text-ms-sm"
           aria-pressed={liked}
           aria-label={liked ? "Batalkan suka" : "Suka status"}
         >
@@ -218,31 +218,31 @@ function StatusDetailPage() {
           />
           <span className="tabular-nums">{likeCount}</span>
         </button>
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <div className="flex items-center gap-ms-1.5 text-ms-sm text-muted-foreground">
           <MessageCircle className="size-5" />
           <span className="tabular-nums">{comments.length}</span>
         </div>
       </div>
 
-      <section aria-label="Komentar" className="flex-1 space-y-2 border-t px-4 py-3">
+      <section aria-label="Komentar" className="flex-1 space-ms-2 border-t px-ms-4 py-ms-3">
         {comments.length === 0 ? (
-          <p className="py-6 text-center text-xs text-muted-foreground">
+          <p className="py-ms-6 text-center text-ms-xs text-muted-foreground">
             Belum ada komentar. Jadilah yang pertama.
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-ms-3">
             {comments.map((c) => (
-              <li key={c.id} className="flex items-start gap-2">
+              <li key={c.id} className="flex items-start gap-ms-2">
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-ms-xs text-muted-foreground">
                     {new Date(c.created_at).toLocaleString("id-ID")}
                   </div>
-                  <div className="text-sm">{c.body}</div>
+                  <div className="text-ms-sm">{c.body}</div>
                 </div>
                 {(c.user_id === uid || isOwner) && (
                   <button
                     aria-label="Hapus komentar"
-                    className="text-xs text-muted-foreground hover:text-destructive"
+                    className="text-ms-xs text-muted-foreground hover:text-destructive"
                     onClick={() => onDeleteComment(c.id)}
                   >
                     <Trash2 className="size-4" />
@@ -259,7 +259,7 @@ function StatusDetailPage() {
           e.preventDefault();
           onSend();
         }}
-        className="sticky bottom-0 flex items-center gap-2 border-t bg-background/95 p-3 backdrop-blur"
+        className="sticky bottom-0 flex items-center gap-ms-2 border-t bg-background/95 p-ms-3 backdrop-blur"
       >
         <Input
           value={text}

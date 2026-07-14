@@ -42,10 +42,10 @@ function docHref(docsRelPath: string): string {
 function PressAuditCodesPage() {
   const entries = getPressAuditRegistry();
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-4">
+    <div className="mx-auto max-w-4xl space-ms-4 p-ms-4">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Daftar Kode PA00X</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-ms-2xl font-semibold">Daftar Kode PA00X</h1>
+        <p className="text-ms-sm text-muted-foreground">
           Registry runtime dari <code>press-audit</code>. Kode di sini
           selalu sinkron dengan <code>src/lib/press-audit.ts</code>.
           Untuk detail lengkap dan cheat-sheet, buka{" "}
@@ -63,7 +63,7 @@ function PressAuditCodesPage() {
 
       <Card data-press-audit-skip="PA001">
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle className="text-ms-base">
             {entries.length} kode aktif
           </CardTitle>
         </CardHeader>
@@ -86,14 +86,14 @@ function PressAuditCodesPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <code className="text-xs">{e.rule}</code>
+                    <code className="text-ms-xs">{e.rule}</code>
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="text-ms-sm">
                     {e.description}
                   </TableCell>
                   <TableCell>
                     <a
-                      className="text-sm underline"
+                      className="text-ms-sm underline"
                       href={docHref(e.docs)}
                       target="_blank"
                       rel="noreferrer"
@@ -110,11 +110,11 @@ function PressAuditCodesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle className="text-ms-base">
             Kode fallback & alokasi baru
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
+        <CardContent className="space-ms-2 text-ms-sm">
           <p>
             <Badge variant="outline" className="font-mono">
               PA000

@@ -74,17 +74,17 @@ export function ReadyRequestSection() {
   }, [rows, query]);
 
   return (
-    <section className="space-y-2">
+    <section className="space-ms-2">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <p className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
           Paket Request Siap Kirim
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           {/* Layout toggle desktop-only — mobile default ke list. */}
           <div className="hidden sm:inline-flex">
             <LayoutModeToggle mode={layout} onChange={setLayout} />
           </div>
-          <Link to="/request" search={{ title: undefined, highlight: undefined }} className="text-[11px] font-medium text-primary hover:underline">Kelola →</Link>
+          <Link to="/request" search={{ title: undefined, highlight: undefined }} className="text-ms-2xs font-medium text-primary hover:underline">Kelola →</Link>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export function ReadyRequestSection() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Cari judul / produk…"
-            className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs"
+            className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-ms-xs"
           />
           {query && (
             <button aria-label="Tutup" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -108,7 +108,7 @@ export function ReadyRequestSection() {
       {rows === null ? (
         <div className={gridClass} aria-busy="true" aria-label="Memuat paket request">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-1.5 rounded-md border bg-card p-2.5">
+            <div key={i} className="flex flex-col gap-ms-1.5 rounded-md border bg-card p-ms-2.5">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-3 w-1/2" />
                 <Skeleton className="h-4 w-12 rounded" />
@@ -122,7 +122,7 @@ export function ReadyRequestSection() {
         <Link
           to="/request"
           search={{ title: undefined, highlight: undefined }}
-          className="flex flex-col items-center gap-1.5 rounded-md border border-dashed bg-card p-5 text-center text-xs text-muted-foreground hover:border-primary/40 hover:bg-accent"
+          className="flex flex-col items-center gap-ms-1.5 rounded-md border border-dashed bg-card p-ms-5 text-center text-ms-xs text-muted-foreground hover:border-primary/40 hover:bg-accent"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
             <PackagePlus className="h-4 w-4 text-primary" />
@@ -131,7 +131,7 @@ export function ReadyRequestSection() {
           <span>Tap untuk membuat paket request pertama.</span>
         </Link>
       ) : filtered && filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-1 rounded-md border border-dashed bg-card p-4 text-center text-xs text-muted-foreground">
+        <div className="flex flex-col items-center gap-ms-1 rounded-md border border-dashed bg-card p-ms-4 text-center text-ms-xs text-muted-foreground">
           <Search className="h-4 w-4 opacity-60" />
           <span>Tidak ada hasil untuk pencarian itu.</span>
         </div>
@@ -145,21 +145,21 @@ export function ReadyRequestSection() {
               data-testid={`ready-request-card-${r.id}`}
               className={
                 "flex flex-col gap-0.5 rounded-md border bg-card hover:border-primary/40 hover:bg-accent " +
-                (compact ? "px-2.5 py-1.5" : "p-2.5")
+                (compact ? "px-ms-2.5 py-1.5" : "p-ms-2.5")
               }
             >
               <div className="flex items-center justify-between">
-                <span className="truncate text-xs font-semibold">{r.name}</span>
+                <span className="truncate text-ms-xs font-semibold">{r.name}</span>
               <span
                 data-testid={`ready-request-badge-${r.id}`}
                 data-badge-count={r.prep_count}
-                className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary"
+                className="rounded bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-medium text-primary"
               >
                   {r.prep_count} paket
                 </span>
               </div>
               {!compact && (
-                <span className="line-clamp-2 text-[11px] text-muted-foreground">
+                <span className="line-clamp-2 text-ms-2xs text-muted-foreground">
                   {r.items_summary || `${r.product_count} produk`}
                 </span>
               )}

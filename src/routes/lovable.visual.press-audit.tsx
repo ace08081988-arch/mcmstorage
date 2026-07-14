@@ -34,33 +34,33 @@ function PressAuditHarness() {
   return (
     <main
       data-press-scope="on"
-      className="min-h-[100dvh] space-y-6 bg-background p-6 text-foreground"
+      className="min-h-[100dvh] space-ms-6 bg-background p-ms-6 text-foreground"
     >
-      <h1 className="text-lg font-semibold">Press-audit warnings harness</h1>
-      <p className="text-xs text-muted-foreground">
+      <h1 className="text-ms-lg font-semibold">Press-audit warnings harness</h1>
+      <p className="text-ms-xs text-muted-foreground">
         Empat offender di bawah ini sengaja tanpa <code>data-no-press</code>.
       </p>
 
       {/* Rule 1 — Radix-like animated surface di dalam scope. */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">radix-animated-surface</h2>
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">radix-animated-surface</h2>
         <div
           data-testid="offender-radix"
           role="dialog"
           data-state="open"
-          className="rounded border p-3 text-sm"
+          className="rounded border p-ms-3 text-ms-sm"
         >
           Radix content look-alike (inline, tanpa portal) tanpa data-no-press.
         </div>
       </section>
 
       {/* Rule 2 — motion.* dengan whileTap membungkus <button>. */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">motion-whiletap-wraps-button</h2>
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">motion-whiletap-wraps-button</h2>
         <div data-whiletap="1">
           <button
             data-testid="offender-motion-btn"
-            className="rounded bg-primary px-3 py-2 text-primary-foreground"
+            className="rounded bg-primary px-ms-3 py-ms-2 text-primary-foreground"
           >
             Tombol di dalam whileTap
           </button>
@@ -68,38 +68,38 @@ function PressAuditHarness() {
       </section>
 
       {/* Rule 3 — sortable handle. */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">sortable-handle</h2>
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">sortable-handle</h2>
         <button
           data-testid="offender-sortable"
           aria-roledescription="sortable"
           aria-label="Drag handle"
-          className="rounded border px-3 py-2"
+          className="rounded border px-ms-3 py-ms-2"
         >
           ⋮⋮ Handle
         </button>
       </section>
 
       {/* Rule 4 — destructive menuitem. */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">destructive-menuitem</h2>
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">destructive-menuitem</h2>
         <div
           data-testid="offender-destructive"
           role="menuitem"
-          className="text-destructive cursor-pointer rounded px-3 py-2"
+          className="text-destructive cursor-pointer rounded px-ms-3 py-ms-2"
         >
           Hapus item
         </div>
       </section>
 
       {/* Kontrol positif — tidak boleh masuk warnings. */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-medium">Kontrol positif (opt-out benar)</h2>
+      <section className="space-ms-2">
+        <h2 className="text-ms-sm font-medium">Kontrol positif (opt-out benar)</h2>
         <button
           data-testid="control-ok-sortable"
           data-no-press
           aria-roledescription="sortable"
-          className="rounded border px-3 py-2"
+          className="rounded border px-ms-3 py-ms-2"
         >
           Handle aman
         </button>
@@ -107,7 +107,7 @@ function PressAuditHarness() {
           <button
             data-testid="control-ok-motion-btn"
             data-no-press
-            className="rounded bg-primary px-3 py-2 text-primary-foreground"
+            className="rounded bg-primary px-ms-3 py-ms-2 text-primary-foreground"
           >
             Tombol whileTap aman
           </button>

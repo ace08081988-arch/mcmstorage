@@ -101,8 +101,8 @@ export function EditContactNameDialog({ open, onOpenChange, peerKey, initialName
             Otomatis tersimpan saat Anda mengetik dan tersinkron ke Buku Alamat.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor="contact-alias-name" className="text-xs uppercase text-muted-foreground">Nama tampilan</Label>
+        <div className="space-ms-2">
+          <Label htmlFor="contact-alias-name" className="text-ms-xs uppercase text-muted-foreground">Nama tampilan</Label>
           <Input
             id="contact-alias-name"
             autoFocus
@@ -112,13 +112,13 @@ export function EditContactNameDialog({ open, onOpenChange, peerKey, initialName
             maxLength={100}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void saveNow(); } }}
           />
-          <div className="flex h-5 items-center gap-1 text-[11px]">
+          <div className="flex h-5 items-center gap-ms-1 text-ms-2xs">
             {status === "saving" ? (
-              <span className="flex items-center gap-1 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Menyimpan…</span>
+              <span className="flex items-center gap-ms-1 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Menyimpan…</span>
             ) : status === "saved" ? (
-              <span className="flex items-center gap-1 text-emerald-600"><Check className="h-3 w-3" /> Tersimpan & tersinkron</span>
+              <span className="flex items-center gap-ms-1 text-emerald-600"><Check className="h-3 w-3" /> Tersimpan & tersinkron</span>
             ) : status === "error" ? (
-              <span className="flex items-center gap-1 text-destructive"><AlertCircle className="h-3 w-3" /> {errorMsg ?? "Gagal menyimpan"}</span>
+              <span className="flex items-center gap-ms-1 text-destructive"><AlertCircle className="h-3 w-3" /> {errorMsg ?? "Gagal menyimpan"}</span>
             ) : (
               <span className="text-muted-foreground">
                 {fromAlias ? "Nama saat ini diambil dari Buku Alamat." : "Nama saat ini diambil dari profil / nomor."}

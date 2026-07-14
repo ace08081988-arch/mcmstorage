@@ -115,22 +115,22 @@ export function PendingVerificationSection({
     <>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
             <ShieldCheck className="h-4 w-4" />
             Menunggu Verifikasi
             <StatusBadge lifecycle="waiting_verification" size="xs" />
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-ms-2">
           {loading ? (
-            <p className="text-xs text-muted-foreground">Memuat…</p>
+            <p className="text-ms-xs text-muted-foreground">Memuat…</p>
           ) : (
             rows.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between gap-2 rounded border p-2"
+                className="flex items-center justify-between gap-ms-2 rounded border p-ms-2"
               >
-                <div className="min-w-0 flex-1 text-xs">
+                <div className="min-w-0 flex-1 text-ms-xs">
                   {(() => {
                     const taskName = r.task_id ? taskNames[r.task_id] : undefined;
                     const itemName = r.task_item_id ? itemNames[r.task_item_id] : undefined;
@@ -140,7 +140,7 @@ export function PendingVerificationSection({
                         <div className="truncate font-medium">
                           {label || "Submisi pegawai"}
                         </div>
-                        <div className="truncate text-[11px] text-muted-foreground">
+                        <div className="truncate text-ms-2xs text-muted-foreground">
                           {new Date(r.submitted_at).toLocaleString("id-ID")}
                         </div>
                       </>

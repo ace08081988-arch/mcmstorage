@@ -180,15 +180,15 @@ function ProfilPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 pb-12">
+    <main className="mx-auto w-full max-w-3xl space-ms-6 p-ms-4 pb-12">
       {/* Hero header */}
-      <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 sm:p-6">
+      <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/15 via-primary/5 to-background p-ms-5 sm:p-ms-6">
         <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex flex-col gap-ms-4 sm:flex-row sm:items-center">
           <div className="relative">
             <Avatar className="h-20 w-20 ring-2 ring-primary/30 ring-offset-2 ring-offset-background">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt="Foto profil" /> : null}
-              <AvatarFallback className="bg-primary/15 text-xl font-semibold text-primary">
+              <AvatarFallback className="bg-primary/15 text-ms-xl font-semibold text-primary">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -214,25 +214,25 @@ function ProfilPage() {
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="truncate text-xl font-semibold tracking-tight">
+            <div className="flex items-center gap-ms-2">
+              <h1 className="truncate text-ms-xl font-semibold tracking-tight">
                 {displayName || "Profil akun"}
               </h1>
               {profile?.email && (
                 <BadgeCheck className="h-4 w-4 flex-none text-primary" aria-hidden="true" />
               )}
             </div>
-            <p className="truncate text-sm text-muted-foreground">
+            <p className="truncate text-ms-sm text-muted-foreground">
               {profile?.email ?? "Memuat akun…"}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-ms-2">
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading || isLoading}
-                className="h-7 gap-1.5 text-xs"
+                className="h-7 gap-ms-1.5 text-ms-xs"
               >
                 <Camera className="h-3.5 w-3.5" aria-hidden="true" />
                 {profile?.avatar_url ? "Ganti foto" : "Unggah foto"}
@@ -244,24 +244,24 @@ function ProfilPage() {
                   variant="ghost"
                   onClick={handleAvatarRemove}
                   disabled={uploading}
-                  className="h-7 gap-1.5 text-xs text-destructive hover:text-destructive"
+                  className="h-7 gap-ms-1.5 text-ms-xs text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Hapus
                 </Button>
               )}
-              <span className="text-[10px] text-muted-foreground">JPG/PNG, maks 3 MB</span>
+              <span className="text-ms-2xs text-muted-foreground">JPG/PNG, maks 3 MB</span>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <Badge variant="secondary" className="gap-1">
+            <div className="mt-2 flex flex-wrap items-center gap-ms-1.5">
+              <Badge variant="secondary" className="gap-ms-1">
                 <Globe2 className="h-3 w-3" aria-hidden="true" />
                 {country.flag} {country.name}
               </Badge>
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-ms-1">
                 <Coins className="h-3 w-3" aria-hidden="true" />
                 {currency}
               </Badge>
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="secondary" className="gap-ms-1">
                 <Languages className="h-3 w-3" aria-hidden="true" />
                 {LANGUAGES.find((l) => l.code === language)?.name ?? language}
               </Badge>
@@ -270,19 +270,19 @@ function ProfilPage() {
         </div>
       </section>
 
-      <form onSubmit={onSubmit} className="space-y-5">
+      <form onSubmit={onSubmit} className="space-ms-5">
         {/* Identitas */}
         <Card>
           <CardHeader className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-ms-2">
               <User className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle className="text-base">Identitas</CardTitle>
+              <CardTitle className="text-ms-base">Identitas</CardTitle>
             </div>
             <CardDescription>
               Nama tampilan dan email yang dipakai di seluruh aplikasi.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-ms-4">
             <div className="space-y-1.5">
               <Label htmlFor="profil-nama">Nama tampilan</Label>
               <Input
@@ -296,7 +296,7 @@ function ProfilPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="profil-email" className="flex items-center gap-1.5">
+              <Label htmlFor="profil-email" className="flex items-center gap-ms-1.5">
                 <Mail className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 Email akun
               </Label>
@@ -311,13 +311,13 @@ function ProfilPage() {
                 />
                 <Badge
                   variant="outline"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 gap-1 text-[10px]"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 gap-ms-1 text-ms-2xs"
                 >
                   <ShieldCheck className="h-3 w-3" aria-hidden="true" />
                   Terkunci
                 </Badge>
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 Untuk mengubah email, gunakan menu ubah email pada pengaturan akun.
               </p>
             </div>
@@ -327,24 +327,24 @@ function ProfilPage() {
         {/* Kontak */}
         <Card>
           <CardHeader className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-ms-2">
               <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle className="text-base">Kontak MCM</CardTitle>
+              <CardTitle className="text-ms-base">Kontak MCM</CardTitle>
             </div>
             <CardDescription>
               Nomor pengirim default untuk pesan MCM & link pegawai.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-ms-3">
             <div className="space-y-1.5">
               <Label htmlFor="profil-hp">Nomor MCM / HP</Label>
-              <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="flex flex-col gap-ms-2 sm:flex-row">
                 <select
                   aria-label="Kode negara"
                   value={countryCode}
                   onChange={(e) => onCountryChange(e.target.value)}
                   disabled={isLoading}
-                  className="h-10 w-full rounded-md border bg-background px-2 text-sm sm:max-w-[12rem]"
+                  className="h-10 w-full rounded-md border bg-background px-ms-2 text-ms-sm sm:max-w-[12rem]"
                 >
                   {COUNTRIES.map((c) => (
                     <option key={c.code} value={c.code}>
@@ -365,14 +365,14 @@ function ProfilPage() {
                 />
               </div>
               {phone.trim() && (
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-ms-2 pt-1">
                   {phoneValid ? (
-                    <Badge variant="secondary" className="gap-1 text-[10px]">
+                    <Badge variant="secondary" className="gap-ms-1 text-ms-2xs">
                       <BadgeCheck className="h-3 w-3 text-primary" aria-hidden="true" />
                       {formatWaDisplay(phone, countryCode)}
                     </Badge>
                   ) : (
-                    <Badge variant="destructive" className="text-[10px]">
+                    <Badge variant="destructive" className="text-ms-2xs">
                       Nomor belum valid
                     </Badge>
                   )}
@@ -385,17 +385,17 @@ function ProfilPage() {
         {/* Preferensi Regional */}
         <Card>
           <CardHeader className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-ms-2">
               <Globe2 className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle className="text-base">Preferensi regional</CardTitle>
+              <CardTitle className="text-ms-base">Preferensi regional</CardTitle>
             </div>
             <CardDescription>
               Bahasa, mata uang, dan format tanggal di seluruh aplikasi.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="grid gap-ms-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="profil-lang" className="flex items-center gap-1.5">
+              <Label htmlFor="profil-lang" className="flex items-center gap-ms-1.5">
                 <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 Bahasa antarmuka
               </Label>
@@ -404,7 +404,7 @@ function ProfilPage() {
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
                 disabled={isLoading}
-                className="h-10 w-full rounded-md border bg-background px-2 text-sm"
+                className="h-10 w-full rounded-md border bg-background px-ms-2 text-ms-sm"
               >
                 {LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>{l.name}</option>
@@ -412,7 +412,7 @@ function ProfilPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="profil-currency" className="flex items-center gap-1.5">
+              <Label htmlFor="profil-currency" className="flex items-center gap-ms-1.5">
                 <Coins className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 Mata uang
               </Label>
@@ -425,12 +425,12 @@ function ProfilPage() {
                 disabled={isLoading}
                 className="h-10 uppercase tracking-wider"
               />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 Contoh: <span className="font-medium text-foreground">{formatCurrency(1234567, previewProfile)}</span>
               </p>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="profil-date" className="flex items-center gap-1.5">
+              <Label htmlFor="profil-date" className="flex items-center gap-ms-1.5">
                 <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                 Format tanggal
               </Label>
@@ -439,13 +439,13 @@ function ProfilPage() {
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value)}
                 disabled={isLoading}
-                className="h-10 w-full rounded-md border bg-background px-2 text-sm"
+                className="h-10 w-full rounded-md border bg-background px-ms-2 text-ms-sm"
               >
                 {DATE_FORMATS.map((f) => (
                   <option key={f.code} value={f.code}>{f.code} — {f.sample}</option>
                 ))}
               </select>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 Hari ini: <span className="font-medium text-foreground">{formatDate(new Date(), previewProfile)}</span>
               </p>
             </div>
@@ -453,14 +453,14 @@ function ProfilPage() {
         </Card>
 
         {/* Action bar */}
-        <div className="sticky bottom-2 z-10 flex items-center justify-between gap-3 rounded-xl border bg-background/95 p-3 shadow-sm backdrop-blur">
-          <p className="text-xs text-muted-foreground">
+        <div className="sticky bottom-2 z-10 flex items-center justify-between gap-ms-3 rounded-xl border bg-background/95 p-ms-3 shadow-sm backdrop-blur">
+          <p className="text-ms-xs text-muted-foreground">
             {dirty ? "Ada perubahan belum disimpan." : "Semua perubahan tersimpan."}
           </p>
           <Button
             type="submit"
             disabled={!dirty || update.isPending || isLoading}
-            className="gap-2"
+            className="gap-ms-2"
           >
             {update.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -494,14 +494,14 @@ function ProfilPage() {
 
       <Separator />
 
-      <section className="space-y-2">
+      <section className="space-ms-2">
         <div>
-          <h2 className="text-sm font-semibold">Pintasan unduhan</h2>
-          <p className="text-[11px] text-muted-foreground">
+          <h2 className="text-ms-sm font-semibold">Pintasan unduhan</h2>
+          <p className="text-ms-2xs text-muted-foreground">
             Unduh APK MCM Chat versi terbaru tanpa membuka halaman /download.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:max-w-sm">
+        <div className="grid grid-cols-2 gap-ms-2 sm:max-w-sm">
           <DownloadChatApkShortcut />
           <CopyChatApkLinksButton />
         </div>
@@ -509,23 +509,23 @@ function ProfilPage() {
 
       <Separator />
 
-      <section className="space-y-2">
+      <section className="space-ms-2">
         <div>
-          <h2 className="text-sm font-semibold">Tampilan</h2>
-          <p className="text-[11px] text-muted-foreground">
+          <h2 className="text-ms-sm font-semibold">Tampilan</h2>
+          <p className="text-ms-2xs text-muted-foreground">
             Ubah tema, aksen, font, latar, dan pilih preset profesional.
           </p>
         </div>
         <Link
           to="/pengaturan-tampilan"
-          className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent transition-transform active:scale-[0.99] sm:max-w-sm"
+          className="flex items-center gap-ms-3 rounded-md border p-ms-3 hover:bg-accent transition-transform active:scale-[0.99] sm:max-w-sm"
         >
           <div className="grid h-9 w-9 place-items-center rounded-md bg-primary/10 text-primary">
             <Palette className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">Pengaturan tampilan</p>
-            <p className="text-[11px] text-muted-foreground">Tema, aksen, font, latar & preset</p>
+            <p className="text-ms-sm font-semibold">Pengaturan tampilan</p>
+            <p className="text-ms-2xs text-muted-foreground">Tema, aksen, font, latar & preset</p>
           </div>
           <span className="text-muted-foreground">›</span>
         </Link>

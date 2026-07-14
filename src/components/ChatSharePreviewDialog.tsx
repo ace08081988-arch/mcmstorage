@@ -66,10 +66,10 @@ function StepRow({ label, status, hint }: { label: string; status: "pending" | "
     : status === "running" ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
     : <span className="inline-block h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />;
   return (
-    <div className="flex items-center gap-2 text-[12px]">
+    <div className="flex items-center gap-ms-2 text-ms-xs">
       <span className="shrink-0">{icon}</span>
       <span className="flex-1 truncate">{label}</span>
-      {hint ? <span className="text-[11px] text-muted-foreground">{hint}</span> : null}
+      {hint ? <span className="text-ms-2xs text-muted-foreground">{hint}</span> : null}
     </div>
   );
 }
@@ -168,7 +168,7 @@ export function ChatSharePreviewDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!sending) onOpenChange(o); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <span>Pratinjau kiriman chat</span>
             <SyncSourceBadge source={liveLog.lastSource} active={liveLog.active} />
           </DialogTitle>
@@ -178,9 +178,9 @@ export function ChatSharePreviewDialog({
         </DialogHeader>
 
         {data && (
-          <div className="space-y-3 text-sm">
-            <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5">
-              <div className="flex items-center justify-between text-[12px] font-semibold">
+          <div className="space-ms-3 text-ms-sm">
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-ms-2.5">
+              <div className="flex items-center justify-between text-ms-xs font-semibold">
                 <span className="text-foreground">Ringkasan payload</span>
                 <span className="text-primary">
                   {data.folderCount} kiriman · {data.totalPhotos} foto terlampir
@@ -196,7 +196,7 @@ export function ChatSharePreviewDialog({
               />
             ) : null}
             {effectiveDup && !progressActive && !outcome ? (
-              <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2.5 text-[12px] text-amber-900 dark:text-amber-200">
+              <div className="flex items-start gap-ms-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-ms-2.5 text-ms-xs text-amber-900 dark:text-amber-200">
                 <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">
@@ -222,13 +222,13 @@ export function ChatSharePreviewDialog({
                 {effectiveDup.status !== "in-flight" ? (
                   <div
                     className={
-                      "mt-2 rounded-md border px-2 py-1.5 text-[11px] " +
+                      "mt-2 rounded-md border px-ms-2 py-1.5 text-ms-2xs " +
                       (payloadMatches
                         ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
                         : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
                     }
                   >
-                    <span className="inline-flex items-start gap-1">
+                    <span className="inline-flex items-start gap-ms-1">
                       <span className="flex-1">
                         {payloadMatches
                           ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
@@ -263,28 +263,28 @@ export function ChatSharePreviewDialog({
               <SendLogViewer entries={previousLog} defaultOpen={!!duplicate && duplicate.status !== "in-flight"} />
             ) : null}
             <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Caption</h3>
-              <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-2 font-sans text-[12.5px] leading-snug">{data.caption || "(kosong)"}</pre>
+              <h3 className="mb-1 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">Caption</h3>
+              <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-ms-2 font-sans text-[12.5px] leading-snug">{data.caption || "(kosong)"}</pre>
             </section>
 
             <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="mb-1 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Foto · {data.totalPhotos}
                 {data.missingPhotos > 0 && (
                   <span className="ml-1 font-normal normal-case text-amber-600">({data.missingPhotos} gagal diunduh)</span>
                 )}
               </h3>
               {data.totalPhotos === 0 ? (
-                <p className="text-xs text-muted-foreground">Tidak ada foto yang dapat dilampirkan.</p>
+                <p className="text-ms-xs text-muted-foreground">Tidak ada foto yang dapat dilampirkan.</p>
               ) : (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-ms-1.5">
                   {data.thumbs.slice(0, 4).map((u, i) => (
                     <div key={i} className="h-14 w-14 overflow-hidden rounded border bg-muted">
                       <img src={u} alt="" className="h-full w-full object-cover" loading="lazy" />
                     </div>
                   ))}
                   {data.totalPhotos > 4 && (
-                    <div className="flex h-14 w-14 items-center justify-center rounded border bg-muted text-xs font-semibold text-muted-foreground">
+                    <div className="flex h-14 w-14 items-center justify-center rounded border bg-muted text-ms-xs font-semibold text-muted-foreground">
                       +{data.totalPhotos - 4}
                     </div>
                   )}
@@ -293,7 +293,7 @@ export function ChatSharePreviewDialog({
               {data.failedPhotoLabels && data.failedPhotoLabels.length > 0 && (
                 <div
                   role="alert"
-                  className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-[11.5px] leading-snug text-amber-900"
+                  className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-ms-2 text-[11.5px] leading-snug text-amber-900"
                 >
                   <div className="font-semibold">Foto berikut gagal dibaca dan tidak ikut dilampirkan:</div>
                   <ul className="mt-1 list-disc space-y-0.5 pl-4">
@@ -306,35 +306,35 @@ export function ChatSharePreviewDialog({
                   </ul>
                 </div>
               )}
-              <p className="mt-1 text-[11px] text-muted-foreground">Tiap foto dikirim sebagai pesan terpisah.</p>
+              <p className="mt-1 text-ms-2xs text-muted-foreground">Tiap foto dikirim sebagai pesan terpisah.</p>
             </section>
 
             <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Link Maps</h3>
+              <h3 className="mb-1 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">Link Maps</h3>
               {data.mapsUrl ? (
                 <a
                   href={data.mapsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex max-w-full items-center gap-1 truncate rounded-md border bg-muted/40 px-2 py-1 text-[12px] text-primary hover:underline"
+                  className="inline-flex max-w-full items-center gap-ms-1 truncate rounded-md border bg-muted/40 px-ms-2 py-1 text-ms-xs text-primary hover:underline"
                 >
                   <MapPin className="h-3 w-3 shrink-0" />
                   <span className="truncate">{data.mapsUrl}</span>
                 </a>
               ) : (
-                <p className="text-xs text-muted-foreground">Tidak ada lokasi yang dilampirkan.</p>
+                <p className="text-ms-xs text-muted-foreground">Tidak ada lokasi yang dilampirkan.</p>
               )}
             </section>
           </div>
         )}
 
         {progressActive && status ? (
-          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="space-ms-2 rounded-md border bg-muted/30 p-ms-3">
+            <div className="flex items-center justify-between gap-ms-2">
+              <h3 className="text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {outcome ? "Hasil pengiriman" : "Mengirim…"}
               </h3>
-              <span className="text-[11px] text-muted-foreground">{doneSteps}/{totalSteps} langkah</span>
+              <span className="text-ms-2xs text-muted-foreground">{doneSteps}/{totalSteps} langkah</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
               <div
@@ -369,7 +369,7 @@ export function ChatSharePreviewDialog({
             {outcome ? (
               <div
                 className={
-                  "flex items-start gap-2 rounded-md border p-2 text-[12px] " +
+                  "flex items-start gap-ms-2 rounded-md border p-ms-2 text-ms-xs " +
                   (outcome.kind === "success" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
                   : outcome.kind === "partial" ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200"
                   : outcome.kind === "cancelled" ? "border-muted-foreground/30 bg-muted text-muted-foreground"
@@ -394,7 +394,7 @@ export function ChatSharePreviewDialog({
           </div>
         ) : null}
 
-        <DialogFooter className="gap-2 sm:gap-2">
+        <DialogFooter className="gap-ms-2 sm:gap-ms-2">
           {outcome ? (
             <>
               {(outcome.kind === "failed" || outcome.kind === "partial") && onRetry ? (
@@ -402,7 +402,7 @@ export function ChatSharePreviewDialog({
                   type="button"
                   onClick={onRetry}
                   disabled={sending}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border bg-card px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
+                  className="inline-flex h-9 items-center justify-center gap-ms-1.5 rounded-md border bg-card px-ms-3 text-ms-sm font-medium hover:bg-accent disabled:opacity-50"
                 >
                   <RefreshCw className="h-4 w-4" /> Coba lagi
                 </button>
@@ -410,7 +410,7 @@ export function ChatSharePreviewDialog({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
+                className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
               >
                 Tutup
               </button>
@@ -421,7 +421,7 @@ export function ChatSharePreviewDialog({
                 type="button"
                 onClick={() => onOpenChange(false)}
                 disabled={sending}
-                className="inline-flex h-9 items-center justify-center rounded-md border bg-card px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
+                className="inline-flex h-9 items-center justify-center rounded-md border bg-card px-ms-3 text-ms-sm font-medium hover:bg-accent disabled:opacity-50"
               >
                 Batal
               </button>
@@ -437,7 +437,7 @@ export function ChatSharePreviewDialog({
                         ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                         : "Kirim ulang meski klik ganda terdeteksi"
                   }
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
+                  className="inline-flex h-9 items-center justify-center gap-ms-1.5 rounded-md border border-amber-500 bg-amber-500 px-ms-3 text-ms-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
                 >
                   <ShieldAlert className="h-4 w-4" />
                   Kirim ulang (paksa)
@@ -448,7 +448,7 @@ export function ChatSharePreviewDialog({
                   onClick={onConfirm}
                   disabled={sending || !data || live?.status === "in-flight"}
                   title={live?.status === "in-flight" ? (crossChannel ? "Kiriman MCM untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+                  className="inline-flex h-9 items-center justify-center gap-ms-1.5 rounded-md bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
                 >
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   {sending ? "Mengirim…" : live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim sekarang"}

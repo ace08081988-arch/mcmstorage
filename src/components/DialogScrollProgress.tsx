@@ -102,7 +102,7 @@ export function DialogScrollProgress({
   return (
     <div className={`${className}`}>
       {activeLabel ? (
-        <div className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="mb-1 flex items-center justify-between text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">
           <span className="truncate">{activeLabel}</span>
           <span className="tabular-nums">{Math.round(progress)}%</span>
         </div>
@@ -121,14 +121,14 @@ export function DialogScrollProgress({
         />
       </div>
       {sections && sections.length > 0 ? (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex gap-ms-2">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={scrollToTop}
             disabled={!canGoBack}
-            className="h-7 flex-1 gap-1 px-2 text-[10px] disabled:opacity-30"
+            className="h-7 flex-1 gap-ms-1 px-ms-2 text-ms-2xs disabled:opacity-30"
             aria-label="Kembali ke atas form"
             title="Kembali ke atas form"
           >
@@ -142,7 +142,7 @@ export function DialogScrollProgress({
             size="sm"
             onClick={scrollToNext}
             disabled={!canGoNext}
-            className="h-7 flex-1 gap-1 px-2 text-[10px] disabled:opacity-30"
+            className="h-7 flex-1 gap-ms-1 px-ms-2 text-ms-2xs disabled:opacity-30"
             aria-label={nextSection ? `Lompat ke bagian ${nextSection.label}` : "Lompat ke bawah form"}
             title={nextSection ? `Lompat ke ${nextSection.label}` : "Lompat ke bawah form"}
           >

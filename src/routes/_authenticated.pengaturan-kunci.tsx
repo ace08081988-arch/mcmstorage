@@ -80,9 +80,9 @@ function StatusRow({
         ? "bg-rose-500"
         : "bg-amber-500";
   return (
-    <li className="flex items-center justify-between gap-2 rounded border bg-background px-2 py-1">
+    <li className="flex items-center justify-between gap-ms-2 rounded border bg-background px-ms-2 py-1">
       <span className="text-muted-foreground">{label}</span>
-      <span className="flex items-center gap-1.5 font-medium">
+      <span className="flex items-center gap-ms-1.5 font-medium">
         <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />
         {value}
       </span>
@@ -271,7 +271,7 @@ function PengaturanKunci() {
 
   if (!uid) {
     return (
-      <div className="mx-auto max-w-2xl p-4 text-sm text-muted-foreground">
+      <div className="mx-auto max-w-2xl p-ms-4 text-ms-sm text-muted-foreground">
         Memuat…
       </div>
     );
@@ -349,32 +349,32 @@ function PengaturanKunci() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-4">
+    <div className="mx-auto max-w-2xl space-ms-6 p-ms-4">
       <header className="space-y-1">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-xl font-semibold">Pengaturan Kunci Aplikasi</h1>
+        <div className="flex items-center justify-between gap-ms-2">
+          <h1 className="text-ms-xl font-semibold">Pengaturan Kunci Aplikasi</h1>
           <Link
             to="/"
-            className="text-xs text-muted-foreground hover:underline"
+            className="text-ms-xs text-muted-foreground hover:underline"
           >
             ← Beranda
           </Link>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-ms-sm text-muted-foreground">
           Atur metode kunci, sidik jari, auto-lock saat idle, dan kunci saat
           aplikasi keluar fokus.
         </p>
       </header>
 
-      <section className="rounded-lg border p-4 space-y-2">
+      <section className="rounded-lg border p-ms-4 space-ms-2">
         <div>
-          <div className="text-sm font-medium">Nama Toko</div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-ms-sm font-medium">Nama Toko</div>
+          <div className="text-ms-xs text-muted-foreground">
             Dipakai otomatis di caption MCM saat mengirim paket
             (mis. <em>“PEMBAYARAN DIKONFIRMASI - {shopSaved || "NAMA TOKO"}”</em>).
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-ms-2">
           <Input
             value={shopName}
             onChange={(e) => setShopName(e.target.value)}
@@ -392,17 +392,17 @@ function PengaturanKunci() {
         </div>
       </section>
 
-      <section className="rounded-lg border p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <section className="rounded-lg border p-ms-4">
+        <div className="flex flex-wrap items-center justify-between gap-ms-2">
           <div>
-            <div className="text-sm font-medium">Status</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-ms-sm font-medium">Status</div>
+            <div className="text-ms-xs text-muted-foreground">
               {cfg
                 ? `Aktif — ${cfg.method === "pin" ? "PIN" : "Pola"}${cfg.biometric ? " + Sidik jari" : ""}`
                 : "Belum diaktifkan"}
             </div>
             {storageMode ? (
-              <div className="mt-1 text-[11px] text-muted-foreground">
+              <div className="mt-1 text-ms-2xs text-muted-foreground">
                 Penyimpanan hash:{" "}
                 <span className="font-mono">
                   {storageMode === "secure"
@@ -424,7 +424,7 @@ function PengaturanKunci() {
               </div>
             ) : null}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-ms-2">
             {cfg && (
               <Button
                 size="sm"
@@ -443,15 +443,15 @@ function PengaturanKunci() {
         </div>
       </section>
 
-      <section className="space-y-3 rounded-lg border p-4">
+      <section className="space-ms-3 rounded-lg border p-ms-4">
         <div>
-          <h2 className="text-sm font-medium">Metode Kunci</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="text-ms-sm font-medium">Metode Kunci</h2>
+          <p className="text-ms-xs text-muted-foreground">
             Pilih salah satu sebagai metode utama. Mengubah metode akan
             menggantikan kredensial sebelumnya.
           </p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-ms-2 sm:grid-cols-2">
           <Button
             variant={editor === "pin" ? "default" : "outline"}
             onClick={() => {
@@ -476,7 +476,7 @@ function PengaturanKunci() {
         </div>
 
         {editor === "pin" && (
-          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+          <div className="space-ms-2 rounded-md border bg-muted/30 p-ms-3">
             <Label>PIN baru (4-8 digit)</Label>
             <Input
               type="password"
@@ -495,7 +495,7 @@ function PengaturanKunci() {
               onChange={(e) => setPin2(e.target.value.replace(/\D/g, ""))}
               placeholder="••••"
             />
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex justify-end gap-ms-2 pt-1">
               <Button variant="outline" onClick={() => setEditor("none")}>
                 Batal
               </Button>
@@ -505,7 +505,7 @@ function PengaturanKunci() {
         )}
 
         {editor === "pattern" && (
-          <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+          <div className="space-ms-3 rounded-md border bg-muted/30 p-ms-3">
             <div>
               <Label>Gambar pola baru (≥ 4 titik)</Label>
               <div className="mt-2 flex justify-center">
@@ -515,7 +515,7 @@ function PengaturanKunci() {
                   onChange={setPat1}
                 />
               </div>
-              <div className="mt-1 text-center text-[11px] text-muted-foreground">
+              <div className="mt-1 text-center text-ms-2xs text-muted-foreground">
                 {pat1.length} titik
               </div>
             </div>
@@ -528,11 +528,11 @@ function PengaturanKunci() {
                   onChange={setPat2}
                 />
               </div>
-              <div className="mt-1 text-center text-[11px] text-muted-foreground">
+              <div className="mt-1 text-center text-ms-2xs text-muted-foreground">
                 {pat2.length} titik
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-ms-2">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -552,16 +552,16 @@ function PengaturanKunci() {
         )}
       </section>
 
-      <section className="space-y-4 rounded-lg border p-4">
-        <h2 className="text-sm font-medium">Opsi Tambahan</h2>
+      <section className="space-ms-4 rounded-lg border p-ms-4">
+        <h2 className="text-ms-sm font-medium">Opsi Tambahan</h2>
 
-        <div className="rounded-md border bg-muted/30 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="text-[12px] font-medium">Status Perangkat</div>
+        <div className="rounded-md border bg-muted/30 p-ms-3">
+          <div className="mb-2 flex items-center justify-between gap-ms-2">
+            <div className="flex items-center gap-ms-2">
+              <div className="text-ms-xs font-medium">Status Perangkat</div>
               <span
                 key={bioTick}
-                className="text-[10px] text-muted-foreground"
+                className="text-ms-2xs text-muted-foreground"
                 aria-live="polite"
               >
                 {bioChecking
@@ -575,7 +575,7 @@ function PengaturanKunci() {
               type="button"
               onClick={() => runBioCheck(true)}
               disabled={bioChecking}
-              className="text-[11px] font-medium text-primary underline disabled:opacity-50"
+              className="text-ms-2xs font-medium text-primary underline disabled:opacity-50"
             >
               {bioChecking ? "Memeriksa…" : "Refresh"}
             </button>
@@ -585,7 +585,7 @@ function PengaturanKunci() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 px-2 text-[11px]"
+                className="h-7 px-ms-2 text-ms-2xs"
                 onClick={() => handleOpenPerm(false)}
                 disabled={openingPerm}
               >
@@ -593,7 +593,7 @@ function PengaturanKunci() {
               </Button>
             </div>
           )}
-          <ul className="grid grid-cols-1 gap-1 text-[11px] sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-ms-1 text-ms-2xs sm:grid-cols-2">
             <StatusRow
               label="Platform"
               value={
@@ -646,7 +646,7 @@ function PengaturanKunci() {
             />
           </ul>
           {bioStatus.reason && !bioAvailable && (
-            <div className="mt-2 text-[11px] text-muted-foreground">
+            <div className="mt-2 text-ms-2xs text-muted-foreground">
               Detail: <span className="font-mono">{bioStatus.code || "—"}</span>{" "}
               · {bioStatus.reason}
             </div>
@@ -719,7 +719,7 @@ function PengaturanKunci() {
             }
             if (recs.length === 0 && bioAvailable && cfg?.biometric) {
               return (
-                <div className="mt-2 rounded border border-emerald-500/30 bg-emerald-500/5 px-2 py-1.5 text-[11px] text-emerald-700 dark:text-emerald-300">
+                <div className="mt-2 rounded border border-emerald-500/30 bg-emerald-500/5 px-ms-2 py-1.5 text-ms-2xs text-emerald-700 dark:text-emerald-300">
                   Sidik jari aktif dan siap dipakai.
                 </div>
               );
@@ -727,16 +727,16 @@ function PengaturanKunci() {
             if (recs.length === 0) return null;
             return (
               <div className="mt-3 space-y-1.5">
-                <div className="text-[11px] font-medium text-muted-foreground">
+                <div className="text-ms-2xs font-medium text-muted-foreground">
                   Rekomendasi langkah
                 </div>
                 <ol className="space-y-1.5">
                   {recs.map((r, i) => (
                     <li
                       key={r.key}
-                      className="flex items-start gap-2 rounded border bg-background px-2 py-1.5 text-[11px]"
+                      className="flex items-start gap-ms-2 rounded border bg-background px-ms-2 py-1.5 text-ms-2xs"
                     >
-                      <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                      <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-ms-2xs font-semibold text-amber-700 dark:text-amber-300">
                         {i + 1}
                       </span>
                       <div className="flex-1 space-y-1">
@@ -745,7 +745,7 @@ function PengaturanKunci() {
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="h-7 px-2 text-[11px]"
+                            className="h-7 px-ms-2 text-ms-2xs"
                             onClick={r.action.onClick}
                             disabled={r.action.disabled}
                           >
@@ -756,7 +756,7 @@ function PengaturanKunci() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="ml-1 h-7 px-2 text-[11px]"
+                            className="ml-1 h-7 px-ms-2 text-ms-2xs"
                             onClick={r.secondary.onClick}
                             disabled={r.secondary.disabled}
                           >
@@ -772,10 +772,10 @@ function PengaturanKunci() {
           })()}
         </div>
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-ms-3">
           <div className="flex-1">
             <Label>Sidik jari</Label>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-ms-2xs text-muted-foreground">
               {bioChecking
                 ? "Memeriksa perangkat…"
                 : bioAvailable
@@ -783,7 +783,7 @@ function PengaturanKunci() {
                   : bioStatus.reason || "Tidak tersedia di perangkat ini"}
             </p>
             {!bioChecking && !bioAvailable && (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-ms-2">
                 {bioStatus.native && (
                   <Button
                     size="sm"
@@ -805,16 +805,16 @@ function PengaturanKunci() {
               </div>
             )}
             {!bioChecking && !bioAvailable && bioStatus.native && (
-              <p className="mt-2 text-[11px] text-muted-foreground">
+              <p className="mt-2 text-ms-2xs text-muted-foreground">
                 Setelah menambahkan sidik jari di sistem, kembali ke aplikasi —
                 switch akan aktif otomatis.
               </p>
             )}
             {!bioChecking && !bioAvailable && !cfg && (
-              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-900 dark:text-amber-200">
+              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-900 dark:text-amber-200">
                 Sidik jari belum tersedia. Buat <b>PIN cadangan</b> agar tetap bisa
                 mengaktifkan App Lock dan membuka aplikasi.
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-ms-2">
                   <Button
                     size="sm"
                     onClick={() => {
@@ -841,7 +841,7 @@ function PengaturanKunci() {
               </div>
             )}
             {cfg && (
-              <p className="mt-2 text-[11px] text-muted-foreground">
+              <p className="mt-2 text-ms-2xs text-muted-foreground">
                 {cfg.method === "pin" ? "PIN" : "Pola"} cadangan tetap aktif —
                 bisa dipakai login bila sidik jari gagal atau dinonaktifkan.
               </p>
@@ -854,10 +854,10 @@ function PengaturanKunci() {
           />
         </div>
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-ms-3">
           <div>
             <Label>Kunci saat aplikasi keluar fokus</Label>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-ms-2xs text-muted-foreground">
               Tab atau aplikasi disembunyikan → langsung terkunci
             </p>
           </div>
@@ -881,15 +881,15 @@ function PengaturanKunci() {
               updateOption({ idleMs: m * 60000 });
             }}
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-ms-2xs text-muted-foreground">
             0 = nonaktif. Tersimpan otomatis saat diubah.
           </p>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t pt-3">
+        <div className="flex items-center justify-between gap-ms-3 border-t pt-3">
           <div>
             <Label>Hapus sesi saat tutup tab</Label>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-ms-2xs text-muted-foreground">
               Logout otomatis saat tab/aplikasi ditutup
             </p>
           </div>

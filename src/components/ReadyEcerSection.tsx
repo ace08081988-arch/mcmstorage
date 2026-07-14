@@ -577,13 +577,13 @@ export function ReadyEcerSection() {
   return (
     <div ref={rootRef} className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <div className="flex items-center gap-ms-1.5">
+          <p className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
             Produk Eceran Siap Kirim
           </p>
           <RealtimeBadge status={realtimeStatus} syncing={syncing || refreshing} />
         </div>
-        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
+        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }} className="inline-flex items-center gap-0.5 text-ms-2xs font-medium text-primary hover:underline">
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
@@ -594,7 +594,7 @@ export function ReadyEcerSection() {
       </div>
 
       {rows && rows.length > 0 && (
-        <div className="flex gap-1.5">
+        <div className="flex gap-ms-1.5">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -602,7 +602,7 @@ export function ReadyEcerSection() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari judul, produk, kategori (1g, ST, SPR, GS), atau ID…"
-              className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
+              className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-ms-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
             />
             {query && (
               <button
@@ -618,7 +618,7 @@ export function ReadyEcerSection() {
           <select
             value={productFilter}
             onChange={(e) => setProductFilter(e.target.value)}
-            className="h-8 max-w-[40%] rounded-md border bg-card px-2 text-xs outline-none focus:border-primary/40"
+            className="h-8 max-w-[40%] rounded-md border bg-card px-ms-2 text-ms-xs outline-none focus:border-primary/40"
             aria-label="Filter produk"
           >
             <option value="all">Semua produk</option>
@@ -633,13 +633,13 @@ export function ReadyEcerSection() {
         <div
           role="status"
           aria-live="polite"
-          className={`flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-[11px] transition-colors ${
+          className={`flex items-center justify-between gap-ms-2 rounded-md border px-ms-2 py-1 text-ms-2xs transition-colors ${
             crossTabSync.status === "pending"
               ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
               : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
           }`}
         >
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-ms-2">
             {crossTabSync.status === "pending" ? (
               <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
             ) : (
@@ -666,8 +666,8 @@ export function ReadyEcerSection() {
       )}
 
       {syncedFromDetail && productFilter !== "all" && (
-        <div className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-[11px] text-primary">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="flex items-center justify-between gap-ms-2 rounded-md border border-primary/30 bg-primary/5 px-ms-2 py-1 text-ms-2xs text-primary">
+          <div className="flex min-w-0 flex-1 items-center gap-ms-2">
             <span className="truncate">
               Disinkron dari detail: {(products.find(([id]) => id === productFilter)?.[1]) ?? "produk terpilih"}
             </span>
@@ -703,11 +703,11 @@ export function ReadyEcerSection() {
       )}
 
       {rows && rows.length > 0 && (
-        <div className="flex items-center gap-1 rounded-md border bg-card/50 p-0.5">
+        <div className="flex items-center gap-ms-1 rounded-md border bg-card/50 p-0.5">
           <button
             type="button"
             onClick={() => setView("active")}
-            className={`flex-1 rounded px-2 py-1 text-[11px] font-semibold transition ${view === "active" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            className={`flex-1 rounded px-ms-2 py-1 text-ms-2xs font-semibold transition ${view === "active" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
             aria-pressed={view === "active"}
           >
             Aktif <span className="ml-1 font-mono opacity-80">{totalActive}</span>
@@ -715,7 +715,7 @@ export function ReadyEcerSection() {
           <button
             type="button"
             onClick={() => setView("sent")}
-            className={`flex-1 inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition ${view === "sent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            className={`flex-1 inline-flex items-center justify-center gap-ms-1 rounded px-ms-2 py-1 text-ms-2xs font-semibold transition ${view === "sent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
             aria-pressed={view === "sent"}
           >
             <History className="h-3 w-3" /> Riwayat terkirim <span className="ml-0.5 font-mono opacity-80">{totalSent}</span>
@@ -825,8 +825,8 @@ export function ReadyEcerSection() {
       {rows === null ? (
         <div className={ecerGridClass} aria-busy="true" aria-label="Memuat produk eceran">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-1 rounded-md border bg-card px-3 py-2.5">
-              <div className="flex items-center gap-1.5">
+            <div key={i} className="flex flex-col gap-ms-1 rounded-md border bg-card px-ms-3 py-ms-2.5">
+              <div className="flex items-center gap-ms-1.5">
                 <Skeleton className="h-3.5 w-3.5 rounded" />
                 <Skeleton className="h-3 w-2/3" />
               </div>
@@ -839,19 +839,19 @@ export function ReadyEcerSection() {
         <Link
           to="/ecer"
           search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }}
-          className="flex flex-col items-center gap-1.5 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground hover:border-primary/40 hover:bg-accent"
+          className="flex flex-col items-center gap-ms-1.5 rounded-md border border-dashed bg-card/50 p-ms-5 text-center text-ms-2xs text-muted-foreground hover:border-primary/40 hover:bg-accent"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
             <Scale className="h-4 w-4 text-primary" />
           </div>
           <span className="font-medium text-foreground">Belum ada Judul Ecer</span>
           <span>Tap untuk membuat yang pertama.</span>
-          <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+          <span className="mt-0.5 inline-flex items-center gap-ms-1 rounded-full bg-primary/10 px-ms-2 py-0.5 text-primary">
             <Plus className="h-3 w-3" /> Buat sekarang
           </span>
         </Link>
       ) : filtered && filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed bg-card/50 p-4 text-center text-[11px] text-muted-foreground">
+        <div className="flex flex-col items-center gap-ms-2 rounded-md border border-dashed bg-card/50 p-ms-4 text-center text-ms-2xs text-muted-foreground">
           <span>Tidak ada hasil yang cocok.</span>
           {activeFilters > 0 && (
             <button
@@ -866,7 +866,7 @@ export function ReadyEcerSection() {
       ) : (
         <div className={ecerGridClass}>
           {visible.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center gap-1 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground">
+            <div className="col-span-full flex flex-col items-center gap-ms-1 rounded-md border border-dashed bg-card/50 p-ms-5 text-center text-ms-2xs text-muted-foreground">
               {view === "sent" ? (
                 <>
                   <History className="h-4 w-4" />
@@ -929,7 +929,7 @@ function BulkToolbar({
         <button
           type="button"
           onClick={() => setSelectMode(true)}
-          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-foreground hover:bg-accent"
+          className="inline-flex h-7 items-center gap-ms-1 rounded-md border bg-card px-ms-2 text-ms-2xs font-semibold text-foreground hover:bg-accent"
         >
           <ListChecks className="h-3 w-3" /> Pilih beberapa
         </button>
@@ -937,20 +937,20 @@ function BulkToolbar({
     );
   }
   return (
-    <div className="flex flex-wrap items-center gap-1 rounded-md border bg-primary/5 px-1.5 py-1">
+    <div className="flex flex-wrap items-center gap-ms-1 rounded-md border bg-primary/5 px-1.5 py-1">
       <button
         type="button"
         onClick={() => {
           if (allSelected) setSelectedIds(new Set());
           else setSelectedIds(new Set(visibleIds));
         }}
-        className="inline-flex h-7 items-center gap-1 rounded-md bg-card px-2 text-[11px] font-semibold hover:bg-accent"
+        className="inline-flex h-7 items-center gap-ms-1 rounded-md bg-card px-ms-2 text-ms-2xs font-semibold hover:bg-accent"
       >
         {allSelected ? <CheckSquare className="h-3 w-3 text-primary" /> : <Square className="h-3 w-3" />}
         {allSelected ? "Lepas semua" : "Pilih semua"}
       </button>
-      <span className="text-[11px] font-semibold text-primary">{count} terpilih</span>
-      <div className="ml-auto flex flex-wrap items-center gap-1">
+      <span className="text-ms-2xs font-semibold text-primary">{count} terpilih</span>
+      <div className="ml-auto flex flex-wrap items-center gap-ms-1">
         <WaShareButton
           size="sm"
           variant="solid"
@@ -971,7 +971,7 @@ function BulkToolbar({
           type="button"
           onClick={onBulkDelete}
           disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 text-[11px] font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-destructive/40 bg-destructive/10 px-ms-2 text-ms-2xs font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50"
         >
           {busy === "delete" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
           Hapus
@@ -980,12 +980,12 @@ function BulkToolbar({
           type="button"
           onClick={() => setSelectMode(false)}
           disabled={busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-ms-1 rounded-md border bg-card px-ms-2 text-ms-2xs font-semibold text-muted-foreground hover:bg-accent disabled:opacity-50"
         >
           <X className="h-3 w-3" /> Batal
         </button>
       </div>
-      <p className="basis-full text-[11px] text-muted-foreground">
+      <p className="basis-full text-ms-2xs text-muted-foreground">
         {view === "sent"
           ? "Tap kartu untuk centang. Aksi WA/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
           : "Tap kartu untuk centang. WA/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
@@ -1002,18 +1002,18 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
   const order: SyncLevel[] = ["ok", "fallback_grams", "fallback_wid", "self_only", "no_match", "no_wid", "empty"];
   const failing = counts.no_match + counts.no_wid;
   return (
-    <div className="rounded-md border bg-card/50 p-1.5">
+    <div className="rounded-md border bg-card/50 p-ms-1.5">
       <div className="mb-1 flex items-center justify-between px-0.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status sinkron</span>
+        <span className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Status sinkron</span>
         {failing > 0 && (
-          <span className="text-[11px] font-semibold text-destructive">{failing} gagal</span>
+          <span className="text-ms-2xs font-semibold text-destructive">{failing} gagal</span>
         )}
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-ms-1">
         <button
           type="button"
           onClick={() => onChange("all")}
-          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${active === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
+          className={`inline-flex items-center gap-ms-1 rounded-full px-1.5 py-0.5 text-ms-2xs font-semibold ${active === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
         >
           Semua <span className="font-mono">{total}</span>
         </button>
@@ -1027,7 +1027,7 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
               key={lvl}
               type="button"
               onClick={() => onChange(isActive ? "all" : lvl)}
-              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${meta.cls} ${isActive ? "ring-2 ring-primary/40" : ""}`}
+              className={`inline-flex items-center gap-ms-1 rounded-full px-1.5 py-0.5 text-ms-2xs font-semibold ${meta.cls} ${isActive ? "ring-2 ring-primary/40" : ""}`}
               aria-pressed={isActive}
             >
               <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
@@ -1043,14 +1043,14 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
 function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "offline"; syncing: boolean }) {
   if (syncing) {
     return (
-      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary/10 px-1.5 text-[11px] font-medium leading-none text-primary">
+      <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-primary/10 px-1.5 text-ms-2xs font-medium leading-none text-primary">
         <Loader2 className="h-2.5 w-2.5 animate-spin" /> Memperbarui…
       </span>
     );
   }
   if (status === "live") {
     return (
-      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-1.5 text-[11px] font-medium leading-none text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-1.5 text-ms-2xs font-medium leading-none text-emerald-600 dark:text-emerald-400">
         <span className="relative flex h-1.5 w-1.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -1061,13 +1061,13 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   }
   if (status === "offline") {
     return (
-      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-destructive/10 px-1.5 text-[11px] font-medium leading-none text-destructive">
+      <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-destructive/10 px-1.5 text-ms-2xs font-medium leading-none text-destructive">
         <Radio className="h-2.5 w-2.5" /> Offline
       </span>
     );
   }
   return (
-    <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-muted px-1.5 text-[11px] font-medium leading-none text-muted-foreground">
+    <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-muted px-1.5 text-ms-2xs font-medium leading-none text-muted-foreground">
       <Loader2 className="h-2.5 w-2.5 animate-spin" /> Menyambung…
     </span>
   );
@@ -1147,28 +1147,28 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onRe
   const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
   if (status === "sending") {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-primary">
         <Loader2 className="h-2.5 w-2.5 animate-spin" /> Mengirim…
       </span>
     );
   }
   if (status === "failed") {
     return (
-      <span className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-ms-1">
       <Popover>
         <PopoverTrigger asChild>
-          <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] font-semibold text-destructive">
+          <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-destructive">
             <XCircle className="h-2.5 w-2.5" /> Gagal kirim
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[11px]" onClick={stop}>
+        <PopoverContent align="start" className="w-64 space-y-1 p-ms-2.5 text-ms-2xs" onClick={stop}>
           <div className="font-semibold text-foreground">Gagal kirim via MCM</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
           {onResend ? (
             <button
               type="button"
               onClick={(e) => { stop(e); onResend(); }}
-              className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+              className="mt-1 inline-flex w-full items-center justify-center gap-ms-1 rounded-md bg-primary px-ms-2 py-1 text-ms-2xs font-semibold text-primary-foreground hover:bg-primary/90"
             >
               <RefreshCw className="h-3 w-3" /> {resendLabel || "Kirim ulang"}
             </button>
@@ -1181,7 +1181,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onRe
         <button
           type="button"
           onClick={(e) => { stop(e); onResend(); }}
-          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20"
+          className="inline-flex items-center gap-ms-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-primary hover:bg-primary/20"
           title={resendLabel || "Kirim ulang"}
         >
           <RefreshCw className="h-2.5 w-2.5" /> Kirim ulang
@@ -1192,7 +1192,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onRe
   }
   if (status === "cancelled") {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-semibold text-muted-foreground">
         <CircleSlash className="h-2.5 w-2.5" /> Dibatalkan
       </span>
     );
@@ -1200,14 +1200,14 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onRe
   if (status === "success" || (view === "sent" && lastSentAt)) {
     const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!, now)}`;
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
         <CheckCircle2 className="h-2.5 w-2.5" /> {label}
       </span>
     );
   }
   if (view === "active" && sentCount === 0) {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground">
         <span className="h-1 w-1 rounded-full bg-muted-foreground/60" /> Belum dikirim
       </span>
     );
@@ -1227,8 +1227,8 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
     .sort((a, b) => b.entry.at - a.entry.at);
   if (rows.length === 0) return null;
   return (
-    <div className="rounded-md border bg-muted/40 p-1.5">
-      <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-md border bg-muted/40 p-ms-1.5">
+      <div className="mb-1 flex items-center gap-ms-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
         <History className="h-2.5 w-2.5" /> Detail kiriman ({rows.length})
       </div>
       <ul className="space-y-1">
@@ -1240,7 +1240,7 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
           });
           const maps = entry.mapsUrl ?? shot.location_url ?? null;
           return (
-            <li key={shot.id} className="flex flex-wrap items-center gap-1 text-[11px] leading-snug">
+            <li key={shot.id} className="flex flex-wrap items-center gap-ms-1 text-ms-2xs leading-snug">
               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`}>
                 {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
                 {channel === "chat" ? "Chat" : "MCM"}
@@ -1280,7 +1280,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${meta.cls}`}
+          className={`inline-flex w-fit items-center gap-ms-1 rounded-full px-1.5 py-0.5 text-ms-2xs font-semibold ${meta.cls}`}
           aria-label={`Status sinkron: ${meta.label}`}
         >
           <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
@@ -1289,7 +1289,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-64 space-y-2 p-2.5 text-[11px]"
+        className="w-64 space-ms-2 p-ms-2.5 text-ms-2xs"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="font-semibold text-foreground">Status sinkron foto pegawai</div>
@@ -2326,8 +2326,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               Periksa isi teks sebelum dikirim. {waPreviewPhotoCount > 0 ? `${waPreviewPhotoCount} foto akan dilampirkan.` : "Tidak ada foto yang bisa dilampirkan."}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5">
-            <div className="flex items-center justify-between text-[12px] font-semibold">
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-ms-2.5">
+            <div className="flex items-center justify-between text-ms-xs font-semibold">
               <span className="text-foreground">Ringkasan payload</span>
               <span className="text-primary">
                 {waPreviewFolders.filter((f) => f.included).length} kiriman · {waPreviewPhotoCount} foto terlampir
@@ -2335,18 +2335,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             </div>
           </div>
           {waPreviewFolders.length > 0 && (
-            <div className="rounded-md border bg-background p-2">
-              <div className="mb-1 flex items-center justify-between text-[11px] font-semibold">
+            <div className="rounded-md border bg-background p-ms-2">
+              <div className="mb-1 flex items-center justify-between text-ms-2xs font-semibold">
                 <span>Pengelompokan folder</span>
                 <span className="text-muted-foreground">
                   {waPreviewFolders.filter((f) => f.included).length}/{waPreviewFolders.length} folder · {waPreviewPhotoCount} foto
                 </span>
               </div>
-              <ul className="space-y-0.5 text-[11px]">
+              <ul className="space-y-0.5 text-ms-2xs">
                 {waPreviewFolders.map((f, i) => (
                   <li
                     key={i}
-                    className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 ${
+                    className={`flex items-center justify-between gap-ms-2 rounded px-1.5 py-1 ${
                       f.included ? "bg-emerald-500/10 text-foreground" : "bg-muted/60 text-muted-foreground line-through"
                     }`}
                   >
@@ -2356,20 +2356,20 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 ))}
               </ul>
               {waPreviewFolders.some((f) => !f.included) && (
-                <p className="mt-1 text-[10px] text-muted-foreground">
+                <p className="mt-1 text-ms-2xs text-muted-foreground">
                   Folder dilewati karena batas 10 foto per pengiriman. Kirim sisanya di batch berikutnya.
                 </p>
               )}
             </div>
           )}
-          <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/40 p-3">
-            <pre className="whitespace-pre-wrap break-words font-sans text-[12px] leading-relaxed text-foreground">{waPreviewText}</pre>
+          <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/40 p-ms-3">
+            <pre className="whitespace-pre-wrap break-words font-sans text-ms-xs leading-relaxed text-foreground">{waPreviewText}</pre>
             {waPreviewLocation && (
               <a
                 href={waPreviewLocation}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary underline underline-offset-2"
+                className="mt-2 inline-flex items-center gap-ms-1 text-ms-2xs font-medium text-primary underline underline-offset-2"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MapPin className="h-3 w-3" /> Buka lokasi di peta
@@ -2413,17 +2413,17 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           ) : (
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
           )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
-            <div className="flex min-w-0 items-center gap-1 text-[11px] font-medium leading-none text-white/90">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-ms-2">
+            <div className="flex min-w-0 items-center gap-ms-1 text-ms-2xs font-medium leading-none text-white/90">
               <Scale className="h-2.5 w-2.5 shrink-0" />
               <span className="min-w-0 flex-1 truncate" title={r.name}>{r.name}</span>
             </div>
           </div>
-          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-[11px] font-semibold leading-none text-white shadow-sm">
+          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-ms-2xs font-semibold leading-none text-white shadow-sm">
             {shots.length} foto
           </span>
           {thumbs[0]?.location_url && (
-            <span className="absolute right-9 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-medium leading-none text-white backdrop-blur-sm">
+            <span className="absolute right-9 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-ms-2xs font-medium leading-none text-white backdrop-blur-sm">
               <MapPin className="h-2.5 w-2.5" /> GPS
             </span>
           )}
@@ -2440,17 +2440,17 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           ) : (
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
           )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
-            <div className="flex min-w-0 items-center gap-1 text-[11px] font-medium leading-none text-white/90">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-ms-2">
+            <div className="flex min-w-0 items-center gap-ms-1 text-ms-2xs font-medium leading-none text-white/90">
               <Scale className="h-2.5 w-2.5 shrink-0" />
               <span className="min-w-0 flex-1 truncate" title={r.name}>{r.name}</span>
             </div>
           </div>
-          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-[11px] font-semibold leading-none text-white shadow-sm">
+          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-ms-2xs font-semibold leading-none text-white shadow-sm">
             {shots.length} foto
           </span>
           {thumbs[0]?.location_url && (
-            <span className="absolute right-9 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-medium leading-none text-white backdrop-blur-sm">
+            <span className="absolute right-9 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-ms-2xs font-medium leading-none text-white backdrop-blur-sm">
               <MapPin className="h-2.5 w-2.5" /> GPS
             </span>
           )}
@@ -2458,7 +2458,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         )
       ) : null}
 
-      <div className="flex flex-col gap-1.5 p-2">
+      <div className="flex flex-col gap-ms-1.5 p-ms-2">
         <Link
           to="/ecer"
           search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
@@ -2469,12 +2469,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           className="flex flex-col gap-0.5"
         >
           {shots.length === 0 && (
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-ms-1.5">
               <Scale className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1 truncate text-xs font-semibold leading-snug" title={r.name}>{r.name}</span>
+              <span className="min-w-0 flex-1 truncate text-ms-xs font-semibold leading-snug" title={r.name}>{r.name}</span>
             </div>
           )}
-          <span className="block min-w-0 truncate text-[11px] font-medium leading-none text-foreground/80" title={`${r.product_name} · ${r.target_grams} ${unit}`}>
+          <span className="block min-w-0 truncate text-ms-2xs font-medium leading-none text-foreground/80" title={`${r.product_name} · ${r.target_grams} ${unit}`}>
             {r.product_name} · {r.target_grams} {unit}
           </span>
           <SyncBadge row={r} />
@@ -2519,7 +2519,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 aria-label={`Lihat aturan pencocokan foto untuk ${r.name}`}
                 aria-haspopup="dialog"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                className="flex w-fit min-w-0 max-w-full items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium leading-none text-muted-foreground hover:bg-accent"
+                className="flex w-fit min-w-0 max-w-full items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium leading-none text-muted-foreground hover:bg-accent"
                 title={`Cocok: produk + ${r.target_grams}${unit}`}
               >
                 <span className="h-1 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
@@ -2530,18 +2530,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="w-64 space-y-2 p-2.5 text-[11px]"
+              className="w-64 space-ms-2 p-ms-2.5 text-ms-2xs"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="font-semibold text-foreground">Aturan cocok foto</div>
               <dl className="space-y-1 text-muted-foreground">
-                <div className="flex gap-1">
+                <div className="flex gap-ms-1">
                   <dt className="shrink-0">warehouse_item_id:</dt>
                   <dd className="break-all font-mono text-foreground/90">{r.warehouse_item_id}</dd>
                 </div>
-                <div className="flex gap-1"><dt>ukuran:</dt><dd className="text-foreground/90">{r.target_grams}</dd></div>
-                <div className="flex gap-1"><dt>unit:</dt><dd className="text-foreground/90">{unit}</dd></div>
-                <div className="flex gap-1">
+                <div className="flex gap-ms-1"><dt>ukuran:</dt><dd className="text-foreground/90">{r.target_grams}</dd></div>
+                <div className="flex gap-ms-1"><dt>unit:</dt><dd className="text-foreground/90">{unit}</dd></div>
+                <div className="flex gap-ms-1">
                   <dt className="shrink-0">title_id:</dt>
                   <dd className="break-all font-mono text-foreground/90">{r.id}</dd>
                 </div>
@@ -2552,13 +2552,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <Link
                 to="/ecer"
                 search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
-                className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
+                className="inline-flex items-center gap-ms-1 rounded bg-primary/10 px-ms-2 py-1 text-ms-2xs font-semibold text-primary hover:bg-primary/20"
               >
                 <ExternalLink className="h-2.5 w-2.5" /> Buka detail item di Ecer
               </Link>
             </PopoverContent>
           </Popover>
-          <span className="text-[11px] leading-snug">
+          <span className="text-ms-2xs leading-snug">
             <span
               data-testid={`ready-ecer-badge-${r.id}`}
               data-badge-count={r.prep_count}
@@ -2568,7 +2568,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             </span>
           </span>
           {view === "sent" && (
-            <span className="mt-0.5 inline-flex items-center gap-1 self-start rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+            <span className="mt-0.5 inline-flex items-center gap-ms-1 self-start rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-semibold text-muted-foreground">
               <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
               {expanded ? "Sembunyikan detail" : `Lihat detail kiriman (${shots.length})`}
             </span>
@@ -2582,16 +2582,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         )}
 
         {shots.length === 0 ? (
-          <div className="flex flex-col items-center gap-1 rounded-md border border-dashed bg-muted/40 px-2 py-2.5 text-center">
+          <div className="flex flex-col items-center gap-ms-1 rounded-md border border-dashed bg-muted/40 px-ms-2 py-ms-2.5 text-center">
           {syncing || refreshing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
           ) : (
             <Inbox className="h-3.5 w-3.5 text-muted-foreground" />
           )}
-          <span className="text-[11px] font-medium leading-snug text-muted-foreground">
+          <span className="text-ms-2xs font-medium leading-snug text-muted-foreground">
             {syncing || refreshing ? "Memuat kiriman…" : "Belum ada kiriman pegawai"}
           </span>
-          <span className="text-[11px] leading-snug text-muted-foreground">
+          <span className="text-ms-2xs leading-snug text-muted-foreground">
             {realtimeStatus === "live"
               ? "Menunggu foto pegawai — akan muncul otomatis."
               : realtimeStatus === "offline"
@@ -2603,7 +2603,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             aria-label={`Segarkan kiriman pegawai untuk ${r.name}`}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
             disabled={refreshing}
-            className="mt-0.5 inline-flex h-6 items-center gap-1 rounded bg-primary/10 px-2 text-[11px] font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
+            className="mt-0.5 inline-flex h-6 items-center gap-ms-1 rounded bg-primary/10 px-ms-2 text-ms-2xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
           >
             <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Menyegarkan…" : "Segarkan"}
@@ -2611,7 +2611,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         </div>
         ) : (
           <>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-ms-1.5">
             {thumbs.slice(1, 4).map((s) => (
               <div key={s.id} className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-card bg-muted ring-1 ring-border">
                 {s.thumb_url ? (
@@ -2623,12 +2623,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <div
                 role="img"
                 aria-label={`${extra} foto lainnya`}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-[11px] font-semibold text-muted-foreground ring-1 ring-border"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-ms-2xs font-semibold text-muted-foreground ring-1 ring-border"
               >
                 +{extra}
               </div>
             )}
-            <div className="ml-auto flex w-full items-center justify-end gap-1.5 sm:w-auto">
+            <div className="ml-auto flex w-full items-center justify-end gap-ms-1.5 sm:w-auto">
             {/*
               Semua alur "Kirim ke pembeli" wajib lewat verifikasi
               pembayaran (Lunas / Hutang / Bayar sebagian) di halaman detail
@@ -2672,7 +2672,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label={`Kirim ${r.prep_count} kotak ke pembeli (verifikasi bayar dulu)`}
                 title="Verifikasi lokasi dan pesan WA dulu, lalu kirim ke WhatsApp"
-                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
+                className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
               >
                 <Send className="h-3 w-3" /> Kirim ke pembeli
               </button>
@@ -2684,7 +2684,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label={`Siapkan minimal 1 kotak untuk ${r.name} sebelum bisa dikirim`}
                 title="Belum ada kotak siap — buka detail untuk menyiapkan kotak dulu"
-                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md border border-dashed border-primary/50 bg-primary/5 px-2 text-[11px] font-semibold text-primary shadow-sm transition hover:bg-primary/10"
+                className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md border border-dashed border-primary/50 bg-primary/5 px-ms-2 text-ms-2xs font-semibold text-primary shadow-sm transition hover:bg-primary/10"
               >
                 <Send className="h-3 w-3 opacity-70" /> Siapkan kotak →
               </Link>

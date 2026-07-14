@@ -199,13 +199,13 @@ export function CallHost() {
         />
       ) : null}
       {incoming && !active ? (
-        <div className="fixed inset-x-0 top-4 z-[110] mx-auto flex max-w-sm items-center gap-3 rounded-2xl border bg-card p-4 shadow-2xl">
+        <div className="fixed inset-x-0 top-4 z-[110] mx-auto flex max-w-sm items-center gap-ms-3 rounded-2xl border bg-card p-ms-4 shadow-2xl">
           <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
             {incoming.kind === "video" ? <VideoIcon className="h-6 w-6" /> : <Phone className="h-6 w-6" />}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">{incoming.callerName}</div>
-            <div className="text-[11px] text-muted-foreground">
+            <div className="truncate text-ms-sm font-semibold">{incoming.callerName}</div>
+            <div className="text-ms-2xs text-muted-foreground">
               Panggilan {incoming.kind === "video" ? "video" : "suara"} masuk…
             </div>
           </div>

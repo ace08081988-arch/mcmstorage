@@ -71,7 +71,7 @@ function Harness() {
   const smallTestId = swapped ? "remote" : "local";
 
   return (
-    <div className="min-h-screen bg-black p-4 text-white">
+    <div className="min-h-screen bg-black p-ms-4 text-white">
       <div className="relative h-64 w-full bg-neutral-900">
         <video
           data-testid={bigTestId}
@@ -99,22 +99,22 @@ function Harness() {
         data-pos={pos}
         data-custom={custom ? `${custom.x},${custom.y}` : ""}
         data-swapped={String(swapped)}
-        className="mt-2 text-xs"
+        className="mt-2 text-ms-xs"
       >
         facing={facing} fit={fit} pos={pos} custom={custom ? `${custom.x},${custom.y}` : "-"} swapped={String(swapped)}
       </div>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-2 flex flex-wrap gap-ms-2">
         <button data-testid="btn-toggle-fit" onClick={toggleFit}
-          className="rounded bg-white/10 px-3 py-1 text-sm">Toggle Crop/Fit</button>
+          className="rounded bg-white/10 px-ms-3 py-1 text-ms-sm">Toggle Crop/Fit</button>
         <button data-testid="btn-cycle-pos" onClick={cyclePos}
-          className="rounded bg-white/10 px-3 py-1 text-sm">Cycle posisi</button>
+          className="rounded bg-white/10 px-ms-3 py-1 text-ms-sm">Cycle posisi</button>
         <button data-testid="btn-drag" onClick={drag20x80}
-          className="rounded bg-white/10 px-3 py-1 text-sm">Drag custom (20,80)</button>
+          className="rounded bg-white/10 px-ms-3 py-1 text-ms-sm">Drag custom (20,80)</button>
         <button data-testid="btn-swap" onClick={() => setSwapped((s) => !s)}
-          className="rounded bg-white/10 px-3 py-1 text-sm">Swap besar/kecil</button>
+          className="rounded bg-white/10 px-ms-3 py-1 text-ms-sm">Swap besar/kecil</button>
         <button data-testid="btn-flip" onClick={() =>
           setFacing((f) => (f === "user" ? "environment" : "user"))}
-          className="rounded bg-white/10 px-3 py-1 text-sm">Flip kamera</button>
+          className="rounded bg-white/10 px-ms-3 py-1 text-ms-sm">Flip kamera</button>
       </div>
     </div>
   );

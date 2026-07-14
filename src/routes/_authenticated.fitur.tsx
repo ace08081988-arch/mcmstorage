@@ -107,9 +107,9 @@ function FiturPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 px-4 pt-3 pb-2 backdrop-blur">
-        <h1 className="text-2xl font-semibold">Fitur</h1>
-        <div className="flex items-center gap-1 text-muted-foreground">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 px-ms-4 pt-3 pb-2 backdrop-blur">
+        <h1 className="text-ms-2xl font-semibold">Fitur</h1>
+        <div className="flex items-center gap-ms-1 text-muted-foreground">
           <Link
             to="/notifikasi"
             aria-label="Pembaruan"
@@ -136,9 +136,9 @@ function FiturPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 pt-3 pb-6">
+      <main className="flex-1 overflow-y-auto px-ms-4 pt-3 pb-6">
         {/* Stat cards */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-ms-2">
           <StatCard
             Icon={Receipt}
             value={convCount != null ? String(convCount) : "—"}
@@ -179,13 +179,13 @@ function StatCard({
   trend?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border p-3">
+    <div className="rounded-2xl border p-ms-3">
       <Icon className="h-5 w-5 text-muted-foreground" />
-      <div className="mt-3 flex items-baseline gap-1">
-        <span className="text-2xl font-semibold leading-none">{value}</span>
+      <div className="mt-3 flex items-baseline gap-ms-1">
+        <span className="text-ms-2xl font-semibold leading-none">{value}</span>
         {trend ? <ArrowDownRight className="h-4 w-4 text-rose-500" /> : null}
       </div>
-      <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{label}</p>
+      <p className="mt-1.5 text-ms-xs leading-snug text-muted-foreground">{label}</p>
     </div>
   );
 }
@@ -199,7 +199,7 @@ function Section({
 }) {
   return (
     <section className="mt-6">
-      <h2 className="mb-1 text-sm font-semibold">{title}</h2>
+      <h2 className="mb-1 text-ms-sm font-semibold">{title}</h2>
       <ul className="divide-y">{children}</ul>
     </section>
   );
@@ -207,20 +207,20 @@ function Section({
 
 function FeatureRow({ Icon, title, desc, to, soon }: Row) {
   const inner = (
-    <div className="flex items-start gap-4 py-3.5">
+    <div className="flex items-start gap-ms-4 py-ms-3.5">
       <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center text-muted-foreground">
         <Icon className="h-6 w-6" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-base font-medium">{title}</p>
+        <div className="flex items-center gap-ms-2">
+          <p className="truncate text-ms-base font-medium">{title}</p>
           {soon ? (
-            <span className="rounded-full border px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">
+            <span className="rounded-full border px-1.5 py-0.5 text-ms-2xs leading-none text-muted-foreground">
               Segera
             </span>
           ) : null}
         </div>
-        <p className="mt-0.5 text-sm leading-snug text-muted-foreground">
+        <p className="mt-0.5 text-ms-sm leading-snug text-muted-foreground">
           {desc}
         </p>
       </div>

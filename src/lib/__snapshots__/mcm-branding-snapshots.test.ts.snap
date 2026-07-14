@@ -2,7 +2,7 @@
 
 exports[`MCM branding — snapshot label chat kunci > daftar percakapan → src/routes/_authenticated.chat.index.tsx 1`] = `
 [
-  "<h1 className="text-2xl font-bold tracking-tight">MCM</h1>",
+  "<h1 className="text-ms-2xl font-bold tracking-tight">MCM</h1>",
 ]
 `;
 

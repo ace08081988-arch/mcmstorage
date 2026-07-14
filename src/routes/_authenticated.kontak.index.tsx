@@ -208,15 +208,15 @@ function KontakPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-3xl items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
           <Link
             to="/"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-accent"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-ms-sm hover:bg-accent"
             aria-label="Kembali"
           >
             ←
           </Link>
-          <h1 className="flex-1 truncate text-base font-semibold">
+          <h1 className="flex-1 truncate text-ms-base font-semibold">
             Pelanggan &amp; Pemasok
           </h1>
           <Button
@@ -235,7 +235,7 @@ function KontakPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-3 py-4 sm:px-6">
+      <main className="mx-auto max-w-3xl px-ms-3 py-ms-4 sm:px-ms-6">
         <Tabs value={tab} onValueChange={(v) => setTab(v as Kind)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="customer">Pelanggan</TabsTrigger>
@@ -244,16 +244,16 @@ function KontakPage() {
 
           <TabsContent value={tab} className="mt-3">
             {loading ? (
-              <ul className="space-y-2" aria-busy="true" aria-label="Memuat kontak">
+              <ul className="space-ms-2" aria-busy="true" aria-label="Memuat kontak">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <li key={i} className="rounded-lg border bg-card p-3">
-                    <div className="flex items-start gap-2">
-                      <div className="min-w-0 flex-1 space-y-2">
+                  <li key={i} className="rounded-lg border bg-card p-ms-3">
+                    <div className="flex items-start gap-ms-2">
+                      <div className="min-w-0 flex-1 space-ms-2">
                         <Skeleton className="h-4 w-2/5" />
                         <Skeleton className="h-3 w-1/3" />
                         <Skeleton className="h-3 w-20 rounded-full" />
                       </div>
-                      <div className="flex flex-col gap-1.5">
+                      <div className="flex flex-col gap-ms-1.5">
                         <Skeleton className="h-7 w-24 rounded-md" />
                         <Skeleton className="h-7 w-24 rounded-md" />
                       </div>
@@ -262,7 +262,7 @@ function KontakPage() {
                 ))}
               </ul>
             ) : rows.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+              <div className="flex flex-col items-center gap-ms-3 rounded-lg border border-dashed py-12 text-center text-ms-sm text-muted-foreground">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                   {tab === "customer" ? <Users2 className="h-5 w-5" /> : <Truck className="h-5 w-5" />}
                 </div>
@@ -270,7 +270,7 @@ function KontakPage() {
                   <p className="font-medium text-foreground">
                     Belum ada {tab === "customer" ? "pelanggan" : "pemasok"}
                   </p>
-                  <p className="mx-auto max-w-xs text-xs">
+                  <p className="mx-auto max-w-xs text-ms-xs">
                     Tambahkan lewat halaman terkait seperti{" "}
                     <Link to="/gudang" className="text-primary hover:underline">pesanan</Link>
                     {" "}atau{" "}
@@ -279,19 +279,19 @@ function KontakPage() {
                 </div>
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-ms-2">
                 {groupedRows.map((r) => (
                   <li
                     key={r.ids[0]}
-                    className="rounded-lg border bg-card p-3 text-sm"
+                    className="rounded-lg border bg-card p-ms-3 text-ms-sm"
                   >
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-ms-2">
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 truncate font-medium">
+                        <div className="flex items-center gap-ms-1.5 truncate font-medium">
                           <span className="truncate">{r.name}</span>
                           {r.dupCount > 1 ? (
                             <span
-                              className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                              className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground"
                               title={`${r.dupCount} entri digabung`}
                             >
                               ×{r.dupCount}
@@ -299,11 +299,11 @@ function KontakPage() {
                           ) : null}
                         </div>
                         {r.contact && (
-                          <div className="truncate text-xs text-muted-foreground">
+                          <div className="truncate text-ms-xs text-muted-foreground">
                             {r.contact}
                           </div>
                         )}
-                        <div className="mt-1 text-[11px]">
+                        <div className="mt-1 text-ms-2xs">
                           {r.account_user_id ? (
                             <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                               Tertaut ke akun
@@ -315,7 +315,7 @@ function KontakPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-ms-1">
                         <Button
                           size="sm"
                           variant="outline"
@@ -481,7 +481,7 @@ function LinkAccountDialog({
             push chat akan dikirim ke akun yang tertaut.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <Input
             autoFocus
             placeholder="Cari nama atau nomor telepon…"
@@ -490,7 +490,7 @@ function LinkAccountDialog({
           />
           <ul className="max-h-72 space-y-1 overflow-auto">
             {results.length === 0 ? (
-              <li className="py-6 text-center text-xs text-muted-foreground">
+              <li className="py-ms-6 text-center text-ms-xs text-muted-foreground">
                 Tidak ada hasil.
               </li>
             ) : (
@@ -500,19 +500,19 @@ function LinkAccountDialog({
                     type="button"
                     disabled={busy}
                     onClick={() => void link(c.user_id)}
-                    className="flex w-full items-center justify-between gap-2 rounded-md border bg-card px-3 py-2 text-left text-sm hover:bg-accent disabled:opacity-50"
+                    className="flex w-full items-center justify-between gap-ms-2 rounded-md border bg-card px-ms-3 py-ms-2 text-left text-ms-sm hover:bg-accent disabled:opacity-50"
                   >
                     <span className="min-w-0 flex-1">
                        <span className="block truncate font-medium">
                          {c.display_name || c.phone || c.user_id}
                        </span>
                        {c.phone && c.display_name && (
-                         <span className="block truncate text-xs text-muted-foreground">
+                         <span className="block truncate text-ms-xs text-muted-foreground">
                            {c.phone}
                          </span>
                        )}
                     </span>
-                    <span className="text-xs text-primary">Tautkan</span>
+                    <span className="text-ms-xs text-primary">Tautkan</span>
                   </button>
                 </li>
               ))

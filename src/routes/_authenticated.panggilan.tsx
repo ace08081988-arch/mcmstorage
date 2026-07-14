@@ -117,7 +117,7 @@ function PanggilanPage() {
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
       <header
-        className="wa-header sticky top-0 z-10 flex items-center gap-2 border-b px-3 py-3"
+        className="wa-header sticky top-0 z-10 flex items-center gap-ms-2 border-b px-ms-3 py-ms-3"
         style={{ paddingTop: "max(env(safe-area-inset-top), 0.75rem)" }}
       >
         <Button
@@ -129,24 +129,24 @@ function PanggilanPage() {
         >
           <Link to="/chat"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <h1 className="text-lg font-semibold">Panggilan</h1>
+        <h1 className="text-ms-lg font-semibold">Panggilan</h1>
       </header>
 
       <div className="flex-1">
         {calls.isLoading ? (
-          <div className="px-4 py-6 text-center text-xs text-muted-foreground">Memuat riwayat…</div>
+          <div className="px-ms-4 py-ms-6 text-center text-ms-xs text-muted-foreground">Memuat riwayat…</div>
         ) : rows.length === 0 ? (
-          <div className="px-4 py-8">
-            <div className="mx-auto max-w-sm space-y-3 rounded-2xl border bg-card p-6 text-center">
+          <div className="px-ms-4 py-8">
+            <div className="mx-auto max-w-sm space-ms-3 rounded-2xl border bg-card p-ms-6 text-center">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
                 <PhoneMissed className="h-6 w-6" />
               </div>
-              <h2 className="text-base font-semibold">Belum ada panggilan</h2>
-              <p className="text-xs text-muted-foreground">
+              <h2 className="text-ms-base font-semibold">Belum ada panggilan</h2>
+              <p className="text-ms-xs text-muted-foreground">
                 Riwayat panggilan suara & video akan muncul di sini. Mulai panggilan
                 dari dalam percakapan.
               </p>
-              <Button asChild size="sm" className="gap-1.5">
+              <Button asChild size="sm" className="gap-ms-1.5">
                 <Link to="/chat"><Phone className="h-4 w-4" /> Buka daftar chat</Link>
               </Button>
             </div>
@@ -220,19 +220,19 @@ function CallRowItem({
     row.status === "ended" ? formatCallDuration(row.duration_sec) : undefined;
 
   return (
-    <li className="flex items-center gap-1 px-2 py-1">
+    <li className="flex items-center gap-ms-1 px-ms-2 py-1">
       <Link
         to="/chat/$conversationId"
         params={{ conversationId: row.conversation_id }}
         preload="intent"
-        className="flex min-h-[56px] flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors touch-manipulation hover:bg-muted/60 active:bg-muted"
+        className="flex min-h-[56px] flex-1 items-center gap-ms-3 rounded-lg px-ms-2 py-ms-2 text-left transition-colors touch-manipulation hover:bg-muted/60 active:bg-muted"
         aria-label={`Buka chat dengan ${peerName}`}
       >
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold uppercase">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-ms-sm font-semibold uppercase">
           {peerName.charAt(0)}
         </div>
         <div className="min-w-0 flex-1">
-          <div className={`truncate text-sm font-medium ${missed ? "text-red-600" : ""}`}>{peerName}</div>
+          <div className={`truncate text-ms-sm font-medium ${missed ? "text-red-600" : ""}`}>{peerName}</div>
           <CallStatusButton
             status={row.status as CallVisualStatus}
             outgoing={outgoing}

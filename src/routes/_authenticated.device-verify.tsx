@@ -212,28 +212,28 @@ function DeviceVerifyPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background px-ms-4">
+      <div className="w-full max-w-sm space-ms-5 rounded-2xl border bg-card p-ms-6 shadow-sm">
         <div className="text-center">
-          <h1 className="text-lg font-semibold">Verifikasi device baru</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <h1 className="text-ms-lg font-semibold">Verifikasi device baru</h1>
+          <p className="mt-1 text-ms-xs text-muted-foreground">
             Demi keamanan, masukkan kode 6 digit yang kami kirim ke{" "}
             <strong>{maskedEmail || "email Anda"}</strong>.
           </p>
         </div>
 
         {stage === "loading" && (
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-ms-sm text-muted-foreground">
             Memeriksa device…
           </p>
         )}
 
         {stage === "error" && (
-          <div className="space-y-3 text-center">
-            <p className="text-sm text-destructive">Gagal memulai verifikasi.</p>
+          <div className="space-ms-3 text-center">
+            <p className="text-ms-sm text-destructive">Gagal memulai verifikasi.</p>
             <button
               onClick={() => location.reload()}
-              className="rounded-md border px-3 py-2 text-sm"
+              className="rounded-md border px-ms-3 py-ms-2 text-ms-sm"
             >
               Coba lagi
             </button>
@@ -241,9 +241,9 @@ function DeviceVerifyPage() {
         )}
 
         {stage === "otp" && (
-          <form onSubmit={submit} className="space-y-3">
+          <form onSubmit={submit} className="space-ms-3">
             {emailWarning && (
-              <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-800">
+              <p className="rounded-md border border-amber-300 bg-amber-50 p-ms-2 text-ms-2xs text-amber-800">
                 {emailWarning}
               </p>
             )}
@@ -257,12 +257,12 @@ function DeviceVerifyPage() {
                 setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
               }
               placeholder="••••••"
-              className="w-full rounded-md border bg-background px-3 py-3 text-center text-2xl tracking-[0.5em] outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border bg-background px-ms-3 py-ms-3 text-center text-ms-2xl tracking-[0.5em] outline-none focus:ring-2 focus:ring-ring"
             />
             <button
               type="submit"
               disabled={busy || code.length !== 6}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="w-full rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               {busy ? "Memverifikasi…" : "Verifikasi"}
             </button>
@@ -270,18 +270,18 @@ function DeviceVerifyPage() {
               type="button"
               onClick={resend}
               disabled={busy || cooldown > 0}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+              className="w-full rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm font-medium hover:bg-accent disabled:opacity-50"
               aria-label="Kirim ulang OTP"
             >
               {cooldown > 0
                 ? `Kirim ulang OTP (${cooldown}s)`
                 : "Kirim ulang OTP"}
             </button>
-            <p className="text-center text-[11px] text-muted-foreground">
+            <p className="text-center text-ms-2xs text-muted-foreground">
               Tidak menerima kode? Periksa folder Spam/Promosi, lalu klik
               kirim ulang.
             </p>
-            <div className="flex items-center justify-end text-[11px]">
+            <div className="flex items-center justify-end text-ms-2xs">
               <button
                 type="button"
                 onClick={signOut}

@@ -125,7 +125,7 @@ export function VoiceNotePlayer({
 
   return (
     <div
-      className={`flex items-center gap-2 rounded-full px-2 py-1.5 ${
+      className={`flex items-center gap-ms-2 rounded-full px-ms-2 py-1.5 ${
         mine ? "bg-primary-foreground/10" : "bg-background/70 border border-border"
       }`}
       style={{ minWidth: 200, maxWidth: 260 }}
@@ -156,8 +156,8 @@ export function VoiceNotePlayer({
             }}
           />
         </div>
-        <div className="flex items-center justify-between text-[10px] leading-snug opacity-70">
-          <span className="inline-flex items-center gap-1">
+        <div className="flex items-center justify-between text-ms-2xs leading-snug opacity-70">
+          <span className="inline-flex items-center gap-ms-1">
             <Mic className="h-3 w-3" />
             Voice note
           </span>
