@@ -2374,6 +2374,14 @@ function ItemCard({
     setEditorSrc(p.dataUrl);
     setEditorOpen(true);
   }
+  function tryOpenEditForIdx(i: number): boolean {
+    const p = photosRef.current[i];
+    if (!p) return false;
+    setEditingIdx(i);
+    setEditorSrc(p.dataUrl);
+    setEditorOpen(true);
+    return true;
+  }
   function advanceEditQueue() {
     const q = editQueueRef.current;
     if (q.length === 0) {
@@ -2606,18 +2614,20 @@ function ItemCard({
   }
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
+    const beforeLen = photosRef.current.length;
     const results = await Promise.all(files.map((f) => stageOne(f, false)));
     const okCount = results.filter(Boolean).length;
     if (okCount === 0) return;
     // Setelah semua foto ter-stage, buka PhotoEditor untuk tiap foto baru
     // secara berurutan. Pakai photosRef supaya index-nya akurat setelah
     // state selesai flush.
-    await new Promise((r) => setTimeout(r, 0));
-    const len = photosRef.current.length;
-    const startIdx = len - okCount;
+    const len = await waitForPhotosRefLength(photosRef, beforeLen + okCount);
+    const startIdx = Math.max(0, len - okCount);
     const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
     editQueueRef.current = idxs.slice(1);
-    openEditForIdx(idxs[0]);
+    if (!tryOpenEditForIdx(idxs[0])) {
+      toast.success(`${okCount} foto masuk. Ketuk foto untuk edit.`);
+    }
   }
 
   function takeLocation() {
@@ -3922,6 +3932,14 @@ function RequestForm({
     setEditorSrc(p.dataUrl);
     setEditorOpen(true);
   }
+  function tryOpenEditForIdx(i: number): boolean {
+    const p = photosRef.current[i];
+    if (!p) return false;
+    setEditingIdx(i);
+    setEditorSrc(p.dataUrl);
+    setEditorOpen(true);
+    return true;
+  }
   function advanceEditQueue() {
     const q = editQueueRef.current;
     if (q.length === 0) {
@@ -4109,15 +4127,17 @@ function RequestForm({
   }
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
+    const beforeLen = photosRef.current.length;
     const results = await Promise.all(files.map((f) => stageOne(f, false)));
     const okCount = results.filter(Boolean).length;
     if (okCount === 0) return;
-    await new Promise((r) => setTimeout(r, 0));
-    const len = photosRef.current.length;
-    const startIdx = len - okCount;
+    const len = await waitForPhotosRefLength(photosRef, beforeLen + okCount);
+    const startIdx = Math.max(0, len - okCount);
     const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
     editQueueRef.current = idxs.slice(1);
-    openEditForIdx(idxs[0]);
+    if (!tryOpenEditForIdx(idxs[0])) {
+      toast.success(`${okCount} foto masuk. Ketuk foto untuk edit.`);
+    }
   }
 
   function takeLocation() {
