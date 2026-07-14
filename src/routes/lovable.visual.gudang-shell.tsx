@@ -57,7 +57,7 @@ const TABS: ReadonlyArray<PillsTabItem<TabKey>> = [
   { k: "riwayat", label: "Riwayat", icon: History },
 ];
 
-const WIDTHS = [390, 411] as const;
+const WIDTHS = [360, 390, 411, 768] as const;
 const STATES = ["loading", "empty", "data"] as const;
 type State = (typeof STATES)[number];
 

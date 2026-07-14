@@ -22,11 +22,14 @@ import { BOTOL_PER_KARTON, rupiah, fmtBase, fmtItemQty } from "@/lib/stock-forma
 
 type PackageType = "gram" | "pcs" | "botol" | "sachet";
 type BaseUnit = "g" | "pcs";
-type Viewport = { name: "desktop" | "mobile"; width: number };
+type Viewport = { name: "mobile-xs" | "mobile" | "mobile-lg" | "tablet" | "desktop"; width: number };
 
 const VIEWPORTS: Viewport[] = [
-  { name: "desktop", width: 1280 },
+  { name: "mobile-xs", width: 360 },
   { name: "mobile", width: 390 },
+  { name: "mobile-lg", width: 411 },
+  { name: "tablet", width: 768 },
+  { name: "desktop", width: 1280 },
 ];
 const SM_BREAKPOINT = 640;
 const LG_BREAKPOINT = 1024;
@@ -177,9 +180,12 @@ describe("Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan", (
   }
 
   describe("cross-viewport parity: nilai numerik identik lintas viewport", () => {
+    const desktopVp = VIEWPORTS.find((v) => v.name === "desktop")!;
+    const nonDesktopVps = VIEWPORTS.filter((v) => v.name !== "desktop");
     for (const mode of ["new", "existing"] as const) {
       for (const pt of PACKAGE_TYPES) {
-        it(`${mode} · ${pt}: numerik desktop == mobile`, () => {
+        for (const vp of nonDesktopVps) {
+        it(`${mode} · ${pt}: numerik desktop == ${vp.name}`, () => {
           // Hilangkan baris [layout] & [header truncation] agar tersisa
           // konten data murni — harus identik antar viewport.
           const strip = (s: string) =>
@@ -193,17 +199,18 @@ describe("Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan", (
               )
               .join("\n");
           const desktop = strip(
-            renderScreen({ viewport: VIEWPORTS[0], mode, packageType: pt }),
+            renderScreen({ viewport: desktopVp, mode, packageType: pt }),
           );
-          const mobile = strip(
-            renderScreen({ viewport: VIEWPORTS[1], mode, packageType: pt }),
+          const other = strip(
+            renderScreen({ viewport: vp, mode, packageType: pt }),
           );
           // Header ringkasan bisa dipotong di mobile; samakan dgn desktop
           // dengan memangkas keduanya ke 23 char yang dipakai truncation.
           const norm = (s: string) =>
             s.replace(/(\[SUM\] Ringkasan \| )([^\n]+)/, (_m, p, v) => `${p}${v.slice(0, 23)}`);
-          expect(norm(mobile)).toBe(norm(desktop));
+          expect(norm(other)).toBe(norm(desktop));
         });
+        }
       }
     }
   });

@@ -24,7 +24,10 @@ const OUT = "/tmp/browser/gudang-snapshots";
 
 const VIEWPORTS = [
   { name: "desktop", width: 1280, height: 1800 },
+  { name: "tablet", width: 768, height: 1600 },
+  { name: "mobile-lg", width: 411, height: 1600 },
   { name: "mobile", width: 390, height: 1600 },
+  { name: "mobile-xs", width: 360, height: 1600 },
 ];
 const PACKAGE_TYPES = ["gram", "botol", "pcs", "sachet"];
 const MODES = ["new", "existing"];
