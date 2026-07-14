@@ -1,4 +1,4 @@
-name: request_list_titles_via_task – Selesai scope regression
+name: request-list-titles-selesai-scope
 
 on:
   push:
@@ -16,14 +16,16 @@ on:
 jobs:
   run-sql:
     runs-on: ubuntu-latest
-    if: ${{ secrets.SUPABASE_DB_URL != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Install psql client
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
       - name: Run request_list_titles_via_task regression
         env:
-          PGPASSWORD_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGSSLMODE: require
         run: |
-          psql -v ON_ERROR_STOP=1 "$PGPASSWORD_URL" \
+          psql -v ON_ERROR_STOP=1 "$DATABASE_URL" \
             -f supabase/tests/request_list_titles_selesai_scope.sql
