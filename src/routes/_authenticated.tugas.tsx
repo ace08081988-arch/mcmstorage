@@ -1541,7 +1541,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         </div>
 
         <label className="block">
-          <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor MCM / HP pegawai (opsional, format: 628xxxx)</div>
+          <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor MCM / HP pegawai (opsional, contoh: 6281234567890 — harus dari kontak tersimpan)</div>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, "").slice(0, 16))}
