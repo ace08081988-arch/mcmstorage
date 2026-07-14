@@ -1366,6 +1366,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     const entries = Object.values(picked);
     if (entries.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
     if (pin.length < 4) { toast.error("PIN minimal 4 digit"); return; }
+    if (!phoneValidation.ok) { toast.error(phoneValidation.error ?? "Nomor pegawai tidak valid"); return; }
     // Foto referensi bersifat opsional — barang tanpa foto tetap dibuatkan tugas,
     // hanya saja tidak ada lampiran foto referensi ke WhatsApp.
     const missingPhoto = entries.filter((e) => !e.item.image_path).map((e) => e.item.name);
