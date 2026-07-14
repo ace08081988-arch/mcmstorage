@@ -1816,6 +1816,8 @@ function PrepSections({
       customers={customers}
       onDelete={guardedDelete}
       onSent={guardedSent}
+      autoOpenSend={!inSent && !!autoOpenSend && idx === 0}
+      onConsumeAutoOpenSend={onConsumeAutoOpenSend}
     />
     </div>
     );
