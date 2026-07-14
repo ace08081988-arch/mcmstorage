@@ -834,6 +834,7 @@ function TugasPage() {
                     <CheckCircle2 className="h-3 w-3" /> {p.submitted}/{p.items} item
                   </span>
                 </div>
+                <TaskPinMemo shareToken={t.share_token} />
               </div>
               <div className="flex shrink-0 items-center gap-ms-1">
                 <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs font-medium hover:bg-accent" aria-label={`Buka tugas ${t.title}`}>Buka</button>
