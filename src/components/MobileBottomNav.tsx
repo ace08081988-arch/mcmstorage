@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Warehouse, PackageSearch, MessageCircle, Menu } from "lucide-react";
 import { useMemo } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useUnreadTotal } from "@/lib/chat";
+import { useUnreadStatus } from "@/lib/chat";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,18 +18,19 @@ type Item = {
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
   badge?: number;
+  badgeLoading?: boolean;
 };
 
 export function MobileBottomNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const unread = useUnreadTotal();
+  const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
   const { toggleSidebar } = useSidebar();
 
   const items: Item[] = [
     { to: "/", label: "Beranda", Icon: Home },
     { to: "/gudang", label: "Gudang", Icon: Warehouse },
     { to: "/ecer", label: "Ecer", Icon: PackageSearch },
-    { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread },
+    { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
   ];
 
   const activeTo = useMemo(() => {
@@ -85,7 +86,7 @@ export function MobileBottomNav() {
               "inset 0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent), 0 4px 12px -6px color-mix(in oklab, var(--primary) 45%, transparent)",
           }}
         />
-        {items.map(({ to, label, Icon, badge }) => {
+        {items.map(({ to, label, Icon, badge, badgeLoading }) => {
           const active = activeTo === to;
           // Saat Chat punya unread, langsung buka /chat dengan filter "Belum
           // dibaca" aktif — mengetuk tab (atau badge di dalamnya) memfokuskan
@@ -97,7 +98,13 @@ export function MobileBottomNav() {
               to={to}
               search={chatUnreadFocus ? { filter: "unread" } : undefined}
               aria-current={active ? "page" : undefined}
-              aria-label={badge && badge > 0 ? `${label}, ${badge} belum dibaca` : label}
+              aria-label={
+                badgeLoading
+                  ? `${label}, memuat jumlah belum dibaca`
+                  : badge && badge > 0
+                    ? `${label}, ${badge} belum dibaca`
+                    : label
+              }
               className={cn(
                 "group/tab relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[0.65625rem] leading-tight transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
                 "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -119,7 +126,16 @@ export function MobileBottomNav() {
                     "motion-reduce:transition-none",
                   )}
                 />
-                {badge && badge > 0 ? (
+                {badgeLoading ? (
+                  // Placeholder saat data unread masih dimuat pertama kali.
+                  // Bentuk pill kecil dengan shimmer halus supaya slot badge
+                  // tidak "kosong-lalu-loncat" begitu angka datang. Warna
+                  // pakai muted supaya tidak menyaingi badge merah asli.
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute -right-0.5 -top-0.5 block h-4 min-w-[16px] animate-pulse rounded-full bg-muted/70 ring-2 ring-background motion-reduce:animate-none"
+                  />
+                ) : badge && badge > 0 ? (
                   <span className="pointer-events-none absolute -right-0.5 -top-0.5">
                     {/* Halo pulse — beri kesan hidup tanpa menggeser layout.
                         `motion-reduce:hidden` menghormati preferensi user. */}
@@ -149,9 +165,11 @@ export function MobileBottomNav() {
           type="button"
           onClick={toggleSidebar}
           aria-label={
-            unread > 0 && activeTo !== "/chat"
-              ? `Buka menu, ${unread} chat belum dibaca`
-              : "Buka menu"
+            unreadLoading && activeTo !== "/chat"
+              ? "Buka menu, memuat jumlah chat belum dibaca"
+              : unread > 0 && activeTo !== "/chat"
+                ? `Buka menu, ${unread} chat belum dibaca`
+                : "Buka menu"
           }
           aria-current={menuActive ? "page" : undefined}
           className={cn(
@@ -182,7 +200,14 @@ export function MobileBottomNav() {
                 meski notifikasi ada di rute lain (mis. /notifikasi, /tugas).
                 Angka dihilangkan (dot-only) supaya tidak duplikat visual
                 dengan badge di tab Chat itu sendiri. */}
-            {unread > 0 && activeTo !== "/chat" ? (
+            {unreadLoading && activeTo !== "/chat" ? (
+              <span className="pointer-events-none absolute -right-0.5 -top-0.5">
+                <span
+                  aria-hidden
+                  className="block h-2.5 w-2.5 animate-pulse rounded-full bg-muted/70 ring-2 ring-background motion-reduce:animate-none"
+                />
+              </span>
+            ) : unread > 0 && activeTo !== "/chat" ? (
               <span className="pointer-events-none absolute -right-0.5 -top-0.5">
                 <span
                   aria-hidden
