@@ -20,6 +20,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CallHost } from "@/components/chat/CallHost";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
@@ -125,13 +126,14 @@ function AuthLock() {
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
           <AppHeader />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 pb-[calc(env(safe-area-inset-bottom)+64px)] md:pb-0">
             <Outlet />
           </div>
         </SidebarInset>
       </div>
       {uid && cfg && locked && <AppLockScreen uid={uid} cfg={cfg} />}
       <CallHost />
+      <MobileBottomNav />
     </SidebarProvider>
   );
 }
