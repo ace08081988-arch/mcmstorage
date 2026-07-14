@@ -74,6 +74,11 @@ function RequestPage() {
   const [items, setItems] = useState<WarehouseItem[]>([]);
   const [titles, setTitles] = useState<RequestTitle[]>([]);
   const [titleItems, setTitleItems] = useState<RequestTitleItem[]>([]);
+  // Peta title_id -> jumlah prep dalam siklus AKTIF (created_at > reprep_requested_at,
+  // atau semuanya bila reprep_requested_at null). Dipakai untuk memutuskan
+  // apakah tombol "Minta penyiapan ulang" ditampilkan (siklus sudah punya prep
+  // = sudah selesai, boleh direset).
+  const [activePrepCountByTitle, setActivePrepCountByTitle] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   type LoadErr = {
     source: string; message: string; code?: string; status?: number;
