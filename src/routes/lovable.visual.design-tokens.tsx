@@ -138,7 +138,7 @@ function DesignTokensPreview() {
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-ms-2 px-ms-4 pb-ms-3">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-ms-2 px-ms-4 pb-3">
           {WIDTH_PRESETS.map((p) => {
             const active = widthPreset === p.value;
             return (
@@ -228,7 +228,7 @@ function SectionHeader({
   hint: string;
 }) {
   return (
-    <div className="flex items-center gap-ms-2 border-b border-border/60 pb-ms-2">
+    <div className="flex items-center gap-ms-2 border-b border-border/60 pb-2">
       <Icon className="size-4 shrink-0 text-primary" aria-hidden />
       <h2 className="min-w-0 truncate text-ms-base font-semibold">{title}</h2>
       <span className="ml-auto shrink-0 text-ms-2xs uppercase tracking-wide text-muted-foreground">
@@ -283,7 +283,7 @@ function SpacingSection() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-ms-3 pt-ms-2">
+      <div className="grid grid-cols-2 gap-ms-3 pt-2">
         {[2, 3, 4, 6].map((n) => (
           <div key={n} className="rounded-md border border-border/60">
             <div className={`p-ms-${n} bg-muted/40`}>
