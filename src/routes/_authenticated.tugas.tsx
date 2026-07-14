@@ -14,6 +14,7 @@ import { SharePinDialog } from "@/components/tugas/SharePinDialog";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { deriveTaskShortStatus, type TaskShortStatus } from "@/lib/prep-status";
 import { fetchAddressBook, normalizePhone, type AddressBookRow } from "@/lib/address-book";
+import { rememberPin, recallPin, forgetPin } from "@/lib/prep-pin-memo";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
