@@ -1124,10 +1124,7 @@ function PublicPrepPage() {
 
   // Daftarkan silentRefresh ke ref agar setWorkerOperationActive dapat
   // memicu satu kali refresh saat semua operasi busy selesai.
-  useEffect(() => {
-    silentRefreshRef.current = silentRefresh;
-    return () => { silentRefreshRef.current = null; };
-  });
+  silentRefreshRef.current = silentRefresh;
 
   // Beri peringatan sebelum tab ditutup / reload saat foto masih diproses
   // agar draft tidak hilang tanpa disadari.
@@ -3612,7 +3609,29 @@ function RequestSection({
 }) {
   const [titles, setTitles] = useState<RequestTitleDTO[] | null>(null);
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Persist panel request yang sedang dibuka. Android WebView bisa me-recreate
+  // halaman setelah balik dari Galeri; tanpa ini form request kembali tertutup
+  // dan terlihat seperti layar bolak-balik / tidak ada perubahan.
+  const openStorageKey = `mcm.prep.request.open:${token}`;
+  const [openId, setOpenIdRaw] = useState<string | null>(() => {
+    try {
+      return typeof window !== "undefined"
+        ? window.sessionStorage.getItem(openStorageKey)
+        : null;
+    } catch {
+      return null;
+    }
+  });
+  const setOpenId = (next: string | null) => {
+    setOpenIdRaw(next);
+    try {
+      if (typeof window === "undefined") return;
+      if (next) window.sessionStorage.setItem(openStorageKey, next);
+      else window.sessionStorage.removeItem(openStorageKey);
+    } catch {
+      /* ignore quota */
+    }
+  };
 
   async function load() {
     try {
@@ -3645,6 +3664,12 @@ function RequestSection({
     void load();
   }, [token, pin]);
 
+  useEffect(() => {
+    if (!titles || !openId) return;
+    const stillOpenable = titles.some((t) => t.id === openId && (t.submitted_count ?? 0) <= 0);
+    if (!stillOpenable) setOpenId(null);
+  }, [titles, openId]);
+
   if (!titles) return null;
   if (titles.length === 0) return null;
 
@@ -3658,7 +3683,7 @@ function RequestSection({
         </span>
       </div>
       <div className="space-ms-2">
-        {titles.map((t) => {
+        {titles.map((t, titleIndex) => {
           let renderedRow: ReactNode;
           try {
             const requestItems = Array.isArray(t.items) ? t.items : [];
@@ -3729,7 +3754,7 @@ function RequestSection({
             console.error("[RequestSection] render title failed", t?.id, err);
             renderedRow = (
               <div
-                key={t?.id ?? Math.random()}
+                key={t?.id ?? `request-title-error-${titleIndex}`}
                 className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-ms-3 py-ms-2 text-ms-2xs text-amber-700 dark:text-amber-300"
               >
                 Paket &quot;{t?.name ?? "tanpa nama"}&quot; tidak bisa ditampilkan. Muat ulang portal atau hubungi admin.
