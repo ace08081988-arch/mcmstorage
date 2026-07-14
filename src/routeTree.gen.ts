@@ -89,6 +89,7 @@ import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/
 import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
 import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.visual.kemasan-badge'
 import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
+import { Route as LovableVisualDesignTokensRouteImport } from './routes/lovable.visual.design-tokens'
 import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
 import { Route as LovableVisualChatQueueNetworkDropRouteImport } from './routes/lovable.visual.chat-queue-network-drop'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
@@ -559,6 +560,12 @@ const LovableVisualKartonKonversiRoute =
     path: '/lovable/visual/karton-konversi',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualDesignTokensRoute =
+  LovableVisualDesignTokensRouteImport.update({
+    id: '/lovable/visual/design-tokens',
+    path: '/lovable/visual/design-tokens',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualDeliveryHistoryRoute =
   LovableVisualDeliveryHistoryRouteImport.update({
     id: '/lovable/visual/delivery-history',
@@ -877,6 +884,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
+  '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -994,6 +1002,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
+  '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -1116,6 +1125,7 @@ export interface FileRoutesById {
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
+  '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -1238,6 +1248,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
+    | '/lovable/visual/design-tokens'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
@@ -1355,6 +1366,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
+    | '/lovable/visual/design-tokens'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
@@ -1476,6 +1488,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
+    | '/lovable/visual/design-tokens'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
@@ -1539,6 +1552,7 @@ export interface RootRouteChildren {
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualChatQueueNetworkDropRoute: typeof LovableVisualChatQueueNetworkDropRoute
   LovableVisualDeliveryHistoryRoute: typeof LovableVisualDeliveryHistoryRoute
+  LovableVisualDesignTokensRoute: typeof LovableVisualDesignTokensRoute
   LovableVisualKartonKonversiRoute: typeof LovableVisualKartonKonversiRoute
   LovableVisualKemasanBadgeRoute: typeof LovableVisualKemasanBadgeRoute
   LovableVisualKomponenReviewRoute: typeof LovableVisualKomponenReviewRoute
@@ -2129,6 +2143,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualKartonKonversiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/design-tokens': {
+      id: '/lovable/visual/design-tokens'
+      path: '/lovable/visual/design-tokens'
+      fullPath: '/lovable/visual/design-tokens'
+      preLoaderRoute: typeof LovableVisualDesignTokensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/delivery-history': {
       id: '/lovable/visual/delivery-history'
       path: '/lovable/visual/delivery-history'
@@ -2641,6 +2662,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualChatQueueNetworkDropRoute:
     LovableVisualChatQueueNetworkDropRoute,
   LovableVisualDeliveryHistoryRoute: LovableVisualDeliveryHistoryRoute,
+  LovableVisualDesignTokensRoute: LovableVisualDesignTokensRoute,
   LovableVisualKartonKonversiRoute: LovableVisualKartonKonversiRoute,
   LovableVisualKemasanBadgeRoute: LovableVisualKemasanBadgeRoute,
   LovableVisualKomponenReviewRoute: LovableVisualKomponenReviewRoute,
