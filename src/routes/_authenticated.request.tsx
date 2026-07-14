@@ -97,7 +97,12 @@ function RequestPage() {
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
   // Deep-link `send=1` dari Beranda (ReadyRequestSection). Buka dialog verifikasi
   // penjualan otomatis pada paket aktif pertama — sekali saja, lalu dikonsumsi.
-  const [autoSendPending, setAutoSendPending] = useState<boolean>(search.send === "1");
+  const [autoSendPending, setAutoSendPending] = useState<boolean>(
+    search.send === "wa" || search.send === "chat",
+  );
+  const [autoSendChannel, setAutoSendChannel] = useState<"whatsapp" | "chat">(
+    search.send === "chat" ? "chat" : "whatsapp",
+  );
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
@@ -302,6 +307,7 @@ function RequestPage() {
         onBack={() => setSelectedTitleId(undefined)}
         onChanged={loadAll}
         autoOpenSend={autoSendPending}
+        autoOpenSendChannel={autoSendChannel}
         onConsumeAutoOpenSend={() => setAutoSendPending(false)}
       />
     );
