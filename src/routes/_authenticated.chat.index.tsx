@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
@@ -35,6 +35,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { previewText } from "@/lib/chat-cards";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
+  // Terima query `?filter=unread` sebagai deep-link dari tab Chat di bottom
+  // nav — supaya mengetuk badge chat langsung memfokuskan daftar pesan
+  // belum dibaca. Nilai lain diabaikan (fallback ke "all").
+  validateSearch: (search: Record<string, unknown>) => {
+    const raw = typeof search.filter === "string" ? search.filter : undefined;
+    return { filter: raw === "unread" ? ("unread" as const) : undefined };
+  },
   component: ChatListPage,
 });
 
@@ -56,12 +63,20 @@ function ChatListPage() {
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
   const navigate = useNavigate();
+  const routeSearch = Route.useSearch();
   const pin = usePinConversation();
   const archive = useArchiveConversation();
   const mute = useMuteConversation();
   const [grupOpen, setGrupOpen] = useState(false);
   // Filter chip aktif — preset WA + daftar custom (prefix `list:<id>`).
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<string>(
+    routeSearch.filter === "unread" ? "unread" : "all",
+  );
+  // Sinkron ulang bila user mengetuk tab Chat lagi dari tab lain dengan
+  // unread — TanStack Router hanya mengganti search param tanpa remount.
+  useEffect(() => {
+    if (routeSearch.filter === "unread") setFilter("unread");
+  }, [routeSearch.filter]);
   const { data: chatLists } = useChatLists();
   const { data: allListMembers } = useAllChatListMembers();
   // Mode seleksi multi-percakapan (tekan lama untuk aktif).
