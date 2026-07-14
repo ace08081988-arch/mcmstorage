@@ -294,6 +294,8 @@ function RequestPage() {
         titleItems={selectedTitleItems}
         onBack={() => setSelectedTitleId(undefined)}
         onChanged={loadAll}
+        autoOpenSend={autoSendPending}
+        onConsumeAutoOpenSend={() => setAutoSendPending(false)}
       />
     );
   }
