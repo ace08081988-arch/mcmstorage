@@ -496,7 +496,21 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border/60 px-3 py-3.5">
+      <SidebarHeader
+        className="relative overflow-hidden border-b border-sidebar-border/50 px-3 py-4"
+        style={{
+          background:
+            "linear-gradient(140deg, color-mix(in oklab, var(--primary) 10%, transparent) 0%, transparent 55%)",
+        }}
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-3 bottom-0 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 45%, transparent), transparent)",
+          }}
+        />
         <OrgHeader />
       </SidebarHeader>
       <SidebarContent className="gap-0">
@@ -506,7 +520,12 @@ export function AppSidebar() {
             {gi > 0 ? (
               <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />
             ) : null}
-            <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+            <SidebarGroupLabel className="flex items-center gap-2 px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+              <span
+                aria-hidden
+                className="inline-block h-[3px] w-[3px] rounded-full"
+                style={{ background: "color-mix(in oklab, var(--primary) 65%, transparent)" }}
+              />
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -519,7 +538,7 @@ export function AppSidebar() {
                         asChild
                         isActive={active}
                         tooltip={item.title}
-                        className="group/nav relative h-9 overflow-hidden rounded-lg px-2.5 font-medium text-sidebar-foreground/85 transition-all duration-200 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground hover:translate-x-0.5 data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/15 data-[active=true]:to-primary/5 data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:opacity-0 before:transition-opacity data-[active=true]:before:opacity-100"
+                        className="group/nav relative h-10 overflow-hidden rounded-xl px-2.5 font-medium text-sidebar-foreground/85 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground hover:translate-x-0.5 data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/20 data-[active=true]:via-primary/8 data-[active=true]:to-transparent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold data-[active=true]:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent)] before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-gradient-to-b before:from-primary before:to-primary/60 before:opacity-0 before:transition-opacity data-[active=true]:before:opacity-100"
                       >
                         <NavLinkItem
                           item={item}
@@ -579,10 +598,19 @@ export function AppSidebar() {
                   onClick={() => setShowMore((v) => !v)}
                   aria-expanded={showMore}
                   aria-controls="mcm-sidebar-more"
-                  className="group/nav flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
+                  className="group/nav flex h-10 w-full items-center gap-2.5 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/25 px-2.5 text-[13px] font-medium text-sidebar-foreground/90 transition-colors hover:border-primary/30 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 >
-                  <MoreHorizontal className="h-[17px] w-[17px] shrink-0 text-muted-foreground group-hover/nav:text-sidebar-foreground" />
+                  <span
+                    aria-hidden
+                    className="grid h-6 w-6 shrink-0 place-items-center rounded-md ring-1 ring-primary/20"
+                    style={{ background: "color-mix(in oklab, var(--primary) 12%, transparent)" }}
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5 text-primary" />
+                  </span>
                   <span className="flex-1 truncate text-left tracking-[-0.005em]">Lainnya</span>
+                  <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+                    {showMore ? "Tutup" : "Buka"}
+                  </span>
                   <ChevronDown
                     className={
                       "h-4 w-4 shrink-0 text-muted-foreground transition-transform " +
@@ -603,7 +631,7 @@ export function AppSidebar() {
           return nodes;
         })()}
       </SidebarContent>
-      <SidebarFooter className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="gap-2 border-t border-sidebar-border/40 px-2 pb-2 pt-2 group-data-[collapsible=icon]:hidden">
         <div
           title={
             syncState === "syncing"
@@ -612,14 +640,38 @@ export function AppSidebar() {
                 ? `Tidak ada koneksi — badge mungkin tertinggal. ${lastSyncTitle}`
                 : lastSyncTitle
           }
-          className={`mb-2 flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-[11px] font-medium ${syncMeta.cls}`}
+          className="flex items-center justify-between gap-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-2.5 py-1.5 text-[11px] font-medium backdrop-blur-sm"
         >
           <span className="flex items-center gap-2">
-            <syncMeta.Icon className={`h-3.5 w-3.5 ${syncState === "syncing" ? "animate-spin" : ""}`} />
-            <span>{syncMeta.label}</span>
+            <span className="relative inline-flex h-2 w-2 shrink-0">
+              <span
+                className={
+                  "absolute inset-0 rounded-full " +
+                  (syncState === "online"
+                    ? "bg-emerald-400 shadow-[0_0_8px_1px_rgba(52,211,153,0.55)]"
+                    : syncState === "syncing"
+                      ? "bg-amber-400 animate-pulse"
+                      : "bg-destructive")
+                }
+              />
+              {syncState === "online" ? (
+                <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
+              ) : null}
+            </span>
+            <span
+              className={
+                syncState === "online"
+                  ? "text-emerald-500 dark:text-emerald-400"
+                  : syncState === "syncing"
+                    ? "text-amber-500 dark:text-amber-400"
+                    : "text-destructive"
+              }
+            >
+              {syncMeta.label}
+            </span>
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="opacity-80">
+            <span className="text-muted-foreground">
               {syncState === "syncing" ? "…" : lastSyncLabel}
             </span>
             <button
@@ -636,25 +688,42 @@ export function AppSidebar() {
                     : "Sinkronkan ulang percakapan"
               }
               aria-label="Sinkronkan ulang percakapan"
-              className="inline-flex h-5 w-5 items-center justify-center rounded-sm border border-current/20 bg-background/40 hover:bg-background/70 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-sidebar-border/60 bg-background/40 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-background/70 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw className={`h-3 w-3 ${syncState === "syncing" ? "animate-spin" : ""}`} />
             </button>
           </span>
         </div>
-        <CompactModeToggle />
-        <ReduceMotionToggle />
+        <div className="rounded-xl border border-sidebar-border/40 bg-sidebar-accent/15 p-1">
+          <CompactModeToggle />
+          <ReduceMotionToggle />
+        </div>
         {!chatOnly && (
           <a
             href="/download#chat"
-            className="mt-2 flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-2 py-1.5 text-[11px] font-medium text-foreground hover:bg-primary/15"
+            className="group/chat relative mt-1 flex items-center gap-2.5 overflow-hidden rounded-xl px-2.5 py-2 text-[11px] font-medium text-foreground transition-all hover:translate-y-[-1px]"
+            style={{
+              background:
+                "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent), color-mix(in oklab, var(--primary) 6%, transparent))",
+              boxShadow:
+                "inset 0 0 0 1px color-mix(in oklab, var(--primary) 35%, transparent), 0 4px 12px -6px color-mix(in oklab, var(--primary) 40%, transparent)",
+            }}
             title="Unduh MCM Chat — APK khusus komunikasi, akun sama"
           >
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">💬</span>
-            <span className="flex-1 leading-tight">
-              Coba <b>MCM Chat</b>
-              <span className="block text-[10px] opacity-70">APK khusus chat · akun sama</span>
+            <span
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-primary-foreground shadow-sm ring-1 ring-primary/30"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 70%, black))",
+              }}
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
             </span>
+            <span className="flex-1 leading-tight">
+              Coba <b className="tracking-tight">MCM Chat</b>
+              <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">APK khusus chat · akun sama</span>
+            </span>
+            <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-primary/70 transition-transform group-hover/chat:translate-x-0.5" />
           </a>
         )}
       </SidebarFooter>
