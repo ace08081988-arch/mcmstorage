@@ -1,11 +1,11 @@
 /**
  * Fixture QA untuk shell /gudang: menjalankan tiga state (loading / empty /
- * data) berdampingan di lebar 390 & 411 tanpa perlu backend/device-verify.
+ * data) berdampingan di lebar 320–768 tanpa perlu backend/device-verify.
  *
  * Cek yang dipenuhi:
  * - Header sticky, pills, PageContainer, SummaryCard memakai token `--ms-*`.
  * - Tidak ada horizontal overflow.
- * - Tinggi + padding elemen identik antara 390 & 411 (keduanya mobile).
+ * - Tinggi + padding elemen identik antar viewport mobile (320/360/390/411).
  *
  * URL: /lovable/visual/gudang-shell   ·   noindex, tanpa auth, tanpa network.
  */
@@ -57,7 +57,7 @@ const TABS: ReadonlyArray<PillsTabItem<TabKey>> = [
   { k: "riwayat", label: "Riwayat", icon: History },
 ];
 
-const WIDTHS = [360, 390, 411, 768] as const;
+const WIDTHS = [320, 360, 390, 411, 768] as const;
 const STATES = ["loading", "empty", "data"] as const;
 type State = (typeof STATES)[number];
 
@@ -93,7 +93,7 @@ function GudangShellFixture() {
   return (
     <div className="min-h-screen bg-muted/10 p-ms-4">
       <h1 className="mb-ms-4 text-ms-lg font-semibold tracking-tight">
-        Gudang shell — loading · empty · data × 390/411
+        Gudang shell — loading · empty · data × 320/360/390/411/768
       </h1>
       <div className="grid grid-cols-1 gap-ms-6 xl:grid-cols-2">
         {WIDTHS.map((w) => (
