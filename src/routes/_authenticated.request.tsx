@@ -186,6 +186,23 @@ function RequestPage() {
       if (wi.data) setItems(wi.data as WarehouseItem[]);
       if (t.data) setTitles(t.data as RequestTitle[]);
       if (ti.data) setTitleItems(ti.data as RequestTitleItem[]);
+      // Ambil prep untuk menghitung siklus aktif per title. Query
+      // di-scoped otomatis oleh RLS ke user aktif; tidak perlu filter
+      // user_id manual (dan tetap aman kalaupun ada baris lain lolos).
+      const titlesData = (t.data ?? []) as RequestTitle[];
+      const reprepById = new Map<string, string | null>(
+        titlesData.map((row) => [row.id, row.reprep_requested_at ?? null]),
+      );
+      const { data: prepRows } = await sb
+        .from("request_preparations")
+        .select("title_id,created_at");
+      const counts: Record<string, number> = {};
+      for (const row of (prepRows ?? []) as Array<{ title_id: string; created_at: string }>) {
+        const cutoff = reprepById.get(row.title_id) ?? null;
+        if (cutoff && !(row.created_at > cutoff)) continue;
+        counts[row.title_id] = (counts[row.title_id] ?? 0) + 1;
+      }
+      setActivePrepCountByTitle(counts);
     } catch (e) {
       const err = e as { message?: string; status?: number; code?: string };
       setLoadError({
