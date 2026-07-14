@@ -189,22 +189,46 @@ function normalizePrepTask(value: unknown): PrepTaskRow | null {
 
 type NativeCameraStatus = "fallback" | "cancelled";
 
+type NativePickedPhoto = {
+  webPath?: string;
+  path?: string;
+  uri?: string;
+  format?: string;
+  metadata?: { format?: string | null } | null;
+};
+
 async function beginPortalNativePicker(): Promise<() => void> {
   const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
   beginNativePicker();
   return endNativePicker;
 }
 
-async function cameraPhotoToFile(
-  photo: { webPath?: string; format?: string },
-  prefix: string,
-): Promise<File | null> {
-  if (!photo.webPath) return null;
-  const response = await fetch(photo.webPath);
+function pickedPhotoUrl(photo: NativePickedPhoto): string | null {
+  return photo.webPath || photo.path || photo.uri || null;
+}
+
+function pickedPhotoFormat(photo: NativePickedPhoto, blob: Blob): string {
+  return (
+    photo.format ||
+    photo.metadata?.format ||
+    blob.type.split("/")[1] ||
+    "jpg"
+  );
+}
+
+async function cameraPhotoToFile(photo: NativePickedPhoto, prefix: string): Promise<File | null> {
+  const url = pickedPhotoUrl(photo);
+  if (!url) return null;
+  const response = await fetch(url);
+  // URL lokal dari Capacitor/Android kadang bukan respons HTTP normal
+  // (status bisa 0), tapi blob-nya tetap valid. Tolak hanya error HTTP nyata.
+  if (response.status >= 400) {
+    throw new Error(`Foto native tidak bisa dibaca (${response.status})`);
+  }
   const blob = await response.blob();
-  const rawExt = (photo.format || blob.type.split("/")[1] || "jpg").toLowerCase();
+  const rawExt = pickedPhotoFormat(photo, blob).toLowerCase();
   const ext = rawExt === "jpeg" ? "jpg" : rawExt.replace(/[^a-z0-9]/g, "") || "jpg";
-  const mime = blob.type || (ext === "jpg" ? "image/jpeg" : `image/${ext}`);
+  const mime = blob.type || (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
   return new File([blob], `${prefix}-${Date.now()}.${ext}`, { type: mime });
 }
 
@@ -239,15 +263,17 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
   const { Capacitor } = await import("@capacitor/core");
   if (!Capacitor.isNativePlatform()) return "fallback";
   try {
-    const { Camera } = await import("@capacitor/camera");
-    const result = await Camera.pickImages({
+    const { Camera, MediaTypeSelection } = await import("@capacitor/camera");
+    const result = await Camera.chooseFromGallery({
+      mediaType: MediaTypeSelection.Photo,
+      allowMultipleSelection: true,
       quality: 82,
-      width: 2048,
-      height: 2048,
+      targetWidth: 2048,
+      targetHeight: 2048,
       correctOrientation: true,
       limit: 20,
     });
-    const photos = Array.isArray(result.photos) ? result.photos : [];
+    const photos = Array.isArray(result.results) ? result.results : [];
     const files = await Promise.all(
       photos.map((photo) => cameraPhotoToFile(photo, "pegawai-galeri")),
     );
@@ -259,6 +285,22 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
     }
     throw err;
   }
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+async function waitForPhotosRefLength(
+  photosRef: RefObject<StagedPhoto[]>,
+  minLength: number,
+): Promise<number> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const len = photosRef.current.length;
+    if (len >= minLength) return len;
+    await nextFrame();
+  }
+  return photosRef.current.length;
 }
 
 function isObjectUrl(url: string | null | undefined): boolean {
@@ -2334,6 +2376,14 @@ function ItemCard({
     setEditorSrc(p.dataUrl);
     setEditorOpen(true);
   }
+  function tryOpenEditForIdx(i: number): boolean {
+    const p = photosRef.current[i];
+    if (!p) return false;
+    setEditingIdx(i);
+    setEditorSrc(p.dataUrl);
+    setEditorOpen(true);
+    return true;
+  }
   function advanceEditQueue() {
     const q = editQueueRef.current;
     if (q.length === 0) {
@@ -2566,18 +2616,20 @@ function ItemCard({
   }
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
+    const beforeLen = photosRef.current.length;
     const results = await Promise.all(files.map((f) => stageOne(f, false)));
     const okCount = results.filter(Boolean).length;
     if (okCount === 0) return;
     // Setelah semua foto ter-stage, buka PhotoEditor untuk tiap foto baru
     // secara berurutan. Pakai photosRef supaya index-nya akurat setelah
     // state selesai flush.
-    await new Promise((r) => setTimeout(r, 0));
-    const len = photosRef.current.length;
-    const startIdx = len - okCount;
+    const len = await waitForPhotosRefLength(photosRef, beforeLen + okCount);
+    const startIdx = Math.max(0, len - okCount);
     const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
     editQueueRef.current = idxs.slice(1);
-    openEditForIdx(idxs[0]);
+    if (!tryOpenEditForIdx(idxs[0])) {
+      toast.success(`${okCount} foto masuk. Ketuk foto untuk edit.`);
+    }
   }
 
   function takeLocation() {
@@ -3882,6 +3934,14 @@ function RequestForm({
     setEditorSrc(p.dataUrl);
     setEditorOpen(true);
   }
+  function tryOpenEditForIdx(i: number): boolean {
+    const p = photosRef.current[i];
+    if (!p) return false;
+    setEditingIdx(i);
+    setEditorSrc(p.dataUrl);
+    setEditorOpen(true);
+    return true;
+  }
   function advanceEditQueue() {
     const q = editQueueRef.current;
     if (q.length === 0) {
@@ -4069,15 +4129,17 @@ function RequestForm({
   }
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
+    const beforeLen = photosRef.current.length;
     const results = await Promise.all(files.map((f) => stageOne(f, false)));
     const okCount = results.filter(Boolean).length;
     if (okCount === 0) return;
-    await new Promise((r) => setTimeout(r, 0));
-    const len = photosRef.current.length;
-    const startIdx = len - okCount;
+    const len = await waitForPhotosRefLength(photosRef, beforeLen + okCount);
+    const startIdx = Math.max(0, len - okCount);
     const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
     editQueueRef.current = idxs.slice(1);
-    openEditForIdx(idxs[0]);
+    if (!tryOpenEditForIdx(idxs[0])) {
+      toast.success(`${okCount} foto masuk. Ketuk foto untuk edit.`);
+    }
   }
 
   function takeLocation() {

@@ -62,7 +62,9 @@ const STICKER_PRESETS: Record<string, { label: string; Icon: typeof Check; defau
 };
 
 export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosaveKey }: PhotoEditorV2Props) {
-  const [img] = useImage(src, "anonymous");
+  // Jangan paksa crossOrigin untuk blob:/data: URL dari kamera/galeri lokal.
+  // Android WebView bisa menolak decode diam-diam jika blob lokal diberi CORS.
+  const [img, imageLoadStatus] = useImage(src, /^https?:\/\//i.test(src) ? "anonymous" : undefined);
   const [tool, setTool] = useState<Tool>("pilih");
   const [color, setColor] = useState<string>("#ef4444");
   const [strokeWidth, setStrokeWidth] = useState<number>(6);
@@ -594,6 +596,16 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             />
           </Layer>
         </Stage>
+
+        {!img && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-ms-6 text-center">
+            <div className="rounded-lg border border-white/10 bg-neutral-900/75 px-ms-4 py-ms-3 text-ms-sm text-white/85 shadow-xl backdrop-blur-xl">
+              {imageLoadStatus === "failed"
+                ? "Foto tidak bisa dibuka di editor. Tekan Batal lalu pilih ulang."
+                : "Membuka foto…"}
+            </div>
+          </div>
+        )}
 
         {/* Header glass — kiri (batal + reset), tengah (title kosong), kanan (undo/redo/layer/simpan). */}
         <header
