@@ -553,7 +553,7 @@ function PengaturanTampilanPage() {
 
       <div className="space-y-4 px-4 pt-2">
         {/* Info draft */}
-        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] leading-snug text-muted-foreground">
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-ms-2xs leading-snug text-muted-foreground">
           Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
           Tampilan halaman lain tidak berubah sampai Anda menekan{" "}
           <span className="font-semibold text-foreground">Simpan</span> di bagian bawah.
@@ -579,7 +579,7 @@ function PengaturanTampilanPage() {
               >
                 <span className="text-lg leading-none">{p.icon}</span>
                 <span className="text-sm font-semibold">{p.label}</span>
-                <span className="text-[11px] leading-snug text-muted-foreground">{p.desc}</span>
+                <span className="text-ms-2xs leading-snug text-muted-foreground">{p.desc}</span>
               </button>
             ))}
           </CardContent>
@@ -712,7 +712,7 @@ function PengaturanTampilanPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium">Mode padat (compact)</p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
+                <p className="text-ms-2xs leading-snug text-muted-foreground">
                   Rapatkan padding & jarak agar lebih banyak konten terlihat.
                 </p>
               </div>
@@ -740,7 +740,7 @@ function PengaturanTampilanPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium">Kurangi animasi</p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
+                <p className="text-ms-2xs leading-snug text-muted-foreground">
                   Hilangkan animasi non-esensial untuk tampilan lebih tenang.
                 </p>
               </div>
@@ -753,7 +753,7 @@ function PengaturanTampilanPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium">Tingkatkan kontras</p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
+                <p className="text-ms-2xs leading-snug text-muted-foreground">
                   Perkuat border & ring fokus.
                 </p>
               </div>
@@ -813,7 +813,7 @@ function PengaturanTampilanPage() {
                   <button
                     key={p.id}
                     onClick={() => patch({ bgImage: p.url })}
-                    className={`relative h-14 overflow-hidden rounded-md border text-[10px] font-medium transition-transform hover:opacity-90 active:scale-95 ${active ? "border-primary ring-2 ring-primary" : "border-muted"}`}
+                    className={`relative h-14 overflow-hidden rounded-md border text-ms-2xs font-medium transition-transform hover:opacity-90 active:scale-95 ${active ? "border-primary ring-2 ring-primary" : "border-muted"}`}
                     style={p.url ? { backgroundImage: `url("${p.url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
                     title={p.label}
                   >
@@ -861,7 +861,7 @@ function PengaturanTampilanPage() {
                     onValueChange={(v) => patch({ bgOverlay: v[0] ?? 0.7 })}
                     aria-label="Kegelapan overlay latar"
                   />
-                  <p className="mt-1 text-[10px] text-muted-foreground">
+                  <p className="mt-1 text-ms-2xs text-muted-foreground">
                     0% = foto sepenuhnya tembus; 95% = hampir tak terlihat.
                   </p>
                 </div>
@@ -907,7 +907,7 @@ function PengaturanTampilanPage() {
                 <Download className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
                   <p className="text-sm font-semibold">Ekspor ke file</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-ms-2xs text-muted-foreground">
                     Unduh file <code className="rounded bg-muted px-1">.json</code> berisi
                     pengaturan tampilan Anda saat ini.
                   </p>
@@ -921,7 +921,7 @@ function PengaturanTampilanPage() {
                 <Upload className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
                   <p className="text-sm font-semibold">Impor dari file</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-ms-2xs text-muted-foreground">
                     Pilih file hasil ekspor untuk memuatnya sebagai pratinjau.
                   </p>
                 </div>
@@ -935,7 +935,7 @@ function PengaturanTampilanPage() {
                 <ClipboardPaste className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
                   <p className="text-sm font-semibold">Impor dari clipboard</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-ms-2xs text-muted-foreground">
                     Tempel JSON pengaturan dari clipboard. Fallback prompt manual
                     jika izin clipboard tidak tersedia.
                   </p>
@@ -950,25 +950,25 @@ function PengaturanTampilanPage() {
                 <Link2 className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
                   <p className="text-sm font-semibold">Impor dari URL</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-ms-2xs text-muted-foreground">
                     Ambil file JSON dari tautan <code className="rounded bg-muted px-1">https://…</code>{" "}
                     (dibatasi 10MB).
                   </p>
                 </div>
               </button>
             </div>
-            <p className="text-[11px] leading-snug text-muted-foreground">
+            <p className="text-ms-2xs leading-snug text-muted-foreground">
               Hasil impor hanya menimpa pratinjau di halaman ini — data akun, chat, dan
               gudang tidak terpengaruh. Tekan <span className="font-semibold text-foreground">Simpan</span>{" "}
               agar hasilnya diterapkan ke aplikasi.
             </p>
             <div className="grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-2">
               <div>
-                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                <p className="mb-1.5 flex items-center gap-1.5 text-ms-2xs font-semibold text-foreground">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                   Yang disimpan
                 </p>
-                <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
+                <ul className="space-y-1 text-ms-2xs leading-snug text-muted-foreground">
                   {[
                     "Tema (terang / gelap / ikut sistem)",
                     "Aksen warna & radius sudut",
@@ -987,11 +987,11 @@ function PengaturanTampilanPage() {
                 </ul>
               </div>
               <div>
-                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                <p className="mb-1.5 flex items-center gap-1.5 text-ms-2xs font-semibold text-foreground">
                   <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                   Yang tidak disimpan
                 </p>
-                <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
+                <ul className="space-y-1 text-ms-2xs leading-snug text-muted-foreground">
                   {[
                     "Akun, email, PIN & sesi login",
                     "Isi chat, kontak & lampiran",
@@ -1033,7 +1033,7 @@ function PengaturanTampilanPage() {
               <Languages className="h-4 w-4 mt-0.5 text-primary" />
               <div>
                 <p className="text-sm font-semibold">Bahasa & format</p>
-                <p className="text-[11px] text-muted-foreground">Bahasa aplikasi, mata uang, format tanggal</p>
+                <p className="text-ms-2xs text-muted-foreground">Bahasa aplikasi, mata uang, format tanggal</p>
               </div>
             </Link>
             <Link
@@ -1043,7 +1043,7 @@ function PengaturanTampilanPage() {
               <Accessibility className="h-4 w-4 mt-0.5 text-primary" />
               <div>
                 <p className="text-sm font-semibold">Aksesibilitas</p>
-                <p className="text-[11px] text-muted-foreground">Skala teks lanjutan & animasi</p>
+                <p className="text-ms-2xs text-muted-foreground">Skala teks lanjutan & animasi</p>
               </div>
             </Link>
           </CardContent>
