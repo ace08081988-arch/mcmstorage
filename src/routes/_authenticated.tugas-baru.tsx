@@ -23,13 +23,20 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/tugas-baru")({
-  validateSearch: (search: Record<string, unknown>): { title_id?: string } => {
-    const t = typeof search.title_id === "string" ? search.title_id.trim() : "";
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { title_id?: string; title_id_invalid?: true } => {
+    // Param sama sekali tidak dikirim → form manual biasa, bukan fallback.
+    if (!("title_id" in search) || search.title_id == null) return {};
+    const raw = typeof search.title_id === "string" ? search.title_id.trim() : "";
     // Guard: hanya UUID v4-ish yang diteruskan supaya tidak bocor payload liar.
-    if (t && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) {
-      return { title_id: t };
+    if (raw && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) {
+      return { title_id: raw };
     }
-    return {};
+    // Param dikirim tapi bukan UUID valid (atau kosong) → tandai supaya UI
+    // bisa menampilkan fallback + arah balik ke /ecer, bukan diam-diam
+    // menerima bentuk form kosong yang membingungkan owner.
+    return { title_id_invalid: true };
   },
   head: () => ({
     meta: [
