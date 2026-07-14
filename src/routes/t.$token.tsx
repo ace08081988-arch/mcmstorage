@@ -189,20 +189,42 @@ function normalizePrepTask(value: unknown): PrepTaskRow | null {
 
 type NativeCameraStatus = "fallback" | "cancelled";
 
+type NativePickedPhoto = {
+  webPath?: string;
+  path?: string;
+  uri?: string;
+  format?: string;
+  metadata?: { format?: string | null } | null;
+};
+
 async function beginPortalNativePicker(): Promise<() => void> {
   const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
   beginNativePicker();
   return endNativePicker;
 }
 
-async function cameraPhotoToFile(
-  photo: { webPath?: string; format?: string },
-  prefix: string,
-): Promise<File | null> {
-  if (!photo.webPath) return null;
-  const response = await fetch(photo.webPath);
+function pickedPhotoUrl(photo: NativePickedPhoto): string | null {
+  return photo.webPath || photo.path || photo.uri || null;
+}
+
+function pickedPhotoFormat(photo: NativePickedPhoto, blob: Blob): string {
+  return (
+    photo.format ||
+    photo.metadata?.format ||
+    blob.type.split("/")[1] ||
+    "jpg"
+  );
+}
+
+async function cameraPhotoToFile(photo: NativePickedPhoto, prefix: string): Promise<File | null> {
+  const url = pickedPhotoUrl(photo);
+  if (!url) return null;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Foto native tidak bisa dibaca (${response.status})`);
+  }
   const blob = await response.blob();
-  const rawExt = (photo.format || blob.type.split("/")[1] || "jpg").toLowerCase();
+  const rawExt = pickedPhotoFormat(photo, blob).toLowerCase();
   const ext = rawExt === "jpeg" ? "jpg" : rawExt.replace(/[^a-z0-9]/g, "") || "jpg";
   const mime = blob.type || (ext === "jpg" ? "image/jpeg" : `image/${ext}`);
   return new File([blob], `${prefix}-${Date.now()}.${ext}`, { type: mime });
@@ -239,15 +261,17 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
   const { Capacitor } = await import("@capacitor/core");
   if (!Capacitor.isNativePlatform()) return "fallback";
   try {
-    const { Camera } = await import("@capacitor/camera");
-    const result = await Camera.pickImages({
+    const { Camera, MediaTypeSelection } = await import("@capacitor/camera");
+    const result = await Camera.chooseFromGallery({
+      mediaType: MediaTypeSelection.Photo,
+      allowMultipleSelection: true,
       quality: 82,
-      width: 2048,
-      height: 2048,
+      targetWidth: 2048,
+      targetHeight: 2048,
       correctOrientation: true,
       limit: 20,
     });
-    const photos = Array.isArray(result.photos) ? result.photos : [];
+    const photos = Array.isArray(result.results) ? result.results : [];
     const files = await Promise.all(
       photos.map((photo) => cameraPhotoToFile(photo, "pegawai-galeri")),
     );
@@ -259,6 +283,22 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
     }
     throw err;
   }
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+async function waitForPhotosRefLength(
+  photosRef: RefObject<StagedPhoto[]>,
+  minLength: number,
+): Promise<number> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const len = photosRef.current.length;
+    if (len >= minLength) return len;
+    await nextFrame();
+  }
+  return photosRef.current.length;
 }
 
 function isObjectUrl(url: string | null | undefined): boolean {
