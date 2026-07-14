@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Component, useCallback, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useRef, useState, type ErrorInfo, type ReactNode, type RefObject } from "react";
 import { useLayoutEffect } from "react";
 import { toast } from "sonner";
 import { PhotoEditor } from "@/components/PhotoEditor";
@@ -2297,7 +2297,7 @@ function ItemCard({
   useEffect(() => () => {
     fallbackPickerReleaseRef.current?.();
   }, []);
-  async function openFallbackPhotoPicker(inputRef: React.RefObject<HTMLInputElement | null>) {
+  async function openFallbackPhotoPicker(inputRef: RefObject<HTMLInputElement | null>) {
     fallbackPickerReleaseRef.current?.();
     onActivityChange(true);
     const endNativePicker = await beginPortalNativePicker();
@@ -3821,7 +3821,7 @@ function RequestForm({
   useEffect(() => () => {
     fallbackPickerReleaseRef.current?.();
   }, []);
-  async function openFallbackPhotoPicker(inputRef: React.RefObject<HTMLInputElement | null>) {
+  async function openFallbackPhotoPicker(inputRef: RefObject<HTMLInputElement | null>) {
     fallbackPickerReleaseRef.current?.();
     onActivityChange(true);
     const endNativePicker = await beginPortalNativePicker();
