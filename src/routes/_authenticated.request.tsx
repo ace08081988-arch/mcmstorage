@@ -1608,6 +1608,7 @@ function TitleDetailView({
 
 function PrepSections({
   preps, prepItems, warehouseItems, titleItems, titleName, customers, onDelete, onChanged,
+  autoOpenSend, onConsumeAutoOpenSend,
 }: {
   preps: RequestPreparation[];
   prepItems: Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>;
@@ -1617,6 +1618,8 @@ function PrepSections({
   customers: CustomerRow[];
   onDelete: (p: RequestPreparation) => void;
   onChanged: () => Promise<{ ok: boolean; error?: string }> | void;
+  autoOpenSend?: boolean;
+  onConsumeAutoOpenSend?: () => void;
 }) {
   const [showHistory, setShowHistory] = useState(true);
   const [layout, setLayout] = useLayoutMode("requestPrep", "grid");
