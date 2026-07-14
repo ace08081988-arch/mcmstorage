@@ -68,6 +68,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* Premium++ typography tokens (Slice 0 — opt-in via `font-display`/`font-body`).
+     Terhubung ke class utility Tailwind: `font-display`, `font-body`.
+     Tidak mengubah default `font-sans` app; komponen harus opt-in. */
+  --font-display: "DM Serif Display", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-body: "Fira Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
