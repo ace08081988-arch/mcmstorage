@@ -29,6 +29,7 @@ type Row = {
 
 export function ReadyRequestSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [layout, setLayout] = useLayoutMode("readyRequest", "list");
   const gridClass = layoutGridClass(layout);
@@ -73,6 +74,11 @@ export function ReadyRequestSection() {
 
   useEffect(() => { void load(); }, [load]);
   useOnDebtTx(useCallback(() => { void load(); }, [load]));
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try { await load(); } finally { setRefreshing(false); }
+  }, [load]);
 
   const filtered = useMemo(() => {
     if (!rows) return null;
