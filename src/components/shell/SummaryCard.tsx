@@ -37,7 +37,7 @@ export function SummaryCard({
     <div className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-b from-card to-background p-ms-3 elev-sm backdrop-blur transition-all hover:border-primary/40 hover:elev-md md:p-ms-4">
       <div className="flex items-start justify-between gap-ms-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground md:text-ms-2xs">
+          <p className="truncate text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {label}
           </p>
           {loading ? (
