@@ -213,24 +213,24 @@ function SummaryCard({
     info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
   };
   return (
-    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-4">
+    <div className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-b from-card to-background p-ms-3 elev-sm backdrop-blur transition-all hover:border-primary/40 hover:elev-md md:p-ms-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:text-[11px]">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground md:text-[11px]">
             {label}
           </p>
           {loading ? (
             <div className="mt-2 h-6 w-12 animate-pulse rounded bg-muted md:h-7 md:w-16" />
           ) : (
-            <p className="mt-1 text-xl font-bold tabular-nums tracking-tight md:text-2xl">
+            <p className="mt-1 text-ms-xl font-semibold tabular-nums md:text-ms-2xl">
               {value.toLocaleString("id-ID")}
             </p>
           )}
         </div>
         <span
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${toneCls[tone]} md:h-9 md:w-9`}
+          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-inset ${toneCls[tone]} md:h-10 md:w-10`}
         >
-          <Icon className="h-4 w-4 md:h-4.5 md:w-4.5" />
+          <Icon className="h-4 w-4 md:h-[18px] md:w-[18px]" />
         </span>
       </div>
     </div>
@@ -411,17 +411,27 @@ function GudangPage() {
 
       {/* Mobile header + horizontal nav */}
       <div className="flex-1 min-w-0">
-        <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur-xl md:hidden">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-3 py-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <Link to="/" className="rounded-md border px-2 py-1 text-xs hover:bg-accent">← Beranda</Link>
-              <h1 className="flex items-center gap-1.5 truncate text-base font-bold tracking-tight">
-                <Package className="h-4 w-4 shrink-0 text-primary" /> Gudang
-              </h1>
+        <header className="sticky top-0 z-10 border-b border-primary/15 bg-background/85 backdrop-blur-xl md:hidden">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-ms-4 py-ms-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Link
+                to="/"
+                className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-3 text-[11px] font-medium text-foreground hover:border-primary/60"
+              >
+                ← Beranda
+              </Link>
+              <div className="min-w-0 leading-tight">
+                <p className="flex items-center gap-1.5 truncate text-ms-base font-semibold tracking-ms-tight text-foreground">
+                  <Package className="h-4 w-4 shrink-0 text-primary" /> Gudang
+                </p>
+                <p className="truncate text-[10px] uppercase tracking-[0.18em] text-primary/70">
+                  Inventaris · Pembukuan
+                </p>
+              </div>
             </div>
-            <div className="shrink-0 text-right text-[10px] text-muted-foreground">
-              <div className="uppercase tracking-wide">Nilai stok</div>
-              <div className="text-xs font-bold tabular-nums text-foreground">{rupiah(totalStokValue)}</div>
+            <div className="shrink-0 text-right leading-tight">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Nilai stok</div>
+              <div className="text-ms-sm font-semibold tabular-nums text-foreground">{rupiah(totalStokValue)}</div>
             </div>
           </div>
           {/* L7: overflow cue — fade kiri/kanan menunjukkan tab masih bisa
@@ -431,7 +441,7 @@ function GudangPage() {
             <nav
               role="tablist"
               aria-label="Bagian Gudang"
-              className="flex gap-1.5 overflow-x-auto scroll-smooth px-3 pb-2 text-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex gap-1.5 overflow-x-auto scroll-smooth px-ms-4 pb-2.5 text-ms-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {navItems.map(({ k, label, icon: Icon }) => (
                 <button
@@ -439,7 +449,7 @@ function GudangPage() {
                   role="tab"
                   aria-selected={tab === k}
                   onClick={() => setTab(k)}
-                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-colors ${tab === k ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-border/60 bg-background/60 hover:bg-accent"}`}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-medium tracking-ms-tight transition-colors ${tab === k ? "border-primary bg-primary text-primary-foreground elev-sm" : "border-primary/20 bg-card/70 text-foreground/80 hover:border-primary/50 hover:bg-accent"}`}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {label}
@@ -448,18 +458,18 @@ function GudangPage() {
             </nav>
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background to-transparent"
+              className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background/95 to-transparent"
             />
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background to-transparent"
+              className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background/95 to-transparent"
             />
           </div>
         </header>
 
-        <main className="mx-auto max-w-3xl space-y-4 p-3 md:max-w-4xl md:p-6">
+        <main className="mx-auto max-w-3xl space-ms-5 px-ms-4 py-ms-5 md:max-w-4xl md:p-6">
         {/* Inventory summary — always visible */}
-        <section aria-label="Ringkasan inventaris" className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+        <section aria-label="Ringkasan inventaris" className="grid grid-cols-2 gap-ms-3 md:grid-cols-4">
           <SummaryCard
             icon={Package}
             label="Total Produk"
