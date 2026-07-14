@@ -147,6 +147,15 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   }, [fit, zoom]);
 
   const startPointer = useCallback(() => {
+    // Bila ada dua jari (pinch), jangan mulai stroke — pinch handler yang
+    // pegang kanvas. Tanpa ini, pinch akan memulai coretan pendek sebelum
+    // jari kedua terdeteksi.
+    const st = stageRef.current;
+    const pointers = st && (st as unknown as { getPointersPositions?: () => Array<{ x: number; y: number }> }).getPointersPositions;
+    if (typeof pointers === "function") {
+      const list = pointers.call(st);
+      if (list && list.length > 1) return;
+    }
     const p = stagePointerToScene();
     if (!p) return;
     if (["coret", "highlighter", "brush", "eraser"].includes(tool)) {
