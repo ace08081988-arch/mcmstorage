@@ -1,13 +1,16 @@
 /**
  * Fixture QA untuk shell /gudang: menjalankan tiga state (loading / empty /
- * data) berdampingan di lebar 320–768 tanpa perlu backend/device-verify.
+ * data) × dua tema (light / dark) berdampingan di lebar 320–768 tanpa
+ * perlu backend/device-verify.
  *
  * Cek yang dipenuhi:
  * - Header sticky, pills, PageContainer, SummaryCard memakai token `--ms-*`.
  * - Tidak ada horizontal overflow.
  * - Tinggi + padding elemen identik antar viewport mobile (320/360/390/411).
+ * - Spacing/tokens identik antar tema light/dark; hanya warna yang berubah.
  *
- * URL: /lovable/visual/gudang-shell   ·   noindex, tanpa auth, tanpa network.
+ * URL: /lovable/visual/gudang-shell?theme=dark|light|both  ·  noindex, tanpa
+ * auth, tanpa network.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
@@ -60,6 +63,8 @@ const TABS: ReadonlyArray<PillsTabItem<TabKey>> = [
 const WIDTHS = [320, 360, 390, 411, 768] as const;
 const STATES = ["loading", "empty", "data"] as const;
 type State = (typeof STATES)[number];
+const THEMES = ["light", "dark"] as const;
+type Theme = (typeof THEMES)[number];
 
 export const Route = createFileRoute("/lovable/visual/gudang-shell")({
   head: () => ({
@@ -71,6 +76,7 @@ export const Route = createFileRoute("/lovable/visual/gudang-shell")({
   validateSearch: z.object({
     state: z.enum(["loading", "empty", "data"]).optional(),
     variant: z.enum(["grid", "solo"]).optional(),
+    theme: z.enum(["light", "dark", "both"]).optional(),
   }),
   component: GudangShellFixture,
 });
@@ -81,19 +87,28 @@ function GudangShellFixture() {
   // media queries ikut viewport asli Playwright (390/411). Dipakai untuk
   // audit responsif; mode "grid" (default) untuk overview visual di desktop.
   if (search.variant === "solo") {
+    const soloTheme: Theme = search.theme === "dark" ? "dark" : "light";
     return (
       <div
         data-fixture-state={search.state ?? "data"}
         data-fixture-mode="solo"
+        data-fixture-theme={soloTheme}
+        className={soloTheme === "dark" ? "dark" : undefined}
       >
         <ShellPreview state={search.state ?? "data"} />
       </div>
     );
   }
+  const themesToRender: Theme[] =
+    search.theme === "dark"
+      ? ["dark"]
+      : search.theme === "light"
+        ? ["light"]
+        : ["light", "dark"];
   return (
     <div className="min-h-screen bg-muted/10 p-ms-4">
       <h1 className="mb-ms-4 text-ms-lg font-semibold tracking-tight">
-        Gudang shell — loading · empty · data × 320/360/390/411/768
+        Gudang shell — loading · empty · data × light/dark × 320/360/390/411/768
       </h1>
       <div className="grid grid-cols-1 gap-ms-6 xl:grid-cols-2">
         {WIDTHS.map((w) => (
@@ -101,11 +116,18 @@ function GudangShellFixture() {
             <div className="text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               viewport {w}px
             </div>
-            <div className="flex flex-wrap gap-ms-4">
-              {STATES.map((s) => (
-                <StatePhone key={s} width={w} state={s} />
-              ))}
-            </div>
+            {themesToRender.map((th) => (
+              <div key={th} className="space-ms-2">
+                <div className="text-ms-2xs uppercase tracking-[0.18em] text-muted-foreground">
+                  theme {th}
+                </div>
+                <div className="flex flex-wrap gap-ms-4">
+                  {STATES.map((s) => (
+                    <StatePhone key={s} width={w} state={s} theme={th} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ))}
       </div>
@@ -113,19 +135,22 @@ function GudangShellFixture() {
   );
 }
 
-function StatePhone({ width, state }: { width: number; state: State }) {
+function StatePhone({ width, state, theme }: { width: number; state: State; theme: Theme }) {
   return (
     <div className="space-ms-2">
       <div
         data-fixture-state={state}
         data-fixture-width={width}
+        data-fixture-theme={theme}
         className="overflow-hidden rounded-2xl border border-border/60 bg-background shadow"
         style={{ width: `${width}px` }}
       >
-        <ShellPreview state={state} />
+        <div className={theme === "dark" ? "dark" : undefined}>
+          <ShellPreview state={state} />
+        </div>
       </div>
       <div className="text-ms-2xs text-muted-foreground">
-        {state} · {width}px
+        {state} · {theme} · {width}px
       </div>
     </div>
   );
