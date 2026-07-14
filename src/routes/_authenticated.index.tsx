@@ -803,24 +803,24 @@ function Index() {
           </div>
         </header>
 
-        <main className="relative mx-auto w-full max-w-md space-y-6 px-4 pt-6 pb-10 sm:max-w-2xl sm:px-6">
+        <main className="relative mx-auto w-full max-w-md space-y-7 px-4 pt-6 pb-12 sm:max-w-2xl sm:px-6 sm:pt-8">
           {/* Hero: alur kerja aplikasi */}
           <section
-            className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-background p-5 shadow-[0_20px_60px_-30px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
+            className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-background p-5 shadow-[0_20px_60px_-30px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:p-6"
           >
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-primary/80">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/80">
               <span className="h-px w-6 bg-primary/60" />
               Alur Kerja
             </div>
-            <h1 className="mt-2 text-[22px] font-semibold leading-tight tracking-tight text-foreground">
+            <h1 className="mt-3 text-[24px] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-[28px]">
               Dari <span className="text-primary">stok</span> ke tangan pelanggan —
               satu alur, tanpa kebocoran.
             </h1>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
+            <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
               Empat langkah inti yang menjalankan MCM Storage setiap hari.
             </p>
 
-            <ol className="mt-5 space-y-2.5">
+            <ol className="mt-6 space-y-2.5">
               {[
                 { n: "01", to: "/gudang", t: "Gudang", d: "Kelola stok, pembelian, dan harga modal." },
                 { n: "02", to: "/ecer", t: "Siapkan Pesanan", d: "Ecer & request — timbang, kemas, verifikasi." },
@@ -831,16 +831,16 @@ function Index() {
                   <Link
                     to={step.to}
                     preload="intent"
-                    className="group flex items-center gap-3 rounded-xl border border-primary/15 bg-card px-3 py-3 transition-colors hover:border-primary/50 hover:bg-accent"
+                    className="group flex items-center gap-3 rounded-xl border border-primary/15 bg-card px-3.5 py-3 transition-all hover:border-primary/50 hover:bg-accent hover:translate-x-0.5"
                   >
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/40 bg-background font-serif text-[13px] tracking-wider text-primary">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-background font-serif text-[13.5px] tracking-wider text-primary">
                       {step.n}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] font-semibold text-foreground">
+                      <span className="block text-[14px] font-semibold tracking-tight text-foreground">
                         {step.t}
                       </span>
-                      <span className="block truncate text-[11px] text-muted-foreground">
+                      <span className="mt-0.5 block truncate text-[11.5px] leading-snug text-muted-foreground">
                         {step.d}
                       </span>
                     </span>
@@ -858,7 +858,7 @@ function Index() {
 
           {/* CTA inti: kategori */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-primary/70">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/70">
               <span className="h-px w-6 bg-primary/50" />
               {categories.length === 0 ? "Mulai" : "Kategori"}
             </div>
@@ -867,9 +867,9 @@ function Index() {
                 e.preventDefault();
                 addCategory(newCatName);
               }}
-              className="rounded-xl border border-primary/20 bg-card p-3"
+              className="rounded-xl border border-primary/20 bg-card p-3.5"
             >
-              <label className="mb-1.5 block text-[11px] font-medium text-muted-foreground">
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">
                 {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori"}
               </label>
               <div className="flex gap-2">
@@ -877,11 +877,11 @@ function Index() {
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   placeholder="Sembako, Pakaian, 1 gram…"
-                  className="w-full rounded-md border border-primary/20 bg-background px-2.5 py-2 text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                  className="h-10 w-full rounded-lg border border-primary/20 bg-background px-3 text-[13.5px] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
                 />
                 <button
                   type="submit"
-                  className="shrink-0 rounded-md bg-primary px-4 text-[12px] font-semibold text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)] hover:bg-primary/90"
+                  className="h-10 shrink-0 rounded-lg bg-primary px-4 text-[12.5px] font-semibold tracking-tight text-primary-foreground shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
                 >
                   Buat
                 </button>
@@ -889,32 +889,32 @@ function Index() {
             </form>
 
             {categories.length > 0 && (
-              <ul className="grid gap-1.5">
+              <ul className="grid gap-2">
                 {categories.map((c) => {
                   const count = items.filter((i) => i.kategori === c).length;
                   return (
                     <li
                       key={c}
-                      className="flex items-center gap-2 rounded-xl border border-primary/15 bg-card px-3 py-2.5 transition-colors hover:border-primary/40"
+                      className="flex items-center gap-2 rounded-xl border border-primary/15 bg-card px-3 py-3 transition-colors hover:border-primary/40"
                     >
                       <button
                         onClick={() => setActiveCat(c)}
-                        className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
-                        <span className="inline-flex shrink-0 items-center rounded border border-primary/40 bg-background px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary">
+                        <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-primary">
                           {tagFor(c)}
                         </span>
-                        <span className="truncate text-[13px] font-medium text-foreground">
+                        <span className="truncate text-[13.5px] font-medium tracking-tight text-foreground">
                           {c}
                         </span>
-                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                        <span className="ml-auto shrink-0 text-[10.5px] text-muted-foreground">
                           {count} pesanan
                         </span>
                       </button>
                       <button
                         onClick={() => deleteCategory(c)}
                         disabled={categories.length <= 1}
-                        className="shrink-0 rounded-md border border-destructive/30 px-2 py-1 text-[10px] font-medium text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30"
+                        className="shrink-0 rounded-md border border-destructive/30 px-2 py-1 text-[10.5px] font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30"
                         title={categories.length <= 1 ? "Minimal harus ada 1 kategori" : `Hapus kategori ${c}`}
                         aria-label={`Hapus kategori ${c}`}
                       >
@@ -939,11 +939,11 @@ function Index() {
             }}
           >
             <summary
-              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-[12px] font-medium text-foreground/80 [&::-webkit-details-marker]:hidden"
+              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3.5 text-[12.5px] font-medium tracking-tight text-foreground/80 [&::-webkit-details-marker]:hidden"
               onPointerEnter={() => setLainnyaMounted(true)}
               onFocus={() => setLainnyaMounted(true)}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/70">
                 <span className="h-px w-5 bg-primary/50" />
                 Lainnya
               </span>
@@ -952,7 +952,7 @@ function Index() {
               </span>
             </summary>
             <div className="space-y-4 border-t border-primary/10 p-4">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 {[
                   { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
                   { to: "/kontak", label: "Pelanggan & Pemasok", emoji: "👥", desc: "Tautkan akun pengguna" },
@@ -965,13 +965,13 @@ function Index() {
                     key={s.to}
                     to={s.to}
                     preload="intent"
-                    className="flex flex-col gap-0.5 rounded-lg border border-primary/15 bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
+                    className="flex flex-col gap-0.5 rounded-xl border border-primary/15 bg-card px-3 py-3 text-left transition-all hover:border-primary/40 hover:bg-accent hover:-translate-y-0.5"
                   >
-                    <span className="text-base leading-none">{s.emoji}</span>
-                    <span className="mt-1 text-[11px] font-semibold leading-tight text-foreground">
+                    <span className="text-[17px] leading-none">{s.emoji}</span>
+                    <span className="mt-1.5 text-[11.5px] font-semibold leading-tight tracking-tight text-foreground">
                       {s.label}
                     </span>
-                    <span className="text-[10px] leading-tight text-muted-foreground">
+                    <span className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">
                       {s.desc}
                     </span>
                   </Link>
@@ -1003,7 +1003,7 @@ function Index() {
               {(categories.length > 0 || items.length > 0) && (
                 <button
                   onClick={resetAllData}
-                  className="w-full rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] font-semibold text-destructive hover:bg-destructive/10"
+                  className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[11.5px] font-semibold tracking-tight text-destructive transition-colors hover:bg-destructive/10"
                 >
                   🗑 Reset semua data saya
                 </button>
@@ -1011,7 +1011,7 @@ function Index() {
             </div>
           </details>
 
-          <p className="pt-2 text-center text-[10px] tracking-[0.2em] text-primary/40 uppercase">
+          <p className="pt-3 text-center text-[10px] font-medium uppercase tracking-[0.28em] text-primary/40">
             · MCM · Barokah Rizki ·
           </p>
         </main>
