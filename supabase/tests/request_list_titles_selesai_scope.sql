@@ -185,6 +185,41 @@ BEGIN
     END IF;
   END;
 
+  -- ================================================================
+  -- Skenario 6: Request untuk (title, owner) yang SAMA sudah pernah
+  -- DIKIRIM KE ADMIN oleh pegawai lain (task A / PIN A). Pegawai kedua
+  -- (task B / PIN B) membuka daftar → title HARUS terhitung "Selesai"
+  -- (yakni: tersembunyi dari daftar task B) meski dikirim dari task+PIN
+  -- yang berbeda. Skenario ini menegaskan scope (title, owner) LINTAS
+  -- via_task/PIN untuk siklus yang sedang aktif — termasuk kasus umum
+  -- di lapangan: satu pegawai sudah menyerahkan ke admin, pegawai lain
+  -- membuka link-nya sendiri dan tidak boleh melihat title itu lagi.
+  -- ================================================================
+  -- Titik awal: setelah S5, prep title milik owner utama sudah dihapus
+  -- dan reprep_requested_at = NULL, sehingga title kembali "kosong".
+  -- Kirim prep dari task A (pegawai lain, PIN berbeda) untuk mensimulasi
+  -- "sudah dikirim ke admin dari pegawai lain".
+  INSERT INTO public.request_preparations(user_id, title_id, via_task_id, created_by, photo_paths)
+  VALUES (v_owner, v_title, v_task_a, 'worker', ARRAY[]::text[]);
+
+  -- Verifikasi dari sisi task B (pegawai kedua, PIN berbeda): title
+  -- tidak boleh muncul di daftar — sudah dihitung selesai lintas PIN.
+  v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
+  v_titles := v_res->'titles';
+  IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text) THEN
+    RAISE EXCEPTION 'FAIL S6: title masih muncul di task B padahal pegawai lain (task A) sudah kirim ke admin';
+  END IF;
+  RAISE NOTICE 'PASS S6: prep pegawai lain (task A) tetap dihitung Selesai untuk task B (lintas PIN)';
+
+  -- Sanity: task A yang mengirim pun sudah tidak menampilkan title
+  -- (simetri dengan S2b) — memastikan tidak ada jalur task yang bocor.
+  v_res := public.request_list_titles_via_task(v_token_a, v_pin_a);
+  v_titles := v_res->'titles';
+  IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text) THEN
+    RAISE EXCEPTION 'FAIL S6b: title masih muncul di task A setelah prep dikirim';
+  END IF;
+  RAISE NOTICE 'PASS S6b: title juga hilang dari task A (simetri lintas PIN)';
+
   RAISE NOTICE 'ALL PASS: request_list_titles_via_task "Selesai" scope regression';
 END $$;
 
