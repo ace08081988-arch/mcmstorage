@@ -33,6 +33,8 @@ import {
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
+import { shareToChat } from "@/lib/share-chat";
+import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
@@ -56,7 +58,12 @@ export const Route = createFileRoute("/_authenticated/request")({
   validateSearch: (s: Record<string, unknown>) => ({
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
-    send: s.send === "1" ? "1" as const : undefined,
+    send:
+      s.send === "wa" || s.send === "chat"
+        ? (s.send as "wa" | "chat")
+        : s.send === "1"
+          ? ("wa" as const)
+          : undefined,
   }),
   component: RequestPage,
 });
@@ -90,7 +97,12 @@ function RequestPage() {
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
   // Deep-link `send=1` dari Beranda (ReadyRequestSection). Buka dialog verifikasi
   // penjualan otomatis pada paket aktif pertama — sekali saja, lalu dikonsumsi.
-  const [autoSendPending, setAutoSendPending] = useState<boolean>(search.send === "1");
+  const [autoSendPending, setAutoSendPending] = useState<boolean>(
+    search.send === "wa" || search.send === "chat",
+  );
+  const [autoSendChannel, setAutoSendChannel] = useState<"whatsapp" | "chat">(
+    search.send === "chat" ? "chat" : "whatsapp",
+  );
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
@@ -295,6 +307,7 @@ function RequestPage() {
         onBack={() => setSelectedTitleId(undefined)}
         onChanged={loadAll}
         autoOpenSend={autoSendPending}
+        autoOpenSendChannel={autoSendChannel}
         onConsumeAutoOpenSend={() => setAutoSendPending(false)}
       />
     );
@@ -1466,7 +1479,7 @@ function SendPrepLinkDialog({
 }
 
 function TitleDetailView({
-  title, warehouseItems, titleItems, onBack, onChanged, autoOpenSend, onConsumeAutoOpenSend,
+  title, warehouseItems, titleItems, onBack, onChanged, autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend,
 }: {
   title: RequestTitle;
   warehouseItems: WarehouseItem[];
@@ -1474,6 +1487,7 @@ function TitleDetailView({
   onBack: () => void;
   onChanged: () => void;
   autoOpenSend?: boolean;
+  autoOpenSendChannel?: "whatsapp" | "chat";
   onConsumeAutoOpenSend?: () => void;
 }) {
   const [preps, setPreps] = useState<RequestPreparation[]>([]);
@@ -1590,6 +1604,7 @@ function TitleDetailView({
             return load();
           }}
           autoOpenSend={autoOpenSend}
+          autoOpenSendChannel={autoOpenSendChannel}
           onConsumeAutoOpenSend={onConsumeAutoOpenSend}
         />
       )}
@@ -1608,7 +1623,7 @@ function TitleDetailView({
 
 function PrepSections({
   preps, prepItems, warehouseItems, titleItems, titleName, customers, onDelete, onChanged,
-  autoOpenSend, onConsumeAutoOpenSend,
+  autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend,
 }: {
   preps: RequestPreparation[];
   prepItems: Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>;
@@ -1619,6 +1634,7 @@ function PrepSections({
   onDelete: (p: RequestPreparation) => void;
   onChanged: () => Promise<{ ok: boolean; error?: string }> | void;
   autoOpenSend?: boolean;
+  autoOpenSendChannel?: "whatsapp" | "chat";
   onConsumeAutoOpenSend?: () => void;
 }) {
   const [showHistory, setShowHistory] = useState(true);
@@ -1817,6 +1833,7 @@ function PrepSections({
       onDelete={guardedDelete}
       onSent={guardedSent}
       autoOpenSend={!inSent && !!autoOpenSend && idx === 0}
+      autoOpenSendChannel={autoOpenSendChannel}
       onConsumeAutoOpenSend={onConsumeAutoOpenSend}
     />
     </div>
@@ -1966,7 +1983,7 @@ function PrepSections({
 
 function PrepCard({
   index, prep, items, warehouseItems, titleItems, titleName, customers, onDelete, onSent,
-  autoOpenSend, onConsumeAutoOpenSend,
+  autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend,
 }: {
   index: number;
   prep: RequestPreparation;
@@ -1978,15 +1995,20 @@ function PrepCard({
   onDelete: () => void;
   onSent: () => void;
   autoOpenSend?: boolean;
+  autoOpenSendChannel?: "whatsapp" | "chat";
   onConsumeAutoOpenSend?: () => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
+  // Kanal aktif untuk dialog verifikasi: default WA (tombol Kirim di kartu),
+  // dapat di-override oleh deep-link `send=chat` dari Beranda.
+  const [dialogChannel, setDialogChannel] = useState<"whatsapp" | "chat">("whatsapp");
   // Auto-buka dialog verifikasi bila datang dari deep-link `send=1`. Dikonsumsi
   // sekali supaya tidak re-trigger saat kartu di-remount / user menutup dialog.
   useEffect(() => {
     if (!autoOpenSend) return;
     if (isSentPrep(prep)) return;
+    setDialogChannel(autoOpenSendChannel ?? "whatsapp");
     setSendOpen(true);
     onConsumeAutoOpenSend?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2019,7 +2041,7 @@ function PrepCard({
         <div className="flex shrink-0 items-center gap-ms-1">
           {!sold ? (
             <button
-              onClick={() => setSendOpen(true)}
+              onClick={() => { setDialogChannel("whatsapp"); setSendOpen(true); }}
               className="inline-flex items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-1 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
               aria-label="Kirim ke pelanggan"
               title="Kirim foto + tagihan ke pelanggan (potong stok & catat piutang bila hutang)"
@@ -2094,6 +2116,7 @@ function PrepCard({
         <SendPrepToCustomerDialog
           open={sendOpen}
           onClose={() => setSendOpen(false)}
+          channel={dialogChannel}
           prep={prep}
           items={items}
           warehouseItems={warehouseItems}
@@ -2118,11 +2141,12 @@ function PrepCard({
 // tabel debts terhubung ke customer_id.
 // -----------------------------------------------------------------------
 function SendPrepToCustomerDialog({
-  open, onClose, prep, items, warehouseItems, titleItems, titleName,
+  open, onClose, channel = "whatsapp", prep, items, warehouseItems, titleItems, titleName,
   customers, photoPaths, unitFor, onSent,
 }: {
   open: boolean;
   onClose: () => void;
+  channel?: "whatsapp" | "chat";
   prep: RequestPreparation;
   items: Array<{ id: string; warehouse_item_id: string; actual_grams: number }>;
   warehouseItems: WarehouseItem[];
@@ -2149,6 +2173,14 @@ function SendPrepToCustomerDialog({
   const [paidStr, setPaidStr] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  // State kanal Chat MCM: dialog picker + percakapan yang dipilih user.
+  // Hanya dipakai bila `channel === "chat"`.
+  const [chatPickerOpen, setChatPickerOpen] = useState(false);
+  const [chatConv, setChatConv] = useState<{ id: string; title: string } | null>(null);
+  // Reset pilihan percakapan setiap kali dialog dibuka ulang / kanal berubah.
+  useEffect(() => {
+    if (open) { setChatConv(null); setChatPickerOpen(false); }
+  }, [open, channel]);
   const [initialSnap, setInitialSnap] = useState<{ mode: "link" | "manual"; customerId: string; manualName: string; totalStr: string; payMethod: "kas" | "hutang" | "partial"; paidStr: string; note: string }>({ mode: "link", customerId: "", manualName: "", totalStr: "", payMethod: "kas", paidStr: "", note: "" });
   // Dibaca `useSaveStatusToast` saat saving → dirty (gagal kirim).
   const [sendError, setSendError] = useState<string | null>(null);
@@ -2237,11 +2269,19 @@ function SendPrepToCustomerDialog({
     return files;
   }
 
-  async function handleSend() {
+  async function doSend(chosenConv?: { id: string; title: string }) {
     if (!canSend) return;
     if (!resolvedParty.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
     if (totalAmount <= 0) {
       if (!confirm("Total belum diisi (Rp 0). Lanjutkan tanpa mencatat penjualan?")) return;
+    }
+    // Kanal Chat MCM: pastikan user memilih percakapan tujuan lebih dulu.
+    // RPC pencatatan penjualan/piutang tidak dijalankan sampai target valid,
+    // supaya tidak ada "tercatat tapi tidak terkirim".
+    const conv = channel === "chat" ? (chosenConv ?? chatConv) : null;
+    if (channel === "chat" && !conv) {
+      setChatPickerOpen(true);
+      return;
     }
     setSendError(null);
     setBusy(true);
@@ -2269,26 +2309,45 @@ function SendPrepToCustomerDialog({
         at: Date.now(),
       });
 
-      // 2) Kirim WA dengan foto asli terlampir (bukan cuma link/teks).
+      // 2) Kirim ke kanal terpilih dengan foto asli terlampir.
       const files = await fetchPhotoFiles();
       const text = buildCaption();
-      const phone = normalizePhone(resolvedParty.contact) ?? undefined;
-      const res = await shareToWhatsApp({
-        text,
-        title: titleName,
-        files,
-        // Jika ada foto, jangan set phone → biar share sheet muncul & foto ikut.
-        phone: files.length === 0 ? phone : undefined,
-      });
-      notifyShareResult(res);
-
-      toast.success(
-        payment.method === "hutang"
-          ? "Terkirim — penjualan & piutang tercatat"
-          : payment.method === "partial"
-            ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
-            : "Terkirim — penjualan tercatat, stok gudang tersinkron",
-      );
+      if (channel === "chat" && conv) {
+        const shots = files.map((f, i) => ({ id: `${prep.id}:${i}`, file: f }));
+        const res = await shareToChat({
+          conversationId: conv.id,
+          caption: text,
+          locationUrl: prep.location_url ?? null,
+          shots,
+        });
+        if (res.status !== "shared") {
+          throw new Error(res.error || "Gagal kirim ke MCM Chat");
+        }
+        toast.success(
+          payment.method === "hutang"
+            ? `Terkirim ke ${conv.title} — penjualan & piutang tercatat`
+            : payment.method === "partial"
+              ? `Terkirim ke ${conv.title} — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
+              : `Terkirim ke ${conv.title} — penjualan tercatat, stok gudang tersinkron`,
+        );
+      } else {
+        const phone = normalizePhone(resolvedParty.contact) ?? undefined;
+        const res = await shareToWhatsApp({
+          text,
+          title: titleName,
+          files,
+          // Jika ada foto, jangan set phone → biar share sheet muncul & foto ikut.
+          phone: files.length === 0 ? phone : undefined,
+        });
+        notifyShareResult(res);
+        toast.success(
+          payment.method === "hutang"
+            ? "Terkirim — penjualan & piutang tercatat"
+            : payment.method === "partial"
+              ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
+              : "Terkirim — penjualan tercatat, stok gudang tersinkron",
+        );
+      }
       onSent();
     } catch (e) {
       const msg = (e as { message?: string })?.message ?? String(e);
@@ -2297,19 +2356,24 @@ function SendPrepToCustomerDialog({
       setBusy(false);
     }
   }
+  const handleSend = () => { void doSend(); };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy && confirmDiscardIfDirty(sendStatus)) onClose(); }}>
       <DialogContent ref={scrollRef} className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-ms-6 pt-6 pb-3">
           <div className="flex items-start justify-between gap-ms-2">
             <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
-              <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
+              {channel === "chat" ? <MessageCircle className="h-4 w-4 text-primary" /> : <Send className="h-4 w-4 text-primary" />}
+              {channel === "chat" ? "Kirim via MCM Chat" : "Kirim ke pelanggan"}
             </DialogTitle>
             <DialogSaveStatus status={sendStatus} className="shrink-0" />
           </div>
           <DialogDescription>
-            Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui.
+            {channel === "chat"
+              ? "Foto + lokasi dikirim ke percakapan MCM. Stok gudang & piutang otomatis tercatat."
+              : "Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui."}
           </DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
@@ -2469,17 +2533,38 @@ function SendPrepToCustomerDialog({
           <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={handleSend} disabled={!canSend}>
-              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+              {busy
+                ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                : channel === "chat"
+                  ? <MessageCircle className="mr-1 h-3.5 w-3.5" />
+                  : <Send className="mr-1 h-3.5 w-3.5" />}
+              {channel === "chat" ? "Kirim Chat & " : "Kirim & "}
               {payMethod === "hutang"
-                ? "Kirim & catat piutang"
+                ? "catat piutang"
                 : payMethod === "partial"
-                  ? "Kirim & catat sebagian piutang"
-                  : "Kirim & catat penjualan"}
+                  ? "catat sebagian piutang"
+                  : "catat penjualan"}
             </Button>
           </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {channel === "chat" && (
+      <PickChatConversationDialog
+        open={chatPickerOpen}
+        onOpenChange={setChatPickerOpen}
+        title="Pilih percakapan tujuan"
+        onPick={(id, dispTitle) => {
+          const picked = { id, title: dispTitle };
+          setChatConv(picked);
+          setChatPickerOpen(false);
+          // Lanjutkan alur kirim dengan tujuan yang baru dipilih; RPC & share
+          // dijalankan setelah picker ditutup supaya state tidak stale.
+          void doSend(picked);
+        }}
+      />
+    )}
+    </>
   );
 }
 
