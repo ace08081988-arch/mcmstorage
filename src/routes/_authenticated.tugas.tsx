@@ -1178,6 +1178,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const [phoneSuggestions, setPhoneSuggestions] = useState<
     Array<{ value: string; label: string; name: string; linkedUserId: string | null }>
   >([]);
+  const [contactsLoaded, setContactsLoaded] = useState(false);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1200,6 +1201,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         setPhoneSuggestions(list);
       } catch {
         // Diam-diam gagal — autocomplete hanyalah bantuan opsional.
+      } finally {
+        if (!cancelled) setContactsLoaded(true);
       }
     })();
     return () => {
@@ -1218,6 +1221,29 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     Object.keys(picked).length > 0 ||
     note.trim() !== "" ||
     title.trim() !== "Tugas siapkan barang";
+
+  // Validasi nomor pegawai: opsional, tapi jika diisi harus (a) format 62xxx
+  // yang valid dan (b) cocok dengan kontak tersimpan supaya nama & ID pegawai
+  // benar-benar terverifikasi sebelum tugas dibuat.
+  const phoneValidation = useMemo(() => {
+    const cleaned = phone.replace(/\D/g, "");
+    if (!cleaned) return { ok: true as const, error: null as string | null };
+    if (!/^628\d{7,13}$/.test(cleaned)) {
+      return {
+        ok: false as const,
+        error:
+          "Format nomor tidak valid. Gunakan awalan 628 diikuti nomor HP (contoh: 62812xxxxxxx).",
+      };
+    }
+    if (contactsLoaded && !phoneSuggestions.some((s) => s.value === cleaned)) {
+      return {
+        ok: false as const,
+        error:
+          "Nomor tidak ada di buku alamat. Pilih dari daftar kontak, atau tambahkan dulu di Kontak sebelum membuat tugas.",
+      };
+    }
+    return { ok: true as const, error: null as string | null };
+  }, [phone, phoneSuggestions, contactsLoaded]);
 
   function requestClose() {
     if (hasContent) {
@@ -1340,6 +1366,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     const entries = Object.values(picked);
     if (entries.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
     if (pin.length < 4) { toast.error("PIN minimal 4 digit"); return; }
+    if (!phoneValidation.ok) { toast.error(phoneValidation.error ?? "Nomor pegawai tidak valid"); return; }
     // Foto referensi bersifat opsional — barang tanpa foto tetap dibuatkan tugas,
     // hanya saja tidak ada lampiran foto referensi ke WhatsApp.
     const missingPhoto = entries.filter((e) => !e.item.image_path).map((e) => e.item.name);
@@ -1522,7 +1549,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             inputMode="tel"
             list="prep-phone-suggestions"
             autoComplete="tel"
-            className="h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums"
+            aria-invalid={!phoneValidation.ok}
+            className={`h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums ${
+              !phoneValidation.ok ? "border-destructive ring-1 ring-destructive/40" : ""
+            }`}
           />
           {phoneSuggestions.length > 0 && (
             <datalist id="prep-phone-suggestions">
@@ -1532,6 +1562,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             </datalist>
           )}
           {(() => {
+            if (!phoneValidation.ok) {
+              return (
+                <div className="mt-1 flex items-start gap-1 text-ms-2xs text-destructive">
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span>{phoneValidation.error}</span>
+                </div>
+              );
+            }
             const cleaned = phone.replace(/\D/g, "");
             const match = cleaned
               ? phoneSuggestions.find((s) => s.value === cleaned)
