@@ -33,6 +33,8 @@ import {
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
+import { shareToChat } from "@/lib/share-chat";
+import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
@@ -56,7 +58,12 @@ export const Route = createFileRoute("/_authenticated/request")({
   validateSearch: (s: Record<string, unknown>) => ({
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
-    send: s.send === "1" ? "1" as const : undefined,
+    send:
+      s.send === "wa" || s.send === "chat"
+        ? (s.send as "wa" | "chat")
+        : s.send === "1"
+          ? ("wa" as const)
+          : undefined,
   }),
   component: RequestPage,
 });
