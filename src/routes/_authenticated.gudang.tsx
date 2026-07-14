@@ -197,8 +197,6 @@ function SignedImg({ path, className, alt }: { path: string; className?: string;
   return <img src={url} alt={alt || ""} className={className} loading="lazy" />;
 }
 
-type SummaryTone = "primary" | "warning" | "danger" | "info";
-
 function GudangLoadingSkeleton() {
   return (
     <div className="space-ms-3">
