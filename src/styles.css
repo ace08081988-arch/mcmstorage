@@ -72,6 +72,45 @@
 
 :root {
   --radius: 0.625rem;
+  /* ==========================================================================
+     Mobile design tokens — typography & spacing scale.
+     SATU sumber kebenaran untuk semua halaman (411/390px sebagai anchor).
+     Pakai utility `text-ms-*`, `p-ms-*`, `gap-ms-*`, `space-ms-*` (di bawah)
+     alih-alih hardcode `text-[13px]` / `p-3.5`. Skala mengikuti `--app-font-size`
+     sehingga preset "sm/md/lg/xl" di /pengaturan-tampilan tetap konsisten.
+     ========================================================================== */
+  /* Type scale (line-height dipasangkan agar tidak drift). */
+  --ms-text-2xs: 0.6875rem;  /* 11px */
+  --ms-text-xs:  0.75rem;    /* 12px */
+  --ms-text-sm:  0.8125rem;  /* 13px */
+  --ms-text-base:0.9375rem;  /* 15px — body mobile */
+  --ms-text-md:  1rem;       /* 16px */
+  --ms-text-lg:  1.125rem;   /* 18px */
+  --ms-text-xl:  1.25rem;    /* 20px */
+  --ms-text-2xl: 1.5rem;     /* 24px — heading kartu */
+  --ms-text-3xl: 1.75rem;    /* 28px — heading halaman */
+  --ms-text-4xl: 2.125rem;   /* 34px — hero */
+  --ms-leading-tight:  1.15;
+  --ms-leading-snug:   1.3;
+  --ms-leading-normal: 1.5;
+  --ms-leading-relaxed:1.65;
+  --ms-tracking-tight: -0.015em;
+  --ms-tracking-normal: 0;
+  --ms-tracking-wide:  0.02em;
+  /* Spacing scale — kelipatan 4px dengan step semantik. */
+  --ms-space-0:  0;
+  --ms-space-1:  0.25rem;   /* 4  */
+  --ms-space-2:  0.5rem;    /* 8  */
+  --ms-space-3:  0.75rem;   /* 12 — padding kartu ringkas */
+  --ms-space-4:  1rem;      /* 16 — padding kartu default */
+  --ms-space-5:  1.25rem;   /* 20 */
+  --ms-space-6:  1.5rem;    /* 24 — gap antar section */
+  --ms-space-8:  2rem;      /* 32 */
+  --ms-space-10: 2.5rem;    /* 40 */
+  --ms-space-12: 3rem;      /* 48 */
+  /* Target sentuh & radius kartu — jaga aksesibilitas mobile. */
+  --ms-tap:      2.75rem;   /* 44px min target */
+  --ms-radius-card: calc(var(--radius) + 4px);
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
@@ -195,6 +234,62 @@
 @utility status-warning { background-color: var(--warning-soft); color: var(--warning); }
 @utility status-info    { background-color: var(--info-soft);    color: var(--info); }
 @utility status-danger  { background-color: color-mix(in oklab, var(--destructive) 15%, var(--background)); color: var(--destructive); }
+
+/* ==========================================================================
+   Mobile scale utilities — pakai ini alih-alih nilai literal.
+   Contoh:  <p className="text-ms-sm leading-ms-snug"/>
+            <div className="p-ms-4 gap-ms-3"/>
+   ========================================================================== */
+@utility text-ms-2xs  { font-size: var(--ms-text-2xs);  line-height: var(--ms-leading-snug); }
+@utility text-ms-xs   { font-size: var(--ms-text-xs);   line-height: var(--ms-leading-snug); }
+@utility text-ms-sm   { font-size: var(--ms-text-sm);   line-height: var(--ms-leading-normal); }
+@utility text-ms-base { font-size: var(--ms-text-base); line-height: var(--ms-leading-normal); }
+@utility text-ms-md   { font-size: var(--ms-text-md);   line-height: var(--ms-leading-normal); }
+@utility text-ms-lg   { font-size: var(--ms-text-lg);   line-height: var(--ms-leading-snug); }
+@utility text-ms-xl   { font-size: var(--ms-text-xl);   line-height: var(--ms-leading-snug); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-2xl  { font-size: var(--ms-text-2xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-3xl  { font-size: var(--ms-text-3xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-4xl  { font-size: var(--ms-text-4xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility leading-ms-tight   { line-height: var(--ms-leading-tight); }
+@utility leading-ms-snug    { line-height: var(--ms-leading-snug); }
+@utility leading-ms-normal  { line-height: var(--ms-leading-normal); }
+@utility leading-ms-relaxed { line-height: var(--ms-leading-relaxed); }
+@utility tracking-ms-tight  { letter-spacing: var(--ms-tracking-tight); }
+@utility tracking-ms-wide   { letter-spacing: var(--ms-tracking-wide); }
+/* Padding all sides */
+@utility p-ms-1  { padding: var(--ms-space-1); }
+@utility p-ms-2  { padding: var(--ms-space-2); }
+@utility p-ms-3  { padding: var(--ms-space-3); }
+@utility p-ms-4  { padding: var(--ms-space-4); }
+@utility p-ms-5  { padding: var(--ms-space-5); }
+@utility p-ms-6  { padding: var(--ms-space-6); }
+/* Padding block/inline */
+@utility px-ms-2 { padding-inline: var(--ms-space-2); }
+@utility px-ms-3 { padding-inline: var(--ms-space-3); }
+@utility px-ms-4 { padding-inline: var(--ms-space-4); }
+@utility px-ms-5 { padding-inline: var(--ms-space-5); }
+@utility px-ms-6 { padding-inline: var(--ms-space-6); }
+@utility py-ms-2 { padding-block: var(--ms-space-2); }
+@utility py-ms-3 { padding-block: var(--ms-space-3); }
+@utility py-ms-4 { padding-block: var(--ms-space-4); }
+@utility py-ms-5 { padding-block: var(--ms-space-5); }
+@utility py-ms-6 { padding-block: var(--ms-space-6); }
+/* Gap */
+@utility gap-ms-1 { gap: var(--ms-space-1); }
+@utility gap-ms-2 { gap: var(--ms-space-2); }
+@utility gap-ms-3 { gap: var(--ms-space-3); }
+@utility gap-ms-4 { gap: var(--ms-space-4); }
+@utility gap-ms-5 { gap: var(--ms-space-5); }
+@utility gap-ms-6 { gap: var(--ms-space-6); }
+/* Vertical stack — pengganti space-y literal. */
+@utility space-ms-2 { & > * + * { margin-top: var(--ms-space-2); } }
+@utility space-ms-3 { & > * + * { margin-top: var(--ms-space-3); } }
+@utility space-ms-4 { & > * + * { margin-top: var(--ms-space-4); } }
+@utility space-ms-5 { & > * + * { margin-top: var(--ms-space-5); } }
+@utility space-ms-6 { & > * + * { margin-top: var(--ms-space-6); } }
+/* Target sentuh min — dipakai untuk tombol/tab utility di bottom nav & kartu. */
+@utility min-tap { min-height: var(--ms-tap); min-width: var(--ms-tap); }
+@utility rounded-ms-card { border-radius: var(--ms-radius-card); }
 
 @layer base {
   * {
