@@ -454,6 +454,25 @@ export function useUnreadTotal() {
   return useMemo(() => (data ?? []).reduce((acc, c) => acc + c.unread, 0), [data]);
 }
 
+/**
+ * Varian dari {@link useUnreadTotal} yang juga membocorkan status loading
+ * awal — dipakai bottom nav untuk merender badge placeholder (skeleton)
+ * saat cache percakapan belum sempat terisi, jadi ikon Chat tidak
+ * "berkedip kosong lalu tiba-tiba muncul angka".
+ *
+ * `isLoading` di sini artinya query pertama masih jalan DAN belum ada
+ * data cache sama sekali — bukan refetch background. Refetch tidak
+ * memicu placeholder supaya badge yang sudah ada tidak flicker.
+ */
+export function useUnreadStatus(): { count: number; isLoading: boolean } {
+  const { data, isPending } = useConversations();
+  const count = useMemo(
+    () => (data ?? []).reduce((acc, c) => acc + c.unread, 0),
+    [data],
+  );
+  return { count, isLoading: isPending && !data };
+}
+
 export function useConversationMessages(conversationId: string | undefined) {
   const qc = useQueryClient();
 
