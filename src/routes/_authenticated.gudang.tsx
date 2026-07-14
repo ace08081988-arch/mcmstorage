@@ -416,8 +416,7 @@ function GudangPage() {
             <div className="flex min-w-0 items-center gap-2.5">
               <Link
                 to="/"
-                className="inline-flex min-tap items-center justify-center rounded-full border border-primary/25 bg-card px-3 text-[11px] font-medium text-foreground hover:border-primary/60"
-                style={{ minHeight: "2rem", minWidth: "auto" }}
+                className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-3 text-[11px] font-medium text-foreground hover:border-primary/60"
               >
                 ← Beranda
               </Link>
