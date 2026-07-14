@@ -369,66 +369,23 @@ function GudangPage() {
         </nav>
       </aside>
 
-      {/* Mobile header + horizontal nav */}
+      {/* Mobile header + horizontal nav (desktop pakai sidebar di atas) */}
       <div className="flex-1 min-w-0">
-        <header className="sticky top-0 z-10 border-b border-primary/15 bg-background/85 backdrop-blur-xl md:hidden">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-ms-2 px-ms-4 py-ms-3">
-            <div className="flex min-w-0 items-center gap-ms-2.5">
-              <Link
-                to="/"
-                className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-ms-3 text-[0.6875rem] font-medium text-foreground hover:border-primary/60"
-              >
-                ← Beranda
-              </Link>
-              <div className="min-w-0 leading-tight">
-                <p className="flex min-w-0 items-center gap-ms-1.5 text-ms-base font-semibold tracking-ms-tight text-foreground">
-                  <Package className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="truncate">Gudang</span>
-                </p>
-                <p className="hidden min-[390px]:block truncate text-[0.625rem] uppercase tracking-[0.18em] text-primary/70">
-                  Inventaris · Pembukuan
-                </p>
-              </div>
-            </div>
-            <div className="shrink-0 text-right leading-tight">
-              <div className="text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Nilai stok</div>
-              <div className="text-ms-sm font-semibold tabular-nums text-foreground">{rupiah(totalStokValue)}</div>
-            </div>
-          </div>
-          {/* L7: overflow cue — fade kiri/kanan menunjukkan tab masih bisa
-              discroll di layar sempit (411px). Fade dinonaktifkan pointer
-              agar tidak menghalangi klik tab. */}
-          <div className="relative mx-auto max-w-3xl">
-            <nav
-              role="tablist"
-              aria-label="Bagian Gudang"
-              className="flex gap-ms-1.5 overflow-x-auto scroll-smooth px-ms-4 pb-2.5 text-ms-xs [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {navItems.map(({ k, label, icon: Icon }) => (
-                <button
-                  key={k}
-                  role="tab"
-                  aria-selected={tab === k}
-                  onClick={() => setTab(k)}
-                  className={`inline-flex shrink-0 items-center gap-ms-1.5 rounded-full border px-ms-3.5 py-1.5 font-medium tracking-ms-tight transition-colors ${tab === k ? "border-primary bg-primary text-primary-foreground elev-sm" : "border-primary/20 bg-card/70 text-foreground/80 hover:border-primary/50 hover:bg-accent"}`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </button>
-              ))}
-            </nav>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-background/95 to-transparent"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background/95 to-transparent"
-            />
-          </div>
-        </header>
+        <PageHeader
+          icon={Package}
+          title="Gudang"
+          subtitle="Inventaris · Pembukuan"
+          stat={{ label: "Nilai stok", value: rupiah(totalStokValue) }}
+        >
+          <PillsTabs
+            tabs={navItems}
+            value={tab}
+            onChange={setTab}
+            ariaLabel="Bagian Gudang"
+          />
+        </PageHeader>
 
-        <main className="mx-auto max-w-3xl space-ms-5 px-ms-4 py-ms-5 md:max-w-4xl md:p-ms-6">
+        <PageContainer>
         {/* Inventory summary — always visible */}
         <section aria-label="Ringkasan inventaris" className="grid grid-cols-2 gap-ms-3 md:grid-cols-4">
           <SummaryCard
@@ -536,7 +493,7 @@ function GudangPage() {
             totalCost={totalCost}
           />
         )}
-        </main>
+        </PageContainer>
       </div>
     </div>
   );
