@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { PackagePlus, Search, X } from "lucide-react";
+import {
+  Boxes,
+  Inbox,
+  Loader2,
+  PackagePlus,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { displayUnit } from "@/lib/unit-label";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
