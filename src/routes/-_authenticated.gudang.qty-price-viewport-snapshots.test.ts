@@ -29,11 +29,13 @@ import { BOTOL_PER_KARTON, rupiah, fmtBase, fmtItemQty } from "@/lib/stock-forma
  */
 
 type PackageType = BeliPackageType;
-type Viewport = { name: "desktop" | "mobile"; width: number };
+type Viewport = { name: "desktop" | "mobile" | "mobile-xs" | "mobile-xxs"; width: number };
 
 const VIEWPORTS: Viewport[] = [
   { name: "desktop", width: 1280 },
   { name: "mobile", width: 390 },
+  { name: "mobile-xs", width: 360 },
+  { name: "mobile-xxs", width: 320 },
 ];
 const SM_BREAKPOINT = 640;
 const LG_BREAKPOINT = 1024;

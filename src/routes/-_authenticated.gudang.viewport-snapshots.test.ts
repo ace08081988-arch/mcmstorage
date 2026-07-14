@@ -22,9 +22,10 @@ import { BOTOL_PER_KARTON, rupiah, fmtBase, fmtItemQty } from "@/lib/stock-forma
 
 type PackageType = "gram" | "pcs" | "botol" | "sachet";
 type BaseUnit = "g" | "pcs";
-type Viewport = { name: "mobile-xs" | "mobile" | "mobile-lg" | "tablet" | "desktop"; width: number };
+type Viewport = { name: "mobile-xxs" | "mobile-xs" | "mobile" | "mobile-lg" | "tablet" | "desktop"; width: number };
 
 const VIEWPORTS: Viewport[] = [
+  { name: "mobile-xxs", width: 320 },
   { name: "mobile-xs", width: 360 },
   { name: "mobile", width: 390 },
   { name: "mobile-lg", width: 411 },
