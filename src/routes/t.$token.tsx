@@ -1124,10 +1124,7 @@ function PublicPrepPage() {
 
   // Daftarkan silentRefresh ke ref agar setWorkerOperationActive dapat
   // memicu satu kali refresh saat semua operasi busy selesai.
-  useEffect(() => {
-    silentRefreshRef.current = silentRefresh;
-    return () => { silentRefreshRef.current = null; };
-  });
+  silentRefreshRef.current = silentRefresh;
 
   // Beri peringatan sebelum tab ditutup / reload saat foto masih diproses
   // agar draft tidak hilang tanpa disadari.
@@ -3658,7 +3655,7 @@ function RequestSection({
         </span>
       </div>
       <div className="space-ms-2">
-        {titles.map((t) => {
+        {titles.map((t, titleIndex) => {
           let renderedRow: ReactNode;
           try {
             const requestItems = Array.isArray(t.items) ? t.items : [];
@@ -3729,7 +3726,7 @@ function RequestSection({
             console.error("[RequestSection] render title failed", t?.id, err);
             renderedRow = (
               <div
-                key={t?.id ?? Math.random()}
+                key={t?.id ?? `request-title-error-${titleIndex}`}
                 className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-ms-3 py-ms-2 text-ms-2xs text-amber-700 dark:text-amber-300"
               >
                 Paket &quot;{t?.name ?? "tanpa nama"}&quot; tidak bisa ditampilkan. Muat ulang portal atau hubungi admin.

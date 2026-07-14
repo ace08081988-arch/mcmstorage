@@ -1,3 +1,5 @@
+import { isLockSuppressed } from "@/lib/app-lock";
+
 // Deep link handler untuk APK Android (Capacitor).
 //
 // Mendukung dua bentuk URL yang dikirim OS ke aplikasi:
@@ -49,6 +51,27 @@ export function parseDeepLink(rawUrl: string): { token: string; pin: string | nu
   }
 }
 
+export function shouldSkipDeepLinkNavigation(
+  current: Pick<Location, "pathname" | "search" | "hash">,
+  targetPath: string,
+  targetHash: string,
+  nativePickerSuppressed: boolean,
+): boolean {
+  const currentFull = `${current.pathname}${current.search}${current.hash}`;
+  const targetFull = `${targetPath}${targetHash ? `#${targetHash}` : ""}`;
+
+  // Exact no-op: jangan paksa router menavigasi ke URL yang sama.
+  if (currentFull === targetFull) return true;
+
+  // Android sering mengirim ulang intent terakhir saat kembali dari Photo
+  // Picker/Galeri. Kalau portal sudah berada di task yang sama dan guard
+  // native picker masih aktif, intent itu adalah echo lama — bukan navigasi
+  // baru. Mengabaikannya mencegah route remount yang menutup form request.
+  if (nativePickerSuppressed && current.pathname === targetPath) return true;
+
+  return false;
+}
+
 export async function startDeepLinkListener(router: DeepLinkRouter) {
   if (typeof window === "undefined") return;
   let App: typeof import("@capacitor/app").App | null = null;
@@ -65,11 +88,12 @@ export async function startDeepLinkListener(router: DeepLinkRouter) {
     const parsed = parseDeepLink(rawUrl);
     if (!parsed) return;
     const path = `/t/${encodeURIComponent(parsed.token)}`;
-    const hash = parsed.pin ? `#p=${parsed.pin}` : "";
+    const hash = parsed.pin ? `p=${parsed.pin}` : "";
+    if (shouldSkipDeepLinkNavigation(window.location, path, hash, isLockSuppressed())) return;
     try {
-      router.navigate({ to: path, hash: hash.replace(/^#/, "") || undefined });
+      router.navigate({ to: path, hash: hash || undefined });
     } catch {
-      window.location.assign(`${path}${hash}`);
+      window.location.assign(`${path}${hash ? `#${hash}` : ""}`);
     }
   };
 
