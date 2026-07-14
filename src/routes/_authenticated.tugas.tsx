@@ -1519,8 +1519,17 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, "").slice(0, 16))}
             placeholder="62812xxxxxxx"
             inputMode="tel"
+            list="prep-phone-suggestions"
+            autoComplete="tel"
             className="h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums"
           />
+          {phoneSuggestions.length > 0 && (
+            <datalist id="prep-phone-suggestions">
+              {phoneSuggestions.map((s) => (
+                <option key={s.value} value={s.value} label={s.label} />
+              ))}
+            </datalist>
+          )}
           <div className="mt-1 text-ms-2xs text-muted-foreground">Jika diisi, MCM akan otomatis terbuka berisi link & PIN setelah tugas dibuat.</div>
         </label>
 
