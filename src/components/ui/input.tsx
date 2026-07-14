@@ -30,7 +30,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           // dan iOS Safari tidak auto-zoom saat fokus (butuh font ≥16px,
           // yang sudah dipenuhi `text-base`). ≥sm turun ke `h-9` untuk
           // kepadatan desktop.
-          "flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 md:text-sm",
+          "flex h-11 w-full rounded-md border border-input bg-transparent px-ms-3 py-1 text-ms-md shadow-sm transition-colors file:border-0 file:bg-transparent file:text-ms-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 md:text-ms-sm",
           className,
         )}
         ref={ref}
