@@ -2824,17 +2824,45 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             </Button>
             <Button
               size="sm"
-              onClick={sendWA}
-              disabled={sending}
+              onClick={visibleShots.length === 0 ? undefined : sendWA}
+              disabled={visibleShots.length === 0 ? false : sending}
               aria-label={
                 visibleShots.length === 0
-                  ? "Kirim perintah penyiapan ke pegawai via WhatsApp"
+                  ? "Buka tugas pegawai untuk judul ini"
                   : `Kirim ${visibleShots.length} kiriman pegawai via WhatsApp`
               }
               className="bg-emerald-600 hover:bg-emerald-700"
+              asChild={visibleShots.length === 0}
             >
-              <MessageCircle className="h-3.5 w-3.5" />
-              {visibleShots.length === 0 ? "Kirim perintah" : "Kirim WA"}
+              {visibleShots.length === 0 ? (
+                // Belum ada kiriman: langsung buka halaman Tugas Pegawai.
+                // Kalau judul sudah tertaut ke tugas → buka daftar `/tugas`
+                // (fokus ke tugas yang bersangkutan lewat query `q`).
+                // Kalau belum → buka `/tugas-baru` dengan title_id agar
+                // owner bisa langsung bikin tugas untuk judul ini.
+                linkedTask?.share_token ? (
+                  <Link
+                    to="/tugas"
+                    search={{ q: linkedTask.share_token }}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Tugas pegawai
+                  </Link>
+                ) : (
+                  <Link
+                    to="/tugas-baru"
+                    search={{ title_id: title.id }}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Buat tugas pegawai
+                  </Link>
+                )
+              ) : (
+                <>
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Kirim WA
+                </>
+              )}
             </Button>
           </div>
         </div>
