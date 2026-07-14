@@ -421,16 +421,17 @@ function GudangPage() {
                 ← Beranda
               </Link>
               <div className="min-w-0 leading-tight">
-                <p className="flex items-center gap-1.5 truncate text-ms-base font-semibold tracking-ms-tight text-foreground">
-                  <Package className="h-4 w-4 shrink-0 text-primary" /> Gudang
+                <p className="flex min-w-0 items-center gap-1.5 text-ms-base font-semibold tracking-ms-tight text-foreground">
+                  <Package className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="truncate">Gudang</span>
                 </p>
-                <p className="truncate text-[10px] uppercase tracking-[0.18em] text-primary/70">
+                <p className="hidden min-[390px]:block truncate text-[10px] uppercase tracking-[0.18em] text-primary/70">
                   Inventaris · Pembukuan
                 </p>
               </div>
             </div>
             <div className="shrink-0 text-right leading-tight">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Nilai stok</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Nilai stok</div>
               <div className="text-ms-sm font-semibold tabular-nums text-foreground">{rupiah(totalStokValue)}</div>
             </div>
           </div>
