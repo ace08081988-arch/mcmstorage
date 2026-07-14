@@ -169,8 +169,13 @@ export function NotificationBell() {
       if (cancelled) return;
       const uid = data.user?.id;
       if (!uid) return;
+      // Suffix unik per-mount agar StrictMode / remount cepat tidak
+      // mengambil kembali channel lama yang sudah `.subscribe()` — kalau
+      // itu terjadi, chaining `.on()` berikutnya melempar
+      // "cannot add postgres_changes callbacks after subscribe()".
+      const topic = `notif-bell:${uid}:${Math.random().toString(36).slice(2, 10)}`;
       channel = supabase
-        .channel(`notif-bell:${uid}`)
+        .channel(topic)
         // messages has no per-recipient column; keep global insert but rely on RLS.
         .on(
           "postgres_changes",
