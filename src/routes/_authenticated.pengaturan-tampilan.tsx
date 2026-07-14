@@ -551,7 +551,7 @@ function PengaturanTampilanPage() {
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-32">
       <SettingsHeader title="Tampilan" subtitle="Preset, tema, aksen, font, latar & kerapatan" icon={Palette} />
 
-      <div className="space-ms-4 px-ms-4 pt-ms-2">
+      <div className="space-ms-4 px-ms-4 pt-2">
         {/* Info draft */}
         <div className="rounded-md border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-2xs leading-ms-snug text-muted-foreground">
           Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
