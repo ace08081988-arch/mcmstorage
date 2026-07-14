@@ -874,7 +874,7 @@ function ToolPill(props: { active: boolean; onClick: () => void; label: string; 
 function IconPill(props: {
   onClick: () => void;
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
   disabled?: boolean;
   active?: boolean;
   tone?: "default" | "danger";
