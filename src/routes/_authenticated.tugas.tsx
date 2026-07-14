@@ -1222,6 +1222,29 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     note.trim() !== "" ||
     title.trim() !== "Tugas siapkan barang";
 
+  // Validasi nomor pegawai: opsional, tapi jika diisi harus (a) format 62xxx
+  // yang valid dan (b) cocok dengan kontak tersimpan supaya nama & ID pegawai
+  // benar-benar terverifikasi sebelum tugas dibuat.
+  const phoneValidation = useMemo(() => {
+    const cleaned = phone.replace(/\D/g, "");
+    if (!cleaned) return { ok: true as const, error: null as string | null };
+    if (!/^628\d{7,13}$/.test(cleaned)) {
+      return {
+        ok: false as const,
+        error:
+          "Format nomor tidak valid. Gunakan awalan 628 diikuti nomor HP (contoh: 62812xxxxxxx).",
+      };
+    }
+    if (contactsLoaded && !phoneSuggestions.some((s) => s.value === cleaned)) {
+      return {
+        ok: false as const,
+        error:
+          "Nomor tidak ada di buku alamat. Pilih dari daftar kontak, atau tambahkan dulu di Kontak sebelum membuat tugas.",
+      };
+    }
+    return { ok: true as const, error: null as string | null };
+  }, [phone, phoneSuggestions, contactsLoaded]);
+
   function requestClose() {
     if (hasContent) {
       const ok = window.confirm(
