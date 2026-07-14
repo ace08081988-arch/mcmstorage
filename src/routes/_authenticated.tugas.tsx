@@ -1531,7 +1531,35 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
               ))}
             </datalist>
           )}
-          <div className="mt-1 text-ms-2xs text-muted-foreground">Jika diisi, MCM akan otomatis terbuka berisi link & PIN setelah tugas dibuat.</div>
+          {(() => {
+            const cleaned = phone.replace(/\D/g, "");
+            const match = cleaned
+              ? phoneSuggestions.find((s) => s.value === cleaned)
+              : null;
+            if (!match) {
+              return (
+                <div className="mt-1 text-ms-2xs text-muted-foreground">
+                  Jika diisi, MCM akan otomatis terbuka berisi link & PIN setelah tugas dibuat.
+                </div>
+              );
+            }
+            return (
+              <div className="mt-1 flex flex-wrap items-center gap-ms-1 text-ms-2xs">
+                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 font-medium text-emerald-600">
+                  <CheckCircle2 className="h-3 w-3" /> {match.name}
+                </span>
+                <span className="text-muted-foreground">
+                  ID:{" "}
+                  <span className="font-mono tabular-nums">
+                    {match.linkedUserId ? match.linkedUserId.slice(0, 8) : "—"}
+                  </span>
+                </span>
+                {!match.linkedUserId && (
+                  <span className="text-muted-foreground">· belum terhubung akun MCM</span>
+                )}
+              </div>
+            );
+          })()}
         </label>
 
         <div className="border-t pt-3">
