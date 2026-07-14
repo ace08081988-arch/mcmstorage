@@ -42,6 +42,12 @@ export function MobileBottomNav() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
 
+  // Index tab aktif untuk menggerakkan indikator "pill" bergeser mulus
+  // antar tab. 5 slot total (4 link + tombol Menu); Menu tidak pernah aktif
+  // sehingga indikator disembunyikan saat activeIndex === -1.
+  const activeIndex = activeTo ? items.findIndex((it) => it.to === activeTo) : -1;
+  const slotCount = items.length + 1; // +1 untuk tombol "Menu"
+
   return (
     <nav
       aria-label="Navigasi utama"
@@ -55,7 +61,26 @@ export function MobileBottomNav() {
         boxShadow: "0 -8px 24px -12px color-mix(in oklab, var(--primary) 22%, transparent)",
       }}
     >
-      <div className="mx-auto flex max-w-md items-stretch justify-around px-1 pt-1.5">
+      <div className="relative mx-auto flex max-w-md items-stretch justify-around px-1 pt-1.5">
+        {/* Indikator pill yang meluncur antar tab. Menggunakan transform
+            supaya GPU-accelerated dan mulus di WebView Android. */}
+        <span
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute left-0 top-1.5 h-8 rounded-full",
+            "transition-[transform,opacity,width] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+            "motion-reduce:transition-none",
+            activeIndex >= 0 ? "opacity-100" : "opacity-0",
+          )}
+          style={{
+            width: `calc((100% - 0.5rem) / ${slotCount})`,
+            transform: `translateX(calc(0.25rem + ${Math.max(activeIndex, 0)} * 100%))`,
+            background:
+              "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent), color-mix(in oklab, var(--primary) 8%, transparent))",
+            boxShadow:
+              "inset 0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent), 0 4px 12px -6px color-mix(in oklab, var(--primary) 45%, transparent)",
+          }}
+        />
         {items.map(({ to, label, Icon, badge }) => {
           const active = activeTo === to;
           return (
@@ -65,7 +90,7 @@ export function MobileBottomNav() {
               aria-current={active ? "page" : undefined}
               aria-label={badge && badge > 0 ? `${label}, ${badge} belum dibaca` : label}
               className={cn(
-                "relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[10.5px] leading-tight transition-colors duration-300",
+                "group/tab relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[10.5px] leading-tight transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
                 "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 active ? "text-primary" : "text-muted-foreground",
               )}
@@ -73,20 +98,31 @@ export function MobileBottomNav() {
               <span
                 aria-hidden
                 className={cn(
-                  "relative grid h-8 w-14 place-items-center rounded-full transition-all duration-300 ease-out",
-                  active
-                    ? "bg-primary/12 ring-1 ring-primary/25"
-                    : "bg-transparent",
+                  "relative grid h-8 w-14 place-items-center rounded-full transition-transform duration-300 ease-out",
+                  active ? "-translate-y-0.5 scale-105" : "scale-100",
+                  "motion-reduce:transform-none motion-reduce:transition-none",
                 )}
               >
-                <Icon className="h-[18px] w-[18px]" />
+                <Icon
+                  className={cn(
+                    "h-[18px] w-[18px] transition-transform duration-300 ease-out",
+                    active ? "drop-shadow-[0_2px_6px_color-mix(in_oklab,var(--primary)_55%,transparent)]" : "",
+                    "motion-reduce:transition-none",
+                  )}
+                />
                 {badge && badge > 0 ? (
                   <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9.5px] font-semibold leading-none text-destructive-foreground shadow">
                     {badge > 99 ? "99+" : badge}
                   </span>
                 ) : null}
               </span>
-              <span className={active ? "font-semibold tracking-tight" : "tracking-tight"}>
+              <span
+                className={cn(
+                  "transition-all duration-300 ease-out tracking-tight",
+                  active ? "font-semibold opacity-100" : "font-normal opacity-80",
+                  "motion-reduce:transition-none",
+                )}
+              >
                 {label}
               </span>
             </Link>
@@ -97,17 +133,17 @@ export function MobileBottomNav() {
           onClick={toggleSidebar}
           aria-label="Buka menu"
           className={cn(
-            "relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[10.5px] leading-tight text-muted-foreground transition-colors duration-300",
+            "relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[10.5px] leading-tight text-muted-foreground transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
             "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           )}
         >
           <span
             aria-hidden
-            className="grid h-8 w-14 place-items-center rounded-full bg-transparent"
+            className="grid h-8 w-14 place-items-center rounded-full bg-transparent transition-transform duration-300 ease-out"
           >
             <Menu className="h-[18px] w-[18px]" />
           </span>
-          <span className="tracking-tight">Menu</span>
+          <span className="tracking-tight opacity-80">Menu</span>
         </button>
       </div>
     </nav>
