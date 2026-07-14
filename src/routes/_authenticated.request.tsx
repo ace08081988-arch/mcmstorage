@@ -74,6 +74,11 @@ function RequestPage() {
   const [items, setItems] = useState<WarehouseItem[]>([]);
   const [titles, setTitles] = useState<RequestTitle[]>([]);
   const [titleItems, setTitleItems] = useState<RequestTitleItem[]>([]);
+  // Peta title_id -> jumlah prep dalam siklus AKTIF (created_at > reprep_requested_at,
+  // atau semuanya bila reprep_requested_at null). Dipakai untuk memutuskan
+  // apakah tombol "Minta penyiapan ulang" ditampilkan (siklus sudah punya prep
+  // = sudah selesai, boleh direset).
+  const [activePrepCountByTitle, setActivePrepCountByTitle] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   type LoadErr = {
     source: string; message: string; code?: string; status?: number;
@@ -181,6 +186,23 @@ function RequestPage() {
       if (wi.data) setItems(wi.data as WarehouseItem[]);
       if (t.data) setTitles(t.data as RequestTitle[]);
       if (ti.data) setTitleItems(ti.data as RequestTitleItem[]);
+      // Ambil prep untuk menghitung siklus aktif per title. Query
+      // di-scoped otomatis oleh RLS ke user aktif; tidak perlu filter
+      // user_id manual (dan tetap aman kalaupun ada baris lain lolos).
+      const titlesData = (t.data ?? []) as RequestTitle[];
+      const reprepById = new Map<string, string | null>(
+        titlesData.map((row) => [row.id, row.reprep_requested_at ?? null]),
+      );
+      const { data: prepRows } = await sb
+        .from("request_preparations")
+        .select("title_id,created_at");
+      const counts: Record<string, number> = {};
+      for (const row of (prepRows ?? []) as Array<{ title_id: string; created_at: string }>) {
+        const cutoff = reprepById.get(row.title_id) ?? null;
+        if (cutoff && !(row.created_at > cutoff)) continue;
+        counts[row.title_id] = (counts[row.title_id] ?? 0) + 1;
+      }
+      setActivePrepCountByTitle(counts);
     } catch (e) {
       const err = e as { message?: string; status?: number; code?: string };
       setLoadError({
@@ -417,6 +439,27 @@ function RequestPage() {
                 toast.error("Gagal hapus: " + (e as Error).message);
               }
             };
+            const activePrepCount = activePrepCountByTitle[t.id] ?? 0;
+            const canRequestReprep = activePrepCount > 0;
+            const requestReprep = async () => {
+              if (!confirm(
+                `Minta penyiapan ulang untuk "${t.name}"?\n\n` +
+                `Title ini akan muncul lagi di portal pegawai (task baru).\n` +
+                `Riwayat penyiapan lama TIDAK dihapus — hanya siklus penyiapan ` +
+                `di-reset. Aksi ini dicatat di riwayat title.`,
+              )) return;
+              try {
+                const { error } = await sb
+                  .from("request_titles")
+                  .update({ reprep_requested_at: new Date().toISOString() })
+                  .eq("id", t.id);
+                if (error) throw error;
+                toast.success("Permintaan penyiapan ulang tercatat");
+                void loadAll();
+              } catch (e) {
+                toast.error("Gagal minta penyiapan ulang: " + (e as Error).message);
+              }
+            };
             return (
               <button
                 key={t.id}
@@ -482,6 +525,19 @@ function RequestPage() {
                   >
                     <History className="h-3 w-3" /> Riwayat
                   </div>
+                  {canRequestReprep && (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); void requestReprep(); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void requestReprep(); } }}
+                      className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
+                      aria-label="Minta penyiapan ulang"
+                      title={`Sudah disiapkan ${activePrepCount}× pada siklus ini. Reset agar bisa disiapkan lagi di task baru tanpa mengubah riwayat.`}
+                    >
+                      <RotateCw className="h-3 w-3" /> Minta penyiapan ulang
+                    </div>
+                  )}
                   <div
                     role="button"
                     tabIndex={0}

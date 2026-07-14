@@ -2477,6 +2477,7 @@ export type Database = {
           name: string
           note: string | null
           position: number
+          reprep_requested_at: string | null
           updated_at: string
           user_id: string
         }
@@ -2486,6 +2487,7 @@ export type Database = {
           name: string
           note?: string | null
           position?: number
+          reprep_requested_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -2495,6 +2497,7 @@ export type Database = {
           name?: string
           note?: string | null
           position?: number
+          reprep_requested_at?: string | null
           updated_at?: string
           user_id?: string
         }
