@@ -341,7 +341,7 @@ function GudangPage() {
             <Package className="h-[18px] w-[18px] text-primary" /> Gudang
           </h1>
           <div className="mt-3 rounded-lg border bg-muted/30 px-ms-3 py-ms-2">
-            <p className="text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Nilai stok</p>
+            <p className="text-ms-2xs font-semibold uppercase tracking-[0.1em] text-muted-foreground md:tracking-[0.18em]">Nilai stok</p>
             <p className="text-ms-sm font-bold tabular-nums">{rupiah(totalStokValue)}</p>
           </div>
         </div>
