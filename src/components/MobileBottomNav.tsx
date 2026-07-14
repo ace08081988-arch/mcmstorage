@@ -87,10 +87,15 @@ export function MobileBottomNav() {
         />
         {items.map(({ to, label, Icon, badge }) => {
           const active = activeTo === to;
+          // Saat Chat punya unread, langsung buka /chat dengan filter "Belum
+          // dibaca" aktif — mengetuk tab (atau badge di dalamnya) memfokuskan
+          // user ke daftar pesan yang belum dibaca, bukan campur semua chat.
+          const chatUnreadFocus = to === "/chat" && (badge ?? 0) > 0;
           return (
             <Link
               key={to}
               to={to}
+              search={chatUnreadFocus ? { filter: "unread" } : undefined}
               aria-current={active ? "page" : undefined}
               aria-label={badge && badge > 0 ? `${label}, ${badge} belum dibaca` : label}
               className={cn(
