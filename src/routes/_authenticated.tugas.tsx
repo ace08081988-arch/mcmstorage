@@ -16,6 +16,55 @@ import { deriveTaskShortStatus, type TaskShortStatus } from "@/lib/prep-status";
 import { fetchAddressBook, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { rememberPin, recallPin, forgetPin } from "@/lib/prep-pin-memo";
 
+/**
+ * Badge kecil di kartu tugas yang menampilkan PIN dari pengingat lokal
+ * (localStorage) di HP pemilik. Default tersembunyi ("PIN ••••") — tap
+ * untuk memperlihatkan angka aslinya. Tombol salin muncul saat PIN dibuka
+ * agar pemilik bisa mengirim ulang lewat chat tanpa membuka dialog share.
+ *
+ * Kalau PIN tidak ada di device ini (mis. tugas dibuat dari HP lain),
+ * badge memberi tahu supaya pemilik tahu perlu reset PIN dari tombol
+ * bagikan (💬) untuk mengaktifkan PIN baru.
+ */
+function TaskPinMemo({ shareToken }: { shareToken: string }) {
+  const [reveal, setReveal] = useState(false);
+  const pin = useMemo(() => recallPin(shareToken), [shareToken, reveal]);
+  if (!pin) {
+    return (
+      <div className="mt-1.5 inline-flex items-center gap-ms-1 rounded-md border border-dashed border-muted-foreground/30 bg-muted/30 px-ms-2 py-0.5 text-ms-2xs text-muted-foreground">
+        <ShieldAlert className="h-3 w-3" />
+        PIN tidak tercatat di HP ini
+      </div>
+    );
+  }
+  return (
+    <div className="mt-1.5 inline-flex items-center gap-ms-1 rounded-md border border-primary/30 bg-primary/5 px-ms-2 py-0.5 text-ms-2xs font-medium text-primary">
+      <ShieldCheck className="h-3 w-3" />
+      <span className="text-muted-foreground">PIN</span>
+      <button
+        type="button"
+        onClick={() => setReveal((v) => !v)}
+        className="tabular-nums font-semibold tracking-wide"
+        aria-label={reveal ? "Sembunyikan PIN" : "Tampilkan PIN"}
+        title={reveal ? "Klik untuk sembunyikan" : "Klik untuk tampilkan"}
+      >
+        {reveal ? pin : "•".repeat(pin.length)}
+      </button>
+      {reveal && (
+        <button
+          type="button"
+          onClick={() => { void copyText(pin); toast.success("PIN disalin"); }}
+          className="ml-0.5 inline-flex h-5 w-5 items-center justify-center rounded hover:bg-primary/10"
+          aria-label="Salin PIN"
+          title="Salin PIN"
+        >
+          <Copy className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
     meta: [
