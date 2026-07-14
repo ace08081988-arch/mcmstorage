@@ -9,6 +9,11 @@
 -- yang tersisa di database. Setiap assertion memakai PERFORM + RAISE
 -- EXCEPTION pada kegagalan; sukses mencetak PASS via RAISE NOTICE.
 
+-- CATATAN WAKTU: `now()` fixed ke transaction start dalam satu transaksi,
+-- sehingga tidak bisa dipakai untuk memesan urutan waktu antar-statement.
+-- Test ini konsisten memakai `clock_timestamp()` untuk cutoff & created_at
+-- prep siklus baru, dan `pg_sleep` untuk memastikan cutoff < prep baru.
+
 BEGIN;
 SET LOCAL client_min_messages = notice;
 
@@ -106,9 +111,10 @@ BEGIN
   -- reprep_requested_at = now(). Title HARUS kembali muncul di task B
   -- dengan submitted_count=0, karena prep lama < cutoff.
   -- ================================================================
-  -- Pastikan cutoff strictly > created_at prep lama.
-  v_reprep_ts := now() + interval '1 millisecond';
-  PERFORM pg_sleep(0.01);
+  -- Cutoff harus strictly > created_at prep lama. `now()` fixed per-xact,
+  -- jadi pakai clock_timestamp() + jeda kecil supaya urutan monotonik.
+  PERFORM pg_sleep(0.05);
+  v_reprep_ts := clock_timestamp();
   UPDATE public.request_titles SET reprep_requested_at = v_reprep_ts WHERE id = v_title;
 
   v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
@@ -126,9 +132,11 @@ BEGIN
   -- Skenario 4: Prep BARU (created_at > reprep_requested_at) via task B
   -- kembali menyembunyikan title, tanpa terganggu prep lama.
   -- ================================================================
-  PERFORM pg_sleep(0.01);
-  INSERT INTO public.request_preparations(user_id, title_id, via_task_id, created_by, photo_paths)
-  VALUES (v_owner, v_title, v_task_b, 'worker', ARRAY[]::text[])
+  -- created_at prep lama pakai default now() (= xact start) ⇒ < v_reprep_ts.
+  -- created_at prep baru harus > v_reprep_ts; set eksplisit dari clock().
+  PERFORM pg_sleep(0.05);
+  INSERT INTO public.request_preparations(user_id, title_id, via_task_id, created_by, photo_paths, created_at)
+  VALUES (v_owner, v_title, v_task_b, 'worker', ARRAY[]::text[], clock_timestamp())
   RETURNING id INTO v_prep_b;
 
   v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
