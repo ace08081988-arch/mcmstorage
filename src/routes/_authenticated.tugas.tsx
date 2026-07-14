@@ -1176,7 +1176,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   // Ditarik sekali saat dialog dibuka; native <datalist> memberi pengalaman
   // autocomplete yang mulus di keyboard Android/iOS tanpa perlu library.
   const [phoneSuggestions, setPhoneSuggestions] = useState<
-    Array<{ value: string; label: string }>
+    Array<{ value: string; label: string; name: string; linkedUserId: string | null }>
   >([]);
   useEffect(() => {
     let cancelled = false;
@@ -1185,7 +1185,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         const rows = await fetchAddressBook();
         if (cancelled) return;
         const seen = new Set<string>();
-        const list: Array<{ value: string; label: string }> = [];
+        const list: Array<{ value: string; label: string; name: string; linkedUserId: string | null }> = [];
         for (const r of rows as AddressBookRow[]) {
           const norm = r.phone_norm ?? normalizePhone(r.phone);
           if (!norm) continue;
@@ -1193,7 +1193,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
           const value = norm.startsWith("+") ? norm.slice(1) : norm;
           if (!value || seen.has(value)) continue;
           seen.add(value);
-          list.push({ value, label: r.name || value });
+          const name = r.name || value;
+          list.push({ value, label: name, name, linkedUserId: r.linked_user_id ?? null });
         }
         list.sort((a, b) => a.label.localeCompare(b.label));
         setPhoneSuggestions(list);
