@@ -220,13 +220,15 @@ async function cameraPhotoToFile(photo: NativePickedPhoto, prefix: string): Prom
   const url = pickedPhotoUrl(photo);
   if (!url) return null;
   const response = await fetch(url);
-  if (!response.ok) {
+  // URL lokal dari Capacitor/Android kadang bukan respons HTTP normal
+  // (status bisa 0), tapi blob-nya tetap valid. Tolak hanya error HTTP nyata.
+  if (response.status >= 400) {
     throw new Error(`Foto native tidak bisa dibaca (${response.status})`);
   }
   const blob = await response.blob();
   const rawExt = pickedPhotoFormat(photo, blob).toLowerCase();
   const ext = rawExt === "jpeg" ? "jpg" : rawExt.replace(/[^a-z0-9]/g, "") || "jpg";
-  const mime = blob.type || (ext === "jpg" ? "image/jpeg" : `image/${ext}`);
+  const mime = blob.type || (ext === "jpg" || ext === "jpeg" ? "image/jpeg" : `image/${ext}`);
   return new File([blob], `${prefix}-${Date.now()}.${ext}`, { type: mime });
 }
 
