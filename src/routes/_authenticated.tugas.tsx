@@ -1549,7 +1549,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             inputMode="tel"
             list="prep-phone-suggestions"
             autoComplete="tel"
-            className="h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums"
+            aria-invalid={!phoneValidation.ok}
+            className={`h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums ${
+              !phoneValidation.ok ? "border-destructive ring-1 ring-destructive/40" : ""
+            }`}
           />
           {phoneSuggestions.length > 0 && (
             <datalist id="prep-phone-suggestions">
@@ -1559,6 +1562,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             </datalist>
           )}
           {(() => {
+            if (!phoneValidation.ok) {
+              return (
+                <div className="mt-1 flex items-start gap-1 text-ms-2xs text-destructive">
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span>{phoneValidation.error}</span>
+                </div>
+              );
+            }
             const cleaned = phone.replace(/\D/g, "");
             const match = cleaned
               ? phoneSuggestions.find((s) => s.value === cleaned)
