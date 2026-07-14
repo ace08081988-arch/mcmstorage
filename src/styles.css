@@ -72,6 +72,45 @@
 
 :root {
   --radius: 0.625rem;
+  /* ==========================================================================
+     Mobile design tokens — typography & spacing scale.
+     SATU sumber kebenaran untuk semua halaman (411/390px sebagai anchor).
+     Pakai utility `text-ms-*`, `p-ms-*`, `gap-ms-*`, `space-ms-*` (di bawah)
+     alih-alih hardcode `text-[13px]` / `p-3.5`. Skala mengikuti `--app-font-size`
+     sehingga preset "sm/md/lg/xl" di /pengaturan-tampilan tetap konsisten.
+     ========================================================================== */
+  /* Type scale (line-height dipasangkan agar tidak drift). */
+  --ms-text-2xs: 0.6875rem;  /* 11px */
+  --ms-text-xs:  0.75rem;    /* 12px */
+  --ms-text-sm:  0.8125rem;  /* 13px */
+  --ms-text-base:0.9375rem;  /* 15px — body mobile */
+  --ms-text-md:  1rem;       /* 16px */
+  --ms-text-lg:  1.125rem;   /* 18px */
+  --ms-text-xl:  1.25rem;    /* 20px */
+  --ms-text-2xl: 1.5rem;     /* 24px — heading kartu */
+  --ms-text-3xl: 1.75rem;    /* 28px — heading halaman */
+  --ms-text-4xl: 2.125rem;   /* 34px — hero */
+  --ms-leading-tight:  1.15;
+  --ms-leading-snug:   1.3;
+  --ms-leading-normal: 1.5;
+  --ms-leading-relaxed:1.65;
+  --ms-tracking-tight: -0.015em;
+  --ms-tracking-normal: 0;
+  --ms-tracking-wide:  0.02em;
+  /* Spacing scale — kelipatan 4px dengan step semantik. */
+  --ms-space-0:  0;
+  --ms-space-1:  0.25rem;   /* 4  */
+  --ms-space-2:  0.5rem;    /* 8  */
+  --ms-space-3:  0.75rem;   /* 12 — padding kartu ringkas */
+  --ms-space-4:  1rem;      /* 16 — padding kartu default */
+  --ms-space-5:  1.25rem;   /* 20 */
+  --ms-space-6:  1.5rem;    /* 24 — gap antar section */
+  --ms-space-8:  2rem;      /* 32 */
+  --ms-space-10: 2.5rem;    /* 40 */
+  --ms-space-12: 3rem;      /* 48 */
+  /* Target sentuh & radius kartu — jaga aksesibilitas mobile. */
+  --ms-tap:      2.75rem;   /* 44px min target */
+  --ms-radius-card: calc(var(--radius) + 4px);
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
