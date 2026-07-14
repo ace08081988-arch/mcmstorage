@@ -542,17 +542,47 @@ function TugasBaruForm() {
   // dan (b) form masih dalam kondisi kosong bawaan.
   const searchParams = Route.useSearch();
   const prefillTitleId = searchParams.title_id ?? null;
+  const prefillTitleIdInvalid = searchParams.title_id_invalid === true;
   const prefillConsumedRef = useRef(false);
   const [prefillInfo, setPrefillInfo] = useState<{
     name: string; qty: string; unit: string; linkedWid: boolean;
   } | null>(null);
+  /**
+   * Fallback ketika deep-link membawa `title_id` yang tidak bisa dipakai:
+   *   - "invalid":   param dikirim tapi bukan UUID (sudah dijaring
+   *                  `validateSearch` → flag `title_id_invalid`).
+   *   - "not_found": param UUID sah, tapi tidak ada judul ecer yang cocok
+   *                  (mungkin sudah dihapus / bukan milik user).
+   * Kita TIDAK mengalihkan otomatis karena owner masih bisa mengisi form
+   * manual; alih-alih tampilkan banner + toast + link kembali ke /ecer.
+   */
+  const [prefillFallback, setPrefillFallback] = useState<
+    { reason: "invalid" | "not_found" } | null
+  >(null);
+  const invalidToastRef = useRef(false);
+  useEffect(() => {
+    if (!prefillTitleIdInvalid) return;
+    if (invalidToastRef.current) return;
+    invalidToastRef.current = true;
+    setPrefillFallback({ reason: "invalid" });
+    toast.warning("Link judul ecer tidak valid", {
+      description: "Form dibuka manual. Kembali ke halaman Ecer untuk memilih judul.",
+    });
+  }, [prefillTitleIdInvalid]);
   useEffect(() => {
     if (prefillConsumedRef.current) return;
     if (!prefillTitleId) return;
     if (initialRef.current) return; // draft menang
     if (titles.length === 0) return; // tunggu titles siap
     const t = titles.find((x) => x.id === prefillTitleId);
-    if (!t) { prefillConsumedRef.current = true; return; }
+    if (!t) {
+      prefillConsumedRef.current = true;
+      setPrefillFallback({ reason: "not_found" });
+      toast.warning("Judul ecer tidak ditemukan", {
+        description: "Mungkin sudah dihapus. Form dibuka manual — pilih judul lain di halaman Ecer.",
+      });
+      return;
+    }
     // Hanya prefill jika form masih blanko (1 baris kosong bawaan).
     const blank = rows.length === 1 && rows[0]?.name === "" && rows[0]?.title_id === "";
     if (!blank) { prefillConsumedRef.current = true; return; }
