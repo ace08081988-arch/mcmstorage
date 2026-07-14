@@ -1222,7 +1222,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     note.trim() !== "" ||
     title.trim() !== "Tugas siapkan barang";
 
-  // Validasi nomor pegawai: opsional, tapi jika diisi harus (a) format 62xxx
+  // Validasi nomor pegawai: opsional, tapi jika diisi harus (a) format 628xxx
   // yang valid dan (b) cocok dengan kontak tersimpan supaya nama & ID pegawai
   // benar-benar terverifikasi sebelum tugas dibuat.
   const phoneValidation = useMemo(() => {
@@ -1232,14 +1232,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       return {
         ok: false as const,
         error:
-          "Format nomor tidak valid. Gunakan awalan 628 diikuti nomor HP (contoh: 62812xxxxxxx).",
+          "Gagal menyimpan: format nomor belum benar. Nomor harus diawali 628 (bukan +62 atau 08), diikuti 7–13 digit. Contoh format yang benar: 6281234567890. Cara memperbaiki: ubah menjadi diawali 628, lalu pilih dari daftar kontak yang muncul.",
       };
     }
     if (contactsLoaded && !phoneSuggestions.some((s) => s.value === cleaned)) {
       return {
         ok: false as const,
         error:
-          "Nomor tidak ada di buku alamat. Pilih dari daftar kontak, atau tambahkan dulu di Kontak sebelum membuat tugas.",
+          "Gagal menyimpan: nomor belum tersimpan di buku alamat. Format sudah benar, tapi kontak ini belum pernah ditambahkan. Cara memperbaiki: simpan dulu nomor pegawai di menu Kontak, lalu kembali ke sini dan pilih dari daftar kontak.",
       };
     }
     return { ok: true as const, error: null as string | null };
@@ -1541,7 +1541,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         </div>
 
         <label className="block">
-          <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor MCM / HP pegawai (opsional, format: 628xxxx)</div>
+          <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor MCM / HP pegawai (opsional, contoh: 6281234567890 — harus dari kontak tersimpan)</div>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, "").slice(0, 16))}
