@@ -213,24 +213,24 @@ function SummaryCard({
     info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
   };
   return (
-    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-4">
+    <div className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-b from-card to-background p-ms-3 elev-sm backdrop-blur transition-all hover:border-primary/40 hover:elev-md md:p-ms-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:text-[11px]">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground md:text-[11px]">
             {label}
           </p>
           {loading ? (
             <div className="mt-2 h-6 w-12 animate-pulse rounded bg-muted md:h-7 md:w-16" />
           ) : (
-            <p className="mt-1 text-xl font-bold tabular-nums tracking-tight md:text-2xl">
+            <p className="mt-1 text-ms-xl font-semibold tabular-nums md:text-ms-2xl">
               {value.toLocaleString("id-ID")}
             </p>
           )}
         </div>
         <span
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${toneCls[tone]} md:h-9 md:w-9`}
+          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-inset ${toneCls[tone]} md:h-10 md:w-10`}
         >
-          <Icon className="h-4 w-4 md:h-4.5 md:w-4.5" />
+          <Icon className="h-4 w-4 md:h-[18px] md:w-[18px]" />
         </span>
       </div>
     </div>
