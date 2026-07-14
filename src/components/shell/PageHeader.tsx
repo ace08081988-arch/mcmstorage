@@ -62,7 +62,7 @@ export function PageHeader({
               <span className="truncate">{title}</span>
             </p>
             {subtitle ? (
-              <p className="hidden min-[390px]:block truncate text-[0.625rem] uppercase tracking-[0.18em] text-primary/70">
+              <p className="hidden min-[390px]:block truncate text-ms-2xs uppercase tracking-[0.18em] text-primary/70">
                 {subtitle}
               </p>
             ) : null}
@@ -70,7 +70,7 @@ export function PageHeader({
         </div>
         {stat ? (
           <div className="shrink-0 text-right leading-tight">
-            <div className="text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <div className="text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {stat.label}
             </div>
             <div className="text-ms-sm font-semibold tabular-nums text-foreground">
