@@ -143,7 +143,11 @@ export function MobileBottomNav() {
         <button
           type="button"
           onClick={toggleSidebar}
-          aria-label="Buka menu"
+          aria-label={
+            unread > 0 && activeTo !== "/chat"
+              ? `Buka menu, ${unread} chat belum dibaca`
+              : "Buka menu"
+          }
           aria-current={menuActive ? "page" : undefined}
           className={cn(
             "relative flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[0.65625rem] leading-tight text-muted-foreground transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
@@ -168,6 +172,20 @@ export function MobileBottomNav() {
                 "motion-reduce:transition-none",
               )}
             />
+            {/* Badge chat belum dibaca — muncul di ikon Menu HANYA saat user
+                sedang tidak berada di tab Chat, supaya sinyal tetap terlihat
+                meski notifikasi ada di rute lain (mis. /notifikasi, /tugas).
+                Angka dihilangkan (dot-only) supaya tidak duplikat visual
+                dengan badge di tab Chat itu sendiri. */}
+            {unread > 0 && activeTo !== "/chat" ? (
+              <span className="pointer-events-none absolute -right-0.5 -top-0.5">
+                <span
+                  aria-hidden
+                  className="absolute inset-0 -z-10 animate-ping rounded-full bg-destructive/60 motion-reduce:hidden"
+                />
+                <span className="relative block h-2.5 w-2.5 rounded-full bg-destructive shadow ring-2 ring-background" />
+              </span>
+            ) : null}
           </span>
           <span
             className={cn(
