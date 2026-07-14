@@ -91,6 +91,10 @@ type SyncStatus = {
 
 export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  // Navigasi bulk WA/Chat wajib lewat halaman /ecer supaya alur pembayaran
+  // (Lunas/Hutang/Bayar sebagian) tetap dipanggil sebelum WA/Chat benar-
+  // benar terkirim. Sama seperti tombol per-kartu "Kirim ke pembeli".
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>(() => {
     if (typeof window === "undefined") return "all";
