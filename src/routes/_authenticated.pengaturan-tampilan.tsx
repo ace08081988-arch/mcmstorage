@@ -551,9 +551,9 @@ function PengaturanTampilanPage() {
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-32">
       <SettingsHeader title="Tampilan" subtitle="Preset, tema, aksen, font, latar & kerapatan" icon={Palette} />
 
-      <div className="space-y-4 px-4 pt-2">
+      <div className="space-ms-4 px-ms-4 pt-ms-2">
         {/* Info draft */}
-        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] leading-snug text-muted-foreground">
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-2xs leading-ms-snug text-muted-foreground">
           Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
           Tampilan halaman lain tidak berubah sampai Anda menekan{" "}
           <span className="font-semibold text-foreground">Simpan</span> di bagian bawah.
@@ -562,24 +562,24 @@ function PengaturanTampilanPage() {
         {/* Preset profesional */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
               <Sparkles className="h-4 w-4 text-primary" /> Preset profesional
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-ms-xs">
               Satu klik untuk mempratinjau tema, aksen, radius, font, dan kerapatan sekaligus.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <CardContent className="grid grid-cols-1 gap-ms-2 sm:grid-cols-3">
             {PRESETS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => applyPreset(p)}
-                className="group flex flex-col gap-1 rounded-lg border bg-card px-3 py-3 text-left transition-all duration-150 hover:border-primary/50 hover:bg-accent active:scale-[0.98]"
+                className="group flex flex-col gap-1 rounded-lg border bg-card px-ms-3 py-ms-3 text-left transition-all duration-150 hover:border-primary/50 hover:bg-accent active:scale-[0.98]"
               >
-                <span className="text-lg leading-none">{p.icon}</span>
-                <span className="text-sm font-semibold">{p.label}</span>
-                <span className="text-[11px] leading-snug text-muted-foreground">{p.desc}</span>
+                <span className="text-ms-lg leading-none">{p.icon}</span>
+                <span className="text-ms-sm font-semibold">{p.label}</span>
+                <span className="text-ms-2xs leading-ms-snug text-muted-foreground">{p.desc}</span>
               </button>
             ))}
           </CardContent>
@@ -588,12 +588,12 @@ function PengaturanTampilanPage() {
         {/* Tema */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
               <Moon className="h-4 w-4" /> Tema
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-ms-2">
               {([
                 { v: "light" as Theme, label: "Terang", Icon: Sun },
                 { v: "dark" as Theme, label: "Gelap", Icon: Moon },
@@ -602,7 +602,7 @@ function PengaturanTampilanPage() {
                 <button
                   key={v}
                   onClick={() => patch({ theme: v })}
-                  className={`flex flex-col items-center gap-1 rounded-md border px-2 py-3 text-xs font-medium transition-all hover:bg-accent active:scale-[0.97] ${draft.theme === v ? "border-primary bg-accent" : ""}`}
+                  className={`flex flex-col items-center gap-1 rounded-md border px-ms-2 py-ms-3 text-ms-xs font-medium transition-all hover:bg-accent active:scale-[0.97] ${draft.theme === v ? "border-primary bg-accent" : ""}`}
                 >
                   <Icon className="h-4 w-4" />
                   {label}
@@ -615,12 +615,12 @@ function PengaturanTampilanPage() {
         {/* Aksen */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
               <Palette className="h-4 w-4" /> Warna aksen
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap gap-ms-2.5">
               {ACCENTS.map((a) => (
                 <button
                   key={a.id}
@@ -638,14 +638,14 @@ function PengaturanTampilanPage() {
         {/* Font */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
               <Type className="h-4 w-4" /> Font & ukuran
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-ms-4">
             <div>
-              <p className="mb-2 text-xs text-muted-foreground">Jenis font</p>
-              <div className="grid grid-cols-2 gap-2">
+              <p className="mb-2 text-ms-xs text-muted-foreground">Jenis font</p>
+              <div className="grid grid-cols-2 gap-ms-2">
                 {([
                   { v: "sans" as FontFamily, label: "Sans (Inter)", family: "Inter, system-ui, sans-serif" },
                   { v: "serif" as FontFamily, label: "Serif (Merriweather)", family: "Merriweather, Georgia, serif" },
@@ -656,7 +656,7 @@ function PengaturanTampilanPage() {
                     key={o.v}
                     onClick={() => patch({ font: o.v })}
                     style={{ fontFamily: o.family }}
-                    className={`rounded-md border px-2 py-2 text-left text-xs font-medium hover:bg-accent active:scale-[0.97] transition-transform ${draft.font === o.v ? "border-primary bg-accent" : ""}`}
+                    className={`rounded-md border px-ms-2 py-ms-2 text-left text-ms-xs font-medium hover:bg-accent active:scale-[0.97] transition-transform ${draft.font === o.v ? "border-primary bg-accent" : ""}`}
                   >
                     {o.label}
                   </button>
@@ -665,8 +665,8 @@ function PengaturanTampilanPage() {
             </div>
 
             <div>
-              <p className="mb-2 text-xs text-muted-foreground">Ukuran teks</p>
-              <div className="grid grid-cols-4 gap-2">
+              <p className="mb-2 text-ms-xs text-muted-foreground">Ukuran teks</p>
+              <div className="grid grid-cols-4 gap-ms-2">
                 {([
                   { v: "sm" as FontSize, label: "A−" },
                   { v: "md" as FontSize, label: "A" },
@@ -676,7 +676,7 @@ function PengaturanTampilanPage() {
                   <button
                     key={o.v}
                     onClick={() => patch({ size: o.v })}
-                    className={`rounded-md border px-2 py-2 text-sm font-semibold hover:bg-accent active:scale-[0.97] transition-transform ${draft.size === o.v ? "border-primary bg-accent" : ""}`}
+                    className={`rounded-md border px-ms-2 py-ms-2 text-ms-sm font-semibold hover:bg-accent active:scale-[0.97] transition-transform ${draft.size === o.v ? "border-primary bg-accent" : ""}`}
                   >
                     {o.label}
                   </button>
@@ -686,8 +686,8 @@ function PengaturanTampilanPage() {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">Skala font (in-app)</p>
-                <span className="text-xs font-semibold tabular-nums">{Math.round(draft.fontScale * 100)}%</span>
+                <p className="text-ms-xs text-muted-foreground">Skala font (in-app)</p>
+                <span className="text-ms-xs font-semibold tabular-nums">{Math.round(draft.fontScale * 100)}%</span>
               </div>
               <Slider
                 value={[draft.fontScale]}
@@ -704,15 +704,15 @@ function PengaturanTampilanPage() {
         {/* Kerapatan & sudut */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
               <Layers className="h-4 w-4" /> Kerapatan & sudut
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
+          <CardContent className="space-ms-4">
+            <div className="flex items-start justify-between gap-ms-4">
               <div>
-                <p className="text-sm font-medium">Mode padat (compact)</p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
+                <p className="text-ms-sm font-medium">Mode padat (compact)</p>
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
                   Rapatkan padding & jarak agar lebih banyak konten terlihat.
                 </p>
               </div>
@@ -724,8 +724,8 @@ function PengaturanTampilanPage() {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">Kelengkungan sudut</p>
-                <span className="text-xs font-semibold tabular-nums">{draft.radius.toFixed(2)}rem</span>
+                <p className="text-ms-xs text-muted-foreground">Kelengkungan sudut</p>
+                <span className="text-ms-xs font-semibold tabular-nums">{draft.radius.toFixed(2)}rem</span>
               </div>
               <Slider
                 value={[draft.radius]}
@@ -737,10 +737,10 @@ function PengaturanTampilanPage() {
               />
             </div>
 
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-ms-4">
               <div>
-                <p className="text-sm font-medium">Kurangi animasi</p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
+                <p className="text-ms-sm font-medium">Kurangi animasi</p>
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
                   Hilangkan animasi non-esensial untuk tampilan lebih tenang.
                 </p>
               </div>
@@ -750,10 +750,10 @@ function PengaturanTampilanPage() {
               />
             </div>
 
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-ms-4">
               <div>
-                <p className="text-sm font-medium">Tingkatkan kontras</p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
+                <p className="text-ms-sm font-medium">Tingkatkan kontras</p>
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
                   Perkuat border & ring fokus.
                 </p>
               </div>
@@ -768,14 +768,14 @@ function PengaturanTampilanPage() {
         {/* Latar & transparansi */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
               <ImageIcon className="h-4 w-4" /> Latar & transparansi
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-ms-xs">
               Pilih preset, unggah foto sendiri, dan atur kegelapan/blur overlay.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-ms-3">
             {/* Pratinjau */}
             <div className="relative h-32 w-full overflow-hidden rounded-md border">
               <div
@@ -800,20 +800,20 @@ function PengaturanTampilanPage() {
                 />
               )}
               <div className="absolute inset-0 flex items-center justify-center text-center">
-                <p className="text-xs font-semibold text-foreground">
+                <p className="text-ms-xs font-semibold text-foreground">
                   {draft.bgImage ? `Overlay ${Math.round(draft.bgOverlay * 100)}%, blur ${draft.bgBlur}px` : "Belum ada foto latar"}
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-ms-2">
               {BG_PRESETS.map((p) => {
                 const active = (p.url === "" && !draft.bgImage) || draft.bgImage === p.url;
                 return (
                   <button
                     key={p.id}
                     onClick={() => patch({ bgImage: p.url })}
-                    className={`relative h-14 overflow-hidden rounded-md border text-[10px] font-medium transition-transform hover:opacity-90 active:scale-95 ${active ? "border-primary ring-2 ring-primary" : "border-muted"}`}
+                    className={`relative h-14 overflow-hidden rounded-md border text-ms-2xs font-medium transition-transform hover:opacity-90 active:scale-95 ${active ? "border-primary ring-2 ring-primary" : "border-muted"}`}
                     style={p.url ? { backgroundImage: `url("${p.url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
                     title={p.label}
                   >
@@ -825,8 +825,8 @@ function PengaturanTampilanPage() {
               })}
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <label className="inline-flex flex-1 cursor-pointer items-center justify-center rounded-md border border-dashed px-3 py-2 text-xs font-medium hover:bg-accent">
+            <div className="flex flex-wrap gap-ms-2">
+              <label className="inline-flex flex-1 cursor-pointer items-center justify-center rounded-md border border-dashed px-ms-3 py-ms-2 text-ms-xs font-medium hover:bg-accent">
                 📷 Unggah foto sendiri
                 <input
                   ref={fileInputRef}
@@ -839,7 +839,7 @@ function PengaturanTampilanPage() {
               {draft.bgImage && (
                 <button
                   onClick={() => patch({ bgImage: "" })}
-                  className="rounded-md border px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
+                  className="rounded-md border px-ms-3 py-ms-2 text-ms-xs font-medium text-destructive hover:bg-destructive/10"
                 >
                   Hapus latar
                 </button>
@@ -850,8 +850,8 @@ function PengaturanTampilanPage() {
               <>
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">Transparansi (overlay)</p>
-                    <span className="text-xs font-semibold tabular-nums">{Math.round(draft.bgOverlay * 100)}%</span>
+                    <p className="text-ms-xs text-muted-foreground">Transparansi (overlay)</p>
+                    <span className="text-ms-xs font-semibold tabular-nums">{Math.round(draft.bgOverlay * 100)}%</span>
                   </div>
                   <Slider
                     value={[draft.bgOverlay]}
@@ -861,14 +861,14 @@ function PengaturanTampilanPage() {
                     onValueChange={(v) => patch({ bgOverlay: v[0] ?? 0.7 })}
                     aria-label="Kegelapan overlay latar"
                   />
-                  <p className="mt-1 text-[10px] text-muted-foreground">
+                  <p className="mt-1 text-ms-2xs text-muted-foreground">
                     0% = foto sepenuhnya tembus; 95% = hampir tak terlihat.
                   </p>
                 </div>
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">Blur foto</p>
-                    <span className="text-xs font-semibold tabular-nums">{draft.bgBlur}px</span>
+                    <p className="text-ms-xs text-muted-foreground">Blur foto</p>
+                    <span className="text-ms-xs font-semibold tabular-nums">{draft.bgBlur}px</span>
                   </div>
                   <Slider
                     value={[draft.bgBlur]}
@@ -887,27 +887,27 @@ function PengaturanTampilanPage() {
         {/* Ekspor & impor */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
               <Download className="h-4 w-4" /> Ekspor & impor pengaturan
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-ms-xs">
               Simpan semua pengaturan di halaman ini (tema, aksen, font, ukuran, skala,
               kerapatan, radius, kontras, animasi, dan latar) menjadi satu file.
               Berguna untuk memindahkan tampilan yang sudah Anda atur ke HP/laptop
               lain, atau membagikannya ke rekan.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <CardContent className="space-ms-3">
+            <div className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={exportSettings}
-                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+                className="flex items-start gap-ms-3 rounded-md border p-ms-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
               >
                 <Download className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
-                  <p className="text-sm font-semibold">Ekspor ke file</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-ms-sm font-semibold">Ekspor ke file</p>
+                  <p className="text-ms-2xs text-muted-foreground">
                     Unduh file <code className="rounded bg-muted px-1">.json</code> berisi
                     pengaturan tampilan Anda saat ini.
                   </p>
@@ -916,12 +916,12 @@ function PengaturanTampilanPage() {
               <button
                 type="button"
                 onClick={() => importInputRef.current?.click()}
-                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+                className="flex items-start gap-ms-3 rounded-md border p-ms-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
               >
                 <Upload className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
-                  <p className="text-sm font-semibold">Impor dari file</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-ms-sm font-semibold">Impor dari file</p>
+                  <p className="text-ms-2xs text-muted-foreground">
                     Pilih file hasil ekspor untuk memuatnya sebagai pratinjau.
                   </p>
                 </div>
@@ -930,12 +930,12 @@ function PengaturanTampilanPage() {
                 type="button"
                 data-testid="import-from-paste"
                 onClick={importFromPaste}
-                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+                className="flex items-start gap-ms-3 rounded-md border p-ms-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
               >
                 <ClipboardPaste className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
-                  <p className="text-sm font-semibold">Impor dari clipboard</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-ms-sm font-semibold">Impor dari clipboard</p>
+                  <p className="text-ms-2xs text-muted-foreground">
                     Tempel JSON pengaturan dari clipboard. Fallback prompt manual
                     jika izin clipboard tidak tersedia.
                   </p>
@@ -945,30 +945,30 @@ function PengaturanTampilanPage() {
                 type="button"
                 data-testid="import-from-url"
                 onClick={importFromUrl}
-                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+                className="flex items-start gap-ms-3 rounded-md border p-ms-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
               >
                 <Link2 className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
-                  <p className="text-sm font-semibold">Impor dari URL</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-ms-sm font-semibold">Impor dari URL</p>
+                  <p className="text-ms-2xs text-muted-foreground">
                     Ambil file JSON dari tautan <code className="rounded bg-muted px-1">https://…</code>{" "}
                     (dibatasi 10MB).
                   </p>
                 </div>
               </button>
             </div>
-            <p className="text-[11px] leading-snug text-muted-foreground">
+            <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
               Hasil impor hanya menimpa pratinjau di halaman ini — data akun, chat, dan
               gudang tidak terpengaruh. Tekan <span className="font-semibold text-foreground">Simpan</span>{" "}
               agar hasilnya diterapkan ke aplikasi.
             </p>
-            <div className="grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-ms-2 rounded-md border bg-muted/30 p-ms-3 sm:grid-cols-2">
               <div>
-                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                <p className="mb-1.5 flex items-center gap-1.5 text-ms-2xs font-semibold text-foreground">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                   Yang disimpan
                 </p>
-                <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
+                <ul className="space-y-1 text-ms-2xs leading-ms-snug text-muted-foreground">
                   {[
                     "Tema (terang / gelap / ikut sistem)",
                     "Aksen warna & radius sudut",
@@ -987,11 +987,11 @@ function PengaturanTampilanPage() {
                 </ul>
               </div>
               <div>
-                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                <p className="mb-1.5 flex items-center gap-1.5 text-ms-2xs font-semibold text-foreground">
                   <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                   Yang tidak disimpan
                 </p>
-                <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
+                <ul className="space-y-1 text-ms-2xs leading-ms-snug text-muted-foreground">
                   {[
                     "Akun, email, PIN & sesi login",
                     "Isi chat, kontak & lampiran",
@@ -1023,27 +1023,27 @@ function PengaturanTampilanPage() {
         {/* Tautan pengaturan lanjutan */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Pengaturan lain</CardTitle>
+            <CardTitle className="text-ms-base">Pengaturan lain</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <CardContent className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2">
             <Link
               to="/pengaturan-bahasa"
-              className="flex items-start gap-3 rounded-md border p-3 hover:bg-accent transition-transform active:scale-[0.98]"
+              className="flex items-start gap-ms-3 rounded-md border p-ms-3 hover:bg-accent transition-transform active:scale-[0.98]"
             >
               <Languages className="h-4 w-4 mt-0.5 text-primary" />
               <div>
-                <p className="text-sm font-semibold">Bahasa & format</p>
-                <p className="text-[11px] text-muted-foreground">Bahasa aplikasi, mata uang, format tanggal</p>
+                <p className="text-ms-sm font-semibold">Bahasa & format</p>
+                <p className="text-ms-2xs text-muted-foreground">Bahasa aplikasi, mata uang, format tanggal</p>
               </div>
             </Link>
             <Link
               to="/pengaturan-aksesibilitas"
-              className="flex items-start gap-3 rounded-md border p-3 hover:bg-accent transition-transform active:scale-[0.98]"
+              className="flex items-start gap-ms-3 rounded-md border p-ms-3 hover:bg-accent transition-transform active:scale-[0.98]"
             >
               <Accessibility className="h-4 w-4 mt-0.5 text-primary" />
               <div>
-                <p className="text-sm font-semibold">Aksesibilitas</p>
-                <p className="text-[11px] text-muted-foreground">Skala teks lanjutan & animasi</p>
+                <p className="text-ms-sm font-semibold">Aksesibilitas</p>
+                <p className="text-ms-2xs text-muted-foreground">Skala teks lanjutan & animasi</p>
               </div>
             </Link>
           </CardContent>
@@ -1063,11 +1063,11 @@ function PengaturanTampilanPage() {
         role="region"
         aria-label="Simpan pengaturan tampilan"
       >
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
-          <p className="text-xs text-muted-foreground">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-ms-2 px-ms-4 py-ms-3">
+          <p className="text-ms-xs text-muted-foreground">
             Ada perubahan belum disimpan. Tampilan aplikasi utama belum berubah.
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-ms-2">
             <Button variant="outline" size="sm" onClick={commitCancel}>
               <X className="mr-1.5 h-3.5 w-3.5" />
               Batalkan
