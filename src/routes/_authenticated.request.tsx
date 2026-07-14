@@ -88,6 +88,9 @@ function RequestPage() {
   const [loadError, setLoadError] = useState<LoadErr | null>(null);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
+  // Deep-link `send=1` dari Beranda (ReadyRequestSection). Buka dialog verifikasi
+  // penjualan otomatis pada paket aktif pertama — sekali saja, lalu dikonsumsi.
+  const [autoSendPending, setAutoSendPending] = useState<boolean>(search.send === "1");
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
