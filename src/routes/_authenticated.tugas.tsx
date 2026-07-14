@@ -544,8 +544,10 @@ function TugasPage() {
 
   async function removeTask(id: string) {
     if (!confirm("Hapus tugas ini? Semua foto kiriman juga ikut terhapus.")) return;
+    const target = tasks.find((x) => x.id === id);
     const { error } = await supabase.from("prep_tasks").delete().eq("id", id);
     if (error) return toast.error(error.message);
+    if (target?.share_token) forgetPin(target.share_token);
     toast.success("Tugas dihapus"); void load();
   }
 
