@@ -1466,6 +1466,9 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       }
       return toast.error(error.message);
     }
+    // Simpan PIN sebagai pengingat lokal di HP pemilik saja (localStorage).
+    // Tidak dikirim ke mana pun; verifikasi tetap via hash server-side.
+    rememberPin(token, pin);
     // Kumpulkan foto referensi tiap barang yang dipilih untuk dilampirkan ke WA.
     const photoFiles: File[] = [];
     const seen = new Set<string>();
