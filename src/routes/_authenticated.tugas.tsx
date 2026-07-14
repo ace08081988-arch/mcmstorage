@@ -198,8 +198,11 @@ function TokenStatusPanel({ tasks, loaded }: { tasks: Task[]; loaded: boolean })
     return tasks.map((t) => {
       const expiresMs = t.expires_at ? new Date(t.expires_at).getTime() : 0;
       const isExpired = expiresMs > 0 && expiresMs < now;
-      const isRevoked = t.status === "revoked" || t.status === "canceled";
-      const isValid = !isExpired && !isRevoked && t.status !== "completed";
+      // Enum status di DB (constraint prep_tasks_status_check):
+      // 'active' | 'done' | 'cancelled' | 'expired'. Jangan pakai label lama
+      // 'revoked' / 'canceled' / 'completed' — tidak akan pernah cocok.
+      const isRevoked = t.status === "cancelled" || t.status === "done";
+      const isValid = !isExpired && t.status === "active";
       const createdMs = new Date(t.created_at).getTime();
       const pinMs = t.pin_updated_at ? new Date(t.pin_updated_at).getTime() : createdMs;
       const pinChanged = pinMs - createdMs > 2000; // >2s dianggap perubahan nyata
@@ -318,7 +321,7 @@ function TokenStatusPanel({ tasks, loaded }: { tasks: Task[]; loaded: boolean })
           {filtered.map((r) => {
             const t = r.task;
             const statusLabel = r.isRevoked
-              ? (t.status === "completed" ? "Selesai" : "Dicabut")
+              ? (t.status === "done" ? "Selesai" : "Dicabut")
               : r.isExpired ? "Kedaluwarsa" : "Valid";
             const statusClass = r.isValid
               ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
