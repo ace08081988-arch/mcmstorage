@@ -56,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/request")({
   validateSearch: (s: Record<string, unknown>) => ({
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
+    send: s.send === "1" ? "1" as const : undefined,
   }),
   component: RequestPage,
 });
