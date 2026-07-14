@@ -1178,6 +1178,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const [phoneSuggestions, setPhoneSuggestions] = useState<
     Array<{ value: string; label: string; name: string; linkedUserId: string | null }>
   >([]);
+  const [contactsLoaded, setContactsLoaded] = useState(false);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1200,6 +1201,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         setPhoneSuggestions(list);
       } catch {
         // Diam-diam gagal — autocomplete hanyalah bantuan opsional.
+      } finally {
+        if (!cancelled) setContactsLoaded(true);
       }
     })();
     return () => {
