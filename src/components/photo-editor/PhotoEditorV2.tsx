@@ -14,7 +14,7 @@
  *   photo-editor-tool-pilih | -coret | -teks | -stiker | -panah | -kotak | -lingkaran
  *   Tombol: "Simpan", "Batal", "Coret", "Kotak", "Lingkaran", "Stiker", "Panah", "Teks", "Pilih"
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type Konva from "konva";
 import {
   Stage, Layer, Image as KImage, Line, Rect, Circle, Ellipse, Arrow, Text as KText, Group, Transformer,
