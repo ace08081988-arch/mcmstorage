@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { PhotoEditor } from "@/components/PhotoEditor";
+import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/PhotoEditorV2";
 import { displayUnit } from "@/lib/unit-label";
 import {
   UNIT_GROUPS,

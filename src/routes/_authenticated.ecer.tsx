@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensure-session";
-import { PhotoEditor } from "@/components/PhotoEditor";
+import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/PhotoEditorV2";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

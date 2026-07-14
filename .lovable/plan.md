@@ -1,83 +1,83 @@
-## Ruang lingkup
+## Latar
 
-"Premium++" diterjemahkan berdasarkan dua jawaban Anda:
+Editor foto saat ini (`src/components/PhotoEditor.tsx`, ±2010 baris) pakai kanvas 2D manual: rotasi hanya 90°, tanpa crop / filter / pinch-zoom modern, dan lag di HP low-end karena tiap gerakan re-draw seluruh layer.
 
-- **Publik** (landing, auth, worker portal `/portal`, `/tugas/[token]`): full Noir & Gold + DM Serif Display / Fira Sans. Palet override diizinkan.
-- **Operasional** (chat, ecer, gudang, tugas, pratinjau, dashboard, settings): warna TETAP ikut preset user di `/pengaturan-tampilan`. "Premium++" di sini artinya polish presentasi — tipografi heading, spacing, elevation/shadow, transisi mikro, refined states — TANPA menyentuh `:root` / `.dark` / `--primary` / `--mcm-brand`.
+Di repo sudah ada rangka `PhotoEditorV2` (react-konva) di `src/components/photo-editor/PhotoEditorV2.tsx` — sudah punya undo/redo, layer, sticker Lucide, dan autosave scene, tapi **hanya dipakai di route visual preview**. Tombol Crop di sana masih `disabled`, dan filter/brightness belum ada. Route asli yang dipakai pegawai/pemilik (`/t/$token`, `_authenticated.request`, `_authenticated.ecer`) semua masih pakai editor lama.
 
-Aturan non-negotiable (mengikuti guardrail Anda):
+Rombakan total = **pindah semua pemakaian ke V2**, tuntaskan fitur yang belum jadi di V2, lalu hapus editor lama. Empat prioritas Anda (interaksi lambat, toolbar kuno, crop/rotate terbatas, belum ada filter) langsung tercakup karena V2 pakai engine react-konva (GPU-cached layer, gesture bawaan Konva) dan strukturnya siap ditambahi crop + filter.
 
-1. Tidak menimpa token warna operasional. Semua polish operasional lewat utility opt-in (`text-premium-heading`, `shadow-elevate`, dll.), bukan override `:root`.
-2. Setiap slice diverifikasi di 411px sebelum lanjut. Tidak ada auto-lanjut karena tsc/build hijau.
-3. Tidak ada state implisit — motion & shadow diberi `prefers-reduced-motion` fallback dan mengikuti `ReduceMotionToggle` yang sudah ada.
-4. Tidak menyentuh: `client.ts`, `.env`, `routeTree.gen.ts`, `supabase/config.toml`, `auth-*` generated, schema `auth/storage/realtime/vault`.
+## Rencana per slice (auditable)
 
-## Urutan slice (Anda tolak/lanjut per slice)
+### Slice 1 · Toolbar & interaksi modern (aman, tanpa hilang fitur)
+Tujuan: rasa "jadul" hilang meski fitur belum bertambah.
 
-Sesuai jawaban high-traffic dulu:
+- Redesain toolbar V2 jadi bar bawah glass gelap (semi-transparan `bg-background/70 backdrop-blur-xl`) + tombol besar tap-target 44px, ikon Lucide konsisten. Tetap pakai token semantik, bukan warna hardcode.
+- Panel warna & slider dipindah ke bottom-sheet yang muncul saat tool aktif — sekali swipe untuk sembunyikan, tidak menutupi kanvas.
+- Pinch zoom & pan dua jari: pakai `Konva.Stage` gesture (sudah didukung), tambah batas zoom 0.5×–4×, snap ke 1× saat mendekati, dan momentum pan.
+- Perf: aktifkan `Konva.Layer.cache()` untuk foto dasar + `hitGraphEnabled=false` pada layer overlay saat menggambar → tidak ada full re-raster saat pointermove.
+- Undo/redo per-stroke tetap; tambah tombol "Reset" di header.
+- Ganti panggilan `PhotoEditor` → `PhotoEditorV2` di 3 route asli (`t.$token`, `_authenticated.request`, `_authenticated.ecer`) + route preview visual, kirim `autosaveKey` yang stabil per konteks (mis. `prep:${itemId}`) supaya draft edit tetap aman.
 
-```text
-Slice 0  Fondasi tokens polish (utility premium, opsional font-display DM Serif untuk heading operasional, load font via <link>)
-Slice 1  Chat        — hub kerja utama Anda
-Slice 2  Ecer        — dashboard order & WA mirror
-Slice 3  Gudang      — list produk & konversi
-Slice 4  Tugas + Pratinjau
-Slice 5  Publik full Noir & Gold (auth, /portal, /tugas/[token] worker)
-Slice 6  Dashboard + Settings sisanya
-```
+Tes cepat: buka `/t/$token` di preview 411px, coba coret + rotate + save → foto ter-upload sama seperti dulu.
 
-Slice 5 sengaja tidak di depan karena landing sudah Noir & Gold (memori proyek). Kalau ternyata halaman auth/portal masih generik, Anda bisa minta saya angkat Slice 5 ke depan.
+### Slice 2 · Filter & auto-enhance
+Tujuan: foto barang gudang cepat cerah/jelas.
 
-## Slice 0 — Fondasi (dikerjakan pertama)
+- Tambah state `adjust` di scene: `{ brightness: 0, contrast: 0, saturation: 0 }` (semua −1..+1, default 0). Terapkan lewat `Konva.Filters.Brighten` + `HueSaturation` di layer foto dasar (perlu `image.cache()` + `image.filters([...])`).
+- Preset filter (satu tap):
+  - **Asli** (0/0/0)
+  - **Terang** (+0.15 / +0.1 / 0) — foto gudang gelap
+  - **Toko** (+0.05 / +0.15 / +0.15) — warna produk pop
+  - **Auto** — hitung dari histogram luminance (mean → target 0.5) di worker kecil offscreen
+  - **B/W** — saturation −1
+- Panel adjust modal bottom-sheet: 3 slider + bar preset di atas. Live preview via Konva filter (bukan CSS `filter:` — supaya konsisten dengan hasil export).
+- Simpan `adjust` & preset ke scene JSON (autosave tetap jalan). Compat: scene lama tanpa field ini di-treat sebagai default.
+- Ekspor tetap lewat `stage.toCanvas()` → filter sudah baked in.
 
-Yang saya ubah:
+### Slice 3 · Crop preset + rotate halus + flip
+Tujuan: framing foto beres tanpa app luar.
 
-- `src/routes/__root.tsx`: tambah `<link rel="preconnect">` + stylesheet `DM Serif Display` (400) + `Fira Sans` (400,500,600). Tidak sentuh `<head>` metadata lain.
-- `src/styles.css`:
-  - Tambah token `--font-display: "DM Serif Display", ui-serif, Georgia, serif;` dan `--font-body: "Fira Sans", ui-sans-serif, system-ui, ...;` di `@theme inline`.
-  - Tambah token `--shadow-elevate`, `--shadow-elevate-lg`, `--gradient-gold` (khusus scope publik, prefixed `--public-*`).
-  - Tambah `@utility text-premium-heading`, `@utility shadow-elevate`, `@utility surface-elevated` — semua opt-in, tidak mengubah default.
-  - Tambah `@custom-variant` untuk gate reduce-motion.
-- `src/lib/premium-typography.ts` (baru): helper class `cn`-friendly untuk heading operasional supaya konsisten.
+- Aktifkan tool `crop`: tampilkan overlay grid rule-of-thirds di atas foto dasar, sudut+sisi handle drag.
+- Aspect ratio chips: **Bebas · 1:1 · 4:5 · 4:3 · 16:9** (Toko biasanya 1:1 & 4:5 untuk katalog). Saat preset dipilih, box crop di-constrain proporsional.
+- Rotate slider −45°..+45° (halus) selain tombol ±90° yang sudah ada. Preview real-time; commit saat lepas.
+- Flip H / Flip V tombol terpisah (tidak lewat scale negatif — pakai field `flipH/flipV` yang sudah ada di scene).
+- Commit crop: update `scene.width/height` & offset semua object supaya koordinat tetap benar (translate). Reversible via undo.
 
-Yang TIDAK berubah di Slice 0:
+### Slice 4 · Anotasi finishing
+Tujuan: anotasi terasa halus, bukan MSPaint.
 
-- Semua nilai `--background`, `--primary`, `--accent`, `--mcm-brand` di `:root` dan `.dark`.
-- Semua preset di `/pengaturan-tampilan`.
-- Semua komponen — mereka belum consume utility baru.
+- Panah baru: kepala anak-panah tapered (bukan segitiga polos), shadow tipis untuk kontras di foto terang.
+- Teks: chip background opsional (rounded-lg, semi-transparan) supaya terbaca di foto ramai — toggle di panel teks.
+- Blur/mosaic brush kecil (Konva `Filter.Blur` di path draw) untuk sensor plat/nomor pelanggan.
+- Semua stroke di-render dengan `lineCap: round, lineJoin: round, tension: 0.4` (sudah default) — pastikan tetap konsisten di crop.
 
-Verifikasi Slice 0:
+### Slice 5 · Bersih-bersih
+- Hapus `src/components/PhotoEditor.tsx` + `PhotoEditor.hittest.test.ts` setelah 4 slice pertama Anda approve di HP 411px.
+- Tulis test unit tipis untuk `adjust` preset & crop coord math di `photo-editor/engine`.
+- Update dokumen `docs/` kalau ada referensi ke editor lama.
 
-- `tsgo --noEmit` bersih.
-- Halaman apa pun harus render identik dengan sebelumnya (utility opt-in, belum dipakai).
-- Anda buka `/pengaturan-tampilan`, ganti preset warna: harus tetap berfungsi.
-- Screenshot 411px halaman index & satu operasional (chat) sebelum/sesudah: pixel-diff nol di area yang belum di-adopt.
+## Cakupan yang **tidak** disentuh
+- Alur upload / kompresi (`src/lib/prep.ts`, `prep-image-compress.ts`) — tetap. Blob yang keluar dari V2 format sama.
+- Kontrak `onSave(blob, dataUrl, sceneJson?)` — tetap. Semua pemanggil existing tidak berubah.
+- Server function / RPC / storage bucket — tidak berubah.
 
-## Slice 1..N — polish per rute
+## Verifikasi
 
-Template polish per rute (dijalankan setelah Slice 0 approved):
+Setelah tiap slice:
+1. `bunx tsgo --noEmit` — hard build gate.
+2. Manual di preview 411px CSS px: coret + rotate + crop + save → foto muncul di dashboard pemilik dengan hasil identik yang di-preview.
+3. Setelah slice 2 & 3: bandingkan foto sebelum/sesudah preset "Terang" di 3 foto contoh gudang.
+4. Anda uji di HP fisik (411 & 390) sebelum saya lanjut ke slice berikutnya — tidak self-approve.
 
-- PageHeader → font-display untuk judul, tracking-tight, ukuran naik satu step di 411px.
-- Kartu utama → `surface-elevated` (border tipis + `shadow-elevate`), radius `--ms-radius-card` konsisten.
-- CTA primer → keep bg-primary (preset user), tambah shadow inset + hover translate-y-[-1px] dengan reduce-motion fallback.
-- Empty states → serif display + body Fira Sans, no illustration change.
-- Divider & chip → refined dengan `color-mix` sedikit lebih pekat di `.dark`.
+## Estimasi ukuran
 
-Setiap slice mengubah maksimum 3–5 file, ada test snapshot 411px di rute yang bersangkutan (kalau belum ada, saya buat baru — sesuai pola `viewport-snapshots` yang sudah ada di `src/routes/__snapshots__/`).
+- Slice 1: ±200 baris edit V2 + 4 route swap (±20 baris/route).
+- Slice 2: ±150 baris (adjust panel + filter pipe).
+- Slice 3: ±250 baris (crop overlay + math).
+- Slice 4: ±120 baris.
+- Slice 5: hapus ~2010 baris editor lama.
 
-## Verifikasi wajib setiap slice
+Total tambah bersih ≈ −1200 baris (editor lama lebih besar dari V2 baru gabungan).
 
-1. `tsgo --noEmit` + `vitest run` (test yang terkait).
-2. Snapshot 411px + 390px + 320px (matriks Anda) — diff visual di-review.
-3. Preset warna default dan satu preset non-default masih render benar (mencegah token bocor).
-4. Reduce-motion aktif → tidak ada translate/scale.
-5. Anda approve on-device sebelum saya lanjut ke slice berikutnya.
-
-## Yang eksplisit BUKAN bagian dari rencana ini
-
-- Perubahan business logic apa pun (Lunas, Sudah Dikirim, RLS, WA send flow).
-- Perubahan schema DB atau RLS.
-- Rilis Android/iOS build baru.
-- Menyentuh preset warna user yang sudah ada.
-
-Kalau plan ini OK, saya mulai Slice 0 (fondasi) dulu — kecil, reversible, tidak mengubah tampilan apa pun sampai slice berikut mengadopsi utility-nya.
+## Setelah Anda setujui
+Saya mulai **Slice 1 saja**. Setelah Anda cek di HP dan bilang OK, baru lanjut Slice 2. Tidak ada slice yang saya kerjakan di depan.
