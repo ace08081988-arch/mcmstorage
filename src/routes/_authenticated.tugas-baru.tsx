@@ -23,13 +23,20 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/tugas-baru")({
-  validateSearch: (search: Record<string, unknown>): { title_id?: string } => {
-    const t = typeof search.title_id === "string" ? search.title_id.trim() : "";
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { title_id?: string; title_id_invalid?: true } => {
+    // Param sama sekali tidak dikirim → form manual biasa, bukan fallback.
+    if (!("title_id" in search) || search.title_id == null) return {};
+    const raw = typeof search.title_id === "string" ? search.title_id.trim() : "";
     // Guard: hanya UUID v4-ish yang diteruskan supaya tidak bocor payload liar.
-    if (t && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) {
-      return { title_id: t };
+    if (raw && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) {
+      return { title_id: raw };
     }
-    return {};
+    // Param dikirim tapi bukan UUID valid (atau kosong) → tandai supaya UI
+    // bisa menampilkan fallback + arah balik ke /ecer, bukan diam-diam
+    // menerima bentuk form kosong yang membingungkan owner.
+    return { title_id_invalid: true };
   },
   head: () => ({
     meta: [
@@ -535,17 +542,47 @@ function TugasBaruForm() {
   // dan (b) form masih dalam kondisi kosong bawaan.
   const searchParams = Route.useSearch();
   const prefillTitleId = searchParams.title_id ?? null;
+  const prefillTitleIdInvalid = searchParams.title_id_invalid === true;
   const prefillConsumedRef = useRef(false);
   const [prefillInfo, setPrefillInfo] = useState<{
     name: string; qty: string; unit: string; linkedWid: boolean;
   } | null>(null);
+  /**
+   * Fallback ketika deep-link membawa `title_id` yang tidak bisa dipakai:
+   *   - "invalid":   param dikirim tapi bukan UUID (sudah dijaring
+   *                  `validateSearch` → flag `title_id_invalid`).
+   *   - "not_found": param UUID sah, tapi tidak ada judul ecer yang cocok
+   *                  (mungkin sudah dihapus / bukan milik user).
+   * Kita TIDAK mengalihkan otomatis karena owner masih bisa mengisi form
+   * manual; alih-alih tampilkan banner + toast + link kembali ke /ecer.
+   */
+  const [prefillFallback, setPrefillFallback] = useState<
+    { reason: "invalid" | "not_found" } | null
+  >(null);
+  const invalidToastRef = useRef(false);
+  useEffect(() => {
+    if (!prefillTitleIdInvalid) return;
+    if (invalidToastRef.current) return;
+    invalidToastRef.current = true;
+    setPrefillFallback({ reason: "invalid" });
+    toast.warning("Link judul ecer tidak valid", {
+      description: "Form dibuka manual. Kembali ke halaman Ecer untuk memilih judul.",
+    });
+  }, [prefillTitleIdInvalid]);
   useEffect(() => {
     if (prefillConsumedRef.current) return;
     if (!prefillTitleId) return;
     if (initialRef.current) return; // draft menang
     if (titles.length === 0) return; // tunggu titles siap
     const t = titles.find((x) => x.id === prefillTitleId);
-    if (!t) { prefillConsumedRef.current = true; return; }
+    if (!t) {
+      prefillConsumedRef.current = true;
+      setPrefillFallback({ reason: "not_found" });
+      toast.warning("Judul ecer tidak ditemukan", {
+        description: "Mungkin sudah dihapus. Form dibuka manual — pilih judul lain di halaman Ecer.",
+      });
+      return;
+    }
     // Hanya prefill jika form masih blanko (1 baris kosong bawaan).
     const blank = rows.length === 1 && rows[0]?.name === "" && rows[0]?.title_id === "";
     if (!blank) { prefillConsumedRef.current = true; return; }
@@ -966,6 +1003,34 @@ function TugasBaruForm() {
                 onClick={() => setPrefillInfo(null)}
                 className="shrink-0 rounded border border-sky-600/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-sky-600/10"
                 aria-label="Tutup ringkasan prefill"
+              >
+                Tutup
+              </button>
+            </div>
+          ) : null}
+          {prefillFallback ? (
+            <div
+              role="status"
+              aria-live="polite"
+              data-testid="tugas-baru-prefill-fallback"
+              data-reason={prefillFallback.reason}
+              className="flex items-start justify-between gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-2xs text-amber-900 dark:text-amber-200"
+            >
+              <span className="min-w-0">
+                {prefillFallback.reason === "invalid"
+                  ? "Link tidak menyertakan judul ecer yang valid."
+                  : "Judul ecer dari link tidak ditemukan (mungkin sudah dihapus)."}
+                {" "}Form dibuka manual — Anda tetap bisa membuat tugas, atau{" "}
+                <Link to="/ecer" className="underline underline-offset-2 font-medium">
+                  kembali ke Ecer
+                </Link>{" "}
+                untuk memilih judul.
+              </span>
+              <button
+                type="button"
+                onClick={() => setPrefillFallback(null)}
+                className="shrink-0 rounded border border-amber-600/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-amber-600/10"
+                aria-label="Tutup peringatan judul ecer"
               >
                 Tutup
               </button>
