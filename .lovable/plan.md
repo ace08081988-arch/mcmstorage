@@ -1,73 +1,83 @@
+## Ruang lingkup
 
-## Ringkasan Audit
+"Premium++" diterjemahkan berdasarkan dua jawaban Anda:
 
-203 file di `src/` (di luar `routeTree.gen.ts`, `src/integrations/**`, `src/components/ui/**`) memakai kelas typography/spacing lama.
+- **Publik** (landing, auth, worker portal `/portal`, `/tugas/[token]`): full Noir & Gold + DM Serif Display / Fira Sans. Palet override diizinkan.
+- **Operasional** (chat, ecer, gudang, tugas, pratinjau, dashboard, settings): warna TETAP ikut preset user di `/pengaturan-tampilan`. "Premium++" di sini artinya polish presentasi — tipografi heading, spacing, elevation/shadow, transisi mikro, refined states — TANPA menyentuh `:root` / `.dark` / `--primary` / `--mcm-brand`.
 
-Total kejadian yang akan diganti:
+Aturan non-negotiable (mengikuti guardrail Anda):
+
+1. Tidak menimpa token warna operasional. Semua polish operasional lewat utility opt-in (`text-premium-heading`, `shadow-elevate`, dll.), bukan override `:root`.
+2. Setiap slice diverifikasi di 411px sebelum lanjut. Tidak ada auto-lanjut karena tsc/build hijau.
+3. Tidak ada state implisit — motion & shadow diberi `prefers-reduced-motion` fallback dan mengikuti `ReduceMotionToggle` yang sudah ada.
+4. Tidak menyentuh: `client.ts`, `.env`, `routeTree.gen.ts`, `supabase/config.toml`, `auth-*` generated, schema `auth/storage/realtime/vault`.
+
+## Urutan slice (Anda tolak/lanjut per slice)
+
+Sesuai jawaban high-traffic dulu:
 
 ```text
-Typography px (bypass font-scale — prioritas tinggi)
-  text-[10px]     426
-  text-[11px]     874
-  text-[12px]      45
-  text-[13px]      12
-  text-[15px]       6
-Typography Tailwind (aman, mapping 1:1 ke --ms-*)
-  text-xs  981   text-sm  724   text-base 146
-  text-lg   83   text-xl   33   text-2xl   35
-  text-3xl  16   text-4xl   6
-Spacing (mapping 1:1)
-  space-y-{1..6}, gap-{1..6}, p/px/py-{2..6}   ~5 800
+Slice 0  Fondasi tokens polish (utility premium, opsional font-display DM Serif untuk heading operasional, load font via <link>)
+Slice 1  Chat        — hub kerja utama Anda
+Slice 2  Ecer        — dashboard order & WA mirror
+Slice 3  Gudang      — list produk & konversi
+Slice 4  Tugas + Pratinjau
+Slice 5  Publik full Noir & Gold (auth, /portal, /tugas/[token] worker)
+Slice 6  Dashboard + Settings sisanya
 ```
 
-## Mapping yang Diterapkan
+Slice 5 sengaja tidak di depan karena landing sudah Noir & Gold (memori proyek). Kalau ternyata halaman auth/portal masih generik, Anda bisa minta saya angkat Slice 5 ke depan.
 
-Text (px → token, semua rem-based sehingga ikut `--app-font-size`):
-```text
-text-[10px] text-[11px]        → text-ms-2xs   (0.6875rem/11px)
-text-[12px]                    → text-ms-xs
-text-[13px]                    → text-ms-sm
-text-[15px]                    → text-ms-base
-text-xs  → text-ms-xs          text-sm → text-ms-sm
-text-base→ text-ms-base        text-lg → text-ms-lg
-text-xl  → text-ms-xl          text-2xl→ text-ms-2xl
-text-3xl → text-ms-3xl         text-4xl→ text-ms-4xl
-```
+## Slice 0 — Fondasi (dikerjakan pertama)
 
-Spacing (mapping 1:1; utility hanya tersedia untuk `p/px/py`, `gap`, `space-y`, tidak untuk `pt/pb/pl/pr/mt/mb` — arahan itu **tidak diubah**):
-```text
-space-y-N  → space-ms-N   (N ∈ 2..6; space-y-1 dilewati — tidak ada token)
-gap-N      → gap-ms-N     (N ∈ 1..6)
-p-N        → p-ms-N       (N ∈ 1..6)
-px-N       → px-ms-N      (N ∈ 2..6)
-py-N       → py-ms-N      (N ∈ 2..6)
-```
+Yang saya ubah:
 
-## Pengaman
+- `src/routes/__root.tsx`: tambah `<link rel="preconnect">` + stylesheet `DM Serif Display` (400) + `Fira Sans` (400,500,600). Tidak sentuh `<head>` metadata lain.
+- `src/styles.css`:
+  - Tambah token `--font-display: "DM Serif Display", ui-serif, Georgia, serif;` dan `--font-body: "Fira Sans", ui-sans-serif, system-ui, ...;` di `@theme inline`.
+  - Tambah token `--shadow-elevate`, `--shadow-elevate-lg`, `--gradient-gold` (khusus scope publik, prefixed `--public-*`).
+  - Tambah `@utility text-premium-heading`, `@utility shadow-elevate`, `@utility surface-elevated` — semua opt-in, tidak mengubah default.
+  - Tambah `@custom-variant` untuk gate reduce-motion.
+- `src/lib/premium-typography.ts` (baru): helper class `cn`-friendly untuk heading operasional supaya konsisten.
 
-1. Regex word-boundary: `text-muted-foreground`, `bg-primary/50`, `gap-x-2`, `space-y-reverse`, dll. tidak akan ikut terganti.
-2. Direktori yang **dilewati**: `src/routeTree.gen.ts`, `src/integrations/**` (auto-gen Cloud), `src/components/ui/**` (shadcn primitives — biarkan generic).
-3. `text-[14px]`, `text-[16px]`, `text-[18px]`, `text-[20px]` tidak ada di codebase → tidak ada mapping tebakan.
-4. Ukuran px non-standar (mis. `text-[9px]`, `text-[17px]`) — akan dilaporkan setelah run tanpa diubah, untuk keputusan manual.
-5. Setelah migrasi: `tsgo --noEmit` untuk memastikan tidak ada regresi tipe/import.
+Yang TIDAK berubah di Slice 0:
 
-## Yang Sengaja Tidak Diubah
+- Semua nilai `--background`, `--primary`, `--accent`, `--mcm-brand` di `:root` dan `.dark`.
+- Semua preset di `/pengaturan-tampilan`.
+- Semua komponen — mereka belum consume utility baru.
 
-- Directional padding/margin (`pt-*`, `pb-*`, `pl-*`, `pr-*`, `mt-*`, `mb-*`) — tidak ada token utility yang cocok; menambahkannya akan menambah scope. Sebutkan bila ingin dibuatkan `pt-ms-*` dst. sekaligus.
-- `space-y-1` (221x) — tidak ada `space-ms-1`; dibiarkan.
-- Nilai `rem` custom (`text-[0.6875rem]`) dari migrasi sebelumnya — sudah setara token; tidak diusik.
-- Kelas di dalam `src/components/ui/**` (shadcn) — di-freeze agar update shadcn tetap smooth.
+Verifikasi Slice 0:
 
-## Rencana Eksekusi
+- `tsgo --noEmit` bersih.
+- Halaman apa pun harus render identik dengan sebelumnya (utility opt-in, belum dipakai).
+- Anda buka `/pengaturan-tampilan`, ganti preset warna: harus tetap berfungsi.
+- Screenshot 411px halaman index & satu operasional (chat) sebelum/sesudah: pixel-diff nol di area yang belum di-adopt.
 
-1. Jalankan sed word-boundary sekali jalan untuk seluruh mapping di atas (satu file per pass agar diff kecil-per-file).
-2. Jalankan `bunx tsgo --noEmit`.
-3. Laporkan: jumlah file berubah, sisa `text-[Npx]` non-standar, dan file-file dengan volume perubahan terbesar untuk pemeriksaan on-device 411/390px prioritas.
+## Slice 1..N — polish per rute
 
-## Yang Perlu Konfirmasi
+Template polish per rute (dijalankan setelah Slice 0 approved):
 
-Migrasi ini menyentuh ~203 file dan ~10 000 kelas — cakupan besar dan visual dari **semua halaman** akan bergantung pada token `--ms-*`. Konfirmasi:
+- PageHeader → font-display untuk judul, tracking-tight, ukuran naik satu step di 411px.
+- Kartu utama → `surface-elevated` (border tipis + `shadow-elevate`), radius `--ms-radius-card` konsisten.
+- CTA primer → keep bg-primary (preset user), tambah shadow inset + hover translate-y-[-1px] dengan reduce-motion fallback.
+- Empty states → serif display + body Fira Sans, no illustration change.
+- Divider & chip → refined dengan `color-mix` sedikit lebih pekat di `.dark`.
 
-- **Setujui mapping di atas** → saya jalankan otomatis dan laporkan hasilnya.
-- Atau minta saya **tambahkan token directional (`pt-ms-*` dst.) dulu** supaya `pt-3`, `mb-4`, dll. ikut termigrasi dalam pass yang sama.
-- Atau minta saya **mulai dari subset prioritas** (mis. hanya `text-[10px]` / `text-[11px]` yang bypass font-scale, lalu sisanya di pass berikutnya).
+Setiap slice mengubah maksimum 3–5 file, ada test snapshot 411px di rute yang bersangkutan (kalau belum ada, saya buat baru — sesuai pola `viewport-snapshots` yang sudah ada di `src/routes/__snapshots__/`).
+
+## Verifikasi wajib setiap slice
+
+1. `tsgo --noEmit` + `vitest run` (test yang terkait).
+2. Snapshot 411px + 390px + 320px (matriks Anda) — diff visual di-review.
+3. Preset warna default dan satu preset non-default masih render benar (mencegah token bocor).
+4. Reduce-motion aktif → tidak ada translate/scale.
+5. Anda approve on-device sebelum saya lanjut ke slice berikutnya.
+
+## Yang eksplisit BUKAN bagian dari rencana ini
+
+- Perubahan business logic apa pun (Lunas, Sudah Dikirim, RLS, WA send flow).
+- Perubahan schema DB atau RLS.
+- Rilis Android/iOS build baru.
+- Menyentuh preset warna user yang sudah ada.
+
+Kalau plan ini OK, saya mulai Slice 0 (fondasi) dulu — kecil, reversible, tidak mengubah tampilan apa pun sampai slice berikut mengadopsi utility-nya.
