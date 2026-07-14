@@ -1479,7 +1479,7 @@ function SendPrepLinkDialog({
 }
 
 function TitleDetailView({
-  title, warehouseItems, titleItems, onBack, onChanged, autoOpenSend, onConsumeAutoOpenSend,
+  title, warehouseItems, titleItems, onBack, onChanged, autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend,
 }: {
   title: RequestTitle;
   warehouseItems: WarehouseItem[];
@@ -1487,6 +1487,7 @@ function TitleDetailView({
   onBack: () => void;
   onChanged: () => void;
   autoOpenSend?: boolean;
+  autoOpenSendChannel?: "whatsapp" | "chat";
   onConsumeAutoOpenSend?: () => void;
 }) {
   const [preps, setPreps] = useState<RequestPreparation[]>([]);
@@ -1603,6 +1604,7 @@ function TitleDetailView({
             return load();
           }}
           autoOpenSend={autoOpenSend}
+          autoOpenSendChannel={autoOpenSendChannel}
           onConsumeAutoOpenSend={onConsumeAutoOpenSend}
         />
       )}
