@@ -222,7 +222,7 @@ function SummaryCard({
           {loading ? (
             <div className="mt-2 h-6 w-12 animate-pulse rounded bg-muted md:h-7 md:w-16" />
           ) : (
-            <p className="mt-1 text-ms-xl font-semibold tabular-nums md:text-ms-2xl">
+            <p className="mt-1 truncate text-ms-xl font-semibold tabular-nums md:text-ms-2xl">
               {value.toLocaleString("id-ID")}
             </p>
           )}
