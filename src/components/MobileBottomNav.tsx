@@ -74,7 +74,7 @@ export function MobileBottomNav() {
           )}
           style={{
             width: `calc((100% - 0.5rem) / ${slotCount})`,
-            transform: `translateX(calc(0.25rem + ${Math.max(activeIndex, 0)} * (100% + (0.5rem / ${slotCount - 1}))))`,
+            transform: `translateX(calc(0.25rem + ${Math.max(activeIndex, 0)} * 100%))`,
             background:
               "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent), color-mix(in oklab, var(--primary) 8%, transparent))",
             boxShadow:
