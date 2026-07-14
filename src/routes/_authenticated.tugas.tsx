@@ -1172,6 +1172,40 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // Saran otomatis nomor pegawai dari buku alamat (address_book).
+  // Ditarik sekali saat dialog dibuka; native <datalist> memberi pengalaman
+  // autocomplete yang mulus di keyboard Android/iOS tanpa perlu library.
+  const [phoneSuggestions, setPhoneSuggestions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await fetchAddressBook();
+        if (cancelled) return;
+        const seen = new Set<string>();
+        const list: Array<{ value: string; label: string }> = [];
+        for (const r of rows as AddressBookRow[]) {
+          const norm = r.phone_norm ?? normalizePhone(r.phone);
+          if (!norm) continue;
+          // Format 628xxx (bukan +62 / 08) supaya konsisten dgn input.
+          const value = norm.startsWith("+") ? norm.slice(1) : norm;
+          if (!value || seen.has(value)) continue;
+          seen.add(value);
+          list.push({ value, label: r.name || value });
+        }
+        list.sort((a, b) => a.label.localeCompare(b.label));
+        setPhoneSuggestions(list);
+      } catch {
+        // Diam-diam gagal — autocomplete hanyalah bantuan opsional.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Auto-persist draf tiap kali field berubah. sessionStorage-scoped: hilang
   // saat tab ditutup, tapi tahan reload di tab yang sama.
   useEffect(() => {
