@@ -1589,6 +1589,8 @@ function TitleDetailView({
             onChanged();
             return load();
           }}
+          autoOpenSend={autoOpenSend}
+          onConsumeAutoOpenSend={onConsumeAutoOpenSend}
         />
       )}
 
