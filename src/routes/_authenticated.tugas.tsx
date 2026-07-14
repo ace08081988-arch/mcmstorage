@@ -1179,6 +1179,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     Array<{ value: string; label: string; name: string; linkedUserId: string | null }>
   >([]);
   const [contactsLoaded, setContactsLoaded] = useState(false);
+  const [phoneFocused, setPhoneFocused] = useState(false);
+  const [phoneHighlight, setPhoneHighlight] = useState(0);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1244,6 +1246,32 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     }
     return { ok: true as const, error: null as string | null };
   }, [phone, phoneSuggestions, contactsLoaded]);
+
+  // Kandidat kontak yang cocok dengan yang diketik. Cocok jika substring
+  // digit ada di nomor ATAU substring (case-insensitive) ada di nama.
+  // Dropdown hanya muncul kalau ada input & ada hasil & belum exact match.
+  const phoneMatches = useMemo(() => {
+    const raw = phone.trim();
+    const digits = raw.replace(/\D/g, "");
+    if (!raw) return [] as typeof phoneSuggestions;
+    const q = raw.toLowerCase();
+    const list = phoneSuggestions.filter((s) => {
+      if (digits && s.value.includes(digits)) return true;
+      if (s.name.toLowerCase().includes(q)) return true;
+      return false;
+    });
+    return list.slice(0, 8);
+  }, [phone, phoneSuggestions]);
+  const phoneExactMatch = useMemo(() => {
+    const cleaned = phone.replace(/\D/g, "");
+    if (!cleaned) return false;
+    return phoneSuggestions.some((s) => s.value === cleaned);
+  }, [phone, phoneSuggestions]);
+  const showPhoneDropdown =
+    phoneFocused && phoneMatches.length > 0 && !phoneExactMatch;
+  useEffect(() => {
+    setPhoneHighlight(0);
+  }, [phone]);
 
   function requestClose() {
     if (hasContent) {
