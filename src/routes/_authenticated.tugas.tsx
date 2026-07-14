@@ -1568,26 +1568,61 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
           <button onClick={() => setPin(genPin())} className="h-10 rounded-md border px-ms-3 text-ms-xs">Acak</button>
         </div>
 
-        <label className="block">
+        <label className="block relative">
           <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor MCM / HP pegawai (opsional, contoh: 6281234567890 — harus dari kontak tersimpan)</div>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, "").slice(0, 16))}
             placeholder="62812xxxxxxx"
             inputMode="tel"
-            list="prep-phone-suggestions"
             autoComplete="tel"
+            onFocus={() => setPhoneFocused(true)}
+            onBlur={() => { setTimeout(() => setPhoneFocused(false), 120); }}
+            onKeyDown={(e) => {
+              if (!showPhoneDropdown) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setPhoneHighlight((h) => Math.min(h + 1, phoneMatches.length - 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setPhoneHighlight((h) => Math.max(h - 1, 0));
+              } else if (e.key === "Enter") {
+                const m = phoneMatches[phoneHighlight];
+                if (m) { e.preventDefault(); setPhone(m.value); setPhoneFocused(false); }
+              } else if (e.key === "Escape") {
+                setPhoneFocused(false);
+              }
+            }}
             aria-invalid={!phoneValidation.ok}
             className={`h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums ${
               !phoneValidation.ok ? "border-destructive ring-1 ring-destructive/40" : ""
             }`}
           />
-          {phoneSuggestions.length > 0 && (
-            <datalist id="prep-phone-suggestions">
-              {phoneSuggestions.map((s) => (
-                <option key={s.value} value={s.value} label={s.label} />
+          {showPhoneDropdown && (
+            <div
+              role="listbox"
+              className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-md border bg-popover shadow-lg"
+            >
+              {phoneMatches.map((m, i) => (
+                <button
+                  type="button"
+                  key={m.value}
+                  role="option"
+                  aria-selected={i === phoneHighlight}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { setPhone(m.value); setPhoneFocused(false); }}
+                  onMouseEnter={() => setPhoneHighlight(i)}
+                  className={`flex w-full items-center justify-between gap-ms-2 px-ms-2 py-1.5 text-left text-ms-sm ${
+                    i === phoneHighlight ? "bg-accent" : "hover:bg-accent/60"
+                  }`}
+                >
+                  <span className="min-w-0 flex-1 truncate font-medium">{m.name}</span>
+                  <span className="shrink-0 font-mono text-ms-2xs tabular-nums text-muted-foreground">
+                    {m.value}
+                  </span>
+                </button>
               ))}
-            </datalist>
+            </div>
           )}
           {(() => {
             if (!phoneValidation.ok) {
