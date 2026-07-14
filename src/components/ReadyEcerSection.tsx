@@ -91,6 +91,10 @@ type SyncStatus = {
 
 export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  // Navigasi bulk WA/Chat wajib lewat halaman /ecer supaya alur pembayaran
+  // (Lunas/Hutang/Bayar sebagian) tetap dipanggil sebelum WA/Chat benar-
+  // benar terkirim. Sama seperti tombol per-kartu "Kirim ke pembeli".
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>(() => {
     if (typeof window === "undefined") return "all";
@@ -735,25 +739,41 @@ export function ReadyEcerSection() {
           busy={bulkBusy}
           onBulkWA={async () => {
             if (selectedIds.size === 0) return;
-            setBulkBusy("wa");
-            try {
-              const ids = [...selectedIds];
-              for (const id of ids) {
-                await new Promise<void>((resolve) => {
-                  const handler = () => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); };
-                  window.addEventListener(`ecer-bulk-done:${id}`, handler);
-                  window.dispatchEvent(new CustomEvent(`ecer-bulk:wa:${id}`));
-                  // safety timeout
-                  setTimeout(() => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); }, 60000);
-                });
-              }
-            } finally {
-              setBulkBusy(null);
-              setSelectedIds(new Set());
-              setSelectMode(false);
+            // WA/Chat bulk lama mengirim langsung tanpa lewat verifikasi
+            // pembayaran. Sekarang disamakan dengan alur Siapkan Sendiri &
+            // tombol per-kartu: WAJIB satu judul, lalu diarahkan ke /ecer
+            // dengan `send=1` supaya SendEcerPrepsDialog terbuka dan owner
+            // mengisi metode bayar sebelum WA benar-benar terkirim.
+            if (selectedIds.size > 1) {
+              toast.info("Kirim ke pembeli hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
+              return;
             }
+            const id = [...selectedIds][0];
+            const row = (rows ?? []).find((r) => r.id === id);
+            if (!row) return;
+            setSelectedIds(new Set());
+            setSelectMode(false);
+            void navigate({
+              to: "/ecer",
+              search: { item: row.warehouse_item_id, title: row.id, highlight: undefined, send: "1" },
+            });
           }}
-          onBulkChatPick={() => setBulkPickChat(true)}
+          onBulkChatPick={() => {
+            if (selectedIds.size === 0) return;
+            if (selectedIds.size > 1) {
+              toast.info("Kirim ke pembeli hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
+              return;
+            }
+            const id = [...selectedIds][0];
+            const row = (rows ?? []).find((r) => r.id === id);
+            if (!row) return;
+            setSelectedIds(new Set());
+            setSelectMode(false);
+            void navigate({
+              to: "/ecer",
+              search: { item: row.warehouse_item_id, title: row.id, highlight: undefined, send: "1" },
+            });
+          }}
           onBulkDelete={() => setBulkConfirm("delete")}
         />
         </div>
