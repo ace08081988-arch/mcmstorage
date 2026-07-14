@@ -525,6 +525,19 @@ function RequestPage() {
                   >
                     <History className="h-3 w-3" /> Riwayat
                   </div>
+                  {canRequestReprep && (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); void requestReprep(); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void requestReprep(); } }}
+                      className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
+                      aria-label="Minta penyiapan ulang"
+                      title={`Sudah disiapkan ${activePrepCount}× pada siklus ini. Reset agar bisa disiapkan lagi di task baru tanpa mengubah riwayat.`}
+                    >
+                      <RotateCw className="h-3 w-3" /> Minta penyiapan ulang
+                    </div>
+                  )}
                   <div
                     role="button"
                     tabIndex={0}
