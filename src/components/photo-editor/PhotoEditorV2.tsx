@@ -72,6 +72,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const [showLayers, setShowLayers] = useState(false);
   const [showText, setShowText] = useState<null | { id: string }>(null);
   const [showStickers, setShowStickers] = useState(false);
+  // Panel gaya (warna/tebal/opacity) muncul otomatis saat tool coret/bentuk/teks aktif.
+  // Panel dapat ditutup manual lewat handle drag di atasnya — state ini menyimpan
+  // pilihan pemilik agar tidak "muncul lagi" saat mengganti antar tool goresan.
+  const [stylePanelClosed, setStylePanelClosed] = useState(false);
 
   // Initial scene: prefer initialSceneJson → autosave draft → empty.
   const [scene, setScene] = useState<Scene>(() => emptyScene(0, 0));
