@@ -223,13 +223,13 @@ export function OrderSummaryCard({
   return (
     <section
       className={cn(
-        "mx-2 my-2 rounded-lg border bg-card px-3 py-2 text-sm shadow-sm",
+        "mx-2 my-2 rounded-lg border bg-card px-ms-3 py-ms-2 text-ms-sm shadow-sm",
         className,
       )}
       aria-label="Ringkasan pesanan"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-ms-2">
+        <span className="inline-flex items-center gap-ms-1 rounded-md bg-muted px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground">
           <Hash className="h-3 w-3" aria-hidden />
           {derived.orderLabel || "Chat"}
         </span>
@@ -237,9 +237,9 @@ export function OrderSummaryCard({
         {payBadge}
       </div>
 
-      <div className="mt-1.5 grid gap-0.5 text-xs text-muted-foreground">
+      <div className="mt-1.5 grid gap-0.5 text-ms-xs text-muted-foreground">
         {customerName ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-ms-1.5">
             <UserIcon className="h-3.5 w-3.5" aria-hidden />
             <span className="truncate">
               <span className="text-foreground">{customerName}</span>
@@ -248,7 +248,7 @@ export function OrderSummaryCard({
           </div>
         ) : null}
         {productName || grams ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-ms-1.5">
             <Package className="h-3.5 w-3.5" aria-hidden />
             <span className="truncate">
               {productName ? (
@@ -259,7 +259,7 @@ export function OrderSummaryCard({
           </div>
         ) : null}
         {typeof soldTotal === "number" ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-ms-1.5">
             <Wallet className="h-3.5 w-3.5" aria-hidden />
             <span className="truncate">
               Total Rp {soldTotal.toLocaleString("id-ID")}
@@ -274,7 +274,7 @@ export function OrderSummaryCard({
         ) : null}
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="mt-2 flex flex-wrap gap-ms-1.5">
         {links.linked_customer_id ? (
           <QuickLink
             to="/kontak"
@@ -332,7 +332,7 @@ function QuickLink({
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-1 rounded-full border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-muted"
+      className="inline-flex items-center gap-ms-1 rounded-full border bg-background px-ms-2 py-1 text-ms-2xs font-medium text-foreground hover:bg-muted"
     >
       {icon}
       {label}

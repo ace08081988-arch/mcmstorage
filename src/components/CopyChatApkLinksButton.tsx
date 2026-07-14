@@ -126,7 +126,7 @@ export function CopyChatApkLinksButton({
         }
         className={
           className ??
-          "inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-xs font-medium transition-all duration-150 hover:bg-accent hover:shadow-sm active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+          "inline-flex items-center gap-ms-1.5 rounded-md border bg-card px-ms-3 py-1.5 text-ms-xs font-medium transition-all duration-150 hover:bg-accent hover:shadow-sm active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
         }
       >
         {busy || isChecking ? (
@@ -168,10 +168,10 @@ export function CopyChatApkLinksButton({
       }
       className={
         className ??
-        "group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+        "group flex flex-col gap-0.5 rounded-md border bg-card px-ms-3 py-ms-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
       }
     >
-      <span className="text-base leading-none">
+      <span className="text-ms-base leading-none">
         {busy || isChecking ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : copied ? (
@@ -180,7 +180,7 @@ export function CopyChatApkLinksButton({
           "📋"
         )}
       </span>
-      <span className="mt-1 text-xs font-semibold leading-tight">
+      <span className="mt-1 text-ms-xs font-semibold leading-tight">
         {copied
           ? "Tersalin"
           : isChecking
@@ -189,7 +189,7 @@ export function CopyChatApkLinksButton({
               ? "Belum tersedia"
               : "Salin link APK Chat"}
       </span>
-      <span className="text-[10px] leading-tight text-muted-foreground">
+      <span className="text-ms-2xs leading-tight text-muted-foreground">
         {isChecking
           ? "Mengecek rilis terbaru…"
           : isUnavailable

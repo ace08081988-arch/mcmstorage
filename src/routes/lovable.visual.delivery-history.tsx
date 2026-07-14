@@ -106,58 +106,58 @@ function Harness() {
   }, [theme, scale]);
   const headerLabel = "PaketRequestDenganJudulSangatPanjangTanpaSpasiUntukMengujiTruncateDiHeaderDialogMobile";
   return (
-    <div className="min-h-dvh bg-background p-3" data-visual-root data-theme={theme}>
+    <div className="min-h-dvh bg-background p-ms-3" data-visual-root data-theme={theme}>
       {/* Wadah mock DialogContent: max-w-lg + padding dialog. */}
-      <div data-visual-dialog className="mx-auto w-full max-w-lg rounded-xl border bg-card p-4 shadow-sm">
+      <div data-visual-dialog className="mx-auto w-full max-w-lg rounded-xl border bg-card p-ms-4 shadow-sm">
         <div className="mb-3">
-          <div className="flex items-center gap-2 font-semibold">
+          <div className="flex items-center gap-ms-2 font-semibold">
             <History className="h-4 w-4 text-primary" /> Riwayat pengiriman link
           </div>
-          <div className="min-w-0 text-sm text-muted-foreground">
+          <div className="min-w-0 text-ms-sm text-muted-foreground">
             Daftar pengiriman link tugas ke pegawai untuk{" "}
             <b className="inline-block min-w-0 max-w-full truncate align-bottom">{headerLabel}</b>
             . Status diambil dari tugas terkait.
           </div>
         </div>
 
-        <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+        <div className="max-h-[60vh] space-ms-2 overflow-y-auto pr-1">
           {ROWS.map((g) => (
-            <div key={g.key} data-history-card className="rounded-lg border bg-card p-3 text-xs">
-              <div className="flex items-start justify-between gap-2">
+            <div key={g.key} data-history-card className="rounded-lg border bg-card p-ms-3 text-ms-xs">
+              <div className="flex items-start justify-between gap-ms-2">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold text-sm">{g.worker_name}</div>
-                  <div className="truncate text-[11px] text-muted-foreground">{g.title_name}</div>
+                  <div className="truncate font-semibold text-ms-sm">{g.worker_name}</div>
+                  <div className="truncate text-ms-2xs text-muted-foreground">{g.title_name}</div>
                 </div>
-                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${g.status.tone}`}>
+                <span className={`shrink-0 rounded-full border px-ms-2 py-0.5 text-ms-2xs font-medium ${g.status.tone}`}>
                   {g.status.label}
                 </span>
               </div>
-              <div className="mt-1.5 grid grid-cols-1 gap-1 text-[11px] text-muted-foreground sm:grid-cols-2">
+              <div className="mt-1.5 grid grid-cols-1 gap-ms-1 text-ms-2xs text-muted-foreground sm:grid-cols-2">
                 <div className="min-w-0">
-                  <span className="text-[10px] uppercase tracking-wide">Kirim pertama</span>
+                  <span className="text-ms-2xs uppercase tracking-wide">Kirim pertama</span>
                   <br />
                   <span className="truncate">{g.firstSent}</span>
                 </div>
                 {g.lastSent !== g.firstSent && (
                   <div className="min-w-0">
-                    <span className="text-[10px] uppercase tracking-wide">Kirim terakhir</span>
+                    <span className="text-ms-2xs uppercase tracking-wide">Kirim terakhir</span>
                     <br />
                     <span className="truncate">{g.lastSent}</span>
                   </div>
                 )}
                 {g.completed && (
                   <div className="min-w-0 sm:col-span-2">
-                    <span className="text-[10px] uppercase tracking-wide">Selesai</span>
+                    <span className="text-ms-2xs uppercase tracking-wide">Selesai</span>
                     <br />
                     <span className="truncate">{g.completed}</span>
                   </div>
                 )}
               </div>
-              <div className="mt-1.5 flex flex-wrap gap-1">
+              <div className="mt-1.5 flex flex-wrap gap-ms-1">
                 {g.entries.map((e) => (
                   <span
                     key={e.id}
-                    className="min-w-0 max-w-full truncate rounded-full border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                    className="min-w-0 max-w-full truncate rounded-full border bg-muted/40 px-ms-2 py-0.5 text-ms-2xs text-muted-foreground"
                     title={e.label}
                   >
                     {e.label}
@@ -168,8 +168,8 @@ function Harness() {
           ))}
 
           {/* Error mock */}
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-            <div className="flex items-center gap-1 font-semibold">
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-xs text-destructive">
+            <div className="flex items-center gap-ms-1 font-semibold">
               <AlertTriangle className="h-3.5 w-3.5" /> Gagal memuat
             </div>
             <div className="mt-1 break-words">

@@ -273,14 +273,14 @@ export function NotificationBell() {
         sideOffset={8}
         className="w-[calc(100vw-1rem)] max-w-sm p-0"
       >
-        <div className="flex items-center justify-between border-b px-3 py-2">
-          <div className="text-sm font-semibold">Notifikasi</div>
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between border-b px-ms-3 py-ms-2">
+          <div className="text-ms-sm font-semibold">Notifikasi</div>
+          <div className="flex items-center gap-ms-1">
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs"
+                className="h-7 px-ms-2 text-ms-xs"
                 onClick={onMarkAll}
                 disabled={syncing !== null}
               >
@@ -291,7 +291,7 @@ export function NotificationBell() {
               asChild
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-xs"
+              className="h-7 px-ms-2 text-ms-xs"
               onClick={() => setOpen(false)}
             >
               <Link to="/notifikasi">Semua</Link>
@@ -300,12 +300,12 @@ export function NotificationBell() {
         </div>
 
         {syncError && (
-          <div className="flex items-center justify-between gap-2 border-b bg-destructive/10 px-3 py-1.5 text-[0.6875rem] text-destructive">
+          <div className="flex items-center justify-between gap-ms-2 border-b bg-destructive/10 px-ms-3 py-1.5 text-[0.6875rem] text-destructive">
             <span>{syncError}</span>
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 px-2 text-[0.6875rem]"
+              className="h-6 px-ms-2 text-[0.6875rem]"
               onClick={() => {
                 setSyncError(null);
                 void refresh();
@@ -317,7 +317,7 @@ export function NotificationBell() {
         )}
 
         {perm !== "granted" && (
-          <div className="flex items-start gap-2 border-b bg-muted/40 px-3 py-2 text-xs">
+          <div className="flex items-start gap-ms-2 border-b bg-muted/40 px-ms-3 py-ms-2 text-ms-xs">
             {perm === "denied" ? (
               <BellOff className="mt-0.5 h-3.5 w-3.5 flex-none text-destructive" />
             ) : (
@@ -338,11 +338,11 @@ export function NotificationBell() {
                     ? "Browser tidak akan menampilkan prompt lagi. Reset dari site settings atau buka diagnostik."
                     : "Izinkan browser menampilkan banner walau aplikasi ditutup."}
               </p>
-              <div className="mt-1.5 flex flex-wrap gap-1">
+              <div className="mt-1.5 flex flex-wrap gap-ms-1">
                 {perm === "default" && (
                   <Button
                     size="sm"
-                    className="h-7 text-xs"
+                    className="h-7 text-ms-xs"
                     onClick={askPermission}
                     disabled={requesting}
                   >
@@ -353,7 +353,7 @@ export function NotificationBell() {
                   asChild
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs"
+                  className="h-7 text-ms-xs"
                   onClick={() => setOpen(false)}
                 >
                   <Link to="/status-notifikasi">Diagnostik</Link>
@@ -365,7 +365,7 @@ export function NotificationBell() {
 
         <div className="max-h-[70vh] overflow-y-auto">
           {items.length === 0 ? (
-            <div className="px-3 py-8 text-center text-xs text-muted-foreground">
+            <div className="px-ms-3 py-8 text-center text-ms-xs text-muted-foreground">
               {loading ? "Memuat…" : "Belum ada notifikasi."}
             </div>
           ) : (
@@ -373,13 +373,13 @@ export function NotificationBell() {
               {items.map((it) => {
                 const Icon = iconFor(it.kind);
                 const content = (
-                  <div className="flex gap-2 px-3 py-2">
+                  <div className="flex gap-ms-2 px-ms-3 py-ms-2">
                     <div className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-muted">
                       <Icon className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="truncate text-xs font-medium">
+                      <div className="flex items-center justify-between gap-ms-2">
+                        <div className="truncate text-ms-xs font-medium">
                           {it.title}
                         </div>
                         <div
@@ -389,10 +389,10 @@ export function NotificationBell() {
                           {timeAgo(it.createdAt)}
                         </div>
                       </div>
-                      <div className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">
+                      <div className="mt-0.5 line-clamp-2 text-ms-xs leading-snug text-muted-foreground">
                         {it.body}
                       </div>
-                      <div className="mt-1 flex items-center gap-2 text-[0.6875rem]">
+                      <div className="mt-1 flex items-center gap-ms-2 text-[0.6875rem]">
                         <span className="text-muted-foreground">
                           {formatDate(it.createdAt)}
                         </span>
@@ -440,7 +440,7 @@ export function NotificationBell() {
           )}
         </div>
 
-        <div className="border-t px-3 py-2 text-[0.6875rem] text-muted-foreground">
+        <div className="border-t px-ms-3 py-ms-2 text-[0.6875rem] text-muted-foreground">
           Fallback in-app — muncul walau banner sistem diblokir preview.
         </div>
       </PopoverContent>

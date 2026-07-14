@@ -22,11 +22,11 @@ function PengaturanBahasaPage() {
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
       <SettingsHeader title="Bahasa Aplikasi" subtitle="Pilih bahasa yang paling nyaman" icon={Languages} />
-      <div className="px-4 pt-2">
+      <div className="px-ms-4 pt-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Bahasa</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-ms-base">Bahasa</CardTitle>
+            <CardDescription className="text-ms-xs">
               Pengaturan disimpan di perangkat ini. Atribut <code>lang</code> pada <code>&lt;html&gt;</code> ikut diperbarui untuk pembaca layar.
             </CardDescription>
           </CardHeader>
@@ -34,7 +34,7 @@ function PengaturanBahasaPage() {
             <RadioGroup
               value={prefs.language}
               onValueChange={(v) => set({ language: v as "id" | "en" })}
-              className="space-y-2"
+              className="space-ms-2"
             >
               {OPTIONS.map((o) => {
                 const active = prefs.language === o.code;
@@ -42,18 +42,18 @@ function PengaturanBahasaPage() {
                   <label
                     key={o.code}
                     htmlFor={`lang-${o.code}`}
-                    className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${active ? "border-primary bg-primary/5" : "hover:bg-accent/40"}`}
+                    className={`flex items-start gap-ms-3 rounded-lg border p-ms-3 cursor-pointer transition-colors ${active ? "border-primary bg-primary/5" : "hover:bg-accent/40"}`}
                   >
                     <RadioGroupItem id={`lang-${o.code}`} value={o.code} className="mt-1" />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor={`lang-${o.code}`} className="text-sm font-medium">
+                      <div className="flex items-center gap-ms-2">
+                        <Label htmlFor={`lang-${o.code}`} className="text-ms-sm font-medium">
                           {o.label}
                         </Label>
-                        <span className="text-xs text-muted-foreground">· {o.native}</span>
+                        <span className="text-ms-xs text-muted-foreground">· {o.native}</span>
                         {active && <Check className="ml-auto h-4 w-4 text-primary" />}
                       </div>
-                      <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{o.hint}</p>
+                      <p className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground">{o.hint}</p>
                     </div>
                   </label>
                 );

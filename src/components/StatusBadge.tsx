@@ -76,7 +76,7 @@ export function StatusBadge({
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded font-semibold uppercase leading-none",
         "max-w-full whitespace-nowrap tracking-wide",
-        size === "xs" ? "h-5 px-1.5 text-[10px]" : "h-6 px-2 text-[11px]",
+        size === "xs" ? "h-5 px-1.5 text-ms-2xs" : "h-6 px-ms-2 text-ms-2xs",
         variantClass(v),
         className,
       )}

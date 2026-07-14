@@ -193,13 +193,13 @@ export function AccessDiagnostics() {
   return (
     <Card aria-labelledby="access-diagnostics-title">
       <CardHeader>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           <ShieldQuestion className="h-5 w-5 text-primary" aria-hidden="true" />
-          <CardTitle id="access-diagnostics-title" className="text-base">
+          <CardTitle id="access-diagnostics-title" className="text-ms-base">
             Diagnostik RLS
           </CardTitle>
           {summary && (
-            <Badge variant="secondary" className="ml-auto text-[10px]">
+            <Badge variant="secondary" className="ml-auto text-ms-2xs">
               {summary.ok}/{summary.total} lolos
             </Badge>
           )}
@@ -211,8 +211,8 @@ export function AccessDiagnostics() {
           menampilkan data baris manapun.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
+      <CardContent className="space-ms-3">
+        <div className="flex flex-wrap items-center gap-ms-2">
           <Button
             type="button"
             size="sm"
@@ -228,7 +228,7 @@ export function AccessDiagnostics() {
             {running ? "Menjalankan…" : results ? "Jalankan ulang" : "Jalankan diagnostik"}
           </Button>
           {ranAt && (
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-ms-2xs text-muted-foreground">
               Terakhir dijalankan {ranAt.toLocaleTimeString()} · {summary?.denied ?? 0} ditolak
               RLS, {summary?.other ?? 0} error lain
             </span>
@@ -236,13 +236,13 @@ export function AccessDiagnostics() {
         </div>
 
         {results && (
-          <ul className="space-y-2" data-testid="access-diagnostics-results">
+          <ul className="space-ms-2" data-testid="access-diagnostics-results">
             {results.map((r) => {
               const denied = !r.ok && isAccessDenied(r.code, r.message);
               return (
                 <li
                   key={r.key}
-                  className={`rounded-md border p-2.5 ${
+                  className={`rounded-md border p-ms-2.5 ${
                     r.ok
                       ? "border-emerald-500/30 bg-emerald-500/5"
                       : denied
@@ -253,7 +253,7 @@ export function AccessDiagnostics() {
                   data-ok={r.ok ? "1" : "0"}
                   data-code={r.code ?? ""}
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-ms-2">
                     {r.ok ? (
                       <CheckCircle2
                         className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
@@ -267,8 +267,8 @@ export function AccessDiagnostics() {
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2">
-                        <span className="text-sm font-medium">{r.label}</span>
-                        <span className="text-[11px] text-muted-foreground">
+                        <span className="text-ms-sm font-medium">{r.label}</span>
+                        <span className="text-ms-2xs text-muted-foreground">
                           tabel <code>{r.table}</code> · {r.ms} ms
                         </span>
                       </div>
@@ -278,7 +278,7 @@ export function AccessDiagnostics() {
                     </div>
                     <Badge
                       variant={r.ok ? "secondary" : "outline"}
-                      className="ml-1 shrink-0 text-[10px]"
+                      className="ml-1 shrink-0 text-ms-2xs"
                     >
                       {r.ok
                         ? `OK (${r.rows ?? 0} baris)`
@@ -312,7 +312,7 @@ export function AccessDiagnostics() {
         )}
 
         {!results && !running && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-ms-2xs text-muted-foreground">
             Tekan <b>Jalankan diagnostik</b> untuk memeriksa 6 area sekaligus. Probe
             hanya membaca kolom <code>id</code>, tidak menulis/menghapus apapun.
           </p>

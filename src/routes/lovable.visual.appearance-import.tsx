@@ -61,9 +61,9 @@ function AppearanceImportHarness() {
   const patch: ImportedPatch | null = result && result.ok ? result.patch : null;
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-6">
-      <h1 className="text-xl font-semibold">Appearance import migrator</h1>
-      <p className="text-sm text-muted-foreground">
+    <main className="mx-auto max-w-3xl space-ms-4 p-ms-6">
+      <h1 className="text-ms-xl font-semibold">Appearance import migrator</h1>
+      <p className="text-ms-sm text-muted-foreground">
         Skema aktif: v{EXPORT_SCHEMA_VERSION}. Tempelkan payload JSON dan
         tekan Run.
       </p>
@@ -73,14 +73,14 @@ function AppearanceImportHarness() {
         value={json}
         onChange={(e) => setJson(e.target.value)}
         rows={10}
-        className="w-full rounded border p-2 font-mono text-xs"
+        className="w-full rounded border p-ms-2 font-mono text-ms-xs"
         placeholder='{"__type":"mcm.appearance-settings",...}'
       />
-      <div className="flex gap-2">
+      <div className="flex gap-ms-2">
         <button
           type="button"
           data-testid="ai-run"
-          className="rounded bg-primary px-3 py-1.5 text-primary-foreground"
+          className="rounded bg-primary px-ms-3 py-1.5 text-primary-foreground"
           onClick={run}
         >
           Run migrator
@@ -88,7 +88,7 @@ function AppearanceImportHarness() {
         <button
           type="button"
           data-testid="ai-reset"
-          className="rounded border px-3 py-1.5"
+          className="rounded border px-ms-3 py-1.5"
           onClick={() => {
             setJson("");
             setResult(null);
@@ -101,7 +101,7 @@ function AppearanceImportHarness() {
 
       <section
         data-testid="ai-output"
-        className="space-y-1 rounded border p-3 text-sm"
+        className="space-y-1 rounded border p-ms-3 text-ms-sm"
       >
         <div>
           <span>status: </span>
@@ -149,7 +149,7 @@ function AppearanceImportHarness() {
 
         <pre
           data-testid="ai-patch-json"
-          className="mt-2 overflow-auto rounded bg-muted p-2 text-xs"
+          className="mt-2 overflow-auto rounded bg-muted p-ms-2 text-ms-xs"
         >
           {patch ? JSON.stringify(patch, null, 2) : ""}
         </pre>
@@ -158,7 +158,7 @@ function AppearanceImportHarness() {
       {/* Pratinjau: membuktikan patch benar-benar diterapkan ke UI. */}
       <section
         data-testid="ai-preview"
-        className="rounded border p-4"
+        className="rounded border p-ms-4"
         data-theme={patch?.theme ?? ""}
         data-font={patch?.font ?? ""}
         data-size={patch?.size ?? ""}
@@ -223,9 +223,9 @@ function PatchRow({
   value: string | number | boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-2">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span data-testid={`ai-patch-${label}`} className="font-mono text-xs">
+    <div className="flex items-baseline justify-between gap-ms-2">
+      <span className="text-ms-xs text-muted-foreground">{label}</span>
+      <span data-testid={`ai-patch-${label}`} className="font-mono text-ms-xs">
         {String(value)}
       </span>
     </div>

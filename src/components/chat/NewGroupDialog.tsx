@@ -60,7 +60,7 @@ export function NewGroupDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger ? (
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-1.5">
+          <Button variant="outline" size="sm" className="gap-ms-1.5">
             <Users className="h-4 w-4" /> Grup baru
           </Button>
         </DialogTrigger>
@@ -69,7 +69,7 @@ export function NewGroupDialog({
         <DialogHeader>
           <DialogTitle>Buat grup chat</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div className="space-y-1.5">
             <Label htmlFor="grup-title">Nama grup</Label>
             <Input id="grup-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Mis. Tim toko" />
@@ -78,13 +78,13 @@ export function NewGroupDialog({
             <Label htmlFor="grup-q">Tambahkan anggota</Label>
             <Input id="grup-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari kontak…" />
           </div>
-          <div className="max-h-64 space-y-1 overflow-auto rounded-md border p-1">
+          <div className="max-h-64 space-y-1 overflow-auto rounded-md border p-ms-1">
             {isLoading ? (
-              <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center p-ms-4 text-ms-sm text-muted-foreground">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
               </div>
             ) : (contacts ?? []).length === 0 ? (
-              <div className="p-4 text-center text-xs text-muted-foreground">Tidak ada kontak.</div>
+              <div className="p-ms-4 text-center text-ms-xs text-muted-foreground">Tidak ada kontak.</div>
             ) : (
               (contacts ?? []).map((c) => {
                 const on = !!picked[c.user_id];
@@ -93,14 +93,14 @@ export function NewGroupDialog({
                     key={c.user_id}
                     type="button"
                     onClick={() => toggle(c.user_id)}
-                    className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-accent"
+                    className="flex w-full items-center gap-ms-3 rounded-md px-ms-2 py-ms-2 text-left hover:bg-accent"
                   >
                     <div className={`grid h-5 w-5 place-items-center rounded border ${on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
                       {on ? <Check className="h-3.5 w-3.5" /> : null}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{c.display_name || "Pengguna"}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">{c.label ?? c.kind}</div>
+                      <div className="truncate text-ms-sm font-medium">{c.display_name || "Pengguna"}</div>
+                      <div className="truncate text-ms-2xs text-muted-foreground">{c.label ?? c.kind}</div>
                     </div>
                   </button>
                 );
@@ -109,7 +109,7 @@ export function NewGroupDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={submit} disabled={create.isPending} className="gap-2">
+          <Button onClick={submit} disabled={create.isPending} className="gap-ms-2">
             {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
             Buat grup ({Object.keys(picked).length})
           </Button>

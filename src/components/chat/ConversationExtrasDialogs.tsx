@@ -59,7 +59,7 @@ export function ConversationSearchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <Search className="h-4 w-4" /> Cari di percakapan
           </DialogTitle>
           <DialogDescription>Cari kata di pesan yang sudah dimuat.</DialogDescription>
@@ -72,7 +72,7 @@ export function ConversationSearchDialog({
         />
         <div className="max-h-72 space-y-1 overflow-y-auto">
           {q.trim() && hits.length === 0 ? (
-            <p className="p-4 text-center text-xs text-muted-foreground">
+            <p className="p-ms-4 text-center text-ms-xs text-muted-foreground">
               Tidak ada pesan yang cocok.
             </p>
           ) : (
@@ -80,14 +80,14 @@ export function ConversationSearchDialog({
               <button
                 key={m.id}
                 type="button"
-                className="w-full rounded-md border p-2 text-left text-xs hover:bg-accent"
+                className="w-full rounded-md border p-ms-2 text-left text-ms-xs hover:bg-accent"
                 onClick={() => {
                   onJump(m.id);
                   onOpenChange(false);
                 }}
               >
                 <div className="line-clamp-2 whitespace-pre-wrap">{previewText(m.body) ?? ""}</div>
-                <div className="mt-1 text-[10px] text-muted-foreground">
+                <div className="mt-1 text-ms-2xs text-muted-foreground">
                   {new Date(m.created_at).toLocaleString("id-ID")}
                 </div>
               </button>
@@ -150,9 +150,9 @@ export function MediaLinksDialog({
           </TabsList>
           <TabsContent value="media" className="max-h-72 overflow-y-auto">
             {images.length === 0 ? (
-              <p className="p-6 text-center text-xs text-muted-foreground">Belum ada media.</p>
+              <p className="p-ms-6 text-center text-ms-xs text-muted-foreground">Belum ada media.</p>
             ) : (
-              <div className="grid grid-cols-3 gap-2 p-1">
+              <div className="grid grid-cols-3 gap-ms-2 p-ms-1">
                 {images.map((it, i) => (
                   <a
                     key={`${it.url}-${i}`}
@@ -167,9 +167,9 @@ export function MediaLinksDialog({
               </div>
             )}
           </TabsContent>
-          <TabsContent value="links" className="max-h-72 space-y-1 overflow-y-auto p-1">
+          <TabsContent value="links" className="max-h-72 space-y-1 overflow-y-auto p-ms-1">
             {links.length === 0 ? (
-              <p className="p-6 text-center text-xs text-muted-foreground">Belum ada tautan.</p>
+              <p className="p-ms-6 text-center text-ms-xs text-muted-foreground">Belum ada tautan.</p>
             ) : (
               links.map((l, i) => (
                 <a
@@ -177,7 +177,7 @@ export function MediaLinksDialog({
                   href={l.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block rounded-md border p-2 text-xs hover:bg-accent"
+                  className="block rounded-md border p-ms-2 text-ms-xs hover:bg-accent"
                 >
                   <div className="truncate font-medium text-primary">{l.url}</div>
                   <div className="mt-0.5 line-clamp-2 text-muted-foreground">{previewText(l.body) ?? ""}</div>
@@ -185,9 +185,9 @@ export function MediaLinksDialog({
               ))
             )}
           </TabsContent>
-          <TabsContent value="docs" className="max-h-72 space-y-1 overflow-y-auto p-1">
+          <TabsContent value="docs" className="max-h-72 space-y-1 overflow-y-auto p-ms-1">
             {docs.length === 0 ? (
-              <p className="p-6 text-center text-xs text-muted-foreground">Belum ada dokumen.</p>
+              <p className="p-ms-6 text-center text-ms-xs text-muted-foreground">Belum ada dokumen.</p>
             ) : (
               docs.map((d, i) => (
                 <a
@@ -195,7 +195,7 @@ export function MediaLinksDialog({
                   href={d.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-md border p-2 text-xs hover:bg-accent"
+                  className="flex items-center gap-ms-2 rounded-md border p-ms-2 text-ms-xs hover:bg-accent"
                 >
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <span className="truncate">{d.url.split("/").pop() || d.url}</span>
@@ -222,12 +222,12 @@ export function MuteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <BellOff className="h-4 w-4" /> Senyapkan notifikasi
           </DialogTitle>
           <DialogDescription>Pilih durasi. Kamu tetap menerima pesan, tapi tanpa bunyi/notif.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-2">
+        <div className="grid gap-ms-2">
           {MUTE_PRESETS.map((p) => (
             <Button
               key={p.label}

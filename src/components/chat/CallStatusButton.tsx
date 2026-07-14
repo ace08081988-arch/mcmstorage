@@ -43,7 +43,7 @@ export function CallStatusButton({
       title={hint}
       aria-label={hint}
       data-testid={`call-status-${status}`}
-      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:underline"
+      className="flex items-center gap-ms-1 text-ms-2xs text-muted-foreground hover:underline"
     >
       <Icon className={`h-3 w-3 ${colorClass}`} />
       <span className={colorClass}>{label}</span>

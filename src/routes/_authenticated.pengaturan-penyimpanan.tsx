@@ -296,28 +296,28 @@ function PenyimpananPage() {
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
       <SettingsHeader title="Penyimpanan dan Data" subtitle="Penggunaan lokal & unduhan otomatis" icon={HardDrive} />
-      <div className="space-y-4 px-4 pt-2">
+      <div className="space-ms-4 px-ms-4 pt-2">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-ms-base flex items-center gap-ms-2">
               <HardDrive className="h-4 w-4" />
               Penggunaan penyimpanan
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-ms-xs">
               Perkiraan data yang disimpan aplikasi di perangkat ini.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-md border bg-muted/30 p-3">
-                <div className="text-xs text-muted-foreground">Local storage</div>
-                <div className="text-lg font-semibold tabular-nums">
+          <CardContent className="space-ms-3">
+            <div className="grid grid-cols-2 gap-ms-3">
+              <div className="rounded-md border bg-muted/30 p-ms-3">
+                <div className="text-ms-xs text-muted-foreground">Local storage</div>
+                <div className="text-ms-lg font-semibold tabular-nums">
                   {formatKB(snapshot.totalBytes)}
                 </div>
               </div>
-              <div className="rounded-md border bg-muted/30 p-3">
-                <div className="text-xs text-muted-foreground">Kuota browser</div>
-                <div className="text-lg font-semibold tabular-nums">
+              <div className="rounded-md border bg-muted/30 p-ms-3">
+                <div className="text-ms-xs text-muted-foreground">Kuota browser</div>
+                <div className="text-ms-lg font-semibold tabular-nums">
                   {usedMB != null && quotaMB != null
                     ? `${usedMB.toFixed(1)} / ${quotaMB.toFixed(0)} MB`
                     : "—"}
@@ -326,12 +326,12 @@ function PenyimpananPage() {
             </div>
             {snapshot.entries.length > 0 && (
               <details className="rounded-md border">
-                <summary className="cursor-pointer px-3 py-2 text-xs font-medium">
+                <summary className="cursor-pointer px-ms-3 py-ms-2 text-ms-xs font-medium">
                   Rincian entri terbesar
                 </summary>
-                <ul className="divide-y text-xs">
+                <ul className="divide-y text-ms-xs">
                   {snapshot.entries.map((e) => (
-                    <li key={e.key} className="flex items-center justify-between px-3 py-1.5">
+                    <li key={e.key} className="flex items-center justify-between px-ms-3 py-1.5">
                       <span className="truncate font-mono">{e.key}</span>
                       <span className="tabular-nums text-muted-foreground">
                         {formatKB(e.bytes)}
@@ -341,7 +341,7 @@ function PenyimpananPage() {
                 </ul>
               </details>
             )}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-ms-2">
               <Button size="sm" variant="outline" onClick={refresh}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 Segarkan
@@ -364,12 +364,12 @@ function PenyimpananPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Unduh otomatis media</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-ms-base">Unduh otomatis media</CardTitle>
+            <CardDescription className="text-ms-xs">
               Pilih jaringan mana yang otomatis mengunduh foto & lampiran chat.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-ms-4">
             <ToggleRow
               label="Di Wi-Fi"
               help="Foto & stiker terunduh otomatis saat terhubung Wi-Fi."
@@ -387,14 +387,14 @@ function PenyimpananPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Cadangan & pulihkan preferensi</CardTitle>
-            <CardDescription className="text-xs">
+            <CardTitle className="text-ms-base">Cadangan & pulihkan preferensi</CardTitle>
+            <CardDescription className="text-ms-xs">
               Ekspor aksesibilitas, bahasa aplikasi, penyimpanan, dan URL integrasi sosial ke satu
               file JSON. Impor kapan saja untuk memulihkan.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="rounded-md border bg-muted/30 p-3 text-[11px] leading-snug text-muted-foreground">
+          <CardContent className="space-ms-3">
+            <div className="rounded-md border bg-muted/30 p-ms-3 text-ms-2xs leading-snug text-muted-foreground">
               <div>
                 Bahasa: <span className="font-medium text-foreground">{prefs.language.toUpperCase()}</span>
                 {" · "}
@@ -420,7 +420,7 @@ function PenyimpananPage() {
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-ms-2">
               <Button size="sm" variant="outline" onClick={onExport}>
                 <Download className="mr-1.5 h-3.5 w-3.5" />
                 Ekspor JSON
@@ -446,7 +446,7 @@ function PenyimpananPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Pulihkan preferensi dari cadangan?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2 text-xs">
+              <div className="space-ms-2 text-ms-xs">
                 <p>
                   Pengaturan aksesibilitas, bahasa, penyimpanan, dan URL sosial saat ini akan
                   ditimpa oleh isi cadangan.
@@ -476,11 +476,11 @@ function PenyimpananPage() {
               Hapus {pendingClear?.label.toLowerCase() ?? "data"}?
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2 text-xs">
+              <div className="space-ms-2 text-ms-xs">
                 {clearProgress.phase !== "idle" && (
-                  <div className="rounded-md border bg-muted/40 p-2 text-[11px]">
+                  <div className="rounded-md border bg-muted/40 p-ms-2 text-ms-2xs">
                     <div className="mb-1 flex items-center justify-between font-medium">
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-ms-1.5">
                         {clearProgress.phase === "processing" ? (
                           <>
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
@@ -506,7 +506,7 @@ function PenyimpananPage() {
                       className="h-1.5"
                     />
                     {clearProgress.phase === "processing" && clearProgress.currentKey && (
-                      <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
+                      <p className="mt-1 truncate font-mono text-ms-2xs text-muted-foreground">
                         {clearProgress.currentKey}
                       </p>
                     )}
@@ -517,7 +517,7 @@ function PenyimpananPage() {
                   Data di server (jika ada) tidak terpengaruh.
                 </p>
                 {pendingClear && (
-                  <div className="rounded-md border bg-muted/30 p-2 text-[11px] text-foreground">
+                  <div className="rounded-md border bg-muted/30 p-ms-2 text-ms-2xs text-foreground">
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Dipilih</span>
                       <span className="font-medium tabular-nums">
@@ -529,10 +529,10 @@ function PenyimpananPage() {
                         )}
                       </span>
                     </div>
-                    <div className="mt-1 flex gap-2">
+                    <div className="mt-1 flex gap-ms-2">
                       <button
                         type="button"
-                        className="text-[11px] text-primary underline"
+                        className="text-ms-2xs text-primary underline"
                         onClick={() =>
                           setSelectedKeys(new Set(pendingClear.keys.map((k) => k.key)))
                         }
@@ -541,14 +541,14 @@ function PenyimpananPage() {
                       </button>
                       <button
                         type="button"
-                        className="text-[11px] text-muted-foreground underline"
+                        className="text-ms-2xs text-muted-foreground underline"
                         onClick={() => setSelectedKeys(new Set())}
                       >
                         Kosongkan
                       </button>
                     </div>
-                    <div className="mt-2 flex items-start justify-between gap-2 rounded border bg-background p-2">
-                      <label className="flex items-start gap-2 text-[11px] leading-snug">
+                    <div className="mt-2 flex items-start justify-between gap-ms-2 rounded border bg-background p-ms-2">
+                      <label className="flex items-start gap-ms-2 text-ms-2xs leading-snug">
                         <Checkbox
                           checked={backupBeforeClear}
                           onCheckedChange={(v) => setBackupBeforeClear(Boolean(v))}
@@ -566,7 +566,7 @@ function PenyimpananPage() {
                       </label>
                       <button
                         type="button"
-                        className="shrink-0 text-[11px] text-primary underline disabled:opacity-40"
+                        className="shrink-0 text-ms-2xs text-primary underline disabled:opacity-40"
                         disabled={
                           selectedKeys.size === 0 || clearProgress.phase === "processing"
                         }
@@ -617,7 +617,7 @@ function PenyimpananPage() {
                                 return (
                                   <li
                                     key={e.key}
-                                    className="flex items-center gap-2 px-2 py-1 font-mono text-[11px]"
+                                    className="flex items-center gap-ms-2 px-ms-2 py-1 font-mono text-ms-2xs"
                                   >
                                     <Checkbox
                                       checked={checked}
@@ -640,7 +640,7 @@ function PenyimpananPage() {
                             </ul>
                           </div>
                           {total > CLEAR_PAGE_SIZE && (
-                            <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
+                            <div className="mt-1 flex items-center justify-between gap-ms-2 text-ms-2xs">
                               {clearExpanded ? (
                                 <button
                                   type="button"
@@ -651,7 +651,7 @@ function PenyimpananPage() {
                                 </button>
                               ) : (
                                 <>
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-ms-1">
                                     <button
                                       type="button"
                                       disabled={page <= 1}
@@ -736,10 +736,10 @@ function ToggleRow({
 }) {
   const id = `t-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-ms-4">
       <div className="min-w-0 flex-1">
-        <label htmlFor={id} className="block text-sm font-medium">{label}</label>
-        <p className="text-[11px] leading-snug text-muted-foreground">{help}</p>
+        <label htmlFor={id} className="block text-ms-sm font-medium">{label}</label>
+        <p className="text-ms-2xs leading-snug text-muted-foreground">{help}</p>
       </div>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </div>
@@ -767,17 +767,17 @@ function BackupSummary({
   const changed = rows.filter((r) => r.cur !== r.next).length;
   const groups = Array.from(new Set(rows.map((r) => r.group)));
   return (
-    <div className="space-y-2">
-      <div className="rounded-md border bg-muted/30 p-2 text-[11px] text-foreground">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-ms-2">
+      <div className="rounded-md border bg-muted/30 p-ms-2 text-ms-2xs text-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-ms-2">
           <span className="text-muted-foreground">Diekspor</span>
           <span className="font-medium">{new Date(pending.exportedAt).toLocaleString()}</span>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-ms-2">
           <span className="text-muted-foreground">Versi cadangan</span>
           <span className="font-medium tabular-nums">v{pending.version}</span>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-ms-2">
           <span className="text-muted-foreground">Field berubah</span>
           <span className={`font-medium tabular-nums ${changed > 0 ? "text-amber-600 dark:text-amber-400" : ""}`}>
             {changed} / {rows.length}
@@ -787,7 +787,7 @@ function BackupSummary({
       <div className="max-h-64 overflow-auto rounded-md border bg-background">
         {groups.map((g) => (
           <div key={g} className="border-b last:border-b-0">
-            <div className="bg-muted/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="bg-muted/40 px-ms-2 py-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               {g}
             </div>
             <ul className="divide-y">
@@ -796,14 +796,14 @@ function BackupSummary({
                 .map((r) => {
                   const diff = r.cur !== r.next;
                   return (
-                    <li key={r.label} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 px-2 py-1.5">
-                      <span className="truncate text-[11px]">{r.label}</span>
-                      <span className="truncate font-mono text-[11px] text-muted-foreground line-through max-w-[9rem]">
+                    <li key={r.label} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-ms-2 px-ms-2 py-1.5">
+                      <span className="truncate text-ms-2xs">{r.label}</span>
+                      <span className="truncate font-mono text-ms-2xs text-muted-foreground line-through max-w-[9rem]">
                         {r.cur}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">→</span>
+                      <span className="text-ms-2xs text-muted-foreground">→</span>
                       <span
-                        className={`truncate font-mono text-[11px] max-w-[9rem] ${diff ? "font-semibold text-amber-600 dark:text-amber-400" : "text-foreground"}`}
+                        className={`truncate font-mono text-ms-2xs max-w-[9rem] ${diff ? "font-semibold text-amber-600 dark:text-amber-400" : "text-foreground"}`}
                       >
                         {r.next}
                       </span>
@@ -815,7 +815,7 @@ function BackupSummary({
         ))}
       </div>
       {changed === 0 && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-ms-2xs text-muted-foreground">
           Isi cadangan identik dengan pengaturan saat ini — memulihkan tidak akan mengubah apa pun.
         </p>
       )}

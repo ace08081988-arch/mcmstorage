@@ -312,13 +312,13 @@ function PembaruanPage() {
        */}
       <a
         href="#pembaruan-main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-ms-4 focus:py-ms-2 focus:text-ms-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         Lompat ke konten
       </a>
       {/* Header */}
-      <header className="sticky top-0 z-20 flex items-center gap-2 bg-background/95 px-4 pb-2 pt-4 backdrop-blur">
-        <h1 id="pembaruan-title" className="mr-auto text-2xl font-semibold tracking-tight">
+      <header className="sticky top-0 z-20 flex items-center gap-ms-2 bg-background/95 px-ms-4 pb-2 pt-4 backdrop-blur">
+        <h1 id="pembaruan-title" className="mr-auto text-ms-2xl font-semibold tracking-tight">
           Pembaruan
         </h1>
         <Link
@@ -367,7 +367,7 @@ function PembaruanPage() {
        */}
       <nav
         aria-label="Bagian di halaman Pembaruan"
-        className="flex shrink-0 gap-2 border-b bg-background/95 px-4 pb-2 backdrop-blur"
+        className="flex shrink-0 gap-ms-2 border-b bg-background/95 px-ms-4 pb-2 backdrop-blur"
       >
         {(
           [
@@ -386,7 +386,7 @@ function PembaruanPage() {
               onPointerDown={onPressStart("selection")}
               onClick={() => scrollToSection(s.id)}
               className={
-                `rounded-full px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${PRESS_CHIP} ` +
+                `rounded-full px-ms-3 py-1.5 text-ms-xs font-medium transition-[background-color,color,transform] duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${PRESS_CHIP} ` +
                 (active
                   ? "bg-primary/15 text-primary"
                   : "bg-muted text-muted-foreground hover:bg-muted/80")
@@ -419,20 +419,20 @@ function PembaruanPage() {
         className="flex-1 overflow-y-auto pb-4 outline-none"
       >
       {/* Status */}
-      <section id="pembaruan-sec-status" className="scroll-mt-4 px-4" aria-labelledby="pembaruan-status-h">
-        <h2 id="pembaruan-status-h" className="mb-2 text-lg font-semibold">
+      <section id="pembaruan-sec-status" className="scroll-mt-4 px-ms-4" aria-labelledby="pembaruan-status-h">
+        <h2 id="pembaruan-status-h" className="mb-2 text-ms-lg font-semibold">
           Status
         </h2>
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-ms-3 overflow-x-auto px-ms-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Tambah Status card */}
           <Link
             to="/status/baru"
             aria-label="Tambah status baru"
             onPointerDown={onPressStart("medium")}
-            className={`relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-2 text-left ring-1 ring-inset ring-border/50 hover:bg-muted/60 active:bg-muted/70 ${PRESS_CARD}`}
+            className={`relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-ms-2 text-left ring-1 ring-inset ring-border/50 hover:bg-muted/60 active:bg-muted/70 ${PRESS_CARD}`}
           >
             <span
-              className="absolute left-1/2 top-6 grid size-16 -translate-x-1/2 place-items-center overflow-hidden rounded-full bg-background text-lg font-semibold"
+              className="absolute left-1/2 top-6 grid size-16 -translate-x-1/2 place-items-center overflow-hidden rounded-full bg-background text-ms-lg font-semibold"
               style={{ color: brand || undefined }}
             >
               {logo ? (
@@ -444,7 +444,7 @@ function PembaruanPage() {
                 <Plus className="size-3.5" />
               </span>
             </span>
-            <span className="text-center text-xs font-medium">Tambah Status</span>
+            <span className="text-center text-ms-xs font-medium">Tambah Status</span>
           </Link>
 
           {myStatuses.slice(0, 1).map((s) => (
@@ -469,8 +469,8 @@ function PembaruanPage() {
           ))}
 
           {statuses.length === 0 && (
-            <div className="flex h-40 w-40 shrink-0 snap-start flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-3 text-center">
-              <span className="text-xs text-muted-foreground">
+            <div className="flex h-40 w-40 shrink-0 snap-start flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-ms-3 text-center">
+              <span className="text-ms-xs text-muted-foreground">
                 Belum ada status. Ketuk "Tambah Status" untuk mulai.
               </span>
             </div>
@@ -479,16 +479,16 @@ function PembaruanPage() {
       </section>
 
       {/* Saluran */}
-      <section id="pembaruan-sec-saluran" className="mt-2 scroll-mt-4 px-4" aria-labelledby="pembaruan-saluran-h">
+      <section id="pembaruan-sec-saluran" className="mt-2 scroll-mt-4 px-ms-4" aria-labelledby="pembaruan-saluran-h">
         <div className="mb-2 flex items-center justify-between">
-          <h2 id="pembaruan-saluran-h" className="text-lg font-semibold">
+          <h2 id="pembaruan-saluran-h" className="text-ms-lg font-semibold">
             Saluran
           </h2>
           <Link
             to="/notifikasi"
             aria-label="Jelajahi pengaturan saluran & notifikasi"
             onPointerDown={onPressStart("selection")}
-            className={`rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/80 active:bg-muted/60 ${PRESS_CHIP}`}
+            className={`rounded-full bg-muted px-ms-3 py-1.5 text-ms-xs font-medium text-foreground hover:bg-muted/80 active:bg-muted/60 ${PRESS_CHIP}`}
           >
             Jelajahi
           </Link>
@@ -497,12 +497,12 @@ function PembaruanPage() {
         {channels.length === 0 ? (
           <div
             role="status"
-            className="rounded-xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground"
+            className="rounded-xl border border-dashed border-border/60 p-ms-6 text-center text-ms-sm text-muted-foreground"
           >
             Belum ada pembaruan. Pesan, tugas, dan pesanan baru akan tampil di sini.
           </div>
         ) : (
-          <ul className="space-y-4" aria-label="Daftar saluran pembaruan">
+          <ul className="space-ms-4" aria-label="Daftar saluran pembaruan">
             {channels.map((ch) => {
               const Icon = KIND_ICON[ch.kind];
               const kindLabel: Record<FeedItemKind, string> = {
@@ -529,23 +529,23 @@ function PembaruanPage() {
                     <Icon className="size-5" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="truncate text-[15px] font-semibold">{ch.title}</span>
+                    <div className="flex items-baseline gap-ms-2">
+                      <span className="truncate text-ms-base font-semibold">{ch.title}</span>
                       <span
-                        className="ml-auto shrink-0 text-xs tabular-nums text-emerald-500"
+                        className="ml-auto shrink-0 text-ms-xs tabular-nums text-emerald-500"
                         aria-hidden="true"
                       >
                         {formatTimeShort(ch.time)}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-2">
-                      <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+                    <div className="mt-0.5 flex items-center gap-ms-2">
+                      <span className="min-w-0 flex-1 truncate text-ms-sm text-muted-foreground">
                         {ch.snippet}
                       </span>
                       {ch.unread > 0 && (
                         <span
                           aria-hidden="true"
-                          className="grid min-w-6 shrink-0 place-items-center rounded-full bg-success px-1.5 py-0.5 text-[11px] font-semibold text-success-foreground"
+                          className="grid min-w-6 shrink-0 place-items-center rounded-full bg-success px-1.5 py-0.5 text-ms-2xs font-semibold text-success-foreground"
                         >
                           {ch.unread > 99 ? "99+" : ch.unread}
                         </span>
@@ -561,13 +561,13 @@ function PembaruanPage() {
                       to={ch.href}
                       aria-label={rowLabel}
                       onPointerDown={onPressStart("selection")}
-                      className={`-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
+                      className={`-mx-2 flex items-center gap-ms-3 rounded-lg px-ms-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
                     >
                       {body}
                     </Link>
                   ) : (
                     <div
-                      className="flex items-center gap-3 py-1"
+                      className="flex items-center gap-ms-3 py-1"
                       aria-label={rowLabel}
                     >
                       {body}
@@ -581,11 +581,11 @@ function PembaruanPage() {
       </section>
 
       {/* Temukan saluran untuk diikuti */}
-      <section id="pembaruan-sec-temukan" className="mt-6 scroll-mt-4 px-4" aria-labelledby="pembaruan-temukan-h">
-        <h2 id="pembaruan-temukan-h" className="mb-3 text-sm text-muted-foreground">
+      <section id="pembaruan-sec-temukan" className="mt-6 scroll-mt-4 px-ms-4" aria-labelledby="pembaruan-temukan-h">
+        <h2 id="pembaruan-temukan-h" className="mb-3 text-ms-sm text-muted-foreground">
           Temukan saluran untuk diikuti
         </h2>
-        <ul className="space-y-4" aria-label="Rekomendasi saluran untuk diikuti">
+        <ul className="space-ms-4" aria-label="Rekomendasi saluran untuk diikuti">
           <SuggestionRow
             to="/chat"
             Icon={MessageCircle}
@@ -657,16 +657,16 @@ function SuggestionRow({
     <li>
       <Link
         to={to as never}
-        className={`-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
+        className={`-mx-2 flex items-center gap-ms-3 rounded-lg px-ms-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
       >
         <span className={`grid size-12 shrink-0 place-items-center rounded-full ${tone}`}>
           <Icon className="size-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-semibold">{title}</div>
-          <div className="truncate text-sm text-muted-foreground">{subtitle}</div>
+          <div className="truncate text-ms-base font-semibold">{title}</div>
+          <div className="truncate text-ms-sm text-muted-foreground">{subtitle}</div>
         </div>
-        <span className="shrink-0 rounded-full bg-muted px-4 py-1.5 text-xs font-medium">
+        <span className="shrink-0 rounded-full bg-muted px-ms-4 py-1.5 text-ms-xs font-medium">
           Ikuti
         </span>
       </Link>
@@ -707,13 +707,13 @@ function StatusTile({
       )}
       {status.media_type === "text" && (
         <div
-          className="flex size-full items-center justify-center p-2 text-center text-xs font-semibold text-white"
+          className="flex size-full items-center justify-center p-ms-2 text-center text-ms-xs font-semibold text-white"
           style={{ background: status.bg_color || "#0f172a" }}
         >
           <span className="line-clamp-4">{caption}</span>
         </div>
       )}
-      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5 text-[11px] font-medium text-white">
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-ms-1 bg-gradient-to-t from-black/70 to-transparent px-ms-2 py-1.5 text-ms-2xs font-medium text-white">
         <span className="truncate">{label ?? "Status"}</span>
         <span className="flex items-center gap-0.5">
           <Heart className="size-3" />

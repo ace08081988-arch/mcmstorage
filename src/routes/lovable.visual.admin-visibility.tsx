@@ -85,9 +85,9 @@ function AdminVisibilityHarness() {
   });
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6 text-sm">
+    <div className="mx-auto max-w-2xl space-ms-6 p-ms-6 text-ms-sm">
       <header className="space-y-1">
-        <h1 className="text-base font-semibold">Harness · Admin visibility</h1>
+        <h1 className="text-ms-base font-semibold">Harness · Admin visibility</h1>
         <p className="text-muted-foreground">
           Kontrak sidebar admin-only + fallback halaman APK, tanpa auth &
           tanpa memanggil server-fn admin.
@@ -96,7 +96,7 @@ function AdminVisibilityHarness() {
         <p data-testid="admin-only-count">{ADMIN_ONLY_URLS.size}</p>
       </header>
 
-      <section className="space-y-2">
+      <section className="space-ms-2">
         <h2 className="font-medium">Item terlihat</h2>
         <ul className="rounded-md border border-border">
           {visible.map((it) => (
@@ -104,10 +104,10 @@ function AdminVisibilityHarness() {
               key={it.url}
               data-testid={`admin-item-visible-${slug(it.url)}`}
               data-url={it.url}
-              className="border-b border-border/60 px-3 py-2 last:border-b-0"
+              className="border-b border-border/60 px-ms-3 py-ms-2 last:border-b-0"
             >
               {it.title}
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="ml-2 text-ms-xs text-muted-foreground">
                 {it.url}
               </span>
             </li>
@@ -115,13 +115,13 @@ function AdminVisibilityHarness() {
         </ul>
       </section>
 
-      <section className="space-y-2">
+      <section className="space-ms-2">
         <h2 className="font-medium">Item disembunyikan</h2>
         <ul className="rounded-md border border-border">
           {hidden.length === 0 ? (
             <li
               data-testid="admin-item-hidden-empty"
-              className="px-3 py-2 text-muted-foreground"
+              className="px-ms-3 py-ms-2 text-muted-foreground"
             >
               (tidak ada — admin melihat semua)
             </li>
@@ -131,10 +131,10 @@ function AdminVisibilityHarness() {
                 key={it.url}
                 data-testid={`admin-item-hidden-${slug(it.url)}`}
                 data-url={it.url}
-                className="border-b border-border/60 px-3 py-2 last:border-b-0"
+                className="border-b border-border/60 px-ms-3 py-ms-2 last:border-b-0"
               >
                 {it.title}
-                <span className="ml-2 text-xs text-muted-foreground">
+                <span className="ml-2 text-ms-xs text-muted-foreground">
                   {it.url}
                 </span>
               </li>
@@ -143,11 +143,11 @@ function AdminVisibilityHarness() {
         </ul>
       </section>
 
-      <section className="space-y-2">
+      <section className="space-ms-2">
         <h2 className="font-medium">Fallback halaman APK</h2>
         <div
           data-testid="apk-view-kind"
-          className="rounded-md border border-border px-3 py-2"
+          className="rounded-md border border-border px-ms-3 py-ms-2"
         >
           {apkView}
         </div>

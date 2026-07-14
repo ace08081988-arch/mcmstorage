@@ -65,31 +65,31 @@ const VARIANT_TABLE: ComponentSpec[] = [
 function VariantTable() {
   return (
     <section className="mx-auto mb-4 max-w-6xl overflow-hidden rounded-xl border bg-card">
-      <header className="border-b bg-muted/40 px-3 py-2">
-        <h2 className="text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
+      <header className="border-b bg-muted/40 px-ms-3 py-ms-2">
+        <h2 className="text-ms-2xs font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
           Ringkasan varian & props
         </h2>
       </header>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-left text-xs">
-          <thead className="bg-muted/30 text-[11px] uppercase tracking-wider text-muted-foreground">
+        <table className="w-full min-w-[640px] border-collapse text-left text-ms-xs">
+          <thead className="bg-muted/30 text-ms-2xs uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="px-3 py-2 font-semibold">Komponen</th>
-              <th className="px-3 py-2 font-semibold">Varian</th>
-              <th className="px-3 py-2 font-semibold">Props</th>
-              <th className="px-3 py-2 font-semibold">Catatan</th>
+              <th className="px-ms-3 py-ms-2 font-semibold">Komponen</th>
+              <th className="px-ms-3 py-ms-2 font-semibold">Varian</th>
+              <th className="px-ms-3 py-ms-2 font-semibold">Props</th>
+              <th className="px-ms-3 py-ms-2 font-semibold">Catatan</th>
             </tr>
           </thead>
           <tbody>
             {VARIANT_TABLE.flatMap((c) =>
               c.rows.map((r, i) => (
                 <tr key={`${c.name}-${i}`} className="border-t align-top">
-                  <td className="px-3 py-2 font-semibold text-foreground">
+                  <td className="px-ms-3 py-ms-2 font-semibold text-foreground">
                     {i === 0 ? c.name : <span className="text-muted-foreground/60">↳</span>}
                   </td>
-                  <td className="px-3 py-2 text-foreground">{r.label}</td>
-                  <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">{r.props}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{r.note ?? "—"}</td>
+                  <td className="px-ms-3 py-ms-2 text-foreground">{r.label}</td>
+                  <td className="px-ms-3 py-ms-2 font-mono text-ms-2xs text-muted-foreground">{r.props}</td>
+                  <td className="px-ms-3 py-ms-2 text-muted-foreground">{r.note ?? "—"}</td>
                 </tr>
               )),
             )}
@@ -117,7 +117,7 @@ function CocokPill({ target = 250, unit = "g" }: { target?: number; unit?: strin
   return (
     <button
       type="button"
-      className="flex w-fit min-w-0 max-w-full items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium leading-none text-muted-foreground"
+      className="flex w-fit min-w-0 max-w-full items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium leading-none text-muted-foreground"
       title={label}
     >
       <span className="h-1 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
@@ -130,7 +130,7 @@ function CountChip({ count, suffix = "item", maxW = "7rem" }: { count: number; s
   const label = `${count} ${suffix}`;
   return (
     <span
-      className="inline-flex h-5 shrink-0 items-center rounded-full border bg-background px-1.5 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+      className="inline-flex h-5 shrink-0 items-center rounded-full border bg-background px-1.5 text-ms-2xs font-medium leading-none text-muted-foreground tabular-nums"
       style={{ maxWidth: maxW }}
       title={label}
     >
@@ -141,10 +141,10 @@ function CountChip({ count, suffix = "item", maxW = "7rem" }: { count: number; s
 
 function CategoryHeader({ name, count }: { name: string; count: number }) {
   return (
-    <header className="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+    <header className="flex items-center justify-between gap-ms-2 border-b bg-muted/40 px-ms-3 py-ms-2">
+      <div className="flex min-w-0 flex-1 items-center gap-ms-2">
         <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-primary" />
-        <h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug" title={name}>{name}</h3>
+        <h3 className="min-w-0 flex-1 truncate text-ms-sm font-semibold leading-snug" title={name}>{name}</h3>
         <CountChip count={count} />
       </div>
     </header>
@@ -154,26 +154,26 @@ function CategoryHeader({ name, count }: { name: string; count: number }) {
 function HeroCardMini({ name, product, target, ref }: { name: string; product: string; target: string; ref: string }) {
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-3 pb-3 pt-3 text-primary-foreground">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-ms-3 pb-3 pt-3 text-primary-foreground">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase leading-none tracking-[0.18em] text-primary-foreground/80">
+            <div className="flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase leading-none tracking-[0.18em] text-primary-foreground/80">
               <Scale className="h-3 w-3 shrink-0" />
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-2 break-words text-base font-bold leading-snug">{name}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 leading-none text-primary-foreground/85">
-              <span className="inline-flex h-6 min-w-0 max-w-full items-center gap-1 rounded-full bg-white/15 px-2 text-[11px] leading-none">
+            <h2 className="mt-2 break-words text-ms-base font-bold leading-snug">{name}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-ms-1.5 leading-none text-primary-foreground/85">
+              <span className="inline-flex h-6 min-w-0 max-w-full items-center gap-ms-1 rounded-full bg-white/15 px-ms-2 text-ms-2xs leading-none">
                 <Package className="h-3 w-3 shrink-0" />
                 <span className="truncate">{product}</span>
               </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2 text-[11px] leading-none">
+              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/15 px-ms-2 text-ms-2xs leading-none">
                 Target <b className="ml-0.5">{target}</b>
               </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-2 text-[11px] font-semibold leading-none text-emerald-50 ring-1 ring-emerald-300/50">
+              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-ms-2 text-ms-2xs font-semibold leading-none text-emerald-50 ring-1 ring-emerald-300/50">
                 <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
               </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/10 px-2 font-mono text-[11px] leading-none text-primary-foreground/90">
+              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/10 px-ms-2 font-mono text-ms-2xs leading-none text-primary-foreground/90">
                 <Hash className="h-3 w-3 shrink-0" /> {ref}
               </span>
             </div>
@@ -190,15 +190,15 @@ function DetailRow({
   icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string;
 }) {
   return (
-    <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-2 py-2">
-      <span className="flex min-w-0 items-center gap-1.5 text-[11px] uppercase leading-none text-muted-foreground">
+    <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-ms-2 py-ms-2">
+      <span className="flex min-w-0 items-center gap-ms-1.5 text-ms-2xs uppercase leading-none text-muted-foreground">
         <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center">{icon}</span>
         <span className="truncate">{label}</span>
       </span>
-      <div className="flex min-w-0 items-center justify-end gap-1.5 text-right text-sm font-semibold leading-snug text-foreground">
+      <div className="flex min-w-0 items-center justify-end gap-ms-1.5 text-right text-ms-sm font-semibold leading-snug text-foreground">
         <span className="min-w-0 truncate [overflow-wrap:anywhere]">{value}</span>
         {sub && (
-          <span className="shrink-0 whitespace-nowrap text-[11px] font-normal leading-none text-muted-foreground">
+          <span className="shrink-0 whitespace-nowrap text-ms-2xs font-normal leading-none text-muted-foreground">
             · {sub}
           </span>
         )}
@@ -213,17 +213,17 @@ const LONG = "MinyakGorengTropikalSawitMurniLimaLiterRefillEkonomis";
 
 function Showcase() {
   return (
-    <div className="space-y-4 p-3 text-foreground">
-      <section className="space-y-2">
+    <div className="space-ms-4 p-ms-3 text-foreground">
+      <section className="space-ms-2">
         <SectionTitle title="Pill “Cocok: produk + Xunit”" />
-        <div className="space-y-1 rounded-lg border bg-card p-2">
+        <div className="space-y-1 rounded-lg border bg-card p-ms-2">
           <CocokPill target={250} unit="g" />
           <CocokPill target={1000} unit="g" />
           <CocokPill target={12} unit="pcs" />
         </div>
       </section>
 
-      <section className="space-y-2">
+      <section className="space-ms-2">
         <SectionTitle title="Chip “{n} item” pada header kategori" />
         <div className="overflow-hidden rounded-xl border bg-card">
           <CategoryHeader name="Sembako" count={12} />
@@ -232,7 +232,7 @@ function Showcase() {
         </div>
       </section>
 
-      <section className="space-y-2">
+      <section className="space-ms-2">
         <SectionTitle title="Hero card" />
         <HeroCardMini
           name="Gula Pasir Gulaku Premium Kuning 1kg"
@@ -243,9 +243,9 @@ function Showcase() {
         <HeroCardMini name={LONG} product="TROPICAL5L" target="1000 g" ref="9F8E7D6C5B4A3210" />
       </section>
 
-      <section className="space-y-2">
+      <section className="space-ms-2">
         <SectionTitle title="DetailRow" />
-        <div className="divide-y rounded-xl border bg-card px-3">
+        <div className="divide-y rounded-xl border bg-card px-ms-3">
           <DetailRow
             icon={<Package className="h-3.5 w-3.5" />}
             label="Produk gudang"
@@ -267,7 +267,7 @@ function Showcase() {
           <DetailRow
             icon={<Hash className="h-3.5 w-3.5" />}
             label="ID judul referensi panjang"
-            value={<span className="font-mono text-xs">A1B2C3D4E5F60718</span>}
+            value={<span className="font-mono text-ms-xs">A1B2C3D4E5F60718</span>}
           />
         </div>
       </section>
@@ -277,7 +277,7 @@ function Showcase() {
 
 function SectionTitle({ title }: { title: string }) {
   return (
-    <h2 className="text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
+    <h2 className="text-ms-2xs font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
       {title}
     </h2>
   );
@@ -318,22 +318,22 @@ function KomponenReviewPage() {
   }
 
   return (
-    <div className={`${dark ? "dark" : ""} min-h-screen bg-muted/30 p-4 text-foreground`}>
-      <header className="mx-auto mb-4 flex max-w-6xl items-start justify-between gap-3">
+    <div className={`${dark ? "dark" : ""} min-h-screen bg-muted/30 p-ms-4 text-foreground`}>
+      <header className="mx-auto mb-4 flex max-w-6xl items-start justify-between gap-ms-3">
         <div className="min-w-0 space-y-1">
-          <h1 className="text-lg font-bold leading-snug">Review komponen responsif</h1>
-          <p className="text-xs text-muted-foreground">
+          <h1 className="text-ms-lg font-bold leading-snug">Review komponen responsif</h1>
+          <p className="text-ms-xs text-muted-foreground">
             Pratinjau pill Cocok, chip {"{n}"} item, hero card, dan DetailRow pada lebar Android
             320 / 360 / 411 / 480 px. Aturan: <code className="rounded bg-muted px-1">docs/responsive-layout-rules.md</code>.
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-ms-2">
           <button aria-label="Unduh PNG untuk semua lebar"
             type="button"
             onClick={exportAll}
             disabled={busy !== null}
             title="Unduh PNG untuk semua lebar"
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-9 shrink-0 items-center gap-ms-1.5 rounded-full border bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
           >
             <Images className="h-3.5 w-3.5" />
             <span>{busy === "all" ? "Mengunduh…" : "Unduh semua"}</span>
@@ -343,7 +343,7 @@ function KomponenReviewPage() {
             onClick={() => setDark((v) => !v)}
             aria-pressed={dark}
             title={dark ? "Beralih ke mode terang" : "Beralih ke mode gelap"}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold text-foreground shadow-sm hover:bg-muted"
+            className="inline-flex h-9 shrink-0 items-center gap-ms-1.5 rounded-full border bg-background px-ms-3 text-ms-xs font-semibold text-foreground shadow-sm hover:bg-muted"
           >
             {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             <span>{dark ? "Terang" : "Gelap"}</span>
@@ -353,17 +353,17 @@ function KomponenReviewPage() {
 
       <VariantTable />
 
-      <div className="mx-auto grid max-w-6xl gap-4 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
+      <div className="mx-auto grid max-w-6xl gap-ms-4 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
         {WIDTHS.map((w) => (
-          <figure key={w} className="space-y-2">
-            <figcaption className="flex items-center justify-between text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
+          <figure key={w} className="space-ms-2">
+            <figcaption className="flex items-center justify-between text-ms-2xs font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
               <span>Lebar {w}px</span>
               <button
                 type="button"
                 onClick={() => exportOne(w)}
                 disabled={busy !== null}
                 title={`Unduh PNG ${w}px`}
-                className="inline-flex h-6 items-center gap-1 rounded-full border bg-background px-2 text-[11px] font-semibold normal-case tracking-normal text-foreground hover:bg-muted disabled:opacity-50"
+                className="inline-flex h-6 items-center gap-ms-1 rounded-full border bg-background px-ms-2 text-ms-2xs font-semibold normal-case tracking-normal text-foreground hover:bg-muted disabled:opacity-50"
               >
                 <Download className="h-3 w-3" />
                 {busy === `${w}` ? "…" : "PNG"}
@@ -381,7 +381,7 @@ function KomponenReviewPage() {
         ))}
       </div>
 
-      <footer className="mx-auto mt-6 max-w-6xl text-[11px] leading-snug text-muted-foreground">
+      <footer className="mx-auto mt-6 max-w-6xl text-ms-2xs leading-snug text-muted-foreground">
         Halaman ini noindex. Tidak ada network call, fixture statis — aman dibuka tanpa login.
       </footer>
     </div>

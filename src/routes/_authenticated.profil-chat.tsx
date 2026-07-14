@@ -162,7 +162,7 @@ function ProfilChatPage() {
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-background">
       {/* Top bar */}
-      <header className="sticky top-0 z-10 flex items-center gap-4 bg-background px-4 py-3">
+      <header className="sticky top-0 z-10 flex items-center gap-ms-4 bg-background px-ms-4 py-ms-3">
         <button
           type="button"
           aria-label="Kembali"
@@ -171,7 +171,7 @@ function ProfilChatPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="flex-1 text-lg font-semibold">Pengaturan</h1>
+        <h1 className="flex-1 text-ms-lg font-semibold">Pengaturan</h1>
         <button
           type="button"
           aria-label="Cari"
@@ -183,7 +183,7 @@ function ProfilChatPage() {
       </header>
 
       {/* Profile card */}
-      <section className="flex items-center gap-4 px-4 py-4">
+      <section className="flex items-center gap-ms-4 px-ms-4 py-ms-4">
         <div className="relative h-16 w-16 shrink-0">
           {avatarUrl ? (
             <img
@@ -192,19 +192,19 @@ function ProfilChatPage() {
               className="h-16 w-16 rounded-full object-cover"
             />
           ) : (
-            <div className="grid h-16 w-16 place-items-center rounded-full bg-orange-950 text-3xl font-medium text-orange-300">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-orange-950 text-ms-3xl font-medium text-orange-300">
               {initial}
             </div>
           )}
           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-xl font-medium">{name}</div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <div className="truncate text-ms-xl font-medium">{name}</div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-ms-1.5">
             <button
               type="button"
               onClick={() => toast.info("Status kustom segera hadir.")}
-              className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent"
+              className="inline-flex items-center gap-ms-1.5 rounded-full bg-muted px-ms-2.5 py-1 text-ms-xs text-muted-foreground hover:bg-accent"
             >
               <Smile className="h-3.5 w-3.5" />
               Saat ini saya sedang…
@@ -212,7 +212,7 @@ function ProfilChatPage() {
             {profile?.invite_code ? (
               <Link
                 to="/undang"
-                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 font-mono text-xs tabular-nums tracking-widest text-primary hover:bg-primary/20"
+                className="inline-flex items-center gap-ms-1.5 rounded-full bg-primary/10 px-ms-2.5 py-1 font-mono text-ms-xs tabular-nums tracking-widest text-primary hover:bg-primary/20"
                 aria-label="Undang teman lewat PIN"
               >
                 PIN {formatInviteCode(profile.invite_code)}
@@ -233,17 +233,17 @@ function ProfilChatPage() {
       <div className="h-px bg-border" />
 
       {/* Pintasan: unduh APK Chat saja tanpa membuka /download */}
-      <div className="px-4 pt-3">
+      <div className="px-ms-4 pt-3">
         {chatApk?.url ? (
           <button
             type="button"
             onClick={() => setApkPickerOpen(true)}
-            className="flex w-full items-center gap-4 rounded-xl border bg-primary/5 px-4 py-3 text-left hover:bg-primary/10"
+            className="flex w-full items-center gap-ms-4 rounded-xl border bg-primary/5 px-ms-4 py-ms-3 text-left hover:bg-primary/10"
           >
             <Download className="h-6 w-6 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-base font-medium">Unduh APK MCM Chat</div>
-              <div className="truncate text-sm text-muted-foreground">
+              <div className="truncate text-ms-base font-medium">Unduh APK MCM Chat</div>
+              <div className="truncate text-ms-sm text-muted-foreground">
                 Terbaru: {chatApk.versionName ? `v${chatApk.versionName}` : "?"}
                 {chatApk.sizeMB ? ` · ${chatApk.sizeMB} MB` : ""} · Pilih versi
               </div>
@@ -251,15 +251,15 @@ function ProfilChatPage() {
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
           </button>
         ) : (
-          <div className="flex items-center gap-4 rounded-xl border bg-muted/40 px-4 py-3 text-muted-foreground">
+          <div className="flex items-center gap-ms-4 rounded-xl border bg-muted/40 px-ms-4 py-ms-3 text-muted-foreground">
             {apkQuery.isLoading ? (
               <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
             ) : (
               <Download className="h-6 w-6 shrink-0" />
             )}
             <div className="min-w-0 flex-1">
-              <div className="truncate text-base font-medium">Unduh APK MCM Chat</div>
-              <div className="truncate text-sm">
+              <div className="truncate text-ms-base font-medium">Unduh APK MCM Chat</div>
+              <div className="truncate text-ms-sm">
                 {apkQuery.isLoading
                   ? "Memuat versi terbaru..."
                   : "APK belum tersedia — buka halaman /download."}
@@ -267,7 +267,7 @@ function ProfilChatPage() {
             </div>
             <Link
               to="/download"
-              className="text-xs font-semibold text-primary hover:underline"
+              className="text-ms-xs font-semibold text-primary hover:underline"
             >
               Buka
             </Link>
@@ -279,11 +279,11 @@ function ProfilChatPage() {
       <ul className="py-1">
         {ROWS.map((r) => {
           const content = (
-            <div className="flex items-center gap-4 px-4 py-3 active:bg-accent/60 hover:bg-accent/40">
+            <div className="flex items-center gap-ms-4 px-ms-4 py-ms-3 active:bg-accent/60 hover:bg-accent/40">
               <r.icon className="h-6 w-6 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-base">{r.title}</div>
-                <div className="truncate text-sm text-muted-foreground">{r.desc}</div>
+                <div className="truncate text-ms-base">{r.title}</div>
+                <div className="truncate text-ms-sm text-muted-foreground">{r.desc}</div>
               </div>
               <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
             </div>
@@ -327,8 +327,8 @@ function ProfilChatPage() {
               Unduh versi terbaru atau pilih rilis sebelumnya bila diperlukan.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-2.5 py-2">
-            <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-ms-2 rounded-lg border bg-muted/20 px-ms-2.5 py-ms-2">
+            <div className="flex min-w-0 items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
               <ClipboardCheck className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">
                 Cek apakah link yang Anda salin masih bisa dipakai.
@@ -338,7 +338,7 @@ function ProfilChatPage() {
               type="button"
               onClick={validateClipboardLink}
               disabled={validating}
-              className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium hover:bg-accent disabled:opacity-60"
+              className="inline-flex items-center gap-ms-1.5 rounded-md border bg-background px-ms-2.5 py-1 text-ms-2xs font-medium hover:bg-accent disabled:opacity-60"
             >
               {validating ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -350,7 +350,7 @@ function ProfilChatPage() {
           </div>
           {validation && (
             <div
-              className={`rounded-lg border px-3 py-2 text-xs ${
+              className={`rounded-lg border px-ms-3 py-ms-2 text-ms-xs ${
                 validation.active
                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
                   : validation.reason === "expired"
@@ -359,7 +359,7 @@ function ProfilChatPage() {
               }`}
               role="status"
             >
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-ms-2">
                 {validation.active ? (
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
                 ) : (
@@ -393,7 +393,7 @@ function ProfilChatPage() {
                       : validation.checkedUrl}
                   </div>
                   {validation.freshUrl && !validation.active && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-2 flex flex-wrap gap-ms-1.5">
                       <a
                         href={validation.freshUrl}
                         onClick={() => {
@@ -407,7 +407,7 @@ function ProfilChatPage() {
                             sizeMB: validation.sizeMB,
                           });
                         }}
-                        className="inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent"
+                        className="inline-flex items-center gap-ms-1 rounded-md border bg-background px-ms-2 py-1 text-ms-2xs font-medium text-foreground hover:bg-accent"
                       >
                         <Download className="h-3 w-3" />
                         Unduh link baru
@@ -425,7 +425,7 @@ function ProfilChatPage() {
                             toast.error("Gagal menyalin.");
                           }
                         }}
-                        className="inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent"
+                        className="inline-flex items-center gap-ms-1 rounded-md border bg-background px-ms-2 py-1 text-ms-2xs font-medium text-foreground hover:bg-accent"
                       >
                         <Copy className="h-3 w-3" />
                         Salin link baru
@@ -445,9 +445,9 @@ function ProfilChatPage() {
             </div>
           )}
           {history.length > 0 && (
-            <section className="rounded-lg border bg-muted/30 p-2">
+            <section className="rounded-lg border bg-muted/30 p-ms-2">
               <div className="mb-1.5 flex items-center justify-between px-1">
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <History className="h-3.5 w-3.5" />
                   Riwayat unduhan Anda ({history.length})
                 </div>
@@ -457,7 +457,7 @@ function ProfilChatPage() {
                     clearChatApkHistory();
                     toast.success("Riwayat unduhan dihapus.");
                   }}
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-destructive"
+                  className="inline-flex items-center gap-ms-1 text-ms-2xs font-medium text-muted-foreground hover:text-destructive"
                   aria-label="Hapus riwayat unduhan"
                 >
                   <Trash2 className="h-3 w-3" />
@@ -479,19 +479,19 @@ function ProfilChatPage() {
                           sizeMB: h.sizeMB,
                         });
                       }}
-                      className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent"
+                      className="flex items-center gap-ms-2 rounded-md px-ms-2 py-1.5 hover:bg-accent"
                     >
                       <Download className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs font-medium">
+                        <div className="truncate text-ms-xs font-medium">
                           {h.versionName ? `v${h.versionName}` : h.name}
                           {h.versionCode !== null && (
-                            <span className="ml-1 text-[10px] text-muted-foreground">
+                            <span className="ml-1 text-ms-2xs text-muted-foreground">
                               (build {h.versionCode})
                             </span>
                           )}
                         </div>
-                        <div className="truncate text-[10px] text-muted-foreground">
+                        <div className="truncate text-ms-2xs text-muted-foreground">
                           {formatAgoID(h.downloadedAt)}
                           {h.sizeMB ? ` · ${h.sizeMB} MB` : ""}
                         </div>
@@ -503,22 +503,22 @@ function ProfilChatPage() {
             </section>
           )}
           {detailQuery.isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-ms-2 py-ms-6 text-ms-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
               Memuat daftar versi...
             </div>
           ) : chatReleases.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
+            <p className="py-ms-6 text-center text-ms-sm text-muted-foreground">
               Belum ada rilis APK yang tersedia.
             </p>
           ) : (
-            <ul className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+            <ul className="max-h-[60vh] space-ms-2 overflow-y-auto pr-1">
               {chatReleases.map((r: ApkRelease) => {
                 const isLatest = r.name === latestKey;
                 return (
                   <li key={r.name}>
                     <div
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 transition ${
+                      className={`flex items-center gap-ms-2 rounded-lg border px-ms-3 py-ms-2.5 transition ${
                         isLatest
                           ? "border-primary/60 bg-primary/5"
                           : ""
@@ -536,7 +536,7 @@ function ProfilChatPage() {
                           sizeMB: r.sizeMB ?? null,
                         });
                       }}
-                      className="flex min-w-0 flex-1 items-center gap-3"
+                      className="flex min-w-0 flex-1 items-center gap-ms-3"
                     >
                       <Download
                         className={`h-5 w-5 shrink-0 ${
@@ -544,27 +544,27 @@ function ProfilChatPage() {
                         }`}
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate text-sm font-medium">
+                        <div className="flex items-center gap-ms-2">
+                          <span className="truncate text-ms-sm font-medium">
                             {r.versionName ? `v${r.versionName}` : r.name}
                             {r.versionCode !== null && (
-                              <span className="ml-1 text-[11px] text-muted-foreground">
+                              <span className="ml-1 text-ms-2xs text-muted-foreground">
                                 (build {r.versionCode})
                               </span>
                             )}
                           </span>
                           {isLatest && (
-                            <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                            <span className="rounded-full bg-primary px-ms-2 py-0.5 text-ms-2xs font-semibold text-primary-foreground">
                               Terbaru
                             </span>
                           )}
                           {r.belowMinimum && !isLatest && (
-                            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                            <span className="rounded-full bg-amber-500/15 px-ms-2 py-0.5 text-ms-2xs font-semibold text-amber-700 dark:text-amber-300">
                               Lawas
                             </span>
                           )}
                         </div>
-                        <div className="truncate text-[11px] text-muted-foreground">
+                        <div className="truncate text-ms-2xs text-muted-foreground">
                           {r.sizeMB ? `${r.sizeMB} MB` : "Ukuran ?"}
                           {r.updatedAt
                             ? ` · ${new Date(r.updatedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}`

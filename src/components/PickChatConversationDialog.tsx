@@ -32,10 +32,10 @@ export function PickChatConversationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md p-0 gap-0">
-        <DialogHeader className="p-3 pb-2 border-b">
-          <DialogTitle className="text-sm font-semibold">{title}</DialogTitle>
+        <DialogHeader className="p-ms-3 pb-2 border-b">
+          <DialogTitle className="text-ms-sm font-semibold">{title}</DialogTitle>
         </DialogHeader>
-        <div className="p-2 border-b">
+        <div className="p-ms-2 border-b">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -44,7 +44,7 @@ export function PickChatConversationDialog({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Cari percakapan…"
-              className="h-8 w-full rounded-md border bg-background pl-7 pr-7 text-xs outline-none focus:border-primary/40"
+              className="h-8 w-full rounded-md border bg-background pl-7 pr-7 text-ms-xs outline-none focus:border-primary/40"
             />
             {q && (
               <button
@@ -60,11 +60,11 @@ export function PickChatConversationDialog({
         </div>
         <div className="max-h-[55vh] overflow-y-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center gap-2 p-6 text-xs text-muted-foreground">
+            <div className="flex items-center justify-center gap-ms-2 p-ms-6 text-ms-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memuat percakapan…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="p-6 text-center text-xs text-muted-foreground">
+            <div className="p-ms-6 text-center text-ms-xs text-muted-foreground">
               {q ? "Tidak ada percakapan yang cocok." : "Belum ada percakapan. Buka menu Chat untuk memulai."}
             </div>
           ) : (
@@ -76,19 +76,19 @@ export function PickChatConversationDialog({
                     <button
                       type="button"
                       onClick={() => onPick(c.id, c.display_title)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-accent"
+                      className="flex w-full items-center gap-ms-2 px-ms-3 py-ms-2 text-left hover:bg-accent"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                         {isGroup ? <Users className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{c.display_title}</div>
+                        <div className="truncate text-ms-sm font-medium">{c.display_title}</div>
                         {c.last_body && (
-                          <div className="truncate text-[10px] text-muted-foreground">{c.last_body}</div>
+                          <div className="truncate text-ms-2xs text-muted-foreground">{c.last_body}</div>
                         )}
                       </div>
                       {c.unread > 0 && (
-                        <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                        <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-ms-2xs font-semibold text-primary-foreground">
                           {c.unread}
                         </span>
                       )}

@@ -35,7 +35,7 @@ export function SettingsHeader({
         className,
       )}
     >
-      <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3">
+      <div className="mx-auto flex max-w-3xl items-center gap-ms-3 px-ms-3 py-ms-2.5 sm:px-ms-4 sm:py-ms-3">
         <button
           type="button"
           aria-label="Kembali"
@@ -51,19 +51,19 @@ export function SettingsHeader({
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate text-base font-semibold leading-tight tracking-tight sm:text-lg">
+          <div className="flex items-center gap-ms-2">
+            <h1 className="truncate text-ms-base font-semibold leading-tight tracking-tight sm:text-ms-lg">
               {title}
             </h1>
             {status ? <span className="shrink-0">{status}</span> : null}
           </div>
           {subtitle ? (
-            <p className="truncate text-[11px] leading-snug text-muted-foreground sm:text-xs">
+            <p className="truncate text-ms-2xs leading-snug text-muted-foreground sm:text-ms-xs">
               {subtitle}
             </p>
           ) : null}
         </div>
-        {actions ? <div className="flex shrink-0 items-center gap-1.5">{actions}</div> : null}
+        {actions ? <div className="flex shrink-0 items-center gap-ms-1.5">{actions}</div> : null}
       </div>
     </header>
   );

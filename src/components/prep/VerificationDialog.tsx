@@ -101,9 +101,9 @@ export function VerificationDialog({
         </DialogHeader>
 
         {submission ? (
-          <div className="space-y-3 text-sm">
+          <div className="space-ms-3 text-ms-sm">
             {photoUrls && photoUrls.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-ms-2">
                 {photoUrls.map((u, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -116,7 +116,7 @@ export function VerificationDialog({
                 ))}
               </div>
             ) : null}
-            <div className="grid grid-cols-[6rem_1fr] gap-y-1 text-xs">
+            <div className="grid grid-cols-[6rem_1fr] gap-y-1 text-ms-xs">
               <span className="text-muted-foreground">Karyawan</span>
               <span className="min-w-0 truncate">{submission.employee_label ?? "—"}</span>
               <span className="text-muted-foreground">Waktu</span>
@@ -139,7 +139,7 @@ export function VerificationDialog({
                 href={submission.location_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary underline underline-offset-2"
+                className="inline-flex items-center gap-ms-1 text-ms-xs text-primary underline underline-offset-2"
               >
                 <MapPin className="h-3.5 w-3.5" /> Buka lokasi
               </a>
@@ -147,7 +147,7 @@ export function VerificationDialog({
 
             {rejecting ? (
               <div className="space-y-1">
-                <label className="text-xs font-medium">Alasan penolakan</label>
+                <label className="text-ms-xs font-medium">Alasan penolakan</label>
                 <Textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -158,10 +158,10 @@ export function VerificationDialog({
             ) : null}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Tidak ada data submisi.</p>
+          <p className="text-ms-sm text-muted-foreground">Tidak ada data submisi.</p>
         )}
 
-        <DialogFooter className="flex-row gap-2 sm:justify-between">
+        <DialogFooter className="flex-row gap-ms-2 sm:justify-between">
           {rejecting ? (
             <>
               <Button

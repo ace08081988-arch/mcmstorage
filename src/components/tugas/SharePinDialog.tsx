@@ -128,33 +128,33 @@ export function SharePinDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-ms-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-t-2xl border bg-card p-4 shadow-lg sm:rounded-2xl"
+        className="w-full max-w-md rounded-t-2xl border bg-card p-ms-4 shadow-lg sm:rounded-2xl"
       >
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-sm font-semibold">Bagikan link + PIN</div>
-          <button aria-label="Tutup" onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted">
+          <div className="text-ms-sm font-semibold">Bagikan link + PIN</div>
+          <button aria-label="Tutup" onClick={onClose} className="rounded-md p-ms-1 text-muted-foreground hover:bg-muted">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div>
-            <div className="mb-1 text-[11px] text-muted-foreground">Tugas</div>
-            <div className="truncate rounded-md border bg-muted/40 px-2 py-1.5 text-sm">{title}</div>
+            <div className="mb-1 text-ms-2xs text-muted-foreground">Tugas</div>
+            <div className="truncate rounded-md border bg-muted/40 px-ms-2 py-1.5 text-ms-sm">{title}</div>
           </div>
 
           <div>
-            <div className="mb-1 text-[11px] text-muted-foreground">Link pegawai</div>
-            <div className="truncate rounded-md border bg-muted/40 px-2 py-1.5 text-xs font-mono">{url}</div>
+            <div className="mb-1 text-ms-2xs text-muted-foreground">Link pegawai</div>
+            <div className="truncate rounded-md border bg-muted/40 px-ms-2 py-1.5 text-ms-xs font-mono">{url}</div>
           </div>
 
           <TaskQrCode url={url} pin={pin || undefined} title={title} />
 
           <div>
-            <label className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <label className="mb-1 flex items-center gap-ms-1 text-ms-2xs text-muted-foreground">
               <KeyRound className="h-3 w-3" /> PIN tugas (4–8 digit)
             </label>
             <div className="relative">
@@ -165,12 +165,12 @@ export function SharePinDialog({
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
                 placeholder="••••"
-                className="h-11 w-full rounded-md border bg-background px-3 pr-20 text-center text-xl tracking-[0.4em] tabular-nums"
+                className="h-11 w-full rounded-md border bg-background px-ms-3 pr-20 text-center text-ms-xl tracking-[0.4em] tabular-nums"
               />
               <button
                 type="button"
                 onClick={() => (reveal ? setReveal(false) : startReveal())}
-                className="absolute right-1 top-1/2 inline-flex h-9 -translate-y-1/2 items-center gap-1 rounded-md px-2 text-[11px] text-muted-foreground hover:bg-muted"
+                className="absolute right-1 top-1/2 inline-flex h-9 -translate-y-1/2 items-center gap-ms-1 rounded-md px-ms-2 text-ms-2xs text-muted-foreground hover:bg-muted"
                 aria-label={reveal ? "Sembunyikan PIN" : "Tampilkan PIN"}
               >
                 {reveal ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -178,7 +178,7 @@ export function SharePinDialog({
               </button>
             </div>
             {pin && (
-              <div className="mt-1 flex items-center justify-between text-[10px]">
+              <div className="mt-1 flex items-center justify-between text-ms-2xs">
                 <span className="font-mono tracking-[0.3em] text-muted-foreground">
                   {displayPin}
                 </span>
@@ -189,17 +189,17 @@ export function SharePinDialog({
                 )}
               </div>
             )}
-            <div className="mt-1 text-[10px] text-muted-foreground">
+            <div className="mt-1 text-ms-2xs text-muted-foreground">
               PIN dimask demi keamanan. Tekan "Lihat" untuk memeriksa sebentar sebelum dikirim. {taskId ? "Saat disalin/dikirim, PIN ini diaktifkan untuk tugas dan percobaan salah pegawai direset." : "PIN tidak disimpan ulang — hanya disertakan dalam pesan yang Anda kirim."}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-ms-2">
             <button
               type="button"
               onClick={() => void copyAll()}
               disabled={busy}
-              className="inline-flex h-10 items-center justify-center gap-1 rounded-md border px-3 text-sm"
+              className="inline-flex h-10 items-center justify-center gap-ms-1 rounded-md border px-ms-3 text-ms-sm"
             >
               <Copy className="h-4 w-4" /> Salin
             </button>
@@ -207,7 +207,7 @@ export function SharePinDialog({
               type="button"
               onClick={() => void shareWa()}
               disabled={busy || !pin}
-              className="inline-flex h-10 items-center justify-center gap-1 rounded-md bg-[#25D366] px-3 text-sm font-semibold text-white disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-sm font-semibold text-white disabled:opacity-60"
             >
               <MessageCircle className="h-4 w-4" /> Kirim via MCM
             </button>

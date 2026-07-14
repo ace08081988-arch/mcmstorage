@@ -238,7 +238,7 @@ function FriendRequestsPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-background pb-24">
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background px-4 py-3">
+      <header className="sticky top-0 z-10 flex items-center gap-ms-3 border-b bg-background px-ms-4 py-ms-3">
         <button
           type="button"
           aria-label="Kembali"
@@ -248,14 +248,14 @@ function FriendRequestsPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-semibold">Permintaan pertemanan</h1>
-          <p className="text-xs text-muted-foreground">
+          <h1 className="text-ms-lg font-semibold">Permintaan pertemanan</h1>
+          <p className="text-ms-xs text-muted-foreground">
             Terima permintaan lebih dulu supaya chat, panggilan suara, dan video call bisa dilakukan.
           </p>
         </div>
       </header>
 
-      <section className="px-4 pt-4">
+      <section className="px-ms-4 pt-4">
         <Tabs defaultValue="incoming">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="incoming">
@@ -266,7 +266,7 @@ function FriendRequestsPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="incoming" className="mt-3 space-y-2">
+          <TabsContent value="incoming" className="mt-3 space-ms-2">
             {isLoading ? (
               <SkeletonList />
             ) : isError ? (
@@ -297,7 +297,7 @@ function FriendRequestsPage() {
                       size="sm"
                       onClick={() => openChat(r.id, r.peer_id, r.peer_display_name)}
                       disabled={openingChatId === r.id}
-                      className="gap-1"
+                      className="gap-ms-1"
                     >
                       {openingChatId === r.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -313,7 +313,7 @@ function FriendRequestsPage() {
                         size="sm"
                         onClick={() => accept(r.id, r.peer_display_name)}
                         disabled={pendingActionId === r.id}
-                        className="gap-1"
+                        className="gap-ms-1"
                       >
                         {pendingActionId === r.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -328,7 +328,7 @@ function FriendRequestsPage() {
                         variant="outline"
                         onClick={() => reject(r.id, r.peer_display_name)}
                         disabled={pendingActionId === r.id}
-                        className="gap-1"
+                        className="gap-ms-1"
                       >
                         <X className="h-4 w-4" /> Tolak
                       </Button>
@@ -341,7 +341,7 @@ function FriendRequestsPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="outgoing" className="mt-3 space-y-2">
+          <TabsContent value="outgoing" className="mt-3 space-ms-2">
             {isLoading ? (
               <SkeletonList />
             ) : isError ? (
@@ -377,7 +377,7 @@ function FriendRequestsPage() {
                       size="sm"
                       onClick={() => openChat(r.id, r.peer_id, r.peer_display_name)}
                       disabled={openingChatId === r.id}
-                      className="gap-1"
+                      className="gap-ms-1"
                     >
                       {openingChatId === r.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -393,7 +393,7 @@ function FriendRequestsPage() {
                       variant="outline"
                       onClick={() => doCancel(r.id, r.peer_display_name)}
                       disabled={pendingActionId === r.id}
-                      className="gap-1"
+                      className="gap-ms-1"
                     >
                       <X className="h-4 w-4" /> Batalkan
                     </Button>
@@ -425,7 +425,7 @@ function RequestCard(props: {
     ? ""
     : when.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
   return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-sm">
+    <div className="flex items-center gap-ms-3 rounded-2xl border bg-card p-ms-3 shadow-sm">
       {props.avatarUrl ? (
         <img
           src={props.avatarUrl}
@@ -433,31 +433,31 @@ function RequestCard(props: {
           className="h-11 w-11 shrink-0 rounded-full object-cover"
         />
       ) : (
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-950 text-lg font-medium text-orange-300">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-950 text-ms-lg font-medium text-orange-300">
           {initial}
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium">{props.name ?? "Tanpa nama"}</div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <div className="truncate text-ms-sm font-medium">{props.name ?? "Tanpa nama"}</div>
+        <div className="flex flex-wrap items-center gap-ms-2 text-ms-xs text-muted-foreground">
           {props.pin ? <span className="font-mono">PIN {formatInviteCode(props.pin)}</span> : null}
           {whenLabel ? <span>· {whenLabel}</span> : null}
           {props.statusHint}
         </div>
         {props.isSyncing && (
-          <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+          <div className="mt-1 inline-flex items-center gap-ms-1 text-ms-xs font-medium text-amber-600">
             <Loader2 className="h-3 w-3 animate-spin" /> Menyinkronkan ke server…
           </div>
         )}
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">{props.actions}</div>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-ms-2">{props.actions}</div>
     </div>
   );
 }
 
 function SkeletonList() {
   return (
-    <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+    <div className="flex items-center justify-center gap-ms-2 py-8 text-ms-sm text-muted-foreground">
       <Loader2 className="h-4 w-4 animate-spin" /> Memuat…
     </div>
   );
@@ -465,7 +465,7 @@ function SkeletonList() {
 
 function ErrorRetry({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm">
+    <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-ms-4 text-ms-sm">
       <div className="font-medium text-destructive">Gagal memuat permintaan.</div>
       <Button type="button" variant="outline" size="sm" onClick={onRetry} className="mt-2">
         Coba lagi
@@ -478,8 +478,8 @@ function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="flex flex-col items-center rounded-2xl border border-dashed p-8 text-center">
       <UserPlus className="mb-2 h-6 w-6 text-muted-foreground" />
-      <div className="text-sm font-medium">{title}</div>
-      <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+      <div className="text-ms-sm font-medium">{title}</div>
+      <p className="mt-1 text-ms-xs text-muted-foreground">{subtitle}</p>
     </div>
   );
 }
@@ -493,7 +493,7 @@ function StatusChip({
     return (
       <span
         aria-label="Status: diterima"
-        className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600"
+        className="inline-flex items-center gap-ms-1 rounded-full bg-emerald-500/10 px-ms-2 py-0.5 text-ms-xs font-medium text-emerald-600"
       >
         <CheckCircle2 className="h-3 w-3" /> Diterima
       </span>
@@ -503,7 +503,7 @@ function StatusChip({
     return (
       <span
         aria-label="Status: ditolak"
-        className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-600"
+        className="inline-flex items-center gap-ms-1 rounded-full bg-rose-500/10 px-ms-2 py-0.5 text-ms-xs font-medium text-rose-600"
       >
         <XCircle className="h-3 w-3" /> Ditolak
       </span>
@@ -513,7 +513,7 @@ function StatusChip({
     return (
       <span
         aria-label="Status: dibatalkan"
-        className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+        className="inline-flex items-center gap-ms-1 rounded-full bg-muted px-ms-2 py-0.5 text-ms-xs font-medium text-muted-foreground"
       >
         <X className="h-3 w-3" /> Dibatalkan
       </span>
@@ -522,7 +522,7 @@ function StatusChip({
   return (
     <span
       aria-label="Status: menunggu diterima"
-      className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600"
+      className="inline-flex items-center gap-ms-1 rounded-full bg-amber-500/10 px-ms-2 py-0.5 text-ms-xs font-medium text-amber-600"
     >
       <Clock className="h-3 w-3" /> Menunggu
     </span>

@@ -91,12 +91,12 @@ export function PeerProfileDialog({
           </div>
         </div>
 
-        <div className="space-y-3 p-4">
-          <div className="flex items-center gap-2">
+        <div className="space-ms-3 p-ms-4">
+          <div className="flex items-center gap-ms-2">
             <div className="min-w-0 flex-1">
-              <div className="truncate text-lg font-semibold">{displayName}</div>
+              <div className="truncate text-ms-lg font-semibold">{displayName}</div>
               {invite ? (
-                <div className="font-mono text-xs tabular-nums tracking-widest text-muted-foreground">
+                <div className="font-mono text-ms-xs tabular-nums tracking-widest text-muted-foreground">
                   PIN {invite}
                 </div>
               ) : null}
@@ -117,13 +117,13 @@ export function PeerProfileDialog({
           </div>
 
           {trimmedPhone ? (
-            <div className="flex items-center gap-3 rounded-md border border-border/60 bg-muted/40 px-3 py-2">
+            <div className="flex items-center gap-ms-3 rounded-md border border-border/60 bg-muted/40 px-ms-3 py-ms-2">
               <Phone className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                <div className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
                   Nomor telepon
                 </div>
-                <div className="truncate font-mono text-sm tabular-nums" data-testid="peer-profile-phone">
+                <div className="truncate font-mono text-ms-sm tabular-nums" data-testid="peer-profile-phone">
                   {trimmedPhone}
                 </div>
               </div>
@@ -138,7 +138,7 @@ export function PeerProfileDialog({
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-ms-2">
             {onOpenAddressBook ? (
               <Button
                 variant="outline"

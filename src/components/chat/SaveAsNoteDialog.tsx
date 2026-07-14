@@ -35,7 +35,7 @@ export function SaveAsNoteDialog({
         <DialogHeader>
           <DialogTitle>Tambah ke Catatan</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
+        <div className="space-ms-2">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Judul catatan" maxLength={120} />
           <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={6} placeholder="Isi catatan" />
         </div>

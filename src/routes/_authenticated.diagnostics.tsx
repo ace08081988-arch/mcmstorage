@@ -243,12 +243,12 @@ function DiagnosticsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-3 sm:p-5">
-      <div className="flex items-center gap-2">
+    <div className="mx-auto max-w-2xl space-ms-4 p-ms-3 sm:p-ms-5">
+      <div className="flex items-center gap-ms-2">
         <Button asChild variant="ghost" size="sm">
           <Link to="/"><ChevronLeft className="h-4 w-4" /> Kembali</Link>
         </Button>
-        <h1 className="text-lg font-semibold">Diagnostik Aplikasi</h1>
+        <h1 className="text-ms-lg font-semibold">Diagnostik Aplikasi</h1>
         <Button size="sm" variant="outline" className="ml-auto" onClick={copySummary}>
           <Copy className="h-4 w-4" /> Salin ringkasan
         </Button>
@@ -256,34 +256,34 @@ function DiagnosticsPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
             <span>Dukungan browser (share & clipboard)</span>
-            <Button size="sm" variant="ghost" className="ml-auto h-7 px-2" onClick={refreshBrowser} title="Periksa ulang">
+            <Button size="sm" variant="ghost" className="ml-auto h-7 px-ms-2" onClick={refreshBrowser} title="Periksa ulang">
               <RefreshCw className="h-3.5 w-3.5" />
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-ms-2">
           {browserChecks.length === 0 ? (
-            <div className="text-xs text-muted-foreground">Memeriksa…</div>
+            <div className="text-ms-xs text-muted-foreground">Memeriksa…</div>
           ) : browserChecks.map((c) => (
-            <div key={c.label} className="flex items-start gap-2 rounded-md border bg-card/50 p-2">
+            <div key={c.label} className="flex items-start gap-ms-2 rounded-md border bg-card/50 p-ms-2">
               {c.ok ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
               ) : (
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
               )}
-              <div className="min-w-0 flex-1 text-xs">
+              <div className="min-w-0 flex-1 text-ms-xs">
                 <div className="font-medium">{c.label}</div>
                 <div className={c.ok ? "text-muted-foreground" : "text-amber-600 dark:text-amber-400"}>{c.detail}</div>
               </div>
             </div>
           ))}
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-ms-2 pt-1">
             <Button size="sm" variant="outline" onClick={() => void testCopy()}>Tes Salin</Button>
             <Button size="sm" variant="outline" onClick={() => void testShare()}>Tes Bagikan</Button>
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-ms-2xs text-muted-foreground">
             Hasil dimasukkan ke "Salin ringkasan" agar mudah dikirim saat melapor.
           </p>
         </CardContent>
@@ -291,19 +291,19 @@ function DiagnosticsPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
             <Bug className="h-4 w-4" />
             <span>Log debug auth</span>
-            <Button size="sm" variant="ghost" className="ml-auto h-7 px-2" onClick={refreshAuthDebug} title="Muat ulang">
+            <Button size="sm" variant="ghost" className="ml-auto h-7 px-ms-2" onClick={refreshAuthDebug} title="Muat ulang">
               <RefreshCw className="h-3.5 w-3.5" />
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <p className="text-[11px] text-muted-foreground">
+        <CardContent className="space-ms-2">
+          <p className="text-ms-2xs text-muted-foreground">
             Event alur login/verifikasi yang tersimpan di perangkat ini (maks 50 event). Token disamarkan otomatis.
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-ms-2">
             <Button size="sm" variant="outline" onClick={() => void copyAuthDebug()}>
               <Copy className="h-3.5 w-3.5" /> Salin log
             </Button>
@@ -312,9 +312,9 @@ function DiagnosticsPage() {
             </Button>
           </div>
           {authEvents.length === 0 ? (
-            <div className="text-xs text-muted-foreground">Belum ada event tercatat.</div>
+            <div className="text-ms-xs text-muted-foreground">Belum ada event tercatat.</div>
           ) : (
-            <div className="max-h-72 overflow-auto rounded-md border bg-muted/30 p-2">
+            <div className="max-h-72 overflow-auto rounded-md border bg-muted/30 p-ms-2">
               <ul className="space-y-1 font-mono text-[10.5px] leading-snug">
                 {authEvents.slice().reverse().map((e, i) => (
                   <li key={i} className={
@@ -335,7 +335,7 @@ function DiagnosticsPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
             {allOk ? (
               <><CheckCircle2 className="h-5 w-5 text-emerald-600" /> Versi paket router kompatibel</>
             ) : (
@@ -343,15 +343,15 @@ function DiagnosticsPage() {
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-ms-2">
           {checks.map((c) => (
-            <div key={c.label} className="flex items-start gap-2 rounded-md border bg-card/50 p-2">
+            <div key={c.label} className="flex items-start gap-ms-2 rounded-md border bg-card/50 p-ms-2">
               {c.ok ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
               ) : (
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
               )}
-              <div className="min-w-0 flex-1 text-xs">
+              <div className="min-w-0 flex-1 text-ms-xs">
                 <div className="font-medium">{c.label}</div>
                 <div className={c.ok ? "text-muted-foreground" : "text-destructive"}>{c.detail}</div>
               </div>
@@ -361,9 +361,9 @@ function DiagnosticsPage() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Versi paket TanStack</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-ms-base">Versi paket TanStack</CardTitle></CardHeader>
         <CardContent>
-          <table className="w-full text-xs">
+          <table className="w-full text-ms-xs">
             <thead className="text-muted-foreground">
               <tr><th className="py-1 text-left font-medium">Paket</th><th className="py-1 text-left font-medium">Versi</th></tr>
             </thead>
@@ -376,7 +376,7 @@ function DiagnosticsPage() {
               ))}
             </tbody>
           </table>
-          <p className="mt-3 text-[11px] text-muted-foreground">
+          <p className="mt-3 text-ms-2xs text-muted-foreground">
             Versi dibaca langsung dari <code>package.json</code> tiap paket saat build, jadi mencerminkan
             apa yang benar-benar dijalankan aplikasi.
           </p>

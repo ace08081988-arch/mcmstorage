@@ -223,7 +223,7 @@ function RequestPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
+      <div className="flex h-full items-center justify-center p-8 text-ms-sm text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
       </div>
     );
@@ -231,14 +231,14 @@ function RequestPage() {
 
   if (loadError) {
     return (
-      <div className="mx-auto max-w-2xl space-y-3 p-4">
-        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm">
-          <div className="mb-2 flex items-center gap-2 font-semibold text-destructive">
+      <div className="mx-auto max-w-2xl space-ms-3 p-ms-4">
+        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-ms-4 text-ms-sm">
+          <div className="mb-2 flex items-center gap-ms-2 font-semibold text-destructive">
             <AlertTriangle className="h-4 w-4" /> Gagal memuat Penyiapan Request
           </div>
-          <div className="space-y-1 text-xs">
+          <div className="space-y-1 text-ms-xs">
             <div><b>Sumber:</b> {loadError.source}</div>
-            <div className="rounded bg-amber-500/10 p-2 text-amber-700 dark:text-amber-300"><b>Diagnosa:</b> {loadError.diagnosis}</div>
+            <div className="rounded bg-amber-500/10 p-ms-2 text-amber-700 dark:text-amber-300"><b>Diagnosa:</b> {loadError.diagnosis}</div>
             <div><b>Pesan:</b> {loadError.message}</div>
             {loadError.code && <div><b>Kode:</b> {loadError.code}</div>}
             {loadError.status !== undefined && <div><b>HTTP:</b> {loadError.status}</div>}
@@ -246,7 +246,7 @@ function RequestPage() {
             {loadError.details && <div><b>Detail:</b> {loadError.details}</div>}
             <div><b>Jaringan:</b> {typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline"}</div>
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex gap-ms-2">
             <Button size="sm" onClick={() => void loadAll()}>
               <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
             </Button>
@@ -273,17 +273,17 @@ function RequestPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
-      <div className="flex items-center gap-2">
+    <div className="mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
+      <div className="flex items-center gap-ms-2">
         <PackagePlus className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-semibold">Penyiapan Request</h1>
+        <h1 className="text-ms-lg font-semibold">Penyiapan Request</h1>
       </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">
+      <p className="text-ms-xs leading-relaxed text-muted-foreground">
         Buat <b>Judul Request</b> berisi beberapa produk sekaligus (mis. <i>Paket Bu Ani</i>: Kristal 1g + Madu 250g).
         Tiap kotak penyiapan = 1 paket dengan satu foto + lokasi. Stok semua produk otomatis berkurang.
       </p>
 
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-ms-2">
         <Button size="sm" variant="outline" onClick={() => setTestOpen(true)}>
           <FlaskConical className="mr-1 h-4 w-4" /> Uji Coba Alur Pegawai
         </Button>
@@ -300,18 +300,18 @@ function RequestPage() {
       {unrouted.length > 0 && (
         <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center justify-between gap-2 text-base">
-              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+            <CardTitle className="flex items-center justify-between gap-ms-2 text-ms-base">
+              <div className="flex items-center gap-ms-2 text-amber-800 dark:text-amber-200">
                 <AlertTriangle className="h-4 w-4" />
                 Kiriman tanpa folder ecer
-                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium">
+                <span className="rounded-full bg-amber-500/20 px-ms-2 py-0.5 text-ms-2xs font-medium">
                   {unrouted.length}
                 </span>
               </div>
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 text-xs"
+                className="h-7 text-ms-xs"
                 onClick={() => setUnroutedOpen((v) => !v)}
               >
                 {unroutedOpen ? "Sembunyikan" : "Lihat"}
@@ -319,14 +319,14 @@ function RequestPage() {
             </CardTitle>
           </CardHeader>
           {unroutedOpen && (
-            <CardContent className="space-y-2">
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
+            <CardContent className="space-ms-2">
+              <p className="text-ms-2xs leading-relaxed text-muted-foreground">
                 Kiriman pegawai untuk produk yang <b>belum memiliki folder ecer yang cocok</b> (produk tidak punya judul,
                 atau jumlah/satuan task tidak persis sama dengan judul ecer manapun).
                 Buka folder ecer produk terkait dan sesuaikan judulnya, atau perbaiki jumlah/satuan di halaman Tugas Baru
                 agar kiriman berikutnya otomatis masuk folder yang benar.
               </p>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2">
                 {unrouted.map((r) => {
                   const label = r.warehouse_item_name || r.name_snapshot || "(tanpa nama)";
                   const qty = r.qty_requested != null
@@ -338,7 +338,7 @@ function RequestPage() {
                   return (
                     <div
                       key={r.id}
-                      className="flex items-center gap-2 rounded-lg border bg-card p-2"
+                      className="flex items-center gap-ms-2 rounded-lg border bg-card p-ms-2"
                     >
                       {r.thumb_url ? (
                         <a
@@ -359,9 +359,9 @@ function RequestPage() {
                           <ImageIcon className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
-                      <div className="min-w-0 flex-1 text-xs">
+                      <div className="min-w-0 flex-1 text-ms-xs">
                         <div className="truncate font-medium">{label}</div>
-                        <div className="text-[11px] text-muted-foreground">
+                        <div className="text-ms-2xs text-muted-foreground">
                           {qty || "—"} · {when}
                         </div>
                         {r.location_url && (
@@ -369,7 +369,7 @@ function RequestPage() {
                             href={r.location_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                            className="inline-flex items-center gap-ms-1 text-ms-2xs text-primary hover:underline"
                           >
                             <MapPin className="h-3 w-3" /> Lokasi
                           </a>
@@ -385,11 +385,11 @@ function RequestPage() {
       )}
 
       {titles.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-dashed bg-card p-8 text-center text-ms-sm text-muted-foreground">
           Belum ada judul request. Klik tombol di atas untuk membuat yang pertama.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-ms-3 sm:grid-cols-2">
           {titles.map((t) => {
             const tItems = titleItems.filter((i) => i.title_id === t.id);
             const sendTitleWA = () => {
@@ -422,15 +422,15 @@ function RequestPage() {
                 key={t.id}
                 onClick={() => setSelectedTitleId(t.id)}
                 data-request-title-id={t.id}
-                className={`flex flex-col gap-1 rounded-xl border bg-card p-3 text-left hover:border-primary/40 hover:bg-accent ${highlightTitleId === t.id ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
+                className={`flex flex-col gap-ms-1 rounded-xl border bg-card p-ms-3 text-left hover:border-primary/40 hover:bg-accent ${highlightTitleId === t.id ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="truncate font-semibold">{t.name}</div>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  <span className="rounded-full bg-primary/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-primary">
                     {tItems.length} produk
                   </span>
                 </div>
-                <div className="text-[11px] text-muted-foreground line-clamp-2">
+                <div className="text-ms-2xs text-muted-foreground line-clamp-2">
                   {tItems.length > 0
                     ? tItems
                         .map((i) => {
@@ -440,13 +440,13 @@ function RequestPage() {
                         .join(" · ")
                     : "Belum ada produk"}
                 </div>
-                <div className="mt-1 flex flex-wrap gap-1.5">
+                <div className="mt-1 flex flex-wrap gap-ms-1.5">
                   <div
                     role="button"
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); setEditingTitle(t); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setEditingTitle(t); } }}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border px-ms-2 py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted"
                   >
                     <Edit3 className="h-3 w-3" /> Edit
                   </div>
@@ -455,7 +455,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-2 py-0.5 text-[10px] text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-0.5 text-ms-2xs text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
                     aria-label="Kirim via MCM"
                   >
                     <MessageCircle className="h-3 w-3" /> Kirim via MCM
@@ -465,7 +465,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); setSendLinkTitle(t); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setSendLinkTitle(t); } }}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20"
+                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-primary/40 bg-primary/10 px-ms-2 py-0.5 text-ms-2xs text-primary hover:bg-primary/20"
                     aria-label="Kirim link ke pegawai"
                     title="Buat link + PIN untuk pegawai yang menyiapkan"
                   >
@@ -476,7 +476,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); setHistoryTitle(t); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setHistoryTitle(t); } }}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border px-ms-2 py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted"
                     aria-label="Riwayat pengiriman"
                     title="Riwayat pengiriman link ke pegawai untuk judul ini"
                   >
@@ -487,7 +487,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); void deleteTitle(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void deleteTitle(); } }}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/20"
+                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-destructive/40 bg-destructive/10 px-ms-2 py-0.5 text-ms-2xs text-destructive hover:bg-destructive/20"
                     aria-label="Hapus judul"
                   >
                     <Trash2 className="h-3 w-3" /> Hapus
@@ -705,15 +705,15 @@ function TitleEditorDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && confirmDiscardIfDirty(saveStatus)) onClose(); }}>
       <DialogContent ref={scrollRef} className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
-          <div className="flex items-start justify-between gap-2">
+        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-ms-6 pt-6 pb-3">
+          <div className="flex items-start justify-between gap-ms-2">
             <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
             <DialogSaveStatus status={saveStatus} className="shrink-0" />
           </div>
           <DialogDescription>Tambahkan beberapa produk dalam 1 paket. Saat penyiapan, stok semua produk akan otomatis berkurang.</DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <Field id="title-sec-nama" label="Nama judul">
             <div className="relative">
               <Input
@@ -747,12 +747,12 @@ function TitleEditorDialog({
                         type="button"
                         onMouseDown={(e) => { e.preventDefault(); setName(c.name); setNameOpen(false); }}
                         onMouseEnter={() => setNameActive(i)}
-                        className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm ${i === nameActive ? "bg-accent text-accent-foreground" : ""}`}
+                        className={`flex w-full items-center gap-ms-2 px-ms-2 py-1.5 text-left text-ms-sm ${i === nameActive ? "bg-accent text-accent-foreground" : ""}`}
                       >
                         <span aria-hidden>👤</span>
                         <span className="min-w-0 flex-1 truncate">{c.name}</span>
                         {c.phone ? (
-                          <span className="shrink-0 text-[11px] text-muted-foreground">{c.phone}</span>
+                          <span className="shrink-0 text-ms-2xs text-muted-foreground">{c.phone}</span>
                         ) : null}
                       </button>
                     </li>
@@ -762,7 +762,7 @@ function TitleEditorDialog({
                       <button
                         type="button"
                         onMouseDown={(e) => { e.preventDefault(); setNameOpen(false); }}
-                        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        className="flex w-full items-center gap-ms-2 px-ms-2 py-1.5 text-left text-ms-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         <span className="truncate">Pakai “{name.trim()}” sebagai nama baru</span>
@@ -783,15 +783,15 @@ function TitleEditorDialog({
                 <Plus className="mr-1 h-3 w-3" /> Tambah
               </Button>
             </div>
-            <div className="space-y-2">
+            <div className="space-ms-2">
               {rows.map((r, idx) => (
                 // L9: stack ke 2 baris di 411px (produk full-width, lalu
                 // qty + satuan). Pada >=sm kembali ke 7/2/3 seperti semula.
-                <div key={idx} className="grid grid-cols-12 gap-1.5 rounded-md border bg-muted/30 p-2">
+                <div key={idx} className="grid grid-cols-12 gap-ms-1.5 rounded-md border bg-muted/30 p-ms-2">
                   <select
                     value={r.warehouse_item_id}
                     onChange={(e) => updateRow(idx, { warehouse_item_id: e.target.value })}
-                    className="col-span-12 sm:col-span-7 h-9 rounded-md border bg-background px-2 text-xs"
+                    className="col-span-12 sm:col-span-7 h-9 rounded-md border bg-background px-ms-2 text-ms-xs"
                   >
                     <option value="">— pilih produk —</option>
                     {warehouseItems.map((w) => (
@@ -805,13 +805,13 @@ function TitleEditorDialog({
                     min="0"
                     value={r.target_grams}
                     onChange={(e) => updateRow(idx, { target_grams: sanitizeQty(idx, e.target.value) })}
-                    className="col-span-5 sm:col-span-2 h-9 text-xs"
+                    className="col-span-5 sm:col-span-2 h-9 text-ms-xs"
                     placeholder={qtyPlaceholder(r.unit_kind)}
                   />
                   <select
                     value={r.unit_kind}
                     onChange={(e) => updateRow(idx, { unit_kind: e.target.value as UnitKind })}
-                    className="col-span-7 sm:col-span-3 h-9 rounded-md border bg-background px-1 text-xs"
+                    className="col-span-7 sm:col-span-3 h-9 rounded-md border bg-background px-1 text-ms-xs"
                     aria-label="Satuan"
                   >
                     {UNIT_GROUPS.map((g) => (
@@ -826,14 +826,14 @@ function TitleEditorDialog({
                     <Input
                       value={r.unit_custom}
                       onChange={(e) => updateRow(idx, { unit_custom: e.target.value })}
-                      className="col-span-12 h-8 text-[11px]"
+                      className="col-span-12 h-8 text-ms-2xs"
                       placeholder="Satuan lain (mis. sachet, renceng…)"
                     />
                   ) : null}
                   <Input
                     value={r.note}
                     onChange={(e) => updateRow(idx, { note: e.target.value })}
-                    className="col-span-11 h-8 text-[11px]"
+                    className="col-span-11 h-8 text-ms-2xs"
                     placeholder="catatan item (opsional)"
                   />
                   <button aria-label="Hapus"
@@ -844,14 +844,14 @@ function TitleEditorDialog({
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                   {negErrors[idx] ? (
-                    <p className="col-span-12 text-[10px] font-medium text-destructive">{negErrors[idx]}</p>
+                    <p className="col-span-12 text-ms-2xs font-medium text-destructive">{negErrors[idx]}</p>
                   ) : null}
                 </div>
               ))}
             </div>
           </div>
         </div>
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2.5 border-t bg-background px-6 py-3 sm:flex-row sm:justify-between sm:gap-2">
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-ms-2.5 border-t bg-background px-ms-6 py-ms-3 sm:flex-row sm:justify-between sm:gap-ms-2">
           <div className="flex w-full items-center justify-center sm:hidden">
             <DialogSaveStatus status={saveStatus} compact />
           </div>
@@ -864,7 +864,7 @@ function TitleEditorDialog({
               <DialogSaveStatus status={saveStatus} compact />
             </span>
           )}
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+          <div className="grid grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={save} disabled={busy}>
               {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null} Simpan
@@ -1232,7 +1232,7 @@ function SendPrepLinkDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <Send className="h-4 w-4 text-primary" /> Kirim link ke pegawai
           </DialogTitle>
           <DialogDescription>
@@ -1241,13 +1241,13 @@ function SendPrepLinkDialog({
         </DialogHeader>
 
         {busy && !session ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-ms-2 py-8 text-ms-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Membuat link…
           </div>
         ) : error ? (
-          <div className="space-y-2">
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-              <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat link</div>
+          <div className="space-ms-2">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-xs text-destructive">
+              <div className="flex items-center gap-ms-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat link</div>
               <div className="mt-1 break-words">{error}</div>
             </div>
             <Button variant="outline" size="sm" className="w-full" onClick={() => { setError(null); setSession(null); }}>
@@ -1255,27 +1255,27 @@ function SendPrepLinkDialog({
             </Button>
           </div>
         ) : session ? (
-          <div className="space-y-3">
-            <div className="flex justify-center rounded-lg border bg-white p-3">
+          <div className="space-ms-3">
+            <div className="flex justify-center rounded-lg border bg-white p-ms-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qrUrl} alt="QR tugas pegawai" width={200} height={200} />
             </div>
             <div className="space-y-1.5">
               <div>
-                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link</Label>
-                <div className="break-all rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono">
+                <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Link</Label>
+                <div className="break-all rounded-md border bg-muted/30 px-ms-2 py-1.5 text-ms-2xs font-mono">
                   {session.url}
                 </div>
               </div>
               <div>
-                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">PIN</Label>
-                <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-center text-lg font-bold tracking-[0.4em] tabular-nums">
+                <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">PIN</Label>
+                <div className="rounded-md border bg-muted/30 px-ms-2 py-1.5 text-center text-ms-lg font-bold tracking-[0.4em] tabular-nums">
                   {session.pin}
                 </div>
               </div>
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Nama pegawai</Label>
+              <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Nama pegawai</Label>
               <Input
                 value={workerName}
                 onChange={(e) => setWorkerName(e.target.value)}
@@ -1285,23 +1285,23 @@ function SendPrepLinkDialog({
                 className="h-8"
               />
               {nameError && (
-                <div className="mt-1.5 flex items-start gap-1 text-[11px] text-destructive">
+                <div className="mt-1.5 flex items-start gap-ms-1 text-ms-2xs text-destructive">
                   <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                   <span>{nameError}</span>
                 </div>
               )}
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Pratinjau pesan WhatsApp</Label>
+              <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Pratinjau pesan WhatsApp</Label>
               <Textarea
                 readOnly
                 value={waMessage}
                 rows={8}
-                className="mt-1 resize-none text-[11px] leading-relaxed font-mono"
+                className="mt-1 resize-none text-ms-2xs leading-relaxed font-mono"
                 onFocus={(e) => e.currentTarget.select()}
               />
             </div>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+            <div className="grid grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
               <Button variant="outline" size="sm" onClick={copyMessage} disabled={!canPrepare || (isPending && pending !== "copyMsg")} aria-busy={pending === "copyMsg"}>
                 {pending === "copyMsg"
                   ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -1327,7 +1327,7 @@ function SendPrepLinkDialog({
                 : <Copy className="mr-1 h-3.5 w-3.5" />}
               Salin Link + PIN saja
             </Button>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+            <div className="grid grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
               <Button variant="outline" size="sm" onClick={() => void downloadPng()} disabled={isPending && pending !== "downloadPng"} aria-busy={pending === "downloadPng"}>
                 {pending === "downloadPng"
                   ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -1346,7 +1346,7 @@ function SendPrepLinkDialog({
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Buka di tab baru untuk cek
               </a>
             </Button>
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
               <b>1 link + PIN = 1 paket penyiapan.</b> Setelah pegawai kirim foto & lokasi, PIN otomatis mati.
               Untuk pesanan berikutnya, tekan tombol di bawah agar dapat link + PIN baru.
             </div>
@@ -1361,9 +1361,9 @@ function SendPrepLinkDialog({
             </Button>
           </div>
         ) : (
-          <div className="space-y-3 py-1">
+          <div className="space-ms-3 py-1">
             <div>
-              <Label htmlFor="worker-name" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              <Label htmlFor="worker-name" className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
                 Nama pegawai <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -1377,15 +1377,15 @@ function SendPrepLinkDialog({
                 autoComplete="off"
               />
               {nameError ? (
-                <div className="mt-1.5 flex items-start gap-1 text-[11px] text-destructive">
+                <div className="mt-1.5 flex items-start gap-ms-1 text-ms-2xs text-destructive">
                   <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                   <span>{nameError}</span>
                 </div>
               ) : (
-                <div className="mt-1.5 text-[11px] text-muted-foreground">Wajib diisi sebelum link & PIN dibuat.</div>
+                <div className="mt-1.5 text-ms-2xs text-muted-foreground">Wajib diisi sebelum link & PIN dibuat.</div>
               )}
             </div>
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
               <b>Langkah:</b> masukkan nama pegawai yang akan mengerjakan, lalu tekan <b>Buat link & PIN</b>. Setelah itu baru bisa menyalin atau mengunduh pesan.
             </div>
             <Button className="w-full" onClick={() => void createSession()} disabled={busy}>
@@ -1472,25 +1472,25 @@ function TitleDetailView({
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
-      <button onClick={onBack} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+    <div className="mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
+      <button onClick={onBack} className="inline-flex items-center gap-ms-1 text-ms-xs text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-3 w-3" /> Kembali
       </button>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
             <Package className="h-4 w-4 text-primary" /> {title.name}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-xs">
+        <CardContent className="space-ms-2 text-ms-xs">
           {title.note && <p className="text-muted-foreground whitespace-pre-wrap">{title.note}</p>}
           <div>
-            <div className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">Isi paket</div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="mb-1 text-ms-2xs uppercase tracking-wide text-muted-foreground">Isi paket</div>
+            <div className="flex flex-wrap gap-ms-1.5">
               {titleItems.map((i) => {
                 const w = warehouseItems.find((x) => x.id === i.warehouse_item_id);
                 return (
-                  <span key={i.id} className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  <span key={i.id} className="rounded-md bg-primary/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-primary">
                     {w?.name ?? "?"} {formatQty(i.target_grams, i.unit_label, w?.name)}
                   </span>
                 );
@@ -1507,9 +1507,9 @@ function TitleDetailView({
       </div>
 
       {loading ? (
-        <div className="p-6 text-center text-xs text-muted-foreground"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></div>
+        <div className="p-ms-6 text-center text-ms-xs text-muted-foreground"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></div>
       ) : preps.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-card p-6 text-center text-xs text-muted-foreground">
+        <div className="rounded-xl border border-dashed bg-card p-ms-6 text-center text-ms-xs text-muted-foreground">
           Belum ada penyiapan untuk judul ini.
         </div>
       ) : (
@@ -1752,14 +1752,14 @@ function PrepSections({
     );
   };
   return (
-    <div className="space-y-4">
+    <div className="space-ms-4">
       {(syncError || (awaitingSentId && !reloading)) && (
         <div
           role="alert"
           className={
             syncError
-              ? "flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive"
-              : "flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-800 dark:text-amber-200"
+              ? "flex items-start gap-ms-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-2 text-ms-2xs text-destructive"
+              : "flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-800 dark:text-amber-200"
           }
         >
           {syncError ? (
@@ -1776,12 +1776,12 @@ function PrepSections({
                 "Menunggu paket yang baru dikirim muncul di Riwayat Terkirim. Kalau terlalu lama, tekan Muat Ulang."}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-ms-1">
             <Button
               type="button"
               size="sm"
               variant="outline"
-              className="h-7 text-[11px]"
+              className="h-7 text-ms-2xs"
               onClick={() => void reloadNow()}
               disabled={reloading}
             >
@@ -1796,7 +1796,7 @@ function PrepSections({
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="h-7 text-[11px]"
+                className="h-7 text-ms-2xs"
                 onClick={() => setSyncError(null)}
               >
                 Tutup
@@ -1807,13 +1807,13 @@ function PrepSections({
       )}
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
             Siap Kirim <span className="text-foreground/70">({active.length})</span>
           </p>
           <LayoutModeToggle mode={layout} onChange={setLayout} />
         </div>
         {active.length === 0 ? (
-          <div className="rounded-xl border border-dashed bg-card p-4 text-center text-[11px] text-muted-foreground">
+          <div className="rounded-xl border border-dashed bg-card p-ms-4 text-center text-ms-2xs text-muted-foreground">
             Tidak ada penyiapan yang menunggu dikirim.
           </div>
         ) : (
@@ -1827,44 +1827,44 @@ function PrepSections({
           <button
             type="button"
             onClick={() => setShowHistory((v) => !v)}
-            className="mb-2 flex w-full items-center justify-between rounded-md border bg-muted/30 px-3 py-1.5 text-[11px] uppercase tracking-wide text-muted-foreground hover:bg-muted/50"
+            className="mb-2 flex w-full items-center justify-between rounded-md border bg-muted/30 px-ms-3 py-1.5 text-ms-2xs uppercase tracking-wide text-muted-foreground hover:bg-muted/50"
             aria-expanded={showHistory}
           >
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-ms-1.5">
               <History className="h-3.5 w-3.5" />
               Riwayat Terkirim <span className="text-foreground/70">({sent.length})</span>
             </span>
-            <span className="text-[10px]">{showHistory ? "Sembunyikan" : "Tampilkan"}</span>
+            <span className="text-ms-2xs">{showHistory ? "Sembunyikan" : "Tampilkan"}</span>
           </button>
           {showHistory && (
             <>
-              <div className="mb-2 grid gap-2 rounded-md border bg-muted/20 p-2 sm:grid-cols-[1fr_auto_auto_auto]">
+              <div className="mb-2 grid gap-ms-2 rounded-md border bg-muted/20 p-ms-2 sm:grid-cols-[1fr_auto_auto_auto]">
                 <Input
                   value={filterQ}
                   onChange={(e) => setFilterQ(e.target.value)}
                   placeholder="Cari nama produk / pelanggan…"
-                  className="h-8 text-xs"
+                  className="h-8 text-ms-xs"
                   aria-label="Cari nama produk"
                 />
                 <Input
                   type="date"
                   value={filterFrom}
                   onChange={(e) => setFilterFrom(e.target.value)}
-                  className="h-8 text-xs"
+                  className="h-8 text-ms-xs"
                   aria-label="Dari tanggal"
                 />
                 <Input
                   type="date"
                   value={filterTo}
                   onChange={(e) => setFilterTo(e.target.value)}
-                  className="h-8 text-xs"
+                  className="h-8 text-ms-xs"
                   aria-label="Sampai tanggal"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs"
+                  className="h-8 text-ms-xs"
                   onClick={clearFilter}
                   disabled={!hasFilter}
                 >
@@ -1872,12 +1872,12 @@ function PrepSections({
                 </Button>
               </div>
               {hasFilter && (
-                <p className="mb-2 text-[11px] text-muted-foreground">
+                <p className="mb-2 text-ms-2xs text-muted-foreground">
                   Menampilkan {filteredSent.length} dari {sent.length} paket terkirim.
                 </p>
               )}
               {filteredSent.length === 0 ? (
-                <div className="rounded-xl border border-dashed bg-card p-4 text-center text-[11px] text-muted-foreground">
+                <div className="rounded-xl border border-dashed bg-card p-ms-4 text-center text-ms-2xs text-muted-foreground">
                   Tidak ada paket terkirim yang cocok dengan filter.
                 </div>
               ) : (
@@ -1929,29 +1929,29 @@ function PrepCard({
       aria-readonly={sold || undefined}
       data-readonly={sold ? "true" : undefined}
     >
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-3 py-1.5">
-        <div className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center justify-between gap-ms-2 border-b bg-muted/30 px-ms-3 py-1.5">
+        <div className="min-w-0 truncate text-ms-2xs font-semibold uppercase tracking-wider text-muted-foreground">
           Paket #{index} · {prep.created_by}
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-ms-1">
           {!sold ? (
             <button
               onClick={() => setSendOpen(true)}
-              className="inline-flex items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-2 py-1 text-[10px] font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+              className="inline-flex items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-1 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
               aria-label="Kirim ke pelanggan"
               title="Kirim foto + tagihan ke pelanggan (potong stok & catat piutang bila hutang)"
             >
               <Send className="h-3 w-3" /> Kirim
             </button>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+            <span className="inline-flex items-center gap-ms-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-ms-2 py-1 text-ms-2xs font-semibold text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="h-3 w-3" /> Terkirim
             </span>
           )}
           {!sold && (
             <button
               onClick={onDelete}
-              className="rounded-md border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
+              className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-1 text-destructive hover:bg-destructive/20"
               aria-label="Hapus penyiapan"
               title="Hapus penyiapan"
             >
@@ -1963,12 +1963,12 @@ function PrepCard({
       {photo ? (
         <img src={photo} alt="" className="aspect-square w-full object-cover" />
       ) : (
-        <div className="flex aspect-square w-full items-center justify-center bg-muted text-xs text-muted-foreground">No photo</div>
+        <div className="flex aspect-square w-full items-center justify-center bg-muted text-ms-xs text-muted-foreground">No photo</div>
       )}
-      <div className="space-y-1.5 p-3 text-[11px]">
+      <div className="space-y-1.5 p-ms-3 text-ms-2xs">
         {sold && (
-          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[11px] text-emerald-800 dark:text-emerald-200 space-y-0.5">
-            <div className="flex items-center gap-1 font-semibold">
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-ms-2 text-ms-2xs text-emerald-800 dark:text-emerald-200 space-y-0.5">
+            <div className="flex items-center gap-ms-1 font-semibold">
               {prep.sold_payment_method === "kas" ? <Wallet className="h-3 w-3" /> : <HandCoins className="h-3 w-3" />}
               {formatSoldPaymentSummary(
                 prep.sold_payment_method,
@@ -1982,21 +1982,21 @@ function PrepCard({
             </div>
           </div>
         )}
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-ms-1">
           {items.map((it) => {
             const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
             return (
-              <span key={it.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+              <span key={it.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-medium text-primary">
                 {w?.name ?? "?"} {it.actual_grams}{unitFor(it.warehouse_item_id)}
               </span>
             );
           })}
           {sold && items.length === 0 && (
-            <span className="text-[10px] italic text-muted-foreground">Item sudah dikonversi ke penjualan</span>
+            <span className="text-ms-2xs italic text-muted-foreground">Item sudah dikonversi ke penjualan</span>
           )}
         </div>
         {prep.location_url && (
-          <a href={prep.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+          <a href={prep.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-ms-1 text-primary hover:underline">
             <MapPin className="h-3 w-3" /> Lokasi
           </a>
         )}
@@ -2218,9 +2218,9 @@ function SendPrepToCustomerDialog({
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy && confirmDiscardIfDirty(sendStatus)) onClose(); }}>
       <DialogContent ref={scrollRef} className="sm:max-w-md max-h-[92vh] overflow-y-auto">
-        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <DialogTitle className="flex items-center gap-2 text-base">
+        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-ms-6 pt-6 pb-3">
+          <div className="flex items-start justify-between gap-ms-2">
+            <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
               <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
             </DialogTitle>
             <DialogSaveStatus status={sendStatus} className="shrink-0" />
@@ -2231,21 +2231,21 @@ function SendPrepToCustomerDialog({
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
 
-        <div className="space-y-3 text-xs">
+        <div className="space-ms-3 text-ms-xs">
           {/* Ringkasan item */}
-          <div id="send-sec-ringkasan" className="rounded-md border bg-muted/30 p-2">
+          <div id="send-sec-ringkasan" className="rounded-md border bg-muted/30 p-ms-2">
             <div className="mb-1 font-semibold">{titleName}</div>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-ms-1">
               {items.map((it) => {
                 const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
                 return (
-                  <span key={it.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                  <span key={it.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-medium text-primary">
                     {w?.name ?? "?"} {it.actual_grams}{unitFor(it.warehouse_item_id)}
                   </span>
                 );
               })}
             </div>
-            <div className="mt-1 text-[10px] text-muted-foreground">
+            <div className="mt-1 text-ms-2xs text-muted-foreground">
               {photoPaths.length > 0
                 ? `${photoPaths.length} foto akan dilampirkan`
                 : "Tidak ada foto pada paket ini"}
@@ -2255,33 +2255,33 @@ function SendPrepToCustomerDialog({
 
           {/* Pelanggan */}
           <Field id="send-sec-pelanggan" label="Pelanggan" size="compact">
-            <div className="flex gap-1 text-[10px]">
+            <div className="flex gap-ms-1 text-ms-2xs">
               <button
                 type="button"
                 onClick={() => setMode("link")}
                 disabled={customers.length === 0}
-                className={`flex-1 rounded-md border px-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"} ${customers.length === 0 ? "opacity-40" : ""}`}
+                className={`flex-1 rounded-md border px-ms-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"} ${customers.length === 0 ? "opacity-40" : ""}`}
               >
                 Dari buku alamat
               </button>
               <button
                 type="button"
                 onClick={() => setMode("manual")}
-                className={`flex-1 rounded-md border px-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"}`}
+                className={`flex-1 rounded-md border px-ms-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"}`}
               >
                 Ketik nama
               </button>
             </div>
             {mode === "link" ? (
               customers.length === 0 ? (
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-ms-2xs text-muted-foreground">
                   Belum ada pelanggan tersimpan. Pilih "Ketik nama" atau tambah di menu Hutang-Piutang.
                 </div>
               ) : (
                 <select
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
-                  className="h-9 w-full rounded-md border bg-card px-2 text-xs"
+                  className="h-9 w-full rounded-md border bg-card px-ms-2 text-ms-xs"
                 >
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -2295,7 +2295,7 @@ function SendPrepToCustomerDialog({
                 value={manualName}
                 onChange={(e) => setManualName(e.target.value)}
                 placeholder="Nama pelanggan"
-                className="h-9 text-xs"
+                className="h-9 text-ms-xs"
               />
             )}
           </Field>
@@ -2312,46 +2312,46 @@ function SendPrepToCustomerDialog({
               onChange={(e) => setTotalStr(e.target.value)}
               placeholder="Contoh: 25000"
               inputMode="numeric"
-              className="h-9 tabular-nums text-xs"
+              className="h-9 tabular-nums text-ms-xs"
             />
           </Field>
 
           {/* Metode bayar */}
           <Field id="send-sec-bayar" label="Metode bayar" size="compact">
-            <div className="flex gap-1">
+            <div className="flex gap-ms-1">
               <button
                 type="button"
                 onClick={() => setPayMethod("kas")}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "kas" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "kas" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
               >
                 <Wallet className="h-3.5 w-3.5" /> Lunas (kas)
               </button>
               <button
                 type="button"
                 onClick={() => setPayMethod("hutang")}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "hutang" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "hutang" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
               >
                 <HandCoins className="h-3.5 w-3.5" /> Hutang (piutang)
               </button>
               <button
                 type="button"
                 onClick={() => setPayMethod("partial")}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "partial" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "partial" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
               >
                 <HandCoins className="h-3.5 w-3.5" /> Bayar sebagian
               </button>
             </div>
             {payMethod === "partial" && (
               <div className="mt-2 space-y-1">
-                <label className="text-[11px] text-muted-foreground">Dibayar sekarang (Rp)</label>
+                <label className="text-ms-2xs text-muted-foreground">Dibayar sekarang (Rp)</label>
                 <Input
                   value={paidStr}
                   onChange={(e) => setPaidStr(e.target.value)}
                   placeholder="Contoh: 10000"
                   inputMode="numeric"
-                  className="h-9 tabular-nums text-xs"
+                  className="h-9 tabular-nums text-ms-xs"
                 />
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-ms-2xs text-muted-foreground">
                   {paidAmount > 0 && totalAmount > 0
                     ? paidAmount >= totalAmount
                       ? <span className="text-destructive">Dibayar tidak boleh ≥ total. Pilih Lunas.</span>
@@ -2361,7 +2361,7 @@ function SendPrepToCustomerDialog({
               </div>
             )}
             {payMethod === "hutang" && (
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-1.5 text-[10px] text-amber-800 dark:text-amber-200">
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-1.5 text-ms-2xs text-amber-800 dark:text-amber-200">
                 Akan otomatis dicatat sebagai piutang di menu Hutang-Piutang atas nama <b>{resolvedParty.name || "-"}</b>.
               </div>
             )}
@@ -2373,17 +2373,17 @@ function SendPrepToCustomerDialog({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              className="text-xs"
+              className="text-ms-xs"
               placeholder="Mis. antar sore, titip di warung, dsb."
             />
           </Field>
         </div>
 
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-col">
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-ms-2 border-t bg-background px-ms-6 py-ms-3 sm:flex-col">
           <div className="flex w-full items-center justify-center">
             <DialogSaveStatus status={sendStatus} compact />
           </div>
-          <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+          <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={handleSend} disabled={!canSend}>
               {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
@@ -2728,15 +2728,15 @@ function PrepEditorDialog({
           if (editorOpen) event.preventDefault();
         }}
       >
-        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
-          <div className="flex items-start justify-between gap-2">
+        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-ms-6 pt-6 pb-3">
+          <div className="flex items-start justify-between gap-ms-2">
             <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
             <DialogSaveStatus status={prepStatus} className="shrink-0" />
           </div>
           <DialogDescription>Atur jumlah aktual tiap produk, lampirkan 1 foto bukti + lokasi.</DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div id="prep-sec-produk">
             <Label>Produk &amp; jumlah aktual</Label>
             <div className="space-y-1.5">
@@ -2747,17 +2747,17 @@ function PrepEditorDialog({
                 return (
                   // L9: stack di 411px agar nama produk tidak dipotong;
                   // qty + satuan berjajar di baris kedua.
-                  <div key={idx} className="grid grid-cols-12 gap-1.5">
-                    <div className="col-span-12 sm:col-span-7 flex min-w-0 items-center rounded-md border bg-muted/30 px-2 py-1.5 sm:py-0 text-xs">
+                  <div key={idx} className="grid grid-cols-12 gap-ms-1.5">
+                    <div className="col-span-12 sm:col-span-7 flex min-w-0 items-center rounded-md border bg-muted/30 px-ms-2 py-1.5 sm:py-0 text-ms-xs">
                       <span className="truncate">{w?.name ?? "?"}</span>
                     </div>
                     <Input
                       type="number" inputMode="decimal" step="any" min="0"
                       value={r.actual_grams}
                       onChange={(e) => setRows((rs) => rs.map((x, i) => i === idx ? { ...x, actual_grams: e.target.value } : x))}
-                      className="col-span-8 sm:col-span-3 h-9 text-xs"
+                      className="col-span-8 sm:col-span-3 h-9 text-ms-xs"
                     />
-                    <div className="col-span-4 sm:col-span-2 flex min-w-0 items-center justify-center rounded-md border bg-muted/30 px-1 text-[11px] font-medium text-muted-foreground">
+                    <div className="col-span-4 sm:col-span-2 flex min-w-0 items-center justify-center rounded-md border bg-muted/30 px-1 text-ms-2xs font-medium text-muted-foreground">
                       <span className="truncate">{unit}</span>
                     </div>
                   </div>
@@ -2781,7 +2781,7 @@ function PrepEditorDialog({
             });
             if (totals.size === 0) return null;
             return (
-              <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px]">
+              <div className="rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-2xs">
                 <div className="mb-1 flex items-center justify-between">
                   <span className="font-semibold text-primary">Preview total</span>
                   {(() => {
@@ -2791,14 +2791,14 @@ function PrepEditorDialog({
                         type="button"
                         onClick={() => setRows(initialRows.map((r) => ({ ...r })))}
                         disabled={!changed}
-                        className="rounded border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted disabled:opacity-40"
+                        className="rounded border bg-background px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-40"
                       >
                         Reset ke awal
                       </button>
                     );
                   })()}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-ms-1.5">
                   {Array.from(totals.entries()).map(([unit, sum]) => (
                     <span key={unit} className="rounded bg-background px-1.5 py-0.5 font-medium">
                       {sum} {unit}
@@ -2807,9 +2807,9 @@ function PrepEditorDialog({
                 </div>
                 <ul className="mt-1.5 space-y-1 border-t border-primary/20 pt-1.5 text-muted-foreground">
                   {details.map((d) => (
-                    <li key={d.idx} className="flex items-center justify-between gap-2">
+                    <li key={d.idx} className="flex items-center justify-between gap-ms-2">
                       <span className="truncate">{d.name}</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-ms-1">
                         <Input
                           type="number" inputMode="decimal" step="any" min="0"
                           value={rows[d.idx]?.actual_grams ?? ""}
@@ -2817,15 +2817,15 @@ function PrepEditorDialog({
                             const v = sanitizeActual(d.idx, e.target.value);
                             setRows((rs) => rs.map((x, i) => i === d.idx ? { ...x, actual_grams: v } : x));
                           }}
-                          className="h-7 w-20 px-1.5 text-right text-[11px] font-mono tabular-nums"
+                          className="h-7 w-20 px-1.5 text-right text-ms-2xs font-mono tabular-nums"
                         />
-                        <span className="w-10 text-left text-[10px]">{d.unit}</span>
+                        <span className="w-10 text-left text-ms-2xs">{d.unit}</span>
                       </div>
                     </li>
                   ))}
                 </ul>
                 {Object.keys(qtyErrors).length > 0 ? (
-                  <p className="mt-1.5 rounded border border-destructive/40 bg-destructive/10 px-1.5 py-1 text-[10px] font-medium text-destructive">
+                  <p className="mt-1.5 rounded border border-destructive/40 bg-destructive/10 px-1.5 py-1 text-ms-2xs font-medium text-destructive">
                     Jumlah tidak boleh negatif. Minimum 0.
                   </p>
                 ) : null}
@@ -2836,7 +2836,7 @@ function PrepEditorDialog({
           {photo ? (
             <div id="prep-sec-foto">
               <img src={photo.dataUrl} alt="" className="w-full rounded-lg border object-cover" />
-              <div className="mt-1 flex gap-2">
+              <div className="mt-1 flex gap-ms-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditorSrc(photo.dataUrl); setEditorOpen(true); }}>
                   <Edit3 className="mr-1 h-3 w-3" /> Edit
                 </Button>
@@ -2844,7 +2844,7 @@ function PrepEditorDialog({
               </div>
             </div>
           ) : (
-            <div id="prep-sec-foto" className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-10">
+            <div id="prep-sec-foto" className="grid grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-10">
               <Button variant="outline" onClick={() => cameraRef.current?.click()}>
                 <Camera className="mr-1 h-4 w-4" /> Kamera
               </Button>
@@ -2856,7 +2856,7 @@ function PrepEditorDialog({
           <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
           <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
-          <div id="prep-sec-lokasi" className="flex gap-2">
+          <div id="prep-sec-lokasi" className="flex gap-ms-2">
             <Input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="flex-1" />
             <Button variant="outline" onClick={takeLocation}>
               <MapPin className="mr-1 h-4 w-4" /> GPS
@@ -2864,14 +2864,14 @@ function PrepEditorDialog({
           </div>
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
 
-          <div id="prep-sec-tujuan" className="space-y-2">
-            <Label className="text-xs">Tujuan (Chat MCM / Nomor WA)</Label>
+          <div id="prep-sec-tujuan" className="space-ms-2">
+            <Label className="text-ms-xs">Tujuan (Chat MCM / Nomor WA)</Label>
             {/* Nama penerima — dipakai untuk auto-save ke buku alamat */}
             <Input
               value={recipientName}
               onChange={(e) => setRecipientName(e.target.value)}
               placeholder="Nama penerima (opsional, untuk simpan otomatis)"
-              className="text-xs"
+              className="text-ms-xs"
             />
             <div className="relative">
               <Input
@@ -2897,11 +2897,11 @@ function PrepEditorDialog({
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => pickContact(c)}
-                      className="flex w-full items-start justify-between gap-2 border-b px-2 py-1.5 text-left text-xs hover:bg-accent last:border-b-0"
+                      className="flex w-full items-start justify-between gap-ms-2 border-b px-ms-2 py-1.5 text-left text-ms-xs hover:bg-accent last:border-b-0"
                     >
                       <div className="min-w-0">
                         <div className="truncate font-medium">{c.name}</div>
-                        <div className="truncate font-mono text-[10px] text-muted-foreground">
+                        <div className="truncate font-mono text-ms-2xs text-muted-foreground">
                           {c.phone || "—"}
                         </div>
                       </div>
@@ -2914,17 +2914,17 @@ function PrepEditorDialog({
               ) : null}
             </div>
             {pickedLinkedUserId ? (
-              <p className="text-[10px] text-primary">
+              <p className="text-ms-2xs text-primary">
                 Kontak MCM terpilih: <span className="font-medium">{pickedName || "(tanpa nama)"}</span> — bisa kirim via Chat MCM.
               </p>
             ) : waPhone.trim() === "" ? (
-              <p className="text-[10px] text-muted-foreground">Ketik untuk cari kontak, atau isi nomor manual (awalan 0 → 62).</p>
+              <p className="text-ms-2xs text-muted-foreground">Ketik untuk cari kontak, atau isi nomor manual (awalan 0 → 62).</p>
             ) : waNorm.error ? (
-              <p className="text-[10px] text-destructive">{waNorm.error}</p>
+              <p className="text-ms-2xs text-destructive">{waNorm.error}</p>
             ) : (
-              <p className="text-[10px] text-muted-foreground">Akan dikirim ke: <span className="font-mono">+{waNorm.digits}</span></p>
+              <p className="text-ms-2xs text-muted-foreground">Akan dikirim ke: <span className="font-mono">+{waNorm.digits}</span></p>
             )}
-            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <label className="flex items-center gap-ms-2 text-ms-2xs text-muted-foreground">
               <input
                 type="checkbox"
                 checked={autoSaveContact}
@@ -2935,7 +2935,7 @@ function PrepEditorDialog({
             </label>
           </div>
         </div>
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-col">
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-ms-2 border-t bg-background px-ms-6 py-ms-3 sm:flex-col">
           <div className="flex w-full items-center justify-center">
             <DialogSaveStatus status={prepStatus} compact />
           </div>
@@ -2959,7 +2959,7 @@ function PrepEditorDialog({
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <MessageCircle className="mr-1 h-3 w-3" />}
             Simpan &amp; Buka Chat MCM
           </Button>
-          <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+          <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={() => save()} disabled={busy}>
               {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null} Simpan
@@ -3076,7 +3076,7 @@ function WorkerTestDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <FlaskConical className="h-4 w-4 text-primary" /> Uji Coba Alur Pegawai
           </DialogTitle>
           <DialogDescription>
@@ -3086,7 +3086,7 @@ function WorkerTestDialog({
         </DialogHeader>
 
         {!session ? (
-          <div className="space-y-3">
+          <div className="space-ms-3">
             <Field label="PIN uji coba (opsional, min 4 digit)" size="xs">
               <Input
                 inputMode="numeric" maxLength={8}
@@ -3095,7 +3095,7 @@ function WorkerTestDialog({
                 placeholder="Kosongkan untuk acak"
               />
             </Field>
-            <div className="rounded-md border bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
+            <div className="rounded-md border bg-muted/30 p-ms-2.5 text-ms-2xs text-muted-foreground">
               Pastikan sudah ada minimal 1 Judul Request dengan beberapa produk. Saat ini: <b>{titles.length} judul</b>.
             </div>
             <Button className="w-full" onClick={createSession} disabled={busy}>
@@ -3104,31 +3104,31 @@ function WorkerTestDialog({
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="flex justify-center rounded-lg border bg-white p-3">
+          <div className="space-ms-3">
+            <div className="flex justify-center rounded-lg border bg-white p-ms-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qrUrl} alt="QR uji coba" width={200} height={200} />
             </div>
             <div className="space-y-1.5">
               <div>
-                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link</Label>
-                <div className="break-all rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono">
+                <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Link</Label>
+                <div className="break-all rounded-md border bg-muted/30 px-ms-2 py-1.5 text-ms-2xs font-mono">
                   {session.url}
                 </div>
               </div>
               <div>
-                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">PIN</Label>
-                <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-center text-lg font-bold tracking-[0.4em] tabular-nums">
+                <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">PIN</Label>
+                <div className="rounded-md border bg-muted/30 px-ms-2 py-1.5 text-center text-ms-lg font-bold tracking-[0.4em] tabular-nums">
                   {session.pin}
                 </div>
               </div>
             </div>
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
               <b>Tips uji:</b> Buka link di tab baru / HP, masukkan PIN, scroll ke <b>"Paket Request"</b>,
               pilih satu judul, isi gram tiap produk, ambil foto + lokasi, lalu Kirim.
               Stok produk akan benar-benar berkurang. Tekan <b>"Batalkan sesi uji coba"</b> untuk mengembalikan stok &amp; menghapus paket uji.
             </div>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+            <div className="grid grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
               <Button variant="outline" size="sm" onClick={copyAll} disabled={copying} aria-busy={copying}>
                 {copying
                   ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -3283,7 +3283,7 @@ function DeliveryHistoryDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <History className="h-4 w-4 text-primary" /> Riwayat pengiriman link
           </DialogTitle>
           <DialogDescription className="min-w-0">
@@ -3294,55 +3294,55 @@ function DeliveryHistoryDialog({
         </DialogHeader>
 
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+          <div className="flex items-center justify-center gap-ms-2 py-10 text-ms-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Memuat riwayat…
           </div>
         ) : error ? (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-            <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Gagal memuat</div>
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-xs text-destructive">
+            <div className="flex items-center gap-ms-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Gagal memuat</div>
             <div className="mt-1 break-words">{error}</div>
             <Button size="sm" variant="outline" className="mt-2" onClick={() => void load()}>
               <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
             </Button>
           </div>
         ) : grouped.length === 0 ? (
-          <div className="rounded-md border border-dashed bg-muted/30 p-6 text-center text-xs text-muted-foreground">
+          <div className="rounded-md border border-dashed bg-muted/30 p-ms-6 text-center text-ms-xs text-muted-foreground">
             Belum ada riwayat pengiriman.
           </div>
         ) : (
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+          <div className="max-h-[60vh] space-ms-2 overflow-y-auto pr-1">
             {grouped.map((g) => {
               const t = g.task_id ? tasks[g.task_id] : undefined;
               const status = taskStatusLabel(t);
               const firstSent = g.entries[g.entries.length - 1]?.sent_at ?? g.entries[0].sent_at;
               const lastSent = g.entries[0]?.sent_at;
               return (
-                <div key={g.key} className="rounded-lg border bg-card p-3 text-xs">
-                  <div className="flex items-start justify-between gap-2">
+                <div key={g.key} className="rounded-lg border bg-card p-ms-3 text-ms-xs">
+                  <div className="flex items-start justify-between gap-ms-2">
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold text-sm">{g.worker_name}</div>
+                      <div className="truncate font-semibold text-ms-sm">{g.worker_name}</div>
                       {target === "all" && (
-                        <div className="truncate text-[11px] text-muted-foreground">{g.title_name}</div>
+                        <div className="truncate text-ms-2xs text-muted-foreground">{g.title_name}</div>
                       )}
                     </div>
-                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${status.tone}`}>
+                    <span className={`shrink-0 rounded-full border px-ms-2 py-0.5 text-ms-2xs font-medium ${status.tone}`}>
                       {status.label}
                     </span>
                   </div>
-                  <div className="mt-1.5 grid grid-cols-1 gap-1 text-[11px] text-muted-foreground sm:grid-cols-2">
-                    <div className="min-w-0"><span className="text-[10px] uppercase tracking-wide">Kirim pertama</span><br /><span className="truncate">{formatWaktu(firstSent)}</span></div>
+                  <div className="mt-1.5 grid grid-cols-1 gap-ms-1 text-ms-2xs text-muted-foreground sm:grid-cols-2">
+                    <div className="min-w-0"><span className="text-ms-2xs uppercase tracking-wide">Kirim pertama</span><br /><span className="truncate">{formatWaktu(firstSent)}</span></div>
                     {lastSent !== firstSent && (
-                      <div className="min-w-0"><span className="text-[10px] uppercase tracking-wide">Kirim terakhir</span><br /><span className="truncate">{formatWaktu(lastSent)}</span></div>
+                      <div className="min-w-0"><span className="text-ms-2xs uppercase tracking-wide">Kirim terakhir</span><br /><span className="truncate">{formatWaktu(lastSent)}</span></div>
                     )}
                     {t?.completed_at && (
-                      <div className="min-w-0 sm:col-span-2"><span className="text-[10px] uppercase tracking-wide">Selesai</span><br /><span className="truncate">{formatWaktu(t.completed_at)}</span></div>
+                      <div className="min-w-0 sm:col-span-2"><span className="text-ms-2xs uppercase tracking-wide">Selesai</span><br /><span className="truncate">{formatWaktu(t.completed_at)}</span></div>
                     )}
                   </div>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
+                  <div className="mt-1.5 flex flex-wrap gap-ms-1">
                     {g.entries.map((e) => (
                         <span
                           key={e.id}
-                          className="min-w-0 truncate rounded-full border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                          className="min-w-0 truncate rounded-full border bg-muted/40 px-ms-2 py-0.5 text-ms-2xs text-muted-foreground"
                           title={formatWaktu(e.sent_at)}
                         >
                           {channelLabel(e.channel)} · {formatWaktu(e.sent_at)}
@@ -3355,7 +3355,7 @@ function DeliveryHistoryDialog({
           </div>
         )}
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-ms-2">
           <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
             <RotateCw className="mr-1 h-3.5 w-3.5" /> Segarkan
           </Button>

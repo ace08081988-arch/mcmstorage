@@ -146,10 +146,10 @@ export function EmailVerificationStatus() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Verifikasi email</CardTitle>
+          <CardTitle className="text-ms-base">Verifikasi email</CardTitle>
           <CardDescription>Memeriksa status verifikasi…</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-ms-2">
           <Skeleton className="h-4 w-2/3" />
           <Skeleton className="h-9 w-40" />
         </CardContent>
@@ -170,7 +170,7 @@ export function EmailVerificationStatus() {
       data-state={verified ? "verified" : "pending"}
     >
       <CardHeader>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           {verified ? (
             <CheckCircle2
               className="h-5 w-5 text-emerald-500"
@@ -182,7 +182,7 @@ export function EmailVerificationStatus() {
               aria-hidden="true"
             />
           )}
-          <CardTitle id="email-verify-title" className="text-base">
+          <CardTitle id="email-verify-title" className="text-ms-base">
             Verifikasi email
           </CardTitle>
           <Badge
@@ -218,23 +218,23 @@ export function EmailVerificationStatus() {
           )}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-ms-3">
         {!verified && (
           <>
             {/* Indikator progres polling */}
             <div
-              className="space-y-1.5 rounded-md border bg-muted/30 p-2.5"
+              className="space-y-1.5 rounded-md border bg-muted/30 p-ms-2.5"
               data-testid="email-verify-progress"
               role="status"
               aria-live="polite"
             >
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-ms-2 text-ms-sm">
                 <Loader2
                   className="h-4 w-4 animate-spin text-primary"
                   aria-hidden="true"
                 />
                 <span>Menunggu konfirmasi email…</span>
-                <span className="ml-auto text-[11px] text-muted-foreground">
+                <span className="ml-auto text-ms-2xs text-muted-foreground">
                   Cek #{pollCount}
                 </span>
               </div>
@@ -243,19 +243,19 @@ export function EmailVerificationStatus() {
                 className="h-1.5"
                 aria-label="Progres pengecekan berikutnya"
               />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 {lastCheckedAt
                   ? `Cek terakhir: ${new Date(lastCheckedAt).toLocaleTimeString("id-ID")} · Pengecekan berikutnya tiap ${POLL_INTERVAL_MS / 1000} detik.`
                   : `Pengecekan berjalan tiap ${POLL_INTERVAL_MS / 1000} detik.`}
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-ms-2">
               <Button
                 type="button"
                 onClick={doResend}
                 disabled={resending || cooldownLeft > 0}
-                className="gap-2"
+                className="gap-ms-2"
                 data-testid="email-verify-resend"
               >
                 {resending ? (
@@ -271,7 +271,7 @@ export function EmailVerificationStatus() {
                 type="button"
                 variant="outline"
                 onClick={() => void refresh()}
-                className="gap-2"
+                className="gap-ms-2"
                 data-testid="email-verify-check-now"
               >
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -279,7 +279,7 @@ export function EmailVerificationStatus() {
               </Button>
             </div>
 
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-ms-2xs text-muted-foreground">
               Sudah klik tautan tapi masih "Menunggu"? Coba tombol <b>Cek
               sekarang</b> atau muat ulang halaman.
             </p>

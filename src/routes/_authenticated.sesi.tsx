@@ -23,12 +23,12 @@ type DeviceSession = {
 export const Route = createFileRoute("/_authenticated/sesi")({
   component: SesiPage,
   errorComponent: ({ error, reset }) => (
-    <div className="mx-auto max-w-md p-6 text-sm">
+    <div className="mx-auto max-w-md p-ms-6 text-ms-sm">
       <p className="mb-3 text-destructive">Gagal memuat sesi: {error.message}</p>
       <Button onClick={reset} variant="outline">Coba lagi</Button>
     </div>
   ),
-  notFoundComponent: () => <div className="p-6 text-sm">Halaman tidak ditemukan.</div>,
+  notFoundComponent: () => <div className="p-ms-6 text-ms-sm">Halaman tidak ditemukan.</div>,
 });
 
 function relativeTime(iso: string, now: number): string {
@@ -121,11 +121,11 @@ function SesiPage() {
   const revoked = sessions.filter((s) => s.revoked_at);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <header className="flex items-center justify-between gap-2">
+    <div className="mx-auto max-w-2xl space-ms-4 p-ms-4">
+      <header className="flex items-center justify-between gap-ms-2">
         <div>
-          <h1 className="text-xl font-semibold">Sesi & Perangkat</h1>
-          <p className="text-xs text-muted-foreground">
+          <h1 className="text-ms-xl font-semibold">Sesi & Perangkat</h1>
+          <p className="text-ms-xs text-muted-foreground">
             Daftar perangkat tempat akun Anda login. Cabut akses kapan saja.
           </p>
         </div>
@@ -142,12 +142,12 @@ function SesiPage() {
 
       {active.length > 1 ? (
         <Card className="border-amber-500/40 bg-amber-500/5">
-          <CardContent className="flex items-start justify-between gap-3 py-3">
-            <div className="flex items-start gap-2 text-sm">
+          <CardContent className="flex items-start justify-between gap-ms-3 py-ms-3">
+            <div className="flex items-start gap-ms-2 text-ms-sm">
               <ShieldAlert className="mt-0.5 h-4 w-4 text-amber-600" />
               <div>
                 <div className="font-medium">Logout dari semua perangkat lain</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-ms-xs text-muted-foreground">
                   Mempertahankan sesi perangkat ini saja.
                 </div>
               </div>
@@ -164,30 +164,30 @@ function SesiPage() {
         </Card>
       ) : null}
 
-      <section className="space-y-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <section className="space-ms-2">
+        <h2 className="text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Perangkat aktif ({active.length})
         </h2>
         {sessionsQ.isLoading ? (
-          <Card><CardContent className="py-6 text-center text-sm text-muted-foreground">Memuat…</CardContent></Card>
+          <Card><CardContent className="py-ms-6 text-center text-ms-sm text-muted-foreground">Memuat…</CardContent></Card>
         ) : active.length === 0 ? (
-          <Card><CardContent className="py-6 text-center text-sm text-muted-foreground">Belum ada sesi tercatat.</CardContent></Card>
+          <Card><CardContent className="py-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada sesi tercatat.</CardContent></Card>
         ) : (
           active.map((s) => {
             const Icon = iconFor(s.label, s.user_agent);
             const isCurrent = s.device_id === currentDeviceId;
             return (
               <Card key={s.id}>
-                <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center gap-ms-3 space-y-0 pb-2">
                   <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted">
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="flex items-center gap-2 text-sm">
+                    <CardTitle className="flex items-center gap-ms-2 text-ms-sm">
                       <span className="truncate">{s.label ?? "Perangkat tidak dikenal"}</span>
-                      {isCurrent ? <Badge variant="default" className="h-5 text-[10px]">Perangkat ini</Badge> : null}
+                      {isCurrent ? <Badge variant="default" className="h-5 text-ms-2xs">Perangkat ini</Badge> : null}
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-ms-xs text-muted-foreground">
                       Aktif {relativeTime(s.last_seen_at, now)} · Login {relativeTime(s.created_at, now)}
                     </p>
                   </div>
@@ -203,7 +203,7 @@ function SesiPage() {
                 </CardHeader>
                 {s.user_agent ? (
                   <CardContent className="pt-0">
-                    <p className="truncate text-[11px] text-muted-foreground" title={s.user_agent}>
+                    <p className="truncate text-ms-2xs text-muted-foreground" title={s.user_agent}>
                       {s.user_agent}
                     </p>
                   </CardContent>
@@ -215,23 +215,23 @@ function SesiPage() {
       </section>
 
       {revoked.length > 0 ? (
-        <section className="space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <section className="space-ms-2">
+          <h2 className="text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Riwayat dicabut ({revoked.length})
           </h2>
           {revoked.map((s) => {
             const Icon = iconFor(s.label, s.user_agent);
             return (
               <Card key={s.id} className="opacity-70">
-                <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center gap-ms-3 space-y-0 pb-2">
                   <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted">
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="text-sm">
+                    <CardTitle className="text-ms-sm">
                       <span className="truncate">{s.label ?? "Perangkat"}</span>
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-ms-xs text-muted-foreground">
                       Dicabut {s.revoked_at ? relativeTime(s.revoked_at, now) : "-"}
                     </p>
                   </div>
@@ -242,7 +242,7 @@ function SesiPage() {
         </section>
       ) : null}
 
-      <p className="pt-2 text-center text-[11px] text-muted-foreground">
+      <p className="pt-2 text-center text-ms-2xs text-muted-foreground">
         Sesi yang dicabut akan ditutup otomatis pada perangkat tersebut dalam 1 menit. Pastikan kata sandi
         Anda kuat dan tidak dibagikan ke siapa pun.
       </p>

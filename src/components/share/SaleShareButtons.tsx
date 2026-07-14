@@ -7,7 +7,7 @@
  *   • Warna WA WAJIB `#25D366` (solid) atau `#25D366/10 + #1ea952`
  *     (soft). Warna Chat WAJIB token `primary`. Class hex hard-coded
  *     di luar file ini dianggap regresi.
- *   • Ukuran `sm` = h-7 text-[11px]; `md` = h-9 text-xs. Tidak ada
+ *   • Ukuran `sm` = h-7 text-ms-2xs; `md` = h-9 text-ms-xs. Tidak ada
  *     ukuran custom lain untuk tombol share penjualan.
  *   • Label: `sm` = "WA"/"Chat"; `md` = "Kirim WA"/"Kirim Chat".
  *   • `disabled` + `reason` → tooltip = reason, cursor not-allowed,
@@ -38,8 +38,8 @@ type BaseProps = {
 };
 
 const SIZE_CLS: Record<ShareBtnSize, string> = {
-  sm: "h-7 px-2 text-[11px]",
-  md: "h-9 px-3 text-xs",
+  sm: "h-7 px-ms-2 text-ms-2xs",
+  md: "h-9 px-ms-3 text-ms-xs",
 };
 
 const ICON_SIZE: Record<ShareBtnSize, string> = {
@@ -62,7 +62,7 @@ const CHAT_CLS: Record<ShareBtnVariant, string> = {
 };
 
 function baseCls(size: ShareBtnSize) {
-  return `inline-flex items-center justify-center gap-1 rounded-md font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${SIZE_CLS[size]}`;
+  return `inline-flex items-center justify-center gap-ms-1 rounded-md font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${SIZE_CLS[size]}`;
 }
 
 export const WaShareButton = forwardRef<HTMLButtonElement, BaseProps>(

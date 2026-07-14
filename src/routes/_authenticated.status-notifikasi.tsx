@@ -619,14 +619,14 @@ function StatusNotifikasiPage() {
   };
 
   return (
-    <div className="p-4 space-y-4 max-w-2xl mx-auto">
-      <h1 className="text-xl font-semibold">Status Notifikasi</h1>
+    <div className="p-ms-4 space-ms-4 max-w-2xl mx-auto">
+      <h1 className="text-ms-xl font-semibold">Status Notifikasi</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Izin browser</CardTitle>
+          <CardTitle className="text-ms-base">Izin browser</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-ms-3 text-ms-sm">
           <Row label="Notification API" value={"Notification" in window ? "Tersedia" : "Tidak tersedia"} />
           <Row
             label="Permission"
@@ -634,7 +634,7 @@ function StatusNotifikasiPage() {
           />
           <Row
             label="Permissions API"
-            value={permApiState ? <code className="text-xs">{permApiState}</code> : <span className="text-xs text-muted-foreground">tidak tersedia</span>}
+            value={permApiState ? <code className="text-ms-xs">{permApiState}</code> : <span className="text-ms-xs text-muted-foreground">tidak tersedia</span>}
           />
           <Row label="Secure context" value={secure ? "Ya (HTTPS/localhost)" : "Tidak"} />
           <Row label="Service worker" value={swReady === null ? "…" : swReady ? "Terdaftar" : "Belum terdaftar"} />
@@ -642,10 +642,10 @@ function StatusNotifikasiPage() {
           {canPrompt && (
             <Button size="sm" onClick={requestPerm}>Minta izin notifikasi</Button>
           )}
-          <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1">
-            <div className="flex items-center gap-2">
+          <div className="rounded-md border bg-muted/40 p-ms-2 text-ms-xs space-y-1">
+            <div className="flex items-center gap-ms-2">
               <span className="font-medium">Alasan:</span>
-              <code className="text-[11px]">{reason.code}</code>
+              <code className="text-ms-2xs">{reason.code}</code>
             </div>
             <p className="text-muted-foreground leading-snug">{reason.detail}</p>
           </div>
@@ -654,12 +654,12 @@ function StatusNotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center justify-between">
+          <CardTitle className="text-ms-base flex items-center justify-between">
             <span>Kesiapan service worker & push</span>
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-xs"
+              className="h-7 text-ms-xs"
               onClick={() => void runChecks()}
               disabled={checking}
             >
@@ -667,7 +667,7 @@ function StatusNotifikasiPage() {
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-ms-3 text-ms-sm">
           <Row
             label="Service worker"
             value={
@@ -680,12 +680,12 @@ function StatusNotifikasiPage() {
             <>
               <Row
                 label="Scope"
-                value={<code className="text-[11px] break-all">{swDetails.scope}</code>}
+                value={<code className="text-ms-2xs break-all">{swDetails.scope}</code>}
               />
               <Row
                 label="Script"
                 value={
-                  <code className="text-[11px] break-all">
+                  <code className="text-ms-2xs break-all">
                     {swDetails.scriptURL
                       ? new URL(swDetails.scriptURL, location.origin).pathname
                       : "-"}
@@ -706,14 +706,14 @@ function StatusNotifikasiPage() {
               </Badge>
             }
           />
-          <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1">
-            <div className="flex justify-between gap-2">
+          <div className="rounded-md border bg-muted/40 p-ms-2 text-ms-xs space-y-1">
+            <div className="flex justify-between gap-ms-2">
               <span className="text-muted-foreground">SW terakhir aktif</span>
               <span title={lastSwSetup ? new Date(lastSwSetup).toLocaleString() : ""}>
                 {formatRelative(lastSwSetup)}
               </span>
             </div>
-            <div className="flex justify-between gap-2">
+            <div className="flex justify-between gap-ms-2">
               <span className="text-muted-foreground">Push terakhir ter-subscribe</span>
               <span title={lastPushSetup ? new Date(lastPushSetup).toLocaleString() : ""}>
                 {formatRelative(lastPushSetup)}
@@ -721,8 +721,8 @@ function StatusNotifikasiPage() {
             </div>
           </div>
 
-          <div className="rounded-md border p-2 text-xs space-y-2">
-            <div className="flex items-center justify-between gap-2">
+          <div className="rounded-md border p-ms-2 text-ms-xs space-ms-2">
+            <div className="flex items-center justify-between gap-ms-2">
               <span className="font-medium">Versi & pembaruan</span>
               <Badge
                 variant={
@@ -743,36 +743,36 @@ function StatusNotifikasiPage() {
                 {updateState === "error" && "gagal"}
               </Badge>
             </div>
-            <div className="flex justify-between gap-2">
+            <div className="flex justify-between gap-ms-2">
               <span className="text-muted-foreground">Versi worker</span>
-              <code className="text-[11px] break-all">
+              <code className="text-ms-2xs break-all">
                 {swDetails?.version ?? "—"}
               </code>
             </div>
-            <div className="flex justify-between gap-2">
+            <div className="flex justify-between gap-ms-2">
               <span className="text-muted-foreground">Script ETag</span>
-              <code className="text-[11px] break-all">
+              <code className="text-ms-2xs break-all">
                 {swDetails?.scriptEtag ?? "—"}
               </code>
             </div>
-            <div className="flex justify-between gap-2">
+            <div className="flex justify-between gap-ms-2">
               <span className="text-muted-foreground">Last-Modified</span>
-              <span className="text-[11px]">{swDetails?.scriptLastModified ?? "—"}</span>
+              <span className="text-ms-2xs">{swDetails?.scriptLastModified ?? "—"}</span>
             </div>
-            <div className="flex justify-between gap-2">
+            <div className="flex justify-between gap-ms-2">
               <span className="text-muted-foreground">Cek pembaruan terakhir</span>
               <span title={lastUpdateCheck ? new Date(lastUpdateCheck).toLocaleString() : ""}>
                 {formatRelative(lastUpdateCheck)}
               </span>
             </div>
             {updateMsg && (
-              <p className="text-[11px] text-muted-foreground leading-snug">{updateMsg}</p>
+              <p className="text-ms-2xs text-muted-foreground leading-snug">{updateMsg}</p>
             )}
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="flex flex-wrap gap-ms-2 pt-1">
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 text-xs"
+                className="h-7 text-ms-xs"
                 onClick={requestSwUpdate}
                 disabled={updateState === "checking" || !swDetails}
               >
@@ -781,7 +781,7 @@ function StatusNotifikasiPage() {
               {swDetails?.hasWaiting && (
                 <Button
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-7 text-ms-xs"
                   onClick={activateWaiting}
                   disabled={updateState === "activated"}
                 >
@@ -795,11 +795,11 @@ function StatusNotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Detail push subscription</CardTitle>
+          <CardTitle className="text-ms-base">Detail push subscription</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-ms-3 text-ms-sm">
           {!pushSub || !pushDetails ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-ms-xs text-muted-foreground">
               Belum ada push subscription aktif di perangkat/browser ini.
             </p>
           ) : (
@@ -807,7 +807,7 @@ function StatusNotifikasiPage() {
               <Row
                 label="Provider"
                 value={
-                  <span className="text-xs">
+                  <span className="text-ms-xs">
                     {pushDetails.endpoint
                       ? new URL(pushDetails.endpoint).host
                       : "-"}
@@ -816,11 +816,11 @@ function StatusNotifikasiPage() {
               />
               <div className="space-y-1">
                 <div className="text-muted-foreground">Endpoint</div>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 truncate rounded bg-muted px-2 py-1 text-[11px]">
+                <div className="flex items-center gap-ms-2">
+                  <code className="flex-1 truncate rounded bg-muted px-ms-2 py-1 text-ms-2xs">
                     {maskEndpoint(pushDetails.endpoint ?? "")}
                   </code>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={copyEndpoint}>
+                  <Button size="sm" variant="outline" className="h-7 text-ms-xs" onClick={copyEndpoint}>
                     {copied ? "Tersalin" : "Salin"}
                   </Button>
                 </div>
@@ -836,7 +836,7 @@ function StatusNotifikasiPage() {
               <Row
                 label="Kunci enkripsi"
                 value={
-                  <span className="text-xs">
+                  <span className="text-ms-xs">
                     p256dh: {pushDetails.hasP256dh ? "ok" : "—"} · auth:{" "}
                     {pushDetails.hasAuth ? "ok" : "—"}
                   </span>
@@ -849,9 +849,9 @@ function StatusNotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Konteks tampilan</CardTitle>
+          <CardTitle className="text-ms-base">Konteks tampilan</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-ms-3 text-ms-sm">
           <Row
             label="Berjalan di"
             value={
@@ -861,8 +861,8 @@ function StatusNotifikasiPage() {
             }
           />
           <Row label="Same-origin dengan parent" value={frame.sameOrigin ? "Ya" : "Tidak (cross-origin)"} />
-          <Row label="Origin" value={<code className="text-xs">{typeof window !== "undefined" ? window.location.origin : "-"}</code>} />
-          <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1 font-mono">
+          <Row label="Origin" value={<code className="text-ms-xs">{typeof window !== "undefined" ? window.location.origin : "-"}</code>} />
+          <div className="rounded-md border bg-muted/40 p-ms-2 text-ms-xs space-y-1 font-mono">
             <div className="font-sans text-muted-foreground mb-1">Bukti mentah</div>
             <Evidence k="window.self !== window.top" v={String(frame.selfNeTop)} />
             <Evidence k="window.parent !== window" v={String(frame.hasParent)} />
@@ -882,7 +882,7 @@ function StatusNotifikasiPage() {
             <Evidence k="document.referrer" v={frame.referrer || "(kosong)"} />
           </div>
           {frame.inIframe && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-ms-xs text-muted-foreground">
               Browser umumnya memblokir prompt izin notifikasi di dalam iframe editor.
               Untuk menguji banner sistem, buka domain published langsung di tab baru.
             </p>
@@ -892,9 +892,9 @@ function StatusNotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Ringkasan kesiapan</CardTitle>
+          <CardTitle className="text-ms-base">Ringkasan kesiapan</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm">
+        <CardContent className="text-ms-sm">
           <Readiness perm={perm} inIframe={frame.inIframe} sw={swReady} sub={pushSub} />
         </CardContent>
       </Card>
@@ -903,10 +903,10 @@ function StatusNotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Ekspor snapshot</CardTitle>
+          <CardTitle className="text-ms-base">Ekspor snapshot</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <p className="text-xs text-muted-foreground leading-snug">
+        <CardContent className="space-ms-3 text-ms-sm">
+          <p className="text-ms-xs text-muted-foreground leading-snug">
             Ringkasan permission, service worker, dan detail push subscription (endpoint dimasker) dalam format JSON.
           </p>
           <ExportReadinessNotice
@@ -918,7 +918,7 @@ function StatusNotifikasiPage() {
             onRetry={() => void runChecks()}
             onRequestPerm={requestPerm}
           />
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-ms-2">
             <Button size="sm" variant="secondary" onClick={openPreview}>Pratinjau</Button>
             <Button size="sm" onClick={downloadSnapshot}>Unduh JSON</Button>
             <Button size="sm" variant="outline" onClick={copySnapshot}>
@@ -926,7 +926,7 @@ function StatusNotifikasiPage() {
             </Button>
           </div>
           {exportError && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-2 text-ms-xs text-destructive">
               {exportError}
             </div>
           )}
@@ -943,10 +943,10 @@ function StatusNotifikasiPage() {
               Periksa isi sebelum diunduh atau disalin. {previewJson.length.toLocaleString("id-ID")} karakter.
             </DialogDescription>
           </DialogHeader>
-          <pre className="max-h-[55vh] overflow-auto rounded-md border bg-muted/40 p-3 text-[11px] leading-snug font-mono whitespace-pre-wrap break-all">
+          <pre className="max-h-[55vh] overflow-auto rounded-md border bg-muted/40 p-ms-3 text-ms-2xs leading-snug font-mono whitespace-pre-wrap break-all">
             {previewJson}
           </pre>
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter className="gap-ms-2 sm:gap-ms-2">
             <Button size="sm" variant="outline" onClick={() => setPreviewOpen(false)}>
               Tutup
             </Button>
@@ -963,7 +963,7 @@ function StatusNotifikasiPage() {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-ms-3">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
@@ -972,7 +972,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 function Evidence({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex items-start justify-between gap-3">
+    <div className="flex items-start justify-between gap-ms-3">
       <span className="text-muted-foreground">{k}</span>
       <span className="text-right break-all">{v}</span>
     </div>
@@ -1026,10 +1026,10 @@ function ExportReadinessNotice({
   if (!issues.length) return null;
 
   return (
-    <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-2">
-      <div className="flex items-center justify-between gap-2">
+    <div className="rounded-md border border-border bg-muted/50 p-ms-3 text-ms-xs space-ms-2">
+      <div className="flex items-center justify-between gap-ms-2">
         <span className="font-medium text-foreground">Data belum lengkap</span>
-        <Badge variant="secondary" className="text-[10px]">
+        <Badge variant="secondary" className="text-ms-2xs">
           {issues.length} item
         </Badge>
       </div>
@@ -1039,7 +1039,7 @@ function ExportReadinessNotice({
       <p className="text-muted-foreground leading-snug">
         Snapshot tetap dapat diekspor; bagian yang tidak tersedia akan tercatat sebagai kosong.
       </p>
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="flex flex-wrap gap-ms-2 pt-1">
         <Button size="sm" variant="outline" onClick={onRetry} disabled={checking}>
           {checking ? "Memeriksa…" : "Coba lagi"}
         </Button>
@@ -1096,19 +1096,19 @@ function TestNotificationCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Kirim notifikasi uji</CardTitle>
+        <CardTitle className="text-ms-base">Kirim notifikasi uji</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm">
+      <CardContent className="space-ms-3 text-ms-sm">
         <p className="text-muted-foreground">
           Kirim satu banner uji ke semua perangkat yang telah berlangganan push
           milik akun ini. Butuh izin <b>granted</b> dan push subscription aktif.
         </p>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-ms-2">
           <Button onClick={send} disabled={disabled}>
             {sending ? "Mengirim…" : "Kirim notifikasi uji"}
           </Button>
           {disabled && !sending && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-ms-xs text-muted-foreground">
               {perm !== "granted"
                 ? "Aktifkan izin notifikasi dulu."
                 : "Aktifkan push subscription dulu."}
@@ -1118,7 +1118,7 @@ function TestNotificationCard({
         {result && (
           <div
             className={
-              "rounded-md border p-3 text-xs " +
+              "rounded-md border p-ms-3 text-ms-xs " +
               (result.ok
                 ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
                 : "border-destructive/40 bg-destructive/10 text-destructive")
@@ -1179,10 +1179,10 @@ function ImportSnapshotCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Impor snapshot JSON</CardTitle>
+        <CardTitle className="text-ms-base">Impor snapshot JSON</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        <p className="text-xs text-muted-foreground leading-snug">
+      <CardContent className="space-ms-3 text-ms-sm">
+        <p className="text-ms-xs text-muted-foreground leading-snug">
           Baca kembali file ekspor Status Notifikasi (versi saat ini: v{CURRENT_SCHEMA_VERSION}).
           File lama tanpa <code>schemaVersion</code> tetap didukung dan otomatis dinormalkan.
         </p>
@@ -1193,7 +1193,7 @@ function ImportSnapshotCard() {
           className="hidden"
           onChange={(e) => void onInput(e)}
         />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-ms-2">
           <Button size="sm" onClick={pickFile}>Pilih file JSON</Button>
           <Button size="sm" variant="outline" onClick={() => setPasteOpen(true)}>
             Tempel JSON
@@ -1205,7 +1205,7 @@ function ImportSnapshotCard() {
           )}
         </div>
         {fileName && (
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-ms-2xs text-muted-foreground">
             Sumber: <code>{fileName}</code>
           </div>
         )}
@@ -1222,10 +1222,10 @@ function ImportSnapshotCard() {
             <textarea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
-              className="min-h-[240px] w-full rounded-md border bg-background p-2 font-mono text-[11px] leading-snug"
+              className="min-h-[240px] w-full rounded-md border bg-background p-ms-2 font-mono text-ms-2xs leading-snug"
               placeholder='{ "schemaVersion": 1, ... }'
             />
-            <DialogFooter className="gap-2 sm:gap-2">
+            <DialogFooter className="gap-ms-2 sm:gap-ms-2">
               <Button size="sm" variant="outline" onClick={() => setPasteOpen(false)}>
                 Batal
               </Button>
@@ -1243,7 +1243,7 @@ function ImportSnapshotCard() {
 function ImportResultView({ result }: { result: ImportResult }) {
   if (!result.ok) {
     return (
-      <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive space-y-1">
+      <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-xs text-destructive space-y-1">
         <div className="font-medium">Gagal diimpor</div>
         <p className="leading-snug">{result.error}</p>
       </div>
@@ -1263,11 +1263,11 @@ function ImportResultView({ result }: { result: ImportResult }) {
   const errorCount = fieldIssues.filter((f) => f.severity === "error").length;
   const warnCount = fieldIssues.filter((f) => f.severity === "warning").length;
   return (
-    <div className="space-y-2">
-      <div className="rounded-md border p-3 text-xs space-y-1">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-ms-2">
+      <div className="rounded-md border p-ms-3 text-ms-xs space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-ms-2">
           <span className="font-medium">Snapshot valid</span>
-          <div className="flex gap-1">
+          <div className="flex gap-ms-1">
             <Badge variant={sourceVersion === 0 ? "secondary" : "default"}>
               schema v{sourceVersion === 0 ? "0 (legacy)" : sourceVersion}
             </Badge>
@@ -1285,14 +1285,14 @@ function ImportResultView({ result }: { result: ImportResult }) {
       </div>
       <CompatibilityBanner info={compatibility} />
       {appliedMigrations.length > 0 && (
-        <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
+        <div className="rounded-md border border-border bg-muted/50 p-ms-3 text-ms-xs space-y-1">
           <div className="font-medium">
             Migrasi otomatis diterapkan ({appliedMigrations.length})
           </div>
           <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground leading-snug">
             {appliedMigrations.map((m, i) => (
               <li key={`${m.from}-${m.to}-${i}`}>
-                <code className="text-[10px]">
+                <code className="text-ms-2xs">
                   v{m.from} → v{m.to}
                 </code>{" "}
                 — {m.description}
@@ -1307,17 +1307,17 @@ function ImportResultView({ result }: { result: ImportResult }) {
       {fieldIssues.length > 0 && (
         <div
           className={
-            "rounded-md border p-3 text-xs space-y-2 " +
+            "rounded-md border p-ms-3 text-ms-xs space-ms-2 " +
             (errorCount > 0
               ? "border-destructive/40 bg-destructive/10"
               : "border-border bg-muted/50")
           }
         >
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-ms-2">
             <div className="font-medium">
               Validasi field ({fieldIssues.length})
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-ms-1">
               {errorCount > 0 && (
                 <Badge variant="destructive">{errorCount} error</Badge>
               )}
@@ -1327,13 +1327,13 @@ function ImportResultView({ result }: { result: ImportResult }) {
             </div>
           </div>
           <div className="overflow-auto max-h-[40vh] rounded border bg-background">
-            <table className="w-full border-collapse text-[10px]">
+            <table className="w-full border-collapse text-ms-2xs">
               <thead className="sticky top-0 bg-muted text-muted-foreground">
                 <tr className="text-left">
-                  <th className="px-2 py-1 font-medium">Path</th>
-                  <th className="px-2 py-1 font-medium">Kode</th>
-                  <th className="px-2 py-1 font-medium">Diharapkan</th>
-                  <th className="px-2 py-1 font-medium">Aktual</th>
+                  <th className="px-ms-2 py-1 font-medium">Path</th>
+                  <th className="px-ms-2 py-1 font-medium">Kode</th>
+                  <th className="px-ms-2 py-1 font-medium">Diharapkan</th>
+                  <th className="px-ms-2 py-1 font-medium">Aktual</th>
                 </tr>
               </thead>
               <tbody>
@@ -1346,12 +1346,12 @@ function ImportResultView({ result }: { result: ImportResult }) {
                         : "text-foreground"
                     }
                   >
-                    <td className="px-2 py-1 font-mono">
+                    <td className="px-ms-2 py-1 font-mono">
                       <code>{f.path}</code>
                     </td>
-                    <td className="px-2 py-1">{f.code}</td>
-                    <td className="px-2 py-1 font-mono">{f.expected}</td>
-                    <td className="px-2 py-1 font-mono">{f.got}</td>
+                    <td className="px-ms-2 py-1">{f.code}</td>
+                    <td className="px-ms-2 py-1 font-mono">{f.expected}</td>
+                    <td className="px-ms-2 py-1 font-mono">{f.got}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1360,19 +1360,19 @@ function ImportResultView({ result }: { result: ImportResult }) {
         </div>
       )}
       {warnings.length > 0 && (
-        <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
+        <div className="rounded-md border border-border bg-muted/50 p-ms-3 text-ms-xs space-y-1">
           <div className="font-medium">Catatan validasi ({warnings.length})</div>
           <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground leading-snug">
             {warnings.map((w, i) => (
               <li key={`${w.code}-${i}`}>
-                <code className="text-[10px]">{w.code}</code> — {w.detail}
+                <code className="text-ms-2xs">{w.code}</code> — {w.detail}
               </li>
             ))}
           </ul>
         </div>
       )}
-      <details className="rounded-md border p-2 text-[11px]">
-        <summary className="cursor-pointer text-xs font-medium">Snapshot ternormalisasi</summary>
+      <details className="rounded-md border p-ms-2 text-ms-2xs">
+        <summary className="cursor-pointer text-ms-xs font-medium">Snapshot ternormalisasi</summary>
         <pre className="mt-2 max-h-[40vh] overflow-auto whitespace-pre-wrap break-all font-mono">
           {JSON.stringify(snapshot, null, 2)}
         </pre>
@@ -1387,7 +1387,7 @@ function SnapshotSummary({ snapshot }: { snapshot: NormalizedSnapshot }) {
   const swState = (snapshot.serviceWorker?.state as string) ?? "—";
   const pushActive = snapshot.pushSubscription?.active;
   return (
-    <div className="grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+    <div className="grid grid-cols-2 gap-ms-1 text-ms-2xs text-muted-foreground">
       <div>exportedAt</div>
       <div className="text-right text-foreground">{snapshot.exportedAt ?? "—"}</div>
       <div>timezone</div>
@@ -1433,10 +1433,10 @@ function CompatibilityBanner({ info }: { info: CompatibilityInfo }) {
       ? "Migrasi maju berhasil"
       : "Versi cocok persis";
   return (
-    <div className={`rounded-md border p-3 text-xs space-y-1 ${tone}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className={`rounded-md border p-ms-3 text-ms-xs space-y-1 ${tone}`}>
+      <div className="flex flex-wrap items-center justify-between gap-ms-2">
         <span className="font-medium">{label}</span>
-        <div className="flex gap-1">
+        <div className="flex gap-ms-1">
           <Badge variant="outline">
             v{info.sourceVersion} → v{info.targetVersion}
           </Badge>
@@ -1449,7 +1449,7 @@ function CompatibilityBanner({ info }: { info: CompatibilityInfo }) {
         <p className="leading-snug">
           File berasal dari skema masa depan. Sistem membaca field yang
           dikenali versi ini; field baru disimpan di{" "}
-          <code className="text-[10px]">snapshot.extra</code> agar tidak hilang.
+          <code className="text-ms-2xs">snapshot.extra</code> agar tidak hilang.
           Tampilan/aksi tertentu bisa jadi menunjukkan data yang belum lengkap.
         </p>
       )}
@@ -1460,12 +1460,12 @@ function CompatibilityBanner({ info }: { info: CompatibilityInfo }) {
       )}
       {info.unknownTopLevelFields.length > 0 && (
         <div className="pt-1">
-          <div className="text-[11px] font-medium">
+          <div className="text-ms-2xs font-medium">
             Field masa depan dipertahankan ({info.unknownTopLevelFields.length})
           </div>
-          <div className="flex flex-wrap gap-1 pt-1">
+          <div className="flex flex-wrap gap-ms-1 pt-1">
             {info.unknownTopLevelFields.map((k) => (
-              <Badge key={k} variant="secondary" className="text-[10px]">
+              <Badge key={k} variant="secondary" className="text-ms-2xs">
                 {k}
               </Badge>
             ))}
@@ -1488,8 +1488,8 @@ function _MigrationDiffViewImpl({
   const visible: DiffLine[] =
     mode === "changed" ? lines.filter((l) => l.kind !== "same") : lines;
   return (
-    <details className="rounded-md border p-2 text-[11px]" open>
-      <summary className="cursor-pointer text-xs font-medium flex flex-wrap items-center gap-2">
+    <details className="rounded-md border p-ms-2 text-ms-2xs" open>
+      <summary className="cursor-pointer text-ms-xs font-medium flex flex-wrap items-center gap-ms-2">
         <span>Preview diff migrasi</span>
         <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">
           +{stats.added}
@@ -1499,12 +1499,12 @@ function _MigrationDiffViewImpl({
         </Badge>
         <Badge variant="secondary">{stats.unchanged} sama</Badge>
       </summary>
-      <div className="mt-2 flex items-center gap-1">
+      <div className="mt-2 flex items-center gap-ms-1">
         <Button
           type="button"
           size="sm"
           variant={mode === "changed" ? "default" : "outline"}
-          className="h-6 px-2 text-[10px]"
+          className="h-6 px-ms-2 text-ms-2xs"
           onClick={() => setMode("changed")}
         >
           Hanya perubahan
@@ -1513,15 +1513,15 @@ function _MigrationDiffViewImpl({
           type="button"
           size="sm"
           variant={mode === "all" ? "default" : "outline"}
-          className="h-6 px-2 text-[10px]"
+          className="h-6 px-ms-2 text-ms-2xs"
           onClick={() => setMode("all")}
         >
           Semua baris
         </Button>
       </div>
-      <div className="mt-2 max-h-[40vh] overflow-auto rounded border bg-muted/30 font-mono text-[10px] leading-snug">
+      <div className="mt-2 max-h-[40vh] overflow-auto rounded border bg-muted/30 font-mono text-ms-2xs leading-snug">
         {visible.length === 0 ? (
-          <div className="p-2 text-muted-foreground">Tidak ada perbedaan baris.</div>
+          <div className="p-ms-2 text-muted-foreground">Tidak ada perbedaan baris.</div>
         ) : (
           <table className="w-full border-collapse">
             <tbody>

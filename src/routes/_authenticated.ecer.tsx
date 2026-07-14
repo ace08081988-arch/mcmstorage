@@ -107,13 +107,13 @@ function StatChip({
     danger: "text-destructive bg-destructive/10 ring-destructive/20",
   };
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-background/70 px-2.5 py-1.5 backdrop-blur">
+    <div className="flex items-center gap-ms-2 rounded-lg border bg-background/70 px-ms-2.5 py-1.5 backdrop-blur">
       <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1 ring-inset ${map[tone]}`}>
         <Icon className="h-3.5 w-3.5" />
       </span>
       <div className="min-w-0">
         <div className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-        <div className="text-sm font-bold leading-none tabular-nums">{value.toLocaleString("id-ID")}</div>
+        <div className="text-ms-sm font-bold leading-none tabular-nums">{value.toLocaleString("id-ID")}</div>
       </div>
     </div>
   );
@@ -121,12 +121,12 @@ function StatChip({
 
 function EcerLoadingSkeleton() {
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
+    <div className="mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
       <div className="h-28 w-full animate-pulse rounded-2xl bg-muted/50" />
       <div className="h-24 w-full animate-pulse rounded-xl bg-muted/50" />
-      <div className="space-y-2">
+      <div className="space-ms-2">
         <div className="h-14 w-full animate-pulse rounded-lg bg-muted/40" />
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-ms-2 sm:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-24 w-full animate-pulse rounded-lg bg-muted/40" />
           ))}
@@ -157,17 +157,17 @@ function EcerSummaryCard({
     danger: "text-destructive bg-destructive/10 ring-destructive/20",
   };
   return (
-    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-4">
-      <div className="flex items-start justify-between gap-2">
+    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-ms-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-ms-4">
+      <div className="flex items-start justify-between gap-ms-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:text-[11px]">
+          <p className="truncate text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground md:text-ms-2xs">
             {label}
           </p>
-          <p className="mt-1 text-xl font-bold tabular-nums tracking-tight md:text-2xl">
+          <p className="mt-1 text-ms-xl font-bold tabular-nums tracking-tight md:text-ms-2xl">
             {value.toLocaleString("id-ID")}
           </p>
           {hint && (
-            <p className="mt-0.5 hidden text-[10px] leading-tight text-muted-foreground md:block">
+            <p className="mt-0.5 hidden text-ms-2xs leading-tight text-muted-foreground md:block">
               {hint}
             </p>
           )}
@@ -399,23 +399,23 @@ function EcerPage() {
   if (loadError && items.length === 0 && titles.length === 0) {
     const navOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
     return (
-      <div className="mx-auto max-w-lg p-4 sm:p-6">
-        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5">
-          <div className="mb-3 flex items-start gap-3">
+      <div className="mx-auto max-w-lg p-ms-4 sm:p-ms-6">
+        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-ms-5">
+          <div className="mb-3 flex items-start gap-ms-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold">Gagal memuat Penyiapan Ecer</div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Sumber: <code className="rounded bg-muted px-1 py-0.5">{loadError.source}</code></div>
+              <div className="text-ms-sm font-semibold">Gagal memuat Penyiapan Ecer</div>
+              <div className="mt-0.5 text-ms-xs text-muted-foreground">Sumber: <code className="rounded bg-muted px-1 py-0.5">{loadError.source}</code></div>
             </div>
           </div>
 
           {loadError.diagnosis && (
-            <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-xs leading-snug text-amber-700 dark:text-amber-400">
+            <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-xs leading-snug text-amber-700 dark:text-amber-400">
               <b>Kemungkinan penyebab:</b> {loadError.diagnosis}
             </div>
           )}
 
-          <div className="space-y-1.5 rounded-md border bg-background/60 p-2.5 text-[11px] leading-snug">
+          <div className="space-y-1.5 rounded-md border bg-background/60 p-ms-2.5 text-ms-2xs leading-snug">
             <div><span className="text-muted-foreground">Pesan:</span> <span className="break-words font-mono">{loadError.message}</span></div>
             {loadError.code && <div><span className="text-muted-foreground">Kode:</span> <span className="font-mono">{loadError.code}</span></div>}
             {loadError.status !== undefined && <div><span className="text-muted-foreground">HTTP:</span> <span className="font-mono">{String(loadError.status)}</span></div>}
@@ -424,7 +424,7 @@ function EcerPage() {
             <div><span className="text-muted-foreground">Jaringan:</span> <span className="font-mono">{navOnline ? "online" : "offline"}</span></div>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-ms-2">
             <Button size="sm" onClick={() => void loadAll()}>
               <RotateCw className="mr-1 h-4 w-4" /> Coba lagi
             </Button>
@@ -511,23 +511,23 @@ function EcerPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
+    <div className="mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
       {/* Hero header */}
-      <section aria-labelledby="ecer-heading" className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm sm:p-5">
-        <div className="flex items-start justify-between gap-3">
+      <section aria-labelledby="ecer-heading" className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-ms-4 shadow-sm sm:p-ms-5">
+        <div className="flex items-start justify-between gap-ms-3">
           <div className="min-w-0 flex-1">
-            <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full border bg-background/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+            <div className="mb-1.5 inline-flex items-center gap-ms-1.5 rounded-full border bg-background/70 px-ms-2.5 py-0.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
               <Sparkles className="h-3 w-3 text-primary" /> Modul Penyiapan
             </div>
-            <h1 id="ecer-heading" className="flex items-center gap-2 text-lg font-bold tracking-tight sm:text-xl">
+            <h1 id="ecer-heading" className="flex items-center gap-ms-2 text-ms-lg font-bold tracking-tight sm:text-ms-xl">
               <Scale className="h-5 w-5 text-primary" /> Penyiapan Ecer
             </h1>
-            <p className="mt-1 max-w-xl text-[11px] leading-snug text-muted-foreground sm:text-xs">
+            <p className="mt-1 max-w-xl text-ms-2xs leading-snug text-muted-foreground sm:text-ms-xs">
               Buat <b>Judul Ecer</b> per produk (mis. <i>KRISTAL 1 gram</i>), lalu tambah kotak penyiapan
               berisi foto + lokasi + berat aktual. Stok produk otomatis berkurang setiap penyiapan disimpan.
             </p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setCreatingProduct(true)} className="shrink-0 gap-1" aria-label="Tambah produk gudang baru">
+          <Button size="sm" variant="outline" onClick={() => setCreatingProduct(true)} className="shrink-0 gap-ms-1" aria-label="Tambah produk gudang baru">
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Produk baru</span>
           </Button>
@@ -537,7 +537,7 @@ function EcerPage() {
       <PendingVerificationSection />
 
       {/* Summary cards — Ready / In Progress / Waiting / Completed */}
-      <section aria-label="Ringkasan Judul Ecer" className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+      <section aria-label="Ringkasan Judul Ecer" className="grid grid-cols-2 gap-ms-2.5 md:grid-cols-4">
         <EcerSummaryCard
           icon={LayoutGrid}
           label="Total Judul"
@@ -568,18 +568,18 @@ function EcerPage() {
       </section>
 
       {/* Product picker */}
-      <div className="rounded-xl border bg-card p-3 shadow-sm sm:p-4">
-        <div className="flex items-center justify-between gap-2">
-          <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="rounded-xl border bg-card p-ms-3 shadow-sm sm:p-ms-4">
+        <div className="flex items-center justify-between gap-ms-2">
+          <Label className="flex items-center gap-ms-1.5 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <PackageSearch className="h-3.5 w-3.5" /> Pilih produk
           </Label>
           {q && (
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-ms-2xs text-muted-foreground">
               {filteredItems.length} / {items.length}
             </span>
           )}
         </div>
-        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1.4fr]">
+        <div className="mt-2 grid gap-ms-2 sm:grid-cols-[1fr_1.4fr]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -587,13 +587,13 @@ function EcerPage() {
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
               placeholder="Cari produk / kategori…"
-              className="h-10 w-full rounded-md border bg-background pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="h-10 w-full rounded-md border bg-background pl-8 pr-3 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <select
             value={selectedItemId ?? ""}
             onChange={(e) => { setSelectedItemId(e.target.value || undefined); setSelectedTitleId(undefined); }}
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">— Pilih produk —</option>
             {filteredItems.map((it) => (
@@ -604,7 +604,7 @@ function EcerPage() {
           </select>
         </div>
         {items.length === 0 && (
-          <div className="mt-3 rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
+          <div className="mt-3 rounded-lg border border-dashed p-ms-4 text-center text-ms-xs text-muted-foreground">
             <Package className="mx-auto mb-1.5 h-6 w-6 opacity-60" />
             Belum ada produk gudang. Tambahkan produk untuk mulai membuat judul ecer.
           </div>
@@ -613,15 +613,15 @@ function EcerPage() {
 
       {selectedItem && (
         <Card className="overflow-hidden border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 border-b bg-muted/30 pb-3">
+          <CardHeader className="flex flex-row items-center justify-between gap-ms-2 space-y-0 border-b bg-muted/30 pb-3">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-ms-1.5">
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Package className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
-                  <CardTitle className="truncate text-base">{selectedItem.name}</CardTitle>
-                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <CardTitle className="truncate text-ms-base">{selectedItem.name}</CardTitle>
+                  <div className="flex flex-wrap items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
                     {selectedItem.category && (
                       <span className="rounded-full bg-background px-1.5 py-0.5 ring-1 ring-inset ring-border">
                         {selectedItem.category}
@@ -632,26 +632,26 @@ function EcerPage() {
                 </div>
               </div>
             </div>
-            <Button size="sm" onClick={() => setCreatingTitle(true)} className="shrink-0 gap-1">
+            <Button size="sm" onClick={() => setCreatingTitle(true)} className="shrink-0 gap-ms-1">
               <Plus className="h-4 w-4" /> Judul baru
             </Button>
           </CardHeader>
-          <CardContent className="space-y-2 pt-3">
+          <CardContent className="space-ms-2 pt-3">
             {titlesForItem.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center">
+              <div className="flex flex-col items-center gap-ms-2 rounded-lg border border-dashed p-ms-6 text-center">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <LayoutGrid className="h-5 w-5" />
                 </span>
-                <div className="text-sm font-medium">Belum ada Judul Ecer</div>
-                <div className="max-w-xs text-[11px] text-muted-foreground">
+                <div className="text-ms-sm font-medium">Belum ada Judul Ecer</div>
+                <div className="max-w-xs text-ms-2xs text-muted-foreground">
                   Buat judul pertama untuk mulai mencatat kotak penyiapan produk ini.
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setCreatingTitle(true)} className="mt-1 gap-1">
+                <Button size="sm" variant="outline" onClick={() => setCreatingTitle(true)} className="mt-1 gap-ms-1">
                   <Plus className="h-3.5 w-3.5" /> Buat Judul Ecer
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-ms-2 sm:grid-cols-2">
                 {titlesForItem.map((t) => (
                   <TitleCard
                     key={t.id}
@@ -671,12 +671,12 @@ function EcerPage() {
       )}
 
       {!selectedItem && items.length > 0 && (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-card/50 p-8 text-center">
+        <div className="flex flex-col items-center gap-ms-2 rounded-xl border border-dashed bg-card/50 p-8 text-center">
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <PackageSearch className="h-6 w-6" />
           </span>
-          <div className="text-sm font-medium">Pilih produk untuk mulai</div>
-          <div className="max-w-sm text-[11px] text-muted-foreground">
+          <div className="text-ms-sm font-medium">Pilih produk untuk mulai</div>
+          <div className="max-w-sm text-ms-2xs text-muted-foreground">
             Cari atau pilih produk gudang di atas untuk melihat dan mengelola Judul Ecer yang terkait.
           </div>
         </div>
@@ -778,28 +778,28 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, st
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
       data-title-id={title.id}
-      className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
+      className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-card p-ms-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-ms-2">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 font-medium tabular-nums text-foreground">
+          <div className="text-ms-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
+            <span className="inline-flex items-center gap-ms-1 rounded-md bg-muted px-1.5 py-0.5 font-medium tabular-nums text-foreground">
               <Scale className="h-3 w-3" /> {title.target_grams} {displayUnit(itemName, title.unit_label)}
             </span>
-            <span className="inline-flex items-center gap-1 tabular-nums">
+            <span className="inline-flex items-center gap-ms-1 tabular-nums">
               <Hash className="h-3 w-3" />
               {isLoadingCount ? "…" : stat ? `${soldC}/${c} terkirim` : `${c} penyiapan`}
             </span>
           </div>
         </div>
-        <span className={`inline-flex h-5 shrink-0 items-center rounded-full px-2 text-[10px] font-semibold uppercase tracking-wide ${status.cls}`}>
+        <span className={`inline-flex h-5 shrink-0 items-center rounded-full px-ms-2 text-ms-2xs font-semibold uppercase tracking-wide ${status.cls}`}>
           {status.label}
         </span>
       </div>
 
       {title.note && (
-        <div className="mt-2 line-clamp-2 rounded-md bg-muted/40 px-2 py-1 text-[11px] leading-snug text-muted-foreground">
+        <div className="mt-2 line-clamp-2 rounded-md bg-muted/40 px-ms-2 py-1 text-ms-2xs leading-snug text-muted-foreground">
           {title.note}
         </div>
       )}
@@ -812,11 +812,11 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, st
         />
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
-        <span className="text-[11px] leading-snug text-muted-foreground group-hover:text-primary">
+      <div className="mt-2 flex items-center justify-between gap-ms-2 border-t pt-2">
+        <span className="text-ms-2xs leading-snug text-muted-foreground group-hover:text-primary">
           Tap untuk buka →
         </span>
-        <div className="flex gap-1">
+        <div className="flex gap-ms-1">
           <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label="Edit judul">
             <Edit3 className="h-3.5 w-3.5" />
           </Button>
@@ -870,9 +870,9 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
           <DialogTitle>{existing ? "Edit judul ecer" : "Judul ecer baru"}</DialogTitle>
           <DialogDescription>Produk: <b>{item.name}</b></DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div>
-            <Label className="text-xs">Nama judul</Label>
+            <Label className="text-ms-xs">Nama judul</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -886,15 +886,15 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
           </div>
           <div className={pairClass}>
             <div>
-              <Label className="text-xs">Target berat</Label>
+              <Label className="text-ms-xs">Target berat</Label>
               <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
             </div>
             <div>
-              <Label className="text-xs">Satuan</Label>
+              <Label className="text-ms-xs">Satuan</Label>
               <div className="mt-1 inline-flex h-9 rounded-md border bg-background p-0.5">
                 {(["g", "gram"] as const).map((u) => (
                   <button key={u} onClick={() => setUnit(u)}
-                    className={`h-full rounded px-3 text-xs font-medium ${unit === u ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+                    className={`h-full rounded px-ms-3 text-ms-xs font-medium ${unit === u ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
                     {u}
                   </button>
                 ))}
@@ -902,7 +902,7 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
             </div>
           </div>
           <div>
-            <Label className="text-xs">Keterangan (opsional)</Label>
+            <Label className="text-ms-xs">Keterangan (opsional)</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Peraturan penyiapan / catatan…" rows={2} />
           </div>
         </div>
@@ -1089,43 +1089,43 @@ function DetailHero({
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {/* Brand strip */}
-      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-4 pb-4 pt-4 text-primary-foreground sm:px-5 sm:pb-6 sm:pt-5">
+      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-ms-4 pb-4 pt-4 text-primary-foreground sm:px-ms-5 sm:pb-6 sm:pt-5">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary-foreground/40 to-emerald-400" />
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase leading-none tracking-[0.18em] text-primary-foreground/80">
+            <div className="flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase leading-none tracking-[0.18em] text-primary-foreground/80">
               <Scale className="h-3 w-3 shrink-0" />
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-2 break-words text-base font-bold leading-snug sm:text-xl">{title.name}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] leading-none text-primary-foreground/85">
+            <h2 className="mt-2 break-words text-ms-base font-bold leading-snug sm:text-ms-xl">{title.name}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs leading-none text-primary-foreground/85">
               <span
-                className="inline-flex h-6 min-w-0 max-w-full items-center gap-1 rounded-full bg-white/15 px-2 leading-none backdrop-blur-sm"
+                className="inline-flex h-6 min-w-0 max-w-full items-center gap-ms-1 rounded-full bg-white/15 px-ms-2 leading-none backdrop-blur-sm"
                 title={item.name}
               >
                 <Package className="h-3 w-3 shrink-0" />
                 <span className="truncate">{item.name}</span>
               </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2 leading-none backdrop-blur-sm">
+              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/15 px-ms-2 leading-none backdrop-blur-sm">
                 Target <b className="ml-0.5">{title.target_grams} {unit}</b>
               </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-2 font-semibold leading-none text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
+              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-ms-2 font-semibold leading-none text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
                 <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
               </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/10 px-2 font-mono leading-none text-primary-foreground/90 backdrop-blur-sm sm:hidden">
+              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/10 px-ms-2 font-mono leading-none text-primary-foreground/90 backdrop-blur-sm sm:hidden">
                 <Hash className="h-3 w-3 shrink-0" /> {ref}
               </span>
             </div>
           </div>
           <div className="hidden shrink-0 text-right sm:block">
-            <div className="text-[11px] uppercase leading-snug tracking-wider text-primary-foreground/70">No. Referensi</div>
-            <div className="font-mono text-[11px] leading-snug text-primary-foreground/95">{ref}</div>
+            <div className="text-ms-2xs uppercase leading-snug tracking-wider text-primary-foreground/70">No. Referensi</div>
+            <div className="font-mono text-ms-2xs leading-snug text-primary-foreground/95">{ref}</div>
           </div>
         </div>
       </div>
 
       {/* Detail rows */}
-      <div className="divide-y bg-card px-4 sm:px-5">
+      <div className="divide-y bg-card px-ms-4 sm:px-ms-5">
         <DetailRow icon={<Package className="h-3.5 w-3.5" />} label="Produk gudang"
           value={<span className="font-semibold">{item.name}</span>}
           sub={`Stok: ${fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}`}
@@ -1152,9 +1152,9 @@ function DetailHero({
           </>
         )}
         <DetailRow icon={<Hash className="h-3.5 w-3.5" />} label="ID judul"
-          value={<span className="font-mono text-xs">{ref}</span>} />
+          value={<span className="font-mono text-ms-xs">{ref}</span>} />
         {title.note && (
-          <div className="py-2.5">
+          <div className="py-ms-2.5">
             <EcerLabel as="div">Catatan</EcerLabel>
             <EcerBody as="div" className="mt-1.5 whitespace-pre-wrap">{title.note}</EcerBody>
           </div>
@@ -1163,24 +1163,24 @@ function DetailHero({
 
       {/* Action footer — bar 4 tombol ramah jempol (pill aktif lega) */}
       <div
-        className="sticky bottom-0 z-10 -mx-px border-t bg-card/95 px-2 pt-2 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:bg-muted/40 sm:px-5 sm:py-3 sm:shadow-none sm:backdrop-blur-0"
+        className="sticky bottom-0 z-10 -mx-px border-t bg-card/95 px-ms-2 pt-2 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:bg-muted/40 sm:px-ms-5 sm:py-ms-3 sm:shadow-none sm:backdrop-blur-0"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
       >
-        <div className="hidden text-[11px] uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
+        <div className="hidden text-ms-2xs uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
           Simpan halaman ini sebagai referensi penyiapan.
         </div>
         {/* Mobile: bar bawah dengan kolom auto-fit — tetap rapi walau jumlah
             tombol bervariasi (Judul & Produk kondisional). Desktop: flex wrap. */}
-        <div className="grid auto-cols-fr grid-flow-col gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5">
+        <div className="grid auto-cols-fr grid-flow-col gap-ms-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-ms-1.5">
           {onCreateTitle && (
             <button
               type="button"
               onClick={onCreateTitle}
               title="Judul ecer baru untuk produk yang sama"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <Plus className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Judul</span>
+              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Judul</span>
             </button>
           )}
           {onCreateProduct && (
@@ -1188,20 +1188,20 @@ function DetailHero({
               type="button"
               onClick={onCreateProduct}
               title="Buat produk gudang baru lalu langsung dibuatkan judulnya"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <Package className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Produk</span>
+              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Produk</span>
             </button>
           )}
           <button
             type="button"
             onClick={onScrollToWorker}
             title="Lihat kiriman pegawai untuk judul ini"
-            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
           >
             <Users className="h-5 w-5" aria-hidden />
-            <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Pegawai</span>
+            <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Pegawai</span>
           </button>
           {isAdmin && (
             <Link
@@ -1209,10 +1209,10 @@ function DetailHero({
               search={{ title_id: title.id }}
               title="Buat perintah penyiapan untuk pegawai (Shift+P)"
               aria-label="Buat perintah penyiapan untuk pegawai"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-primary/10 p-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-primary/10 p-ms-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
             >
               <UserPlus className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Perintah</span>
+              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Perintah</span>
             </Link>
           )}
           {isAdmin && (
@@ -1222,10 +1222,10 @@ function DetailHero({
               title={copyLinkTooltip}
               aria-label={copyLinkAriaLabel}
               aria-keyshortcuts="Shift+L"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <Link2 className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Salin link</span>
+              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Salin link</span>
             </button>
           )}
           {isAdmin && (
@@ -1234,20 +1234,20 @@ function DetailHero({
               onClick={() => setQrOpen(true)}
               title="Tampilkan QR permalink Penyiapan pegawai (Shift+Q)"
               aria-label="Tampilkan QR permalink Penyiapan pegawai"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <QrCode className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">QR</span>
+              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">QR</span>
             </button>
           )}
           <button
             type="button"
             onClick={onAdd}
             title="Tambah penyiapan untuk judul ini"
-            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50 p-2 text-emerald-700 transition-all active:scale-95 dark:bg-emerald-500/15 dark:text-emerald-300 sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-emerald-50 p-ms-2 text-emerald-700 transition-all active:scale-95 dark:bg-emerald-500/15 dark:text-emerald-300 sm:hidden"
           >
             <Plus className="h-5 w-5" aria-hidden />
-            <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Penyiapan</span>
+            <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Penyiapan</span>
           </button>
 
           {/* Desktop / tablet — keep richer labels */}
@@ -1317,13 +1317,13 @@ function DetailHero({
               </DialogDescription>
             </DialogHeader>
             {workerBusy && !workerSession ? (
-              <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-ms-2 py-8 text-ms-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Membuat sesi pegawai…
               </div>
             ) : workerErr ? (
-              <div className="space-y-2">
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-                  <div className="flex items-center gap-1 font-semibold">
+              <div className="space-ms-2">
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-xs text-destructive">
+                  <div className="flex items-center gap-ms-1 font-semibold">
                     <AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat sesi
                   </div>
                   <div className="mt-1 break-words">{workerErr}</div>
@@ -1333,15 +1333,15 @@ function DetailHero({
                 </Button>
               </div>
             ) : workerSession ? (
-              <div className="space-y-3">
+              <div className="space-ms-3">
                 <TaskQrCode url={workerSession.url} pin={workerSession.pin} title={`Penyiapan ${title.name}`} />
                 <div>
-                  <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
-                  <div className="break-all rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono">
+                  <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
+                  <div className="break-all rounded-md border bg-muted/30 px-ms-2 py-1.5 text-ms-2xs font-mono">
                     {workerSession.url}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-ms-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -1373,15 +1373,15 @@ function DetailHero({
 
 function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-2 py-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
-      <EcerLabel className="flex min-w-0 items-center gap-1.5 leading-snug" title={label}>
+    <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-ms-2 py-ms-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
+      <EcerLabel className="flex min-w-0 items-center gap-ms-1.5 leading-snug" title={label}>
         <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground/70 [&_svg]:h-3.5 [&_svg]:w-3.5">
           {icon}
         </span>
         <span className="truncate">{label}</span>
       </EcerLabel>
       <div
-        className="flex min-w-0 items-center justify-end gap-x-1.5 text-right text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
+        className="flex min-w-0 items-center justify-end gap-x-1.5 text-right text-ms-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
         title={[typeof value === "string" ? value : undefined, sub].filter(Boolean).join(" · ") || undefined}
       >
         <span className="min-w-0 truncate [overflow-wrap:anywhere]">{value}</span>
@@ -1635,8 +1635,8 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   }
 
   return (
-    <div className="ecer-detail mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
-      <div className="flex items-center gap-2">
+    <div className="ecer-detail mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
+      <div className="flex items-center gap-ms-2">
         <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4" /> Kembali</Button>
       </div>
       <DetailHero
@@ -1657,11 +1657,11 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       />
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
+          <div className="flex items-center justify-between gap-ms-2">
+            <CardTitle className="flex items-center gap-ms-1.5 text-ms-sm leading-snug">
               <Boxes className="h-4 w-4 text-primary" /> Daftar penyiapan
               <span
-                className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+                className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-ms-2 text-ms-2xs font-medium leading-none text-muted-foreground tabular-nums"
                 title={`${active.length} penyiapan aktif`}
               >
                 {active.length}
@@ -1669,7 +1669,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
             </CardTitle>
             {active.length > 0 && (
               selectionMode ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-ms-1">
                   <Button size="sm" variant="outline" onClick={exitSelection}>Batal</Button>
                   <Button size="sm" onClick={() => setSendOpen(true)} disabled={selectedPreps.length === 0}>
                     <Send className="mr-1 h-3.5 w-3.5" /> Kirim ke pembeli ({selectedPreps.length})
@@ -1685,28 +1685,28 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+            <div className="space-ms-3">
+              <div className="flex items-center justify-center gap-ms-2 py-ms-2 text-ms-xs text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Memuat daftar penyiapan…
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="aspect-square animate-pulse rounded-md border bg-muted/40" />
                 ))}
               </div>
             </div>
           ) : loadError ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
-              <div className="flex items-start gap-2.5">
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-ms-4">
+              <div className="flex items-start gap-ms-2.5">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="text-sm font-semibold text-destructive">Gagal memuat daftar penyiapan</div>
-                  <div className="space-y-1 rounded-md border bg-background/60 p-2 text-[11px] leading-snug">
+                <div className="min-w-0 flex-1 space-ms-2">
+                  <div className="text-ms-sm font-semibold text-destructive">Gagal memuat daftar penyiapan</div>
+                  <div className="space-y-1 rounded-md border bg-background/60 p-ms-2 text-ms-2xs leading-snug">
                     <div><span className="text-muted-foreground">Pesan:</span> <span className="break-words font-mono">{loadError.message}</span></div>
                     {loadError.code && <div><span className="text-muted-foreground">Kode:</span> <span className="font-mono">{loadError.code}</span></div>}
                     {loadError.hint && <div><span className="text-muted-foreground">Hint:</span> <span className="font-mono">{loadError.hint}</span></div>}
                   </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-ms-2 pt-1">
                     <Button size="sm" onClick={() => void load()}>
                       <RotateCw className="mr-1 h-4 w-4" /> Coba lagi
                     </Button>
@@ -1721,16 +1721,16 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               </div>
             </div>
           ) : active.length === 0 && sent.length === 0 ? (
-            <div className="rounded-md border border-dashed bg-muted/20 px-4 py-8 text-center">
+            <div className="rounded-md border border-dashed bg-muted/20 px-ms-4 py-8 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <Boxes className="h-6 w-6 text-primary" />
               </div>
-              <div className="text-sm font-semibold">Belum ada penyiapan</div>
-              <p className="mx-auto mt-1 max-w-xs text-xs leading-snug text-muted-foreground">
+              <div className="text-ms-sm font-semibold">Belum ada penyiapan</div>
+              <p className="mx-auto mt-1 max-w-xs text-ms-xs leading-snug text-muted-foreground">
                 Tambahkan kotak penyiapan pertama untuk judul <b className="break-words">{title.name}</b>.
                 Setiap kotak berisi foto, lokasi, dan berat aktual yang ditimbang.
               </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <div className="mt-4 flex flex-wrap justify-center gap-ms-2">
                 <Button size="sm" onClick={() => setAdding(true)}>
                   <Plus className="mr-1 h-4 w-4" /> Tambah penyiapan
                 </Button>
@@ -1739,7 +1739,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           ) : (
             <>
               {active.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
                   {active.map((p, idx) => (
                     <PrepBox
                       key={p.id}
@@ -1757,22 +1757,22 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   ))}
                 </div>
               ) : (
-                <div className="rounded-md border border-dashed bg-muted/20 px-4 py-4 text-center text-xs text-muted-foreground">
+                <div className="rounded-md border border-dashed bg-muted/20 px-ms-4 py-ms-4 text-center text-ms-xs text-muted-foreground">
                   Semua penyiapan sudah dikirim ke pembeli. Tambah yang baru untuk mengisi lagi.
                 </div>
               )}
               {sent.length > 0 && (
                 <div id="riwayat-terkirim" data-testid="riwayat-terkirim" className="mt-5 border-t pt-3 scroll-mt-20">
-                  <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div className="mb-2 flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Riwayat Terkirim
-                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium normal-case text-muted-foreground">
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium normal-case text-muted-foreground">
                       {sent.length}
                     </span>
                   </div>
                   {autoSendSummary && (
                     <div
                       data-testid="auto-send-summary"
-                      className="mb-3 flex items-start justify-between gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900"
+                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-emerald-200 bg-emerald-50 px-ms-3 py-ms-2 text-ms-xs text-emerald-900"
                     >
                       <div className="min-w-0">
                         <div className="font-semibold">Auto-Kirim tercatat</div>
@@ -1789,7 +1789,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                         type="button"
                         aria-label="Tutup ringkasan"
                         onClick={() => setAutoSendSummary(null)}
-                        className="rounded p-1 text-emerald-800/70 hover:bg-emerald-100"
+                        className="rounded p-ms-1 text-emerald-800/70 hover:bg-emerald-100"
                       >
                         ×
                       </button>
@@ -1798,7 +1798,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   {autoSendCancelSummary && (
                     <div
                       data-testid="auto-send-cancel-summary"
-                      className="mb-3 flex items-start justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-amber-200 bg-amber-50 px-ms-3 py-ms-2 text-ms-xs text-amber-900"
                     >
                       <div className="min-w-0">
                         <div className="font-semibold">Auto-Kirim dibatalkan</div>
@@ -1826,13 +1826,13 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                         type="button"
                         aria-label="Tutup ringkasan pembatalan"
                         onClick={() => setAutoSendCancelSummary(null)}
-                        className="rounded p-1 text-amber-800/70 hover:bg-amber-100"
+                        className="rounded p-ms-1 text-amber-800/70 hover:bg-amber-100"
                       >
                         ×
                       </button>
                     </div>
                   )}
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
                     {sent.map((p, idx) => (
                       <PrepBox
                         key={p.id}
@@ -2785,24 +2785,24 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   return (
     <Card id={`worker-shots-${title.id}`} className="scroll-mt-20 transition-shadow">
       <CardHeader className="pb-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-ms-2">
           <div className="min-w-0">
-            <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
+            <CardTitle className="flex items-center gap-ms-1.5 text-ms-sm leading-snug">
               <Users className="h-4 w-4 text-primary" /> Kiriman pegawai
               {!loading && (
                 <span
-                  className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+                  className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-ms-2 text-ms-2xs font-medium leading-none text-muted-foreground tabular-nums"
                   title={`${visibleShots.length} kiriman aktif`}
                 >
                   {visibleShots.length}
                 </span>
               )}
             </CardTitle>
-            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+            <div className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground">
               Cocok via warehouse_item_id + {title.target_grams}{displayUnitStr} (fallback ukuran/unit).
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-ms-1.5">
             <Button size="sm" variant="outline" onClick={refresh} disabled={refreshing || loading}>
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Segarkan
             </Button>
@@ -2841,21 +2841,21 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       </CardHeader>
       <CardContent>
         {!title.warehouse_item_id ? (
-          <div className="rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 p-4 text-center text-xs text-amber-700 dark:text-amber-300">
+          <div className="rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 p-ms-4 text-center text-ms-xs text-amber-700 dark:text-amber-300">
             Judul ini belum terhubung ke produk gudang (<code>warehouse_item_id</code> kosong), jadi tidak bisa mencocokkan kiriman pegawai. Set produk gudang pada judul ini terlebih dahulu.
           </div>
         ) : loading ? (
-          <div className="py-6 text-center text-xs text-muted-foreground"><Loader2 className="inline h-4 w-4 animate-spin" /> Memuat kiriman pegawai…</div>
+          <div className="py-ms-6 text-center text-ms-xs text-muted-foreground"><Loader2 className="inline h-4 w-4 animate-spin" /> Memuat kiriman pegawai…</div>
         ) : error ? (
-          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-ms-3 text-ms-xs text-destructive">
             Gagal memuat: {error}
           </div>
         ) : visibleShots.length === 0 ? (
-          <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
+          <div className="rounded-md border border-dashed p-ms-6 text-center text-ms-xs text-muted-foreground">
             Belum ada kiriman pegawai untuk judul ini. Bagikan link tugas ke pegawai dari halaman Tugas.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-ms-2 sm:grid-cols-3 md:grid-cols-4">
             {visibleShots.map((s) => {
               const paths = shotPaths(s);
               const isWa = waSendingId === s.id;
@@ -2866,9 +2866,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   {s.thumb_url ? (
                     <img src={s.thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">no img</div>
+                    <div className="flex h-full w-full items-center justify-center text-ms-2xs text-muted-foreground">no img</div>
                   )}
-                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[11px] leading-snug text-white">
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-ms-1 bg-gradient-to-t from-black/80 to-transparent p-ms-1.5 text-ms-2xs leading-snug text-white">
                   <span className="truncate">{new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                   {s.location_url && (
                     <a href={s.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 rounded bg-black/50 px-1 py-0.5 backdrop-blur-sm">
@@ -2878,27 +2878,27 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   </div>
                 {s.match !== "strict" && (
                   <span
-                    className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-amber-500/90 px-1.5 text-[11px] font-semibold leading-none text-white"
+                    className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-amber-500/90 px-1.5 text-ms-2xs font-semibold leading-none text-white"
                     title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}
                   >
                     {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
                   </span>
                 )}
                   <span
-                    className="absolute right-1 top-1 inline-flex h-5 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-semibold leading-none text-white backdrop-blur-sm"
+                    className="absolute right-1 top-1 inline-flex h-5 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-ms-2xs font-semibold leading-none text-white backdrop-blur-sm"
                     title={`${paths.length} foto dalam folder ini`}
                   >
                     <ImageIcon className="h-2.5 w-2.5" /> {paths.length}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 border-t bg-card p-1">
+                <div className="flex items-center gap-ms-1 border-t bg-card p-ms-1">
                   <button
                     type="button"
                     onClick={() => void sendShotWA(s)}
                     disabled={isWa || isChat}
                     aria-label={`Kirim folder (${paths.length} foto) via WhatsApp`}
                     title={`Kirim ${paths.length} foto + lokasi via WhatsApp`}
-                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-1 rounded bg-[#25D366] px-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
+                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-ms-1 rounded bg-[#25D366] px-1.5 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
                   >
                     {isWa ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
                     WA
@@ -2909,7 +2909,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                     disabled={isWa || isChat}
                     aria-label={`Kirim folder (${paths.length} foto) via MCM Chat`}
                     title={`Kirim ${paths.length} foto + lokasi via MCM Chat`}
-                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-1 rounded bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-ms-1 rounded bg-primary px-1.5 text-ms-2xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
                   >
                     {isChat ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                     Chat
@@ -2961,21 +2961,21 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               </DialogDescription>
             ) : null}
             {previewReq && previewReq.paths.length > 0 ? (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-ms-2">
                 {(() => {
                   const total = previewReq.paths.length;
                   const excluded = Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
                   const willSend = total - excluded;
                   return (
                     <>
-                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-ms-2.5 py-1 text-ms-xs font-medium text-primary">
                         <span className="tabular-nums">{willSend} / {total}</span>
-                        <span className="ml-1 text-[10px] text-muted-foreground">foto akan dikirim</span>
+                        <span className="ml-1 text-ms-2xs text-muted-foreground">foto akan dikirim</span>
                       </span>
                       {excluded > 0 ? (
-                        <span className="inline-flex items-center rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">
+                        <span className="inline-flex items-center rounded-full bg-destructive/10 px-ms-2.5 py-1 text-ms-xs font-medium text-destructive">
                           <span className="tabular-nums">{excluded}</span>
-                          <span className="ml-1 text-[10px]">dikecualikan</span>
+                          <span className="ml-1 text-ms-2xs">dikecualikan</span>
                         </span>
                       ) : null}
                     </>
@@ -2985,8 +2985,8 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             ) : null}
           </DialogHeader>
           {previewReq && previewReq.paths.length > 0 ? (
-            <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/30 p-2">
-              <div className="mb-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+            <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/30 p-ms-2">
+              <div className="mb-1.5 flex items-center justify-between text-ms-2xs text-muted-foreground">
                 <span>
                   Ketuk foto untuk mengecualikan · {Math.min(previewReq.paths.length, 12) - Array.from(excludedPaths).filter((p) => previewReq.paths.slice(0, 12).includes(p)).length}
                   /{Math.min(previewReq.paths.length, 12)} dipilih
@@ -3006,7 +3006,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   </button>
                 ) : null}
               </div>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-ms-1.5">
                 {(previewUrls ?? new Array(Math.min(previewReq.paths.length, 12)).fill(null)).map((u, i) => (
                   (() => {
                     const p = previewReq.paths[i];
@@ -3028,12 +3028,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                             className={`h-full w-full object-cover transition ${excluded ? "opacity-30 grayscale" : ""}`}
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                          <div className="flex h-full w-full items-center justify-center text-ms-2xs text-muted-foreground">
                             {previewUrls ? "×" : "…"}
                           </div>
                         )}
                         <span
-                          className={`absolute right-1 top-1 grid h-5 w-5 place-content-center rounded-full text-[10px] font-bold shadow ${excluded ? "bg-destructive text-destructive-foreground" : "bg-background/90 text-foreground"}`}
+                          className={`absolute right-1 top-1 grid h-5 w-5 place-content-center rounded-full text-ms-2xs font-bold shadow ${excluded ? "bg-destructive text-destructive-foreground" : "bg-background/90 text-foreground"}`}
                           aria-hidden
                         >
                           {excluded ? "×" : "✓"}
@@ -3044,7 +3044,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 ))}
               </div>
               {previewReq.paths.length > 12 ? (
-                <div className="mt-1.5 text-center text-[11px] text-muted-foreground">
+                <div className="mt-1.5 text-center text-ms-2xs text-muted-foreground">
                   +{previewReq.paths.length - 12} foto lain tidak ditampilkan
                 </div>
               ) : null}
@@ -3055,20 +3055,20 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               const url = effectiveLocationUrl;
               const desc = describeLocationUrl(url);
               return (
-                <div className="rounded-md border bg-muted/30 p-2">
-                  <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
+                <div className="rounded-md border bg-muted/30 p-ms-2">
+                  <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs font-medium text-muted-foreground">
                     <span>
                       <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
                       Lokasi — akan dilampirkan sebagai baris terakhir caption
                     </span>
                     {desc.kind ? (
-                      <span className="rounded bg-background/70 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+                      <span className="rounded bg-background/70 px-1.5 py-0.5 text-ms-2xs font-semibold text-foreground">
                         {desc.kind}
                       </span>
                     ) : null}
                   </div>
                   {desc.label ? (
-                    <div className="mb-1 text-xs font-semibold text-foreground">
+                    <div className="mb-1 text-ms-xs font-semibold text-foreground">
                       📍 {desc.label}
                     </div>
                   ) : null}
@@ -3076,20 +3076,20 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block truncate text-[11px] text-primary underline"
+                    className="block truncate text-ms-2xs text-primary underline"
                     title={url}
                   >
                     {url}
                   </a>
-                  <div className="mt-1 rounded bg-background/70 p-1.5 text-[11px] leading-relaxed text-foreground">
-                    <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Format kirim:</span>
+                  <div className="mt-1 rounded bg-background/70 p-ms-1.5 text-ms-2xs leading-relaxed text-foreground">
+                    <span className="mr-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Format kirim:</span>
                     <span className="break-all">📍 {url}</span>
                   </div>
                 </div>
               );
             })()
           ) : previewReq?.shotLocations && previewReq.shotLocations.some((s) => s.locationUrl) ? (
-            <div className="rounded-md border border-dashed border-muted-foreground/30 bg-muted/20 p-2 text-[11px] text-muted-foreground">
+            <div className="rounded-md border border-dashed border-muted-foreground/30 bg-muted/20 p-ms-2 text-ms-2xs text-muted-foreground">
               <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50" aria-hidden />
               Lokasi tidak akan dilampirkan — semua foto dari kiriman yang punya lokasi telah dikecualikan.
             </div>
@@ -3099,8 +3099,8 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             const remaining = previewReq.paths.length - Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
             if (remaining > 0) return null;
             return (
-              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2.5">
-                <div className="flex items-start gap-2 text-xs text-destructive">
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-ms-2.5">
+                <div className="flex items-start gap-ms-2 text-ms-xs text-destructive">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">Tidak ada foto yang tersisa untuk dikirim</div>
@@ -3119,8 +3119,8 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             const totalShown = Math.min(previewReq.paths.length, 12);
             const excludedInShown = Array.from(excludedPaths).filter((p) => previewReq.paths.slice(0, 12).includes(p)).length;
             return (
-              <div className="rounded-md border bg-muted/30 p-2.5">
-                <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
+              <div className="rounded-md border bg-muted/30 p-ms-2.5">
+                <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs font-medium text-muted-foreground">
                   <span>
                     <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
                     Preview caption{previewReq.captionLabel ? ` ${previewReq.captionLabel}` : ""} — live · {totalShown - excludedInShown}/{totalShown} foto
@@ -3129,14 +3129,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 </div>
                 <pre
                   key={caption}
-                  className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded bg-background/70 p-2 text-[11px] leading-relaxed text-foreground"
+                  className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded bg-background/70 p-ms-2 text-ms-2xs leading-relaxed text-foreground"
                 >
                   {caption}
                 </pre>
               </div>
             );
           })()}
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-ms-2">
             <Button variant="outline" onClick={() => finishPreview(false)}>Batal</Button>
             <Button
               onClick={() => finishPreview(true)}
@@ -3161,14 +3161,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             </DialogDescription>
           </DialogHeader>
           {linkedTask?.share_token ? (
-            <div className="space-y-3">
+            <div className="space-ms-3">
               <TaskQrCode
                 url={publicTaskUrl(linkedTask.share_token)}
                 title={`Penyiapan ${title.name}`}
               />
               <div>
-                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
-                <div className="mt-1 break-all rounded-md border bg-muted/40 p-2 text-[11px] font-mono">
+                <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
+                <div className="mt-1 break-all rounded-md border bg-muted/40 p-ms-2 text-ms-2xs font-mono">
                   {publicTaskUrl(linkedTask.share_token)}
                 </div>
               </div>
@@ -3312,14 +3312,14 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
     >
       <div className="relative aspect-square w-full bg-muted">
         {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : (
-          <div className="flex h-full w-full items-center justify-center text-[11px] leading-snug text-muted-foreground">No foto</div>
+          <div className="flex h-full w-full items-center justify-center text-ms-2xs leading-snug text-muted-foreground">No foto</div>
         )}
-        <div className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[11px] leading-snug font-medium text-white">#{index}</div>
+        <div className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">#{index}</div>
         {prep.created_by === "worker" && (
-          <div className="absolute right-1 top-1 rounded bg-blue-500/90 px-1.5 py-0.5 text-[11px] leading-snug font-medium text-white">Pegawai</div>
+          <div className="absolute right-1 top-1 rounded bg-blue-500/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">Pegawai</div>
         )}
         {sold && (
-          <div className="absolute inset-x-1 bottom-1 rounded bg-emerald-600/90 px-1.5 py-0.5 text-[10px] leading-snug font-semibold text-white">
+          <div className="absolute inset-x-1 bottom-1 rounded bg-emerald-600/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-semibold text-white">
             Terkirim{prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
           </div>
         )}
@@ -3329,11 +3329,11 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           </div>
         )}
       </div>
-      <div className="space-y-1 p-2">
-        <div className="text-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
-        {prep.note && <div className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">{prep.note}</div>}
+      <div className="space-y-1 p-ms-2">
+        <div className="text-ms-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
+        {prep.note && <div className="line-clamp-2 text-ms-2xs leading-snug text-muted-foreground">{prep.note}</div>}
         {sold && (
-          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-1 text-[10px] leading-snug text-emerald-800 dark:text-emerald-200">
+          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-1 text-ms-2xs leading-snug text-emerald-800 dark:text-emerald-200">
             {formatSoldPaymentSummary(
               prep.sold_payment_method,
               Number(prep.sold_total ?? 0),
@@ -3342,10 +3342,10 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             {prep.sold_at && <> · {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</>}
           </div>
         )}
-        <div className="flex items-center justify-between gap-1 pt-1">
+        <div className="flex items-center justify-between gap-ms-1 pt-1">
           {prep.location_url ? (
             <a href={prep.location_url} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-0.5 text-[11px] leading-snug text-primary hover:underline">
+              className="inline-flex items-center gap-0.5 text-ms-2xs leading-snug text-primary hover:underline">
               <MapPin className="h-3 w-3" /> Lokasi <ExternalLink className="h-2.5 w-2.5" />
             </a>
           ) : <span />}
@@ -3359,12 +3359,12 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             )}
           </div>
         </div>
-        <div className="text-[11px] leading-snug text-muted-foreground">
+        <div className="text-ms-2xs leading-snug text-muted-foreground">
           {new Date(prep.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
         </div>
         {shareDiag && (
-          <div className="mt-1 space-y-1 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] leading-snug">
-            <div className="flex items-center justify-between gap-1">
+          <div className="mt-1 space-y-1 rounded border border-destructive/40 bg-destructive/5 p-ms-2 text-ms-2xs leading-snug">
+            <div className="flex items-center justify-between gap-ms-1">
               <span className="font-semibold text-destructive">Diagnostik kirim WA</span>
               <button type="button" onClick={() => setShareDiag(null)} className="text-muted-foreground hover:underline">Tutup</button>
             </div>
@@ -3380,10 +3380,10 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             <div className="break-all">wa.me: {shareDiag.waUrl}</div>
             <div className="break-all">Hasil: {JSON.stringify(shareDiag.result)}</div>
             {shareDiag.error && <div className="text-destructive">Error: {shareDiag.error}</div>}
-            <div className="flex gap-1 pt-1">
-              <button type="button" onClick={copyDiag} className="rounded border px-2 py-0.5 hover:bg-accent">Salin detail</button>
-              <a href={shareDiag.waUrl} target="_blank" rel="noreferrer" className="rounded border px-2 py-0.5 hover:bg-accent">Buka wa.me</a>
-              <button type="button" onClick={onShare} className="rounded border px-2 py-0.5 hover:bg-accent">Coba lagi</button>
+            <div className="flex gap-ms-1 pt-1">
+              <button type="button" onClick={copyDiag} className="rounded border px-ms-2 py-0.5 hover:bg-accent">Salin detail</button>
+              <a href={shareDiag.waUrl} target="_blank" rel="noreferrer" className="rounded border px-ms-2 py-0.5 hover:bg-accent">Buka wa.me</a>
+              <button type="button" onClick={onShare} className="rounded border px-ms-2 py-0.5 hover:bg-accent">Coba lagi</button>
             </div>
           </div>
         )}
@@ -3484,19 +3484,19 @@ function PrepEditDialog({
           <DialogTitle>Edit penyiapan</DialogTitle>
           <DialogDescription>{title.name}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div>
-            <Label className="text-xs">
+            <Label className="text-ms-xs">
               Berat aktual ({displayUnit(itemName, title.unit_label)})
             </Label>
             <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
-            <div className="mt-1 text-[11px] text-muted-foreground">
+            <div className="mt-1 text-ms-2xs text-muted-foreground">
               Selisih dengan nilai sebelumnya akan menyesuaikan stok gudang otomatis.
             </div>
           </div>
           <div>
-            <Label className="text-xs">Link lokasi (GPS)</Label>
-            <div className="flex gap-2">
+            <Label className="text-ms-xs">Link lokasi (GPS)</Label>
+            <div className="flex gap-ms-2">
               <Input
                 value={locUrl}
                 onChange={(e) => setLocUrl(e.target.value)}
@@ -3507,18 +3507,18 @@ function PrepEditDialog({
               </Button>
             </div>
             {gps && (
-              <div className="mt-1 text-[11px] text-muted-foreground">
+              <div className="mt-1 text-ms-2xs text-muted-foreground">
                 ✓ Koordinat: {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}
               </div>
             )}
           </div>
           <div>
-            <Label className="text-xs">Keterangan</Label>
+            <Label className="text-ms-xs">Keterangan</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
           </div>
         </div>
         <DialogFooter>
-          <div className="flex w-full justify-end gap-2">
+          <div className="flex w-full justify-end gap-ms-2">
             <Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button>
             <Button onClick={() => void save()} disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
@@ -3909,11 +3909,11 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           <DialogTitle>Penyiapan baru</DialogTitle>
           <DialogDescription>{title.name}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           {photo ? (
             <div>
-              <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
-                <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-2 font-medium leading-none text-emerald-700 dark:text-emerald-400">
+              <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs">
+                <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-ms-2 font-medium leading-none text-emerald-700 dark:text-emerald-400">
                   ✓ Pratinjau foto
                 </span>
                 <span className="min-w-0 truncate text-right leading-none text-muted-foreground tabular-nums">
@@ -3928,7 +3928,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               >
                 <img src={photo.dataUrl} alt="Pratinjau foto penyiapan" className="max-h-72 w-full object-contain" />
               </button>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-ms-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditorSrc(photo.dataUrl); setEditorOpen(true); }}>
                   <Edit3 className="h-3 w-3" /> Edit lagi
                 </Button>
@@ -3945,7 +3945,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-ms-2">
               <Button type="button" variant="outline" onClick={() => cameraRef.current?.click()}><Camera className="h-4 w-4" /> Kamera</Button>
               <Button type="button" variant="outline" onClick={() => galleryRef.current?.click()}><ImageIcon className="h-4 w-4" /> Galeri</Button>
               <Button type="button" variant="outline" onClick={() => void pasteFromClipboard()}>📋 Tempel</Button>
@@ -3960,14 +3960,14 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
             className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
 
           <div>
-            <Label className="text-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>
+            <Label className="text-ms-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>
             <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
-            <div className="mt-1 text-[11px] leading-snug text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
+            <div className="mt-1 text-ms-2xs leading-snug text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
           </div>
 
           <div>
-            <Label className="text-xs">Link lokasi (GPS) <span className="text-destructive">*</span></Label>
-            <div className="flex gap-2">
+            <Label className="text-ms-xs">Link lokasi (GPS) <span className="text-destructive">*</span></Label>
+            <div className="flex gap-ms-2">
               <Input
                 value={locUrl}
                 onChange={(e) => onLocUrlChange(e.target.value)}
@@ -3984,7 +3984,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 {locBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />} GPS
               </Button>
             </div>
-            <div className="mt-1 text-[11px] leading-snug text-muted-foreground">
+            <div className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
               {gps
                 ? `✓ Koordinat: ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}`
                 : locUrl
@@ -4005,7 +4005,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     loading="lazy"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="flex items-center justify-between gap-2 border-t bg-muted/40 px-2 py-1 text-[11px] leading-snug text-muted-foreground">
+                  <div className="flex items-center justify-between gap-ms-2 border-t bg-muted/40 px-ms-2 py-1 text-ms-2xs leading-snug text-muted-foreground">
                     <span>Penanda: {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}</span>
                     <a href={link} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
                       Buka peta besar
@@ -4015,11 +4015,11 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               );
             })()}
             {gps && (
-              <div className="mt-2 rounded-md border bg-muted/30 p-2.5">
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <Label className="text-[11px]">Alamat (bisa diedit)</Label>
+              <div className="mt-2 rounded-md border bg-muted/30 p-ms-2.5">
+                <div className="mb-1 flex items-center justify-between gap-ms-2">
+                  <Label className="text-ms-2xs">Alamat (bisa diedit)</Label>
                   {addressBusy && (
-                    <span className="flex items-center gap-1 text-[11px] leading-snug text-muted-foreground">
+                    <span className="flex items-center gap-ms-1 text-ms-2xs leading-snug text-muted-foreground">
                       <Loader2 className="h-3 w-3 animate-spin" /> Mencari alamat…
                     </span>
                   )}
@@ -4033,7 +4033,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                   }}
                   placeholder={addressBusy ? "Mencari alamat dari koordinat…" : "Ketik atau perbaiki alamat di sini"}
                 />
-                <div className="mt-1 flex flex-wrap items-center gap-2">
+                <div className="mt-1 flex flex-wrap items-center gap-ms-2">
                   <Button
                     type="button"
                     size="sm"
@@ -4075,16 +4075,16 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     <RotateCw className="mr-1 h-3 w-3" /> Ambil ulang
                   </Button>
                   {addressError && (
-                    <span className="text-[11px] leading-snug text-destructive">{addressError}</span>
+                    <span className="text-ms-2xs leading-snug text-destructive">{addressError}</span>
                   )}
                 </div>
               </div>
             )}
             {locProblem && (
-              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] leading-snug text-destructive">
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-2.5 text-ms-2xs leading-snug text-destructive">
                 <div className="font-semibold">GPS gagal: {locProblem.message}</div>
                 {locProblem.hint && <div className="mt-1 text-destructive/90">{locProblem.hint}</div>}
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-ms-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => void takeLocation()} disabled={locBusy}>
                     {locBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />} Coba lagi
                   </Button>
@@ -4092,9 +4092,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     Salin detail GPS
                   </Button>
                 </div>
-                <details className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                <details className="mt-2 text-ms-2xs leading-snug text-muted-foreground">
                   <summary className="cursor-pointer">Detail teknis</summary>
-                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-words rounded bg-background/70 p-2">
+                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-words rounded bg-background/70 p-ms-2">
                     {JSON.stringify(locProblem, null, 2)}
                   </pre>
                 </details>
@@ -4105,19 +4105,19 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               <button
                 type="button"
                 onClick={() => setManualOpen((v) => !v)}
-                className="text-[11px] font-medium text-primary underline-offset-2 hover:underline"
+                className="text-ms-2xs font-medium text-primary underline-offset-2 hover:underline"
                 aria-expanded={manualOpen}
               >
                 {manualOpen ? "Tutup input manual" : "Isi lokasi manual (lat/lng/nama)"}
               </button>
               {manualOpen && (
-                <div className="mt-2 space-y-2 rounded-md border bg-muted/40 p-2.5">
-                  <div className="text-[11px] text-muted-foreground">
+                <div className="mt-2 space-ms-2 rounded-md border bg-muted/40 p-ms-2.5">
+                  <div className="text-ms-2xs text-muted-foreground">
                     Gunakan ini jika GPS gagal. Anda bisa salin koordinat dari Google Maps:
                     tahan titik di peta → muncul lat,lng di kotak pencarian.
                   </div>
                   <div>
-                    <Label className="text-[11px]">Nama lokasi (opsional)</Label>
+                    <Label className="text-ms-2xs">Nama lokasi (opsional)</Label>
                     <Input
                       value={manualName}
                       onChange={(e) => setManualName(e.target.value)}
@@ -4127,7 +4127,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                   </div>
                   <div className={pairClass}>
                     <div>
-                      <Label className="text-[11px]">Latitude *</Label>
+                      <Label className="text-ms-2xs">Latitude *</Label>
                       <Input
                         inputMode="decimal"
                         value={manualLat}
@@ -4136,7 +4136,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                       />
                     </div>
                     <div>
-                      <Label className="text-[11px]">Longitude *</Label>
+                      <Label className="text-ms-2xs">Longitude *</Label>
                       <Input
                         inputMode="decimal"
                         value={manualLng}
@@ -4146,9 +4146,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     </div>
                   </div>
                   {manualError && (
-                    <div className="text-[11px] font-medium text-destructive">{manualError}</div>
+                    <div className="text-ms-2xs font-medium text-destructive">{manualError}</div>
                   )}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-ms-2">
                     <Button type="button" size="sm" onClick={applyManualLocation}>
                       Terapkan
                     </Button>
@@ -4172,17 +4172,17 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           </div>
 
           <div>
-            <Label className="text-xs">Keterangan</Label>
+            <Label className="text-ms-xs">Keterangan</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan tentang produk / penyiapan…" rows={2} />
           </div>
         </div>
         <DialogFooter>
-          <div className="flex w-full flex-col gap-2">
+          <div className="flex w-full flex-col gap-ms-2">
             {progress && (
               <div
                 role="status"
                 aria-live="polite"
-                className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-[11px] ${
+                className={`flex items-center gap-ms-2 rounded-md border px-ms-2 py-1.5 text-ms-2xs ${
                   progress.step === "error"
                     ? "border-destructive/40 bg-destructive/10 text-destructive"
                     : progress.step === "done"
@@ -4208,7 +4208,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
               </div>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-ms-2">
               <Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button>
               <Button onClick={save} disabled={busy}>
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -4220,10 +4220,10 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
 
         {zoomOpen && photo && (
           <Dialog open onOpenChange={(o) => { if (!o) setZoomOpen(false); }}>
-            <DialogContent className="max-w-3xl p-2">
-              <DialogHeader className="px-2 pt-1">
-                <DialogTitle className="text-sm">Pratinjau foto</DialogTitle>
-                <DialogDescription className="text-[11px]">Periksa hasil foto sebelum menyimpan.</DialogDescription>
+            <DialogContent className="max-w-3xl p-ms-2">
+              <DialogHeader className="px-ms-2 pt-1">
+                <DialogTitle className="text-ms-sm">Pratinjau foto</DialogTitle>
+                <DialogDescription className="text-ms-2xs">Periksa hasil foto sebelum menyimpan.</DialogDescription>
               </DialogHeader>
               <img src={photo.dataUrl} alt="Pratinjau foto besar" className="max-h-[75vh] w-full rounded-md object-contain" />
             </DialogContent>
@@ -4307,22 +4307,22 @@ function NewProductDialog({ onClose, onCreated }: {
           <DialogTitle>Produk gudang baru</DialogTitle>
           <DialogDescription>Setelah dibuat, akan langsung dibuatkan judul ecer untuk produk ini.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div>
-            <Label className="text-xs">Nama produk</Label>
+            <Label className="text-ms-xs">Nama produk</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. KRISTAL" autoCapitalize="characters" />
           </div>
           <div>
-            <Label className="text-xs">Kategori (opsional)</Label>
+            <Label className="text-ms-xs">Kategori (opsional)</Label>
             <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="mis. Bahan baku" />
           </div>
           <div className={pairClass}>
             <div>
-              <Label className="text-xs">Jenis kemasan</Label>
+              <Label className="text-ms-xs">Jenis kemasan</Label>
               <select
                 value={packageType}
                 onChange={(e) => setPackageType(e.target.value as PkgType)}
-                className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
+                className="mt-1 h-9 w-full rounded-md border bg-background px-ms-2 text-ms-sm"
               >
                 <option value="gram">gram (curah)</option>
                 <option value="botol">botol</option>
@@ -4332,12 +4332,12 @@ function NewProductDialog({ onClose, onCreated }: {
             </div>
             {showSizeField && (
               <div>
-                <Label className="text-xs">Isi/kemasan ({sizeUnitLabel})</Label>
+                <Label className="text-ms-xs">Isi/kemasan ({sizeUnitLabel})</Label>
                 <Input inputMode="decimal" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
               </div>
             )}
           </div>
-          <div className="rounded-md border border-dashed bg-muted/30 p-2 text-[11px] text-muted-foreground">
+          <div className="rounded-md border border-dashed bg-muted/30 p-ms-2 text-ms-2xs text-muted-foreground">
             Stok awal = 0. Tambah stok dari halaman Gudang (catat pembelian) setelah produk dibuat.
           </div>
         </div>
@@ -4567,9 +4567,9 @@ function SendEcerPrepsDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
       <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
             <Send className="h-4 w-4 text-primary" /> Kirim ke pembeli
-            <span className="ml-auto text-[10px] font-normal text-muted-foreground">
+            <span className="ml-auto text-ms-2xs font-normal text-muted-foreground">
               Langkah {step} / 3
             </span>
           </DialogTitle>
@@ -4579,7 +4579,7 @@ function SendEcerPrepsDialog({
         </DialogHeader>
 
         {/* Progress bar tipis — memberi sinyal visual owner sedang di langkah mana */}
-        <div className="mb-1 flex items-center gap-1">
+        <div className="mb-1 flex items-center gap-ms-1">
           {[1, 2, 3].map((s) => (
             <div
               key={s}
@@ -4590,7 +4590,7 @@ function SendEcerPrepsDialog({
             />
           ))}
         </div>
-        <div className="mb-2 flex items-center justify-between text-[10px] font-medium">
+        <div className="mb-2 flex items-center justify-between text-ms-2xs font-medium">
           <span className={step === 1 ? "text-primary" : "text-muted-foreground"}>
             1. Pelanggan
           </span>
@@ -4602,12 +4602,12 @@ function SendEcerPrepsDialog({
           </span>
         </div>
 
-        <div className="space-y-3 text-xs">
-          <div className="rounded-md border bg-muted/30 p-2">
+        <div className="space-ms-3 text-ms-xs">
+          <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="mb-1 font-semibold">{preps.length} kotak dipilih</div>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-ms-1">
               {preps.map((p, i) => (
-                <span key={p.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                <span key={p.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-medium text-primary">
                   #{i + 1} · {p.actual_grams}{displayUnit(itemName, title.unit_label)}
                 </span>
               ))}
@@ -4616,29 +4616,29 @@ function SendEcerPrepsDialog({
 
           {step === 1 && (
           <div>
-            <label className="mb-1 block text-[11px] font-medium">Pelanggan</label>
-            <div className="mb-1 flex gap-1 text-[10px]">
+            <label className="mb-1 block text-ms-2xs font-medium">Pelanggan</label>
+            <div className="mb-1 flex gap-ms-1 text-ms-2xs">
               <button
                 type="button"
                 onClick={() => setMode("link")}
-                className={`flex-1 rounded-md border px-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+                className={`flex-1 rounded-md border px-ms-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
               >Dari kontak</button>
               <button
                 type="button"
                 onClick={() => setMode("manual")}
-                className={`flex-1 rounded-md border px-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+                className={`flex-1 rounded-md border px-ms-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
               >Manual</button>
             </div>
             {mode === "link" ? (
               customers.length === 0 ? (
-                <div className="rounded-md border border-dashed p-2 text-[11px] text-muted-foreground">
+                <div className="rounded-md border border-dashed p-ms-2 text-ms-2xs text-muted-foreground">
                   Belum ada pelanggan. Gunakan mode Manual atau tambahkan pelanggan dulu.
                 </div>
               ) : (
                 <select
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
-                  className="h-9 w-full rounded-md border bg-card px-2 text-xs"
+                  className="h-9 w-full rounded-md border bg-card px-ms-2 text-ms-xs"
                 >
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -4652,12 +4652,12 @@ function SendEcerPrepsDialog({
                 value={manualName}
                 onChange={(e) => setManualName(e.target.value)}
                 placeholder="Nama pelanggan"
-                className="h-9 text-xs"
+                className="h-9 text-ms-xs"
                 maxLength={100}
               />
             )}
             {!canGoStep2 && (
-              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive">
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-1.5 text-ms-2xs text-destructive">
                 Pilih pelanggan dari kontak atau isi nama manual dulu sebelum lanjut.
               </div>
             )}
@@ -4667,67 +4667,67 @@ function SendEcerPrepsDialog({
           {step === 2 && (
           <>
           <div>
-            <label className="mb-1 block text-[11px] font-medium">Total harga (Rp)</label>
+            <label className="mb-1 block text-ms-2xs font-medium">Total harga (Rp)</label>
             <Input
               value={totalStr}
               onChange={(e) => setTotalStr(e.target.value)}
               placeholder="Contoh: 25000"
               inputMode="numeric"
               maxLength={15}
-              className="h-9 tabular-nums text-xs"
+              className="h-9 tabular-nums text-ms-xs"
             />
-            {totalAmount > 0 && <div className="mt-1 text-[10px] text-muted-foreground">= {rupiah(totalAmount)}</div>}
+            {totalAmount > 0 && <div className="mt-1 text-ms-2xs text-muted-foreground">= {rupiah(totalAmount)}</div>}
           </div>
 
           <div>
-            <label className="mb-1 flex items-center gap-1 text-[11px] font-medium">
+            <label className="mb-1 flex items-center gap-ms-1 text-ms-2xs font-medium">
               Metode bayar <span className="text-destructive">*</span>
               {payMethod === null && (
-                <span className="ml-1 text-[10px] font-normal text-destructive">
+                <span className="ml-1 text-ms-2xs font-normal text-destructive">
                   wajib dipilih
                 </span>
               )}
             </label>
-            <div className="flex gap-1">
+            <div className="flex gap-ms-1">
               <button
                 type="button"
                 onClick={() => setPayMethod("kas")}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "kas" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "kas" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
               >
                 <Wallet className="h-3.5 w-3.5" /> Lunas
               </button>
               <button
                 type="button"
                 onClick={() => setPayMethod("hutang")}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "hutang" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "hutang" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
               >
                 <HandCoins className="h-3.5 w-3.5" /> Hutang
               </button>
               <button
                 type="button"
                 onClick={() => setPayMethod("partial")}
-                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "partial" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "partial" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
               >
                 <HandCoins className="h-3.5 w-3.5" /> Sebagian
               </button>
             </div>
             {payMethod === null && (
-              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive">
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-1.5 text-ms-2xs text-destructive">
                 Pilih Lunas / Hutang / Bayar sebagian dulu — pesan WA baru bisa dikirim setelah metode bayar dicatat.
               </div>
             )}
             {payMethod === "partial" && (
               <div className="mt-2 space-y-1">
-                <label className="text-[11px] text-muted-foreground">Dibayar sekarang (Rp)</label>
+                <label className="text-ms-2xs text-muted-foreground">Dibayar sekarang (Rp)</label>
                 <Input
                   value={paidStr}
                   onChange={(e) => setPaidStr(e.target.value)}
                   placeholder="Contoh: 10000"
                   inputMode="numeric"
                   maxLength={15}
-                  className="h-9 tabular-nums text-xs"
+                  className="h-9 tabular-nums text-ms-xs"
                 />
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-ms-2xs text-muted-foreground">
                   {paidAmount > 0 && totalAmount > 0
                     ? paidAmount >= totalAmount
                       ? <span className="text-destructive">Dibayar tidak boleh ≥ total. Pilih Lunas.</span>
@@ -4737,18 +4737,18 @@ function SendEcerPrepsDialog({
               </div>
             )}
             {payMethod === "hutang" && (
-              <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-1.5 text-[10px] text-amber-800 dark:text-amber-200">
+              <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-1.5 text-ms-2xs text-amber-800 dark:text-amber-200">
                 Seluruh total dicatat sebagai piutang atas <b>{party.name || "-"}</b>.
               </div>
             )}
             {payMethod === "kas" && totalAmount > 0 && (
-              <div className="mt-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-1.5 text-[10px] text-emerald-800 dark:text-emerald-200">
+              <div className="mt-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-ms-1.5 text-ms-2xs text-emerald-800 dark:text-emerald-200">
                 Tercatat lunas — {rupiah(totalAmount)} langsung masuk kas.
               </div>
             )}
           </div>
           {payValidationMessage && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-1.5 text-[10px] text-destructive">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-1.5 text-ms-2xs text-destructive">
               {payValidationMessage}
             </div>
           )}
@@ -4759,8 +4759,8 @@ function SendEcerPrepsDialog({
           <>
           {/* Ringkasan hasil verifikasi — read-only. Owner memastikan
               sekali lagi sebelum WhatsApp dibuka. */}
-          <div className="rounded-md border bg-card p-2 text-[11px]">
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-md border bg-card p-ms-2 text-ms-2xs">
+            <div className="mb-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               Ringkasan verifikasi
             </div>
             <div className="grid grid-cols-[80px_1fr] gap-y-1">
@@ -4783,12 +4783,12 @@ function SendEcerPrepsDialog({
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-[11px] font-medium">Catatan (opsional)</label>
+            <label className="mb-1 block text-ms-2xs font-medium">Catatan (opsional)</label>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              className="text-xs"
+              className="text-ms-xs"
               placeholder="Mis. antar sore, titip di warung, dsb."
               maxLength={500}
             />
@@ -4797,8 +4797,8 @@ function SendEcerPrepsDialog({
           )}
         </div>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <div className="grid w-full grid-cols-2 gap-2">
+        <DialogFooter className="flex-col gap-ms-2 sm:flex-col">
+          <div className="grid w-full grid-cols-2 gap-ms-2">
             {step === 1 ? (
               <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>
                 Batal

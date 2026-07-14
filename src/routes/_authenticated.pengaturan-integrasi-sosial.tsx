@@ -49,31 +49,31 @@ function IntegrasiSosialPage() {
         icon={Share2}
         status={
           !dirty && (prefs.facebookUrl || prefs.instagramUrl) ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-emerald-500/12 px-ms-2 py-0.5 text-ms-2xs font-semibold text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
               <Check className="h-3 w-3" strokeWidth={3} />
               Tersimpan
             </span>
           ) : dirty ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2 py-0.5 text-[10px] font-semibold text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-amber-500/12 px-ms-2 py-0.5 text-ms-2xs font-semibold text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
               Belum disimpan
             </span>
           ) : null
         }
       />
-      <div className="space-y-4 px-4 pt-4 sm:pt-5">
+      <div className="space-ms-4 px-ms-4 pt-4 sm:pt-5">
         <Card className="overflow-hidden border-border/70 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+            <CardTitle className="text-ms-sm font-semibold tracking-tight sm:text-ms-base">
               Tautan halaman &amp; profil
             </CardTitle>
-            <CardDescription className="mt-1 text-xs leading-relaxed">
+            <CardDescription className="mt-1 text-ms-xs leading-relaxed">
               Tautan disimpan di perangkat dan dipakai untuk membuka aplikasi sosial dari menu bagikan.
               Integrasi API resmi (kirim pesan lintas platform) belum tersedia.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-5 pt-0">
+          <CardContent className="space-ms-5 pt-0">
             <div className="space-y-1.5">
-              <label htmlFor="fb-url" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+              <label htmlFor="fb-url" className="flex items-center gap-ms-2 text-ms-sm font-semibold tracking-tight">
                 <span
                   aria-hidden
                   className="grid h-7 w-7 place-items-center rounded-lg bg-[hsl(214,89%,52%)]/10 text-[hsl(214,89%,52%)] ring-1 ring-[hsl(214,89%,52%)]/20"
@@ -82,7 +82,7 @@ function IntegrasiSosialPage() {
                 </span>
                 URL Halaman Facebook
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-ms-2">
                 <Input
                   id="fb-url"
                   inputMode="url"
@@ -110,7 +110,7 @@ function IntegrasiSosialPage() {
                 <p
                   id="fb-url-error"
                   role="alert"
-                  className="flex items-center gap-1 text-[11px] font-medium text-destructive"
+                  className="flex items-center gap-ms-1 text-ms-2xs font-medium text-destructive"
                 >
                   <AlertCircle className="h-3 w-3" /> URL tidak valid — awali dengan https://
                 </p>
@@ -118,7 +118,7 @@ function IntegrasiSosialPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="ig-url" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+              <label htmlFor="ig-url" className="flex items-center gap-ms-2 text-ms-sm font-semibold tracking-tight">
                 <span
                   aria-hidden
                   className="grid h-7 w-7 place-items-center rounded-lg bg-[hsl(340,82%,52%)]/10 text-[hsl(340,82%,52%)] ring-1 ring-[hsl(340,82%,52%)]/20"
@@ -127,7 +127,7 @@ function IntegrasiSosialPage() {
                 </span>
                 URL Profil Instagram
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-ms-2">
                 <Input
                   id="ig-url"
                   inputMode="url"
@@ -155,7 +155,7 @@ function IntegrasiSosialPage() {
                 <p
                   id="ig-url-error"
                   role="alert"
-                  className="flex items-center gap-1 text-[11px] font-medium text-destructive"
+                  className="flex items-center gap-ms-1 text-ms-2xs font-medium text-destructive"
                 >
                   <AlertCircle className="h-3 w-3" /> URL tidak valid — awali dengan https://
                 </p>
@@ -163,14 +163,14 @@ function IntegrasiSosialPage() {
             </div>
 
             <div className="flex items-center justify-between border-t border-border/60 pt-4">
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-ms-2xs text-muted-foreground">
                 {dirty ? "Perubahan belum disimpan" : "Semua perubahan tersimpan"}
               </span>
               <Button
                 size="sm"
                 onClick={save}
                 disabled={!dirty || !fbOk || !igOk}
-                className="min-h-10 gap-1.5"
+                className="min-h-10 gap-ms-1.5"
               >
                 <Save className="h-3.5 w-3.5" />
                 Simpan
@@ -181,11 +181,11 @@ function IntegrasiSosialPage() {
 
         <Card className="overflow-hidden border-border/70 bg-muted/30 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+            <CardTitle className="text-ms-sm font-semibold tracking-tight sm:text-ms-base">
               Status integrasi
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 pt-0 text-xs text-muted-foreground">
+          <CardContent className="space-ms-2 pt-0 text-ms-xs text-muted-foreground">
             <p className="leading-relaxed">
               <strong className="text-foreground">Cross-post &amp; Inbox:</strong> belum tersedia
               — akan tersedia setelah App Review Meta selesai.

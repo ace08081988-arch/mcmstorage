@@ -191,8 +191,8 @@ export function WhatsAppTargetHost() {
     const pkg = isBiz ? "com.whatsapp.w4b" : "com.whatsapp";
     const url = isBiz ? PLAY_BUSINESS : PLAY_REGULAR;
     return (
-      <div className="rounded-lg border border-amber-300/60 bg-amber-50/80 p-3 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100">
-        <div className="flex items-center gap-2 font-semibold">
+      <div className="rounded-lg border border-amber-300/60 bg-amber-50/80 p-ms-3 text-ms-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100">
+        <div className="flex items-center gap-ms-2 font-semibold">
           <AlertTriangle className="h-3.5 w-3.5" />
           Cara memasang {label}
         </div>
@@ -203,7 +203,7 @@ export function WhatsAppTargetHost() {
           <li>Buka aplikasi dan selesaikan verifikasi nomor.</li>
           <li>Kembali ke sini dan tekan <span className="font-semibold">Verifikasi ulang</span>.</li>
         </ol>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-ms-2">
           <Button
             asChild
             size="sm"
@@ -273,7 +273,7 @@ export function WhatsAppTargetHost() {
           type="button"
           onClick={() => !missing && setConfirming(kind)}
           disabled={missing}
-          className="flex w-full items-center gap-3 p-3 text-left disabled:cursor-not-allowed"
+          className="flex w-full items-center gap-ms-3 p-ms-3 text-left disabled:cursor-not-allowed"
         >
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
@@ -285,32 +285,32 @@ export function WhatsAppTargetHost() {
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-semibold">{label}</span>
-              {!isBiz && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">biasa</span>}
+            <div className="flex items-center gap-ms-2">
+              <span className="truncate text-ms-sm font-semibold">{label}</span>
+              {!isBiz && <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground">biasa</span>}
             </div>
-            <div className="truncate text-[11px] text-muted-foreground">{sublabel}</div>
-            <div className={`mt-1 inline-flex items-center gap-1 text-[11px] font-medium ${toneCls}`}>
+            <div className="truncate text-ms-2xs text-muted-foreground">{sublabel}</div>
+            <div className={`mt-1 inline-flex items-center gap-ms-1 text-ms-2xs font-medium ${toneCls}`}>
               <status.Icon className="h-3 w-3" />
               {status.label}
             </div>
           </div>
         </button>
-        <div className="border-t bg-muted/30 px-3 py-2">
-          <div className="flex items-center justify-between gap-2">
+        <div className="border-t bg-muted/30 px-ms-3 py-ms-2">
+          <div className="flex items-center justify-between gap-ms-2">
             <button
               type="button"
               onClick={() => setShowUrl((v) => !v)}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-ms-1 text-ms-2xs font-medium text-muted-foreground hover:text-foreground"
             >
               {showUrl ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               Pratinjau URL
             </button>
-            <div className="flex items-center gap-1">
-              <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={() => copy(url)}>
+            <div className="flex items-center gap-ms-1">
+              <Button type="button" size="sm" variant="ghost" className="h-7 px-ms-2 text-ms-2xs" onClick={() => copy(url)}>
                 <Copy className="mr-1 h-3 w-3" /> Salin
               </Button>
-              <Button asChild size="sm" variant="ghost" className="h-7 px-2 text-[11px]">
+              <Button asChild size="sm" variant="ghost" className="h-7 px-ms-2 text-ms-2xs">
                 <a href={url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-1 h-3 w-3" /> Buka
                 </a>
@@ -318,7 +318,7 @@ export function WhatsAppTargetHost() {
             </div>
           </div>
           {showUrl ? (
-            <code className="mt-2 block max-h-28 overflow-auto break-all rounded-md bg-background/80 p-2 font-mono text-[10.5px] leading-snug text-muted-foreground">
+            <code className="mt-2 block max-h-28 overflow-auto break-all rounded-md bg-background/80 p-ms-2 font-mono text-[10.5px] leading-snug text-muted-foreground">
               {url}
             </code>
           ) : (
@@ -328,7 +328,7 @@ export function WhatsAppTargetHost() {
           )}
         </div>
         {missing && (
-          <div className="border-t bg-amber-50/60 p-3 dark:bg-amber-950/20">
+          <div className="border-t bg-amber-50/60 p-ms-3 dark:bg-amber-950/20">
             <InstallHelp kind={kind} />
           </div>
         )}
@@ -341,8 +341,8 @@ export function WhatsAppTargetHost() {
       <DialogContent className="max-w-md gap-0 overflow-hidden p-0 sm:max-w-md">
         {confirming ? (
           <div className="flex flex-col">
-            <DialogHeader className="border-b bg-muted/30 px-5 pb-4 pt-5">
-              <div className="flex items-center gap-3">
+            <DialogHeader className="border-b bg-muted/30 px-ms-5 pb-4 pt-5">
+              <div className="flex items-center gap-ms-3">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                     confirming === "business"
@@ -353,17 +353,17 @@ export function WhatsAppTargetHost() {
                   {confirming === "business" ? <Briefcase className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
                 </div>
                 <div className="min-w-0 flex-1 text-left">
-                  <DialogTitle className="text-base">Konfirmasi: buka {confirmLabel}</DialogTitle>
-                  <DialogDescription className="mt-0.5 text-xs">
+                  <DialogTitle className="text-ms-base">Konfirmasi: buka {confirmLabel}</DialogTitle>
+                  <DialogDescription className="mt-0.5 text-ms-xs">
                     Tinjau pratinjau URL sebelum aplikasi dibuka.
                   </DialogDescription>
                 </div>
               </div>
             </DialogHeader>
-            <div className="space-y-3 px-5 py-4">
+            <div className="space-ms-3 px-ms-5 py-ms-4">
               {confirmMissing && (
                 <>
-                  <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                  <div className="flex items-start gap-ms-2 rounded-lg border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-xs text-destructive">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
                       {confirmLabel} belum terpasang di perangkat ini. Pasang dari Play Store atau pilih opsi lain.
@@ -372,42 +372,42 @@ export function WhatsAppTargetHost() {
                   <InstallHelp kind={confirming} />
                 </>
               )}
-              <div className="rounded-lg border bg-muted/30 p-3">
+              <div className="rounded-lg border bg-muted/30 p-ms-3">
                 <div className="mb-1.5 flex items-center justify-between">
                   <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                     URL yang akan dibuka
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={() => copy(confirmUrl)}>
+                  <div className="flex items-center gap-ms-1">
+                    <Button type="button" size="sm" variant="ghost" className="h-7 px-ms-2 text-ms-2xs" onClick={() => copy(confirmUrl)}>
                       <Copy className="mr-1 h-3 w-3" /> Salin
                     </Button>
-                    <Button asChild size="sm" variant="ghost" className="h-7 px-2 text-[11px]">
+                    <Button asChild size="sm" variant="ghost" className="h-7 px-ms-2 text-ms-2xs">
                       <a href={confirmUrl} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="mr-1 h-3 w-3" /> Buka
                       </a>
                     </Button>
                   </div>
                 </div>
-                <code className="block max-h-32 overflow-auto break-all rounded-md bg-background p-2 font-mono text-[10.5px] leading-snug text-muted-foreground">
+                <code className="block max-h-32 overflow-auto break-all rounded-md bg-background p-ms-2 font-mono text-[10.5px] leading-snug text-muted-foreground">
                   {confirmUrl}
                 </code>
               </div>
-              <div className="space-y-2 rounded-lg border p-3">
-                <label className="flex items-start gap-2 text-xs text-muted-foreground">
+              <div className="space-ms-2 rounded-lg border p-ms-3">
+                <label className="flex items-start gap-ms-2 text-ms-xs text-muted-foreground">
                   <Checkbox checked={remember} onCheckedChange={(c) => setRemember(c === true)} className="mt-0.5" />
                   <span>Ingat pilihan aplikasi saya untuk berikutnya</span>
                 </label>
-                <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                <label className="flex items-start gap-ms-2 text-ms-xs text-muted-foreground">
                   <Checkbox checked={skipConfirm} onCheckedChange={(c) => setSkipConfirm(c === true)} className="mt-0.5" />
                   <span>Lewati layar konfirmasi pratinjau ini lain kali</span>
                 </label>
               </div>
             </div>
-            <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-5 py-3">
+            <div className="flex items-center justify-between gap-ms-2 border-t bg-muted/20 px-ms-5 py-ms-3">
               <Button type="button" variant="ghost" size="sm" onClick={() => setConfirming(null)}>
                 Kembali
               </Button>
-              <div className="flex gap-2">
+              <div className="flex gap-ms-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => finish(null)}>
                   Batal
                 </Button>
@@ -425,22 +425,22 @@ export function WhatsAppTargetHost() {
           </div>
         ) : (
           <div className="flex flex-col">
-            <DialogHeader className="border-b bg-muted/30 px-5 pb-4 pt-5">
-              <div className="flex items-center gap-3">
+            <DialogHeader className="border-b bg-muted/30 px-ms-5 pb-4 pt-5">
+              <div className="flex items-center gap-ms-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   <MessageCircle className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1 text-left">
-                  <DialogTitle className="text-base">Pilih aplikasi WhatsApp</DialogTitle>
-                  <DialogDescription className="mt-0.5 text-xs">
+                  <DialogTitle className="text-ms-base">Pilih aplikasi WhatsApp</DialogTitle>
+                  <DialogDescription className="mt-0.5 text-ms-xs">
                     Tentukan aplikasi yang akan digunakan untuk mengirim pesan ini.
                   </DialogDescription>
                 </div>
               </div>
             </DialogHeader>
-            <div className="space-y-3 px-5 py-4">
+            <div className="space-ms-3 px-ms-5 py-ms-4">
               {bothMissing && (
-                <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                <div className="flex items-start gap-ms-2 rounded-lg border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-xs text-destructive">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
                     Tidak ada aplikasi WhatsApp yang terdeteksi. Pasang WhatsApp atau WhatsApp Business dari Play Store terlebih dahulu.
@@ -448,7 +448,7 @@ export function WhatsAppTargetHost() {
                 </div>
               )}
               {!install.native && (
-                <div className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-[11px] text-muted-foreground">
+                <div className="flex items-start gap-ms-2 rounded-lg border bg-muted/40 p-ms-3 text-ms-2xs text-muted-foreground">
                   <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>
                     Di browser, ketersediaan aplikasi tidak bisa dideteksi otomatis. Pastikan WhatsApp atau WhatsApp Business sudah terpasang.
@@ -457,12 +457,12 @@ export function WhatsAppTargetHost() {
               )}
               <Option kind="business" url={businessUrl} missing={businessMissing} />
               <Option kind="regular" url={regularUrl} missing={regularMissing} />
-              <label className="flex items-center gap-2 px-1 pt-1 text-xs text-muted-foreground">
+              <label className="flex items-center gap-ms-2 px-1 pt-1 text-ms-xs text-muted-foreground">
                 <Checkbox checked={remember} onCheckedChange={(c) => setRemember(c === true)} />
                 <span>Ingat pilihan saya (bisa diubah lagi nanti)</span>
               </label>
             </div>
-            <div className="flex items-center justify-end gap-2 border-t bg-muted/20 px-5 py-3">
+            <div className="flex items-center justify-end gap-ms-2 border-t bg-muted/20 px-ms-5 py-ms-3">
               <Button type="button" variant="ghost" size="sm" onClick={() => finish(null)}>
                 Batal
               </Button>

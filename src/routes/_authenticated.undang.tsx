@@ -169,7 +169,7 @@ function UndangPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-background pb-24">
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background px-4 py-3">
+      <header className="sticky top-0 z-10 flex items-center gap-ms-3 border-b bg-background px-ms-4 py-ms-3">
         <button
           type="button"
           aria-label="Kembali"
@@ -178,21 +178,21 @@ function UndangPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="flex-1 text-lg font-semibold">Undang teman</h1>
+        <h1 className="flex-1 text-ms-lg font-semibold">Undang teman</h1>
         <Link
           to={"/kontak/permintaan" as never}
-          className="rounded-full px-3 py-1 text-xs font-medium text-primary hover:bg-accent"
+          className="rounded-full px-ms-3 py-1 text-ms-xs font-medium text-primary hover:bg-accent"
         >
           Permintaan
         </Link>
       </header>
 
       {/* Kartu PIN saya */}
-      <section className="px-4 pt-4">
-        <div className="rounded-2xl border bg-card p-4 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">PIN saya</div>
-          <div className="mt-1 flex items-center gap-3">
-            <div className="flex-1 select-all font-mono text-3xl font-semibold tabular-nums tracking-widest text-foreground">
+      <section className="px-ms-4 pt-4">
+        <div className="rounded-2xl border bg-card p-ms-4 shadow-sm">
+          <div className="text-ms-xs uppercase tracking-wide text-muted-foreground">PIN saya</div>
+          <div className="mt-1 flex items-center gap-ms-3">
+            <div className="flex-1 select-all font-mono text-ms-3xl font-semibold tabular-nums tracking-widest text-foreground">
               {myCode ? formatInviteCode(myCode) : "········"}
             </div>
             <Button
@@ -206,13 +206,13 @@ function UndangPage() {
               {copied === "code" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 text-ms-xs text-muted-foreground">
             Berikan PIN ini ke teman. Saat mereka memasukkan PIN, kamu langsung muncul di daftar
             kontak mereka.
           </p>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button type="button" onClick={share} disabled={!myCode} className="gap-2">
+          <div className="mt-4 flex flex-wrap gap-ms-2">
+            <Button type="button" onClick={share} disabled={!myCode} className="gap-ms-2">
               <Share2 className="h-4 w-4" /> Bagikan link
             </Button>
             <Button
@@ -220,7 +220,7 @@ function UndangPage() {
               variant="outline"
               onClick={() => copyText("url", myUrl)}
               disabled={!myUrl}
-              className="gap-2"
+              className="gap-ms-2"
             >
               {copied === "url" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               Salin link
@@ -230,21 +230,21 @@ function UndangPage() {
       </section>
 
       {/* Barcode */}
-      <section className="px-4 pt-4">
-        <div className="rounded-2xl border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-sm font-medium">
+      <section className="px-ms-4 pt-4">
+        <div className="rounded-2xl border bg-card p-ms-4 shadow-sm">
+          <div className="flex items-center gap-ms-2 text-ms-sm font-medium">
             <QrCode className="h-4 w-4 text-primary" /> Kode batang / QR
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-ms-xs text-muted-foreground">
             Tampilkan ke teman untuk dipindai — mereka akan langsung diarahkan menambah kamu sebagai
             kontak.
           </p>
           <div className="mt-3 flex items-center justify-center">
-            <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-border">
+            <div className="rounded-2xl bg-white p-ms-3 shadow-sm ring-1 ring-border">
               <canvas ref={canvasRef} aria-label="Kode QR undangan" className="h-64 w-64" />
             </div>
           </div>
-          <div className="mt-2 break-all text-center text-[11px] text-muted-foreground">
+          <div className="mt-2 break-all text-center text-ms-2xs text-muted-foreground">
             {myUrl || ""}
           </div>
           <div className="mt-3 flex justify-center">
@@ -253,7 +253,7 @@ function UndangPage() {
               variant="outline"
               size="sm"
               onClick={() => setScanOpen(true)}
-              className="gap-2"
+              className="gap-ms-2"
               aria-label="Pindai QR teman dengan kamera"
             >
               <Camera className="h-4 w-4" /> Pindai QR teman
@@ -294,20 +294,20 @@ function UndangPage() {
       />
 
       {/* Masukkan PIN teman */}
-      <section className="px-4 pt-4">
-        <div className="rounded-2xl border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-sm font-medium">
+      <section className="px-ms-4 pt-4">
+        <div className="rounded-2xl border bg-card p-ms-4 shadow-sm">
+          <div className="flex items-center gap-ms-2 text-ms-sm font-medium">
             <UserPlus className="h-4 w-4 text-primary" /> Masukkan PIN teman
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-ms-xs text-muted-foreground">
             Ketik atau tempel PIN 8 karakter yang teman berikan.
           </p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <div className="mt-3 flex flex-col gap-ms-2 sm:flex-row">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Contoh: ABCD-1234"
-              className="font-mono text-base tracking-widest"
+              className="font-mono text-ms-base tracking-widest"
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}
@@ -318,7 +318,7 @@ function UndangPage() {
               type="button"
               onClick={handleAdd}
               disabled={!looksValid || !preview || adding}
-              className="gap-2"
+              className="gap-ms-2"
             >
               <UserPlus className="h-4 w-4" />
               {adding ? "Mengirim…" : "Kirim permintaan"}
@@ -326,14 +326,14 @@ function UndangPage() {
           </div>
 
           {/* Status preview */}
-          <div className="mt-3 min-h-[3rem] text-sm">
+          <div className="mt-3 min-h-[3rem] text-ms-sm">
             {!looksValid && input.length > 0 && (
               <span className="text-amber-500">
                 PIN belum lengkap. Butuh 6–16 karakter huruf/angka.
               </span>
             )}
             {looksValid && checking && (
-              <span className="inline-flex items-center gap-2 text-muted-foreground">
+              <span className="inline-flex items-center gap-ms-2 text-muted-foreground">
                 <RefreshCcw className="h-3.5 w-3.5 animate-spin" /> Memeriksa…
               </span>
             )}
@@ -341,13 +341,13 @@ function UndangPage() {
               <span className="text-destructive">{previewError}</span>
             )}
             {preview && (
-              <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-2">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-orange-950 text-lg font-medium text-orange-300">
+              <div className="flex items-center gap-ms-3 rounded-lg border bg-muted/30 p-ms-2">
+                <div className="grid h-10 w-10 place-items-center rounded-full bg-orange-950 text-ms-lg font-medium text-orange-300">
                   {(preview.display_name || "?").trim()[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{preview.display_name || "Tanpa nama"}</div>
-                  <div className="truncate text-xs text-muted-foreground">
+                  <div className="truncate text-ms-xs text-muted-foreground">
                     PIN {formatInviteCode(preview.invite_code)}
                     {preview.chat_only ? " · Akun Chat" : ""}
                   </div>
@@ -357,7 +357,7 @@ function UndangPage() {
           </div>
         </div>
 
-        <div className="mt-3 text-center text-xs text-muted-foreground">
+        <div className="mt-3 text-center text-ms-xs text-muted-foreground">
           Punya link undangan?{" "}
           <Link to="/" className="text-primary underline">
             Buka lewat browser

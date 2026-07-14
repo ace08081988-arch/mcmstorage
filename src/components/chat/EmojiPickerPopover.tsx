@@ -82,16 +82,16 @@ export function EmojiPickerPopover({ onPick, disabled }: Props) {
       <PopoverContent
         side="top"
         align="start"
-        className="w-72 p-2"
+        className="w-72 p-ms-2"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="mb-2 flex gap-1 border-b pb-2">
+        <div className="mb-2 flex gap-ms-1 border-b pb-2">
           {CATEGORIES.map((c) => (
             <button
               key={c.id}
               type="button"
               onClick={() => setTab(c.id)}
-              className={`flex-1 rounded-md px-1 py-1 text-lg leading-none transition ${
+              className={`flex-1 rounded-md px-1 py-1 text-ms-lg leading-none transition ${
                 tab === c.id ? "bg-accent" : "hover:bg-accent/60"
               }`}
               aria-label={`Kategori ${c.id}`}
@@ -111,7 +111,7 @@ export function EmojiPickerPopover({ onPick, disabled }: Props) {
               key={`${active.id}-${i}`}
               type="button"
               onClick={() => onPick(ch)}
-              className="rounded-md p-1 text-xl leading-none transition hover:bg-accent active:scale-95"
+              className="rounded-md p-ms-1 text-ms-xl leading-none transition hover:bg-accent active:scale-95"
               aria-label={ch}
             >
               {ch}

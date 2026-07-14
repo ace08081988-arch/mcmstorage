@@ -235,23 +235,23 @@ function Surface({
 
   return (
     <section
-      className="space-y-2 rounded-md border bg-card p-2"
+      className="space-ms-2 rounded-md border bg-card p-ms-2"
       data-surface={scope}
     >
-      <h2 className="text-sm font-semibold capitalize">{scope}</h2>
+      <h2 className="text-ms-sm font-semibold capitalize">{scope}</h2>
 
-      <div className="grid grid-cols-1 gap-1">
+      <div className="grid grid-cols-1 gap-ms-1">
         {titles.map((t) => {
           const active = activeByTitle.get(t.id) ?? 0;
           const sent = sentByTitle.get(t.id) ?? 0;
           return (
             <div
               key={t.id}
-              className="flex items-center justify-between rounded border px-2 py-1 text-xs"
+              className="flex items-center justify-between rounded border px-ms-2 py-1 text-ms-xs"
               data-title-row={t.id}
             >
               <span className="truncate font-medium">{t.name}</span>
-              <span className="flex items-center gap-1 tabular-nums">
+              <span className="flex items-center gap-ms-1 tabular-nums">
                 <span
                   data-testid={`badge-active-${scope}-${t.id}`}
                   className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300"
@@ -274,17 +274,17 @@ function Surface({
         {preps.map((p) => (
           <div
             key={p.id}
-            className="flex items-center justify-between gap-2 rounded border px-2 py-1 text-[11px]"
+            className="flex items-center justify-between gap-ms-2 rounded border px-ms-2 py-1 text-ms-2xs"
             data-prep-row={p.id}
           >
             <span className="font-mono text-muted-foreground">
               {p.id} · {p.title_id} · {isSentPrep(p) ? "sent" : "active"}
             </span>
-            <span className="flex gap-1">
+            <span className="flex gap-ms-1">
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 px-1.5 text-[10px]"
+                className="h-6 px-1.5 text-ms-2xs"
                 data-testid={`mark-sent-${p.id}`}
                 disabled={isSentPrep(p)}
                 onClick={() => markSent(p.id)}
@@ -294,7 +294,7 @@ function Surface({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 px-1.5 text-[10px]"
+                className="h-6 px-1.5 text-ms-2xs"
                 data-testid={`cancel-sent-${p.id}`}
                 disabled={!isSentPrep(p)}
                 onClick={() => cancelSent(p.id)}
@@ -304,7 +304,7 @@ function Surface({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 px-1.5 text-[10px]"
+                className="h-6 px-1.5 text-ms-2xs"
                 data-testid={`send-wa-${p.id}`}
                 disabled={isSentPrep(p)}
                 onClick={() =>
@@ -327,23 +327,23 @@ function Surface({
           Spec memverifikasi item pindah kesini seketika setelah dialog
           pembayaran dikonfirmasi (tanpa reload). */}
       <div
-        className="mt-2 rounded border border-emerald-500/40 bg-emerald-500/5 p-1.5"
+        className="mt-2 rounded border border-emerald-500/40 bg-emerald-500/5 p-ms-1.5"
         data-testid={`riwayat-${scope}`}
       >
-        <div className="mb-1 text-[10px] font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+        <div className="mb-1 text-ms-2xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
           Riwayat Terkirim ({sent.length})
         </div>
         <div className="space-y-1">
           {sent.map((p) => (
             <div
               key={p.id}
-              className="flex items-center justify-between rounded border bg-card px-1.5 py-0.5 text-[10px]"
+              className="flex items-center justify-between rounded border bg-card px-1.5 py-0.5 text-ms-2xs"
               data-testid={`riwayat-item-${scope}-${p.id}`}
             >
               <span className="font-mono text-muted-foreground">
                 {p.id} · {p.title_id}
               </span>
-              <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
+              <span className="flex items-center gap-ms-1 text-emerald-700 dark:text-emerald-300">
                 {typeof p.paid_amount === "number" ? (
                   <span
                     data-testid={`riwayat-paid-${scope}-${p.id}`}
@@ -357,7 +357,7 @@ function Surface({
             </div>
           ))}
           {sent.length === 0 && (
-            <div className="text-[10px] text-muted-foreground">Belum ada.</div>
+            <div className="text-ms-2xs text-muted-foreground">Belum ada.</div>
           )}
         </div>
       </div>
@@ -369,14 +369,14 @@ function Surface({
           role="dialog"
           aria-label="Konfirmasi pembayaran"
           data-testid={`payment-dialog-${scope}`}
-          className="mt-2 space-y-1 rounded-md border bg-background p-2 text-[11px]"
+          className="mt-2 space-y-1 rounded-md border bg-background p-ms-2 text-ms-2xs"
         >
           <div className="font-semibold">Konfirmasi pembayaran — {payment.prepId}</div>
           {/* Ringkasan yang ditampilkan sebelum tombol Kirim — SSOT
               tampilan; spec memverifikasi bahwa pesan WA yang dikirim
               memuat elemen-elemen ini. */}
           <div
-            className="rounded border bg-muted/30 p-1.5"
+            className="rounded border bg-muted/30 p-ms-1.5"
             data-testid={`payment-summary-${scope}`}
           >
             <div className="flex justify-between">
@@ -404,7 +404,7 @@ function Surface({
               </span>
             </div>
             {paymentTitle?.locationUrl ? (
-              <div className="flex justify-between gap-2">
+              <div className="flex justify-between gap-ms-2">
                 <span className="text-muted-foreground">Lokasi</span>
                 <a
                   href={paymentTitle.locationUrl}
@@ -418,7 +418,7 @@ function Surface({
               </div>
             ) : null}
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-ms-1">
             {(["kas", "hutang", "partial"] as const).map((m) => (
               <button
                 key={m}
@@ -435,11 +435,11 @@ function Surface({
           </div>
           {payment.method === "partial" && (
             <div
-              className="space-y-1 rounded border border-dashed p-1.5"
+              className="space-y-1 rounded border border-dashed p-ms-1.5"
               data-testid={`payment-partial-panel-${scope}`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-[10px] text-muted-foreground">
+              <div className="flex items-center justify-between gap-ms-2">
+                <label className="text-ms-2xs text-muted-foreground">
                   Total tagihan
                 </label>
                 <span
@@ -449,9 +449,9 @@ function Surface({
                   Rp{TOTAL_PER_PREP.toLocaleString("id-ID")}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-ms-2">
                 <label
-                  className="text-[10px] text-muted-foreground"
+                  className="text-ms-2xs text-muted-foreground"
                   htmlFor={`payment-partial-amount-${scope}`}
                 >
                   Bayar sebagian
@@ -471,8 +471,8 @@ function Surface({
                   className="w-24 rounded border px-1.5 py-0.5 text-right tabular-nums"
                 />
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] text-muted-foreground">Sisa</span>
+              <div className="flex items-center justify-between gap-ms-2">
+                <span className="text-ms-2xs text-muted-foreground">Sisa</span>
                 <span
                   className="tabular-nums"
                   data-testid={`payment-partial-sisa-${scope}`}
@@ -484,7 +484,7 @@ function Surface({
               </div>
               {!partialValid && (
                 <div
-                  className="text-[10px] text-destructive"
+                  className="text-ms-2xs text-destructive"
                   data-testid={`payment-partial-error-${scope}`}
                 >
                   Nominal harus di antara 1 dan {TOTAL_PER_PREP - 1}.
@@ -494,9 +494,9 @@ function Surface({
           )}
           {/* Catatan pelanggan — teks opsional yang, kalau diisi, harus
               muncul apa adanya di pesan WA yang dikirim. */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-ms-1">
             <label
-              className="text-[10px] text-muted-foreground"
+              className="text-ms-2xs text-muted-foreground"
               htmlFor={`payment-note-${scope}`}
             >
               Catatan pelanggan
@@ -511,11 +511,11 @@ function Surface({
                 )
               }
               rows={2}
-              className="w-full rounded border px-1.5 py-0.5 text-[11px]"
+              className="w-full rounded border px-1.5 py-0.5 text-ms-2xs"
               placeholder="mis. Tolong antar sore ini"
             />
           </div>
-          <div className="flex justify-end gap-1 pt-1">
+          <div className="flex justify-end gap-ms-1 pt-1">
             <button
               type="button"
               data-testid="payment-cancel"
@@ -589,7 +589,7 @@ function Surface({
           spec dapat menyocokkan baris tertentu. Awalnya kosong. */}
       <pre
         data-testid={`last-wa-message-${scope}`}
-        className="mt-2 whitespace-pre-wrap rounded border bg-muted/30 p-1.5 text-[10px]"
+        className="mt-2 whitespace-pre-wrap rounded border bg-muted/30 p-ms-1.5 text-ms-2xs"
       >
         {lastWa}
       </pre>
@@ -601,7 +601,7 @@ function Surface({
           href={lastWaUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-1 block truncate text-[10px] text-primary underline"
+          className="mt-1 block truncate text-ms-2xs text-primary underline"
         >
           {lastWaUrl}
         </a>
@@ -614,10 +614,10 @@ function Surface({
 
 function Harness() {
   return (
-    <main className="mx-auto max-w-md space-y-3 p-3 text-sm">
+    <main className="mx-auto max-w-md space-ms-3 p-ms-3 text-ms-sm">
       <header>
-        <h1 className="text-base font-bold">Ready Badges — Selector E2E</h1>
-        <p className="text-[11px] text-muted-foreground">
+        <h1 className="text-ms-base font-bold">Ready Badges — Selector E2E</h1>
+        <p className="text-ms-2xs text-muted-foreground">
           Harness no-auth: badge Aktif/Terkirim di dua surface dihidrasi
           hanya dari <code>countActiveByTitle</code>/<code>filterSentPreps</code>.
           Tombol Tandai/Batalkan memicu transisi state supaya spec bisa

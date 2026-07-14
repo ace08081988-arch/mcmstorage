@@ -196,28 +196,28 @@ function DiagnostikPaket() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 font-sans text-sm text-foreground">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <header className="flex items-center justify-between gap-2">
+    <div className="min-h-screen bg-background p-ms-4 font-sans text-ms-sm text-foreground">
+      <div className="mx-auto max-w-3xl space-ms-4">
+        <header className="flex items-center justify-between gap-ms-2">
           <div>
-            <h1 className="text-lg font-semibold">Diagnostik Paket</h1>
-            <p className="text-xs text-muted-foreground">
+            <h1 className="text-ms-lg font-semibold">Diagnostik Paket</h1>
+            <p className="text-ms-xs text-muted-foreground">
               Melacak <code>packageType</code>, <code>displayBaseUnit</code>,{" "}
               <code>displayPackageType</code> dan label render agar mismatch mudah dilihat.
             </p>
           </div>
           <Link
             to="/"
-            className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
+            className="rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent"
           >
             ← Beranda
           </Link>
         </header>
 
         {/* ------- INPUT PANEL ------- */}
-        <section className="rounded-lg border p-3">
-          <h2 className="mb-2 text-sm font-semibold">Input</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <section className="rounded-lg border p-ms-3">
+          <h2 className="mb-2 text-ms-sm font-semibold">Input</h2>
+          <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
             <Field label="mode">
               <select
                 className="input"
@@ -293,23 +293,23 @@ function DiagnostikPaket() {
             </Field>
 
             <Field label="inputKarton">
-              <label className="flex items-center gap-2 pt-1">
+              <label className="flex items-center gap-ms-2 pt-1">
                 <input
                   type="checkbox"
                   checked={inputKarton}
                   onChange={(e) => setInputKarton(e.target.checked)}
                 />
-                <span className="text-xs">botol → karton</span>
+                <span className="text-ms-xs">botol → karton</span>
               </label>
             </Field>
           </div>
 
           {mode === "existing" && (
-            <div className="mt-3 rounded-md border border-dashed p-2">
-              <div className="mb-2 text-xs font-medium text-muted-foreground">
+            <div className="mt-3 rounded-md border border-dashed p-ms-2">
+              <div className="mb-2 text-ms-xs font-medium text-muted-foreground">
                 Simulasi selectedItem
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-ms-2">
                 <Field label="item.package_type">
                   <select
                     className="input"
@@ -346,9 +346,9 @@ function DiagnostikPaket() {
         </section>
 
         {/* ------- IMPORT PAYLOAD ------- */}
-        <section className="rounded-lg border p-3" data-testid="diag-import-payload">
-          <h2 className="mb-2 text-sm font-semibold">Impor payload</h2>
-          <p className="mb-2 text-[11px] text-muted-foreground">
+        <section className="rounded-lg border p-ms-3" data-testid="diag-import-payload">
+          <h2 className="mb-2 text-ms-sm font-semibold">Impor payload</h2>
+          <p className="mb-2 text-ms-2xs text-muted-foreground">
             Tempel JSON payload (mode, packageType, packageSize, packageQty,
             priceMode, pricePerPackage, pricePerBase, inputKarton,
             selectedItem) lalu klik <em>Terapkan</em>. Berguna untuk E2E:
@@ -363,18 +363,18 @@ function DiagnostikPaket() {
             onChange={(e) => setPayloadText(e.target.value)}
             placeholder='{"mode":"new","packageType":"gram","packageSize":"500","packageQty":"2","pricePerPackage":"10000"}'
           />
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-ms-2">
             <button
               type="button"
               data-testid="diag-payload-apply"
               onClick={() => applyPayload(payloadText)}
-              className="rounded-md border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+              className="rounded-md border bg-primary px-ms-3 py-1.5 text-ms-xs font-medium text-primary-foreground hover:opacity-90"
             >
               Terapkan
             </button>
             {payloadError ? (
               <span
-                className="text-[11px] text-red-600 dark:text-red-400"
+                className="text-ms-2xs text-red-600 dark:text-red-400"
                 data-testid="diag-payload-error"
               >
                 {payloadError}
@@ -386,11 +386,11 @@ function DiagnostikPaket() {
         {/* ------- MISMATCH ALERT ------- */}
         {mismatches.length > 0 ? (
           <section
-            className="rounded-lg border border-red-500/60 bg-red-500/10 p-3 text-red-700 dark:text-red-300"
+            className="rounded-lg border border-red-500/60 bg-red-500/10 p-ms-3 text-red-700 dark:text-red-300"
             data-testid="diag-mismatch"
           >
-            <h2 className="text-sm font-semibold">⚠ Mismatch terdeteksi</h2>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+            <h2 className="text-ms-sm font-semibold">⚠ Mismatch terdeteksi</h2>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-ms-xs">
               {mismatches.map((m) => (
                 <li key={m}>{m}</li>
               ))}
@@ -398,17 +398,17 @@ function DiagnostikPaket() {
           </section>
         ) : (
           <section
-            className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-3 text-emerald-700 dark:text-emerald-300"
+            className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-ms-3 text-emerald-700 dark:text-emerald-300"
             data-testid="diag-ok"
           >
-            <span className="text-xs font-medium">✓ display fields konsisten dengan derived</span>
+            <span className="text-ms-xs font-medium">✓ display fields konsisten dengan derived</span>
           </section>
         )}
 
         {/* ------- STATE TABLE ------- */}
         <section className="rounded-lg border">
-          <h2 className="border-b bg-muted/30 px-3 py-2 text-sm font-semibold">State</h2>
-          <div className="divide-y text-xs">
+          <h2 className="border-b bg-muted/30 px-ms-3 py-ms-2 text-ms-sm font-semibold">State</h2>
+          <div className="divide-y text-ms-xs">
             <Row label="mode" value={mode} />
             <Row label="packageType (form)" value={packageType} />
             <Row label="packageSize (form)" value={packageSize} />
@@ -417,10 +417,10 @@ function DiagnostikPaket() {
         </section>
 
         <section className="rounded-lg border">
-          <h2 className="border-b bg-muted/30 px-3 py-2 text-sm font-semibold">
+          <h2 className="border-b bg-muted/30 px-ms-3 py-ms-2 text-ms-sm font-semibold">
             Derived (computeBeliDerived)
           </h2>
-          <div className="divide-y text-xs">
+          <div className="divide-y text-ms-xs">
             <Row label="effPackageType" value={derived.effPackageType} data-testid="diag-eff-package-type" />
             <Row label="effBaseUnit" value={derived.effBaseUnit} data-testid="diag-eff-base-unit" />
             <Row label="effectivePkgSize" value={String(derived.effectivePkgSize)} />
@@ -433,8 +433,8 @@ function DiagnostikPaket() {
         </section>
 
         <section className="rounded-lg border">
-          <h2 className="border-b bg-muted/30 px-3 py-2 text-sm font-semibold">Display</h2>
-          <div className="divide-y text-xs">
+          <h2 className="border-b bg-muted/30 px-ms-3 py-ms-2 text-ms-sm font-semibold">Display</h2>
+          <div className="divide-y text-ms-xs">
             <Row
               label="displayPackageType"
               value={displayPackageType}
@@ -455,10 +455,10 @@ function DiagnostikPaket() {
 
         {/* ------- RENDERED LABELS ------- */}
         <section className="rounded-lg border">
-          <h2 className="border-b bg-muted/30 px-3 py-2 text-sm font-semibold">
+          <h2 className="border-b bg-muted/30 px-ms-3 py-ms-2 text-ms-sm font-semibold">
             Label hasil render (persis seperti di /gudang)
           </h2>
-          <div className="space-y-2 p-3 text-xs">
+          <div className="space-ms-2 p-ms-3 text-ms-xs">
             <LabelRow
               location="Isi / kemasan"
               rendered={`Isi / kemasan (${displayBaseUnit})`}
@@ -497,26 +497,26 @@ function DiagnostikPaket() {
         </section>
 
         {/* ------- ACTIONS ------- */}
-        <section className="flex flex-wrap gap-2">
+        <section className="flex flex-wrap gap-ms-2">
           <button
             type="button"
             onClick={copySnapshot}
-            className="rounded-md border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+            className="rounded-md border bg-primary px-ms-3 py-1.5 text-ms-xs font-medium text-primary-foreground hover:opacity-90"
           >
             Salin snapshot JSON
           </button>
           <Link
             to="/gudang"
-            className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent"
+            className="rounded-md border px-ms-3 py-1.5 text-ms-xs hover:bg-accent"
           >
             Buka /gudang (kirim yang sesungguhnya)
           </Link>
         </section>
 
-        <details className="rounded-lg border p-3 text-xs">
+        <details className="rounded-lg border p-ms-3 text-ms-xs">
           <summary className="cursor-pointer font-semibold">Snapshot JSON</summary>
           <pre
-            className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-muted/40 p-2 font-mono text-[11px] leading-snug"
+            className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-muted/40 p-ms-2 font-mono text-ms-2xs leading-snug"
             data-testid="diag-snapshot-json"
           >
 {JSON.stringify(snapshot, null, 2)}
@@ -540,8 +540,8 @@ function DiagnostikPaket() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+    <label className="flex flex-col gap-ms-1">
+      <span className="font-mono text-ms-2xs uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       {children}
@@ -559,9 +559,9 @@ function Row({
   "data-testid"?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 px-3 py-1.5">
-      <span className="font-mono text-[11px] text-muted-foreground">{label}</span>
-      <span className="font-mono text-[11px] font-medium" {...rest}>
+    <div className="flex items-center justify-between gap-ms-2 px-ms-3 py-1.5">
+      <span className="font-mono text-ms-2xs text-muted-foreground">{label}</span>
+      <span className="font-mono text-ms-2xs font-medium" {...rest}>
         {value}
       </span>
     </div>
@@ -579,10 +579,10 @@ function LabelRow({
 }) {
   return (
     <div className="flex flex-col gap-0.5 border-l-2 border-primary/40 pl-2">
-      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+      <span className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
         {location}
       </span>
-      <span className="font-mono text-[11px]" data-testid={testid}>
+      <span className="font-mono text-ms-2xs" data-testid={testid}>
         “{rendered}”
       </span>
     </div>

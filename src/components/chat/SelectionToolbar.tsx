@@ -28,11 +28,11 @@ type Props = {
 
 export function SelectionToolbar(p: Props) {
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-1 border-b bg-primary text-primary-foreground px-2 py-2 shadow-sm">
+    <header className="sticky top-0 z-20 flex items-center gap-ms-1 border-b bg-primary text-primary-foreground px-ms-2 py-ms-2 shadow-sm">
       <Button variant="ghost" size="icon" onClick={p.onClose} aria-label="Keluar mode pilih" className="text-primary-foreground hover:bg-primary-foreground/15">
         <X className="h-5 w-5" />
       </Button>
-      <span className="min-w-6 text-sm font-semibold tabular-nums">{p.count}</span>
+      <span className="min-w-6 text-ms-sm font-semibold tabular-nums">{p.count}</span>
       <div className="ml-auto flex items-center gap-0.5">
         <Button variant="ghost" size="icon" disabled={!p.oneSelected} onClick={p.onReply} aria-label="Balas" className="text-primary-foreground hover:bg-primary-foreground/15 disabled:opacity-40">
           <Reply className="h-5 w-5" />

@@ -172,7 +172,7 @@ export function AddContactFab() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-ms-2">
               <UserPlus className="h-4 w-4" /> Tambah kontak PIN
             </DialogTitle>
             <DialogDescription>
@@ -180,12 +180,12 @@ export function AddContactFab() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
+          <div className="space-ms-3">
             <div className="space-y-1.5">
-              <Label htmlFor="fab-pin-input" className="text-xs">
+              <Label htmlFor="fab-pin-input" className="text-ms-xs">
                 PIN MCM
               </Label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-ms-2">
                 <Input
                   id="fab-pin-input"
                   autoFocus
@@ -210,23 +210,23 @@ export function AddContactFab() {
                   <ScanLine className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 Format: 8 karakter huruf/angka. Contoh: <code>ABCD-1234</code>.
               </p>
             </div>
 
             {/* Preview target */}
-            <div className="rounded-lg border p-3 text-sm">
+            <div className="rounded-lg border p-ms-3 text-ms-sm">
               {!looksValid ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-ms-xs text-muted-foreground">
                   Ketik PIN atau pindai QR untuk melihat pratinjau.
                 </p>
               ) : checking ? (
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                <p className="flex items-center gap-ms-2 text-ms-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memeriksa PIN…
                 </p>
               ) : preview ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-ms-3">
                   {preview.avatar_url ? (
                     <img
                       src={preview.avatar_url}
@@ -242,21 +242,21 @@ export function AddContactFab() {
                     <div className="truncate font-medium">
                       {preview.display_name || "Pengguna MCM"}
                     </div>
-                    <div className="truncate text-[11px] text-muted-foreground">
+                    <div className="truncate text-ms-2xs text-muted-foreground">
                       PIN {formatInviteCode(preview.invite_code)}
                     </div>
                   </div>
                   <Check className="h-4 w-4 text-emerald-600" aria-hidden />
                 </div>
               ) : (
-                <p className="text-xs text-amber-600">
+                <p className="text-ms-xs text-amber-600">
                   PIN tidak ditemukan. Periksa lagi kode yang diberikan teman.
                 </p>
               )}
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:justify-end">
+          <DialogFooter className="gap-ms-2 sm:justify-end">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               <X className="mr-1 h-4 w-4" /> Batal
             </Button>

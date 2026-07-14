@@ -75,12 +75,12 @@ function MinSupportedFormHarness() {
   };
 
   return (
-    <main className="mx-auto max-w-md space-y-3 p-4">
-      <h1 className="text-base font-semibold">Harness MinSupported form</h1>
-      <section className="rounded-xl border bg-card p-3 shadow-sm">
-        <div className="grid grid-cols-2 gap-2">
+    <main className="mx-auto max-w-md space-ms-3 p-ms-4">
+      <h1 className="text-ms-base font-semibold">Harness MinSupported form</h1>
+      <section className="rounded-xl border bg-card p-ms-3 shadow-sm">
+        <div className="grid grid-cols-2 gap-ms-2">
           <div>
-            <label className="text-[11px] font-medium" htmlFor="mf-name">
+            <label className="text-ms-2xs font-medium" htmlFor="mf-name">
               Min. versi (semver)
             </label>
             <Input
@@ -90,7 +90,7 @@ function MinSupportedFormHarness() {
               onChange={(e) => setName(e.target.value)}
               onBlur={() => setTouched((t) => ({ ...t, name: true }))}
               placeholder="mis. 1.2.0"
-              className={`h-8 font-mono text-xs ${
+              className={`h-8 font-mono text-ms-xs ${
                 touched.name && errors.name
                   ? "border-red-500 focus-visible:ring-red-500"
                   : ""
@@ -100,14 +100,14 @@ function MinSupportedFormHarness() {
             {touched.name && errors.name && (
               <p
                 data-testid="mf-name-error"
-                className="mt-1 text-[11px] leading-snug text-red-600"
+                className="mt-1 text-ms-2xs leading-snug text-red-600"
               >
                 {errors.name}
               </p>
             )}
           </div>
           <div>
-            <label className="text-[11px] font-medium" htmlFor="mf-code">
+            <label className="text-ms-2xs font-medium" htmlFor="mf-code">
               Min. build
             </label>
             <Input
@@ -118,7 +118,7 @@ function MinSupportedFormHarness() {
               onChange={(e) => setCode(e.target.value)}
               onBlur={() => setTouched((t) => ({ ...t, code: true }))}
               placeholder="mis. 45"
-              className={`h-8 font-mono text-xs ${
+              className={`h-8 font-mono text-ms-xs ${
                 touched.code && errors.code
                   ? "border-red-500 focus-visible:ring-red-500"
                   : ""
@@ -128,7 +128,7 @@ function MinSupportedFormHarness() {
             {touched.code && errors.code && (
               <p
                 data-testid="mf-code-error"
-                className="mt-1 text-[11px] leading-snug text-red-600"
+                className="mt-1 text-ms-2xs leading-snug text-red-600"
               >
                 {errors.code}
               </p>
@@ -136,7 +136,7 @@ function MinSupportedFormHarness() {
           </div>
         </div>
         <div className="mt-2">
-          <label className="text-[11px] font-medium" htmlFor="mf-reason">
+          <label className="text-ms-2xs font-medium" htmlFor="mf-reason">
             Alasan (opsional)
           </label>
           <Input
@@ -146,7 +146,7 @@ function MinSupportedFormHarness() {
             onChange={(e) => setReason(e.target.value)}
             onBlur={() => setTouched((t) => ({ ...t, reason: true }))}
             placeholder="mis. Perbaikan keamanan penting"
-            className={`h-8 text-xs ${
+            className={`h-8 text-ms-xs ${
               touched.reason && errors.reason
                 ? "border-red-500 focus-visible:ring-red-500"
                 : ""
@@ -156,7 +156,7 @@ function MinSupportedFormHarness() {
           {touched.reason && errors.reason && (
             <p
               data-testid="mf-reason-error"
-              className="mt-1 text-[11px] leading-snug text-red-600"
+              className="mt-1 text-ms-2xs leading-snug text-red-600"
             >
               {errors.reason}
             </p>
@@ -166,16 +166,16 @@ function MinSupportedFormHarness() {
           (touched.name || touched.code || touched.reason) && (
             <div
               data-testid="mf-form-error"
-              className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-300 bg-red-50 p-2 text-[11px] text-red-700"
+              className="mt-2 flex items-start gap-ms-1.5 rounded-lg border border-red-300 bg-red-50 p-ms-2 text-ms-2xs text-red-700"
             >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{errors.form}</span>
             </div>
           )}
-        <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="mt-2 flex items-center justify-between gap-ms-2">
           <p
             data-testid="mf-saved-count"
-            className="text-[11px] text-muted-foreground"
+            className="text-ms-2xs text-muted-foreground"
           >
             saved={savedCount}
           </p>
@@ -203,9 +203,9 @@ function MinSupportedFormHarness() {
       </section>
       <section
         data-testid="mf-releases"
-        className="rounded-xl border bg-card p-3 shadow-sm"
+        className="rounded-xl border bg-card p-ms-3 shadow-sm"
       >
-        <h2 className="mb-2 text-xs font-semibold">Rilis (mock)</h2>
+        <h2 className="mb-2 text-ms-xs font-semibold">Rilis (mock)</h2>
         <ul className="space-y-1">
           {mockReleases.map((r) => {
             const below = isBelowMinimum(
@@ -217,7 +217,7 @@ function MinSupportedFormHarness() {
                 key={r.id}
                 data-testid={`mf-rel-${r.id}`}
                 data-below={below ? "1" : "0"}
-                className="flex items-center justify-between text-[11px]"
+                className="flex items-center justify-between text-ms-2xs"
               >
                 <span className="font-mono">
                   {r.versionName} ({r.versionCode})

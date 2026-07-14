@@ -154,16 +154,16 @@ export function CartComposer({
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <ShoppingCart className="h-4 w-4" /> Keranjang
           </DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
+        <div className="max-h-[55vh] space-ms-2 overflow-y-auto pr-1">
           {lines.map((line, i) => (
-            <div key={i} className="rounded-md border p-2">
+            <div key={i} className="rounded-md border p-ms-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-ms-xs font-medium text-muted-foreground">
                   Barang #{i + 1}
                 </span>
                 {lines.length > 1 ? (
@@ -183,7 +183,7 @@ export function CartComposer({
               </div>
               <div className="mt-1 space-y-1.5">
                 <div>
-                  <Label className="text-[11px]">Nama barang</Label>
+                  <Label className="text-ms-2xs">Nama barang</Label>
                   <Input
                     value={line.name}
                     maxLength={200}
@@ -198,9 +198,9 @@ export function CartComposer({
                     className="h-8"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-ms-2">
                   <div>
-                    <Label className="text-[11px]">Jumlah</Label>
+                    <Label className="text-ms-2xs">Jumlah</Label>
                     <Input
                       type="number"
                       inputMode="decimal"
@@ -218,7 +218,7 @@ export function CartComposer({
                     />
                   </div>
                   <div>
-                    <Label className="text-[11px]">Harga satuan (opsional)</Label>
+                    <Label className="text-ms-2xs">Harga satuan (opsional)</Label>
                     <Input
                       type="number"
                       inputMode="decimal"
@@ -253,7 +253,7 @@ export function CartComposer({
           </Button>
 
           <div>
-            <Label className="text-[11px]">Catatan (opsional)</Label>
+            <Label className="text-ms-2xs">Catatan (opsional)</Label>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -264,7 +264,7 @@ export function CartComposer({
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t pt-2 text-sm">
+        <div className="flex items-center justify-between border-t pt-2 text-ms-sm">
           <span className="text-muted-foreground">Total (dari yang berharga)</span>
           <span className="font-semibold tabular-nums">{fmtRp(total)}</span>
         </div>

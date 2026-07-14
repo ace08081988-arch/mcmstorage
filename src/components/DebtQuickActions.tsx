@@ -233,7 +233,7 @@ export function DebtQuickActions({
   if (!uid) return null;
   if (q.isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-2 text-[11px] text-muted-foreground">
+      <div className="flex items-center gap-ms-2 rounded-md border bg-muted/30 p-ms-2 text-ms-2xs text-muted-foreground">
         <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memeriksa tagihan…
       </div>
     );
@@ -243,8 +243,8 @@ export function DebtQuickActions({
 
   if (!data.party) {
     return (
-      <div className="rounded-md border border-dashed bg-muted/20 p-2 text-[11px] text-muted-foreground">
-        <div className="flex items-center gap-1.5">
+      <div className="rounded-md border border-dashed bg-muted/20 p-ms-2 text-ms-2xs text-muted-foreground">
+        <div className="flex items-center gap-ms-1.5">
           <Wallet className="h-3.5 w-3.5" />
           <span className="font-semibold text-foreground">Hutang / Piutang</span>
         </div>
@@ -737,13 +737,13 @@ export function DebtQuickActions({
   return (
     <div
       className={
-        "rounded-md border p-2.5 " +
+        "rounded-md border p-ms-2.5 " +
         (kind === "piutang"
           ? "border-emerald-500/40 bg-emerald-500/5"
           : "border-amber-500/40 bg-amber-500/5")
       }
     >
-      <div className="flex items-center gap-1.5 text-[11px]">
+      <div className="flex items-center gap-ms-1.5 text-ms-2xs">
         <Wallet
           className={
             "h-3.5 w-3.5 " +
@@ -763,13 +763,13 @@ export function DebtQuickActions({
         </span>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <div className="mt-2 flex flex-wrap items-center gap-ms-1.5">
         <input
           value={amountRaw}
           onChange={(e) => setAmountRaw(e.target.value.replace(/[^\d]/g, ""))}
           inputMode="numeric"
           placeholder={kind === "piutang" ? "Harga jual (Rp)" : "Harga beli (Rp)"}
-          className="h-8 min-w-0 flex-1 basis-full rounded-md border bg-background px-2 text-right font-mono text-xs sm:basis-auto"
+          className="h-8 min-w-0 flex-1 basis-full rounded-md border bg-background px-ms-2 text-right font-mono text-ms-xs sm:basis-auto"
           disabled={busy !== null}
         />
         <button
@@ -777,7 +777,7 @@ export function DebtQuickActions({
           onClick={() => setPending({ kind: "add" })}
           disabled={busy !== null || !hasAmount}
           className={
-            "inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] font-semibold disabled:opacity-50 " +
+            "inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-semibold disabled:opacity-50 " +
             (kind === "piutang"
               ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20 dark:text-emerald-200"
               : "border-amber-500/60 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 dark:text-amber-200")
@@ -795,7 +795,7 @@ export function DebtQuickActions({
           type="button"
           onClick={() => setPending({ kind: "cash" })}
           disabled={busy !== null || !hasAmount}
-          className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] font-semibold hover:bg-accent disabled:opacity-50"
+          className="inline-flex h-8 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs font-semibold hover:bg-accent disabled:opacity-50"
           title={
             kind === "piutang"
               ? "Catat jual tunai — langsung lunas, tidak menambah piutang"
@@ -809,7 +809,7 @@ export function DebtQuickActions({
           type="button"
           onClick={() => setPending({ kind: "pay", amount: parsed })}
           disabled={busy !== null || !hasAmount || saldo <= 0}
-          className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] font-semibold hover:bg-accent disabled:opacity-50"
+          className="inline-flex h-8 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs font-semibold hover:bg-accent disabled:opacity-50"
           title="Catat pembayaran sebagian sesuai jumlah di kiri"
         >
           {busy === "pay" ? <Loader2 className="h-3 w-3 animate-spin" /> : <HandCoins className="h-3 w-3" />}
@@ -819,18 +819,18 @@ export function DebtQuickActions({
           type="button"
           onClick={() => setPending({ kind: "lunas", amount: saldo })}
           disabled={busy !== null || saldo <= 0}
-          className="inline-flex h-8 items-center gap-1 rounded-md border border-success/60 bg-success px-2 text-[11px] font-semibold text-success-foreground hover:bg-success/90 disabled:opacity-50"
+          className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-success/60 bg-success px-ms-2 text-ms-2xs font-semibold text-success-foreground hover:bg-success/90 disabled:opacity-50"
           title={`Lunasi semua ${kindLabel.toLowerCase()} (${rupiah(saldo)})`}
         >
           {busy === "lunas" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
           Lunas
         </button>
       </div>
-      <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
+      <p className="mt-1.5 text-ms-2xs leading-snug text-muted-foreground">
         Tersinkron ke Hutang & Piutang MCM Storage. <b>Harga Jual</b> = tambah piutang, <b>Tunai</b> = jual langsung lunas, <b>Bayar/Lunas</b> = pelunasan piutang yang ada (dialokasi ke tagihan paling lama).
       </p>
       {lastTx && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-dashed bg-background/60 px-2 py-1.5 text-[11px]">
+        <div className="mt-2 flex flex-wrap items-center gap-ms-1.5 rounded-md border border-dashed bg-background/60 px-ms-2 py-1.5 text-ms-2xs">
           <span className="text-muted-foreground">Transaksi terakhir:</span>
           <span className="font-semibold text-foreground">
             {"paymentIds" in lastTx
@@ -844,7 +844,7 @@ export function DebtQuickActions({
             type="button"
             onClick={() => { setEditAmountRaw(String(lastTx.amount)); setEditOpen(true); }}
             disabled={reverting}
-            className="ml-auto inline-flex h-6 items-center gap-1 rounded border bg-background px-1.5 font-semibold hover:bg-accent disabled:opacity-50"
+            className="ml-auto inline-flex h-6 items-center gap-ms-1 rounded border bg-background px-1.5 font-semibold hover:bg-accent disabled:opacity-50"
             title="Ubah nominal transaksi terakhir"
           >
             <Pencil className="h-3 w-3" /> Edit
@@ -853,7 +853,7 @@ export function DebtQuickActions({
             type="button"
             onClick={() => setUndoOpen(true)}
             disabled={reverting}
-            className="inline-flex h-6 items-center gap-1 rounded border border-red-500/50 bg-red-500/10 px-1.5 font-semibold text-red-700 hover:bg-red-500/20 disabled:opacity-50 dark:text-red-300"
+            className="inline-flex h-6 items-center gap-ms-1 rounded border border-red-500/50 bg-red-500/10 px-1.5 font-semibold text-red-700 hover:bg-red-500/20 disabled:opacity-50 dark:text-red-300"
             title="Batalkan & balik saldo"
           >
             {reverting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Undo2 className="h-3 w-3" />} Urungkan
@@ -865,22 +865,22 @@ export function DebtQuickActions({
           type="button"
           onClick={() => setHistoryOpen((v) => !v)}
           aria-expanded={historyOpen}
-          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold hover:bg-accent"
+          className="flex w-full items-center gap-ms-1.5 px-ms-2 py-1.5 text-ms-2xs font-semibold hover:bg-accent"
         >
           <ScrollText className="h-3 w-3 text-muted-foreground" />
           <span>Riwayat aksi</span>
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">{log.length}</span>
+          <span className="rounded bg-muted px-1.5 py-0.5 text-ms-2xs font-mono text-muted-foreground">{log.length}</span>
           <ChevronDown className={"ml-auto h-3 w-3 text-muted-foreground transition-transform " + (historyOpen ? "rotate-180" : "")} />
         </button>
         {historyOpen && (
           <div className="border-t">
             {log.length === 0 ? (
-              <div className="px-2 py-2 text-[11px] text-muted-foreground">
+              <div className="px-ms-2 py-ms-2 text-ms-2xs text-muted-foreground">
                 Belum ada aksi tercatat. Setiap tekanan Harga Jual / Beli / Tunai / Bayar / Lunas akan muncul di sini.
               </div>
             ) : (
               <>
-                <ol className="max-h-48 overflow-y-auto divide-y text-[11px]">
+                <ol className="max-h-48 overflow-y-auto divide-y text-ms-2xs">
                   {log.map((e) => {
                     const statusColor =
                       e.status === "confirmed"
@@ -891,8 +891,8 @@ export function DebtQuickActions({
                     const statusLabel =
                       e.status === "confirmed" ? "OK" : e.status === "failed" ? "Gagal" : "Batal";
                     return (
-                      <li key={e.id} className="flex items-center gap-2 px-2 py-1.5">
-                        <span className="font-mono text-[10px] text-muted-foreground shrink-0 w-14">
+                      <li key={e.id} className="flex items-center gap-ms-2 px-ms-2 py-1.5">
+                        <span className="font-mono text-ms-2xs text-muted-foreground shrink-0 w-14">
                           {new Date(e.at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                         </span>
                         <span className="min-w-0 flex-1 truncate">
@@ -909,14 +909,14 @@ export function DebtQuickActions({
                     );
                   })}
                 </ol>
-                <div className="flex items-center justify-between border-t px-2 py-1 text-[10px] text-muted-foreground">
+                <div className="flex items-center justify-between border-t px-ms-2 py-1 text-ms-2xs text-muted-foreground">
                   <span>Tersimpan lokal di perangkat ini (maks. 50 entri).</span>
                   <button
                     type="button"
                     onClick={() => {
                       if (window.confirm("Hapus semua riwayat aksi lokal?")) clearDebtActionLog();
                     }}
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold text-red-700 hover:bg-red-500/10 dark:text-red-300"
+                    className="inline-flex items-center gap-ms-1 rounded px-1.5 py-0.5 font-semibold text-red-700 hover:bg-red-500/10 dark:text-red-300"
                   >
                     <Trash2 className="h-3 w-3" /> Hapus riwayat
                   </button>
@@ -990,7 +990,7 @@ export function DebtQuickActions({
             onChange={(e) => setEditAmountRaw(e.target.value.replace(/[^\d]/g, ""))}
             inputMode="numeric"
             placeholder="Nominal baru (Rp)"
-            className="h-9 w-full rounded-md border bg-background px-2 text-right font-mono text-sm"
+            className="h-9 w-full rounded-md border bg-background px-ms-2 text-right font-mono text-ms-sm"
             disabled={reverting}
           />
           {(() => {
@@ -998,7 +998,7 @@ export function DebtQuickActions({
             if (!preview) return null;
             if (!preview.valid) {
               return (
-                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-800 dark:text-amber-200">
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-800 dark:text-amber-200">
                   {preview.reason}
                 </div>
               );
@@ -1011,7 +1011,7 @@ export function DebtQuickActions({
                   : "text-red-700 dark:text-red-300";
             const deltaSign = preview.deltaSaldo > 0 ? "+" : preview.deltaSaldo < 0 ? "−" : "";
             return (
-              <div className="rounded-md border bg-muted/30 p-2 text-[11px] space-y-1">
+              <div className="rounded-md border bg-muted/30 p-ms-2 text-ms-2xs space-y-1">
                 {preview.kind === "amount" ? (
                   <>
                     <div className="flex items-center justify-between">
@@ -1040,7 +1040,7 @@ export function DebtQuickActions({
                     ) : (
                       <ol className="space-y-0.5">
                         {preview.lines.map((ln, i) => (
-                          <li key={ln.id} className="flex items-center justify-between gap-2">
+                          <li key={ln.id} className="flex items-center justify-between gap-ms-2">
                             <span className="min-w-0 truncate text-muted-foreground">
                               {i + 1}. {formatDate(ln.created_at)}
                               <span className="ml-1 font-mono">· sisa {rupiah(ln.sisaBefore)}</span>
@@ -1114,20 +1114,20 @@ export function DebtQuickActions({
                 const preview = allocationPreview(pending.amount);
                 if (preview.lines.length === 0) {
                   return (
-                    <div className="rounded-md border border-dashed p-2 text-[11px] text-muted-foreground">
+                    <div className="rounded-md border border-dashed p-ms-2 text-ms-2xs text-muted-foreground">
                       Tidak ada tagihan terbuka untuk dialokasi.
                     </div>
                   );
                 }
                 return (
-                  <div className="rounded-md border bg-muted/30 p-2 text-[11px]">
+                  <div className="rounded-md border bg-muted/30 p-ms-2 text-ms-2xs">
                     <div className="mb-1 flex items-center justify-between font-semibold text-foreground">
                       <span>Alokasi ke tagihan (terlama dulu)</span>
                       <span className="font-mono">{preview.lines.length} tagihan</span>
                     </div>
                     <ol className="space-y-1">
                       {preview.lines.map((ln, i) => (
-                        <li key={ln.id} className="flex items-center justify-between gap-2">
+                        <li key={ln.id} className="flex items-center justify-between gap-ms-2">
                           <span className="min-w-0 truncate text-muted-foreground">
                             {i + 1}. {formatDate(ln.created_at)}
                             <span className="ml-1 font-mono">· sisa {rupiah(ln.sisaBefore)}</span>

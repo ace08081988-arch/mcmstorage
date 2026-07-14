@@ -88,8 +88,8 @@ function AuditPage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-4">
-      <div className="flex items-center gap-2">
+    <div className="mx-auto w-full max-w-3xl space-ms-4 p-ms-4">
+      <div className="flex items-center gap-ms-2">
         <Button asChild variant="ghost" size="icon" aria-label="Kembali">
           {c ? (
             <Link to="/chat/$conversationId" params={{ conversationId: c }}>
@@ -101,33 +101,33 @@ function AuditPage() {
             </Link>
           )}
         </Button>
-        <div className="flex flex-1 items-center gap-2">
+        <div className="flex flex-1 items-center gap-ms-2">
           <History className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Log hapus pesan</h1>
+          <h1 className="text-ms-lg font-semibold">Log hapus pesan</h1>
         </div>
         {c ? <Badge variant="secondary">Percakapan ini</Badge> : <Badge variant="outline">Semua percakapan</Badge>}
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Aktivitas terbaru</CardTitle>
+          <CardTitle className="text-ms-base">Aktivitas terbaru</CardTitle>
         </CardHeader>
         <CardContent>
           {audit.isLoading ? (
-            <p className="text-sm text-muted-foreground">Memuat…</p>
+            <p className="text-ms-sm text-muted-foreground">Memuat…</p>
           ) : audit.isError ? (
-            <p className="text-sm text-destructive">Gagal memuat log.</p>
+            <p className="text-ms-sm text-destructive">Gagal memuat log.</p>
           ) : (audit.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Belum ada aktivitas penghapusan tercatat.</p>
+            <p className="text-ms-sm text-muted-foreground">Belum ada aktivitas penghapusan tercatat.</p>
           ) : (
             <ul className="divide-y">
               {(audit.data ?? []).map((row) => {
                 const who = profiles.data?.get(row.actor_user_id)?.name ?? "Pengguna";
                 return (
-                  <li key={row.id} className="flex items-start gap-3 py-2">
+                  <li key={row.id} className="flex items-start gap-ms-3 py-ms-2">
                     <div className="mt-0.5"><ActionIcon action={row.action} /></div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-ms-sm">
                         <span className="font-medium">{who}</span>
                         <span className="text-muted-foreground">·</span>
                         <span>{ACTION_LABEL[row.action]}</span>
@@ -135,12 +135,12 @@ function AuditPage() {
                           <Badge variant="outline" className="ml-1">{row.count} pesan</Badge>
                         ) : null}
                       </div>
-                      <div className="text-xs text-muted-foreground">{fmt(row.created_at)}</div>
+                      <div className="text-ms-xs text-muted-foreground">{fmt(row.created_at)}</div>
                       {!c ? (
                         <Link
                           to="/chat/$conversationId"
                           params={{ conversationId: row.conversation_id }}
-                          className="text-xs text-primary hover:underline"
+                          className="text-ms-xs text-primary hover:underline"
                         >
                           Buka percakapan
                         </Link>

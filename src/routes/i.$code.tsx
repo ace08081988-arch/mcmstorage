@@ -113,54 +113,54 @@ function InviteLandingPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background px-4 py-10">
-      <div className="w-full rounded-2xl border bg-card p-6 shadow-sm">
-        <div className="text-center text-xs uppercase tracking-wide text-muted-foreground">
+    <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background px-ms-4 py-10">
+      <div className="w-full rounded-2xl border bg-card p-ms-6 shadow-sm">
+        <div className="text-center text-ms-xs uppercase tracking-wide text-muted-foreground">
           Undangan MCM Chat
         </div>
-        <div className="mt-1 text-center font-mono text-lg tracking-widest">
+        <div className="mt-1 text-center font-mono text-ms-lg tracking-widest">
           PIN {formatInviteCode(code)}
         </div>
 
         <div className="mt-6 min-h-[7rem]">
           {state.kind === "loading" && (
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-ms-2 text-ms-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Memeriksa PIN…
             </div>
           )}
 
           {state.kind === "not_found" && (
             <div className="text-center">
-              <div className="text-base font-medium">PIN tidak ditemukan</div>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <div className="text-ms-base font-medium">PIN tidak ditemukan</div>
+              <p className="mt-1 text-ms-sm text-muted-foreground">
                 Kode mungkin salah ketik atau sudah tidak berlaku.
               </p>
             </div>
           )}
 
           {state.kind === "error" && (
-            <div className="text-center text-sm text-destructive">{state.message}</div>
+            <div className="text-center text-ms-sm text-destructive">{state.message}</div>
           )}
 
           {(state.kind === "ready" || state.kind === "needs_auth") && (
             <div className="flex flex-col items-center text-center">
-              <div className="grid h-16 w-16 place-items-center rounded-full bg-orange-950 text-2xl font-medium text-orange-300">
+              <div className="grid h-16 w-16 place-items-center rounded-full bg-orange-950 text-ms-2xl font-medium text-orange-300">
                 {(state.profile.display_name || "?").trim()[0]?.toUpperCase() || "?"}
               </div>
-              <div className="mt-3 text-lg font-semibold">
+              <div className="mt-3 text-ms-lg font-semibold">
                 {state.profile.display_name || "Tanpa nama"}
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-ms-xs text-muted-foreground">
                 {state.profile.chat_only ? "Akun Chat" : "Pengguna MCM"}
               </div>
 
               {state.kind === "ready" ? (
-                <Button type="button" onClick={add} disabled={adding} className="mt-4 gap-2">
+                <Button type="button" onClick={add} disabled={adding} className="mt-4 gap-ms-2">
                   <UserPlus className="h-4 w-4" />
                   {adding ? "Mengirim…" : "Kirim permintaan pertemanan"}
                 </Button>
               ) : (
-                <Button asChild className="mt-4 gap-2">
+                <Button asChild className="mt-4 gap-ms-2">
                   <Link to="/auth" search={{ next: `/i/${code}` } as never}>
                     <LogIn className="h-4 w-4" />
                     Masuk untuk menambah
@@ -171,7 +171,7 @@ function InviteLandingPage() {
           )}
         </div>
 
-        <div className="mt-6 text-center text-xs text-muted-foreground">
+        <div className="mt-6 text-center text-ms-xs text-muted-foreground">
           <Link to="/" className="text-primary underline">
             Beranda
           </Link>

@@ -75,10 +75,10 @@ export function PatternPad({ onChange, onComplete, disabled, resetKey }: Props) 
   };
 
   return (
-    <div className="flex flex-col items-center gap-2 select-none">
+    <div className="flex flex-col items-center gap-ms-2 select-none">
       <div
         ref={containerRef}
-        className="relative grid aspect-square w-64 grid-cols-3 grid-rows-3 touch-none rounded-xl border bg-card p-3"
+        className="relative grid aspect-square w-64 grid-cols-3 grid-rows-3 touch-none rounded-xl border bg-card p-ms-3"
         onMouseDown={(e) => start(e.clientX, e.clientY)}
         onMouseMove={(e) => move(e.clientX, e.clientY)}
         onMouseUp={end}
@@ -106,14 +106,14 @@ export function PatternPad({ onChange, onComplete, disabled, resetKey }: Props) 
                 }`}
               >
                 {active && (
-                  <span className="text-[10px] font-semibold">{order + 1}</span>
+                  <span className="text-ms-2xs font-semibold">{order + 1}</span>
                 )}
               </div>
             </div>
           );
         })}
       </div>
-      <div className="text-[11px] text-muted-foreground">
+      <div className="text-ms-2xs text-muted-foreground">
         {seq.length === 0
           ? "Geser jari untuk membuat pola"
           : `${seq.length} titik tersambung`}

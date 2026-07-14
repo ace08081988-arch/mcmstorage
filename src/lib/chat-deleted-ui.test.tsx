@@ -45,7 +45,7 @@ function MessageBubble({ message }: { message: DeletableMessage }) {
 /** Mirrors the composer reply preview block above the input. */
 function ComposerReplyPreview({ replyTo }: { replyTo: DeletableMessage }) {
   return (
-    <div data-testid="composer-reply" className="rounded border p-2 text-xs">
+    <div data-testid="composer-reply" className="rounded border p-ms-2 text-ms-xs">
       <span className="font-medium">Membalas: </span>
       <MessagePreview message={replyTo} />
     </div>

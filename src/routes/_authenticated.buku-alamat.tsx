@@ -125,8 +125,8 @@ function StatCard({
     muted: "from-muted/50 to-muted/20 text-foreground",
   };
   return (
-    <div className="min-w-0 rounded-2xl border bg-card p-3 shadow-sm">
-      <div className="flex items-start gap-2">
+    <div className="min-w-0 rounded-2xl border bg-card p-ms-3 shadow-sm">
+      <div className="flex items-start gap-ms-2">
         <div
           className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${tones[tone]}`}
         >
@@ -138,7 +138,7 @@ function StatCard({
           <div className="truncate text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground" title={label}>
             {label}
           </div>
-          <div className="mt-0.5 truncate text-lg font-bold leading-tight tabular-nums" title={String(value)}>
+          <div className="mt-0.5 truncate text-ms-lg font-bold leading-tight tabular-nums" title={String(value)}>
             {typeof value === "number" ? numberFmt.format(value) : value}
           </div>
           {hint && <div className="mt-0.5 truncate text-[10.5px] text-muted-foreground" title={hint}>{hint}</div>}
@@ -310,7 +310,7 @@ function BukuAlamatPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
       <header className="sticky top-0 z-10 border-b bg-card/85 backdrop-blur-md">
-        <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 sm:px-6">
+        <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
           <Link
             to="/"
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border bg-background/60 hover:bg-accent"
@@ -319,8 +319,8 @@ function BukuAlamatPage() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold leading-tight">Pelanggan &amp; Pemasok</h1>
-            <p className="truncate text-[11px] text-muted-foreground">
+            <h1 className="truncate text-ms-base font-semibold leading-tight">Pelanggan &amp; Pemasok</h1>
+            <p className="truncate text-ms-2xs text-muted-foreground">
               Buku alamat &middot; {numberFmt.format(rows.length)} kontak
             </p>
           </div>
@@ -339,17 +339,17 @@ function BukuAlamatPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 px-3 py-4 sm:px-6">
+      <main className="mx-auto max-w-3xl space-ms-4 px-ms-3 py-ms-4 sm:px-ms-6">
         <section
           aria-label="Ringkasan kontak"
-          className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-4 shadow-sm"
+          className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-ms-4 shadow-sm"
         >
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary">
+          <div className="flex items-center gap-ms-2">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-primary/12 px-ms-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary">
               <Sparkles className="h-3 w-3" /> CRM Ringkas
             </span>
             {rows.length > 0 && (
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-ms-2xs text-muted-foreground">
                 {linkedPct}% kontak sudah tertaut ke akun MCM
               </span>
             )}
@@ -358,7 +358,7 @@ function BukuAlamatPage() {
             Kelola pelanggan &amp; pemasok Anda: impor dari HP, tautkan otomatis ke akun MCM, dan
             promosikan menjadi pelanggan atau pemasok.
           </p>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-3 grid grid-cols-2 gap-ms-2 sm:grid-cols-4">
             <StatCard label="Total Kontak" value={rows.length} icon={ContactRound} tone="primary" />
             <StatCard
               label="Terdaftar"
@@ -372,7 +372,7 @@ function BukuAlamatPage() {
           </div>
         </section>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-ms-2">
           <Button
             onClick={() => void handleImport()}
             disabled={importing || support === "unsupported"}
@@ -395,13 +395,13 @@ function BukuAlamatPage() {
           </Button>
         </div>
         {support === "unsupported" && (
-          <p className="rounded-xl border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="rounded-xl border border-amber-300/50 bg-amber-50 px-ms-3 py-ms-2 text-ms-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
             Akses kontak HP hanya tersedia di aplikasi Android MCM Storage, atau di Chrome Android
             (Contact Picker). Tambah manual tetap bisa di semua perangkat.
           </p>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           <div className="relative flex-1">
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -440,12 +440,12 @@ function BukuAlamatPage() {
 
           <TabsContent value={filter} className="mt-3">
             {loading ? (
-              <ul className="space-y-2" aria-busy="true" aria-live="polite">
+              <ul className="space-ms-2" aria-busy="true" aria-live="polite">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <li key={i} className="rounded-2xl border bg-card p-3">
-                    <div className="flex items-start gap-3">
+                  <li key={i} className="rounded-2xl border bg-card p-ms-3">
+                    <div className="flex items-start gap-ms-3">
                       <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-                      <div className="min-w-0 flex-1 space-y-2">
+                      <div className="min-w-0 flex-1 space-ms-2">
                         <Skeleton className="h-4 w-2/5" />
                         <Skeleton className="h-3 w-1/3" />
                         <Skeleton className="h-3 w-1/4" />
@@ -455,14 +455,14 @@ function BukuAlamatPage() {
                 ))}
               </ul>
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card/40 py-12 text-center text-sm text-muted-foreground">
+              <div className="flex flex-col items-center gap-ms-3 rounded-2xl border border-dashed bg-card/40 py-12 text-center text-ms-sm text-muted-foreground">
                 <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary">
                   <ContactRound className="h-6 w-6" />
                 </div>
                 <p className="font-semibold text-foreground">
                   {q || filter !== "all" ? "Tidak ada kontak cocok" : "Belum ada kontak"}
                 </p>
-                <p className="mx-auto max-w-xs text-xs leading-relaxed">
+                <p className="mx-auto max-w-xs text-ms-xs leading-relaxed">
                   {q || filter !== "all" ? (
                     <>Coba ubah kata kunci atau ganti tab filter di atas.</>
                   ) : (
@@ -474,18 +474,18 @@ function BukuAlamatPage() {
                 </p>
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-ms-2">
                 {filtered.map((r) => {
                   const sourceLabel =
                     r.source === "device" ? "HP" : r.source === "app" ? "App" : "Manual";
                   return (
                     <li
                       key={r.id}
-                      className="group rounded-2xl border bg-card p-3 text-sm shadow-sm transition-colors hover:border-primary/30 hover:bg-card/80"
+                      className="group rounded-2xl border bg-card p-ms-3 text-ms-sm shadow-sm transition-colors hover:border-primary/30 hover:bg-card/80"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-ms-3">
                         <div
-                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${avatarTone(
+                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-ms-sm font-semibold ${avatarTone(
                             r.name,
                           )}`}
                           aria-hidden="true"
@@ -493,41 +493,41 @@ function BukuAlamatPage() {
                           {initialsOf(r.name)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-1.5">
+                          <div className="flex flex-wrap items-center gap-ms-1.5">
                             <span className="min-w-0 truncate font-semibold text-foreground">
                               {r.name}
                             </span>
                             {r.linked_user_id && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                              <span className="inline-flex items-center gap-ms-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-ms-2xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                                 <CheckCircle2 className="h-3 w-3" /> Terdaftar
                               </span>
                             )}
-                            <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">
                               {sourceLabel}
                             </span>
                           </div>
                           <div className="mt-1 space-y-0.5">
                             {r.phone && (
-                              <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                              <div className="flex items-center gap-ms-1.5 truncate text-ms-xs text-muted-foreground">
                                 <PhoneIcon className="h-3 w-3 shrink-0" />
                                 <span className="truncate">{r.phone}</span>
                               </div>
                             )}
                             {r.email && (
-                              <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                              <div className="flex items-center gap-ms-1.5 truncate text-ms-xs text-muted-foreground">
                                 <MailIcon className="h-3 w-3 shrink-0" />
                                 <span className="truncate">{r.email}</span>
                               </div>
                             )}
                             {r.note && (
-                              <div className="mt-1 truncate text-[11px] italic text-muted-foreground">
+                              <div className="mt-1 truncate text-ms-2xs italic text-muted-foreground">
                                 “{r.note}”
                               </div>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t pt-2.5">
+                      <div className="mt-2.5 flex flex-wrap items-center gap-ms-1.5 border-t pt-2.5">
                         {r.phone && (
                           <Button
                             size="sm"
@@ -576,7 +576,7 @@ function BukuAlamatPage() {
                         >
                           <Truck className="mr-1 h-3.5 w-3.5" /> Pemasok
                         </Button>
-                        <div className="ml-auto flex items-center gap-1">
+                        <div className="ml-auto flex items-center gap-ms-1">
                           <Button
                             size="sm"
                             variant="ghost"
@@ -796,12 +796,12 @@ function EditDialog({
         {duplicate && (
           <div
             role="alert"
-            className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-ms-3 py-ms-2 text-ms-sm text-destructive"
           >
             {duplicate.reason}. Silakan buka kontak yang sudah ada atau ubah data.
           </div>
         )}
-        <div className="space-y-2">
+        <div className="space-ms-2">
           <Input
             autoFocus
             placeholder="Nama"
@@ -810,7 +810,7 @@ function EditDialog({
           />
           {isNew ? (
             <>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-ms-2">
                 <Input
                   inputMode="text"
                   autoCapitalize="characters"
@@ -833,13 +833,13 @@ function EditDialog({
                   <ScanLine className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="rounded-lg border p-2 text-xs">
+              <div className="rounded-lg border p-ms-2 text-ms-xs">
                 {!isLikelyInviteCode(normalizeInviteCode(pin)) ? (
                   <p className="text-muted-foreground">
                     Ketik PIN 8 karakter atau tekan ikon kamera untuk memindai QR.
                   </p>
                 ) : pinChecking ? (
-                  <p className="flex items-center gap-2 text-muted-foreground">
+                  <p className="flex items-center gap-ms-2 text-muted-foreground">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memeriksa PIN…
                   </p>
                 ) : pinPreview ? (

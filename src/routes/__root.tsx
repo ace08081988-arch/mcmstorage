@@ -24,17 +24,17 @@ import { ChatModeSplash } from "@/components/ChatModeSplash";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-ms-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h2 className="mt-4 text-ms-xl font-semibold text-foreground">Page not found</h2>
+        <p className="mt-2 text-ms-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-ms-4 py-ms-2 text-ms-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Go home
           </Link>
@@ -107,13 +107,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
   if (autoRetrying && attempt < MAX_AUTO_RETRIES) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="flex min-h-screen items-center justify-center bg-background px-ms-4">
         <div className="max-w-md text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-          <h1 className="text-base font-semibold text-foreground">
+          <h1 className="text-ms-base font-semibold text-foreground">
             Memuat ulang halaman…
           </h1>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 text-ms-xs text-muted-foreground">
             Percobaan otomatis {attempt + 1} dari {MAX_AUTO_RETRIES}
           </p>
         </div>
@@ -122,19 +122,19 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-ms-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+        <h1 className="text-ms-xl font-semibold tracking-tight text-foreground">
           This page didn't load
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-ms-sm text-muted-foreground">
           Sudah dicoba memuat ulang otomatis {MAX_AUTO_RETRIES}× namun belum berhasil. Anda bisa coba lagi atau kembali ke beranda.
         </p>
-        <details className="mx-auto mt-4 max-w-full rounded-md border bg-muted/30 p-3 text-left text-xs" open>
+        <details className="mx-auto mt-4 max-w-full rounded-md border bg-muted/30 p-ms-3 text-left text-ms-xs" open>
           <summary className="cursor-pointer select-none font-medium text-foreground">
             Detail error
           </summary>
-          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[11px] leading-snug text-muted-foreground">
+          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-ms-2xs leading-snug text-muted-foreground">
 {String(error?.name ?? "Error")}: {msg || "(tanpa pesan)"}
 {error?.stack ? "\n\n" + String(error.stack).split("\n").slice(0, 8).join("\n") : ""}
           </pre>
@@ -144,12 +144,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               const text = `${error?.name ?? "Error"}: ${msg}\n${error?.stack ?? ""}`;
               try { void navigator.clipboard?.writeText(text); } catch { /* ignore */ }
             }}
-            className="mt-2 inline-flex items-center justify-center rounded border border-input bg-background px-2 py-1 text-[11px] font-medium hover:bg-accent"
+            className="mt-2 inline-flex items-center justify-center rounded border border-input bg-background px-ms-2 py-1 text-ms-2xs font-medium hover:bg-accent"
           >
             Salin detail error
           </button>
         </details>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="mt-6 flex flex-wrap justify-center gap-ms-2">
           <button
             onClick={() => {
               setAttempt(0);
@@ -157,13 +157,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-ms-4 py-ms-2 text-ms-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Muat ulang
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-ms-4 py-ms-2 text-ms-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Beranda
           </a>

@@ -243,34 +243,34 @@ function LabelPreviewPage() {
   }, []);
 
   return (
-    <div className="p-3 sm:p-6 max-w-5xl mx-auto space-y-5">
-      <header className="rounded-xl border bg-card p-4 sm:p-6 shadow-sm">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
+    <div className="p-ms-3 sm:p-ms-6 max-w-5xl mx-auto space-ms-5">
+      <header className="rounded-xl border bg-card p-ms-4 sm:p-ms-6 shadow-sm">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-3 sm:gap-ms-4">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">
+            <h1 className="text-ms-xl sm:text-ms-2xl font-semibold tracking-tight truncate">
               Pratinjau Label
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            <p className="text-ms-xs sm:text-ms-sm text-muted-foreground mt-1">
               Cek tampilan label stok, harga, dan kuantitas pada berbagai
               kombinasi kemasan sebelum dicetak.
             </p>
           </div>
           <Link
             to="/gudang"
-            className="shrink-0 text-xs sm:text-sm px-3 py-2 rounded-md border hover:bg-muted whitespace-nowrap"
+            className="shrink-0 text-ms-xs sm:text-ms-sm px-ms-3 py-ms-2 rounded-md border hover:bg-muted whitespace-nowrap"
           >
             ← Gudang
           </Link>
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-ms-2">
           <button
             type="button"
             onClick={exportAll}
-            className="text-xs sm:text-sm px-3 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 whitespace-nowrap"
+            className="text-ms-xs sm:text-ms-sm px-ms-3 py-ms-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 whitespace-nowrap"
           >
             ⬇ Ekspor semua PDF
           </button>
-          <span className="text-xs text-muted-foreground self-center">
+          <span className="text-ms-xs text-muted-foreground self-center">
             {samples.length} sampel siap dicetak
           </span>
         </div>
@@ -278,9 +278,9 @@ function LabelPreviewPage() {
 
       {/* Live PDF preview — identik dengan hasil ekspor */}
       <section className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3 border-b bg-muted/40">
-          <div className="text-sm font-medium">Pratinjau PDF langsung</div>
-          <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-ms-2 p-ms-3 border-b bg-muted/40">
+          <div className="text-ms-sm font-medium">Pratinjau PDF langsung</div>
+          <div className="flex items-center gap-ms-2 text-ms-xs">
             <label className="text-muted-foreground">Zoom</label>
             <input
               type="range"
@@ -296,14 +296,14 @@ function LabelPreviewPage() {
                 href={pdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="ml-2 px-2 py-1 rounded border hover:bg-muted"
+                className="ml-2 px-ms-2 py-1 rounded border hover:bg-muted"
               >
                 Buka di tab baru
               </a>
             ) : null}
           </div>
         </div>
-        <div className="bg-neutral-200 dark:bg-neutral-800 p-3 overflow-auto">
+        <div className="bg-neutral-200 dark:bg-neutral-800 p-ms-3 overflow-auto">
           {pdfUrl ? (
             <iframe
               key={pdfUrl}
@@ -317,20 +317,20 @@ function LabelPreviewPage() {
               }}
             />
           ) : (
-            <div className="text-sm text-muted-foreground p-6 text-center">
+            <div className="text-ms-sm text-muted-foreground p-ms-6 text-center">
               Menyiapkan pratinjau…
             </div>
           )}
         </div>
       </section>
 
-      <div className="grid gap-4">
+      <div className="grid gap-ms-4">
         {samples.map((s, idx) => {
           const hasPkg = s.package_type && s.package_type !== "pcs" && s.package_size > 0;
           return (
-            <div key={idx} className="rounded-xl border p-3 sm:p-5 space-y-4 bg-card shadow-sm">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                <div className="text-sm font-medium min-w-0 truncate">
+            <div key={idx} className="rounded-xl border p-ms-3 sm:p-ms-5 space-ms-4 bg-card shadow-sm">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2">
+                <div className="text-ms-sm font-medium min-w-0 truncate">
                   {s.name}
                   {hasPkg ? (
                     <span className="text-muted-foreground font-normal">
@@ -342,25 +342,25 @@ function LabelPreviewPage() {
                 <button
                   type="button"
                   onClick={() => buildPdfForSample(s)}
-                  className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border hover:bg-muted whitespace-nowrap"
+                  className="shrink-0 text-ms-xs px-ms-2.5 py-1.5 rounded-md border hover:bg-muted whitespace-nowrap"
                 >
                   ⬇ PDF
                 </button>
               </div>
               {/* Editor */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-ms-2 text-ms-sm">
                 <label className="col-span-2 flex flex-col">
-                  <span className="text-xs text-muted-foreground">Nama</span>
+                  <span className="text-ms-xs text-muted-foreground">Nama</span>
                   <input
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-ms-2 py-1"
                     value={s.name}
                     onChange={(e) => update(idx, { name: e.target.value })}
                   />
                 </label>
                 <label className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Base unit</span>
+                  <span className="text-ms-xs text-muted-foreground">Base unit</span>
                   <select
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-ms-2 py-1"
                     value={s.base_unit}
                     onChange={(e) => update(idx, { base_unit: e.target.value as "g" | "pcs" })}
                   >
@@ -369,45 +369,45 @@ function LabelPreviewPage() {
                   </select>
                 </label>
                 <label className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Kemasan</span>
+                  <span className="text-ms-xs text-muted-foreground">Kemasan</span>
                   <input
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-ms-2 py-1"
                     value={s.package_type}
                     onChange={(e) => update(idx, { package_type: e.target.value })}
                   />
                 </label>
                 <label className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Isi/kemasan</span>
+                  <span className="text-ms-xs text-muted-foreground">Isi/kemasan</span>
                   <input
                     type="number"
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-ms-2 py-1"
                     value={s.package_size}
                     onChange={(e) => update(idx, { package_size: Number(e.target.value) || 0 })}
                   />
                 </label>
                 <label className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Stok (base)</span>
+                  <span className="text-ms-xs text-muted-foreground">Stok (base)</span>
                   <input
                     type="number"
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-ms-2 py-1"
                     value={s.stock_base}
                     onChange={(e) => update(idx, { stock_base: Number(e.target.value) || 0 })}
                   />
                 </label>
                 <label className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Qty trx (base)</span>
+                  <span className="text-ms-xs text-muted-foreground">Qty trx (base)</span>
                   <input
                     type="number"
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-ms-2 py-1"
                     value={s.qty_base}
                     onChange={(e) => update(idx, { qty_base: Number(e.target.value) || 0 })}
                   />
                 </label>
                 <label className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Harga / base</span>
+                  <span className="text-ms-xs text-muted-foreground">Harga / base</span>
                   <input
                     type="number"
-                    className="border rounded px-2 py-1"
+                    className="border rounded px-ms-2 py-1"
                     value={s.price_per_base}
                     onChange={(e) => update(idx, { price_per_base: Number(e.target.value) || 0 })}
                   />
@@ -415,7 +415,7 @@ function LabelPreviewPage() {
               </div>
 
               {/* Output */}
-              <div className="grid md:grid-cols-2 gap-3 text-sm bg-muted/40 rounded-md p-3 border">
+              <div className="grid md:grid-cols-2 gap-ms-3 text-ms-sm bg-muted/40 rounded-md p-ms-3 border">
                 <Row label="Judul item">
                   {s.name}
                   {hasPkg ? ` (${s.package_type} ${s.package_size} ${s.base_unit})` : ""}
@@ -450,7 +450,7 @@ function LabelPreviewPage() {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-ms-xs text-muted-foreground">{label}</span>
       <span className="font-medium break-words">{children}</span>
     </div>
   );
@@ -469,22 +469,22 @@ function SummaryMatrix({ samples }: { samples: Sample[] }) {
   );
   return (
     <div className="rounded-xl border overflow-x-auto bg-card shadow-sm">
-      <table className="w-full text-sm min-w-[520px]">
+      <table className="w-full text-ms-sm min-w-[520px]">
         <thead className="bg-muted/60 text-left">
           <tr>
-            <th className="p-3 font-medium">Item</th>
-            <th className="p-3 font-medium">Stok</th>
-            <th className="p-3 font-medium">Qty trx</th>
-            <th className="p-3 font-medium">Harga</th>
+            <th className="p-ms-3 font-medium">Item</th>
+            <th className="p-ms-3 font-medium">Stok</th>
+            <th className="p-ms-3 font-medium">Qty trx</th>
+            <th className="p-ms-3 font-medium">Harga</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} className="border-t">
-              <td className="p-3 font-medium whitespace-nowrap">{r.name}</td>
-              <td className="p-3 whitespace-nowrap">{r.stok}</td>
-              <td className="p-3 whitespace-nowrap">{r.qty}</td>
-              <td className="p-3 whitespace-nowrap">{r.harga}</td>
+              <td className="p-ms-3 font-medium whitespace-nowrap">{r.name}</td>
+              <td className="p-ms-3 whitespace-nowrap">{r.stok}</td>
+              <td className="p-ms-3 whitespace-nowrap">{r.qty}</td>
+              <td className="p-ms-3 whitespace-nowrap">{r.harga}</td>
             </tr>
           ))}
         </tbody>

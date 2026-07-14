@@ -51,17 +51,17 @@ function AppModePage() {
         subtitle="Sidebar Lengkap vs Chat-only — data & akun tetap sama"
         icon={AppWindow}
       />
-      <div className="space-y-4 px-4 pt-4 sm:pt-5">
+      <div className="space-ms-4 px-ms-4 pt-4 sm:pt-5">
         <Card className="overflow-hidden border-border/70 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+            <CardTitle className="text-ms-sm font-semibold tracking-tight sm:text-ms-base">
               Mode aktif sekarang
             </CardTitle>
             <CardDescription className="mt-1.5">
-              <span className="flex flex-wrap items-center gap-2">
+              <span className="flex flex-wrap items-center gap-ms-2">
                 <Badge
                   variant={mode === "chat" ? "default" : "secondary"}
-                  className="gap-1.5 px-2.5 py-1 text-[11px]"
+                  className="gap-ms-1.5 px-ms-2.5 py-1 text-ms-2xs"
                 >
                   {mode === "chat" ? (
                     <MessageSquare className="h-3 w-3" />
@@ -70,7 +70,7 @@ function AppModePage() {
                   )}
                   {mode === "chat" ? "Chat-only" : "Lengkap"}
                 </Badge>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-ms-2xs text-muted-foreground">
                   Build flag{" "}
                   <code className="rounded bg-muted px-1 py-0.5 text-[10.5px]">VITE_APP_MODE</code>
                   : <code className="text-foreground/80">{envMode}</code>
@@ -78,12 +78,12 @@ function AppModePage() {
               </span>
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2 pt-0">
+          <CardContent className="flex flex-wrap gap-ms-2 pt-0">
             <Button
               variant={mode === "full" ? "default" : "outline"}
               onClick={() => apply("full")}
               aria-pressed={mode === "full"}
-              className="min-h-11 gap-1.5"
+              className="min-h-11 gap-ms-1.5"
             >
               <Layers className="h-4 w-4" />
               Lengkap
@@ -92,7 +92,7 @@ function AppModePage() {
               variant={mode === "chat" ? "default" : "outline"}
               onClick={() => apply("chat")}
               aria-pressed={mode === "chat"}
-              className="min-h-11 gap-1.5"
+              className="min-h-11 gap-ms-1.5"
             >
               <MessageSquare className="h-4 w-4" />
               Chat-only
@@ -109,7 +109,7 @@ function AppModePage() {
 
         <Card className="overflow-hidden border-border/70 bg-muted/30 shadow-sm">
           <CardHeader className="pb-4">
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-ms-3">
               <span
                 aria-hidden
                 className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15"
@@ -117,10 +117,10 @@ function AppModePage() {
                 <Info className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
-                <CardTitle className="text-sm font-semibold tracking-tight sm:text-base">
+                <CardTitle className="text-ms-sm font-semibold tracking-tight sm:text-ms-base">
                   Cara pakai untuk build permanen
                 </CardTitle>
-                <CardDescription className="mt-1 text-xs leading-relaxed">
+                <CardDescription className="mt-1 text-ms-xs leading-relaxed">
                   Untuk deploy versi Chat-only ke domain terpisah (mis.{" "}
                   <code className="rounded bg-background px-1 py-0.5 text-[10.5px]">
                     chat.mcmstorage.biz

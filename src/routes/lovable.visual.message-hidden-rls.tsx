@@ -63,14 +63,14 @@ function Harness() {
   }
 
   return (
-    <div className="p-6 space-y-4 max-w-xl mx-auto">
-      <h1 className="text-lg font-semibold">message_hidden RLS/GRANT check</h1>
+    <div className="p-ms-6 space-ms-4 max-w-xl mx-auto">
+      <h1 className="text-ms-lg font-semibold">message_hidden RLS/GRANT check</h1>
       <Button data-testid="run-check" onClick={run} disabled={running}>
         {running ? "Running…" : "Run check"}
       </Button>
       {result && (
         <dl
-          className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm"
+          className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-ms-sm"
           data-testid="result-block"
         >
           <dt>authed</dt>

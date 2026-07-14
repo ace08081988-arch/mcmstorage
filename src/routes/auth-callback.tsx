@@ -306,28 +306,28 @@ function AuthCallbackPage() {
   }[status];
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-background px-ms-4 py-10">
       <section className="w-full max-w-md">
         {/* Status banner */}
-        <div className={`rounded-t-2xl border border-b-0 p-4 flex items-center gap-3 ${banner.bgClass}`}>
+        <div className={`rounded-t-2xl border border-b-0 p-ms-4 flex items-center gap-ms-3 ${banner.bgClass}`}>
           <banner.Icon className={`h-6 w-6 shrink-0 ${banner.iconClass}`} aria-hidden="true" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold leading-tight">{banner.title}</p>
-            <p className="text-xs opacity-80">{banner.badge}</p>
+            <p className="text-ms-sm font-semibold leading-tight">{banner.title}</p>
+            <p className="text-ms-xs opacity-80">{banner.badge}</p>
           </div>
         </div>
 
-        <div className="rounded-b-2xl border bg-card p-6 shadow-sm">
-          <p className="text-sm text-foreground/90">{message}</p>
+        <div className="rounded-b-2xl border bg-card p-ms-6 shadow-sm">
+          <p className="text-ms-sm text-foreground/90">{message}</p>
 
           {status === "error" && errorDetail && (
-            <p className="mt-2 rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground break-words">
+            <p className="mt-2 rounded-md bg-muted/50 px-ms-3 py-ms-2 text-ms-xs text-muted-foreground break-words">
               Detail: {errorDetail}
             </p>
           )}
 
           {/* Langkah selanjutnya */}
-          <div className="mt-4 rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
+          <div className="mt-4 rounded-lg bg-muted/40 p-ms-3 text-ms-xs text-muted-foreground">
             <p className="font-medium text-foreground/80 mb-1">Langkah selanjutnya</p>
             {status === "loading" && (
               <p>Mohon tunggu sebentar, jangan tutup halaman ini.</p>
@@ -350,11 +350,11 @@ function AuthCallbackPage() {
           </div>
 
           {/* Actions */}
-          <div className="mt-5 flex flex-col gap-2">
+          <div className="mt-5 flex flex-col gap-ms-2">
             {status === "done" && (
               <button
                 onClick={goNow}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                className="inline-flex w-full items-center justify-center gap-ms-2 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground hover:opacity-90"
               >
                 Lanjut ke aplikasi <ArrowRight className="h-4 w-4" />
               </button>
@@ -362,7 +362,7 @@ function AuthCallbackPage() {
             {(status === "manual" || status === "error") && (
               <Link
                 to="/auth"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                className="inline-flex w-full items-center justify-center gap-ms-2 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground hover:opacity-90"
               >
                 Ke halaman Masuk <ArrowRight className="h-4 w-4" />
               </Link>
@@ -370,7 +370,7 @@ function AuthCallbackPage() {
             {status === "error" && (
               <button
                 onClick={retry}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted"
+                className="inline-flex w-full items-center justify-center gap-ms-2 rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm font-medium hover:bg-muted"
               >
                 <RefreshCw className="h-4 w-4" /> Coba lagi
               </button>
@@ -379,7 +379,7 @@ function AuthCallbackPage() {
               <button
                 onClick={() => setConfirmReset(true)}
                 disabled={resetting}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-ms-2 rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm font-medium hover:bg-muted disabled:opacity-60"
                 title="Bersihkan sesi lokal lalu jalankan ulang verifikasi"
               >
                 {resetting ? (
@@ -423,35 +423,35 @@ function AuthCallbackPage() {
           <button
             type="button"
             onClick={() => setShowDebug((s) => !s)}
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+            className="flex w-full items-center gap-ms-2 px-ms-4 py-ms-2.5 text-ms-xs font-medium text-muted-foreground hover:text-foreground"
             aria-expanded={showDebug}
           >
             <Bug className="h-3.5 w-3.5" />
             {showDebug ? "Sembunyikan" : "Tampilkan"} log debug auth
-            <span className="ml-auto text-[10px] opacity-70">{debugEvents.length || readAuthDebug().length} event</span>
+            <span className="ml-auto text-ms-2xs opacity-70">{debugEvents.length || readAuthDebug().length} event</span>
           </button>
           {showDebug && (
-            <div className="border-t px-4 py-3 space-y-3">
-              <div className="flex gap-2">
+            <div className="border-t px-ms-4 py-ms-3 space-ms-3">
+              <div className="flex gap-ms-2">
                 <button
                   type="button"
                   onClick={() => void copyDebug()}
-                  className="inline-flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium hover:bg-muted"
+                  className="inline-flex items-center gap-ms-1 rounded-md border bg-background px-ms-2.5 py-1 text-ms-2xs font-medium hover:bg-muted"
                 >
                   <Copy className="h-3 w-3" /> Salin
                 </button>
                 <button
                   type="button"
                   onClick={wipeDebug}
-                  className="inline-flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium hover:bg-muted"
+                  className="inline-flex items-center gap-ms-1 rounded-md border bg-background px-ms-2.5 py-1 text-ms-2xs font-medium hover:bg-muted"
                 >
                   Bersihkan
                 </button>
               </div>
               {debugEvents.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground">Belum ada event.</p>
+                <p className="text-ms-2xs text-muted-foreground">Belum ada event.</p>
               ) : (
-                <div className="max-h-60 overflow-auto rounded-md border bg-muted/30 p-2">
+                <div className="max-h-60 overflow-auto rounded-md border bg-muted/30 p-ms-2">
                   <ul className="space-y-1 font-mono text-[10.5px] leading-snug">
                     {debugEvents.slice().reverse().map((e, i) => (
                       <li key={i} className={
@@ -469,7 +469,7 @@ function AuthCallbackPage() {
                   </ul>
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 Token disembunyikan otomatis. Log tersimpan di perangkat ini saja (localStorage), maks 50 event.
                 Dapat juga dilihat di <span className="font-mono">/diagnostics</span>.
               </p>
@@ -477,7 +477,7 @@ function AuthCallbackPage() {
           )}
         </div>
 
-        <p className="mt-3 text-center text-xs text-muted-foreground">
+        <p className="mt-3 text-center text-ms-xs text-muted-foreground">
           Butuh bantuan? Hubungi admin toko atau minta tautan verifikasi baru.
         </p>
       </section>

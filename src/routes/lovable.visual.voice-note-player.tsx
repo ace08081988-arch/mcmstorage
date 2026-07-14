@@ -77,19 +77,19 @@ function VoiceNotePlayerHarness() {
   // 40 baris untuk mensimulasikan scroll transkrip panjang.
   const rows = useMemo(() => Array.from({ length: 40 }, (_, i) => i), []);
   return (
-    <div className="min-h-screen bg-background p-4">
-      <h1 className="mb-3 text-sm font-semibold">Voice note preview list</h1>
+    <div className="min-h-screen bg-background p-ms-4">
+      <h1 className="mb-3 text-ms-sm font-semibold">Voice note preview list</h1>
       <button
         type="button"
         data-testid="vn-remount"
         onClick={() => setMountKey((k) => k + 1)}
-        className="mb-2 rounded border px-2 py-1 text-xs"
+        className="mb-2 rounded border px-ms-2 py-1 text-ms-xs"
       >
         Remount rows
       </button>
       <div
         data-testid="vn-scroll"
-        className="flex flex-col gap-2 overflow-y-auto rounded border p-2"
+        className="flex flex-col gap-ms-2 overflow-y-auto rounded border p-ms-2"
         style={{ height: 480 }}
       >
         {url ? decimals ? (
@@ -114,7 +114,7 @@ function VoiceNotePlayerHarness() {
             </div>
           ))
         ) : (
-          <div className="text-xs text-muted-foreground">Menyiapkan sampel…</div>
+          <div className="text-ms-xs text-muted-foreground">Menyiapkan sampel…</div>
         )}
       </div>
     </div>

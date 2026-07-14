@@ -43,22 +43,22 @@ function PengaturanScrollGuardPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl p-4 space-y-4">
+    <div className="mx-auto w-full max-w-2xl p-ms-4 space-ms-4">
       <div>
-        <h1 className="text-lg font-semibold tracking-tight">Pengaturan Scroll-Guard</h1>
-        <p className="text-sm text-muted-foreground leading-snug">
+        <h1 className="text-ms-lg font-semibold tracking-tight">Pengaturan Scroll-Guard</h1>
+        <p className="text-ms-sm text-muted-foreground leading-snug">
           Sesuaikan seberapa ketat menu sidebar menolak tap saat sedang scroll. Nilai lebih tinggi = lebih aman dari salah-tap, lebih rendah = lebih responsif.
         </p>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Parameter deteksi</CardTitle>
-          <CardDescription className="text-xs">
+          <CardTitle className="text-ms-base">Parameter deteksi</CardTitle>
+          <CardDescription className="text-ms-xs">
             Perubahan tersimpan otomatis di perangkat ini. Reset kapan saja untuk kembali ke default.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-ms-6">
           <SliderRow
             label="Cooldown setelah scroll"
             help="Durasi window setelah scroll berhenti — selama ini semua tap ditolak."
@@ -112,7 +112,7 @@ function PengaturanScrollGuardPage() {
             </Button>
             <span
               aria-live="polite"
-              className={`flex items-center gap-1 text-xs font-medium transition-opacity ${
+              className={`flex items-center gap-ms-1 text-ms-xs font-medium transition-opacity ${
                 savedAt ? "opacity-100 text-emerald-600" : "opacity-0"
               }`}
             >
@@ -167,13 +167,13 @@ function SliderRow({
 }) {
   return (
     <div>
-      <div className="mb-1 flex items-baseline justify-between gap-3">
-        <label className="text-sm font-medium leading-snug">{label}</label>
-        <div className="text-sm tabular-nums">
+      <div className="mb-1 flex items-baseline justify-between gap-ms-3">
+        <label className="text-ms-sm font-medium leading-snug">{label}</label>
+        <div className="text-ms-sm tabular-nums">
           <span className="font-semibold">{value}</span>
           <span className="ml-0.5 text-muted-foreground">{unit}</span>
           {value !== defaultValue && (
-            <span className="ml-2 text-[11px] text-muted-foreground">
+            <span className="ml-2 text-ms-2xs text-muted-foreground">
               (default {defaultValue}
               {unit})
             </span>
@@ -187,7 +187,7 @@ function SliderRow({
         step={bounds.step}
         onValueChange={(vs) => onChange(vs[0] ?? value)}
       />
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{help}</p>
+      <p className="mt-1 text-ms-2xs leading-snug text-muted-foreground">{help}</p>
     </div>
   );
 }
@@ -227,24 +227,24 @@ function TestArea({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Uji-coba di perangkat ini</CardTitle>
-        <CardDescription className="text-xs">
+        <CardTitle className="text-ms-base">Uji-coba di perangkat ini</CardTitle>
+        <CardDescription className="text-ms-xs">
           Tap kartu di bawah untuk memicu "navigasi"; scroll di dalamnya untuk melihat guard menolak tap.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-ms-3">
         <div
           ref={boxRef}
           className="h-40 overflow-auto rounded-lg border bg-muted/30"
           style={{ touchAction: "pan-y" }}
         >
-          <div className="p-2 space-y-2" style={{ minHeight: 480 }}>
+          <div className="p-ms-2 space-ms-2" style={{ minHeight: 480 }}>
             {["A", "B", "C", "D", "E", "F"].map((k) => (
               <div
                 key={k}
                 role="button"
                 tabIndex={0}
-                className="rounded-md border bg-background px-3 py-3 text-sm font-medium select-none"
+                className="rounded-md border bg-background px-ms-3 py-ms-3 text-ms-sm font-medium select-none"
                 onPointerDown={(e) => {
                   if (isScrollActive()) {
                     startRef.current = null;
@@ -298,18 +298,18 @@ function TestArea({
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="rounded-md border bg-muted/30 p-2">
+        <div className="grid grid-cols-3 gap-ms-2 text-ms-xs">
+          <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="text-muted-foreground">Tap diterima</div>
-            <div className="text-base font-semibold tabular-nums text-emerald-600">{tapCount}</div>
+            <div className="text-ms-base font-semibold tabular-nums text-emerald-600">{tapCount}</div>
           </div>
-          <div className="rounded-md border bg-muted/30 p-2">
+          <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="text-muted-foreground">Tap ditolak</div>
-            <div className="text-base font-semibold tabular-nums text-amber-600">{rejectCount}</div>
+            <div className="text-ms-base font-semibold tabular-nums text-amber-600">{rejectCount}</div>
           </div>
-          <div className="rounded-md border bg-muted/30 p-2">
+          <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="text-muted-foreground">Status</div>
-            <div className="text-[11px] font-medium leading-tight break-words">{lastEvent}</div>
+            <div className="text-ms-2xs font-medium leading-tight break-words">{lastEvent}</div>
           </div>
         </div>
       </CardContent>
@@ -348,8 +348,8 @@ function HintCustomization({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base flex items-center gap-2">
+        <div className="flex items-start justify-between gap-ms-2">
+          <CardTitle className="text-ms-base flex items-center gap-ms-2">
             <Bell className="h-4 w-4" />
             Teks & durasi tooltip
           </CardTitle>
@@ -359,7 +359,7 @@ function HintCustomization({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-7 shrink-0 text-xs text-muted-foreground hover:text-foreground"
+                className="h-7 shrink-0 text-ms-xs text-muted-foreground hover:text-foreground"
               >
                 <RotateCcw className="mr-1 h-3.5 w-3.5" />
                 Reset semua
@@ -383,12 +383,12 @@ function HintCustomization({
             </AlertDialogContent>
           </AlertDialog>
         </div>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-ms-xs">
           Sesuaikan pesan yang muncul saat guard menolak tap, plus seberapa cepat tooltip fade
           in/out. Kosongkan teks untuk mematikan hint.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="space-ms-5">
         <TextRow
           label="Teks saat scroll masih aktif"
           help='Muncul ketika tap ditolak karena cooldown belum lewat.'
@@ -425,8 +425,8 @@ function HintCustomization({
           onChange={(v) => onChange({ hintHoldMs: v })}
         />
 
-        <div className="rounded-lg border bg-muted/30 p-3">
-          <div className="mb-2 text-xs font-medium text-muted-foreground" id="hint-preview-label">
+        <div className="rounded-lg border bg-muted/30 p-ms-3">
+          <div className="mb-2 text-ms-xs font-medium text-muted-foreground" id="hint-preview-label">
             Pratinjau
           </div>
           <div className="relative h-16 overflow-hidden rounded-md bg-background/60">
@@ -435,7 +435,7 @@ function HintCustomization({
                 key={preview.key}
                 data-testid="hint-preview"
                 aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-3 py-1.5 text-[11px] font-medium leading-tight shadow-md"
+                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-ms-3 py-1.5 text-ms-2xs font-medium leading-tight shadow-md"
                 style={{
                   background: "hsl(var(--foreground) / 0.92)",
                   color: "hsl(var(--background))",
@@ -487,11 +487,11 @@ function TextRow({
   const isEmpty = value.trim().length === 0;
   return (
     <div>
-      <div className="mb-1 flex items-baseline justify-between gap-2">
-        <label className="text-sm font-medium leading-snug">
+      <div className="mb-1 flex items-baseline justify-between gap-ms-2">
+        <label className="text-ms-sm font-medium leading-snug">
           {label}
           {isEmpty && (
-            <span className="ml-2 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+            <span className="ml-2 rounded-full bg-amber-100 px-1.5 py-0.5 text-ms-2xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
               Hint dimatikan
             </span>
           )}
@@ -499,14 +499,14 @@ function TextRow({
         {!isDefault && (
           <button
             type="button"
-            className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+            className="text-ms-2xs text-muted-foreground underline-offset-2 hover:underline"
             onClick={() => onChange(defaultValue)}
           >
             Kembali ke default
           </button>
         )}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-ms-2">
         <Input
           value={value}
           maxLength={SCROLL_GUARD_BOUNDS.hintTextMaxLen}
@@ -514,7 +514,7 @@ function TextRow({
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={false}
           aria-describedby={undefined}
-          className="text-sm"
+          className="text-ms-sm"
         />
         <Button
           type="button"
@@ -527,7 +527,7 @@ function TextRow({
           Uji
         </Button>
       </div>
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+      <p className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
         {isEmpty
           ? "Teks kosong → tooltip tidak akan pernah muncul untuk kasus ini. Kosongkan sengaja jika ingin mematikannya."
           : help}{" "}

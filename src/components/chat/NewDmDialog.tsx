@@ -98,7 +98,7 @@ export function NewDmDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" size="sm" className="gap-1.5">
+        <Button variant="default" size="sm" className="gap-ms-1.5">
           <MessageSquarePlus className="h-4 w-4" /> Chat baru
         </Button>
       </DialogTrigger>
@@ -116,50 +116,50 @@ export function NewDmDialog() {
             autoFocus
           />
         </div>
-        <div className="max-h-80 space-y-1 overflow-auto rounded-md border p-1">
+        <div className="max-h-80 space-y-1 overflow-auto rounded-md border p-ms-1">
           {isLoading ? (
-            <div className="flex items-center justify-center p-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center p-ms-6 text-ms-sm text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
             </div>
           ) : (contacts ?? []).length === 0 ? (
-            <div className="flex flex-col items-center gap-3 p-4 text-center">
+            <div className="flex flex-col items-center gap-ms-3 p-ms-4 text-center">
               <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary">
                 {looksLikePhone ? <Send className="h-5 w-5" /> : <Link2 className="h-5 w-5" />}
               </div>
               {looksLikePhone ? (
                 <>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-ms-xs text-muted-foreground">
                     <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat MCM agar dapat diajak chat.
                   </div>
                   {invitePhone && (
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-ms-2xs text-muted-foreground">
                       Akan dikirim ke: <span className="font-mono text-foreground">+{invitePhone}</span>
                     </div>
                   )}
                   <Button
                     type="button"
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-ms-1.5"
                     onClick={inviteByWhatsApp}
                     disabled={!validation.ok}
                   >
                     <Send className="h-4 w-4" /> Undang via MCM
                   </Button>
                   {!validation.ok && (
-                    <p className="text-[11px] text-destructive">
+                    <p className="text-ms-2xs text-destructive">
                       {validation.reason} Contoh: 08123456789 atau 628123456789.
                     </p>
                   )}
                 </>
               ) : (
                 <>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-ms-xs text-muted-foreground">
                     Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik PIN MCM untuk mengundang.
                   </div>
                   <Button
                     type="button"
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-ms-1.5"
                     onClick={() => {
                       setOpen(false);
                       navigate({ to: "/kontak" });
@@ -178,16 +178,16 @@ export function NewDmDialog() {
                 type="button"
                 onClick={() => onPick(c.user_id)}
                 disabled={startDm.isPending}
-                className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-accent disabled:opacity-50"
+                className="flex w-full items-center gap-ms-3 rounded-md px-ms-2 py-ms-2 text-left hover:bg-accent disabled:opacity-50"
               >
                 <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-primary">
                   <UserRound className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">
+                  <div className="truncate text-ms-sm font-medium">
                     {c.display_name || (c.invite_code ? `PIN ${formatInviteCode(c.invite_code)}` : "Pengguna")}
                   </div>
-                  <div className="truncate text-[11px] text-muted-foreground">
+                  <div className="truncate text-ms-2xs text-muted-foreground">
                     {c.invite_code ? `PIN ${formatInviteCode(c.invite_code)} · ` : ""}{c.label ?? c.kind}
                   </div>
                 </div>

@@ -184,7 +184,7 @@ function KpiCard({
   const inner = (
     <div
       className={cn(
-        "group/card relative flex h-full flex-col gap-3 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all duration-300",
+        "group/card relative flex h-full flex-col gap-ms-3 overflow-hidden rounded-2xl border bg-card/80 p-ms-4 shadow-sm backdrop-blur-sm transition-all duration-300",
         "hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30",
         "min-h-[124px]",
       )}
@@ -222,11 +222,11 @@ function KpiCard({
           </div>
         )}
         {hint ? (
-          <div className="mt-1 text-xs text-muted-foreground/90">{hint}</div>
+          <div className="mt-1 text-ms-xs text-muted-foreground/90">{hint}</div>
         ) : null}
       </div>
       {href ? (
-        <span className="relative inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 transition-all group-hover/card:text-primary group-hover/card:translate-x-0.5">
+        <span className="relative inline-flex items-center gap-ms-1 text-ms-2xs font-semibold uppercase tracking-wider text-muted-foreground/80 transition-all group-hover/card:text-primary group-hover/card:translate-x-0.5">
           Buka <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
         </span>
       ) : null}
@@ -276,7 +276,7 @@ function Sparkline({ points }: { points: { label: string; value: number }[] }) {
           vectorEffect="non-scaling-stroke"
         />
       </svg>
-      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+      <div className="mt-1 flex justify-between text-ms-2xs text-muted-foreground">
         {points.map((p, i) => (
           <span key={i} className="tabular-nums">
             {p.label}
@@ -463,12 +463,12 @@ function ExecKpi({
     rose: "from-rose-500/15 to-transparent text-rose-600 dark:text-rose-400 ring-rose-500/20",
   };
   return (
-    <div className="group relative flex min-h-[112px] min-w-0 flex-col gap-2 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group relative flex min-h-[112px] min-w-0 flex-col gap-ms-2 overflow-hidden rounded-2xl border bg-card/80 p-ms-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div
         aria-hidden
         className={cn("pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br", toneMap[tone])}
       />
-      <div className="relative flex items-start justify-between gap-2">
+      <div className="relative flex items-start justify-between gap-ms-2">
         <span className="min-w-0 flex-1 truncate text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground" title={label}>
           {label}
         </span>
@@ -495,7 +495,7 @@ function ExecKpi({
             {value}
           </div>
         )}
-        {hint ? <div className="mt-0.5 truncate text-[11px] text-muted-foreground/90" title={hint}>{hint}</div> : null}
+        {hint ? <div className="mt-0.5 truncate text-ms-2xs text-muted-foreground/90" title={hint}>{hint}</div> : null}
       </div>
     </div>
   );
@@ -574,9 +574,9 @@ function DashboardPage() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 p-4 pb-24 sm:space-y-8 sm:p-6 lg:p-8">
+    <main className="mx-auto w-full max-w-6xl space-ms-6 p-ms-4 pb-24 sm:space-y-8 sm:p-ms-6 lg:p-8">
       {/* Header */}
-      <header className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/12 via-background to-background p-5 shadow-sm sm:p-8">
+      <header className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/12 via-background to-background p-ms-5 shadow-sm sm:p-8">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-primary/15 blur-3xl"
@@ -585,16 +585,16 @@ function DashboardPage() {
           aria-hidden
           className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-primary/5 blur-3xl"
         />
-        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="relative flex flex-col gap-ms-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm backdrop-blur">
+            <div className="inline-flex items-center gap-ms-1.5 rounded-full border bg-background/80 px-ms-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm backdrop-blur">
               <Sparkles className="h-3 w-3 animate-pulse text-primary" />
               Ringkasan Hari Ini
             </div>
-            <h1 className="mt-3 truncate bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-[2rem] sm:leading-[1.15]">
+            <h1 className="mt-3 truncate bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-ms-2xl font-bold tracking-tight text-transparent sm:text-[2rem] sm:leading-[1.15]">
               {greeting}&nbsp;👋
             </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
+            <p className="mt-1.5 text-ms-sm text-muted-foreground">
               {now.toLocaleDateString("id-ID", {
                 weekday: "long",
                 day: "numeric",
@@ -605,7 +605,7 @@ function DashboardPage() {
           </div>
           <Link
             to="/"
-            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border bg-background/90 px-4 py-2 text-sm font-semibold shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground hover:shadow-md"
+            className="group inline-flex shrink-0 items-center gap-ms-1.5 rounded-full border bg-background/90 px-ms-4 py-ms-2 text-ms-sm font-semibold shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground hover:shadow-md"
           >
             Buka Beranda
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -616,7 +616,7 @@ function DashboardPage() {
       {/* KPI grid */}
       <section
         aria-label="Ringkasan angka"
-        className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+        className="grid grid-cols-2 gap-ms-3 sm:gap-ms-4 lg:grid-cols-4"
       >
         <KpiCard
           label="Penjualan hari ini"
@@ -655,13 +655,13 @@ function DashboardPage() {
       </section>
 
       {/* Chart + activity */}
-      <section className="grid gap-4 sm:gap-5 lg:grid-cols-3">
-        <div className="relative overflow-hidden rounded-2xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md sm:p-6 lg:col-span-2">
+      <section className="grid gap-ms-4 sm:gap-ms-5 lg:grid-cols-3">
+        <div className="relative overflow-hidden rounded-2xl border bg-card/80 p-ms-5 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md sm:p-ms-6 lg:col-span-2">
           <div
             aria-hidden
             className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl"
           />
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-ms-3">
             <div className="min-w-0">
               <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Penjualan 7 hari terakhir
@@ -674,14 +674,14 @@ function DashboardPage() {
                 )}
               </div>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-3 py-1 text-[11px] font-semibold text-primary ring-1 ring-primary/20">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-primary/12 px-ms-3 py-1 text-ms-2xs font-semibold text-primary ring-1 ring-primary/20">
               <TrendingUp className="h-3 w-3" />
               {COMPACT.format(weekTotal)}
             </span>
           </div>
           <div className="relative mt-5">
             {isLoading ? (
-              <div className="space-y-2">
+              <div className="space-ms-2">
                 <div className="h-16 w-full animate-pulse rounded-xl bg-muted" />
                 <div className="flex justify-between">
                   {Array.from({ length: 7 }).map((_, i) => (
@@ -693,28 +693,28 @@ function DashboardPage() {
               <Sparkline points={buckets} />
             )}
           </div>
-          <div className="relative mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="relative mt-4 flex items-center gap-ms-2 text-ms-xs text-muted-foreground">
             <span className="inline-flex h-2 w-2 rounded-full bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.15)]" />
             Total pendapatan per hari
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md sm:p-6">
+        <div className="rounded-2xl border bg-card/80 p-ms-5 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md sm:p-ms-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Aktivitas terbaru
             </div>
             <Link
               to="/gudang"
-              className="inline-flex items-center gap-0.5 text-xs font-semibold text-primary transition-colors hover:text-primary/80"
+              className="inline-flex items-center gap-0.5 text-ms-xs font-semibold text-primary transition-colors hover:text-primary/80"
             >
               Lihat semua <ArrowUpRight className="h-3 w-3" />
             </Link>
           </div>
           {isLoading ? (
-            <div className="space-y-3">
+            <div className="space-ms-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl p-1">
+                <div key={i} className="flex items-center gap-ms-3 rounded-xl p-ms-1">
                   <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-muted" />
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="h-3.5 w-32 animate-pulse rounded bg-muted" />
@@ -731,16 +731,16 @@ function DashboardPage() {
                 return (
                   <li
                     key={s.id}
-                    className="flex items-center gap-3 rounded-xl px-1.5 py-2 transition-colors hover:bg-muted/50"
+                    className="flex items-center gap-ms-3 rounded-xl px-1.5 py-ms-2 transition-colors hover:bg-muted/50"
                   >
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-500/12 text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
                       <ReceiptText className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold tabular-nums">
+                      <div className="truncate text-ms-sm font-semibold tabular-nums">
                         {IDR.format(Number(s.total_revenue) || 0)}
                       </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      <div className="mt-0.5 text-ms-2xs text-muted-foreground">
                         {t.toLocaleString("id-ID", {
                           day: "numeric",
                           month: "short",
@@ -749,7 +749,7 @@ function DashboardPage() {
                         })}
                       </div>
                     </div>
-                    <span className="rounded-md bg-muted/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums">
+                    <span className="rounded-md bg-muted/70 px-ms-2 py-0.5 text-ms-2xs font-medium text-muted-foreground tabular-nums">
                       ×{Number(s.qty_base || 0).toLocaleString("id-ID")}
                     </span>
                   </li>
@@ -757,12 +757,12 @@ function DashboardPage() {
               })}
             </ul>
           ) : (
-            <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-8 text-center">
+            <div className="flex flex-col items-center gap-ms-2 rounded-xl border border-dashed p-8 text-center">
               <span className="grid h-12 w-12 place-items-center rounded-full bg-muted/60 text-muted-foreground">
                 <ReceiptText className="h-5 w-5" />
               </span>
-              <div className="text-sm font-medium">Belum ada aktivitas</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-ms-sm font-medium">Belum ada aktivitas</div>
+              <div className="text-ms-xs text-muted-foreground">
                 Transaksi terbaru akan muncul di sini.
               </div>
             </div>
@@ -771,23 +771,23 @@ function DashboardPage() {
       </section>
 
       {/* Executive report (period-scoped, additive) */}
-      <section aria-label="Laporan eksekutif" className="space-y-4 sm:space-y-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <section aria-label="Laporan eksekutif" className="space-ms-4 sm:space-ms-5">
+        <div className="flex flex-col gap-ms-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm">
+            <div className="inline-flex items-center gap-ms-1.5 rounded-full border bg-background/80 px-ms-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm">
               <LineChart className="h-3 w-3 text-primary" />
               Laporan Eksekutif
             </div>
-            <h2 className="mt-2 text-lg font-bold tracking-tight sm:text-xl">
+            <h2 className="mt-2 text-ms-lg font-bold tracking-tight sm:text-ms-xl">
               Kinerja bisnis · <span className="text-muted-foreground font-semibold">{range.label}</span>
             </h2>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-ms-2">
             <button
               type="button"
               onClick={handleExportSales}
               disabled={reportLoading || (report?.salesRows.length ?? 0) === 0}
-              className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-background disabled:hover:text-foreground"
+              className="inline-flex items-center gap-ms-1.5 rounded-full border bg-background px-ms-3 py-1.5 text-ms-xs font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-background disabled:hover:text-foreground"
               aria-label="Ekspor CSV penjualan"
             >
               <Download className="h-3.5 w-3.5" /> CSV Penjualan
@@ -796,7 +796,7 @@ function DashboardPage() {
               type="button"
               onClick={handleExportTopProducts}
               disabled={reportLoading || (report?.topProducts.length ?? 0) === 0}
-              className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-background disabled:hover:text-foreground"
+              className="inline-flex items-center gap-ms-1.5 rounded-full border bg-background px-ms-3 py-1.5 text-ms-xs font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-background disabled:hover:text-foreground"
               aria-label="Ekspor CSV top produk"
             >
               <Download className="h-3.5 w-3.5" /> CSV Top Produk
@@ -805,8 +805,8 @@ function DashboardPage() {
         </div>
 
         {/* Period filter chips */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-ms-2">
+          <span className="inline-flex items-center gap-ms-1 text-ms-2xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Filter className="h-3 w-3" /> Rentang
           </span>
           {PERIOD_OPTIONS.map((opt) => (
@@ -816,7 +816,7 @@ function DashboardPage() {
               onClick={() => setPeriod(opt.key)}
               aria-pressed={period === opt.key}
               className={cn(
-                "rounded-full border px-3 py-1 text-xs font-semibold transition-all",
+                "rounded-full border px-ms-3 py-1 text-ms-xs font-semibold transition-all",
                 period === opt.key
                   ? "border-primary bg-primary text-primary-foreground shadow-sm"
                   : "bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -826,29 +826,29 @@ function DashboardPage() {
             </button>
           ))}
           {period === "custom" ? (
-            <div className="flex items-center gap-1.5 rounded-full border bg-background px-2 py-1 shadow-sm">
+            <div className="flex items-center gap-ms-1.5 rounded-full border bg-background px-ms-2 py-1 shadow-sm">
               <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
               <input
                 type="date"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
                 aria-label="Tanggal mulai"
-                className="bg-transparent text-xs font-medium outline-none tabular-nums"
+                className="bg-transparent text-ms-xs font-medium outline-none tabular-nums"
               />
-              <span className="text-xs text-muted-foreground">→</span>
+              <span className="text-ms-xs text-muted-foreground">→</span>
               <input
                 type="date"
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
                 aria-label="Tanggal akhir"
-                className="bg-transparent text-xs font-medium outline-none tabular-nums"
+                className="bg-transparent text-ms-xs font-medium outline-none tabular-nums"
               />
             </div>
           ) : null}
         </div>
 
         {/* Exec KPI grid */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-ms-3 sm:gap-ms-4 md:grid-cols-3 lg:grid-cols-6">
           <ExecKpi
             label="Pendapatan periode"
             value={IDR.format(report?.revenuePeriod ?? 0)}
@@ -901,21 +901,21 @@ function DashboardPage() {
 
         {/* Top products table */}
         <div className="relative overflow-hidden rounded-2xl border bg-card/80 shadow-sm backdrop-blur-sm">
-          <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-3 sm:px-5">
+          <div className="flex items-center justify-between border-b bg-muted/30 px-ms-4 py-ms-3 sm:px-ms-5">
             <div className="min-w-0">
               <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Produk terlaris
               </div>
-              <div className="mt-0.5 text-sm font-semibold">Top 5 · {range.label}</div>
+              <div className="mt-0.5 text-ms-sm font-semibold">Top 5 · {range.label}</div>
             </div>
-            <span className="hidden shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary ring-1 ring-primary/20 sm:inline-flex">
+            <span className="hidden shrink-0 items-center gap-ms-1 rounded-full bg-primary/10 px-ms-2.5 py-1 text-ms-2xs font-semibold text-primary ring-1 ring-primary/20 sm:inline-flex">
               <TrendingUp className="h-3 w-3" /> Berdasarkan pendapatan
             </span>
           </div>
           {reportLoading ? (
-            <div className="space-y-2 p-4 sm:p-5">
+            <div className="space-ms-2 p-ms-4 sm:p-ms-5">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
+                <div key={i} className="flex items-center gap-ms-3">
                   <div className="h-8 w-8 shrink-0 animate-pulse rounded-lg bg-muted" />
                   <div className="h-3 flex-1 animate-pulse rounded bg-muted" />
                   <div className="h-3 w-20 animate-pulse rounded bg-muted/70" />
@@ -923,43 +923,43 @@ function DashboardPage() {
               ))}
             </div>
           ) : (report?.topProducts.length ?? 0) === 0 ? (
-            <div className="flex flex-col items-center gap-2 p-8 text-center">
+            <div className="flex flex-col items-center gap-ms-2 p-8 text-center">
               <span className="grid h-12 w-12 place-items-center rounded-full bg-muted/60 text-muted-foreground">
                 <Boxes className="h-5 w-5" />
               </span>
-              <div className="text-sm font-medium">Belum ada penjualan</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-ms-sm font-medium">Belum ada penjualan</div>
+              <div className="text-ms-xs text-muted-foreground">
                 Tidak ada transaksi pada rentang {range.label.toLowerCase()}.
               </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-ms-sm">
                 <thead>
                   <tr className="border-b bg-muted/20 text-left text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    <th scope="col" className="px-4 py-2.5 sm:px-5">#</th>
-                    <th scope="col" className="px-4 py-2.5">Produk</th>
-                    <th scope="col" className="px-4 py-2.5 text-right tabular-nums">Pendapatan</th>
-                    <th scope="col" className="hidden px-4 py-2.5 text-right tabular-nums sm:table-cell">Qty</th>
-                    <th scope="col" className="hidden px-4 py-2.5 text-right tabular-nums sm:table-cell sm:px-5">Trx</th>
+                    <th scope="col" className="px-ms-4 py-ms-2.5 sm:px-ms-5">#</th>
+                    <th scope="col" className="px-ms-4 py-ms-2.5">Produk</th>
+                    <th scope="col" className="px-ms-4 py-ms-2.5 text-right tabular-nums">Pendapatan</th>
+                    <th scope="col" className="hidden px-ms-4 py-ms-2.5 text-right tabular-nums sm:table-cell">Qty</th>
+                    <th scope="col" className="hidden px-ms-4 py-ms-2.5 text-right tabular-nums sm:table-cell sm:px-ms-5">Trx</th>
                   </tr>
                 </thead>
                 <tbody>
                   {report!.topProducts.map((p, i) => (
                     <tr key={i} className="border-b last:border-b-0 transition-colors hover:bg-muted/30">
-                      <td className="px-4 py-3 text-xs font-semibold text-muted-foreground sm:px-5">
+                      <td className="px-ms-4 py-ms-3 text-ms-xs font-semibold text-muted-foreground sm:px-ms-5">
                         {i + 1}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-ms-4 py-ms-3">
                         <div className="truncate font-medium">{p.name}</div>
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                      <td className="px-ms-4 py-ms-3 text-right font-semibold tabular-nums">
                         {IDR.format(p.revenue)}
                       </td>
-                      <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground sm:table-cell">
+                      <td className="hidden px-ms-4 py-ms-3 text-right tabular-nums text-muted-foreground sm:table-cell">
                         {p.qty.toLocaleString("id-ID")}
                       </td>
-                      <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground sm:table-cell sm:px-5">
+                      <td className="hidden px-ms-4 py-ms-3 text-right tabular-nums text-muted-foreground sm:table-cell sm:px-ms-5">
                         {p.orders}
                       </td>
                     </tr>
@@ -978,19 +978,19 @@ function DashboardPage() {
             Aksi cepat
           </h2>
           {prepActiveCount > 0 ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2.5 py-1 text-[11px] font-semibold text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-amber-500/12 px-ms-2.5 py-1 text-ms-2xs font-semibold text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
               <ClipboardList className="h-3 w-3" />
               {prepActiveCount} tugas aktif
             </span>
           ) : null}
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3 sm:gap-ms-4 lg:grid-cols-6">
           {QUICK_ACTIONS.map((a) => (
             <Link
               key={a.href}
               to={a.href}
               className={cn(
-                "group relative flex flex-col gap-2.5 overflow-hidden rounded-2xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all duration-300",
+                "group relative flex flex-col gap-ms-2.5 overflow-hidden rounded-2xl border bg-card/80 p-ms-4 shadow-sm backdrop-blur-sm transition-all duration-300",
                 "hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg focus:outline-none",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               )}
@@ -1003,8 +1003,8 @@ function DashboardPage() {
                 <a.icon className="h-5 w-5" />
               </span>
               <div className="relative min-w-0">
-                <div className="truncate text-sm font-semibold tracking-tight">{a.title}</div>
-                <div className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+                <div className="truncate text-ms-sm font-semibold tracking-tight">{a.title}</div>
+                <div className="mt-0.5 line-clamp-2 text-ms-2xs leading-relaxed text-muted-foreground">
                   {a.desc}
                 </div>
               </div>

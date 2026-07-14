@@ -94,16 +94,16 @@ function PengaturanApkPage() {
   }, [data]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <header className="flex items-start gap-3">
-        <div className="rounded-xl bg-primary/10 p-2 text-primary">
+    <div className="mx-auto max-w-2xl space-ms-4 p-ms-4">
+      <header className="flex items-start gap-ms-3">
+        <div className="rounded-xl bg-primary/10 p-ms-2 text-primary">
           <Package className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-base font-semibold leading-tight">
+          <h1 className="text-ms-base font-semibold leading-tight">
             Pengaturan rilis APK
           </h1>
-          <p className="text-xs leading-snug text-muted-foreground">
+          <p className="text-ms-xs leading-snug text-muted-foreground">
             Kontrol aktif/nonaktif & jadwal rilis tiap berkas APK di bucket{" "}
             <span className="font-mono">apk-releases</span>. Berkas nonaktif atau
             terjadwal di masa depan disembunyikan dari halaman /download publik.
@@ -112,12 +112,12 @@ function PengaturanApkPage() {
       </header>
 
       {isLoading ? (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-ms-2 rounded-xl border border-dashed p-ms-6 text-ms-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           Memuat daftar APK...
         </div>
       ) : isError ? (
-        <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-xl border border-red-300 bg-red-50 p-ms-4 text-ms-sm text-red-700">
           Gagal memuat daftar APK.{" "}
           <button
             className="font-semibold underline"
@@ -128,12 +128,12 @@ function PengaturanApkPage() {
           </button>
         </div>
       ) : !isAdmin || (data && data.isAdmin === false) ? (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          <div className="flex items-start gap-2">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-ms-4 text-ms-sm text-amber-900">
+          <div className="flex items-start gap-ms-2">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="min-w-0">
               <p className="font-semibold leading-snug">Hanya admin</p>
-              <p className="text-xs leading-snug">
+              <p className="text-ms-xs leading-snug">
                 Halaman ini khusus admin untuk mengatur jadwal & status rilis
                 APK. Minta admin untuk memberikan peran admin ke akun kamu bila
                 perlu akses.
@@ -158,7 +158,7 @@ function PengaturanApkPage() {
           <VariantSection title="MCM Chat" rows={grouped.chat} />
           <DownloadAnalyticsCard />
           {data && data.entries.length === 0 && (
-            <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
               Belum ada berkas APK di bucket.
             </div>
           )}
@@ -240,21 +240,21 @@ function MinSupportedCard({
   };
 
   return (
-    <section className="rounded-xl border bg-card p-3 shadow-sm">
-      <header className="flex items-center gap-2">
+    <section className="rounded-xl border bg-card p-ms-3 shadow-sm">
+      <header className="flex items-center gap-ms-2">
         <History className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold">
+        <h2 className="text-ms-sm font-semibold">
           Minimum versi kompatibel — {title}
         </h2>
       </header>
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+      <p className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
         Build yang di bawah minimum akan ditandai sebagai lawas / tidak
         kompatibel di halaman unduh. Kosongkan salah satu untuk melewatkan
         pemeriksaannya.
       </p>
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      <div className="mt-2 grid grid-cols-2 gap-ms-2">
         <div>
-          <label className="text-[11px] font-medium">
+          <label className="text-ms-2xs font-medium">
             Min. versi (semver)
           </label>
           <Input
@@ -262,7 +262,7 @@ function MinSupportedCard({
             onChange={(e) => setName(e.target.value)}
             onBlur={() => setTouched((t) => ({ ...t, name: true }))}
             placeholder="mis. 1.2.0"
-            className={`h-8 font-mono text-xs ${
+            className={`h-8 font-mono text-ms-xs ${
               touched.name && errors.name
                 ? "border-red-500 focus-visible:ring-red-500"
                 : ""
@@ -270,20 +270,20 @@ function MinSupportedCard({
             aria-invalid={touched.name && !!errors.name}
           />
           {touched.name && errors.name && (
-            <p className="mt-1 text-[11px] leading-snug text-red-600 dark:text-red-400">
+            <p className="mt-1 text-ms-2xs leading-snug text-red-600 dark:text-red-400">
               {errors.name}
             </p>
           )}
         </div>
         <div>
-          <label className="text-[11px] font-medium">Min. build</label>
+          <label className="text-ms-2xs font-medium">Min. build</label>
           <Input
             value={code}
             inputMode="numeric"
             onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, ""))}
             onBlur={() => setTouched((t) => ({ ...t, code: true }))}
             placeholder="mis. 45"
-            className={`h-8 font-mono text-xs ${
+            className={`h-8 font-mono text-ms-xs ${
               touched.code && errors.code
                 ? "border-red-500 focus-visible:ring-red-500"
                 : ""
@@ -291,14 +291,14 @@ function MinSupportedCard({
             aria-invalid={touched.code && !!errors.code}
           />
           {touched.code && errors.code && (
-            <p className="mt-1 text-[11px] leading-snug text-red-600 dark:text-red-400">
+            <p className="mt-1 text-ms-2xs leading-snug text-red-600 dark:text-red-400">
               {errors.code}
             </p>
           )}
         </div>
       </div>
       <div className="mt-2">
-        <label className="text-[11px] font-medium">
+        <label className="text-ms-2xs font-medium">
           Alasan (opsional, ditampilkan ke user)
         </label>
         <Input
@@ -306,7 +306,7 @@ function MinSupportedCard({
           onChange={(e) => setReason(e.target.value)}
           onBlur={() => setTouched((t) => ({ ...t, reason: true }))}
           placeholder="mis. Perbaikan keamanan penting"
-          className={`h-8 text-xs ${
+          className={`h-8 text-ms-xs ${
             touched.reason && errors.reason
               ? "border-red-500 focus-visible:ring-red-500"
               : ""
@@ -315,19 +315,19 @@ function MinSupportedCard({
           maxLength={200}
         />
         {touched.reason && errors.reason && (
-          <p className="mt-1 text-[11px] leading-snug text-red-600 dark:text-red-400">
+          <p className="mt-1 text-ms-2xs leading-snug text-red-600 dark:text-red-400">
             {errors.reason}
           </p>
         )}
       </div>
       {errors.form && (touched.name || touched.code || touched.reason) && (
-        <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-300 bg-red-50 p-2 text-[11px] leading-snug text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+        <div className="mt-2 flex items-start gap-ms-1.5 rounded-lg border border-red-300 bg-red-50 p-ms-2 text-ms-2xs leading-snug text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{errors.form}</span>
         </div>
       )}
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="text-[11px] text-muted-foreground">
+      <div className="mt-2 flex items-center justify-between gap-ms-2">
+        <p className="text-ms-2xs text-muted-foreground">
           {current
             ? `Aktif: v${current.min_version_name ?? "-"}${
                 current.min_version_code !== null
@@ -362,9 +362,9 @@ function VariantSection({
 }) {
   if (rows.length === 0) return null;
   return (
-    <section className="space-y-2">
-      <h2 className="text-sm font-semibold">{title}</h2>
-      <div className="space-y-2">
+    <section className="space-ms-2">
+      <h2 className="text-ms-sm font-semibold">{title}</h2>
+      <div className="space-ms-2">
         {rows.map((r) => (
           <ReleaseRow key={r.file_name} entry={r} />
         ))}
@@ -435,16 +435,16 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
   };
 
   return (
-    <div className="rounded-xl border bg-card p-3 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-xl border bg-card p-ms-3 shadow-sm">
+      <div className="flex items-start justify-between gap-ms-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-mono text-xs">{entry.file_name}</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="truncate font-mono text-ms-xs">{entry.file_name}</p>
+          <p className="text-ms-2xs text-muted-foreground">
             {entry.versionName ? `v${entry.versionName}` : "versi ?"}
             {entry.versionCode !== null && ` · build ${entry.versionCode}`}
             {entry.sizeMB !== null && ` · ${entry.sizeMB} MB`}
           </p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-ms-2xs text-muted-foreground">
             Upload:{" "}
             {entry.uploadedAt
               ? new Date(entry.uploadedAt).toLocaleString("id-ID")
@@ -455,7 +455,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
       </div>
 
       {entry.belowMinimum && (
-        <div className="mt-3 flex items-start gap-1.5 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11px] leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="mt-3 flex items-start gap-ms-1.5 rounded-lg border border-amber-300 bg-amber-50 p-ms-2.5 text-ms-2xs leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
           <History className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
             Build ini di bawah minimum versi yang ditetapkan. User akan
@@ -466,13 +466,13 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
 
       {hasWarn && (
         <div
-          className={`mt-3 rounded-lg border p-2.5 text-[11px] leading-snug ${
+          className={`mt-3 rounded-lg border p-ms-2.5 text-ms-2xs leading-snug ${
             hasError
               ? "border-red-300 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
               : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
           }`}
         >
-          <div className="flex items-start gap-1.5 font-semibold">
+          <div className="flex items-start gap-ms-1.5 font-semibold">
             {hasError ? (
               <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             ) : (
@@ -493,9 +493,9 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
         </div>
       )}
 
-      <div className="mt-3 space-y-2 border-t pt-3">
-        <label className="flex items-center justify-between gap-3 text-xs">
-          <span className="flex items-center gap-2">
+      <div className="mt-3 space-ms-2 border-t pt-3">
+        <label className="flex items-center justify-between gap-ms-3 text-ms-xs">
+          <span className="flex items-center gap-ms-2">
             {enabled ? (
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
             ) : (
@@ -508,18 +508,18 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
           <Switch checked={enabled} onCheckedChange={setEnabled} />
         </label>
 
-        <div className="text-xs">
-          <label className="mb-1 flex items-center gap-1.5 font-medium">
+        <div className="text-ms-xs">
+          <label className="mb-1 flex items-center gap-ms-1.5 font-medium">
             <CalendarClock className="h-3.5 w-3.5" />
             Rilis pada
             <span className="text-muted-foreground">(opsional)</span>
           </label>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-ms-2">
             <Input
               type="datetime-local"
               value={publishAt}
               onChange={(e) => setPublishAt(e.target.value)}
-              className="h-8 text-xs"
+              className="h-8 text-ms-xs"
               disabled={!enabled}
             />
             {publishAt && (
@@ -527,31 +527,31 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-8 text-[11px]"
+                className="h-8 text-ms-2xs"
                 onClick={() => setPublishAt("")}
               >
                 Sekarang
               </Button>
             )}
           </div>
-          <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+          <p className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
             Kosongkan untuk langsung dipublikasikan. Isi waktu masa depan untuk
             menahan rilis sampai jadwal.
           </p>
         </div>
 
-        <div className="text-xs">
+        <div className="text-ms-xs">
           <label className="mb-1 block font-medium">Catatan internal</label>
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="min-h-16 text-xs"
+            className="min-h-16 text-ms-xs"
             placeholder="Mis. hotfix, RC1, siap uji beta..."
             maxLength={500}
           />
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-ms-2">
           <Button
             type="button"
             variant="outline"
@@ -585,7 +585,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+            <AlertDialogTitle className="flex items-center gap-ms-2">
               {hasError ? (
                 <ShieldAlert className="h-4 w-4 text-red-600" />
               ) : (
@@ -594,7 +594,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
               Rilis berkas dengan nama bermasalah?
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2 text-xs">
+              <div className="space-ms-2 text-ms-xs">
                 <p className="font-mono break-all">{entry.file_name}</p>
                 <ul className="list-disc space-y-0.5 pl-4">
                   {validation.issues.map((i) => (
@@ -649,7 +649,7 @@ function StatusBadge({ status }: { status: AdminApkEntry["status"] }) {
   } as const;
   return (
     <span
-      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${map[status]}`}
+      className={`shrink-0 rounded-full px-ms-2 py-0.5 text-ms-2xs font-semibold uppercase ${map[status]}`}
     >
       {statusLabel(status)}
     </span>
@@ -690,28 +690,28 @@ function DownloadAnalyticsCard() {
   const chatShare = btnTotal > 0 ? Math.round((chatBtn / btnTotal) * 100) : 0;
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
+    <div className="rounded-xl border bg-card p-ms-4 shadow-sm">
+      <div className="mb-3 flex items-center gap-ms-2">
         <BarChart3 className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">Analitik klik unduh (30 hari)</h3>
+        <h3 className="text-ms-sm font-semibold">Analitik klik unduh (30 hari)</h3>
         <button
           type="button"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="ml-auto text-[11px] font-medium text-muted-foreground hover:text-foreground"
+          className="ml-auto text-ms-2xs font-medium text-muted-foreground hover:text-foreground"
         >
           {isFetching ? "Memuat…" : "Segarkan"}
         </button>
       </div>
       {isLoading ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-ms-2 text-ms-xs text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memuat data…
         </div>
       ) : isError ? (
-        <div className="text-xs text-red-600">Gagal memuat data analitik.</div>
+        <div className="text-ms-xs text-red-600">Gagal memuat data analitik.</div>
       ) : !data ? null : (
         <>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-ms-2">
             <StatTile
               label="MCM Storage — tombol"
               value={storageBtn}
@@ -725,39 +725,39 @@ function DownloadAnalyticsCard() {
               tone="sky"
             />
           </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">
+          <p className="mt-2 text-ms-2xs text-muted-foreground">
             Konversi klik tombol unduh: MCM Chat {chatShare}% dari total{" "}
             {btnTotal}. Data mencakup 30 hari terakhir.
           </p>
 
           <div className="mt-3 overflow-hidden rounded-lg border">
-            <table className="w-full text-[11px]">
+            <table className="w-full text-ms-2xs">
               <thead className="bg-muted/50 text-left">
                 <tr>
-                  <th className="px-2 py-1.5 font-medium">Varian</th>
-                  <th className="px-2 py-1.5 font-medium">Sumber</th>
-                  <th className="px-2 py-1.5 text-right font-medium">24 jam</th>
-                  <th className="px-2 py-1.5 text-right font-medium">7 hari</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Total</th>
+                  <th className="px-ms-2 py-1.5 font-medium">Varian</th>
+                  <th className="px-ms-2 py-1.5 font-medium">Sumber</th>
+                  <th className="px-ms-2 py-1.5 text-right font-medium">24 jam</th>
+                  <th className="px-ms-2 py-1.5 text-right font-medium">7 hari</th>
+                  <th className="px-ms-2 py-1.5 text-right font-medium">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {data.rows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-2 py-3 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-ms-2 py-ms-3 text-center text-muted-foreground">
                       Belum ada klik tercatat.
                     </td>
                   </tr>
                 ) : (
                   data.rows.map((r) => (
                     <tr key={`${r.variant}:${r.source}`} className="border-t">
-                      <td className="px-2 py-1.5 capitalize">{r.variant}</td>
-                      <td className="px-2 py-1.5 text-muted-foreground">
+                      <td className="px-ms-2 py-1.5 capitalize">{r.variant}</td>
+                      <td className="px-ms-2 py-1.5 text-muted-foreground">
                         {sourceLabel(r.source)}
                       </td>
-                      <td className="px-2 py-1.5 text-right font-mono">{r.last24h}</td>
-                      <td className="px-2 py-1.5 text-right font-mono">{r.last7d}</td>
-                      <td className="px-2 py-1.5 text-right font-mono font-semibold">
+                      <td className="px-ms-2 py-1.5 text-right font-mono">{r.last24h}</td>
+                      <td className="px-ms-2 py-1.5 text-right font-mono">{r.last7d}</td>
+                      <td className="px-ms-2 py-1.5 text-right font-mono font-semibold">
                         {r.total}
                       </td>
                     </tr>
@@ -788,12 +788,12 @@ function StatTile({
       ? "border-emerald-300/60 bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30"
       : "border-sky-300/60 bg-sky-50 dark:border-sky-900/60 dark:bg-sky-950/30";
   return (
-    <div className={`rounded-lg border p-2.5 ${cls}`}>
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+    <div className={`rounded-lg border p-ms-2.5 ${cls}`}>
+      <div className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
-      <div className="mt-0.5 font-mono text-lg font-semibold">{value}</div>
-      <div className="text-[10px] text-muted-foreground">{totalHint}</div>
+      <div className="mt-0.5 font-mono text-ms-lg font-semibold">{value}</div>
+      <div className="text-ms-2xs text-muted-foreground">{totalHint}</div>
     </div>
   );
 }
@@ -855,27 +855,27 @@ function UploadApkCard() {
   }
 
   return (
-    <section className="rounded-xl border bg-card p-3 shadow-sm">
-      <header className="flex items-center gap-2">
+    <section className="rounded-xl border bg-card p-ms-3 shadow-sm">
+      <header className="flex items-center gap-ms-2">
         <UploadCloud className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold">Unggah berkas APK baru</h2>
+        <h2 className="text-ms-sm font-semibold">Unggah berkas APK baru</h2>
       </header>
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+      <p className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
         Pilih berkas <span className="font-mono">.apk</span> dan varian target. Berkas akan diunggah ke bucket{" "}
         <span className="font-mono">apk-releases</span>. Untuk varian <b>Chat</b>, nama file wajib memuat token{" "}
         <span className="font-mono">chat</span> (mis. <span className="font-mono">mcm-chat-v1.0.0-1.apk</span>).
       </p>
 
-      <div className="mt-3 space-y-3">
+      <div className="mt-3 space-ms-3">
         <div>
-          <label className="text-[11px] font-medium">Varian</label>
-          <div className="mt-1 grid grid-cols-2 gap-2">
+          <label className="text-ms-2xs font-medium">Varian</label>
+          <div className="mt-1 grid grid-cols-2 gap-ms-2">
             {(["storage", "chat"] as ApkVariant[]).map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setVariant(v)}
-                className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                className={`rounded-lg border px-ms-3 py-ms-2 text-ms-xs font-medium transition ${
                   variant === v
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-input bg-background text-muted-foreground hover:bg-accent"
@@ -888,7 +888,7 @@ function UploadApkCard() {
         </div>
 
         <div>
-          <label className="text-[11px] font-medium" htmlFor="apk-file-input">
+          <label className="text-ms-2xs font-medium" htmlFor="apk-file-input">
             Berkas .apk
           </label>
           <Input
@@ -896,10 +896,10 @@ function UploadApkCard() {
             type="file"
             accept=".apk,application/vnd.android.package-archive"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="mt-1 h-9 cursor-pointer text-xs file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground"
+            className="mt-1 h-9 cursor-pointer text-ms-xs file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-ms-3 file:py-1.5 file:text-ms-xs file:font-medium file:text-primary-foreground"
           />
           {file && (
-            <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
+            <p className="mt-1 truncate font-mono text-ms-2xs text-muted-foreground">
               {file.name} • {sizeMB ?? "?"} MB
             </p>
           )}
@@ -907,30 +907,30 @@ function UploadApkCard() {
 
         {validation && validation.issues.length > 0 && (
           <div
-            className={`rounded-lg border p-2 text-[11px] leading-snug ${
+            className={`rounded-lg border p-ms-2 text-ms-2xs leading-snug ${
               validation.severity === "error"
                 ? "border-red-300 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
                 : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
             }`}
           >
-            <div className="flex items-start gap-1.5">
+            <div className="flex items-start gap-ms-1.5">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <div className="min-w-0 space-y-1">
                 {validation.issues.map((i, idx) => (
                   <p key={idx}>{i.message}</p>
                 ))}
-                <p className="text-[10px] opacity-80">{validation.suggestion}</p>
+                <p className="text-ms-2xs opacity-80">{validation.suggestion}</p>
               </div>
             </div>
           </div>
         )}
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <label className="flex cursor-pointer items-center gap-2 text-xs">
+          <label className="flex cursor-pointer items-center gap-ms-2 text-ms-xs">
             <Switch checked={overwrite} onCheckedChange={setOverwrite} />
             <span>Timpa jika nama sama</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-2 text-xs">
+          <label className="flex cursor-pointer items-center gap-ms-2 text-ms-xs">
             <Switch checked={enabled} onCheckedChange={setEnabled} />
             <span>Langsung publish</span>
           </label>

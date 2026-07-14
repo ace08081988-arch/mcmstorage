@@ -1262,22 +1262,22 @@ function PublicPrepPage() {
   if (!authed) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
-        <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
+        <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-ms-4 py-8">
           {successFlash && (
             <div
-              className="success-banner mb-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3.5 text-emerald-700 shadow-lg shadow-emerald-500/10 sm:p-5 dark:text-emerald-300"
+              className="success-banner mb-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-ms-3.5 text-emerald-700 shadow-lg shadow-emerald-500/10 sm:p-ms-5 dark:text-emerald-300"
               role="status"
               aria-live="polite"
             >
-              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 sm:gap-4">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-ms-3 sm:gap-ms-4">
                 <div className="success-check-badge flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/40 sm:h-12 sm:w-12">
                   <CheckCircle2 className="h-6 w-6 sm:h-7 sm:w-7" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold leading-snug sm:text-base">
+                  <div className="truncate text-ms-sm font-semibold leading-snug sm:text-ms-base">
                     Masuk pegawai berhasil
                   </div>
-                  <div className="truncate text-xs opacity-80 sm:text-sm">Memuat daftar tugas…</div>
+                  <div className="truncate text-ms-xs opacity-80 sm:text-ms-sm">Memuat daftar tugas…</div>
                 </div>
               </div>
             </div>
@@ -1286,19 +1286,19 @@ function PublicPrepPage() {
             <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
               <Package className="h-7 w-7 text-primary" />
             </div>
-            <div className="text-lg font-semibold tracking-tight">MCM Storage</div>
-            <div className="text-xs text-muted-foreground">Portal Tugas Pegawai</div>
+            <div className="text-ms-lg font-semibold tracking-tight">MCM Storage</div>
+            <div className="text-ms-xs text-muted-foreground">Portal Tugas Pegawai</div>
           </div>
-          <div className="w-full rounded-2xl border bg-card p-6 shadow-lg shadow-black/5">
-            <div className="mb-1 flex items-center gap-2 text-base font-semibold">
+          <div className="w-full rounded-2xl border bg-card p-ms-6 shadow-lg shadow-black/5">
+            <div className="mb-1 flex items-center gap-ms-2 text-ms-base font-semibold">
               <Lock className="h-4 w-4 text-primary" /> Verifikasi PIN
             </div>
-            <p className="mb-5 text-xs leading-relaxed text-muted-foreground">
+            <p className="mb-5 text-ms-xs leading-relaxed text-muted-foreground">
               Masukkan PIN dari pemilik untuk membuka daftar barang yang harus disiapkan.
             </p>
             {peekStatus.state === "checking" && (
               <div
-                className="mb-3 flex items-center gap-2 rounded-md border border-muted bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground"
+                className="mb-3 flex items-center gap-ms-2 rounded-md border border-muted bg-muted/30 px-ms-3 py-ms-2 text-ms-2xs text-muted-foreground"
                 role="status"
                 aria-live="polite"
               >
@@ -1307,10 +1307,10 @@ function PublicPrepPage() {
             )}
             {peekStatus.state === "ok" && (
               <div
-                className="mb-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-700 dark:text-emerald-400"
+                className="mb-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-ms-3 py-ms-2 text-ms-2xs text-emerald-700 dark:text-emerald-400"
                 role="status"
               >
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-ms-2">
                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <div className="min-w-0">
                     <div className="font-semibold truncate">
@@ -1336,14 +1336,14 @@ function PublicPrepPage() {
               peekStatus.state === "network") && (
               <div
                 className={
-                  "mb-3 rounded-md border px-3 py-2 text-[11px] leading-relaxed " +
+                  "mb-3 rounded-md border px-ms-3 py-ms-2 text-ms-2xs leading-relaxed " +
                   (peekStatus.state === "rate_limited" || peekStatus.state === "network"
                     ? "border-destructive/40 bg-destructive/5 text-destructive"
                     : "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400")
                 }
                 role="alert"
               >
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-ms-2">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <div className="min-w-0">
                     {peekStatus.state === "not_found" && (
@@ -1402,7 +1402,7 @@ function PublicPrepPage() {
             {lastError && !isLocked && (
               <div
                 className={
-                  "mb-3 rounded-md border px-3 py-2 text-[11px] leading-relaxed " +
+                  "mb-3 rounded-md border px-ms-3 py-ms-2 text-ms-2xs leading-relaxed " +
                   (lastError.kind === "bad_pin"
                     ? "border-destructive/40 bg-destructive/5 text-destructive"
                     : lastError.kind === "expired" ||
@@ -1413,7 +1413,7 @@ function PublicPrepPage() {
                 }
                 role="alert"
               >
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-ms-2">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <div className="min-w-0">
                     <div className="font-semibold">{lastError.message}</div>
@@ -1421,11 +1421,11 @@ function PublicPrepPage() {
                       <div className="mt-0.5 break-words opacity-80">{lastError.detail}</div>
                     )}
                     {lastError.ref && (
-                      <div className="mt-1.5 font-mono text-[10px] opacity-70">
+                      <div className="mt-1.5 font-mono text-ms-2xs opacity-70">
                         Kode referensi: <span className="font-semibold">{lastError.ref}</span>
                         <button
                           type="button"
-                          className="ml-2 rounded border px-2 py-0.5 text-[10px] hover:bg-background/80"
+                          className="ml-2 rounded border px-ms-2 py-0.5 text-ms-2xs hover:bg-background/80"
                           onClick={async () => {
                             try {
                               await navigator.clipboard.writeText(lastError.ref ?? "");
@@ -1446,19 +1446,19 @@ function PublicPrepPage() {
             {(isLocked || attempts > 0) && (
               <div
                 className={
-                  "mb-4 grid grid-cols-2 gap-2 rounded-lg border p-2 text-center " +
+                  "mb-4 grid grid-cols-2 gap-ms-2 rounded-lg border p-ms-2 text-center " +
                   (isLocked
                     ? "border-destructive/40 bg-destructive/5"
                     : "border-amber-500/40 bg-amber-500/5")
                 }
               >
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <div className="text-ms-2xs uppercase tracking-wider text-muted-foreground">
                     Sisa percobaan
                   </div>
                   <div
                     className={
-                      "mt-0.5 text-xl font-bold tabular-nums " +
+                      "mt-0.5 text-ms-xl font-bold tabular-nums " +
                       (isLocked
                         ? "text-destructive"
                         : attemptsLeft <= 1
@@ -1467,19 +1467,19 @@ function PublicPrepPage() {
                     }
                   >
                     {attemptsLeft}
-                    <span className="text-xs font-normal text-muted-foreground">
+                    <span className="text-ms-xs font-normal text-muted-foreground">
                       {" "}
                       / {MAX_ATTEMPTS}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <div className="text-ms-2xs uppercase tracking-wider text-muted-foreground">
                     Tunggu
                   </div>
                   <div
                     className={
-                      "mt-0.5 text-xl font-bold tabular-nums " +
+                      "mt-0.5 text-ms-xl font-bold tabular-nums " +
                       (isLocked ? "text-destructive" : "text-muted-foreground/60")
                     }
                   >
@@ -1492,14 +1492,14 @@ function PublicPrepPage() {
             )}
             {sessionJustExpired && !isLocked && (
               <div
-                className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-300"
+                className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-ms-3 text-amber-800 dark:text-amber-300"
                 role="alert"
               >
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-ms-2">
                   <Clock className="mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold">Sesi PIN sudah berakhir</div>
-                    <div className="mt-0.5 text-[11px] opacity-90">
+                    <div className="text-ms-xs font-semibold">Sesi PIN sudah berakhir</div>
+                    <div className="mt-0.5 text-ms-2xs opacity-90">
                       Masukkan PIN lagi untuk melanjutkan tugas yang tadi.
                     </div>
                   </div>
@@ -1510,7 +1510,7 @@ function PublicPrepPage() {
                     setSessionJustExpired(false);
                     focusPinInput();
                   }}
-                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-amber-600 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700"
+                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-ms-2 rounded-lg bg-amber-600 text-ms-xs font-semibold text-white shadow-sm transition hover:bg-amber-700"
                 >
                   <Lock className="h-4 w-4" /> Re-login sekarang
                 </button>
@@ -1528,7 +1528,7 @@ function PublicPrepPage() {
               }}
               placeholder="••••••"
               disabled={isLocked}
-              className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+              className="mb-3 h-14 w-full rounded-lg border bg-background px-ms-3 text-center text-ms-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
             />
             <button
               type="button"
@@ -1541,13 +1541,13 @@ function PublicPrepPage() {
                 peekStatus.state === "closed"
               }
               onClick={() => fetchTask(pin)}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+              className="inline-flex h-11 w-full items-center justify-center gap-ms-2 rounded-lg bg-primary text-ms-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {isLocked ? `Terkunci ${lockedClock} lagi` : "Buka Tugas"}
             </button>
             {isLocked && (
-              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-[11px] leading-relaxed text-destructive">
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-destructive">
                 <div className="font-semibold">Terkunci {lockedClock} lagi</div>
                 <div className="mt-0.5 opacity-90">
                   Terlalu banyak PIN salah. Anda bisa mencoba lagi setelah hitungan mundur selesai.
@@ -1555,7 +1555,7 @@ function PublicPrepPage() {
               </div>
             )}
             {!isLocked && justUnlocked && (
-              <div className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-400">
+              <div className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-emerald-700 dark:text-emerald-400">
                 <div className="font-semibold">Kunci dibuka — silakan coba lagi</div>
                 <div className="mt-0.5 opacity-90">
                   Pastikan PIN dari pemilik benar. Anda punya {MAX_ATTEMPTS} percobaan baru.
@@ -1563,7 +1563,7 @@ function PublicPrepPage() {
               </div>
             )}
             {!isLocked && attempts > 0 && (
-              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
                 <div className="font-semibold">Silakan coba lagi</div>
                 <div className="mt-0.5 opacity-90">
                   Sisa percobaan: <b>{attemptsLeft}</b> dari {MAX_ATTEMPTS}. Setelah {MAX_ATTEMPTS}{" "}
@@ -1593,22 +1593,22 @@ function PublicPrepPage() {
                   });
                   notifyShareResult(res);
                 }}
-                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 px-3 text-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366]/20 dark:text-[#25D366]"
+                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-ms-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 px-ms-3 text-ms-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366]/20 dark:text-[#25D366]"
               >
                 <MessageCircle className="h-4 w-4" /> Minta PIN baru ke pemilik
               </button>
             )}
             {(isLocked || attempts > 0) && (
-              <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">
+              <p className="mt-2 text-center text-ms-2xs leading-relaxed text-muted-foreground">
                 Tombol ini hanya membuka MCM dengan pesan siap kirim — pembatasan percobaan tetap
                 berlaku sampai hitungan mundur selesai.
               </p>
             )}
-            <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
+            <div className="mt-4 flex items-center justify-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
               <ShieldCheck className="h-3 w-3" /> Koneksi terenkripsi · Sesi terbatas waktu
             </div>
           </div>
-          <div className="mt-6 text-[10px] text-muted-foreground">© MCM Storage</div>
+          <div className="mt-6 text-ms-2xs text-muted-foreground">© MCM Storage</div>
         </div>
       </div>
     );
@@ -1642,13 +1642,13 @@ function PublicPrepPage() {
               };
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
-        <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
-          <div className="w-full rounded-2xl border bg-card p-6 text-center shadow-lg shadow-black/5">
+        <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-ms-4 py-8">
+          <div className="w-full rounded-2xl border bg-card p-ms-6 text-center shadow-lg shadow-black/5">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/30">
               <AlertTriangle className="h-6 w-6" />
             </div>
-            <div className="text-base font-semibold">{copy.title}</div>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{copy.body}</p>
+            <div className="text-ms-base font-semibold">{copy.title}</div>
+            <p className="mt-1 text-ms-xs leading-relaxed text-muted-foreground">{copy.body}</p>
             <button
               type="button"
               onClick={() => {
@@ -1657,7 +1657,7 @@ function PublicPrepPage() {
                   goBackToPin();
                 });
               }}
-              className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-semibold transition hover:bg-muted"
+              className="mt-4 inline-flex h-10 w-full items-center justify-center gap-ms-1.5 rounded-lg border bg-background text-ms-xs font-semibold transition hover:bg-muted"
             >
               <ArrowLeft className="h-4 w-4" /> Kembali ke halaman PIN
             </button>
@@ -1670,7 +1670,7 @@ function PublicPrepPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background pb-12">
       <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
+        <div className="mx-auto flex max-w-2xl items-center gap-ms-2 px-ms-4 py-ms-3">
           <button
             type="button"
             onClick={() => runWhenIdle(goBackToPin)}
@@ -1680,10 +1680,10 @@ function PublicPrepPage() {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="text-ms-2xs font-medium uppercase tracking-wider text-muted-foreground">
               MCM Storage
             </div>
-            <div className="truncate text-sm font-semibold">Tugas Penyiapan Barang</div>
+            <div className="truncate text-ms-sm font-semibold">Tugas Penyiapan Barang</div>
           </div>
           <SyncBadge
             status={rtStatus}
@@ -1695,10 +1695,10 @@ function PublicPrepPage() {
           />
         </div>
         {sessionExpiresAt && (
-          <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 pb-2 text-[11px]">
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-ms-2 px-ms-4 pb-2 text-ms-2xs">
             <span
               className={
-                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium tabular-nums " +
+                "inline-flex items-center gap-ms-1 rounded-full border px-ms-2 py-0.5 font-medium tabular-nums " +
                 (sessionSecondsLeft <= 60
                   ? "border-destructive/30 bg-destructive/10 text-destructive"
                   : sessionSecondsLeft <= 300
@@ -1715,7 +1715,7 @@ function PublicPrepPage() {
                 type="button"
                 onClick={reloginNow}
                 className={
-                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-sm transition " +
+                  "inline-flex items-center gap-ms-1 rounded-full px-ms-2.5 py-0.5 text-ms-2xs font-semibold text-white shadow-sm transition " +
                   (sessionSecondsLeft <= 60
                     ? "bg-destructive hover:bg-destructive/90"
                     : "bg-amber-600 hover:bg-amber-700")
@@ -1736,9 +1736,9 @@ function PublicPrepPage() {
           <div
             role="status"
             aria-live="polite"
-            className="mx-auto max-w-2xl px-4 pb-2"
+            className="mx-auto max-w-2xl px-ms-4 pb-2"
           >
-            <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug text-amber-800 dark:text-amber-200">
+            <div className="flex items-start gap-ms-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-2xs leading-snug text-amber-800 dark:text-amber-200">
               <RefreshCw className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse" />
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">Versi baru menunggu — refresh ditahan</div>
@@ -1760,32 +1760,32 @@ function PublicPrepPage() {
         )}
       </header>
 
-      <div className="mx-auto max-w-2xl px-3 pt-4">
+      <div className="mx-auto max-w-2xl px-ms-3 pt-4">
         <div className="mb-4 overflow-hidden rounded-2xl border bg-card shadow-sm">
-          <div className="border-b bg-gradient-to-r from-primary/5 to-transparent px-4 py-3">
-            <div className="text-base font-semibold leading-tight">{task?.title}</div>
+          <div className="border-b bg-gradient-to-r from-primary/5 to-transparent px-ms-4 py-ms-3">
+            <div className="text-ms-base font-semibold leading-tight">{task?.title}</div>
             {task?.note && (
-              <div className="mt-1 text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap">
+              <div className="mt-1 text-ms-xs leading-relaxed text-muted-foreground whitespace-pre-wrap">
                 {task.note}
               </div>
             )}
           </div>
           <div className="grid grid-cols-2 divide-x text-center">
-            <div className="px-3 py-2.5">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <div className="px-ms-3 py-ms-2.5">
+              <div className="text-ms-2xs uppercase tracking-wider text-muted-foreground">
                 {totalItems > 0 ? "Progres" : "Tugas satuan"}
               </div>
-              <div className="mt-0.5 text-sm font-semibold tabular-nums">
+              <div className="mt-0.5 text-ms-sm font-semibold tabular-nums">
                 {totalItems > 0 ? `${completedItems} / ${totalItems}` : "—"}
               </div>
             </div>
-            <div className="flex items-center justify-center gap-1.5 px-3 py-2.5">
+            <div className="flex items-center justify-center gap-ms-1.5 px-ms-3 py-ms-2.5">
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />
               <div className="text-left">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <div className="text-ms-2xs uppercase tracking-wider text-muted-foreground">
                   Kedaluwarsa
                 </div>
-                <div className="text-[11px] font-medium tabular-nums">
+                <div className="text-ms-2xs font-medium tabular-nums">
                   {task
                     ? new Date(task.expires_at).toLocaleString("id-ID", {
                         dateStyle: "short",
@@ -1802,8 +1802,8 @@ function PublicPrepPage() {
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-3 py-2">
-            <div className="text-[10px] text-muted-foreground">
+          <div className="flex items-center justify-between gap-ms-2 border-t bg-muted/20 px-ms-3 py-ms-2">
+            <div className="text-ms-2xs text-muted-foreground">
               {lastSyncAt ? (
                 <>
                   Diperbarui {Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000))} dtk lalu
@@ -1825,7 +1825,7 @@ function PublicPrepPage() {
                 void manualResync();
               }}
               disabled={resyncing}
-              className="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-[10px] font-semibold transition hover:bg-muted disabled:opacity-60"
+              className="inline-flex h-7 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs font-semibold transition hover:bg-muted disabled:opacity-60"
             >
               {resyncing ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -1858,14 +1858,14 @@ function PublicPrepPage() {
               groups[gi].entries.push({ it, idx });
             });
             return (
-              <div className="space-y-4">
-                <div className="-mb-2 flex flex-wrap items-center justify-end gap-2">
-                  <label className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <div className="space-ms-4">
+                <div className="-mb-2 flex flex-wrap items-center justify-end gap-ms-2">
+                  <label className="inline-flex items-center gap-ms-1 text-ms-2xs text-muted-foreground">
                     <span>Urutkan:</span>
                     <select
                       value={sortMode}
                       onChange={(e) => setSortMode(e.target.value as SortMode)}
-                      className="rounded-md border bg-background px-1.5 py-1 text-[11px] text-foreground"
+                      className="rounded-md border bg-background px-1.5 py-1 text-ms-2xs text-foreground"
                     >
                       <option value="index">Nomor urut</option>
                       <option value="pending-first">Belum siap dulu</option>
@@ -1881,14 +1881,14 @@ function PublicPrepPage() {
                       groups.forEach((g) => { next[g.key] = true; });
                       setCollapsedGroups(next);
                     }}
-                    className="rounded-md border bg-background px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted"
+                    className="rounded-md border bg-background px-ms-2 py-1 text-ms-2xs text-muted-foreground hover:bg-muted"
                   >
                     Tutup semua
                   </button>
                   <button
                     type="button"
                     onClick={() => setCollapsedGroups({})}
-                    className="rounded-md border bg-background px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted"
+                    className="rounded-md border bg-background px-ms-2 py-1 text-ms-2xs text-muted-foreground hover:bg-muted"
                   >
                     Buka semua
                   </button>
@@ -1927,9 +1927,9 @@ function PublicPrepPage() {
                     return arr;
                   })();
                   return (
-                    <section key={g.key} className="space-y-2">
+                    <section key={g.key} className="space-ms-2">
                       <div
-                        className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur cursor-pointer"
+                        className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-ms-2 py-1.5 backdrop-blur cursor-pointer"
                         role="button"
                         tabIndex={0}
                         onClick={() => setSelectedGroup(g)}
@@ -1941,25 +1941,25 @@ function PublicPrepPage() {
                         }}
                         aria-label={`Buka ringkasan detail ${g.label}`}
                       >
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-ms-2">
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1 truncate text-[12px] font-semibold">
+                            <div className="flex items-center gap-ms-1 truncate text-ms-xs font-semibold">
                               <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} aria-hidden="true" />
                               <span className="truncate">{g.label}</span>
                             </div>
                             {g.category && (
-                              <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{g.category}</div>
+                              <div className="truncate text-ms-2xs uppercase tracking-wide text-muted-foreground">{g.category}</div>
                             )}
                           </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <div className="flex items-baseline gap-1 tabular-nums">
-                              <span className={`text-[13px] font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
+                          <div className="flex shrink-0 items-center gap-ms-2">
+                            <div className="flex items-baseline gap-ms-1 tabular-nums">
+                              <span className={`text-ms-sm font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
                                 {doneCount}/{totalCount}
                               </span>
-                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                              <span className="text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">
                                 paket
                               </span>
-                              <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
+                              <span className={`ml-1 rounded-md px-1.5 py-0.5 text-ms-2xs font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
                                 {pct}%
                               </span>
                               <Info className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -1972,7 +1972,7 @@ function PublicPrepPage() {
                               }}
                               aria-expanded={!collapsed}
                               aria-label={collapsed ? `Buka ${g.label}` : `Tutup ${g.label}`}
-                              className="rounded-md p-1 hover:bg-muted"
+                              className="rounded-md p-ms-1 hover:bg-muted"
                             >
                               <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} aria-hidden />
                             </button>
@@ -1985,18 +1985,18 @@ function PublicPrepPage() {
                             aria-hidden
                           />
                         </div>
-                        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-[10px] tabular-nums text-muted-foreground">
-                          <span className="inline-flex items-baseline gap-1">
+                        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-ms-2xs tabular-nums text-muted-foreground">
+                          <span className="inline-flex items-baseline gap-ms-1">
                             <span className="uppercase tracking-wide">Siap</span>
                             <span className={`font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{doneReq}</span>
                             <span>{unit}</span>
                           </span>
-                          <span className="inline-flex items-baseline gap-1">
+                          <span className="inline-flex items-baseline gap-ms-1">
                             <span className="uppercase tracking-wide">Diminta</span>
                             <span className="font-semibold text-foreground">{totalReq}</span>
                             <span>{unit}</span>
                           </span>
-                          <span className="inline-flex items-baseline gap-1">
+                          <span className="inline-flex items-baseline gap-ms-1">
                             <span className="uppercase tracking-wide">Sisa</span>
                             <span className="font-semibold text-foreground">{Math.max(0, totalReq - doneReq)}</span>
                             <span>{unit}</span>
@@ -2009,23 +2009,23 @@ function PublicPrepPage() {
                         style={{ gridTemplateRows: collapsed ? "0fr" : "1fr" }}
                       >
                         <div className="min-h-0 overflow-hidden">
-                          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                          <div className="grid grid-cols-2 gap-ms-2 sm:gap-ms-3">
                             {sortedEntries.map(({ it, idx }) => (
                               <WorkerSectionBoundary
                                 key={it.id}
                                 renderFallback={(error) => (
-                                  <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-                                    <div className="flex items-start gap-2">
+                                  <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-ms-4 text-ms-sm text-destructive">
+                                    <div className="flex items-start gap-ms-2">
                                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                                       <div className="min-w-0">
                                         <div className="font-semibold">Item #{idx + 1} gagal ditampilkan</div>
-                                        <div className="mt-1 text-xs leading-relaxed opacity-90">
+                                        <div className="mt-1 text-ms-xs leading-relaxed opacity-90">
                                           PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak
                                           valid. Item lain tetap bisa dibuka.
                                         </div>
-                                        <details className="mt-2 text-[11px]">
+                                        <details className="mt-2 text-ms-2xs">
                                           <summary className="cursor-pointer">Detail teknis</summary>
-                                          <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
+                                          <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-ms-2 font-mono">
                                             {error.message}
                                           </pre>
                                         </details>
@@ -2076,26 +2076,26 @@ function PublicPrepPage() {
                                 <DialogDescription>{sg.category}</DialogDescription>
                               )}
                             </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-3 gap-2">
-                                <div className="rounded-md border p-2 text-center">
-                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Diminta</div>
-                                  <div className="text-base font-semibold tabular-nums">{totalReq}</div>
-                                  <div className="text-[10px] text-muted-foreground">{totalCount} paket</div>
+                            <div className="space-ms-4">
+                              <div className="grid grid-cols-3 gap-ms-2">
+                                <div className="rounded-md border p-ms-2 text-center">
+                                  <div className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Diminta</div>
+                                  <div className="text-ms-base font-semibold tabular-nums">{totalReq}</div>
+                                  <div className="text-ms-2xs text-muted-foreground">{totalCount} paket</div>
                                 </div>
-                                <div className="rounded-md border p-2 text-center">
-                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Siap</div>
-                                  <div className={`text-base font-semibold tabular-nums ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{doneReq}</div>
-                                  <div className="text-[10px] text-muted-foreground">{doneCount} paket</div>
+                                <div className="rounded-md border p-ms-2 text-center">
+                                  <div className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Siap</div>
+                                  <div className={`text-ms-base font-semibold tabular-nums ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{doneReq}</div>
+                                  <div className="text-ms-2xs text-muted-foreground">{doneCount} paket</div>
                                 </div>
-                                <div className="rounded-md border p-2 text-center">
-                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Sisa</div>
-                                  <div className="text-base font-semibold tabular-nums text-foreground">{Math.max(0, totalReq - doneReq)}</div>
-                                  <div className="text-[10px] text-muted-foreground">{totalCount - doneCount} paket</div>
+                                <div className="rounded-md border p-ms-2 text-center">
+                                  <div className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Sisa</div>
+                                  <div className="text-ms-base font-semibold tabular-nums text-foreground">{Math.max(0, totalReq - doneReq)}</div>
+                                  <div className="text-ms-2xs text-muted-foreground">{totalCount - doneCount} paket</div>
                                 </div>
                               </div>
                               <div className="space-y-1">
-                                <div className="flex justify-between text-xs">
+                                <div className="flex justify-between text-ms-xs">
                                   <span className="text-muted-foreground">Progres</span>
                                   <span className="font-semibold tabular-nums">{doneCount}/{totalCount} · {pct}%</span>
                                 </div>
@@ -2108,8 +2108,8 @@ function PublicPrepPage() {
                                   {sg.entries.map(({ it, idx }) => {
                                     const done = (it.submissions?.length ?? 0) > 0;
                                     return (
-                                      <div key={it.id} className="flex items-center justify-between p-2 text-sm">
-                                        <div className="flex items-center gap-2 min-w-0">
+                                      <div key={it.id} className="flex items-center justify-between p-ms-2 text-ms-sm">
+                                        <div className="flex items-center gap-ms-2 min-w-0">
                                           <div className={`h-2 w-2 shrink-0 rounded-full ${done ? "bg-emerald-500" : "bg-muted-foreground"}`} />
                                           <span className="truncate">{it.name}</span>
                                         </div>
@@ -2132,15 +2132,15 @@ function PublicPrepPage() {
             );
           })()
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 gap-ms-2 sm:gap-ms-3">
             {
             (loading ? (
-              <div className="col-span-2 space-y-3" aria-busy="true" aria-label="Memuat daftar tugas">
+              <div className="col-span-2 space-ms-3" aria-busy="true" aria-label="Memuat daftar tugas">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="space-y-3 rounded-xl border bg-card p-4">
-                    <div className="flex items-start gap-3">
+                  <div key={i} className="space-ms-3 rounded-xl border bg-card p-ms-4">
+                    <div className="flex items-start gap-ms-3">
                       <Skeleton className="h-14 w-14 rounded-lg" />
-                      <div className="flex-1 space-y-2">
+                      <div className="flex-1 space-ms-2">
                         <Skeleton className="h-4 w-3/4" />
                         <Skeleton className="h-3 w-1/2" />
                         <Skeleton className="h-3 w-1/3" />
@@ -2155,7 +2155,7 @@ function PublicPrepPage() {
               // menghalangi pandangan. Panel "Permintaan Paket" (RequestSection
               // di bawah) mungkin masih punya pekerjaan aktif, jadi kita
               // cukup pasang strip tipis alih-alih blok besar "tidak ada tugas".
-              <div className="col-span-2 flex items-center gap-2 rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+              <div className="col-span-2 flex items-center gap-ms-2 rounded-lg border border-dashed bg-muted/30 px-ms-3 py-ms-2 text-ms-2xs text-muted-foreground">
                 <Inbox className="h-3.5 w-3.5 shrink-0" />
                 <span>
                   Belum ada tugas satuan.{" "}
@@ -2171,18 +2171,18 @@ function PublicPrepPage() {
 
         <WorkerSectionBoundary
           renderFallback={(error) => (
-            <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300">
-              <div className="flex items-start gap-2">
+            <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-ms-4 text-ms-sm text-amber-800 dark:text-amber-300">
+              <div className="flex items-start gap-ms-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0">
                   <div className="font-semibold">Paket request gagal ditampilkan</div>
-                  <div className="mt-1 text-xs leading-relaxed opacity-90">
+                  <div className="mt-1 text-ms-xs leading-relaxed opacity-90">
                     Daftar tugas utama tetap bisa dipakai. Detail error disiapkan agar masalah data
                     paket bisa diperbaiki.
                   </div>
-                  <details className="mt-2 text-[11px]">
+                  <details className="mt-2 text-ms-2xs">
                     <summary className="cursor-pointer">Detail teknis</summary>
-                    <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
+                    <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-ms-2 font-mono">
                       {error.message}
                     </pre>
                   </details>
@@ -2199,7 +2199,7 @@ function PublicPrepPage() {
           />
         </WorkerSectionBoundary>
 
-        <div className="mt-6 text-center text-[10px] text-muted-foreground">
+        <div className="mt-6 text-center text-ms-2xs text-muted-foreground">
           Tetap aman · Jangan bagikan PIN ke siapa pun
         </div>
       </div>
@@ -2732,7 +2732,7 @@ function ItemCard({
       className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
     >
       {isStale && (
-        <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+        <div className="flex items-start gap-ms-2 border-b border-amber-500/30 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-amber-800 dark:text-amber-300">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div className="flex-1">
             <b>Item ini baru saja diubah admin.</b> Periksa kembali sebelum kirim.
@@ -2740,7 +2740,7 @@ function ItemCard({
           <button
             type="button"
             onClick={onAcknowledgeStale}
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-amber-500/40 bg-background px-2 text-[10px] font-semibold text-amber-700 hover:bg-amber-500/10 dark:text-amber-300"
+            className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-amber-500/40 bg-background px-ms-2 text-ms-2xs font-semibold text-amber-700 hover:bg-amber-500/10 dark:text-amber-300"
           >
             <RefreshCw className="h-3 w-3" /> Lanjutkan
           </button>
@@ -2752,18 +2752,18 @@ function ItemCard({
         aria-expanded={expanded}
         className="block w-full text-left"
       >
-        <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-2.5 py-1.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="flex items-center justify-between gap-ms-2 border-b bg-muted/30 px-ms-2.5 py-1.5">
+          <div className="text-ms-2xs font-semibold uppercase tracking-wider text-muted-foreground">
             #{index}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-ms-1.5">
             {sendStatus.kind === "sending" ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+              <span className="inline-flex items-center gap-ms-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-primary">
                 <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
                 {sendStatus.phase === "upload" ? "Mengunggah…" : "Mengirim…"}
               </span>
             ) : sendStatus.kind === "failed" && !isDone ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+              <span className="inline-flex items-center gap-ms-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-destructive">
                 <AlertCircle className="h-3 w-3" aria-hidden="true" /> Gagal
               </span>
             ) : isDone || sendStatus.kind === "success" ? (
@@ -2771,7 +2771,7 @@ function ItemCard({
                 <CheckCircle2 className="mr-1 h-3 w-3" /> Berhasil
               </StatusBadge>
             ) : hasDraft ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+              <span className="inline-flex items-center gap-ms-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-ms-2xs font-semibold text-amber-700 dark:text-amber-300">
                 <Clock className="h-3 w-3" aria-hidden="true" /> Menunggu {photos.length + pending.length}
               </span>
             ) : (
@@ -2783,24 +2783,24 @@ function ItemCard({
             />
           </div>
         </div>
-        <div className="p-2.5">
-          <div className="flex items-start gap-2">
+        <div className="p-ms-2.5">
+          <div className="flex items-start gap-ms-2">
             {refSigned ? (
               <img src={refSigned} alt="" className="h-14 w-14 shrink-0 rounded-lg border object-cover" />
             ) : (
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border bg-muted text-[10px] text-muted-foreground">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border bg-muted text-ms-2xs text-muted-foreground">
                 No img
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <div className="line-clamp-2 text-[13px] font-semibold leading-tight">{item.name}</div>
-              <div className="mt-0.5 truncate text-[10px] text-muted-foreground">{item.category ?? "—"}</div>
-              <div className="mt-1 flex flex-wrap gap-1">
-                <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+              <div className="line-clamp-2 text-ms-sm font-semibold leading-tight">{item.name}</div>
+              <div className="mt-0.5 truncate text-ms-2xs text-muted-foreground">{item.category ?? "—"}</div>
+              <div className="mt-1 flex flex-wrap gap-ms-1">
+                <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-medium text-primary">
                   {formatQtyShort(item.qty_requested, item.unit_label, item.name)}
                 </span>
                 {(item.qty_prepared ?? 0) > 0 && (
-                  <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground">
                     Siap {item.qty_prepared}
                   </span>
                 )}
@@ -2810,12 +2810,12 @@ function ItemCard({
         </div>
       </button>
       {expanded && (
-      <div className="border-t px-3 pb-3 pt-3">
+      <div className="border-t px-ms-3 pb-3 pt-3">
         {sendStatus.kind === "sending" && (
           <div
             role="status"
             aria-live="polite"
-            className="mb-2 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-[12px] font-medium text-primary"
+            className="mb-2 flex items-center gap-ms-2 rounded-lg border border-primary/40 bg-primary/5 px-ms-3 py-ms-2 text-ms-xs font-medium text-primary"
           >
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             {sendStatus.phase === "upload"
@@ -2827,7 +2827,7 @@ function ItemCard({
           <div
             role="alert"
             aria-live="assertive"
-            className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-[12px] leading-relaxed text-destructive"
+            className="mb-2 flex items-start gap-ms-2 rounded-lg border border-destructive/40 bg-destructive/5 px-ms-3 py-ms-2 text-ms-xs leading-relaxed text-destructive"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <div className="min-w-0 flex-1">
@@ -2840,7 +2840,7 @@ function ItemCard({
           <div
             role="status"
             aria-live="polite"
-            className="mb-2 flex items-start gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[12px] leading-relaxed text-emerald-700 dark:text-emerald-300"
+            className="mb-2 flex items-start gap-ms-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-ms-3 py-ms-2 text-ms-xs leading-relaxed text-emerald-700 dark:text-emerald-300"
           >
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <div className="min-w-0 flex-1">
@@ -2852,13 +2852,13 @@ function ItemCard({
           </div>
         )}
         {item.note && (
-          <div className="mb-2 rounded-md bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
+          <div className="mb-2 rounded-md bg-muted/50 px-ms-2 py-1.5 text-ms-2xs text-muted-foreground">
             Catatan: {item.note}
           </div>
         )}
         {isDone && !isStale ? (
-          <div className="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300">
-            <div className="flex items-center gap-1.5 font-semibold">
+          <div className="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-ms-3 text-ms-2xs leading-relaxed text-emerald-700 dark:text-emerald-300">
+            <div className="flex items-center gap-ms-1.5 font-semibold">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Sudah terkirim
             </div>
@@ -2917,23 +2917,23 @@ function ItemCard({
             }
           }}
         />
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-ms-2">
           <button aria-label="Kamera"
             type="button"
             onClick={pickCamera}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"
+            className="inline-flex h-11 items-center justify-center gap-ms-1.5 rounded-lg border bg-background text-ms-xs font-medium transition hover:bg-muted"
           >
             <Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}
           </button>
           <button
             type="button"
             onClick={pickGallery}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"
+            className="inline-flex h-11 items-center justify-center gap-ms-1.5 rounded-lg border bg-background text-ms-xs font-medium transition hover:bg-muted"
           >
             <ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}
           </button>
         </div>
-        <p className="mt-1 text-[10px] text-muted-foreground">
+        <p className="mt-1 text-ms-2xs text-muted-foreground">
           Bisa pilih beberapa foto sekaligus dari galeri.
         </p>
         <input
@@ -2952,24 +2952,24 @@ function ItemCard({
           className="hidden"
           onChange={onGalleryFiles}
         />
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-ms-2xs">
           <button
             type="button"
             onClick={() => setHelpKind("camera")}
-            className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="inline-flex items-center gap-ms-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             <HelpCircle className="h-3 w-3" /> Kamera tidak bisa dibuka?
           </button>
           <button
             type="button"
             onClick={() => setHelpKind("gallery")}
-            className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="inline-flex items-center gap-ms-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             <HelpCircle className="h-3 w-3" /> Galeri tidak muncul?
           </button>
         </div>
 
-        <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+        <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
           Siapkan{" "}
           <b>
             {formatQtyShort(item.qty_requested, item.unit_label, item.name)}
@@ -2978,18 +2978,18 @@ function ItemCard({
           sebanyak itu — Anda tidak perlu mengisi angka apa pun.
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-2">
-          <div className="flex gap-2">
+        <div className="mt-3 grid grid-cols-1 gap-ms-2">
+          <div className="flex gap-ms-2">
             <input
               value={locUrl}
               onChange={(e) => setLocUrl(e.target.value)}
               placeholder="Link Google Maps (opsional)"
-              className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="h-10 flex-1 rounded-lg border bg-background px-ms-3 text-ms-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
             <button
               type="button"
               onClick={takeLocation}
-              className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium transition hover:bg-muted"
+              className="inline-flex h-10 items-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
             >
               <MapPin className="h-4 w-4" /> GPS
             </button>
@@ -3014,7 +3014,7 @@ function ItemCard({
                   toast.error("Gagal membaca papan klip");
                 }
               }}
-              className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium transition hover:bg-muted"
+              className="inline-flex h-10 items-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
             >
               <ClipboardPaste className="h-4 w-4" /> Tempel
             </button>
@@ -3023,25 +3023,25 @@ function ItemCard({
             <button
               type="button"
               onClick={() => setManualCoordOpen((v) => !v)}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              className="inline-flex items-center gap-ms-1 text-ms-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               <MapPin className="h-3 w-3" /> {manualCoordOpen ? "Tutup" : "Isi koordinat manual"} (bila GPS ditolak)
             </button>
             {manualCoordOpen && (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-ms-2">
                 <input
                   inputMode="decimal"
                   value={manualLat}
                   onChange={(e) => setManualLat(e.target.value)}
                   placeholder="Lat (mis. -7.257)"
-                  className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-ms-3 text-ms-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 <input
                   inputMode="decimal"
                   value={manualLng}
                   onChange={(e) => setManualLng(e.target.value)}
                   placeholder="Lng (mis. 112.752)"
-                  className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-ms-3 text-ms-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 <button
                   type="button"
@@ -3060,7 +3060,7 @@ function ItemCard({
                     setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
                     toast.success("Koordinat manual dipakai");
                   }}
-                  className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium transition hover:bg-muted"
+                  className="inline-flex h-10 items-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
                 >
                   Pakai
                 </button>
@@ -3071,7 +3071,7 @@ function ItemCard({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Catatan (opsional)"
-            className="h-10 w-full rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="h-10 w-full rounded-lg border bg-background px-ms-3 text-ms-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -3079,7 +3079,7 @@ function ItemCard({
           type="button"
           disabled={busy}
           onClick={submit}
-          className="mt-3 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+          className="mt-3 inline-flex h-11 w-full items-center justify-center gap-ms-1.5 rounded-lg bg-primary text-ms-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           {busy && uploads.some((u) => u.status !== "idle")
@@ -3091,10 +3091,10 @@ function ItemCard({
 
         {item.submissions.length > 0 && (
           <div className="mt-3 border-t pt-2">
-            <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="mb-1.5 text-ms-2xs font-medium uppercase tracking-wider text-muted-foreground">
               Sudah terkirim ({item.submissions.length})
             </div>
-            <div className="flex gap-1 overflow-x-auto">
+            <div className="flex gap-ms-1 overflow-x-auto">
               {item.submissions.map((s) => (
                 <SubmissionThumb key={s.id} path={s.photo_path} />
               ))}
@@ -3211,8 +3211,8 @@ function PhotoTileGrid({
   const uploadErrCount = uploads?.filter((u) => u.status === "error").length ?? 0;
   const isUploading = uploads !== undefined && uploads.some((u) => u.status !== "idle");
   return (
-    <div className="mt-3 space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+    <div className="mt-3 space-ms-2">
+      <div className="flex flex-wrap items-center justify-between gap-ms-2 text-ms-2xs text-muted-foreground">
         <span aria-live="polite">
           {photos.length} foto siap
           {loadingCount > 0 ? ` · ${loadingCount} memuat…` : ""}
@@ -3221,12 +3221,12 @@ function PhotoTileGrid({
           {uploadingCount > 0 ? " · mengunggah…" : ""}
           {uploadErrCount > 0 ? ` · ${uploadErrCount} gagal unggah` : ""}
         </span>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-ms-1.5">
           {uploadErrCount > 0 && !isUploading && onRetryAllUploads && (
             <button
               type="button"
               onClick={onRetryAllUploads}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 text-[10px] font-medium text-primary hover:bg-primary/10"
+              className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-primary/40 bg-primary/5 px-ms-2 text-ms-2xs font-medium text-primary hover:bg-primary/10"
             >
               <RefreshCw className="h-3 w-3" /> Coba lagi {uploadErrCount} foto gagal
             </button>
@@ -3235,7 +3235,7 @@ function PhotoTileGrid({
             <button
               type="button"
               onClick={onMerge}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 text-[10px] font-medium text-primary hover:bg-primary/10"
+              className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-primary/40 bg-primary/5 px-ms-2 text-ms-2xs font-medium text-primary hover:bg-primary/10"
               title="Gabungkan semua foto menjadi satu"
             >
               <Layers className="h-3 w-3" /> Gabung foto
@@ -3245,13 +3245,13 @@ function PhotoTileGrid({
             type="button"
             onClick={onClearAll}
             disabled={isUploading}
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+            className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-destructive/40 px-ms-2 text-ms-2xs text-destructive hover:bg-destructive/10"
           >
             Hapus semua
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-ms-1.5">
         {photos.map((p, i) => {
           const ok = justOk.has(p.blob);
           const up = uploads?.[i]?.status ?? "idle";
@@ -3287,18 +3287,18 @@ function PhotoTileGrid({
               />
               {brokenIdx.has(i) && (
                 <div
-                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 bg-destructive/90 p-2 text-center text-white"
+                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-ms-1 bg-destructive/90 p-ms-2 text-center text-white"
                   role="alert"
                   aria-live="polite"
                 >
                   <AlertCircle className="h-5 w-5" aria-hidden />
-                  <div className="text-[10px] font-semibold leading-tight">
+                  <div className="text-ms-2xs font-semibold leading-tight">
                     Foto rusak
                   </div>
                   <button
                     type="button"
                     onClick={() => onRemove(i)}
-                    className="mt-0.5 inline-flex h-6 items-center gap-1 rounded bg-white/95 px-1.5 text-[10px] font-semibold text-destructive"
+                    className="mt-0.5 inline-flex h-6 items-center gap-ms-1 rounded bg-white/95 px-1.5 text-ms-2xs font-semibold text-destructive"
                   >
                     <Trash2 className="h-3 w-3" /> Hapus & foto ulang
                   </button>
@@ -3312,18 +3312,18 @@ function PhotoTileGrid({
               </div>
               {up === "uploading" && (
                 <div
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 text-white"
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-ms-1 bg-black/55 text-white"
                   role="status"
                   aria-live="polite"
                 >
                   <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-                  <div className="text-[10px] font-medium">Mengunggah…</div>
+                  <div className="text-ms-2xs font-medium">Mengunggah…</div>
                 </div>
               )}
               {up === "done" && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/25">
                   <div
-                    className="rounded-full bg-emerald-500 p-1 text-white shadow"
+                    className="rounded-full bg-emerald-500 p-ms-1 text-white shadow"
                     aria-label="Foto terunggah"
                   >
                     <CheckCircle2 className="h-4 w-4" />
@@ -3332,12 +3332,12 @@ function PhotoTileGrid({
               )}
               {up === "error" && (
                 <div
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-destructive/85 p-1 text-center text-white"
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-destructive/85 p-ms-1 text-center text-white"
                   role="status"
                   aria-live="polite"
                 >
                   <AlertCircle className="h-5 w-5" aria-hidden />
-                  <div className="text-[10px] font-semibold">Gagal unggah</div>
+                  <div className="text-ms-2xs font-semibold">Gagal unggah</div>
                   <div className="line-clamp-2 text-[9px] opacity-90">{upErr}</div>
                   {onRetryUpload && !isUploading && (
                     <button
@@ -3359,13 +3359,13 @@ function PhotoTileGrid({
                 </div>
               )}
               {up !== "uploading" && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-1.5 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-1.5">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-ms-1.5 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-ms-1.5">
                   <button
                     type="button"
                     onClick={() => onEdit(i)}
                     disabled={isUploading}
                     aria-label="Edit foto"
-                    className="pointer-events-auto inline-flex h-8 min-w-[3.5rem] items-center justify-center gap-1 rounded-md bg-white/95 px-2 text-[11px] font-semibold text-slate-900 shadow ring-1 ring-black/10 active:scale-95 disabled:opacity-50"
+                    className="pointer-events-auto inline-flex h-8 min-w-[3.5rem] items-center justify-center gap-ms-1 rounded-md bg-white/95 px-ms-2 text-ms-2xs font-semibold text-slate-900 shadow ring-1 ring-black/10 active:scale-95 disabled:opacity-50"
                   >
                     <Edit3 className="h-3.5 w-3.5" /> Edit
                   </button>
@@ -3374,7 +3374,7 @@ function PhotoTileGrid({
                     onClick={() => onRemove(i)}
                     disabled={isUploading}
                     aria-label="Hapus foto"
-                    className="pointer-events-auto inline-flex h-8 min-w-[3.5rem] items-center justify-center gap-1 rounded-md bg-destructive px-2 text-[11px] font-semibold text-destructive-foreground shadow ring-1 ring-black/10 active:scale-95 disabled:opacity-50"
+                    className="pointer-events-auto inline-flex h-8 min-w-[3.5rem] items-center justify-center gap-ms-1 rounded-md bg-destructive px-ms-2 text-ms-2xs font-semibold text-destructive-foreground shadow ring-1 ring-black/10 active:scale-95 disabled:opacity-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Hapus
                   </button>
@@ -3386,7 +3386,7 @@ function PhotoTileGrid({
         {pending.map((p) => (
           <div
             key={`pend-${p.id}`}
-            className={`relative flex aspect-square flex-col items-center justify-center gap-1 overflow-hidden rounded-md border p-1.5 text-center text-[10px] ${
+            className={`relative flex aspect-square flex-col items-center justify-center gap-ms-1 overflow-hidden rounded-md border p-ms-1.5 text-center text-ms-2xs ${
               p.status === "loading"
                 ? "border-primary/40 bg-primary/5 text-primary"
                 : "border-destructive/50 bg-destructive/10 text-destructive"
@@ -3407,7 +3407,7 @@ function PhotoTileGrid({
                 <div className="line-clamp-2 text-[9px] opacity-80">
                   {p.error || "Gagal membaca foto"}
                 </div>
-                <div className="mt-0.5 flex items-center gap-1">
+                <div className="mt-0.5 flex items-center gap-ms-1">
                   {p.file && (
                     <button
                       type="button"
@@ -3496,7 +3496,7 @@ function SyncBadge({
       onClick={onRefresh}
       title={title}
       aria-label={`Status sinkron: ${map.label}. Klik untuk muat ulang.`}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium ring-1 transition hover:opacity-80 ${map.cls}`}
+      className={`inline-flex items-center gap-ms-1 rounded-full px-ms-2 py-1 text-ms-2xs font-medium ring-1 transition hover:opacity-80 ${map.cls}`}
     >
       <map.Icon className={`h-3 w-3 ${map.spin ? "animate-spin" : ""}`} />
       <span>{map.label}</span>
@@ -3594,14 +3594,14 @@ function RequestSection({
 
   return (
     <div className="mt-6">
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-2 flex items-center gap-ms-2">
         <Package className="h-4 w-4 text-primary" />
-        <div className="text-sm font-semibold">Paket Request</div>
-        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+        <div className="text-ms-sm font-semibold">Paket Request</div>
+        <span className="rounded-full bg-primary/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-primary">
           {titles.length}
         </span>
       </div>
-      <div className="space-y-2">
+      <div className="space-ms-2">
         {titles.map((t) => {
           let renderedRow: ReactNode;
           try {
@@ -3610,15 +3610,15 @@ function RequestSection({
             renderedRow = (
             <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
               {isDone ? (
-                <div className="flex w-full items-center justify-between px-3 py-2 text-left opacity-75">
+                <div className="flex w-full items-center justify-between px-ms-3 py-ms-2 text-left opacity-75">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <div className="truncate text-sm font-semibold">{t.name}</div>
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+                    <div className="flex items-center gap-ms-1.5">
+                      <div className="truncate text-ms-sm font-semibold">{t.name}</div>
+                      <span className="inline-flex shrink-0 items-center gap-ms-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-ms-2xs font-semibold text-emerald-600 ring-1 ring-emerald-500/30 dark:text-emerald-400">
                         <CheckCircle2 className="h-3 w-3" /> Selesai
                       </span>
                     </div>
-                    <div className="truncate text-[11px] text-muted-foreground">
+                    <div className="truncate text-ms-2xs text-muted-foreground">
                       {requestItems
                         .map(
                           (i) =>
@@ -3632,11 +3632,11 @@ function RequestSection({
                 <button
                   type="button"
                   onClick={() => setOpenId(openId === t.id ? null : t.id)}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/40"
+                  className="flex w-full items-center justify-between px-ms-3 py-ms-2 text-left hover:bg-muted/40"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold">{t.name}</div>
-                    <div className="truncate text-[11px] text-muted-foreground">
+                    <div className="truncate text-ms-sm font-semibold">{t.name}</div>
+                    <div className="truncate text-ms-2xs text-muted-foreground">
                       {requestItems
                         .map(
                           (i) =>
@@ -3645,13 +3645,13 @@ function RequestSection({
                         .join(" · ") || "Tidak ada item"}
                     </div>
                   </div>
-                  <span className="ml-2 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
+                  <span className="ml-2 rounded-md bg-primary px-ms-2 py-1 text-ms-2xs font-semibold text-primary-foreground">
                     {openId === t.id ? "Tutup" : "Siapkan"}
                   </span>
                 </button>
               )}
               {openId === t.id && !isDone && (
-                <div className="border-t bg-muted/20 p-3">
+                <div className="border-t bg-muted/20 p-ms-3">
                   <RequestForm
                     title={t}
                     token={token}
@@ -3674,7 +3674,7 @@ function RequestSection({
             renderedRow = (
               <div
                 key={t?.id ?? Math.random()}
-                className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300"
+                className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-ms-3 py-ms-2 text-ms-2xs text-amber-700 dark:text-amber-300"
               >
                 Paket &quot;{t?.name ?? "tanpa nama"}&quot; tidak bisa ditampilkan. Muat ulang portal atau hubungi admin.
               </div>
@@ -4123,11 +4123,11 @@ function RequestForm({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-ms-3">
       <div className="space-y-1.5">
         {rows.map((r, idx) => (
-          <div key={idx} className="grid grid-cols-12 gap-1.5">
-            <div className="col-span-8 flex items-center rounded-md border bg-background px-2 text-xs">
+          <div key={idx} className="grid grid-cols-12 gap-ms-1.5">
+            <div className="col-span-8 flex items-center rounded-md border bg-background px-ms-2 text-ms-xs">
               {r.product_name ?? "?"}
             </div>
             <input
@@ -4141,9 +4141,9 @@ function RequestForm({
                   rs.map((x, i) => (i === idx ? { ...x, actual_grams: e.target.value } : x)),
                 )
               }
-              className="col-span-3 h-9 rounded-md border bg-background px-2 text-xs"
+              className="col-span-3 h-9 rounded-md border bg-background px-ms-2 text-ms-xs"
             />
-            <div className="col-span-1 flex items-center text-[10px] text-muted-foreground">
+            <div className="col-span-1 flex items-center text-ms-2xs text-muted-foreground">
               {shortUnitLabel(r.product_name, r.unit_label)}
             </div>
           </div>
@@ -4195,23 +4195,23 @@ function RequestForm({
           }
         }}
       />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-ms-2">
         <button aria-label="Kamera"
           type="button"
           onClick={pickCamera}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"
+          className="inline-flex h-11 items-center justify-center gap-ms-1.5 rounded-lg border bg-background text-ms-xs font-medium hover:bg-muted"
         >
           <Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}
         </button>
         <button
           type="button"
           onClick={pickGallery}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"
+          className="inline-flex h-11 items-center justify-center gap-ms-1.5 rounded-lg border bg-background text-ms-xs font-medium hover:bg-muted"
         >
           <ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}
         </button>
       </div>
-      <p className="-mt-1 text-[10px] text-muted-foreground">
+      <p className="-mt-1 text-ms-2xs text-muted-foreground">
         Bisa pilih beberapa foto sekaligus dari galeri.
       </p>
       <input
@@ -4230,18 +4230,18 @@ function RequestForm({
         className="hidden"
         onChange={onGalleryFiles}
       />
-      <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
+      <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-ms-2xs">
         <button
           type="button"
           onClick={() => setHelpKind("camera")}
-          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          className="inline-flex items-center gap-ms-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
           <HelpCircle className="h-3 w-3" /> Kamera tidak bisa dibuka?
         </button>
         <button
           type="button"
           onClick={() => setHelpKind("gallery")}
-          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          className="inline-flex items-center gap-ms-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
           <HelpCircle className="h-3 w-3" /> Galeri tidak muncul?
         </button>
@@ -4256,19 +4256,19 @@ function RequestForm({
           Number.isFinite(lat) && Number.isFinite(lng) &&
           Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
         return (
-          <div className="flex items-stretch gap-2">
-            <div className="flex flex-1 flex-col gap-2">
+          <div className="flex items-stretch gap-ms-2">
+            <div className="flex flex-1 flex-col gap-ms-2">
               <input
                 value={locUrl}
                 onChange={(e) => setLocUrl(e.target.value)}
                 placeholder="Link Google Maps (opsional)"
-                className="h-10 w-full rounded-lg border bg-background px-3 text-xs"
+                className="h-10 w-full rounded-lg border bg-background px-ms-3 text-ms-xs"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-ms-2">
                 <button
                   onClick={takeLocation}
                   type="button"
-                  className="inline-flex h-10 w-full items-center justify-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                  className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium hover:bg-muted"
                 >
                   <MapPin className="h-4 w-4" /> GPS
                 </button>
@@ -4293,7 +4293,7 @@ function RequestForm({
                       toast.error("Gagal membaca papan klip");
                     }
                   }}
-                  className="inline-flex h-10 w-full items-center justify-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+                  className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium hover:bg-muted"
                 >
                   <ClipboardPaste className="h-4 w-4" /> Tempel
                 </button>
@@ -4319,7 +4319,7 @@ function RequestForm({
                 </span>
               </a>
             ) : (
-              <div className="flex h-[88px] w-[88px] shrink-0 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/40 px-1 text-center text-[10px] text-muted-foreground">
+              <div className="flex h-[88px] w-[88px] shrink-0 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/40 px-1 text-center text-ms-2xs text-muted-foreground">
                 <MapPin className="mb-0.5 h-4 w-4 opacity-60" />
                 <span className="leading-tight">Belum ada titik</span>
               </div>
@@ -4331,25 +4331,25 @@ function RequestForm({
         <button
           type="button"
           onClick={() => setManualCoordOpen((v) => !v)}
-          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          className="inline-flex items-center gap-ms-1 text-ms-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
           <MapPin className="h-3 w-3" /> {manualCoordOpen ? "Tutup" : "Isi koordinat manual"} (bila GPS ditolak)
         </button>
         {manualCoordOpen && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-ms-2">
             <input
               inputMode="decimal"
               value={manualLat}
               onChange={(e) => setManualLat(e.target.value)}
               placeholder="Lat (mis. -7.257)"
-              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs"
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-ms-3 text-ms-xs"
             />
             <input
               inputMode="decimal"
               value={manualLng}
               onChange={(e) => setManualLng(e.target.value)}
               placeholder="Lng (mis. 112.752)"
-              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs"
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-ms-3 text-ms-xs"
             />
             <button
               type="button"
@@ -4368,7 +4368,7 @@ function RequestForm({
                 setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
                 toast.success("Koordinat manual dipakai");
               }}
-              className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+              className="inline-flex h-10 items-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium hover:bg-muted"
             >
               Pakai
             </button>
@@ -4379,7 +4379,7 @@ function RequestForm({
         value={note}
         onChange={(e) => setNote(e.target.value)}
         placeholder="Catatan (opsional)"
-        className="h-10 w-full rounded-lg border bg-background px-3 text-xs"
+        className="h-10 w-full rounded-lg border bg-background px-ms-3 text-ms-xs"
       />
 
       {(() => {
@@ -4394,9 +4394,9 @@ function RequestForm({
             ? "Isi jumlah dulu"
             : null;
         return (
-          <div className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 border-t bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <div className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 border-t bg-background/95 px-ms-3 py-ms-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
             {reason ? (
-              <p className="mb-1.5 text-center text-[11px] font-medium text-amber-600 dark:text-amber-400">
+              <p className="mb-1.5 text-center text-ms-2xs font-medium text-amber-600 dark:text-amber-400">
                 {reason}
               </p>
             ) : null}
@@ -4405,7 +4405,7 @@ function RequestForm({
               disabled={disabled}
               onClick={submit}
               aria-label="Kirim Paket"
-              className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-11 w-full items-center justify-center gap-ms-1.5 rounded-lg bg-primary text-ms-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

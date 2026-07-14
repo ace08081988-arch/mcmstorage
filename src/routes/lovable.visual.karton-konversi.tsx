@@ -42,20 +42,20 @@ function KartonKonversiHarness() {
   const rendered = fmtItemQty(Number(stockBase) || 0, item);
 
   return (
-    <div className="min-h-screen bg-background p-4 font-sans text-sm text-foreground">
-      <div className="mx-auto max-w-xl space-y-3">
-        <h1 className="text-lg font-semibold">Harness: Konversi Karton</h1>
-        <p className="text-xs text-muted-foreground">
+    <div className="min-h-screen bg-background p-ms-4 font-sans text-ms-sm text-foreground">
+      <div className="mx-auto max-w-xl space-ms-3">
+        <h1 className="text-ms-lg font-semibold">Harness: Konversi Karton</h1>
+        <p className="text-ms-xs text-muted-foreground">
           Merender <code>fmtItemQty</code> untuk verifikasi E2E bahwa 100
           botol otomatis dihitung menjadi 1 karton pada kolom Stok.
           Aturan: 1 karton = {BOTOL_PER_KARTON} botol.
         </p>
 
-        <div className="grid grid-cols-2 gap-2 rounded-lg border p-3">
+        <div className="grid grid-cols-2 gap-ms-2 rounded-lg border p-ms-3">
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">stock_base</span>
+            <span className="text-ms-2xs text-muted-foreground">stock_base</span>
             <input
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               inputMode="numeric"
               data-testid="kk-stock-base"
               value={stockBase}
@@ -63,18 +63,18 @@ function KartonKonversiHarness() {
             />
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">name</span>
+            <span className="text-ms-2xs text-muted-foreground">name</span>
             <input
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               data-testid="kk-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">package_type</span>
+            <span className="text-ms-2xs text-muted-foreground">package_type</span>
             <select
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               data-testid="kk-package-type"
               value={packageType}
               onChange={(e) => setPackageType(e.target.value as PT)}
@@ -86,9 +86,9 @@ function KartonKonversiHarness() {
             </select>
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">package_size</span>
+            <span className="text-ms-2xs text-muted-foreground">package_size</span>
             <input
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               inputMode="numeric"
               data-testid="kk-package-size"
               value={packageSize}
@@ -96,9 +96,9 @@ function KartonKonversiHarness() {
             />
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">base_unit</span>
+            <span className="text-ms-2xs text-muted-foreground">base_unit</span>
             <select
-              className="mt-1 w-full rounded-md border bg-background px-2 py-1.5"
+              className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5"
               data-testid="kk-base-unit"
               value={baseUnit}
               onChange={(e) => setBaseUnit(e.target.value as BU)}
@@ -109,8 +109,8 @@ function KartonKonversiHarness() {
           </label>
         </div>
 
-        <div className="rounded-lg border p-3">
-          <div className="text-[11px] text-muted-foreground">
+        <div className="rounded-lg border p-ms-3">
+          <div className="text-ms-2xs text-muted-foreground">
             Kolom Stok (fmtItemQty)
           </div>
           <div

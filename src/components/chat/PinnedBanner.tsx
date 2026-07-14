@@ -23,7 +23,7 @@ export function PinnedBanner({
         const deleted = isDeleted(m);
         const text = messagePreviewText(m) || "Lampiran";
         return (
-          <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 text-xs">
+          <div key={m.id} className="flex items-center gap-ms-2 px-ms-3 py-1.5 text-ms-xs">
             <Pin className="h-3.5 w-3.5 shrink-0 text-amber-600" />
             <button
               type="button"

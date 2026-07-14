@@ -222,9 +222,9 @@ function TugasBaruPage() {
   }
   if (!isAdmin) {
     return (
-      <div className="mx-auto max-w-2xl px-3 py-6 animate-fade-in">
-        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm">
-          <div className="mb-2 flex items-center gap-2 font-semibold text-destructive">
+      <div className="mx-auto max-w-2xl px-ms-3 py-ms-6 animate-fade-in">
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-ms-5 text-ms-sm">
+          <div className="mb-2 flex items-center gap-ms-2 font-semibold text-destructive">
             <ShieldAlert className="h-5 w-5" /> Akses ditolak
           </div>
           <p className="text-foreground">
@@ -234,7 +234,7 @@ function TugasBaruPage() {
           <div className="mt-3">
             <Link
               to="/tugas"
-              className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-xs font-semibold"
+              className="inline-flex h-9 items-center gap-ms-1 rounded-md border bg-background px-ms-3 text-ms-xs font-semibold"
             >
               <ArrowLeft className="h-4 w-4" /> Kembali ke Penyiapan
             </Link>
@@ -264,7 +264,7 @@ function TugasBaruSkeleton() {
     <div
       ref={ref}
       tabIndex={-1}
-      className="mx-auto max-w-2xl px-3 py-4 animate-fade-in focus:outline-none"
+      className="mx-auto max-w-2xl px-ms-3 py-ms-4 animate-fade-in focus:outline-none"
       role="status"
       aria-live="polite"
       aria-atomic="true"
@@ -273,39 +273,39 @@ function TugasBaruSkeleton() {
       aria-describedby="tugas-baru-skeleton-desc"
     >
       {/* Header: tombol kembali + judul */}
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex items-center gap-ms-2">
         <Skeleton className="h-9 w-9 rounded-md" />
         <Skeleton className="h-6 w-56" />
       </div>
 
-      <div className="space-y-4 rounded-2xl border bg-card p-4">
+      <div className="space-ms-4 rounded-2xl border bg-card p-ms-4">
         {/* Judul tugas */}
-        <div className="space-y-2">
+        <div className="space-ms-2">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-10 w-full" />
         </div>
         {/* Catatan */}
-        <div className="space-y-2">
+        <div className="space-ms-2">
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-20 w-full" />
         </div>
         {/* PIN + token */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-ms-3">
+          <div className="space-ms-2">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-10 w-full" />
           </div>
-          <div className="space-y-2">
+          <div className="space-ms-2">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-10 w-full" />
           </div>
         </div>
         {/* Daftar item (satu baris + placeholder tombol tambah) */}
-        <div className="space-y-2 pt-2">
+        <div className="space-ms-2 pt-2">
           <Skeleton className="h-4 w-28" />
-          <div className="space-y-2 rounded-xl border p-3">
+          <div className="space-ms-2 rounded-xl border p-ms-3">
             <Skeleton className="h-10 w-full" />
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-ms-2">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
@@ -799,42 +799,42 @@ function TugasBaruForm() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4 animate-fade-in">
-      <div className="flex items-center justify-between gap-2">
+    <div className="mx-auto max-w-2xl space-ms-4 p-ms-4 animate-fade-in">
+      <div className="flex items-center justify-between gap-ms-2">
         <div>
-          <h1 ref={headingRef} tabIndex={-1} className="text-lg font-semibold focus:outline-none">Buat Tugas Pegawai</h1>
-          <p className="text-xs text-muted-foreground">Buat token & PIN langsung dari UI — tanpa perlu akses database.</p>
+          <h1 ref={headingRef} tabIndex={-1} className="text-ms-lg font-semibold focus:outline-none">Buat Tugas Pegawai</h1>
+          <p className="text-ms-xs text-muted-foreground">Buat token & PIN langsung dari UI — tanpa perlu akses database.</p>
         </div>
-        <Link to="/tugas" className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
+        <Link to="/tugas" className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent">
           <ArrowLeft className="h-3.5 w-3.5" /> Tugas
         </Link>
       </div>
 
       {created ? (
-        <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
-          <div className="flex items-center gap-2 text-emerald-600">
+        <div className="space-ms-3 rounded-lg border bg-card p-ms-4 text-ms-sm">
+          <div className="flex items-center gap-ms-2 text-emerald-600">
             <ShieldCheck className="h-4 w-4" /> <span className="font-medium">Tugas siap dibagikan</span>
           </div>
           <div className="space-y-1">
-            <div className="text-xs text-muted-foreground">Judul</div>
+            <div className="text-ms-xs text-muted-foreground">Judul</div>
             <div className="font-medium">{created.title}</div>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-ms-3 sm:grid-cols-2">
             <Field label="PIN">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 rounded bg-muted px-2 py-1 text-base tracking-widest">{created.pin}</code>
-                <button aria-label="Salin" type="button" onClick={() => copyText(created.pin)} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">
+              <div className="flex items-center gap-ms-2">
+                <code className="flex-1 rounded bg-muted px-ms-2 py-1 text-ms-base tracking-widest">{created.pin}</code>
+                <button aria-label="Salin" type="button" onClick={() => copyText(created.pin)} className="rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent">
                   <Copy className="h-3.5 w-3.5" />
                 </button>
               </div>
             </Field>
             <Field label="Link pegawai">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded bg-muted px-2 py-1 text-xs">{created.url}</code>
-                <button aria-label="Salin" type="button" onClick={() => copyText(created.url)} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">
+              <div className="flex items-center gap-ms-2">
+                <code className="flex-1 truncate rounded bg-muted px-ms-2 py-1 text-ms-xs">{created.url}</code>
+                <button aria-label="Salin" type="button" onClick={() => copyText(created.url)} className="rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent">
                   <Copy className="h-3.5 w-3.5" />
                 </button>
-                <a href={created.url} target="_blank" rel="noreferrer" className="rounded-md border px-2 py-1 text-xs hover:bg-accent">
+                <a href={created.url} target="_blank" rel="noreferrer" className="rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent">
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>
@@ -843,14 +843,14 @@ function TugasBaruForm() {
           <TaskQrCode url={created.url} pin={created.pin} title={created.title} />
           <Field label="Preview pesan WhatsApp">
             <details className="group rounded-md border bg-muted/40 open:bg-muted/60">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-medium">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-ms-2 px-ms-3 py-ms-2 text-ms-xs font-medium">
                 <span className="text-muted-foreground">
                   Klik untuk lihat/salin — pastikan instruksi <em>foto tiap barang</em> &amp; <em>link Google Maps</em> ada.
                 </span>
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground group-open:hidden">Buka</span>
-                <span className="hidden text-[10px] uppercase tracking-wide text-muted-foreground group-open:inline">Tutup</span>
+                <span className="text-ms-2xs uppercase tracking-wide text-muted-foreground group-open:hidden">Buka</span>
+                <span className="hidden text-ms-2xs uppercase tracking-wide text-muted-foreground group-open:inline">Tutup</span>
               </summary>
-              <div className="border-t px-3 py-2">
+              <div className="border-t px-ms-3 py-ms-2">
                 {(() => {
                   const previewItems = rows
                     .filter((r) => r.name.trim().length > 0)
@@ -870,12 +870,12 @@ function TugasBaruForm() {
                   return (
                     <>
                       {previewCheck.ok ? (
-                        <div className="mb-2 flex items-center gap-1.5 rounded-md border border-emerald-300/60 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-800">
+                        <div className="mb-2 flex items-center gap-ms-1.5 rounded-md border border-emerald-300/60 bg-emerald-50 px-ms-2 py-1 text-ms-2xs font-medium text-emerald-800">
                           <Check className="h-3.5 w-3.5" /> Pesan lengkap — {previewItems.length} barang siap difoto &amp; instruksi maps ada.
                         </div>
                       ) : (
-                        <div className="mb-2 rounded-md border border-destructive/50 bg-destructive/5 px-2 py-1 text-[11px] text-destructive">
-                          <div className="flex items-center gap-1.5 font-semibold">
+                        <div className="mb-2 rounded-md border border-destructive/50 bg-destructive/5 px-ms-2 py-1 text-ms-2xs text-destructive">
+                          <div className="flex items-center gap-ms-1.5 font-semibold">
                             <ShieldAlert className="h-3.5 w-3.5" /> Pesan belum lolos validasi
                           </div>
                           <ul className="mt-0.5 list-disc pl-4">
@@ -885,14 +885,14 @@ function TugasBaruForm() {
                           </ul>
                         </div>
                       )}
-                      <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded bg-background/60 p-2 text-[12px] leading-snug">
+                      <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded bg-background/60 p-ms-2 text-ms-xs leading-snug">
 {previewText}
                       </pre>
-                      <div className="mt-2 flex flex-wrap justify-end gap-2">
+                      <div className="mt-2 flex flex-wrap justify-end gap-ms-2">
                         <button
                           type="button"
                           onClick={() => copyText(previewText)}
-                          className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                          className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent"
                         >
                           <Copy className="h-3.5 w-3.5" /> Salin teks
                         </button>
@@ -904,45 +904,45 @@ function TugasBaruForm() {
             </details>
           </Field>
           <Field label="Kirim via MCM (opsional)">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-ms-2">
               <input
                 inputMode="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="08xxxxxxxxxx"
-                className="flex-1 rounded-md border bg-background px-2 py-1.5 text-sm"
+                className="flex-1 rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
               />
-              <button type="button" onClick={shareWa} className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700">
+              <button type="button" onClick={shareWa} className="inline-flex items-center gap-ms-1 rounded-md bg-emerald-600 px-ms-3 py-1.5 text-ms-xs font-medium text-white hover:bg-emerald-700">
                 <MessageCircle className="h-3.5 w-3.5" /> Kirim
               </button>
             </div>
           </Field>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <button type="button" onClick={reset} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-accent">
+          <div className="flex flex-wrap gap-ms-2 pt-1">
+            <button type="button" onClick={reset} className="inline-flex items-center gap-ms-1 rounded-md border px-ms-3 py-1.5 text-ms-xs hover:bg-accent">
               <RefreshCw className="h-3.5 w-3.5" /> Buat tugas lain
             </button>
-            <Link to="/tugas" className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs hover:bg-accent">
+            <Link to="/tugas" className="inline-flex items-center gap-ms-1 rounded-md border px-ms-3 py-1.5 text-ms-xs hover:bg-accent">
               Lihat daftar tugas
             </Link>
           </div>
         </div>
       ) : (
-        <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
-          <div className="flex items-start justify-between gap-2">
+        <div className="space-ms-3 rounded-lg border bg-card p-ms-4 text-ms-sm">
+          <div className="flex items-start justify-between gap-ms-2">
             <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} reason={savedReason} tooltipMode={tooltipMode} />
             <TooltipModeToggle mode={tooltipMode} onChange={setTooltipMode} />
           </div>
           <LastSavedSummary savedAt={savedAt} reason={savedReason} tooltipMode={tooltipMode} />
           <AutosaveAnnouncer state={saveState} savedAt={savedAt} reason={savedReason} />
           {restored ? (
-            <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
+            <div className="flex items-start justify-between gap-ms-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-ms-3 py-ms-2 text-ms-2xs text-emerald-900 dark:text-emerald-200">
               <span>
                 Draft sebelumnya dipulihkan otomatis — lanjutkan dari yang terakhir Anda isi.
               </span>
               <button
                 type="button"
                 onClick={clearForm}
-                className="shrink-0 rounded border border-emerald-600/40 px-2 py-0.5 text-[10px] hover:bg-emerald-600/10"
+                className="shrink-0 rounded border border-emerald-600/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-emerald-600/10"
               >
                 Bersihkan draft
               </button>
@@ -952,7 +952,7 @@ function TugasBaruForm() {
             <div
               role="status"
               aria-live="polite"
-              className="flex items-start justify-between gap-2 rounded-md border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-[11px] text-sky-900 dark:text-sky-200"
+              className="flex items-start justify-between gap-ms-2 rounded-md border border-sky-500/40 bg-sky-500/10 px-ms-3 py-ms-2 text-ms-2xs text-sky-900 dark:text-sky-200"
             >
               <span className="min-w-0">
                 Terisi otomatis dari <b className="break-words">{prefillInfo.name}</b>
@@ -964,7 +964,7 @@ function TugasBaruForm() {
               <button
                 type="button"
                 onClick={() => setPrefillInfo(null)}
-                className="shrink-0 rounded border border-sky-600/40 px-2 py-0.5 text-[10px] hover:bg-sky-600/10"
+                className="shrink-0 rounded border border-sky-600/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-sky-600/10"
                 aria-label="Tutup ringkasan prefill"
               >
                 Tutup
@@ -976,7 +976,7 @@ function TugasBaruForm() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Mis. Penyiapan pesanan Bu Ani"
-              className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+              className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
             />
           </Field>
           <Field label="Catatan (opsional)">
@@ -985,35 +985,35 @@ function TugasBaruForm() {
               onChange={(e) => setNote(e.target.value)}
               rows={2}
               placeholder="Instruksi tambahan untuk pegawai…"
-              className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+              className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
             />
           </Field>
           <Field label="PIN (4–8 digit)">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-ms-2">
               <input
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
                 inputMode="numeric"
-                className="w-32 rounded-md border bg-background px-2 py-1.5 text-base tracking-widest"
+                className="w-32 rounded-md border bg-background px-ms-2 py-1.5 text-ms-base tracking-widest"
               />
-              <button type="button" onClick={() => setPin(genPin())} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
+              <button type="button" onClick={() => setPin(genPin())} className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent">
                 <RefreshCw className="h-3.5 w-3.5" /> Acak
               </button>
             </div>
           </Field>
 
           <Field label="Token tautan pegawai (8–48 karakter)">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-ms-2">
               <input
                 value={token}
                 onChange={(e) => setToken(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 48))}
                 placeholder="mis. abc123XYZ"
-                className="flex-1 rounded-md border bg-background px-2 py-1.5 font-mono text-sm"
+                className="flex-1 rounded-md border bg-background px-ms-2 py-1.5 font-mono text-ms-sm"
               />
               <button
                 type="button"
                 onClick={() => setToken(genShareToken())}
-                className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent"
                 title="Buat token acak baru"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Acak
@@ -1021,45 +1021,45 @@ function TugasBaruForm() {
               <button
                 type="button"
                 onClick={copyTaskUrl}
-                className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent"
                 title="Salin URL pegawai berdasarkan token ini"
               >
                 <Copy className="h-3.5 w-3.5" /> Salin URL
               </button>
             </div>
-            <div className="mt-1 text-[11px] text-muted-foreground">
+            <div className="mt-1 text-ms-2xs text-muted-foreground">
               Token dipakai di URL pegawai. Isi sendiri untuk memudahkan dikenali, atau tekan Acak untuk mengganti. Tombol Salin URL bisa dipakai kapan saja setelah token terisi.
             </div>
             <TokenDuplicateBadge check={tokenCheck} onRandom={() => setToken(genShareToken())} />
           </Field>
 
           <Field label="Jadwal penyiapan (opsional)">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-ms-2">
               <input
                 type="datetime-local"
                 value={scheduledAt}
                 onChange={(e) => setScheduledAt(e.target.value)}
-                className="rounded-md border bg-background px-2 py-1.5 text-sm"
+                className="rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
               />
               {scheduledAt && (
                 <button
                   type="button"
                   onClick={() => setScheduledAt("")}
-                  className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                  className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent"
                 >
                   Hapus
                 </button>
               )}
             </div>
-            <div className="mt-1 text-[11px] text-muted-foreground">
+            <div className="mt-1 text-ms-2xs text-muted-foreground">
               Waktu yang direncanakan pegawai mulai menyiapkan. Kosongkan bila tidak ada jadwal tetap.
             </div>
           </Field>
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <div className="text-xs font-medium text-muted-foreground">Daftar barang</div>
-              <div className="flex items-center gap-2">
+              <div className="text-ms-xs font-medium text-muted-foreground">Daftar barang</div>
+              <div className="flex items-center gap-ms-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -1071,29 +1071,29 @@ function TugasBaruForm() {
                     targets.forEach((r) => verifyWid(r.key, r.warehouse_item_id));
                     toast.success(`Memverifikasi ulang ${targets.length} baris…`);
                   }}
-                  className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                  className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent"
                   title="Paksa ulang verifikasi status terhubung untuk semua baris"
                 >
                   <RefreshCw className="h-3.5 w-3.5" /> Verifikasi ulang
                 </button>
-                <button type="button" onClick={() => setRows((s) => [...s, newRow()])} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
+                <button type="button" onClick={() => setRows((s) => [...s, newRow()])} className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent">
                   <Plus className="h-3.5 w-3.5" /> Tambah
                 </button>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-ms-2">
               {rows.map((r, i) => (
-                <div key={r.key} className="grid grid-cols-12 items-center gap-2 rounded-md border p-2">
-                  <div className="col-span-12 text-[11px] text-muted-foreground sm:hidden">Barang #{i + 1}</div>
+                <div key={r.key} className="grid grid-cols-12 items-center gap-ms-2 rounded-md border p-ms-2">
+                  <div className="col-span-12 text-ms-2xs text-muted-foreground sm:hidden">Barang #{i + 1}</div>
                   <div className="col-span-12">
                     <label className="block space-y-1">
-                      <div className="text-[11px] font-medium text-muted-foreground">
+                      <div className="text-ms-2xs font-medium text-muted-foreground">
                         Pilih dari daftar produk (agar foto pegawai otomatis muncul di Beranda & tombol Kirim via MCM aktif)
                       </div>
                       <select
                         value={r.title_id}
                         onChange={(e) => pickTitle(r.key, e.target.value)}
-                        className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                        className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
                       >
                         <option value="">— Bebas / manual —</option>
                         {titles.map((t) => (
@@ -1110,31 +1110,31 @@ function TugasBaruForm() {
                     value={r.name}
                     onChange={(e) => updateRow(r.key, { name: e.target.value })}
                     placeholder="Nama barang"
-                    className="col-span-12 rounded-md border bg-background px-2 py-1.5 text-sm sm:col-span-6"
+                    className="col-span-12 rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm sm:col-span-6"
                   />
                   <input
                     value={r.qty}
                     onChange={(e) => updateRow(r.key, { qty: e.target.value.replace(/[^\d.]/g, "") })}
                     inputMode="decimal"
                     placeholder="Jumlah"
-                    className="col-span-5 rounded-md border bg-background px-2 py-1.5 text-sm sm:col-span-3"
+                    className="col-span-5 rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm sm:col-span-3"
                   />
                   <input
                     value={r.unit}
                     onChange={(e) => updateRow(r.key, { unit: e.target.value })}
                     placeholder="Satuan (gram/pcs/botol)"
-                    className="col-span-6 rounded-md border bg-background px-2 py-1.5 text-sm sm:col-span-2"
+                    className="col-span-6 rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm sm:col-span-2"
                   />
                   <button
                     type="button"
                     onClick={() => removeRow(r.key)}
                     disabled={rows.length <= 1}
-                    className="col-span-1 inline-flex items-center justify-center rounded-md border p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                    className="col-span-1 inline-flex items-center justify-center rounded-md border p-ms-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-40"
                     aria-label="Hapus baris"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                  <div className="col-span-12 text-[11px]">
+                  <div className="col-span-12 text-ms-2xs">
                     {(() => {
                       const v = verify[r.key];
                       if (!r.warehouse_item_id) {
@@ -1183,7 +1183,7 @@ function TugasBaruForm() {
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-end gap-2 pt-2">
+          <div className="flex flex-wrap justify-end gap-ms-2 pt-2">
             <button
               type="button"
               onClick={() => {
@@ -1191,7 +1191,7 @@ function TugasBaruForm() {
                 toast.success(changed ? "Draft disimpan" : "Draft sudah tersimpan");
               }}
               disabled={busy}
-              className="inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs hover:bg-accent disabled:opacity-50"
+              className="inline-flex items-center gap-ms-1 rounded-md border px-ms-3 py-ms-2 text-ms-xs hover:bg-accent disabled:opacity-50"
             >
               Simpan draft
             </button>
@@ -1202,7 +1202,7 @@ function TugasBaruForm() {
                 if (v) setPreview(v);
               }}
               disabled={busy}
-              className="inline-flex items-center gap-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              className="inline-flex items-center gap-ms-1 rounded-md bg-primary px-ms-4 py-ms-2 text-ms-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
               {busy ? "Membuat…" : "Pratinjau & buat"}
             </button>
@@ -1266,8 +1266,8 @@ function TugasBaruForm() {
               (noteTrim ? `Catatan: ${noteTrim}\n` : "") +
               `\nBuka link, masukkan PIN, foto barang & kirim:\n${url}\nPIN: ${pin}`;
             return (
-              <div className="max-h-[60vh] space-y-3 overflow-y-auto text-xs">
-                <div className="rounded-lg border bg-muted/30 p-3">
+              <div className="max-h-[60vh] space-ms-3 overflow-y-auto text-ms-xs">
+                <div className="rounded-lg border bg-muted/30 p-ms-3">
                   <div className="grid grid-cols-[90px_1fr] gap-y-1.5">
                     <div className="text-muted-foreground">Judul</div>
                     <div className="font-semibold">{preview.t}</div>
@@ -1284,16 +1284,16 @@ function TugasBaruForm() {
                   </div>
                 </div>
                 <div>
-                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div className="mb-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Barang ({preview.items.length})
                   </div>
-                  <ol className="space-y-1 rounded-lg border bg-card p-3">
+                  <ol className="space-y-1 rounded-lg border bg-card p-ms-3">
                     {preview.items.map((it, i) => (
-                      <li key={i} className="flex items-start justify-between gap-2">
+                      <li key={i} className="flex items-start justify-between gap-ms-2">
                         <span className="truncate">
                           <span className="text-muted-foreground">{i + 1}.</span> {it.name}
                           {!it.warehouse_item_id && (
-                            <span className="ml-1 text-[10px] text-amber-600 dark:text-amber-400">(tanpa cocok produk)</span>
+                            <span className="ml-1 text-ms-2xs text-amber-600 dark:text-amber-400">(tanpa cocok produk)</span>
                           )}
                         </span>
                         <span className="shrink-0 font-mono">
@@ -1305,18 +1305,18 @@ function TugasBaruForm() {
                 </div>
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <div className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Pesan yang akan diteruskan
                     </div>
                     <button
                       type="button"
                       onClick={() => void copyText(waMessage)}
-                      className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] hover:bg-accent"
+                      className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-2xs hover:bg-accent"
                     >
                       <Copy className="h-3 w-3" /> Salin
                     </button>
                   </div>
-                  <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg border bg-[#dcf8c6] p-3 text-[11px] leading-relaxed text-[#111] dark:bg-emerald-950/40 dark:text-emerald-50">
+                  <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg border bg-[#dcf8c6] p-ms-3 text-ms-2xs leading-relaxed text-[#111] dark:bg-emerald-950/40 dark:text-emerald-50">
                     {waMessage}
                   </pre>
                 </div>
@@ -1353,7 +1353,7 @@ function TokenDuplicateBadge({
   if (check.status === "invalid") return null;
   if (check.status === "checking") {
     return (
-      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+      <div className="mt-1 inline-flex items-center gap-ms-1 rounded-md bg-muted px-ms-2 py-0.5 text-ms-2xs text-muted-foreground">
         <svg className="h-2.5 w-2.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
           <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
           <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
@@ -1364,15 +1364,15 @@ function TokenDuplicateBadge({
   }
   if (check.status === "unique") {
     return (
-      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-200">
+      <div className="mt-1 inline-flex items-center gap-ms-1 rounded-md bg-emerald-500/15 px-ms-2 py-0.5 text-ms-2xs font-medium text-emerald-700 dark:text-emerald-200">
         <Check className="h-3 w-3" /> Token belum dipakai — aman
       </div>
     );
   }
   if (check.status === "duplicate") {
     return (
-      <div className="mt-1 flex items-start justify-between gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
-        <span className="flex items-start gap-1">
+      <div className="mt-1 flex items-start justify-between gap-ms-2 rounded-md border border-destructive/50 bg-destructive/10 px-ms-2 py-1 text-ms-2xs text-destructive">
+        <span className="flex items-start gap-ms-1">
           <ShieldAlert className="mt-px h-3 w-3 shrink-0" />
           <span>
             <b>Token sudah dipakai</b> oleh tugas lain. Ubah tokennya atau tekan Acak agar tugas baru bisa dibuat.
@@ -1381,7 +1381,7 @@ function TokenDuplicateBadge({
         <button
           type="button"
           onClick={onRandom}
-          className="shrink-0 rounded border border-destructive/40 px-2 py-0.5 text-[10px] font-medium hover:bg-destructive/10"
+          className="shrink-0 rounded border border-destructive/40 px-ms-2 py-0.5 text-ms-2xs font-medium hover:bg-destructive/10"
         >
           Acak token
         </button>
@@ -1389,7 +1389,7 @@ function TokenDuplicateBadge({
     );
   }
   return (
-    <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-700 dark:text-amber-200">
+    <div className="mt-1 inline-flex items-center gap-ms-1 rounded-md bg-amber-500/15 px-ms-2 py-0.5 text-ms-2xs text-amber-700 dark:text-amber-200">
       <Info className="h-3 w-3" /> Gagal memeriksa token{check.error ? `: ${check.error}` : ""}. Coba lagi.
     </div>
   );
@@ -1398,7 +1398,7 @@ function TokenDuplicateBadge({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div className="text-ms-xs font-medium text-muted-foreground">{label}</div>
       {children}
     </label>
   );
@@ -1547,7 +1547,7 @@ function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | 
     : "Belum ada draft tersimpan";
   return (
     <div
-      className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"
+      className="flex flex-wrap items-center gap-ms-1.5 text-ms-2xs text-muted-foreground"
       role="group"
       aria-label={ariaLabel}
       title={info.tooltip}
@@ -1558,14 +1558,14 @@ function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | 
           via animate-fade-in instead of snapping in place. */}
       <span
         key={`mode-${tooltipMode}`}
-        className="inline-flex flex-wrap items-center gap-1.5 animate-fade-in [animation-duration:220ms] motion-reduce:animate-none motion-reduce:[animation-duration:0ms]"
+        className="inline-flex flex-wrap items-center gap-ms-1.5 animate-fade-in [animation-duration:220ms] motion-reduce:animate-none motion-reduce:[animation-duration:0ms]"
       >
         {info.stamp ? (
           <>
             <span className="tabular-nums" aria-hidden="true">{info.stamp}</span>
             <span className="text-muted-foreground/70" aria-hidden="true">({info.ago})</span>
             <span
-              className={`rounded-sm px-1.5 py-px text-[10px] font-medium transition-colors duration-300 motion-reduce:transition-none ${info.meta.cls}`}
+              className={`rounded-sm px-1.5 py-px text-ms-2xs font-medium transition-colors duration-300 motion-reduce:transition-none ${info.meta.cls}`}
               aria-hidden="true"
             >
               {info.meta.label}
@@ -1573,7 +1573,7 @@ function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | 
           </>
         ) : (
           <span
-            className="rounded-sm bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground"
+            className="rounded-sm bg-muted px-1.5 py-px text-ms-2xs font-medium text-muted-foreground"
             aria-hidden="true"
           >
             Belum ada
@@ -1628,16 +1628,16 @@ function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof de
       <PopoverContent
         align="start"
         aria-label={dialogTitle}
-        className="w-[320px] space-y-3 p-3 text-[11px]"
+        className="w-[320px] space-ms-3 p-ms-3 text-ms-2xs"
       >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold" id="autosave-detail-heading">
+          <span className="text-ms-xs font-semibold" id="autosave-detail-heading">
             {dialogTitle}
           </span>
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent"
+            className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-0.5 text-ms-2xs hover:bg-accent"
             aria-label={copyLabel}
             aria-live="polite"
           >
@@ -1676,21 +1676,21 @@ function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof de
               }
             />
             <details className="group rounded-md border bg-muted/30">
-              <summary className="cursor-pointer list-none px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground">
+              <summary className="cursor-pointer list-none px-ms-2 py-1 text-ms-2xs font-medium text-muted-foreground hover:text-foreground">
                 Teks siap-salin ▾
               </summary>
               <textarea
                 readOnly
                 value={textToCopy}
                 onFocus={(e) => e.currentTarget.select()}
-                className={`${isShort ? "h-12" : "h-40"} w-full resize-none rounded-b-md border-0 border-t bg-background p-2 font-mono text-[10px] leading-snug tabular-nums`}
+                className={`${isShort ? "h-12" : "h-40"} w-full resize-none rounded-b-md border-0 border-t bg-background p-ms-2 font-mono text-ms-2xs leading-snug tabular-nums`}
                 aria-label={textareaLabel}
                 aria-describedby="autosave-detail-heading"
               />
             </details>
           </>
         ) : (
-          <p className="text-[11px] text-muted-foreground">Belum ada draft tersimpan.</p>
+          <p className="text-ms-2xs text-muted-foreground">Belum ada draft tersimpan.</p>
         )}
       </PopoverContent>
     </Popover>
@@ -1699,7 +1699,7 @@ function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof de
 
 function DetailGrid({ rows }: { rows: { label: string; value: string; mono?: boolean; wrap?: boolean }[] }) {
   return (
-    <dl className="grid grid-cols-[72px_1fr] gap-x-3 gap-y-1 text-[11px]">
+    <dl className="grid grid-cols-[72px_1fr] gap-x-3 gap-y-1 text-ms-2xs">
       {rows.map((r) => (
         <div key={r.label} className="contents">
           <dt className="text-muted-foreground">{r.label}</dt>
@@ -1720,7 +1720,7 @@ function DetailGrid({ rows }: { rows: { label: string; value: string; mono?: boo
 function TooltipModeToggle({ mode, onChange }: { mode: TooltipMode; onChange: (m: TooltipMode) => void }) {
   return (
     <div
-      className="flex items-center gap-1 text-[10px] text-muted-foreground"
+      className="flex items-center gap-ms-1 text-ms-2xs text-muted-foreground"
       role="group"
       aria-label="Mode tooltip autosave"
     >
@@ -1795,7 +1795,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
   const content =
     state === "pending" ? (
       <span
-        className="inline-flex items-center gap-1 rounded-sm bg-amber-500/15 px-1.5 py-px text-amber-700 dark:bg-amber-400/25 dark:text-amber-200"
+        className="inline-flex items-center gap-ms-1 rounded-sm bg-amber-500/15 px-1.5 py-px text-amber-700 dark:bg-amber-400/25 dark:text-amber-200"
         title={info.tooltip}
       >
         <svg
@@ -1811,7 +1811,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
       </span>
     ) : state === "saved" ? (
       <span
-        className="inline-flex items-center gap-1"
+        className="inline-flex items-center gap-ms-1"
         title={info.tooltip}
       >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -1839,7 +1839,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
   if (content) lastContentRef.current = content;
   return (
     <div
-      className={`pointer-events-none flex h-4 justify-end text-[10px] text-muted-foreground transition-opacity duration-700 ease-out motion-reduce:transition-none motion-reduce:duration-0 ${
+      className={`pointer-events-none flex h-4 justify-end text-ms-2xs text-muted-foreground transition-opacity duration-700 ease-out motion-reduce:transition-none motion-reduce:duration-0 ${
         show ? "opacity-100" : "opacity-0"
       }`}
       aria-live="polite"

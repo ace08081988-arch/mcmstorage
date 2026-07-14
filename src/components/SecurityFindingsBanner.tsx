@@ -36,27 +36,27 @@ export function SecurityFindingsBanner({ compact = false }: { compact?: boolean 
   if (open.length === 0 && !compact) return null
 
   return (
-    <div className="mb-3 rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100">
-      <div className="flex items-start gap-3">
+    <div className="mb-3 rounded-lg border border-amber-300/60 bg-amber-50 p-ms-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100">
+      <div className="flex items-start gap-ms-3">
         <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
-        <div className="flex-1 text-sm">
+        <div className="flex-1 text-ms-sm">
           <div className="font-medium">
             {open.length === 0
               ? 'Scan keamanan: tidak ada temuan terbuka'
               : `${open.length} temuan keamanan terbuka`}
           </div>
           {data.lastRun?.finished_at && (
-            <div className="mt-0.5 text-xs text-amber-900/70 dark:text-amber-100/70">
+            <div className="mt-0.5 text-ms-xs text-amber-900/70 dark:text-amber-100/70">
               Scan terakhir: {new Date(data.lastRun.finished_at).toLocaleString('id-ID')} ·{' '}
               {data.lastRun.finding_count} total, {data.lastRun.new_count} baru
             </div>
           )}
           {expanded && open.length > 0 && (
-            <ul className="mt-2 space-y-1.5 text-xs">
+            <ul className="mt-2 space-y-1.5 text-ms-xs">
               {open.slice(0, 20).map((f) => (
-                <li key={f.id} className="flex items-start gap-2 rounded border border-amber-200/60 bg-white/40 p-2 dark:border-amber-500/20 dark:bg-amber-950/30">
+                <li key={f.id} className="flex items-start gap-ms-2 rounded border border-amber-200/60 bg-white/40 p-ms-2 dark:border-amber-500/20 dark:bg-amber-950/30">
                   <span
-                    className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${
+                    className={`rounded px-1.5 py-0.5 text-ms-2xs font-medium uppercase ${
                       f.severity === 'critical'
                         ? 'bg-destructive text-destructive-foreground'
                         : 'bg-amber-200 text-amber-900 dark:bg-amber-700 dark:text-amber-50'
@@ -66,14 +66,14 @@ export function SecurityFindingsBanner({ compact = false }: { compact?: boolean 
                   </span>
                   <div className="flex-1">
                     <div className="font-medium">{f.title}</div>
-                    <div className="font-mono text-[10px] text-amber-900/60 dark:text-amber-100/60">
+                    <div className="font-mono text-ms-2xs text-amber-900/60 dark:text-amber-100/60">
                       {f.code}
                     </div>
                   </div>
                   <button
                     onClick={() => ackMut.mutate([f.id])}
                     disabled={ackMut.isPending}
-                    className="inline-flex h-6 items-center gap-1 rounded border border-amber-300 px-1.5 text-[11px] hover:bg-amber-100 dark:border-amber-500/50 dark:hover:bg-amber-900/40"
+                    className="inline-flex h-6 items-center gap-ms-1 rounded border border-amber-300 px-1.5 text-ms-2xs hover:bg-amber-100 dark:border-amber-500/50 dark:hover:bg-amber-900/40"
                     title="Tandai sudah ditangani"
                   >
                     <Check className="h-3 w-3" /> OK
@@ -82,7 +82,7 @@ export function SecurityFindingsBanner({ compact = false }: { compact?: boolean 
               ))}
             </ul>
           )}
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-ms-2">
             {open.length > 0 && (
               <Button size="sm" variant="outline" onClick={() => setExpanded((v) => !v)}>
                 {expanded ? 'Sembunyikan' : 'Lihat detail'}

@@ -295,9 +295,9 @@ function PengaturanHub() {
         }
       />
 
-      <div className="mx-auto max-w-3xl px-3 py-3 sm:px-4 sm:py-4">
+      <div className="mx-auto max-w-3xl px-ms-3 py-ms-3 sm:px-ms-4 sm:py-ms-4">
         {/* Search — sticky di bawah header supaya tetap terlihat saat scroll */}
-        <div className="sticky top-[52px] z-10 -mx-3 mb-3 bg-background/85 px-3 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:top-[60px] sm:-mx-4 sm:px-4">
+        <div className="sticky top-[52px] z-10 -mx-3 mb-3 bg-background/85 px-ms-3 py-ms-2 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:top-[60px] sm:-mx-4 sm:px-ms-4">
           <label htmlFor="pengaturan-search" className="relative block">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -309,7 +309,7 @@ function PengaturanHub() {
               onChange={(e) => setQ(e.target.value)}
               placeholder="Cari pengaturan… (mis. tema, pin, notifikasi)"
               maxLength={80}
-              className="h-10 pl-9 text-sm"
+              className="h-10 pl-9 text-ms-sm"
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
@@ -318,23 +318,23 @@ function PengaturanHub() {
         </div>
 
         {visibleCategories.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
             Tidak ada pengaturan yang cocok dengan{" "}
             <span className="font-medium text-foreground">"{q.trim()}"</span>.
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-ms-5">
             {visibleCategories.map((cat) => (
               <section key={cat.key} aria-labelledby={`cat-${cat.key}`}>
                 <div className="mb-1.5 flex items-baseline justify-between px-1">
                   <h2
                     id={`cat-${cat.key}`}
-                    className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                    className="text-ms-2xs font-semibold uppercase tracking-wider text-muted-foreground"
                   >
                     {cat.label}
                   </h2>
                   {cat.hint && !q.trim() ? (
-                    <span className="hidden text-[10px] text-muted-foreground/70 sm:inline">
+                    <span className="hidden text-ms-2xs text-muted-foreground/70 sm:inline">
                       {cat.hint}
                     </span>
                   ) : null}
@@ -363,7 +363,7 @@ function SettingLink({ entry }: { entry: SettingEntry }) {
     <Link
       to={entry.to}
       className={cn(
-        "group flex items-center gap-3 px-3 py-3 transition-colors",
+        "group flex items-center gap-ms-3 px-ms-3 py-ms-3 transition-colors",
         "hover:bg-accent/50 active:bg-accent focus-visible:bg-accent",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
       )}
@@ -375,7 +375,7 @@ function SettingLink({ entry }: { entry: SettingEntry }) {
         <Icon className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium leading-tight">
+        <span className="block truncate text-ms-sm font-medium leading-tight">
           {entry.title}
           {entry.adminOnly ? (
             <span className="ml-1.5 rounded bg-amber-500/15 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">
@@ -383,7 +383,7 @@ function SettingLink({ entry }: { entry: SettingEntry }) {
             </span>
           ) : null}
         </span>
-        <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground line-clamp-2">
+        <span className="mt-0.5 block text-ms-2xs leading-snug text-muted-foreground line-clamp-2">
           {entry.description}
         </span>
       </span>

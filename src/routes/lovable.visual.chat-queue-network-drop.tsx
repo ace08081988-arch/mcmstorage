@@ -167,10 +167,10 @@ function Harness() {
   }, [busy, rows]);
 
   return (
-    <main className="mx-auto max-w-md space-y-4 p-4">
-      <h1 className="text-lg font-semibold">Harness · Queue produk (network drop)</h1>
+    <main className="mx-auto max-w-md space-ms-4 p-ms-4">
+      <h1 className="text-ms-lg font-semibold">Harness · Queue produk (network drop)</h1>
 
-      <section className="rounded border p-3 text-sm">
+      <section className="rounded border p-ms-3 text-ms-sm">
         <div>
           Online:{" "}
           <span data-testid="online-state" data-online={online ? "1" : "0"}>
@@ -189,11 +189,11 @@ function Harness() {
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-ms-2">
         <button
           type="button"
           data-testid="btn-seed"
-          className="rounded bg-blue-600 px-3 py-2 text-white"
+          className="rounded bg-blue-600 px-ms-3 py-ms-2 text-white"
           onClick={seed}
         >
           Isi Queue (3)
@@ -201,7 +201,7 @@ function Harness() {
         <button
           type="button"
           data-testid="btn-kirim"
-          className="rounded bg-green-600 px-3 py-2 text-white disabled:opacity-50"
+          className="rounded bg-green-600 px-ms-3 py-ms-2 text-white disabled:opacity-50"
           disabled={busy || rows.length === 0}
           onClick={() => { void kirim(); }}
         >
@@ -210,23 +210,23 @@ function Harness() {
         <button
           type="button"
           data-testid="btn-clear"
-          className="rounded bg-gray-600 px-3 py-2 text-white"
+          className="rounded bg-gray-600 px-ms-3 py-ms-2 text-white"
           onClick={clear}
         >
           Reset
         </button>
       </div>
 
-      <ul data-testid="queue-list" className="space-y-2">
+      <ul data-testid="queue-list" className="space-ms-2">
         {rows.map((r) => (
           <li
             key={r.id}
             data-testid={`queue-item-${r.id}`}
             data-status={statuses[r.id] ?? "idle"}
-            className="rounded border p-2 text-sm"
+            className="rounded border p-ms-2 text-ms-sm"
           >
             <div className="font-medium">{r.productName}</div>
-            <div className="text-xs text-gray-500">
+            <div className="text-ms-xs text-gray-500">
               status:{" "}
               <span data-testid={`queue-status-${r.id}`}>
                 {statuses[r.id] ?? "idle"}

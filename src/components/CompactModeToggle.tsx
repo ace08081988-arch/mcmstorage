@@ -38,7 +38,7 @@ export function CompactModeToggle() {
     <Button
       variant="ghost"
       size="sm"
-      className="h-7 w-full justify-start gap-2 px-2 text-xs"
+      className="h-7 w-full justify-start gap-ms-2 px-ms-2 text-ms-xs"
       onClick={() => setOn((v) => !v)}
       title={on ? "Matikan mode ringkas" : "Aktifkan mode ringkas"}
     >

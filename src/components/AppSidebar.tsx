@@ -186,7 +186,7 @@ function NavLinkItem({
     <Link
       to={item.url}
       preload="intent"
-      className="flex items-center gap-2.5"
+      className="flex items-center gap-ms-2.5"
       onPointerDown={(e) => {
         if (!isMobile) return;
         if (e.pointerType === "mouse") return;
@@ -245,7 +245,7 @@ function NavLinkItem({
 function OrgHeader() {
   const { full, short, logo } = useOrgName();
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-ms-2.5">
       {logo ? (
         <img
           src={logo}
@@ -256,13 +256,13 @@ function OrgHeader() {
       ) : (
         <span
           aria-hidden
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-[12px] font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-ms-xs font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
         >
           {short}
         </span>
       )}
       <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-        <div className="truncate text-[13px] font-semibold leading-tight tracking-tight">
+        <div className="truncate text-ms-sm font-semibold leading-tight tracking-tight">
           {full}
         </div>
         <div className="truncate text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -497,7 +497,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader
-        className="relative overflow-hidden border-b border-sidebar-border/50 px-3 py-4"
+        className="relative overflow-hidden border-b border-sidebar-border/50 px-ms-3 py-ms-4"
         style={{
           background:
             "linear-gradient(140deg, color-mix(in oklab, var(--primary) 10%, transparent) 0%, transparent 55%)",
@@ -516,11 +516,11 @@ export function AppSidebar() {
       <SidebarContent className="gap-0">
         {(() => {
           const renderGroup = (group: typeof visibleGroups[number], gi: number) => (
-          <SidebarGroup key={group.label} className="px-2 py-1.5">
+          <SidebarGroup key={group.label} className="px-ms-2 py-1.5">
             {gi > 0 ? (
               <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />
             ) : null}
-            <SidebarGroupLabel className="flex items-center gap-2 px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+            <SidebarGroupLabel className="flex items-center gap-ms-2 px-ms-2 pb-1 text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
               <span
                 aria-hidden
                 className="inline-block h-[3px] w-[3px] rounded-full"
@@ -538,7 +538,7 @@ export function AppSidebar() {
                         asChild
                         isActive={active}
                         tooltip={item.title}
-                        className="group/nav relative h-10 overflow-hidden rounded-xl px-2.5 font-medium text-sidebar-foreground/85 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground hover:translate-x-0.5 data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/20 data-[active=true]:via-primary/8 data-[active=true]:to-transparent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold data-[active=true]:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent)] before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-gradient-to-b before:from-primary before:to-primary/60 before:opacity-0 before:transition-opacity data-[active=true]:before:opacity-100"
+                        className="group/nav relative h-10 overflow-hidden rounded-xl px-ms-2.5 font-medium text-sidebar-foreground/85 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground hover:translate-x-0.5 data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/20 data-[active=true]:via-primary/8 data-[active=true]:to-transparent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold data-[active=true]:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent)] before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-gradient-to-b before:from-primary before:to-primary/60 before:opacity-0 before:transition-opacity data-[active=true]:before:opacity-100"
                       >
                         <NavLinkItem
                           item={item}
@@ -555,15 +555,15 @@ export function AppSidebar() {
                                 : "text-muted-foreground group-hover/nav:text-sidebar-foreground")
                             }
                           />
-                          <span className="truncate text-[13px] tracking-[-0.005em]">
+                          <span className="truncate text-ms-sm tracking-[-0.005em]">
                             {item.title}
                           </span>
                           {item.url === "/chat" && (chatCounts.unread > 0 || chatCounts.archivedUnread > 0) ? (
-                            <span className="ml-auto flex items-center gap-1 group-data-[collapsible=icon]:hidden">
+                            <span className="ml-auto flex items-center gap-ms-1 group-data-[collapsible=icon]:hidden">
                               {chatCounts.unread > 0 ? (
                                 <span
                                   title={`${chatCounts.unread} pesan belum dibaca`}
-                                  className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-none text-primary-foreground"
+                                  className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-ms-2xs font-semibold leading-none text-primary-foreground"
                                 >
                                   {chatCounts.unread > 99 ? "99+" : chatCounts.unread}
                                 </span>
@@ -571,7 +571,7 @@ export function AppSidebar() {
                               {chatCounts.archivedUnread > 0 ? (
                                 <span
                                   title={`${chatCounts.archivedUnread} pesan belum dibaca di arsip`}
-                                  className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-sidebar-border bg-sidebar-accent/60 px-1.5 text-[10px] font-medium leading-none text-muted-foreground"
+                                  className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-sidebar-border bg-sidebar-accent/60 px-1.5 text-ms-2xs font-medium leading-none text-muted-foreground"
                                 >
                                   {chatCounts.archivedUnread > 99 ? "99+" : chatCounts.archivedUnread}
                                 </span>
@@ -591,14 +591,14 @@ export function AppSidebar() {
           primaryGroups.forEach((g, gi) => nodes.push(renderGroup(g, gi)));
           if (isMobile && secondaryGroups.length > 0) {
             nodes.push(
-              <SidebarGroup key="__more__" className="px-2 py-1.5">
+              <SidebarGroup key="__more__" className="px-ms-2 py-1.5">
                 <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />
                 <button
                   type="button"
                   onClick={() => setShowMore((v) => !v)}
                   aria-expanded={showMore}
                   aria-controls="mcm-sidebar-more"
-                  className="group/nav flex h-10 w-full items-center gap-2.5 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/25 px-2.5 text-[13px] font-medium text-sidebar-foreground/90 transition-colors hover:border-primary/30 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  className="group/nav flex h-10 w-full items-center gap-ms-2.5 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/25 px-ms-2.5 text-ms-sm font-medium text-sidebar-foreground/90 transition-colors hover:border-primary/30 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 >
                   <span
                     aria-hidden
@@ -608,7 +608,7 @@ export function AppSidebar() {
                     <MoreHorizontal className="h-3.5 w-3.5 text-primary" />
                   </span>
                   <span className="flex-1 truncate text-left tracking-[-0.005em]">Lainnya</span>
-                  <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+                  <span className="text-ms-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
                     {showMore ? "Tutup" : "Buka"}
                   </span>
                   <ChevronDown
@@ -631,7 +631,7 @@ export function AppSidebar() {
           return nodes;
         })()}
       </SidebarContent>
-      <SidebarFooter className="gap-2 border-t border-sidebar-border/40 px-2 pb-2 pt-2 group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="gap-ms-2 border-t border-sidebar-border/40 px-ms-2 pb-2 pt-2 group-data-[collapsible=icon]:hidden">
         <div
           title={
             syncState === "syncing"
@@ -640,9 +640,9 @@ export function AppSidebar() {
                 ? `Tidak ada koneksi — badge mungkin tertinggal. ${lastSyncTitle}`
                 : lastSyncTitle
           }
-          className="flex items-center justify-between gap-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-2.5 py-1.5 text-[11px] font-medium backdrop-blur-sm"
+          className="flex items-center justify-between gap-ms-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-ms-2.5 py-1.5 text-ms-2xs font-medium backdrop-blur-sm"
         >
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-ms-2">
             <span className="relative inline-flex h-2 w-2 shrink-0">
               <span
                 className={
@@ -670,7 +670,7 @@ export function AppSidebar() {
               {syncMeta.label}
             </span>
           </span>
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-ms-1.5">
             <span className="text-muted-foreground">
               {syncState === "syncing" ? "…" : lastSyncLabel}
             </span>
@@ -694,14 +694,14 @@ export function AppSidebar() {
             </button>
           </span>
         </div>
-        <div className="rounded-xl border border-sidebar-border/40 bg-sidebar-accent/15 p-1">
+        <div className="rounded-xl border border-sidebar-border/40 bg-sidebar-accent/15 p-ms-1">
           <CompactModeToggle />
           <ReduceMotionToggle />
         </div>
         {!chatOnly && (
           <a
             href="/download#chat"
-            className="group/chat relative mt-1 flex items-center gap-2.5 overflow-hidden rounded-xl px-2.5 py-2 text-[11px] font-medium text-foreground transition-all hover:translate-y-[-1px]"
+            className="group/chat relative mt-1 flex items-center gap-ms-2.5 overflow-hidden rounded-xl px-ms-2.5 py-ms-2 text-ms-2xs font-medium text-foreground transition-all hover:translate-y-[-1px]"
             style={{
               background:
                 "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent), color-mix(in oklab, var(--primary) 6%, transparent))",
@@ -721,7 +721,7 @@ export function AppSidebar() {
             </span>
             <span className="flex-1 leading-tight">
               Coba <b className="tracking-tight">MCM Chat</b>
-              <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">APK khusus chat · akun sama</span>
+              <span className="mt-0.5 block text-ms-2xs font-normal text-muted-foreground">APK khusus chat · akun sama</span>
             </span>
             <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-primary/70 transition-transform group-hover/chat:translate-x-0.5" />
           </a>

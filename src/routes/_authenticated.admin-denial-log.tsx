@@ -152,11 +152,11 @@ function AdminDenialLogPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-4 p-4">
-      <div className="flex items-center justify-between gap-2">
+    <div className="mx-auto w-full max-w-5xl space-ms-4 p-ms-4">
+      <div className="flex items-center justify-between gap-ms-2">
         <Link
           to="/diagnostics"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-ms-1 text-ms-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" /> Diagnostik
         </Link>
@@ -174,11 +174,11 @@ function AdminDenialLogPage() {
       </div>
 
       <div>
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
+        <h1 className="text-ms-2xl font-semibold flex items-center gap-ms-2">
           <ShieldAlert className="h-6 w-6 text-amber-600" />
           Log Penolakan Admin
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-ms-sm text-muted-foreground">
           Menampilkan pemanggilan server fn admin yang ditolak (non-admin
           mencoba akses). Gunakan untuk melacak route/halaman yang masih
           memanggil fn admin.
@@ -187,13 +187,13 @@ function AdminDenialLogPage() {
 
       {isCheckingAdmin ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
+          <CardContent className="p-ms-6 text-ms-sm text-muted-foreground">
             Memeriksa akses…
           </CardContent>
         </Card>
       ) : !isAdmin ? (
         <Card>
-          <CardContent className="space-y-2 p-6 text-sm">
+          <CardContent className="space-ms-2 p-ms-6 text-ms-sm">
             <div className="font-medium">Halaman ini hanya untuk admin.</div>
             <p className="text-muted-foreground">
               Kembali ke{" "}
@@ -212,11 +212,11 @@ function AdminDenialLogPage() {
         <>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Filter</CardTitle>
+              <CardTitle className="text-ms-base">Filter</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-3">
+            <CardContent className="grid gap-ms-3 sm:grid-cols-3">
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Fungsi (fn)</label>
+                <label className="text-ms-xs text-muted-foreground">Fungsi (fn)</label>
                 <Select value={fnFilter} onValueChange={setFnFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Semua fn" />
@@ -232,7 +232,7 @@ function AdminDenialLogPage() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">User ID</label>
+                <label className="text-ms-xs text-muted-foreground">User ID</label>
                 <Input
                   value={userIdDraft}
                   placeholder="uuid persis"
@@ -243,7 +243,7 @@ function AdminDenialLogPage() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">
+                <label className="text-ms-xs text-muted-foreground">
                   Referer mengandung
                 </label>
                 <Input
@@ -255,7 +255,7 @@ function AdminDenialLogPage() {
                   }}
                 />
               </div>
-              <div className="sm:col-span-3 flex flex-wrap items-center gap-2 pt-1">
+              <div className="sm:col-span-3 flex flex-wrap items-center gap-ms-2 pt-1">
                 <Button size="sm" onClick={applyFilters}>
                   <Search className="h-4 w-4" />
                   <span className="ml-2">Terapkan</span>
@@ -269,9 +269,9 @@ function AdminDenialLogPage() {
                   <X className="h-4 w-4" />
                   <span className="ml-2">Bersihkan</span>
                 </Button>
-                <div className="ml-auto text-xs text-muted-foreground">
+                <div className="ml-auto text-ms-xs text-muted-foreground">
                   <span
-                    className={`mr-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-snug ${
+                    className={`mr-2 inline-flex items-center gap-ms-1 rounded-full px-ms-2 py-0.5 text-ms-2xs leading-snug ${
                       liveOn
                         ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                         : "bg-muted text-muted-foreground"
@@ -301,16 +301,16 @@ function AdminDenialLogPage() {
           {byReferer.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">
+                <CardTitle className="text-ms-base">
                   Referer teratas (hasil saat ini)
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
+              <CardContent className="flex flex-wrap gap-ms-2">
                 {byReferer.map(([ref, count]) => (
                   <button aria-label="Klik untuk filter referer ini"
                     key={ref}
                     type="button"
-                    className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-xs hover:bg-muted"
+                    className="inline-flex items-center gap-ms-2 rounded-md border border-border/60 bg-muted/40 px-ms-2 py-1 text-ms-xs hover:bg-muted"
                     onClick={() => {
                       const v = ref === "(tanpa referer)" ? "" : ref;
                       setRefererDraft(v);
@@ -332,57 +332,57 @@ function AdminDenialLogPage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">
+              <CardTitle className="text-ms-base">
                 {rows.length} kejadian terbaru
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0">
               {q.isLoading ? (
-                <div className="px-6 pb-4 text-sm text-muted-foreground">
+                <div className="px-ms-6 pb-4 text-ms-sm text-muted-foreground">
                   Memuat…
                 </div>
               ) : rows.length === 0 ? (
-                <div className="px-6 pb-4 text-sm text-muted-foreground">
+                <div className="px-ms-6 pb-4 text-ms-sm text-muted-foreground">
                   Tidak ada penolakan admin yang cocok dengan filter.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                  <table className="w-full text-ms-sm">
+                    <thead className="bg-muted/50 text-ms-xs uppercase text-muted-foreground">
                       <tr>
-                        <th className="px-4 py-2 text-left">Waktu</th>
-                        <th className="px-4 py-2 text-left">Fungsi</th>
-                        <th className="px-4 py-2 text-left">User ID</th>
-                        <th className="px-4 py-2 text-left">Referer</th>
-                        <th className="px-4 py-2 text-left">Alasan</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Waktu</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Fungsi</th>
+                        <th className="px-ms-4 py-ms-2 text-left">User ID</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Referer</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Alasan</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r) => (
                         <tr key={r.id} className="border-t border-border/60 align-top">
-                          <td className="px-4 py-2">
+                          <td className="px-ms-4 py-ms-2">
                             <div className="font-medium">
                               {fmtAgo(r.created_at)}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-ms-xs text-muted-foreground">
                               {fmtAbs(r.created_at)}
                             </div>
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-ms-4 py-ms-2">
                             <button aria-label="Filter fn ini"
                               type="button"
-                              className="font-mono text-xs hover:underline"
+                              className="font-mono text-ms-xs hover:underline"
                               onClick={() => setFnFilter(r.fn)}
                               title="Filter fn ini"
                             >
                               {r.fn}
                             </button>
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-ms-4 py-ms-2">
                             {r.user_id ? (
                               <button
                                 type="button"
-                                className="font-mono text-xs hover:underline"
+                                className="font-mono text-ms-xs hover:underline"
                                 onClick={() => {
                                   setUserIdDraft(r.user_id!);
                                   setUserIdFilter(r.user_id!);
@@ -392,16 +392,16 @@ function AdminDenialLogPage() {
                                 {r.user_id.slice(0, 8)}…
                               </button>
                             ) : (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-ms-xs text-muted-foreground">
                                 —
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-ms-4 py-ms-2">
                             {r.referer ? (
                               <button
                                 type="button"
-                                className="max-w-[320px] truncate text-left text-xs hover:underline"
+                                className="max-w-[320px] truncate text-left text-ms-xs hover:underline"
                                 onClick={() => {
                                   setRefererDraft(r.referer!);
                                   setRefererFilter(r.referer!);
@@ -411,12 +411,12 @@ function AdminDenialLogPage() {
                                 {r.referer}
                               </button>
                             ) : (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-ms-xs text-muted-foreground">
                                 —
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-xs text-muted-foreground">
+                          <td className="px-ms-4 py-ms-2 text-ms-xs text-muted-foreground">
                             {r.reason}
                           </td>
                         </tr>

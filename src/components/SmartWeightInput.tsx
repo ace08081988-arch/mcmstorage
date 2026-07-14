@@ -108,7 +108,7 @@ export function SmartWeightInput({
         aria-label={ariaLabel}
       />
       {showPreview && (
-        <div className="mt-0.5 text-[10px] text-muted-foreground">
+        <div className="mt-0.5 text-ms-2xs text-muted-foreground">
           = {formatGramsSmart(parsed!)}
         </div>
       )}
