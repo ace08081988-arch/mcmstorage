@@ -108,8 +108,11 @@
   --ms-space-8:  2rem;      /* 32 */
   --ms-space-10: 2.5rem;    /* 40 */
   --ms-space-12: 3rem;      /* 48 */
-  /* Target sentuh & radius kartu — jaga aksesibilitas mobile. */
-  --ms-tap:      2.75rem;   /* 44px min target */
+  /* Target sentuh & radius kartu — jaga aksesibilitas mobile.
+     `max()` memastikan tap target tetap ≥44px meski user memilih
+     font-size "sm" (rem menyusut). Ketika user memperbesar font,
+     tap target ikut membesar. */
+  --ms-tap:      max(2.75rem, 44px);
   --ms-radius-card: calc(var(--radius) + 4px);
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
