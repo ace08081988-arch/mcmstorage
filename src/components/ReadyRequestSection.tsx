@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Boxes,
   Inbox,
   Loader2,
+  MessageCircle,
   PackagePlus,
   RefreshCw,
   Search,
+  Send,
   X,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +37,21 @@ export function ReadyRequestSection() {
   const [layout, setLayout] = useLayoutMode("readyRequest", "list");
   const gridClass = layoutGridClass(layout);
   const compact = layout === "compact";
+  const navigate = useNavigate();
+
+  const openSendFlow = useCallback((r: Row) => {
+    if (r.prep_count === 0) {
+      toast.error("Belum ada kiriman pegawai", {
+        description:
+          "Tidak ada paket aktif untuk judul ini. Buka /request dan buat/tunggu penyiapan dulu.",
+      });
+      return;
+    }
+    void navigate({
+      to: "/request",
+      search: { title: r.id, highlight: undefined, send: "1" },
+    });
+  }, [navigate]);
 
   const load = useCallback(async () => {
     const [tRes, tiRes, wRes, pRes] = await Promise.all([
@@ -158,6 +176,7 @@ export function ReadyRequestSection() {
               compact={compact}
               refreshing={refreshing}
               onRefresh={handleRefresh}
+              onSend={() => openSendFlow(r)}
             />
           ))}
         </div>
@@ -171,11 +190,13 @@ function RequestCard({
   compact,
   refreshing,
   onRefresh,
+  onSend,
 }: {
   row: Row;
   compact: boolean;
   refreshing: boolean;
   onRefresh: () => void;
+  onSend: () => void;
 }) {
   const hasPrep = r.prep_count > 0;
   return (
@@ -254,6 +275,40 @@ function RequestCard({
           </span>
         )}
       </Link>
+
+      {/* Tombol Kirim WA/Chat — WAJIB lewat dialog verifikasi penjualan
+          (mirror SiapkanSendiri/ecer): keduanya membuka
+          `SendPrepToCustomerDialog` di `/request` via deep-link `send=1`. */}
+      <div className="flex items-center gap-ms-1.5">
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSend(); }}
+          disabled={!hasPrep}
+          aria-label={`Kirim WA untuk ${r.name}`}
+          title={
+            hasPrep
+              ? "Verifikasi penjualan dulu → lampirkan foto & kirim ke WhatsApp"
+              : "Belum ada paket aktif — buka Request untuk membuat penyiapan"
+          }
+          className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#7ee2a8]"
+        >
+          <Send className="h-3 w-3" /> WA
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSend(); }}
+          disabled={!hasPrep}
+          aria-label={`Kirim Chat untuk ${r.name}`}
+          title={
+            hasPrep
+              ? "Verifikasi penjualan dulu sebelum kirim via Chat"
+              : "Belum ada paket aktif — buka Request untuk membuat penyiapan"
+          }
+          className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded-md border border-primary/40 bg-primary/10 px-ms-2 text-ms-2xs font-semibold text-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <MessageCircle className="h-3 w-3" /> Chat
+        </button>
+      </div>
 
       {!compact && !hasPrep && (
         <div className="flex flex-col items-center gap-ms-1 rounded-md border border-dashed bg-muted/40 px-ms-2 py-ms-2.5 text-center">

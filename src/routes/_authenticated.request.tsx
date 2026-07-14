@@ -56,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/request")({
   validateSearch: (s: Record<string, unknown>) => ({
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
+    send: s.send === "1" ? "1" as const : undefined,
   }),
   component: RequestPage,
 });
@@ -87,6 +88,9 @@ function RequestPage() {
   const [loadError, setLoadError] = useState<LoadErr | null>(null);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
+  // Deep-link `send=1` dari Beranda (ReadyRequestSection). Buka dialog verifikasi
+  // penjualan otomatis pada paket aktif pertama — sekali saja, lalu dikonsumsi.
+  const [autoSendPending, setAutoSendPending] = useState<boolean>(search.send === "1");
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
@@ -290,6 +294,8 @@ function RequestPage() {
         titleItems={selectedTitleItems}
         onBack={() => setSelectedTitleId(undefined)}
         onChanged={loadAll}
+        autoOpenSend={autoSendPending}
+        onConsumeAutoOpenSend={() => setAutoSendPending(false)}
       />
     );
   }
@@ -1460,13 +1466,15 @@ function SendPrepLinkDialog({
 }
 
 function TitleDetailView({
-  title, warehouseItems, titleItems, onBack, onChanged,
+  title, warehouseItems, titleItems, onBack, onChanged, autoOpenSend, onConsumeAutoOpenSend,
 }: {
   title: RequestTitle;
   warehouseItems: WarehouseItem[];
   titleItems: RequestTitleItem[];
   onBack: () => void;
   onChanged: () => void;
+  autoOpenSend?: boolean;
+  onConsumeAutoOpenSend?: () => void;
 }) {
   const [preps, setPreps] = useState<RequestPreparation[]>([]);
   const [prepItems, setPrepItems] = useState<Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>>([]);
@@ -1581,6 +1589,8 @@ function TitleDetailView({
             onChanged();
             return load();
           }}
+          autoOpenSend={autoOpenSend}
+          onConsumeAutoOpenSend={onConsumeAutoOpenSend}
         />
       )}
 
@@ -1598,6 +1608,7 @@ function TitleDetailView({
 
 function PrepSections({
   preps, prepItems, warehouseItems, titleItems, titleName, customers, onDelete, onChanged,
+  autoOpenSend, onConsumeAutoOpenSend,
 }: {
   preps: RequestPreparation[];
   prepItems: Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>;
@@ -1607,6 +1618,8 @@ function PrepSections({
   customers: CustomerRow[];
   onDelete: (p: RequestPreparation) => void;
   onChanged: () => Promise<{ ok: boolean; error?: string }> | void;
+  autoOpenSend?: boolean;
+  onConsumeAutoOpenSend?: () => void;
 }) {
   const [showHistory, setShowHistory] = useState(true);
   const [layout, setLayout] = useLayoutMode("requestPrep", "grid");
@@ -1803,6 +1816,8 @@ function PrepSections({
       customers={customers}
       onDelete={guardedDelete}
       onSent={guardedSent}
+      autoOpenSend={!inSent && !!autoOpenSend && idx === 0}
+      onConsumeAutoOpenSend={onConsumeAutoOpenSend}
     />
     </div>
     );
@@ -1951,6 +1966,7 @@ function PrepSections({
 
 function PrepCard({
   index, prep, items, warehouseItems, titleItems, titleName, customers, onDelete, onSent,
+  autoOpenSend, onConsumeAutoOpenSend,
 }: {
   index: number;
   prep: RequestPreparation;
@@ -1961,9 +1977,20 @@ function PrepCard({
   customers: CustomerRow[];
   onDelete: () => void;
   onSent: () => void;
+  autoOpenSend?: boolean;
+  onConsumeAutoOpenSend?: () => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
+  // Auto-buka dialog verifikasi bila datang dari deep-link `send=1`. Dikonsumsi
+  // sekali supaya tidak re-trigger saat kartu di-remount / user menutup dialog.
+  useEffect(() => {
+    if (!autoOpenSend) return;
+    if (isSentPrep(prep)) return;
+    setSendOpen(true);
+    onConsumeAutoOpenSend?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenSend]);
   // Kumpulkan semua path foto (photo_path lama + photo_paths[] baru), dedup.
   const photoPaths = useMemo(() => {
     const all = [prep.photo_path, ...(prep.photo_paths ?? [])].filter((x): x is string => !!x);
