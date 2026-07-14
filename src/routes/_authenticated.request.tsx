@@ -1623,7 +1623,7 @@ function TitleDetailView({
 
 function PrepSections({
   preps, prepItems, warehouseItems, titleItems, titleName, customers, onDelete, onChanged,
-  autoOpenSend, onConsumeAutoOpenSend,
+  autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend,
 }: {
   preps: RequestPreparation[];
   prepItems: Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>;
@@ -1634,6 +1634,7 @@ function PrepSections({
   onDelete: (p: RequestPreparation) => void;
   onChanged: () => Promise<{ ok: boolean; error?: string }> | void;
   autoOpenSend?: boolean;
+  autoOpenSendChannel?: "whatsapp" | "chat";
   onConsumeAutoOpenSend?: () => void;
 }) {
   const [showHistory, setShowHistory] = useState(true);
@@ -1832,6 +1833,7 @@ function PrepSections({
       onDelete={guardedDelete}
       onSent={guardedSent}
       autoOpenSend={!inSent && !!autoOpenSend && idx === 0}
+      autoOpenSendChannel={autoOpenSendChannel}
       onConsumeAutoOpenSend={onConsumeAutoOpenSend}
     />
     </div>
