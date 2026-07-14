@@ -3609,7 +3609,29 @@ function RequestSection({
 }) {
   const [titles, setTitles] = useState<RequestTitleDTO[] | null>(null);
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Persist panel request yang sedang dibuka. Android WebView bisa me-recreate
+  // halaman setelah balik dari Galeri; tanpa ini form request kembali tertutup
+  // dan terlihat seperti layar bolak-balik / tidak ada perubahan.
+  const openStorageKey = `mcm.prep.request.open:${token}`;
+  const [openId, setOpenIdRaw] = useState<string | null>(() => {
+    try {
+      return typeof window !== "undefined"
+        ? window.sessionStorage.getItem(openStorageKey)
+        : null;
+    } catch {
+      return null;
+    }
+  });
+  const setOpenId = (next: string | null) => {
+    setOpenIdRaw(next);
+    try {
+      if (typeof window === "undefined") return;
+      if (next) window.sessionStorage.setItem(openStorageKey, next);
+      else window.sessionStorage.removeItem(openStorageKey);
+    } catch {
+      /* ignore quota */
+    }
+  };
 
   async function load() {
     try {
@@ -3641,6 +3663,12 @@ function RequestSection({
   useEffect(() => {
     void load();
   }, [token, pin]);
+
+  useEffect(() => {
+    if (!titles || !openId) return;
+    const stillOpenable = titles.some((t) => t.id === openId && (t.submitted_count ?? 0) <= 0);
+    if (!stillOpenable) setOpenId(null);
+  }, [titles, openId]);
 
   if (!titles) return null;
   if (titles.length === 0) return null;
