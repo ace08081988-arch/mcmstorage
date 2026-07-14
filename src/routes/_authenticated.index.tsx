@@ -303,7 +303,7 @@ function Index() {
           <button
             className={
               triggerClassName ??
-              `inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${
+              `inline-flex h-8 items-center justify-center rounded-md border px-2 text-[0.6875rem] font-medium hover:bg-accent ${
                 lockCfg ? "bg-accent" : ""
               }`
             }
@@ -780,15 +780,15 @@ function Index() {
             <div className="flex min-w-0 flex-1 items-center gap-2.5">
               <span
                 aria-hidden
-                className="grid h-8 w-8 place-items-center rounded-full border border-primary/60 bg-card text-[13px] font-semibold tracking-wider text-primary shadow-[0_0_18px_color-mix(in_oklab,var(--primary)_25%,transparent)]"
+                className="grid h-8 w-8 place-items-center rounded-full border border-primary/60 bg-card text-[0.8125rem] font-semibold tracking-wider text-primary shadow-[0_0_18px_color-mix(in_oklab,var(--primary)_25%,transparent)]"
               >
                 M
               </span>
               <div className="min-w-0 leading-tight">
-                <p className="truncate text-[15px] font-semibold tracking-tight text-foreground">
+                <p className="truncate text-[0.9375rem] font-semibold tracking-tight text-foreground">
                   MCM Storage
                 </p>
-                <p className="truncate text-[10px] uppercase tracking-[0.18em] text-primary/70">
+                <p className="truncate text-[0.625rem] uppercase tracking-[0.18em] text-primary/70">
                   Retail Operations · Premium
                 </p>
               </div>
@@ -796,7 +796,7 @@ function Index() {
             {lockMenu(true, "inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/25 bg-card text-foreground hover:border-primary/60")}
             <button
               onClick={signOut}
-              className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-3 text-[11px] font-medium text-foreground hover:border-primary/60"
+              className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-3 text-[0.6875rem] font-medium text-foreground hover:border-primary/60"
             >
               Keluar
             </button>
@@ -808,15 +808,15 @@ function Index() {
           <section
             className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-background p-5 shadow-[0_20px_60px_-30px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:p-6"
           >
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/80">
+            <div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
               <span className="h-px w-6 bg-primary/60" />
               Alur Kerja
             </div>
-            <h1 className="mt-3 text-[24px] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-[28px]">
+            <h1 className="mt-3 text-[1.5rem] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-[1.75rem]">
               Dari <span className="text-primary">stok</span> ke tangan pelanggan —
               satu alur, tanpa kebocoran.
             </h1>
-            <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
+            <p className="mt-2.5 text-[0.8125rem] leading-relaxed text-muted-foreground">
               Empat langkah inti yang menjalankan MCM Storage setiap hari.
             </p>
 
@@ -833,14 +833,14 @@ function Index() {
                     preload="intent"
                     className="group flex items-center gap-3 rounded-xl border border-primary/15 bg-card px-3.5 py-3 transition-all hover:border-primary/50 hover:bg-accent hover:translate-x-0.5"
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-background font-serif text-[13.5px] tracking-wider text-primary">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-background font-serif text-[0.84375rem] tracking-wider text-primary">
                       {step.n}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[14px] font-semibold tracking-tight text-foreground">
+                      <span className="block text-[0.875rem] font-semibold tracking-tight text-foreground">
                         {step.t}
                       </span>
-                      <span className="mt-0.5 block truncate text-[11.5px] leading-snug text-muted-foreground">
+                      <span className="mt-0.5 block truncate text-[0.71875rem] leading-snug text-muted-foreground">
                         {step.d}
                       </span>
                     </span>
@@ -858,7 +858,7 @@ function Index() {
 
           {/* CTA inti: kategori */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/70">
+            <div className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
               <span className="h-px w-6 bg-primary/50" />
               {categories.length === 0 ? "Mulai" : "Kategori"}
             </div>
@@ -869,7 +869,7 @@ function Index() {
               }}
               className="rounded-xl border border-primary/20 bg-card p-3.5"
             >
-              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">
+              <label className="mb-2 block text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">
                 {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori"}
               </label>
               <div className="flex gap-2">
@@ -877,11 +877,11 @@ function Index() {
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   placeholder="Sembako, Pakaian, 1 gram…"
-                  className="h-10 w-full rounded-lg border border-primary/20 bg-background px-3 text-[13.5px] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                  className="h-10 w-full rounded-lg border border-primary/20 bg-background px-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
                 />
                 <button
                   type="submit"
-                  className="h-10 shrink-0 rounded-lg bg-primary px-4 text-[12.5px] font-semibold tracking-tight text-primary-foreground shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
+                  className="h-10 shrink-0 rounded-lg bg-primary px-4 text-[0.78125rem] font-semibold tracking-tight text-primary-foreground shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
                 >
                   Buat
                 </button>
@@ -901,20 +901,20 @@ function Index() {
                         onClick={() => setActiveCat(c)}
                         className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
-                        <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-primary">
+                        <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.08em] text-primary">
                           {tagFor(c)}
                         </span>
-                        <span className="truncate text-[13.5px] font-medium tracking-tight text-foreground">
+                        <span className="truncate text-[0.84375rem] font-medium tracking-tight text-foreground">
                           {c}
                         </span>
-                        <span className="ml-auto shrink-0 text-[10.5px] text-muted-foreground">
+                        <span className="ml-auto shrink-0 text-[0.65625rem] text-muted-foreground">
                           {count} pesanan
                         </span>
                       </button>
                       <button
                         onClick={() => deleteCategory(c)}
                         disabled={categories.length <= 1}
-                        className="shrink-0 rounded-md border border-destructive/30 px-2 py-1 text-[10.5px] font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30"
+                        className="shrink-0 rounded-md border border-destructive/30 px-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30"
                         title={categories.length <= 1 ? "Minimal harus ada 1 kategori" : `Hapus kategori ${c}`}
                         aria-label={`Hapus kategori ${c}`}
                       >
@@ -939,11 +939,11 @@ function Index() {
             }}
           >
             <summary
-              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3.5 text-[12.5px] font-medium tracking-tight text-foreground/80 [&::-webkit-details-marker]:hidden"
+              className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3.5 text-[0.78125rem] font-medium tracking-tight text-foreground/80 [&::-webkit-details-marker]:hidden"
               onPointerEnter={() => setLainnyaMounted(true)}
               onFocus={() => setLainnyaMounted(true)}
             >
-              <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/70">
+              <span className="flex items-center gap-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
                 <span className="h-px w-5 bg-primary/50" />
                 Lainnya
               </span>
@@ -967,11 +967,11 @@ function Index() {
                     preload="intent"
                     className="flex flex-col gap-0.5 rounded-xl border border-primary/15 bg-card px-3 py-3 text-left transition-all hover:border-primary/40 hover:bg-accent hover:-translate-y-0.5"
                   >
-                    <span className="text-[17px] leading-none">{s.emoji}</span>
-                    <span className="mt-1.5 text-[11.5px] font-semibold leading-tight tracking-tight text-foreground">
+                    <span className="text-[1.0625rem] leading-none">{s.emoji}</span>
+                    <span className="mt-1.5 text-[0.71875rem] font-semibold leading-tight tracking-tight text-foreground">
                       {s.label}
                     </span>
-                    <span className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">
+                    <span className="mt-0.5 text-[0.65625rem] leading-snug text-muted-foreground">
                       {s.desc}
                     </span>
                   </Link>
@@ -988,7 +988,7 @@ function Index() {
               {lainnyaMounted && (
                 <Suspense
                   fallback={
-                    <div className="rounded-lg border border-primary/10 bg-card px-3 py-4 text-center text-[11px] text-muted-foreground">
+                    <div className="rounded-lg border border-primary/10 bg-card px-3 py-4 text-center text-[0.6875rem] text-muted-foreground">
                       Memuat…
                     </div>
                   }
@@ -1003,7 +1003,7 @@ function Index() {
               {(categories.length > 0 || items.length > 0) && (
                 <button
                   onClick={resetAllData}
-                  className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[11.5px] font-semibold tracking-tight text-destructive transition-colors hover:bg-destructive/10"
+                  className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[0.71875rem] font-semibold tracking-tight text-destructive transition-colors hover:bg-destructive/10"
                 >
                   🗑 Reset semua data saya
                 </button>
@@ -1011,7 +1011,7 @@ function Index() {
             </div>
           </details>
 
-          <p className="pt-3 text-center text-[10px] font-medium uppercase tracking-[0.28em] text-primary/40">
+          <p className="pt-3 text-center text-[0.625rem] font-medium uppercase tracking-[0.28em] text-primary/40">
             · MCM · Barokah Rizki ·
           </p>
         </main>
@@ -1178,7 +1178,7 @@ function Index() {
                 <h1 className="truncate text-base font-semibold tracking-tight">
                   {activeCat} · MCM Storage
                 </h1>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[0.6875rem] text-muted-foreground">
                   {scopedItems.length} pesanan · {rupiah(total)}
                 </p>
               </div>
@@ -1195,7 +1195,7 @@ function Index() {
                           ? "Belum dikirim"
                           : "Sudah dikirim"
                       }
-                      className={`inline-flex shrink-0 items-center justify-center px-3 text-[11px] font-medium transition-colors ${
+                      className={`inline-flex shrink-0 items-center justify-center px-3 text-[0.6875rem] font-medium transition-colors ${
                         i > 0 ? "border-l" : ""
                       } ${
                         filter === f
@@ -1247,20 +1247,20 @@ function Index() {
             byUnit.set(s, (byUnit.get(s) ?? 0) + (it.jumlah ?? 0));
           }
           return (
-            <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-card p-2.5 text-[11px] sm:grid-cols-4">
+            <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-card p-2.5 text-[0.6875rem] sm:grid-cols-4">
               <div
                 className="col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-2 sm:col-span-4"
                 role="status"
                 aria-live="polite"
                 title="Penjualan hari ini = jumlah harga semua pesanan yang ditandai Sudah Dikirim pada tanggal kalender lokal hari ini."
               >
-                <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#0F7A6C]">
+                <p className="text-[0.65625rem] font-medium uppercase tracking-wide text-[#0F7A6C]">
                   Total penjualan hari ini
                 </p>
                 <p className="mt-0.5 text-lg font-bold tabular-nums text-[#0F7A6C]">
                   {rupiah(omzetHariIni)}
                 </p>
-                <p className="text-[10.5px] text-[#0F7A6C]/80">
+                <p className="text-[0.65625rem] text-[#0F7A6C]/80">
                   {terkirimHariIni.length} pesanan terkirim hari ini
                   {activeCat ? ` · kategori ${activeCat}` : ""}
                 </p>
@@ -1332,17 +1332,17 @@ function Index() {
                         📦
                       </div>
                     )}
-                    <span className="absolute left-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
+                    <span className="absolute left-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[0.625rem] font-medium">
                       {tagFor(p.kategori)}
                     </span>
                     {fotoCount > 0 && (
-                      <span className="absolute right-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px]">
+                      <span className="absolute right-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[0.625rem]">
                         📷{fotoCount}
                       </span>
                     )}
                     {selectMode && (
                       <span
-                        className={`absolute bottom-1.5 right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border-2 text-[10px] ${
+                        className={`absolute bottom-1.5 right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border-2 text-[0.625rem] ${
                           selected.has(p.id)
                             ? "border-primary bg-primary text-primary-foreground"
                             : "border-background bg-background/80"
@@ -1389,23 +1389,23 @@ function Index() {
                     className="flex min-w-0 flex-1 items-center gap-2 text-left"
                   >
                     {viewMode === "list" && (
-                      <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                      <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[0.625rem] font-medium text-secondary-foreground">
                         {tagFor(p.kategori)}
                       </span>
                     )}
                      <span className="truncate text-sm font-medium leading-snug">{p.nama}</span>
                     {viewMode === "list" && p.satuan && (
-                      <span className="shrink-0 whitespace-nowrap text-[11px] leading-snug text-muted-foreground">
+                      <span className="shrink-0 whitespace-nowrap text-[0.6875rem] leading-snug text-muted-foreground">
                         · {formatJumlah(p.jumlah ?? 0, p.satuan)}
                       </span>
                     )}
                     {viewMode === "list" && sent && (
-                      <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-[#25D366]/15 px-1.5 text-[11px] font-medium leading-none text-[#128C7E]">
+                      <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-[#25D366]/15 px-1.5 text-[0.6875rem] font-medium leading-none text-[#128C7E]">
                         ✓
                       </span>
                     )}
                     {viewMode === "list" && fotoCount > 0 && (
-                      <span className="shrink-0 whitespace-nowrap text-[11px] leading-snug text-muted-foreground">📷{fotoCount}</span>
+                      <span className="shrink-0 whitespace-nowrap text-[0.6875rem] leading-snug text-muted-foreground">📷{fotoCount}</span>
                     )}
                     <span className="ml-auto shrink-0 whitespace-nowrap text-xs leading-snug tabular-nums text-muted-foreground">
                       {rupiah(p.harga)}
@@ -1416,7 +1416,7 @@ function Index() {
                       href={waUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 rounded-md bg-[#25D366] px-2 py-1 text-[11px] font-semibold text-white hover:opacity-90"
+                      className="shrink-0 rounded-md bg-[#25D366] px-2 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
                       onClick={(e) => e.stopPropagation()}
                     >
                       MCM
@@ -1425,7 +1425,7 @@ function Index() {
                   {!selectMode && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
-                      className="shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                      className="shrink-0 rounded-md border px-2 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       aria-label="Edit lengkap"
                       title="Edit lengkap"
                     >
@@ -1435,7 +1435,7 @@ function Index() {
                 </div>
                 {viewMode === "grid" && (
                   <div className="flex min-h-[40px] items-center gap-2 border-t px-2.5 py-1.5 leading-snug">
-                    <label className="flex items-center gap-1.5 text-[11px]">
+                    <label className="flex items-center gap-1.5 text-[0.6875rem]">
                       <input
                         type="checkbox"
                         checked={sent}
@@ -1456,7 +1456,7 @@ function Index() {
                     </label>
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
-                      className="ml-auto rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                      className="ml-auto rounded-md border px-2 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                     >
                       ✎ Edit
                     </button>
@@ -1563,11 +1563,11 @@ function Index() {
                         );
                       })()}
                     </div>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[0.625rem] text-muted-foreground">
                       Gram: 0.01 – 5000 · Kg: 0.001 – 5 · lainnya pakai bilangan bulat.
                     </p>
                     <div
-                      className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-[11px] transition-colors ${
+                      className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-[0.6875rem] transition-colors ${
                         flashId === p.id
                           ? "border-[#25D366] bg-[#25D366]/10 text-[#128C7E]"
                           : "bg-background text-muted-foreground"
@@ -1623,7 +1623,7 @@ function Index() {
                             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
                           );
                         }}
-                        className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                        className="rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         📍 Ambil lokasi sekarang
                       </button>
@@ -1634,7 +1634,7 @@ function Index() {
                             .then(() => toast.success("Link lokasi disalin"))
                             .catch(() => toast.error("Gagal menyalin"));
                         }}
-                        className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                        className="rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         Salin link
                       </button>
@@ -1648,7 +1648,7 @@ function Index() {
                             onClick={() => removeFoto(p.id)}
                             aria-label="Hapus foto utama"
                             title="Hapus foto utama"
-                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow"
+                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[0.625rem] shadow"
                           >
                             ×
                           </button>
@@ -1661,13 +1661,13 @@ function Index() {
                             onClick={() => removeGaleri(p.id, idx)}
                             aria-label="Hapus foto galeri"
                             title="Hapus foto galeri"
-                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow"
+                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[0.625rem] shadow"
                           >
                             ×
                           </button>
                         </div>
                       ))}
-                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[10px] hover:bg-accent">
+                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[0.625rem] hover:bg-accent">
                         📷
                         <span>{p.foto ? "Ganti" : "Foto"}</span>
                         <input
@@ -1678,7 +1678,7 @@ function Index() {
                           onChange={(e) => setFoto(p.id, e.target.files)}
                         />
                       </label>
-                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[10px] hover:bg-accent">
+                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[0.625rem] hover:bg-accent">
                         🖼️
                         <span>Galeri</span>
                         <input
@@ -1696,7 +1696,7 @@ function Index() {
                         href={p.lokasi}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                        className="inline-flex items-center rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         📍 Lokasi
                       </a>
@@ -1705,7 +1705,7 @@ function Index() {
                           href={waUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center rounded-md bg-[#25D366] px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90"
+                          className="inline-flex items-center rounded-md bg-[#25D366] px-2.5 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
                         >
                           KIRIM MCM
                         </a>
@@ -1715,13 +1715,13 @@ function Index() {
                           setOpenId(null);
                           toast.success("Tersimpan");
                         }}
-                        className="inline-flex items-center rounded-md border border-primary bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+                        className="inline-flex items-center rounded-md border border-primary bg-primary px-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground hover:opacity-90"
                       >
                         💾 Simpan
                       </button>
                       <button
                         onClick={() => removeItem(p.id)}
-                        className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                        className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-2.5 py-1 text-[0.6875rem] font-medium text-destructive hover:bg-destructive/10"
                       >
                         🗑 Hapus
                       </button>
@@ -1770,20 +1770,20 @@ function Index() {
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-3 py-2 sm:px-6">
             <button
               onClick={selectAllVisible}
-              className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+              className="rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
             >
               {filtered.every((i) => selected.has(i.id)) && filtered.length > 0
                 ? "Batal semua"
                 : "Pilih semua"}
             </button>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-[0.6875rem] text-muted-foreground">
               {selected.size} dipilih · {rupiah(bulkTotal)}
             </span>
             <div className="ml-auto flex gap-1.5">
               <button
                 onClick={bulkMarkSent}
                 disabled={selected.size === 0}
-                className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent disabled:opacity-40"
+                className="rounded-md border px-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent disabled:opacity-40"
               >
                 Tandai terkirim
               </button>
@@ -1795,7 +1795,7 @@ function Index() {
                 onClick={(e) => {
                   if (selected.size === 0) e.preventDefault();
                 }}
-                className={`inline-flex items-center rounded-md bg-[#25D366] px-3 py-1 text-[11px] font-semibold text-white ${
+                className={`inline-flex items-center rounded-md bg-[#25D366] px-3 py-1 text-[0.6875rem] font-semibold text-white ${
                   selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
                 }`}
               >
