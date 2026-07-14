@@ -17,61 +17,33 @@
 BEGIN;
 SET LOCAL client_min_messages = notice;
 
+-- Muat factory data. File helper mendefinisikan schema `test_helper`
+-- (mk_owner / mk_title / mk_task / mk_prep / list_title_entry) sehingga
+-- setiap skenario tinggal memanggilnya tanpa boilerplate INSERT.
+\i supabase/tests/helpers/request_prep_factories.sql
+SET LOCAL search_path = test_helper, public, extensions;
+
 DO $$
 DECLARE
   v_owner uuid;
   v_title uuid;
-  v_item_wh uuid;
-  v_task_a uuid; v_token_a text := 'tst-token-A-' || substr(md5(random()::text),1,8);
-  v_task_b uuid; v_token_b text := 'tst-token-B-' || substr(md5(random()::text),1,8);
-  v_pin_a text := '1234';
-  v_pin_b text := '5678';
-  v_prep_a uuid;
-  v_prep_b uuid;
-  v_res jsonb;
-  v_titles jsonb;
+  v_task_a test_helper.task_ref;
+  v_task_b test_helper.task_ref;
   v_match jsonb;
   v_reprep_ts timestamptz;
 BEGIN
-  -- ---------- owner + katalog gudang ----------
-  SELECT id INTO v_owner FROM public.profiles ORDER BY id LIMIT 1;
-  IF v_owner IS NULL THEN
-    RAISE EXCEPTION 'FAIL: butuh minimal 1 profil untuk menjalankan test';
-  END IF;
-
-  SELECT id INTO v_item_wh FROM public.warehouse_items WHERE user_id = v_owner LIMIT 1;
-  IF v_item_wh IS NULL THEN
-    INSERT INTO public.warehouse_items(user_id, name, category, base_unit, stock_base)
-    VALUES (v_owner, 'Test Item Reprep', 'test', 'g', 0)
-    RETURNING id INTO v_item_wh;
-  END IF;
-
-  -- ---------- title + isi ----------
-  INSERT INTO public.request_titles(user_id, name, note, position)
-  VALUES (v_owner, 'Paket Test Reprep', NULL, 0)
-  RETURNING id INTO v_title;
-
-  INSERT INTO public.request_title_items(title_id, warehouse_item_id, target_grams, unit_label, position)
-  VALUES (v_title, v_item_wh, 100, 'g', 0);
-
-  -- ---------- 2 task berbeda (token+PIN beda) milik owner yang sama ----------
-  INSERT INTO public.prep_tasks(owner_user_id, share_token, pin_hash, status, expires_at)
-  VALUES (v_owner, v_token_a, extensions.crypt(v_pin_a, extensions.gen_salt('bf')), 'active', now() + interval '1 day')
-  RETURNING id INTO v_task_a;
-
-  INSERT INTO public.prep_tasks(owner_user_id, share_token, pin_hash, status, expires_at)
-  VALUES (v_owner, v_token_b, extensions.crypt(v_pin_b, extensions.gen_salt('bf')), 'active', now() + interval '1 day')
-  RETURNING id INTO v_task_b;
+  -- ---------- setup lewat factory ----------
+  v_owner  := mk_owner();
+  v_title  := mk_title(v_owner, 'Paket Test Reprep');
+  PERFORM mk_title_item(v_title, mk_warehouse_item(v_owner, 'Test Item Reprep'), 100);
+  -- 2 task berbeda (token+PIN beda) milik owner yang sama
+  v_task_a := mk_task(v_owner, 'tst-token-A-' || substr(md5(random()::text),1,8), '1234');
+  v_task_b := mk_task(v_owner, 'tst-token-B-' || substr(md5(random()::text),1,8), '5678');
 
   -- ================================================================
   -- Skenario 1: BELUM ada prep → title muncul di kedua task, submitted_count=0.
   -- ================================================================
-  v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
-  IF (v_res->>'ok')::boolean IS DISTINCT FROM true THEN
-    RAISE EXCEPTION 'FAIL S1: RPC token B tidak ok: %', v_res;
-  END IF;
-  v_titles := v_res->'titles';
-  SELECT elem INTO v_match FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text;
+  v_match := list_title_entry(v_task_b.token, v_task_b.pin, v_title);
   IF v_match IS NULL THEN
     RAISE EXCEPTION 'FAIL S1: title seharusnya muncul sebelum ada prep';
   END IF;
@@ -86,22 +58,15 @@ BEGIN
   -- dahulu filter memakai `via_task_id = task saat ini`, sehingga title
   -- masih ikut di task B.
   -- ================================================================
-  INSERT INTO public.request_preparations(user_id, title_id, via_task_id, created_by, photo_paths)
-  VALUES (v_owner, v_title, v_task_a, 'worker', ARRAY[]::text[])
-  RETURNING id INTO v_prep_a;
-
-  v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
-  v_titles := v_res->'titles';
-  IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text) THEN
+  PERFORM mk_prep(v_owner, v_title, v_task_a.id);
+  IF list_title_entry(v_task_b.token, v_task_b.pin, v_title) IS NOT NULL THEN
     RAISE EXCEPTION 'FAIL S2: title BOCOR ke task B padahal sudah disiapkan lewat task A';
   END IF;
   RAISE NOTICE 'PASS S2: prep via task A menyembunyikan title dari task B (lintas via_task/PIN)';
 
   -- Sekaligus verifikasi: task A pun tidak lagi menampilkan title (aturan
   -- "1 title = 1 prep per siklus"). Ini menjaga simetri antar-task.
-  v_res := public.request_list_titles_via_task(v_token_a, v_pin_a);
-  v_titles := v_res->'titles';
-  IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text) THEN
+  IF list_title_entry(v_task_a.token, v_task_a.pin, v_title) IS NOT NULL THEN
     RAISE EXCEPTION 'FAIL S2b: title masih muncul di task A padahal sudah disiapkan';
   END IF;
   RAISE NOTICE 'PASS S2b: title juga hilang dari task A setelah prep dikirim';
@@ -117,9 +82,7 @@ BEGIN
   v_reprep_ts := clock_timestamp();
   UPDATE public.request_titles SET reprep_requested_at = v_reprep_ts WHERE id = v_title;
 
-  v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
-  v_titles := v_res->'titles';
-  SELECT elem INTO v_match FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text;
+  v_match := list_title_entry(v_task_b.token, v_task_b.pin, v_title);
   IF v_match IS NULL THEN
     RAISE EXCEPTION 'FAIL S3: title tidak muncul kembali setelah reprep_requested_at diisi';
   END IF;
@@ -132,16 +95,9 @@ BEGIN
   -- Skenario 4: Prep BARU (created_at > reprep_requested_at) via task B
   -- kembali menyembunyikan title, tanpa terganggu prep lama.
   -- ================================================================
-  -- created_at prep lama pakai default now() (= xact start) ⇒ < v_reprep_ts.
-  -- created_at prep baru harus > v_reprep_ts; set eksplisit dari clock().
   PERFORM pg_sleep(0.05);
-  INSERT INTO public.request_preparations(user_id, title_id, via_task_id, created_by, photo_paths, created_at)
-  VALUES (v_owner, v_title, v_task_b, 'worker', ARRAY[]::text[], clock_timestamp())
-  RETURNING id INTO v_prep_b;
-
-  v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
-  v_titles := v_res->'titles';
-  IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text) THEN
+  PERFORM mk_prep(v_owner, v_title, v_task_b.id, 'worker', clock_timestamp());
+  IF list_title_entry(v_task_b.token, v_task_b.pin, v_title) IS NOT NULL THEN
     RAISE EXCEPTION 'FAIL S4: title masih muncul setelah prep siklus baru dikirim';
   END IF;
   RAISE NOTICE 'PASS S4: prep di siklus baru menutup kembali title (2 prep total, 1 aktif)';
@@ -156,13 +112,10 @@ BEGIN
     v_other uuid;
     v_other_title uuid;
   BEGIN
-    SELECT id INTO v_other FROM public.profiles WHERE id <> v_owner ORDER BY id LIMIT 1;
+    v_other := mk_owner_other(v_owner);
     IF v_other IS NOT NULL THEN
-      INSERT INTO public.request_titles(user_id, name, position)
-      VALUES (v_other, 'Paket Test Reprep OTHER', 0)
-      RETURNING id INTO v_other_title;
-      INSERT INTO public.request_preparations(user_id, title_id, created_by, photo_paths)
-      VALUES (v_other, v_other_title, 'admin', ARRAY[]::text[]);
+      v_other_title := mk_title(v_other, 'Paket Test Reprep OTHER');
+      PERFORM mk_prep(v_other, v_other_title, NULL, 'admin');
 
       -- Bersihkan siklus title milik owner utama supaya bisa dilihat lagi
       -- (prep sendiri sudah 2, semua ≤ now; kita bersihkan agar test murni
@@ -170,9 +123,7 @@ BEGIN
       DELETE FROM public.request_preparations WHERE title_id = v_title;
       UPDATE public.request_titles SET reprep_requested_at = NULL WHERE id = v_title;
 
-      v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
-      v_titles := v_res->'titles';
-      SELECT elem INTO v_match FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text;
+      v_match := list_title_entry(v_task_b.token, v_task_b.pin, v_title);
       IF v_match IS NULL THEN
         RAISE EXCEPTION 'FAIL S5: prep dari owner lain seharusnya tidak menyembunyikan title kita';
       END IF;
@@ -196,26 +147,17 @@ BEGIN
   -- membuka link-nya sendiri dan tidak boleh melihat title itu lagi.
   -- ================================================================
   -- Titik awal: setelah S5, prep title milik owner utama sudah dihapus
-  -- dan reprep_requested_at = NULL, sehingga title kembali "kosong".
-  -- Kirim prep dari task A (pegawai lain, PIN berbeda) untuk mensimulasi
-  -- "sudah dikirim ke admin dari pegawai lain".
-  INSERT INTO public.request_preparations(user_id, title_id, via_task_id, created_by, photo_paths)
-  VALUES (v_owner, v_title, v_task_a, 'worker', ARRAY[]::text[]);
-
-  -- Verifikasi dari sisi task B (pegawai kedua, PIN berbeda): title
-  -- tidak boleh muncul di daftar — sudah dihitung selesai lintas PIN.
-  v_res := public.request_list_titles_via_task(v_token_b, v_pin_b);
-  v_titles := v_res->'titles';
-  IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text) THEN
+  -- dan reprep_requested_at = NULL. Kirim prep dari task A (pegawai lain,
+  -- PIN berbeda) untuk mensimulasi "sudah dikirim ke admin dari pegawai lain".
+  PERFORM mk_prep(v_owner, v_title, v_task_a.id);
+  IF list_title_entry(v_task_b.token, v_task_b.pin, v_title) IS NOT NULL THEN
     RAISE EXCEPTION 'FAIL S6: title masih muncul di task B padahal pegawai lain (task A) sudah kirim ke admin';
   END IF;
   RAISE NOTICE 'PASS S6: prep pegawai lain (task A) tetap dihitung Selesai untuk task B (lintas PIN)';
 
   -- Sanity: task A yang mengirim pun sudah tidak menampilkan title
   -- (simetri dengan S2b) — memastikan tidak ada jalur task yang bocor.
-  v_res := public.request_list_titles_via_task(v_token_a, v_pin_a);
-  v_titles := v_res->'titles';
-  IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_titles) elem WHERE elem->>'id' = v_title::text) THEN
+  IF list_title_entry(v_task_a.token, v_task_a.pin, v_title) IS NOT NULL THEN
     RAISE EXCEPTION 'FAIL S6b: title masih muncul di task A setelah prep dikirim';
   END IF;
   RAISE NOTICE 'PASS S6b: title juga hilang dari task A (simetri lintas PIN)';
