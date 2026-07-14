@@ -5,6 +5,7 @@ import { Copy, MessageCircle, X, KeyRound, Eye, EyeOff } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskQrCode } from "@/components/TaskQrCode";
+import { rememberPin } from "@/lib/prep-pin-memo";
 
 /**
  * Dialog kecil untuk membagikan link tugas + PIN dalam satu pesan.
@@ -96,6 +97,9 @@ export function SharePinDialog({
     }
 
     setSavedPin(pin);
+    // Simpan PIN sebagai pengingat lokal di HP pemilik (per share_token).
+    // Tidak dikirim ke server; verifikasi tetap via hash bcrypt.
+    if (shareToken) rememberPin(shareToken, pin);
     toast.success("PIN baru aktif untuk tugas ini");
     return true;
   }

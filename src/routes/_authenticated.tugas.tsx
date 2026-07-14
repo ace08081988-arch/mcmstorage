@@ -14,6 +14,56 @@ import { SharePinDialog } from "@/components/tugas/SharePinDialog";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { deriveTaskShortStatus, type TaskShortStatus } from "@/lib/prep-status";
 import { fetchAddressBook, normalizePhone, type AddressBookRow } from "@/lib/address-book";
+import { rememberPin, recallPin, forgetPin } from "@/lib/prep-pin-memo";
+
+/**
+ * Badge kecil di kartu tugas yang menampilkan PIN dari pengingat lokal
+ * (localStorage) di HP pemilik. Default tersembunyi ("PIN ••••") — tap
+ * untuk memperlihatkan angka aslinya. Tombol salin muncul saat PIN dibuka
+ * agar pemilik bisa mengirim ulang lewat chat tanpa membuka dialog share.
+ *
+ * Kalau PIN tidak ada di device ini (mis. tugas dibuat dari HP lain),
+ * badge memberi tahu supaya pemilik tahu perlu reset PIN dari tombol
+ * bagikan (💬) untuk mengaktifkan PIN baru.
+ */
+function TaskPinMemo({ shareToken }: { shareToken: string }) {
+  const [reveal, setReveal] = useState(false);
+  const pin = useMemo(() => recallPin(shareToken), [shareToken, reveal]);
+  if (!pin) {
+    return (
+      <div className="mt-1.5 inline-flex items-center gap-ms-1 rounded-md border border-dashed border-muted-foreground/30 bg-muted/30 px-ms-2 py-0.5 text-ms-2xs text-muted-foreground">
+        <ShieldAlert className="h-3 w-3" />
+        PIN tidak tercatat di HP ini
+      </div>
+    );
+  }
+  return (
+    <div className="mt-1.5 inline-flex items-center gap-ms-1 rounded-md border border-primary/30 bg-primary/5 px-ms-2 py-0.5 text-ms-2xs font-medium text-primary">
+      <ShieldCheck className="h-3 w-3" />
+      <span className="text-muted-foreground">PIN</span>
+      <button
+        type="button"
+        onClick={() => setReveal((v) => !v)}
+        className="tabular-nums font-semibold tracking-wide"
+        aria-label={reveal ? "Sembunyikan PIN" : "Tampilkan PIN"}
+        title={reveal ? "Klik untuk sembunyikan" : "Klik untuk tampilkan"}
+      >
+        {reveal ? pin : "•".repeat(pin.length)}
+      </button>
+      {reveal && (
+        <button
+          type="button"
+          onClick={() => { void copyText(pin); toast.success("PIN disalin"); }}
+          className="ml-0.5 inline-flex h-5 w-5 items-center justify-center rounded hover:bg-primary/10"
+          aria-label="Salin PIN"
+          title="Salin PIN"
+        >
+          <Copy className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
@@ -543,8 +593,10 @@ function TugasPage() {
 
   async function removeTask(id: string) {
     if (!confirm("Hapus tugas ini? Semua foto kiriman juga ikut terhapus.")) return;
+    const target = tasks.find((x) => x.id === id);
     const { error } = await supabase.from("prep_tasks").delete().eq("id", id);
     if (error) return toast.error(error.message);
+    if (target?.share_token) forgetPin(target.share_token);
     toast.success("Tugas dihapus"); void load();
   }
 
@@ -831,6 +883,7 @@ function TugasPage() {
                     <CheckCircle2 className="h-3 w-3" /> {p.submitted}/{p.items} item
                   </span>
                 </div>
+                <TaskPinMemo shareToken={t.share_token} />
               </div>
               <div className="flex shrink-0 items-center gap-ms-1">
                 <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs font-medium hover:bg-accent" aria-label={`Buka tugas ${t.title}`}>Buka</button>
@@ -1463,6 +1516,9 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       }
       return toast.error(error.message);
     }
+    // Simpan PIN sebagai pengingat lokal di HP pemilik saja (localStorage).
+    // Tidak dikirim ke mana pun; verifikasi tetap via hash server-side.
+    rememberPin(token, pin);
     // Kumpulkan foto referensi tiap barang yang dipilih untuk dilampirkan ke WA.
     const photoFiles: File[] = [];
     const seen = new Set<string>();
