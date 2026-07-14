@@ -9,7 +9,10 @@
  *
  *   node scripts/snapshot-gudang-viewports.mjs
  *
- * Output PNG: /tmp/browser/gudang-snapshots/<viewport>/<mode>-<pt>.png
+ * Output PNG: /tmp/browser/gudang-snapshots/<viewport>/<theme>/<mode>-<pt>.png
+ *
+ * Snapshot dijalankan untuk tema light DAN dark di setiap viewport, sehingga
+ * regresi kontras/spacing dark mode ikut terdeteksi.
  *
  * Script ini SENGAJA tidak dijalankan di CI karena butuh sesi login.
  * Untuk deteksi regresi otomatis di CI, lihat
@@ -32,6 +35,7 @@ const VIEWPORTS = [
 ];
 const PACKAGE_TYPES = ["gram", "botol", "pcs", "sachet"];
 const MODES = ["new", "existing"];
+const THEMES = ["light", "dark"];
 
 async function restoreSupabaseSession(context, page) {
   const storageKey = process.env.LOVABLE_BROWSER_SUPABASE_STORAGE_KEY;
@@ -76,6 +80,16 @@ async function pickPackageType(page, pt) {
   }
 }
 
+async function applyTheme(page, theme) {
+  await page.evaluate((t) => {
+    const d = document.documentElement;
+    if (t === "dark") d.classList.add("dark");
+    else d.classList.remove("dark");
+    try { localStorage.setItem("app-theme", t); } catch {}
+  }, theme);
+  await page.waitForTimeout(50);
+}
+
 (async () => {
   const authStatus = process.env.LOVABLE_BROWSER_AUTH_STATUS;
   if (authStatus && authStatus !== "injected") {
@@ -93,15 +107,18 @@ async function pickPackageType(page, pt) {
       await restoreSupabaseSession(context, page);
       await page.goto(`${BASE}/gudang`, { waitUntil: "networkidle" });
 
-      for (const mode of MODES) {
-        await pickMode(page, mode);
-        for (const pt of PACKAGE_TYPES) {
-          await pickPackageType(page, pt);
-          // Beri waktu React re-render + memo revalidate.
-          await page.waitForTimeout(200);
-          const out = path.join(OUT, vp.name, `${mode}-${pt}.png`);
-          await shoot(page, out);
-          console.log(`[snapshot-gudang] ${vp.name}/${mode}-${pt} → ${out}`);
+      for (const theme of THEMES) {
+        await applyTheme(page, theme);
+        for (const mode of MODES) {
+          await pickMode(page, mode);
+          for (const pt of PACKAGE_TYPES) {
+            await pickPackageType(page, pt);
+            // Beri waktu React re-render + memo revalidate.
+            await page.waitForTimeout(200);
+            const out = path.join(OUT, vp.name, theme, `${mode}-${pt}.png`);
+            await shoot(page, out);
+            console.log(`[snapshot-gudang] ${vp.name}/${theme}/${mode}-${pt} → ${out}`);
+          }
         }
       }
       await context.close();
