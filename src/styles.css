@@ -68,6 +68,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* Premium++ typography tokens (Slice 0 — opt-in via `font-display`/`font-body`).
+     Terhubung ke class utility Tailwind: `font-display`, `font-body`.
+     Tidak mengubah default `font-sans` app; komponen harus opt-in. */
+  --font-display: "DM Serif Display", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-body: "Fira Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
@@ -228,6 +233,59 @@
 @utility elev-sm { box-shadow: var(--shadow-sm); }
 @utility elev-md { box-shadow: var(--shadow-md); }
 @utility elev-lg { box-shadow: var(--shadow-lg); }
+
+/* ==========================================================================
+   Premium++ utilities (Slice 0 — opt-in, tidak mengubah default apa pun).
+   Dipakai bertahap per rute operasional. Warna tetap mengikuti preset user
+   (`--primary`, `--card`, dst.); utility ini hanya menambah lapisan presentasi
+   (tipografi display, elevasi halus, permukaan berlapis).
+
+   Reduce-motion: transform hanya aktif bila user tidak meminta reduce-motion.
+   ========================================================================== */
+@utility font-display {
+  font-family: var(--font-display);
+  font-feature-settings: "ss01", "liga";
+}
+@utility font-body {
+  font-family: var(--font-body);
+}
+@utility text-premium-heading {
+  font-family: var(--font-display);
+  letter-spacing: var(--ms-tracking-tight);
+  line-height: var(--ms-leading-tight);
+  font-weight: 400;
+}
+@utility surface-elevated {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--ms-radius-card);
+}
+@utility surface-elevated-lg {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  box-shadow: var(--shadow-lg);
+  border-radius: calc(var(--ms-radius-card) + 4px);
+}
+@utility shadow-elevate {
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--foreground) 6%, transparent) inset,
+    0 8px 24px -12px color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+@utility ring-premium {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent),
+    0 0 0 4px color-mix(in oklab, var(--primary) 12%, transparent);
+}
+@utility lift-on-hover {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover { transform: translateY(-1px); }
+    &:active { transform: translateY(0); }
+  }
+}
 
 /*
  * Utility soft-status — pengganti hardcoded `bg-amber-500/15 text-amber-700`
