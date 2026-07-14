@@ -193,11 +193,21 @@ export function AppHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/80 px-2 backdrop-blur-md",
-        "supports-[backdrop-filter]:bg-background/65",
+        "sticky top-0 z-30 flex h-14 items-center gap-2 px-2 backdrop-blur-md",
+        "border-b border-primary/15 bg-background/85 supports-[backdrop-filter]:bg-background/70",
       )}
+      style={{
+        boxShadow: "0 1px 0 0 color-mix(in oklab, var(--primary) 12%, transparent)",
+      }}
     >
-      <SidebarTrigger className="h-9 w-9 shrink-0 rounded-lg hover:bg-accent" />
+      <SidebarTrigger className="h-9 w-9 shrink-0 rounded-lg hover:bg-accent md:inline-flex hidden" />
+      {/* Mobile: no sidebar trigger here (moved to bottom nav "Menu"), spacer for balance */}
+      <span aria-hidden className="ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg md:hidden">
+        <span
+          className="h-6 w-6 rounded-md ring-1 ring-primary/30"
+          style={{ background: "color-mix(in oklab, var(--primary) 14%, transparent)" }}
+        />
+      </span>
 
       {/* Breadcrumb — hidden on very narrow screens, visible from sm up */}
       <nav
@@ -237,9 +247,9 @@ export function AppHeader() {
         })}
       </nav>
 
-      {/* Mobile: page title only (breadcrumb hidden) */}
-      <div className="flex min-w-0 flex-1 items-center sm:hidden">
-        <span className="truncate text-sm font-semibold">
+      {/* Mobile: page title, centered, tracking tight untuk kesan premium */}
+      <div className="flex min-w-0 flex-1 items-center justify-center sm:hidden">
+        <span className="truncate text-[15px] font-semibold tracking-tight">
           {crumbs[crumbs.length - 1]?.label ?? "MCM Storage"}
         </span>
       </div>
@@ -262,18 +272,15 @@ export function AppHeader() {
         </kbd>
       </button>
 
-      {/* Compact search icon on mobile */}
-      <button
-        type="button"
-        onClick={() => setCmdOpen(true)}
-        className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
-        aria-label="Cari menu"
-      >
-        <Search className="h-4.5 w-4.5" />
-      </button>
+      {/* Mobile: hanya notifikasi + avatar; search dipindah ke drawer sidebar (cmd+K tetap aktif) */}
+      <div className="ml-auto sm:hidden">
+        <NotificationBell />
+      </div>
 
-      {/* Notifications */}
-      <NotificationBell />
+      {/* Desktop / tablet: notifikasi */}
+      <div className="hidden sm:block">
+        <NotificationBell />
+      </div>
 
       {/* Profile menu */}
       <DropdownMenu>
