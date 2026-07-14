@@ -14,6 +14,11 @@ export type RequestTitle = {
   position: number;
   created_at: string;
   updated_at: string;
+  // Bila diisi, prep dengan created_at ≤ nilai ini tidak dianggap
+  // "sudah disiapkan" — dipakai tombol "Minta penyiapan ulang" untuk
+  // memaksa title muncul kembali di portal pegawai tanpa mengubah
+  // riwayat prep sebelumnya.
+  reprep_requested_at: string | null;
 };
 
 export type RequestTitleItem = {
