@@ -2246,7 +2246,31 @@ function ItemCard({
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  // Persist expanded state per (token,item) di sessionStorage. Alasan:
+  // pada Android WebView, native photo picker kadang me-recycle WebView
+  // (OOM reclaim) — halaman tugas di-mount ulang dari nol dan auto-reauth
+  // via PIN tersimpan. Tanpa persist, panel item yang tadi terbuka
+  // "kembali ke awal", user harus tap header lagi + tap Galeri lagi.
+  const expandedKey = `mcm.prep.item.expanded:${token}:${item.id}`;
+  const [expanded, setExpandedRaw] = useState<boolean>(() => {
+    try {
+      return typeof window !== "undefined" && window.sessionStorage.getItem(expandedKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setExpanded: typeof setExpandedRaw = (v) => {
+    setExpandedRaw((prev) => {
+      const next = typeof v === "function" ? (v as (p: boolean) => boolean)(prev) : v;
+      try {
+        if (typeof window !== "undefined") {
+          if (next) window.sessionStorage.setItem(expandedKey, "1");
+          else window.sessionStorage.removeItem(expandedKey);
+        }
+      } catch { /* ignore quota */ }
+      return next;
+    });
+  };
   const [manualCoordOpen, setManualCoordOpen] = useState(false);
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
