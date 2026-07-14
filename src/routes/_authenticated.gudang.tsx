@@ -25,6 +25,12 @@ import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
 import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
+import {
+  PageContainer,
+  PageHeader,
+  PillsTabs,
+  SummaryCard,
+} from "@/components/shell";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
