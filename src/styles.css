@@ -484,7 +484,9 @@ html[data-font-size="xl"] { --app-font-size: 20px; }
 /* Mode ringkas — fokus pada density tinggi tanpa memutus layout.
    Aman: hanya skala font + padding/gap halus + sembunyikan elemen yang
    sengaja ditandai data-compact-hide. */
-html.compact { font-size: 92%; }
+/* Compact mengalikan preferensi font-size, bukan menggantinya —
+   jadi user "lg" + compact tetap mengikuti skala lg × 0.92. */
+html.compact { font-size: calc(var(--app-font-size, 16px) * 0.92); }
 html.compact [data-compact-hide] { display: none !important; }
 html.compact .p-6 { padding: 0.875rem; }
 html.compact .p-5 { padding: 0.75rem; }
