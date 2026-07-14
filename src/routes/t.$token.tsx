@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Component, useCallback, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useRef, useState, type ErrorInfo, type ReactNode, type RefObject } from "react";
 import { useLayoutEffect } from "react";
 import { toast } from "sonner";
 import { PhotoEditor } from "@/components/PhotoEditor";
@@ -188,6 +188,12 @@ function normalizePrepTask(value: unknown): PrepTaskRow | null {
 }
 
 type NativeCameraStatus = "fallback" | "cancelled";
+
+async function beginPortalNativePicker(): Promise<() => void> {
+  const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
+  beginNativePicker();
+  return endNativePicker;
+}
 
 async function cameraPhotoToFile(
   photo: { webPath?: string; format?: string },
@@ -2245,6 +2251,7 @@ function ItemCard({
   const [refSigned, setRefSigned] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
+  const fallbackPickerReleaseRef = useRef<null | (() => void)>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   // Persist expanded state per (token,item) di sessionStorage. Alasan:
   // pada Android WebView, native photo picker kadang me-recycle WebView
@@ -2287,6 +2294,29 @@ function ItemCard({
   useEffect(() => () => {
     photosRef.current.forEach(revokePhotoPreview);
   }, []);
+  useEffect(() => () => {
+    fallbackPickerReleaseRef.current?.();
+  }, []);
+  async function openFallbackPhotoPicker(inputRef: RefObject<HTMLInputElement | null>) {
+    fallbackPickerReleaseRef.current?.();
+    onActivityChange(true);
+    const endNativePicker = await beginPortalNativePicker();
+    let released = false;
+    let timer: number | null = null;
+    const release = () => {
+      if (released) return;
+      released = true;
+      if (timer !== null) window.clearTimeout(timer);
+      endNativePicker();
+      onActivityChange(false);
+      onKeepAlive();
+      if (fallbackPickerReleaseRef.current === release) fallbackPickerReleaseRef.current = null;
+    };
+    timer = window.setTimeout(release, 120_000);
+    fallbackPickerReleaseRef.current = release;
+    if (inputRef.current) inputRef.current.click();
+    else release();
+  }
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
     if (!p) {
@@ -2389,8 +2419,7 @@ function ItemCard({
   async function pickCamera() {
     onKeepAlive();
     onActivityChange(true);
-    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
-    beginNativePicker();
+    const endNativePicker = await beginPortalNativePicker();
     try {
       const nativePhoto = await captureNativeCameraPhoto();
       if (nativePhoto === "cancelled") return;
@@ -2415,14 +2444,12 @@ function ItemCard({
       setHelpKind("camera");
       return;
     }
-    beginNativePicker();
-    cameraRef.current?.click();
+    await openFallbackPhotoPicker(cameraRef);
   }
   async function pickGallery() {
     onKeepAlive();
     onActivityChange(true);
-    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
-    beginNativePicker();
+    const endNativePicker = await beginPortalNativePicker();
     try {
       const nativePhotos = await pickNativeGalleryPhotos();
       if (nativePhotos === "cancelled") return;
@@ -2441,8 +2468,7 @@ function ItemCard({
     }
     // Web tidak menyediakan Permissions API khusus untuk galeri; tetap
     // buka file picker, kalau kosong user bisa klik panduan di bawah.
-    beginNativePicker();
-    galleryRef.current?.click();
+    await openFallbackPhotoPicker(galleryRef);
   }
 
   function triggerAutoGps() {
@@ -2524,16 +2550,22 @@ function ItemCard({
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
-    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
-    if (!f) return;
-    await stageOne(f, true);
+    try {
+      if (!f) return;
+      await stageOne(f, true);
+    } finally {
+      fallbackPickerReleaseRef.current?.();
+    }
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
-    if (files.length === 0) return;
-    await stageGalleryFiles(files);
+    try {
+      if (files.length === 0) return;
+      await stageGalleryFiles(files);
+    } finally {
+      fallbackPickerReleaseRef.current?.();
+    }
   }
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
@@ -3749,6 +3781,7 @@ function RequestForm({
   const [busy, setBusy] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
+  const fallbackPickerReleaseRef = useRef<null | (() => void)>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [manualCoordOpen, setManualCoordOpen] = useState(false);
   const [manualLat, setManualLat] = useState("");
@@ -3785,6 +3818,29 @@ function RequestForm({
   useEffect(() => () => {
     photosRef.current.forEach(revokePhotoPreview);
   }, []);
+  useEffect(() => () => {
+    fallbackPickerReleaseRef.current?.();
+  }, []);
+  async function openFallbackPhotoPicker(inputRef: RefObject<HTMLInputElement | null>) {
+    fallbackPickerReleaseRef.current?.();
+    onActivityChange(true);
+    const endNativePicker = await beginPortalNativePicker();
+    let released = false;
+    let timer: number | null = null;
+    const release = () => {
+      if (released) return;
+      released = true;
+      if (timer !== null) window.clearTimeout(timer);
+      endNativePicker();
+      onActivityChange(false);
+      onKeepAlive();
+      if (fallbackPickerReleaseRef.current === release) fallbackPickerReleaseRef.current = null;
+    };
+    timer = window.setTimeout(release, 120_000);
+    fallbackPickerReleaseRef.current = release;
+    if (inputRef.current) inputRef.current.click();
+    else release();
+  }
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
     if (!p) {
@@ -3843,8 +3899,7 @@ function RequestForm({
   async function pickCamera() {
     onKeepAlive();
     onActivityChange(true);
-    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
-    beginNativePicker();
+    const endNativePicker = await beginPortalNativePicker();
     try {
       const nativePhoto = await captureNativeCameraPhoto();
       if (nativePhoto === "cancelled") return;
@@ -3869,14 +3924,12 @@ function RequestForm({
       setHelpKind("camera");
       return;
     }
-    beginNativePicker();
-    cameraRef.current?.click();
+    await openFallbackPhotoPicker(cameraRef);
   }
   async function pickGallery() {
     onKeepAlive();
     onActivityChange(true);
-    const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
-    beginNativePicker();
+    const endNativePicker = await beginPortalNativePicker();
     try {
       const nativePhotos = await pickNativeGalleryPhotos();
       if (nativePhotos === "cancelled") return;
@@ -3893,8 +3946,7 @@ function RequestForm({
       onActivityChange(false);
       onKeepAlive();
     }
-    beginNativePicker();
-    galleryRef.current?.click();
+    await openFallbackPhotoPicker(galleryRef);
   }
 
   function triggerAutoGps() {
@@ -3973,16 +4025,22 @@ function RequestForm({
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
-    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
-    if (!f) return;
-    await stageOne(f, true);
+    try {
+      if (!f) return;
+      await stageOne(f, true);
+    } finally {
+      fallbackPickerReleaseRef.current?.();
+    }
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    try { const m = await import("@/lib/app-lock"); m.endNativePicker(); } catch {}
-    if (files.length === 0) return;
-    await stageGalleryFiles(files);
+    try {
+      if (files.length === 0) return;
+      await stageGalleryFiles(files);
+    } finally {
+      fallbackPickerReleaseRef.current?.();
+    }
   }
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
