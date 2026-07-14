@@ -329,6 +329,71 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     setZoom((z) => Math.min(4, Math.max(0.5, z * factor)));
   };
 
+  // Pinch-zoom dua jari yang halus di HP. Ditempel langsung ke elemen container
+  // (bukan React onTouch*) supaya `preventDefault` benar-benar berjalan (React
+  // memakai listener pasif secara default) — kalau tidak, browser akan
+  // menggeser halaman & menimbulkan getar visual saat pinch di atas kanvas.
+  const zoomRef = useRef(zoom);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let d0 = 0;
+    let z0 = 1;
+    let active = false;
+    const distance = (t: TouchList): number => {
+      const dx = t[0].clientX - t[1].clientX;
+      const dy = t[0].clientY - t[1].clientY;
+      return Math.hypot(dx, dy) || 1;
+    };
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        d0 = distance(e.touches);
+        z0 = zoomRef.current;
+        active = true;
+        // Buang stroke yang mungkin baru dimulai oleh jari pertama, supaya
+        // tidak ada garis tersasar saat jari kedua menyentuh.
+        if (drawingRef.current) {
+          const finished = drawingRef.current;
+          drawingRef.current = null;
+          setScene((s) => ({ ...s, objects: s.objects.filter((o) => o.id !== finished.id) }));
+        }
+      }
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!active || e.touches.length < 2) return;
+      e.preventDefault();
+      const d = distance(e.touches);
+      const next = Math.min(4, Math.max(0.5, (z0 * d) / d0));
+      // Snap ke 1× kalau sudah dekat — mencegah tremor saat pemilik "resetting".
+      setZoom(Math.abs(next - 1) < 0.04 ? 1 : next);
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) active = false;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
+
+  // Reset penuh — dipakai tombol "Reset" di header. Konfirmasi supaya tidak
+  // hilang tak sengaja saat undo/redo panjang.
+  const resetAll = useCallback(() => {
+    if (typeof window !== "undefined" && !window.confirm("Reset semua editan foto ini?")) return;
+    commitScene((s) => ({ ...s, objects: [], rotation: 0, flipH: false, flipV: false, crop: null }));
+    setSelectedId(null);
+  }, [commitScene]);
+
+  // Tool yang butuh panel gaya (warna + tebal + opacity).
+  const needsStyle = ["coret", "highlighter", "brush", "eraser", "panah", "line", "kotak", "lingkaran", "oval", "segitiga", "teks"].includes(tool);
+
   // Render sticker as Konva group (icon drawn as a filled circle badge with symbol).
   // For minimalism iterasi 1: represent each sticker as a colored circle + icon path from Lucide.
   const renderSticker = (o: StickerObj) => {
