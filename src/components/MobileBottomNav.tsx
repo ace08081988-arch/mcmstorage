@@ -115,8 +115,16 @@ export function MobileBottomNav() {
                   )}
                 />
                 {badge && badge > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[0.59375rem] font-semibold leading-none text-destructive-foreground shadow">
-                    {badge > 99 ? "99+" : badge}
+                  <span className="pointer-events-none absolute -right-0.5 -top-0.5">
+                    {/* Halo pulse — beri kesan hidup tanpa menggeser layout.
+                        `motion-reduce:hidden` menghormati preferensi user. */}
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 -z-10 animate-ping rounded-full bg-destructive/60 motion-reduce:hidden"
+                    />
+                    <span className="relative inline-flex min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[0.59375rem] font-semibold leading-none text-destructive-foreground shadow">
+                      {badge > 99 ? "99+" : badge}
+                    </span>
                   </span>
                 ) : null}
               </span>
