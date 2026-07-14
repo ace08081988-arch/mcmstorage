@@ -10,6 +10,7 @@
  * URL: /lovable/visual/gudang-shell   ·   noindex, tanpa auth, tanpa network.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import {
   Boxes,
   Truck,
@@ -67,10 +68,28 @@ export const Route = createFileRoute("/lovable/visual/gudang-shell")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
+  validateSearch: z.object({
+    state: z.enum(["loading", "empty", "data"]).optional(),
+    variant: z.enum(["grid", "solo"]).optional(),
+  }),
   component: GudangShellFixture,
 });
 
 function GudangShellFixture() {
+  const search = Route.useSearch();
+  // Mode "solo" me-render satu state tanpa wrapper 411-lebar-tetap, sehingga
+  // media queries ikut viewport asli Playwright (390/411). Dipakai untuk
+  // audit responsif; mode "grid" (default) untuk overview visual di desktop.
+  if (search.variant === "solo") {
+    return (
+      <div
+        data-fixture-state={search.state ?? "data"}
+        data-fixture-mode="solo"
+      >
+        <ShellPreview state={search.state ?? "data"} />
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-muted/10 p-ms-4">
       <h1 className="mb-ms-4 text-ms-lg font-semibold tracking-tight">
