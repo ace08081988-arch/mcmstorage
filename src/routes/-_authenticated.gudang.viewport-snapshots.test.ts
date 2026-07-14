@@ -180,9 +180,12 @@ describe("Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan", (
   }
 
   describe("cross-viewport parity: nilai numerik identik lintas viewport", () => {
+    const desktopVp = VIEWPORTS.find((v) => v.name === "desktop")!;
+    const nonDesktopVps = VIEWPORTS.filter((v) => v.name !== "desktop");
     for (const mode of ["new", "existing"] as const) {
       for (const pt of PACKAGE_TYPES) {
-        it(`${mode} · ${pt}: numerik desktop == mobile`, () => {
+        for (const vp of nonDesktopVps) {
+        it(`${mode} · ${pt}: numerik desktop == ${vp.name}`, () => {
           // Hilangkan baris [layout] & [header truncation] agar tersisa
           // konten data murni — harus identik antar viewport.
           const strip = (s: string) =>
@@ -196,17 +199,18 @@ describe("Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan", (
               )
               .join("\n");
           const desktop = strip(
-            renderScreen({ viewport: VIEWPORTS[0], mode, packageType: pt }),
+            renderScreen({ viewport: desktopVp, mode, packageType: pt }),
           );
-          const mobile = strip(
-            renderScreen({ viewport: VIEWPORTS[1], mode, packageType: pt }),
+          const other = strip(
+            renderScreen({ viewport: vp, mode, packageType: pt }),
           );
           // Header ringkasan bisa dipotong di mobile; samakan dgn desktop
           // dengan memangkas keduanya ke 23 char yang dipakai truncation.
           const norm = (s: string) =>
             s.replace(/(\[SUM\] Ringkasan \| )([^\n]+)/, (_m, p, v) => `${p}${v.slice(0, 23)}`);
-          expect(norm(mobile)).toBe(norm(desktop));
+          expect(norm(other)).toBe(norm(desktop));
         });
+        }
       }
     }
   });
