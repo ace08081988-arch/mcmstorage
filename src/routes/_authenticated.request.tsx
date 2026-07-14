@@ -1983,7 +1983,7 @@ function PrepSections({
 
 function PrepCard({
   index, prep, items, warehouseItems, titleItems, titleName, customers, onDelete, onSent,
-  autoOpenSend, onConsumeAutoOpenSend,
+  autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend,
 }: {
   index: number;
   prep: RequestPreparation;
@@ -1995,15 +1995,20 @@ function PrepCard({
   onDelete: () => void;
   onSent: () => void;
   autoOpenSend?: boolean;
+  autoOpenSendChannel?: "whatsapp" | "chat";
   onConsumeAutoOpenSend?: () => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
+  // Kanal aktif untuk dialog verifikasi: default WA (tombol Kirim di kartu),
+  // dapat di-override oleh deep-link `send=chat` dari Beranda.
+  const [dialogChannel, setDialogChannel] = useState<"whatsapp" | "chat">("whatsapp");
   // Auto-buka dialog verifikasi bila datang dari deep-link `send=1`. Dikonsumsi
   // sekali supaya tidak re-trigger saat kartu di-remount / user menutup dialog.
   useEffect(() => {
     if (!autoOpenSend) return;
     if (isSentPrep(prep)) return;
+    setDialogChannel(autoOpenSendChannel ?? "whatsapp");
     setSendOpen(true);
     onConsumeAutoOpenSend?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2036,7 +2041,7 @@ function PrepCard({
         <div className="flex shrink-0 items-center gap-ms-1">
           {!sold ? (
             <button
-              onClick={() => setSendOpen(true)}
+              onClick={() => { setDialogChannel("whatsapp"); setSendOpen(true); }}
               className="inline-flex items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-1 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
               aria-label="Kirim ke pelanggan"
               title="Kirim foto + tagihan ke pelanggan (potong stok & catat piutang bila hutang)"
@@ -2111,6 +2116,7 @@ function PrepCard({
         <SendPrepToCustomerDialog
           open={sendOpen}
           onClose={() => setSendOpen(false)}
+          channel={dialogChannel}
           prep={prep}
           items={items}
           warehouseItems={warehouseItems}
