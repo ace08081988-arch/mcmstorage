@@ -2442,9 +2442,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     if (shots.length === 0) {
       ok = await confirm({
         title: "Kirim perintah penyiapan?",
-        description: linkedTask
-          ? `Akan dikirim perintah untuk *${title.name}* (${title.target_grams} ${displayUnitStr}) beserta *link tugas unik* ke halaman pegawai.`
-          : `Belum ada tugas pegawai untuk judul *${title.name}*. Buat dulu di halaman Tugas Baru agar link penyiapan bisa dilampirkan. Kirim tetap sebagai perintah teks?`,
+        description: title.warehouse_item_id
+          ? `Akan dibuat *tugas pegawai baru* untuk *${title.name}* (${title.target_grams} ${displayUnitStr}) — link & PIN unik khusus perintah ini. Perintah lama tidak ikut terbuka di link baru.`
+          : `Judul *${title.name}* belum ditautkan ke produk gudang, jadi tugas baru tidak bisa dibuat otomatis. Kirim sebagai perintah teks saja?`,
         confirmText: "Kirim WA",
       });
     } else {
@@ -2493,32 +2493,75 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       // supaya owner tetap bisa memicu tugas langsung dari halaman detail
       // penyiapan, tanpa harus pindah ke halaman Tugas terlebih dahulu.
       if (shots.length === 0) {
-        // Bangun pesan perintah UNIK per judul: menyertakan link publik
-        // tugas pegawai (`/t/<token>`) beserta catatan/target khusus judul
-        // ini. Bila tidak ada tugas yang terhubung, fallback ke teks
-        // generik lama supaya alur tetap berjalan.
-        const noteLine = linkedTask?.note?.trim() ? `Catatan: ${linkedTask.note.trim()}` : null;
-        const taskUrl = linkedTask ? publicTaskUrl(linkedTask.share_token) : null;
-        const qtyLine = linkedTask?.qty_requested
-          ? `Jumlah diminta: *${linkedTask.qty_requested} ${linkedTask.unit_label ?? displayUnitStr}*`
+        // SSOT: setiap "Kirim perintah" MEMBUAT tugas pegawai baru dengan
+        // share_token + PIN unik. Item di tugas ini hanya perintah judul
+        // saat ini — supaya pegawai yang membuka link tidak melihat
+        // perintah lama dari link sebelumnya. Bila judul belum ditautkan
+        // ke warehouse_item, fallback ke perintah teks generik (tanpa
+        // link) agar alur kirim tidak mati.
+        const targetGrams = Number(title.target_grams) || 0;
+        const unitLabel = title.unit_label ?? displayUnitStr ?? null;
+        let taskUrl: string | null = null;
+        let taskPin: string | null = null;
+        if (title.warehouse_item_id) {
+          const newPin = genPin();
+          const newToken = genShareToken();
+          const payload = [{
+            name: `${itemName} — ${title.name}`,
+            category: null,
+            qty_requested: targetGrams,
+            unit_label: unitLabel,
+            ref_photo_path: null,
+            warehouse_item_id: title.warehouse_item_id,
+            ecer_title_id: title.id,
+          }];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
+            _title: `Ecer: ${title.name}`,
+            _note: `Penyiapan ${itemName} — ${title.name} (${targetGrams} ${unitLabel ?? ""}). Foto masuk folder ecer otomatis.`,
+            _pin: newPin,
+            _share_token: newToken,
+            _items: payload,
+          });
+          if (rpcErr) {
+            toast.error("Gagal membuat tugas baru", { description: rpcErr.message });
+            return;
+          }
+          taskUrl = publicTaskUrl(newToken);
+          taskPin = newPin;
+          // Update state agar QR / tombol link di kartu ikut memperlihatkan
+          // tugas terbaru (bukan yang sebelumnya).
+          setLinkedTask({
+            task_id: "",
+            share_token: newToken,
+            task_title: `Ecer: ${title.name}`,
+            item_id: title.warehouse_item_id,
+            qty_requested: targetGrams,
+            unit_label: unitLabel,
+            note: null,
+            ref_photo_path: null,
+          });
+        }
+        const qtyLine = targetGrams
+          ? `Jumlah diminta: *${targetGrams} ${unitLabel ?? ""}*`
           : null;
         const text = [
           `📦 *Perintah penyiapan* — ${title.name}`,
           `Produk: ${itemName}`,
           `Target per kotak: *${title.target_grams} ${displayUnitStr}*`,
           ...(qtyLine ? [qtyLine] : []),
-          ...(noteLine ? [noteLine] : []),
           `ID judul: ${title.id}`,
-          ...(taskUrl
+          ...(taskUrl && taskPin
             ? [
                 "",
-                "🔗 Link tugas (khusus judul ini):",
+                "🔗 Link tugas (khusus perintah ini):",
                 taskUrl,
-                "Buka link, masukkan PIN yang diberikan, lalu unggah foto + lokasi untuk *judul ini saja*.",
+                `PIN: *${taskPin}*`,
+                "Buka link, masukkan PIN di atas, lalu unggah foto + lokasi. Link ini hanya berisi *perintah ini* — perintah lama tidak ikut.",
               ]
             : [
                 "",
-                "Belum ada link tugas untuk judul ini. Buat lewat menu *Tugas Baru* di aplikasi MCM lalu bagikan ulang.",
+                "Judul ini belum ditautkan ke produk gudang, jadi tidak ada link tugas otomatis. Tautkan lewat halaman *Ecer* atau buat manual via *Tugas Baru*.",
               ]),
         ].join("\n");
         const res = await shareToWhatsApp({ text, title: title.name });
