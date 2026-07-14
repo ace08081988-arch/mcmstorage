@@ -24,7 +24,7 @@ import {
   Pencil, Type, Sticker, MoveUpRight, Square, Circle as CircleIcon, Undo2, Redo2,
   MousePointer2, Crop, RotateCw, FlipHorizontal2, FlipVertical2, Layers, X, Check,
   AlertTriangle, MapPin, Package, DollarSign, Clock, BadgeCheck, Trash2, Copy, Eye, EyeOff, Lock, Unlock,
-  Highlighter, Brush, Eraser, Triangle as TriangleIcon, ZoomIn, ZoomOut,
+  Highlighter, Brush, Eraser, Triangle as TriangleIcon, ZoomIn, ZoomOut, RotateCcw, ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
