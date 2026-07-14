@@ -1008,6 +1008,34 @@ function TugasBaruForm() {
               </button>
             </div>
           ) : null}
+          {prefillFallback ? (
+            <div
+              role="status"
+              aria-live="polite"
+              data-testid="tugas-baru-prefill-fallback"
+              data-reason={prefillFallback.reason}
+              className="flex items-start justify-between gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-2xs text-amber-900 dark:text-amber-200"
+            >
+              <span className="min-w-0">
+                {prefillFallback.reason === "invalid"
+                  ? "Link tidak menyertakan judul ecer yang valid."
+                  : "Judul ecer dari link tidak ditemukan (mungkin sudah dihapus)."}
+                {" "}Form dibuka manual — Anda tetap bisa membuat tugas, atau{" "}
+                <Link to="/ecer" className="underline underline-offset-2 font-medium">
+                  kembali ke Ecer
+                </Link>{" "}
+                untuk memilih judul.
+              </span>
+              <button
+                type="button"
+                onClick={() => setPrefillFallback(null)}
+                className="shrink-0 rounded border border-amber-600/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-amber-600/10"
+                aria-label="Tutup peringatan judul ecer"
+              >
+                Tutup
+              </button>
+            </div>
+          ) : null}
           <Field label="Judul tugas">
             <input
               value={title}
