@@ -261,7 +261,7 @@ export function NotificationBell() {
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[10px] leading-none"
+              className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[0.625rem] leading-none"
             >
               {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
@@ -300,12 +300,12 @@ export function NotificationBell() {
         </div>
 
         {syncError && (
-          <div className="flex items-center justify-between gap-2 border-b bg-destructive/10 px-3 py-1.5 text-[11px] text-destructive">
+          <div className="flex items-center justify-between gap-2 border-b bg-destructive/10 px-3 py-1.5 text-[0.6875rem] text-destructive">
             <span>{syncError}</span>
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 px-2 text-[11px]"
+              className="h-6 px-2 text-[0.6875rem]"
               onClick={() => {
                 setSyncError(null);
                 void refresh();
@@ -383,7 +383,7 @@ export function NotificationBell() {
                           {it.title}
                         </div>
                         <div
-                          className="flex-none text-[11px] text-muted-foreground"
+                          className="flex-none text-[0.6875rem] text-muted-foreground"
                           title={new Date(it.createdAt).toLocaleString("id-ID")}
                         >
                           {timeAgo(it.createdAt)}
@@ -392,7 +392,7 @@ export function NotificationBell() {
                       <div className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">
                         {it.body}
                       </div>
-                      <div className="mt-1 flex items-center gap-2 text-[11px]">
+                      <div className="mt-1 flex items-center gap-2 text-[0.6875rem]">
                         <span className="text-muted-foreground">
                           {formatDate(it.createdAt)}
                         </span>
@@ -440,7 +440,7 @@ export function NotificationBell() {
           )}
         </div>
 
-        <div className="border-t px-3 py-2 text-[11px] text-muted-foreground">
+        <div className="border-t px-3 py-2 text-[0.6875rem] text-muted-foreground">
           Fallback in-app — muncul walau banner sistem diblokir preview.
         </div>
       </PopoverContent>
