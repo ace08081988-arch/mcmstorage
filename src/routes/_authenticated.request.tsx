@@ -1466,13 +1466,15 @@ function SendPrepLinkDialog({
 }
 
 function TitleDetailView({
-  title, warehouseItems, titleItems, onBack, onChanged,
+  title, warehouseItems, titleItems, onBack, onChanged, autoOpenSend, onConsumeAutoOpenSend,
 }: {
   title: RequestTitle;
   warehouseItems: WarehouseItem[];
   titleItems: RequestTitleItem[];
   onBack: () => void;
   onChanged: () => void;
+  autoOpenSend?: boolean;
+  onConsumeAutoOpenSend?: () => void;
 }) {
   const [preps, setPreps] = useState<RequestPreparation[]>([]);
   const [prepItems, setPrepItems] = useState<Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>>([]);
