@@ -1966,6 +1966,7 @@ function PrepSections({
 
 function PrepCard({
   index, prep, items, warehouseItems, titleItems, titleName, customers, onDelete, onSent,
+  autoOpenSend, onConsumeAutoOpenSend,
 }: {
   index: number;
   prep: RequestPreparation;
@@ -1976,9 +1977,20 @@ function PrepCard({
   customers: CustomerRow[];
   onDelete: () => void;
   onSent: () => void;
+  autoOpenSend?: boolean;
+  onConsumeAutoOpenSend?: () => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
+  // Auto-buka dialog verifikasi bila datang dari deep-link `send=1`. Dikonsumsi
+  // sekali supaya tidak re-trigger saat kartu di-remount / user menutup dialog.
+  useEffect(() => {
+    if (!autoOpenSend) return;
+    if (isSentPrep(prep)) return;
+    setSendOpen(true);
+    onConsumeAutoOpenSend?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenSend]);
   // Kumpulkan semua path foto (photo_path lama + photo_paths[] baru), dedup.
   const photoPaths = useMemo(() => {
     const all = [prep.photo_path, ...(prep.photo_paths ?? [])].filter((x): x is string => !!x);
