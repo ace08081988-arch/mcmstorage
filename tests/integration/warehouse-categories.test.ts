@@ -69,7 +69,7 @@ async function seedItem(category: string, itemName = `item-${Math.random().toStr
       user_id: userId,
       name: itemName,
       category,
-      package_type: "unit",
+      package_type: "pcs",
       package_size: 1,
       base_unit: "pcs",
     });
