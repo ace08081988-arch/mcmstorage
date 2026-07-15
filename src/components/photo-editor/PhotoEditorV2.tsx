@@ -66,7 +66,6 @@ const MCM_PALETTE = [
 
 // Aksen brand — dipakai untuk transformer, ring aktif, save button, dsb.
 const GOLD = "#c9a84c";
-const GOLD_LIGHT = "#f0d78c";
 
 const STICKER_PRESETS: Record<string, { label: string; Icon: typeof Check; defaultColor: string }> = {
   arrow: { label: "Panah", Icon: ArrowRight, defaultColor: "#c9a84c" },
