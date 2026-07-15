@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/re
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
-  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
+  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
   Trash2, CheckSquare, Square,
 } from "lucide-react";
 
