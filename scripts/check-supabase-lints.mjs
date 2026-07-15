@@ -30,10 +30,21 @@ const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
 /** Build a quick lookup: name -> { level, functions:Set<string> } */
 const allowIndex = new Map();
 for (const entry of allowlist.allow || []) {
-  allowIndex.set(entry.name, {
-    level: (entry.level || "WARN").toUpperCase(),
-    functions: new Set(entry.functions || []),
-  });
+  const level = (entry.level || "WARN").toUpperCase();
+  const existing = allowIndex.get(entry.name);
+  if (existing) {
+    if (existing.level !== level) {
+      console.warn(
+        `Allowlist: level mismatch for rule '${entry.name}' (${existing.level} vs ${level}); keeping ${existing.level}.`,
+      );
+    }
+    for (const fn of entry.functions || []) existing.functions.add(fn);
+  } else {
+    allowIndex.set(entry.name, {
+      level,
+      functions: new Set(entry.functions || []),
+    });
+  }
 }
 
 const res = await fetch(
