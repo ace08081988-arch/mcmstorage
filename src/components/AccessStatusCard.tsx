@@ -247,8 +247,8 @@ export function AccessStatusCard() {
         loading
           ? "border-muted"
           : isStorage
-            ? "border-emerald-500/40"
-            : "border-amber-500/40"
+            ? "border-success/40"
+            : "border-warning/40"
       }
     >
       <CardHeader>
@@ -256,16 +256,16 @@ export function AccessStatusCard() {
           {loading ? (
             <ShieldCheck className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
           ) : isStorage ? (
-            <Unlock className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+            <Unlock className="h-5 w-5 text-success" aria-hidden="true" />
           ) : (
-            <Lock className="h-5 w-5 text-amber-500" aria-hidden="true" />
+            <Lock className="h-5 w-5 text-warning" aria-hidden="true" />
           )}
           <CardTitle id="access-status-title" className="text-ms-base">
             Status izin akun
           </CardTitle>
           {liveSince && (
             <span
-              className="ml-1 inline-flex items-center gap-ms-1 text-ms-2xs text-emerald-600 dark:text-emerald-400"
+              className="ml-1 inline-flex items-center gap-ms-1 text-ms-2xs text-success dark:text-success"
               data-testid="access-status-live"
               title={`Realtime aktif sejak ${liveSince.toLocaleTimeString()}`}
             >
@@ -276,7 +276,7 @@ export function AccessStatusCard() {
           <Badge
             data-testid="access-mode-badge"
             variant={isStorage ? "default" : "secondary"}
-            className={`ml-auto transition-colors ${justChanged ? "ring-2 ring-emerald-400/70" : ""}`}
+            className={`ml-auto transition-colors ${justChanged ? "ring-2 ring-success/70" : ""}`}
           >
             {loading ? "…" : isStorage ? "Storage" : "Chat-only"}
           </Badge>
@@ -292,7 +292,7 @@ export function AccessStatusCard() {
           <div
             role="status"
             aria-live="polite"
-            className="flex items-start gap-ms-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-ms-2.5 text-ms-xs text-emerald-800 dark:text-emerald-200"
+            className="flex items-start gap-ms-2 rounded-md border border-success/40 bg-success/10 p-ms-2.5 text-ms-xs text-success dark:text-success"
             data-testid="access-status-changed-banner"
           >
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -326,7 +326,7 @@ export function AccessStatusCard() {
 
             {!emailConfirmed && email && (
               <div
-                className="flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2.5 text-amber-800 dark:text-amber-200"
+                className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2.5 text-warning dark:text-warning"
                 data-testid="access-email-warning"
                 role="status"
               >
@@ -360,12 +360,12 @@ export function AccessStatusCard() {
                     >
                       {ok ? (
                         <CheckCircle2
-                          className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+                          className="mt-0.5 h-4 w-4 shrink-0 text-success"
                           aria-label="Terbuka"
                         />
                       ) : (
                         <XCircle
-                          className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
+                          className="mt-0.5 h-4 w-4 shrink-0 text-warning"
                           aria-label="Terkunci"
                         />
                       )}

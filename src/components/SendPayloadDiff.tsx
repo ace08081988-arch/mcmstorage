@@ -57,7 +57,7 @@ export function SendPayloadDiff({
                         "rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold " +
                         (row.changed
                           ? "bg-rose-500/15 text-rose-700 dark:text-rose-200"
-                          : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200")
+                          : "bg-success/15 text-success dark:text-success")
                       }
                     >
                       {row.changed ? "Berubah" : "Sama"}
@@ -88,7 +88,7 @@ function ValueBlock({ tone, label, value }: { tone: "prev" | "curr"; label: stri
         "rounded border px-1.5 py-1 " +
         (tone === "prev"
           ? "border-muted-foreground/20 bg-muted/40"
-          : "border-amber-500/40 bg-amber-500/10")
+          : "border-warning/40 bg-warning/10")
       }
     >
       <div className="text-[9.5px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>

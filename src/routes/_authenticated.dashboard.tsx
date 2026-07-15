@@ -177,8 +177,8 @@ function KpiCard({
 }) {
   const toneMap: Record<string, string> = {
     primary: "from-primary/20 via-primary/5 to-transparent text-primary",
-    emerald: "from-emerald-500/20 via-emerald-500/5 to-transparent text-emerald-600 dark:text-emerald-400",
-    amber: "from-amber-500/20 via-amber-500/5 to-transparent text-amber-600 dark:text-amber-400",
+    emerald: "from-success/20 via-success/5 to-transparent text-success dark:text-success",
+    amber: "from-warning/20 via-warning/5 to-transparent text-warning dark:text-warning",
     sky: "from-sky-500/20 via-sky-500/5 to-transparent text-sky-600 dark:text-sky-400",
   };
   const inner = (
@@ -456,8 +456,8 @@ function ExecKpi({
 }) {
   const toneMap: Record<string, string> = {
     primary: "from-primary/15 to-transparent text-primary ring-primary/20",
-    emerald: "from-emerald-500/15 to-transparent text-emerald-600 dark:text-emerald-400 ring-emerald-500/20",
-    amber: "from-amber-500/15 to-transparent text-amber-600 dark:text-amber-400 ring-amber-500/20",
+    emerald: "from-success/15 to-transparent text-success dark:text-success ring-success/20",
+    amber: "from-warning/15 to-transparent text-warning dark:text-warning ring-warning/20",
     sky: "from-sky-500/15 to-transparent text-sky-600 dark:text-sky-400 ring-sky-500/20",
     violet: "from-violet-500/15 to-transparent text-violet-600 dark:text-violet-400 ring-violet-500/20",
     rose: "from-rose-500/15 to-transparent text-rose-600 dark:text-rose-400 ring-rose-500/20",
@@ -733,7 +733,7 @@ function DashboardPage() {
                     key={s.id}
                     className="flex items-center gap-ms-3 rounded-xl px-1.5 py-ms-2 transition-colors hover:bg-muted/50"
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-500/12 text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/12 text-success ring-1 ring-success/20 dark:text-success">
                       <ReceiptText className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -978,7 +978,7 @@ function DashboardPage() {
             Aksi cepat
           </h2>
           {prepActiveCount > 0 ? (
-            <span className="inline-flex items-center gap-ms-1 rounded-full bg-amber-500/12 px-ms-2.5 py-1 text-ms-2xs font-semibold text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-warning/12 px-ms-2.5 py-1 text-ms-2xs font-semibold text-warning ring-1 ring-warning/20 dark:text-warning">
               <ClipboardList className="h-3 w-3" />
               {prepActiveCount} tugas aktif
             </span>

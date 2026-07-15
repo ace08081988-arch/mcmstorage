@@ -57,14 +57,14 @@ export function SecurityScanReminder() {
   };
 
   return (
-    <div className="mb-3 rounded-lg border border-amber-300/60 bg-amber-50 p-ms-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100">
+    <div className="mb-3 rounded-lg border border-warning/60 bg-warning p-ms-3 text-warning dark:border-warning/40 dark:bg-warning/40 dark:text-warning">
       <div className="flex items-start gap-ms-3">
         <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
         <div className="flex-1 text-ms-sm">
           <div className="font-medium">
             Schema database berubah ({formatVersion(LATEST_VERSION)})
           </div>
-          <div className="mt-0.5 text-amber-900/80 dark:text-amber-100/80">
+          <div className="mt-0.5 text-warning/80 dark:text-warning/80">
             Jalankan ulang security scan untuk memastikan tidak ada policy atau
             secret yang baru terekspos.
           </div>
@@ -78,7 +78,7 @@ export function SecurityScanReminder() {
           type="button"
           onClick={dismiss}
           aria-label="Tutup"
-          className="rounded p-ms-1 text-amber-900/70 hover:bg-amber-100 dark:text-amber-100/70 dark:hover:bg-amber-900/40"
+          className="rounded p-ms-1 text-warning/70 hover:bg-warning dark:text-warning/70 dark:hover:bg-warning/40"
         >
           <X className="h-4 w-4" />
         </button>

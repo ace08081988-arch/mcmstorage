@@ -305,7 +305,7 @@ function KontakPage() {
                         )}
                         <div className="mt-1 text-ms-2xs">
                           {r.account_user_id ? (
-                            <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            <span className="rounded bg-success px-1.5 py-0.5 font-medium text-success dark:bg-success/40 dark:text-success">
                               Tertaut ke akun
                             </span>
                           ) : (

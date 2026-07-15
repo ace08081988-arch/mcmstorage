@@ -187,7 +187,7 @@ export function SharePinDialog({
                   {displayPin}
                 </span>
                 {reveal && (
-                  <span className="text-amber-600 dark:text-amber-400">
+                  <span className="text-warning dark:text-warning">
                     Tersembunyi otomatis dalam {secondsLeft} detik
                   </span>
                 )}

@@ -41,7 +41,7 @@ describe("getCallStatusVisual — pemetaan ikon status kritis", () => {
   it("Ditolak (declined) memakai PhoneOff amber", () => {
     expect(snapshot("declined")).toMatchInlineSnapshot(`
       {
-        "colorClass": "text-amber-500",
+        "colorClass": "text-warning",
         "hint": "Ditolak — penerima menolak panggilan.",
         "icon": "PhoneOff",
         "label": "Ditolak",
@@ -52,7 +52,7 @@ describe("getCallStatusVisual — pemetaan ikon status kritis", () => {
   it("Dibatalkan (cancelled) memakai Ban amber", () => {
     expect(snapshot("cancelled")).toMatchInlineSnapshot(`
       {
-        "colorClass": "text-amber-500",
+        "colorClass": "text-warning",
         "hint": "Dibatalkan — panggilan dihentikan sebelum diangkat.",
         "icon": "Ban",
         "label": "Dibatalkan",
@@ -63,7 +63,7 @@ describe("getCallStatusVisual — pemetaan ikon status kritis", () => {
   it("Diterima netral (ended, arah tidak diketahui) memakai CheckCircle2 emerald", () => {
     expect(snapshot("ended")).toMatchInlineSnapshot(`
       {
-        "colorClass": "text-emerald-500",
+        "colorClass": "text-success",
         "hint": "Diterima — panggilan berhasil tersambung.",
         "icon": "CircleCheck",
         "label": "Diterima",
@@ -74,7 +74,7 @@ describe("getCallStatusVisual — pemetaan ikon status kritis", () => {
   it("Diterima keluar (ended, outgoing) memakai PhoneOutgoing emerald", () => {
     expect(snapshot("ended", { outgoing: true })).toMatchInlineSnapshot(`
       {
-        "colorClass": "text-emerald-500",
+        "colorClass": "text-success",
         "hint": "Diterima — panggilan keluar berhasil tersambung.",
         "icon": "PhoneOutgoing",
         "label": "Diterima",
@@ -85,7 +85,7 @@ describe("getCallStatusVisual — pemetaan ikon status kritis", () => {
   it("Diterima masuk (ended, incoming) memakai PhoneIncoming emerald", () => {
     expect(snapshot("ended", { outgoing: false })).toMatchInlineSnapshot(`
       {
-        "colorClass": "text-emerald-500",
+        "colorClass": "text-success",
         "hint": "Diterima — panggilan masuk berhasil tersambung.",
         "icon": "PhoneIncoming",
         "label": "Diterima",

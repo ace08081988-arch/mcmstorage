@@ -190,7 +190,7 @@ function Harness() {
         <div
           role="dialog"
           data-testid="payment-dialog-ecer"
-          className="rounded border border-emerald-300 bg-emerald-50 p-ms-3 text-ms-sm"
+          className="rounded border border-success bg-success p-ms-3 text-ms-sm"
         >
           Dialog verifikasi pembayaran (stub)
           <button

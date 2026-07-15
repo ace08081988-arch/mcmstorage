@@ -95,12 +95,12 @@ export function ChatModeSplash() {
       <div className="mt-6 text-ms-2xl font-semibold tracking-tight text-white">
         MCM Chat
       </div>
-      <div className="mt-1 text-ms-xs text-emerald-100/70">
+      <div className="mt-1 text-ms-xs text-success/70">
         Pesan cepat & terhubung
       </div>
       <div className="mt-8 h-1 w-24 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full w-1/3 rounded-full bg-emerald-300"
+          className="h-full w-1/3 rounded-full bg-success"
           style={{ animation: "mcm-chat-splash-slide 1200ms ease-in-out infinite" }}
         />
       </div>

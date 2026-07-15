@@ -49,12 +49,12 @@ function IntegrasiSosialPage() {
         icon={Share2}
         status={
           !dirty && (prefs.facebookUrl || prefs.instagramUrl) ? (
-            <span className="inline-flex items-center gap-ms-1 rounded-full bg-emerald-500/12 px-ms-2 py-0.5 text-ms-2xs font-semibold text-emerald-600 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-success/12 px-ms-2 py-0.5 text-ms-2xs font-semibold text-success ring-1 ring-success/20 dark:text-success">
               <Check className="h-3 w-3" strokeWidth={3} />
               Tersimpan
             </span>
           ) : dirty ? (
-            <span className="inline-flex items-center gap-ms-1 rounded-full bg-amber-500/12 px-ms-2 py-0.5 text-ms-2xs font-semibold text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-400">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-warning/12 px-ms-2 py-0.5 text-ms-2xs font-semibold text-warning ring-1 ring-warning/20 dark:text-warning">
               Belum disimpan
             </span>
           ) : null

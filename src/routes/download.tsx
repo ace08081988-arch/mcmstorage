@@ -140,11 +140,11 @@ function ApkCard({
 }) {
   const badge =
     accent === "emerald"
-      ? "bg-emerald-600/10 text-emerald-700 dark:text-emerald-300"
+      ? "bg-success/10 text-success dark:text-success"
       : "bg-sky-600/10 text-sky-700 dark:text-sky-300";
   const btn =
     accent === "emerald"
-      ? "bg-emerald-600 hover:bg-emerald-700"
+      ? "bg-success hover:bg-success"
       : "bg-sky-600 hover:bg-sky-700";
   return (
     <div
@@ -174,7 +174,7 @@ function ApkCard({
       ) : (
         <>
           {apk.belowMinimum && (
-            <div className="mb-3 flex items-start gap-ms-1.5 rounded-lg border border-amber-300 bg-amber-50 p-ms-2.5 text-ms-2xs leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+            <div className="mb-3 flex items-start gap-ms-1.5 rounded-lg border border-warning bg-warning p-ms-2.5 text-ms-2xs leading-snug text-warning dark:border-warning/60 dark:bg-warning/40 dark:text-warning">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <div>
                 <strong className="font-semibold">Build ini lebih lama</strong>{" "}
@@ -292,7 +292,7 @@ function CopyLinkButtons({
         aria-label={`Salin link halaman ${title}`}
       >
         {copied === "page" ? (
-          <Check className="h-3.5 w-3.5 text-emerald-600" />
+          <Check className="h-3.5 w-3.5 text-success" />
         ) : (
           <Link2 className="h-3.5 w-3.5" />
         )}
@@ -309,7 +309,7 @@ function CopyLinkButtons({
         title="Berlaku ± 1 jam sebelum kedaluwarsa"
       >
         {copied === "file" ? (
-          <Check className="h-3.5 w-3.5 text-emerald-600" />
+          <Check className="h-3.5 w-3.5 text-success" />
         ) : (
           <Link2 className="h-3.5 w-3.5" />
         )}

@@ -113,7 +113,7 @@ function PengaturanScrollGuardPage() {
             <span
               aria-live="polite"
               className={`flex items-center gap-ms-1 text-ms-xs font-medium transition-opacity ${
-                savedAt ? "opacity-100 text-emerald-600" : "opacity-0"
+                savedAt ? "opacity-100 text-success" : "opacity-0"
               }`}
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -301,11 +301,11 @@ function TestArea({
         <div className="grid grid-cols-3 gap-ms-2 text-ms-xs">
           <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="text-muted-foreground">Tap diterima</div>
-            <div className="text-ms-base font-semibold tabular-nums text-emerald-600">{tapCount}</div>
+            <div className="text-ms-base font-semibold tabular-nums text-success">{tapCount}</div>
           </div>
           <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="text-muted-foreground">Tap ditolak</div>
-            <div className="text-ms-base font-semibold tabular-nums text-amber-600">{rejectCount}</div>
+            <div className="text-ms-base font-semibold tabular-nums text-warning">{rejectCount}</div>
           </div>
           <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="text-muted-foreground">Status</div>
@@ -491,7 +491,7 @@ function TextRow({
         <label className="text-ms-sm font-medium leading-snug">
           {label}
           {isEmpty && (
-            <span className="ml-2 rounded-full bg-amber-100 px-1.5 py-0.5 text-ms-2xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+            <span className="ml-2 rounded-full bg-warning px-1.5 py-0.5 text-ms-2xs font-medium text-warning dark:bg-warning/50 dark:text-warning">
               Hint dimatikan
             </span>
           )}

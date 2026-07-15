@@ -63,8 +63,8 @@ function levelStok(stokKg: number, ambang: number): StokLevel {
 const LEVEL_META: Record<StokLevel, { label: string; badge: string; text: string; ring: string; emoji: string }> = {
   habis:   { label: "Habis",   badge: "bg-slate-700 text-slate-200 border-slate-600", text: "text-slate-400", ring: "ring-1 ring-slate-600",       emoji: "⛔" },
   kritis:  { label: "Kritis",  badge: "bg-rose-500/20 text-rose-300 border-rose-500/40", text: "text-rose-300", ring: "ring-2 ring-rose-500/60 animate-pulse", emoji: "🚨" },
-  menipis: { label: "Menipis", badge: "bg-amber-500/20 text-amber-300 border-amber-500/40", text: "text-amber-300", ring: "ring-1 ring-amber-500/40", emoji: "⚠" },
-  aman:    { label: "Aman",    badge: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", text: "text-slate-300", ring: "", emoji: "" },
+  menipis: { label: "Menipis", badge: "bg-warning/20 text-warning border-warning/40", text: "text-warning", ring: "ring-1 ring-warning/40", emoji: "⚠" },
+  aman:    { label: "Aman",    badge: "bg-success/15 text-success border-success/30", text: "text-slate-300", ring: "", emoji: "" },
 };
 
 function PosKasirPage() {
@@ -573,7 +573,7 @@ function PosKasirPage() {
           <div className="text-ms-4xl">📦</div>
           <h1 className="text-ms-xl font-bold">Belum ada produk di gudang</h1>
           <p className="text-ms-sm text-slate-400">
-            POS Kasir menampilkan produk dari halaman <Link className="underline text-emerald-300" to="/gudang">Gudang</Link>.
+            POS Kasir menampilkan produk dari halaman <Link className="underline text-success" to="/gudang">Gudang</Link>.
             Tambahkan minimal satu barang untuk mulai menjual.
           </p>
           {gudangError && <p className="text-ms-xs text-red-300">{gudangError}</p>}
@@ -600,7 +600,7 @@ function PosKasirPage() {
             aria-pressed={modeRingkas}
             className={`shrink-0 rounded-lg border text-ms-xs font-medium transition-colors ${
               modeRingkas
-                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                ? "bg-success/20 border-success/50 text-success"
                 : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
             } ${modeRingkas ? "px-ms-2 py-1" : "px-ms-3 py-1.5"}`}
           >
@@ -616,8 +616,8 @@ function PosKasirPage() {
 
         <div className={`${modeRingkas ? "mb-2" : "mb-3"} rounded-lg border text-ms-2xs px-ms-3 py-ms-2 flex items-center justify-between gap-ms-2 ${
           gudangSynced
-            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
-            : "bg-amber-500/10 border-amber-500/30 text-amber-200"
+            ? "bg-success/10 border-success/30 text-success"
+            : "bg-warning/10 border-warning/30 text-warning"
         }`}>
           <span className="truncate">
             {gudangSynced
@@ -645,7 +645,7 @@ function PosKasirPage() {
               aria-pressed={modeRingkas}
               className={`rounded-lg border text-ms-sm font-medium transition-colors ${
                 modeRingkas
-                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                  ? "bg-success/20 border-success/50 text-success"
                   : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
               } px-ms-4 py-ms-2`}
             >
@@ -653,7 +653,7 @@ function PosKasirPage() {
             </button>
             <Link
               to="/pos-kasir/ringkasan"
-              className="px-ms-4 py-ms-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-ms-sm font-medium transition-colors"
+              className="px-ms-4 py-ms-2 rounded-lg bg-success hover:bg-success text-white text-ms-sm font-medium transition-colors"
             >
               📊 Ringkasan
             </Link>
@@ -680,7 +680,7 @@ function PosKasirPage() {
                   disabled={habis}
                   className={`relative shrink-0 flex items-center gap-ms-2 rounded-lg border text-ms-xs transition-colors ${meta.ring} ${
                     active
-                      ? "bg-emerald-500/20 border-emerald-400"
+                      ? "bg-success/20 border-success"
                       : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
                   } ${habis ? "opacity-40 cursor-not-allowed" : ""} ${modeRingkas ? "px-ms-2 py-1.5" : "px-ms-3 py-ms-2"}`}
                 >
@@ -710,7 +710,7 @@ function PosKasirPage() {
               </div>
             )}
             {produkMenipis.length > 0 && (
-              <div className="text-ms-2xs text-amber-300">
+              <div className="text-ms-2xs text-warning">
                 ⚠ Stok menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
               </div>
             )}
@@ -730,7 +730,7 @@ function PosKasirPage() {
                   const n = parseFloat(e.target.value.replace(",", "."));
                   if (Number.isFinite(n) && n > 0) setAmbangStok(n);
                 }}
-                className="w-16 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-0.5 text-ms-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                className="w-16 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-0.5 text-ms-xs text-slate-100 focus:outline-none focus:border-success"
               />
               kg
             </label>
@@ -757,7 +757,7 @@ function PosKasirPage() {
                       const n = parseFloat(e.target.value.replace(",", "."));
                       if (Number.isFinite(n) && n > 0) setAmbangStok(n);
                     }}
-                    className="w-20 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-1 text-ms-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                    className="w-20 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-1 text-ms-xs text-slate-100 focus:outline-none focus:border-success"
                   />
                   kg
                 </label>
@@ -770,7 +770,7 @@ function PosKasirPage() {
                     </div>
                   )}
                   {produkMenipis.length > 0 && (
-                    <div className="text-amber-300">
+                    <div className="text-warning">
                       ⚠ Menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
                     </div>
                   )}
@@ -794,7 +794,7 @@ function PosKasirPage() {
                       disabled={habis}
                       className={`relative text-left p-ms-4 rounded-xl border transition-all ${meta.ring} ${
                         active
-                          ? "bg-emerald-500/20 border-emerald-400 shadow-lg shadow-emerald-500/20"
+                          ? "bg-success/20 border-success shadow-lg shadow-success/20"
                           : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
                       } ${habis ? "opacity-40 cursor-not-allowed" : ""}`}
                     >
@@ -821,23 +821,23 @@ function PosKasirPage() {
             {/* Mobile scale */}
             <div className={`md:hidden bg-gradient-to-b from-slate-950 to-black rounded-2xl border-2 border-slate-700 shadow-2xl ${modeRingkas ? "p-ms-3" : "p-ms-4"}`}>
               <div className={`flex items-center justify-between ${modeRingkas ? "mb-2" : "mb-3"}`}>
-                <span className="text-ms-xs font-mono uppercase tracking-widest text-emerald-400">⚖ Timbangan</span>
+                <span className="text-ms-xs font-mono uppercase tracking-widest text-success">⚖ Timbangan</span>
                 <span className="text-ms-xs text-slate-400 truncate">
                   {selected.emoji} {selected.nama}
                 </span>
               </div>
-              <div className={`bg-black rounded-xl border border-emerald-900/50 relative overflow-hidden ${modeRingkas ? "p-ms-3" : "p-ms-4"}`}>
-                <div className="absolute inset-0 bg-emerald-500/5" />
+              <div className={`bg-black rounded-xl border border-success/50 relative overflow-hidden ${modeRingkas ? "p-ms-3" : "p-ms-4"}`}>
+                <div className="absolute inset-0 bg-success/5" />
                 <div className="relative flex items-baseline justify-end gap-ms-2">
                   <span
-                    className={`font-mono font-bold text-emerald-400 tabular-nums ${modeRingkas ? "text-ms-4xl" : "text-5xl"}`}
+                    className={`font-mono font-bold text-success tabular-nums ${modeRingkas ? "text-ms-4xl" : "text-5xl"}`}
                     style={{ textShadow: "0 0 20px rgba(52,211,153,0.6)", fontFamily: "'Courier New', monospace" }}
                   >
                     {displayBerat}
                   </span>
-                  <span className={`font-mono text-emerald-500 ${modeRingkas ? "text-ms-lg" : "text-ms-xl"}`}>{unit}</span>
+                  <span className={`font-mono text-success ${modeRingkas ? "text-ms-lg" : "text-ms-xl"}`}>{unit}</span>
                 </div>
-                <div className={`border-t border-emerald-900/40 flex justify-between font-mono text-emerald-500/70 ${modeRingkas ? "mt-1 pt-1 text-ms-2xs" : "mt-2 pt-2 text-ms-xs"}`}>
+                <div className={`border-t border-success/40 flex justify-between font-mono text-success/70 ${modeRingkas ? "mt-1 pt-1 text-ms-2xs" : "mt-2 pt-2 text-ms-xs"}`}>
                   <span>@ {rupiah(hargaEfektif)}/{unit.toUpperCase()}</span>
                   <span>TOTAL {rupiah(total)}</span>
                 </div>
@@ -855,7 +855,7 @@ function PosKasirPage() {
                   className={`w-full bg-slate-900 border rounded-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
                     berat > selected.stokKg
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
-                      : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                      : "border-slate-700 focus:border-success focus:ring-success/30"
                   } ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
                   placeholder="0.000"
                 />
@@ -881,7 +881,7 @@ function PosKasirPage() {
                     value={hargaStr}
                     onChange={(e) => setHargaStr(e.target.value)}
                     placeholder="0"
-                    className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg font-mono focus:outline-none focus:ring-2 ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
+                    className={`w-full bg-slate-900 border border-slate-700 focus:border-success focus:ring-success/30 rounded-lg font-mono focus:outline-none focus:ring-2 ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
                   />
                 </div>
               )}
@@ -901,7 +901,7 @@ function PosKasirPage() {
                       className={`rounded-lg border text-ms-xs font-semibold transition-colors ${
                         wouldExceed
                           ? "bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed"
-                          : "bg-slate-800 hover:bg-slate-700 border-slate-700 active:bg-emerald-600/30"
+                          : "bg-slate-800 hover:bg-slate-700 border-slate-700 active:bg-success/30"
                       } ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
                     >
                       +{v}
@@ -926,7 +926,7 @@ function PosKasirPage() {
                 <button
                   onClick={bayar}
                   disabled={!bayarSiap}
-                  className={`rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-ms-xs font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
+                  className={`rounded-lg bg-success hover:bg-success disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-ms-xs font-bold text-white shadow-lg shadow-success/30 active:scale-95 transition-transform ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
                 >
                   Bayar
                 </button>
@@ -937,24 +937,24 @@ function PosKasirPage() {
             {/* Desktop scale */}
             <div className="hidden md:block bg-gradient-to-b from-slate-950 to-black rounded-2xl p-ms-6 border-2 border-slate-700 shadow-2xl">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-ms-xs font-mono uppercase tracking-widest text-emerald-400">⚖ Timbangan Digital</span>
+                <span className="text-ms-xs font-mono uppercase tracking-widest text-success">⚖ Timbangan Digital</span>
                 <span className="flex gap-ms-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-ms-2xs font-mono text-emerald-400">LIVE</span>
+                  <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                  <span className="text-ms-2xs font-mono text-success">LIVE</span>
                 </span>
               </div>
-              <div className="bg-black rounded-xl p-ms-6 border border-emerald-900/50 relative overflow-hidden">
-                <div className="absolute inset-0 bg-emerald-500/5" />
+              <div className="bg-black rounded-xl p-ms-6 border border-success/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-success/5" />
                 <div className="relative flex items-baseline justify-end gap-ms-2">
                   <span
-                    className="font-mono text-6xl md:text-7xl font-bold text-emerald-400 tabular-nums"
+                    className="font-mono text-6xl md:text-7xl font-bold text-success tabular-nums"
                     style={{ textShadow: "0 0 20px rgba(52,211,153,0.6)", fontFamily: "'Courier New', monospace" }}
                   >
                     {displayBerat}
                   </span>
-                  <span className="text-ms-2xl font-mono text-emerald-500">{unit}</span>
+                  <span className="text-ms-2xl font-mono text-success">{unit}</span>
                 </div>
-                <div className="mt-3 pt-3 border-t border-emerald-900/40 flex justify-between text-ms-xs font-mono text-emerald-500/70">
+                <div className="mt-3 pt-3 border-t border-success/40 flex justify-between text-ms-xs font-mono text-success/70">
                   <span>PRODUK: {selected.nama.toUpperCase()}</span>
                   <span>@ {rupiah(hargaEfektif)}/{unit.toUpperCase()}</span>
                 </div>
@@ -974,7 +974,7 @@ function PosKasirPage() {
                   className={`mt-2 w-full bg-slate-900 border rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
                     berat > selected.stokKg
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
-                      : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                      : "border-slate-700 focus:border-success focus:ring-success/30"
                   }`}
                   placeholder="0.000"
                 />
@@ -1032,7 +1032,7 @@ function PosKasirPage() {
                     value={hargaStr}
                     onChange={(e) => setHargaStr(e.target.value)}
                     placeholder="0"
-                    className="mt-2 w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2"
+                    className="mt-2 w-full bg-slate-900 border border-slate-700 focus:border-success focus:ring-success/30 rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2"
                   />
                 </div>
               )}
@@ -1064,7 +1064,7 @@ function PosKasirPage() {
                 </div>
                 <div className="border-t border-slate-700 pt-3 flex justify-between items-baseline">
                   <span className="text-slate-300 font-semibold">TOTAL</span>
-                  <span className="text-ms-2xl font-bold text-emerald-400 font-mono">{rupiah(total)}</span>
+                  <span className="text-ms-2xl font-bold text-success font-mono">{rupiah(total)}</span>
                 </div>
               </div>
 
@@ -1080,7 +1080,7 @@ function PosKasirPage() {
               <button
                 onClick={bayar}
                 disabled={!bayarSiap}
-                className="mt-5 w-full py-ms-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed font-bold text-ms-lg shadow-lg shadow-emerald-500/30 transition-all"
+                className="mt-5 w-full py-ms-4 rounded-xl bg-gradient-to-r from-success to-success hover:from-success hover:to-success disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed font-bold text-ms-lg shadow-lg shadow-success/30 transition-all"
               >
                 💳 Bayar
               </button>
@@ -1139,7 +1139,7 @@ function PosKasirPage() {
                   onClick={() => setUrutan("terbaru")}
                   className={`px-ms-2.5 py-1.5 text-ms-xs font-medium transition-colors ${
                     urutan === "terbaru"
-                      ? "bg-emerald-600 text-white"
+                      ? "bg-success text-white"
                       : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
                   }`}
                   aria-pressed={urutan === "terbaru"}
@@ -1151,7 +1151,7 @@ function PosKasirPage() {
                   onClick={() => setUrutan("terlama")}
                   className={`px-ms-2.5 py-1.5 text-ms-xs font-medium transition-colors ${
                     urutan === "terlama"
-                      ? "bg-emerald-600 text-white"
+                      ? "bg-success text-white"
                       : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
                   }`}
                   aria-pressed={urutan === "terlama"}
@@ -1162,7 +1162,7 @@ function PosKasirPage() {
               <button
                 onClick={exportCSV}
                 disabled={riwayatSorted.length === 0}
-                className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
+                className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-success text-white font-medium"
               >
                 ⬇ Ekspor CSV ({riwayatSorted.length})
               </button>
@@ -1199,11 +1199,11 @@ function PosKasirPage() {
                     💬 Kirim Struk via WA
                   </span>
                   {waReady ? (
-                    <span className="text-ms-2xs text-emerald-400 font-mono truncate">
+                    <span className="text-ms-2xs text-success font-mono truncate">
                       → {waNomorDisplay}
                     </span>
                   ) : (
-                    <span className="text-ms-2xs text-amber-400">Lengkapi nomor & lokasi</span>
+                    <span className="text-ms-2xs text-warning">Lengkapi nomor & lokasi</span>
                   )}
                 </div>
 
@@ -1223,7 +1223,7 @@ function PosKasirPage() {
                       className={`w-full text-ms-sm rounded-lg bg-slate-900/60 border text-slate-100 font-mono focus:outline-none focus:ring-2 ${
                         waNomor && !waNomorNorm
                           ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
-                          : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                          : "border-slate-700 focus:border-success focus:ring-success/30"
                       } ${modeRingkas ? "mt-0.5 px-ms-2 py-1" : "mt-1 px-ms-3 py-ms-2"}`}
                     />
                     {waNomorError && waNomor.trim() !== "" && (
@@ -1252,7 +1252,7 @@ function PosKasirPage() {
                         className={`flex-1 min-w-0 text-ms-sm rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
                           waLokasiTrim && !waLokasiValid
                             ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
-                            : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                            : "border-slate-700 focus:border-success focus:ring-success/30"
                         } ${modeRingkas ? "px-ms-2 py-1" : "px-ms-3 py-ms-2"}`}
                       />
                       <button
@@ -1261,7 +1261,7 @@ function PosKasirPage() {
                         disabled={gpsBusy}
                         title="Ambil lokasi GPS saat ini"
                         aria-label="Ambil lokasi GPS saat ini"
-                        className={`shrink-0 inline-flex items-center gap-ms-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60 ${modeRingkas ? "px-ms-2 py-1 text-ms-xs" : "px-ms-3 py-ms-2 text-ms-sm"}`}
+                        className={`shrink-0 inline-flex items-center gap-ms-1 rounded-lg border border-success/40 bg-success/10 text-success hover:bg-success/20 disabled:opacity-60 ${modeRingkas ? "px-ms-2 py-1 text-ms-xs" : "px-ms-3 py-ms-2 text-ms-sm"}`}
                       >
                         📍 <span>{gpsBusy ? "…" : "GPS"}</span>
                       </button>
@@ -1284,7 +1284,7 @@ function PosKasirPage() {
                       onClick={() => setUrutan("terbaru")}
                       className={`text-ms-xs font-medium transition-colors ${
                         urutan === "terbaru"
-                          ? "bg-emerald-600 text-white"
+                          ? "bg-success text-white"
                           : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
                       } ${modeRingkas ? "px-ms-2 py-1" : "px-ms-2.5 py-1.5"}`}
                       aria-pressed={urutan === "terbaru"}
@@ -1296,7 +1296,7 @@ function PosKasirPage() {
                       onClick={() => setUrutan("terlama")}
                       className={`text-ms-xs font-medium transition-colors ${
                         urutan === "terlama"
-                          ? "bg-emerald-600 text-white"
+                          ? "bg-success text-white"
                           : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
                       } ${modeRingkas ? "px-ms-2 py-1" : "px-ms-2.5 py-1.5"}`}
                       aria-pressed={urutan === "terlama"}
@@ -1313,7 +1313,7 @@ function PosKasirPage() {
                     value={cariTransaksi}
                     onChange={(e) => setCariTransaksi(e.target.value)}
                     placeholder="Cari nama produk atau waktu…"
-                    className={`w-full pl-9 rounded-lg bg-slate-900/60 border border-slate-700 text-ms-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400 ${cariTransaksi ? "pr-20" : "pr-3"} ${modeRingkas ? "py-1.5" : "py-ms-2"}`}
+                    className={`w-full pl-9 rounded-lg bg-slate-900/60 border border-slate-700 text-ms-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-success ${cariTransaksi ? "pr-20" : "pr-3"} ${modeRingkas ? "py-1.5" : "py-ms-2"}`}
                   />
                   {cariTransaksi && (
                     <button
@@ -1383,7 +1383,7 @@ function PosKasirPage() {
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="text-emerald-400 font-mono font-semibold text-ms-sm">{rupiah(t.total)}</div>
+                          <div className="text-success font-mono font-semibold text-ms-sm">{rupiah(t.total)}</div>
                           <div className="text-ms-2xs text-slate-400 font-mono">
                             {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(t)}
                           </div>
@@ -1403,7 +1403,7 @@ function PosKasirPage() {
                           disabled={!waReady}
                           title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
                           aria-disabled={!waReady}
-                          className={`flex-1 rounded-lg text-ms-2xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors ${modeRingkas ? "py-1" : "py-1.5"}`}
+                          className={`flex-1 rounded-lg text-ms-2xs font-semibold bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors ${modeRingkas ? "py-1" : "py-1.5"}`}
                         >
                           💬 Kirim WA
                         </button>
@@ -1457,7 +1457,7 @@ function PosKasirPage() {
                           {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(t)}
                         </td>
                         <td className="py-ms-2 pr-3 text-right font-mono text-slate-400">{rupiah(t.hargaPerKg)}</td>
-                        <td className="py-ms-2 pr-3 text-right font-mono font-semibold text-emerald-400">
+                        <td className="py-ms-2 pr-3 text-right font-mono font-semibold text-success">
                           {rupiah(t.total)}
                         </td>
                         <td className="py-ms-2 text-right font-mono text-slate-300">
@@ -1470,7 +1470,7 @@ function PosKasirPage() {
                             disabled={!waReady}
                             title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
                             aria-disabled={!waReady}
-                            className="px-ms-2.5 py-1 rounded-md text-ms-2xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                            className="px-ms-2.5 py-1 rounded-md text-ms-2xs font-semibold bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
                           >
                             💬 Kirim
                           </button>
@@ -1485,7 +1485,7 @@ function PosKasirPage() {
         </section>
 
         {toast && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-emerald-500/50 rounded-xl px-ms-5 py-ms-3 shadow-2xl text-ms-sm z-50 animate-in fade-in slide-in-from-bottom-4">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-success/50 rounded-xl px-ms-5 py-ms-3 shadow-2xl text-ms-sm z-50 animate-in fade-in slide-in-from-bottom-4">
             {toast}
           </div>
         )}
@@ -1496,13 +1496,13 @@ function PosKasirPage() {
             onClick={() => setStrukTransaksi(null)}
           >
             <div
-              className="w-full max-w-sm rounded-2xl bg-slate-900 border border-emerald-500/40 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4"
+              className="w-full max-w-sm rounded-2xl bg-slate-900 border border-success/40 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-ms-4 py-ms-3 border-b border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-ms-2">
                   <span className="text-ms-lg">🧾</span>
-                  <span className="text-ms-sm font-semibold text-emerald-300">Struk Transaksi</span>
+                  <span className="text-ms-sm font-semibold text-success">Struk Transaksi</span>
                 </div>
                 <button
                   type="button"
@@ -1538,7 +1538,7 @@ function PosKasirPage() {
                   </div>
                   <div className="flex justify-between pt-1.5 border-t border-slate-700">
                     <span className="text-slate-300">Total</span>
-                    <span className="text-emerald-400 font-semibold text-ms-base">
+                    <span className="text-success font-semibold text-ms-base">
                       {rupiah(strukTransaksi.total)}
                     </span>
                   </div>
@@ -1563,13 +1563,13 @@ function PosKasirPage() {
                     disabled={!waReady}
                     title={waDisabledReason || `Kirim ulang ke ${waNomorDisplay}`}
                     aria-disabled={!waReady}
-                    className="py-ms-2.5 rounded-lg text-ms-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                    className="py-ms-2.5 rounded-lg text-ms-xs font-semibold bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
                   >
                     💬 Kirim ulang WA
                   </button>
                 </div>
                 {!waReady && (
-                  <p className="text-ms-2xs text-amber-300/80 text-center">
+                  <p className="text-ms-2xs text-warning/80 text-center">
                     {waDisabledReason}
                   </p>
                 )}

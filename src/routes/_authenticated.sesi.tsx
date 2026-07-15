@@ -141,10 +141,10 @@ function SesiPage() {
       </header>
 
       {active.length > 1 ? (
-        <Card className="border-amber-500/40 bg-amber-500/5">
+        <Card className="border-warning/40 bg-warning/5">
           <CardContent className="flex items-start justify-between gap-ms-3 py-ms-3">
             <div className="flex items-start gap-ms-2 text-ms-sm">
-              <ShieldAlert className="mt-0.5 h-4 w-4 text-amber-600" />
+              <ShieldAlert className="mt-0.5 h-4 w-4 text-warning" />
               <div>
                 <div className="font-medium">Logout dari semua perangkat lain</div>
                 <div className="text-ms-xs text-muted-foreground">

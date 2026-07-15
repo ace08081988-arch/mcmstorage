@@ -170,17 +170,17 @@ function PengaturanAksesibilitasPage() {
           aria-live="polite"
         >
           {dirty ? (
-            <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-ms-2.5 py-1 font-medium text-amber-700 dark:text-amber-300">
+            <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-warning/40 bg-warning/10 px-ms-2.5 py-1 font-medium text-warning dark:text-warning">
               <span
-                className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"
+                className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse"
                 aria-hidden="true"
               />
               Belum disimpan
             </span>
           ) : (
-            <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-ms-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300">
+            <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-success/40 bg-success/10 px-ms-2.5 py-1 font-medium text-success dark:text-success">
               <span
-                className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                className="h-1.5 w-1.5 rounded-full bg-success"
                 aria-hidden="true"
               />
               Tersimpan
@@ -314,7 +314,7 @@ function PengaturanAksesibilitasPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-ms-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
+              <AlertTriangle className="h-5 w-5 text-warning" aria-hidden="true" />
               Perubahan belum disimpan
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -367,11 +367,11 @@ function ToggleRow({
 function UnsavedDot({ title }: { title?: string }) {
   return (
     <span
-      className="inline-flex items-center gap-ms-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-ms-2xs font-medium text-amber-700 dark:text-amber-300"
+      className="inline-flex items-center gap-ms-1 rounded-full bg-warning/15 px-1.5 py-0.5 text-ms-2xs font-medium text-warning dark:text-warning"
       title={title ?? "Nilai berbeda dari yang tersimpan"}
     >
       <span
-        className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"
+        className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse"
         aria-hidden="true"
       />
       Belum disimpan

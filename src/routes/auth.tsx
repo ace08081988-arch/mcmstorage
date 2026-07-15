@@ -498,7 +498,7 @@ function AuthPage() {
         <form onSubmit={submit} className="space-ms-3">
           {mode === "login" && verifyStatus !== "unknown" && email.trim() ? (
             verifyStatus === "unverified" ? (
-              <div className="flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2.5 text-ms-xs text-amber-800 dark:text-amber-100">
+              <div className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2.5 text-ms-xs text-warning dark:text-warning">
                 <MailX className="mt-0.5 h-4 w-4 flex-shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <div>
@@ -509,7 +509,7 @@ function AuthPage() {
                     type="button"
                     onClick={resendVerification}
                     disabled={loading || resendCooldown > 0}
-                    className="rounded-md border border-amber-500/40 bg-background/60 px-ms-2 py-1 text-ms-2xs font-medium hover:bg-background disabled:opacity-50"
+                    className="rounded-md border border-warning/40 bg-background/60 px-ms-2 py-1 text-ms-2xs font-medium hover:bg-background disabled:opacity-50"
                   >
                     {resendCooldown > 0
                       ? `Kirim ulang (${resendCooldown}s)`

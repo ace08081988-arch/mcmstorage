@@ -156,7 +156,7 @@ function SignupAttemptsPage() {
 
       <div className="flex flex-wrap gap-ms-2 text-ms-2xs">
         <span className="rounded-md bg-muted px-ms-2 py-0.5">Total: <b>{stats.total}</b></span>
-        <span className="rounded-md bg-emerald-500/15 px-ms-2 py-0.5 text-emerald-700 dark:text-emerald-200">Berhasil: <b>{stats.ok}</b></span>
+        <span className="rounded-md bg-success/15 px-ms-2 py-0.5 text-success dark:text-success">Berhasil: <b>{stats.ok}</b></span>
         <span className="rounded-md bg-destructive/10 px-ms-2 py-0.5 text-destructive">Gagal: <b>{stats.fail}</b></span>
       </div>
 
@@ -190,7 +190,7 @@ function SignupAttemptsPage() {
                   <td className="px-ms-3 py-1.5 font-mono text-ms-2xs">{r.ip}</td>
                   <td className="px-ms-3 py-1.5">
                     {r.succeeded ? (
-                      <span className="inline-flex items-center gap-ms-1 rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-ms-2xs font-medium text-emerald-700 dark:text-emerald-200">
+                      <span className="inline-flex items-center gap-ms-1 rounded-md bg-success/15 px-1.5 py-0.5 text-ms-2xs font-medium text-success dark:text-success">
                         <CheckCircle2 className="h-3 w-3" /> Berhasil
                       </span>
                     ) : (

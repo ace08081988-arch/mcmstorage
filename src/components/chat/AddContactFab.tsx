@@ -246,10 +246,10 @@ export function AddContactFab() {
                       PIN {formatInviteCode(preview.invite_code)}
                     </div>
                   </div>
-                  <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+                  <Check className="h-4 w-4 text-success" aria-hidden />
                 </div>
               ) : (
-                <p className="text-ms-xs text-amber-600">
+                <p className="text-ms-xs text-warning">
                   PIN tidak ditemukan. Periksa lagi kode yang diberikan teman.
                 </p>
               )}

@@ -103,8 +103,8 @@ function StatChip({
   const map: Record<ChipTone, string> = {
     primary: "text-primary bg-primary/10 ring-primary/20",
     info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
-    success: "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20 dark:text-emerald-400",
-    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    success: "text-success bg-success/10 ring-success/20 dark:text-success",
+    warning: "text-warning bg-warning/10 ring-warning/20 dark:text-warning",
     danger: "text-destructive bg-destructive/10 ring-destructive/20",
   };
   return (
@@ -153,8 +153,8 @@ function EcerSummaryCard({
   const map: Record<ChipTone, string> = {
     primary: "text-primary bg-primary/10 ring-primary/20",
     info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
-    success: "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20 dark:text-emerald-400",
-    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    success: "text-success bg-success/10 ring-success/20 dark:text-success",
+    warning: "text-warning bg-warning/10 ring-warning/20 dark:text-warning",
     danger: "text-destructive bg-destructive/10 ring-destructive/20",
   };
   return (
@@ -411,7 +411,7 @@ function EcerPage() {
           </div>
 
           {loadError.diagnosis && (
-            <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-xs leading-snug text-amber-700 dark:text-amber-400">
+            <div className="mb-3 rounded-md border border-warning/40 bg-warning/5 p-ms-2.5 text-ms-xs leading-snug text-warning dark:text-warning">
               <b>Kemungkinan penyebab:</b> {loadError.diagnosis}
             </div>
           )}
@@ -764,9 +764,9 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, st
   const status = isLoadingCount
     ? { label: "…", cls: "bg-muted text-muted-foreground" }
     : c === 0
-      ? { label: "Menunggu", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" }
+      ? { label: "Menunggu", cls: "bg-warning/15 text-warning dark:text-warning" }
       : soldC >= c
-        ? { label: "Selesai", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" }
+        ? { label: "Selesai", cls: "bg-success/15 text-success dark:text-success" }
         : { label: "Berjalan", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-400" };
   // Progress berbasis penyiapan yang sudah terkirim; fallback: skala 10 penyiapan.
   const progress = c > 0 && stat
@@ -1091,7 +1091,7 @@ function DetailHero({
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {/* Brand strip */}
       <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-ms-4 pb-4 pt-4 text-primary-foreground sm:px-ms-5 sm:pb-6 sm:pt-5">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary-foreground/40 to-emerald-400" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-success via-primary-foreground/40 to-success" />
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-3">
           <div className="min-w-0">
             <div className="flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase leading-none tracking-[0.18em] text-primary-foreground/80">
@@ -1110,7 +1110,7 @@ function DetailHero({
               <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/15 px-ms-2 leading-none backdrop-blur-sm">
                 Target <b className="ml-0.5">{title.target_grams} {unit}</b>
               </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-ms-2 font-semibold leading-none text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
+              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/25 px-ms-2 font-semibold leading-none text-success ring-1 ring-success/50 backdrop-blur-sm">
                 <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
               </span>
               <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/10 px-ms-2 font-mono leading-none text-primary-foreground/90 backdrop-blur-sm sm:hidden">
@@ -1245,7 +1245,7 @@ function DetailHero({
             type="button"
             onClick={onAdd}
             title="Tambah penyiapan untuk judul ini"
-            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-emerald-50 p-ms-2 text-emerald-700 transition-all active:scale-95 dark:bg-emerald-500/15 dark:text-emerald-300 sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-success p-ms-2 text-success transition-all active:scale-95 dark:bg-success/15 dark:text-success sm:hidden"
           >
             <Plus className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Penyiapan</span>
@@ -1302,7 +1302,7 @@ function DetailHero({
               <QrCode className="h-4 w-4" /> QR
             </Button>
           )}
-          <Button size="sm" onClick={onAdd} className="hidden bg-emerald-600 hover:bg-emerald-700 sm:inline-flex">
+          <Button size="sm" onClick={onAdd} className="hidden bg-success hover:bg-success sm:inline-flex">
             <Plus className="h-4 w-4" /> Penyiapan
           </Button>
         </div>
@@ -1767,7 +1767,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               {sent.length > 0 && (
                 <div id="riwayat-terkirim" data-testid="riwayat-terkirim" className="mt-5 border-t pt-3 scroll-mt-20">
                   <div className="mb-2 flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Riwayat Terkirim
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Riwayat Terkirim
                     <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium normal-case text-muted-foreground">
                       {sent.length}
                     </span>
@@ -1775,11 +1775,11 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   {autoSendSummary && (
                     <div
                       data-testid="auto-send-summary"
-                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-emerald-200 bg-emerald-50 px-ms-3 py-ms-2 text-ms-xs text-emerald-900"
+                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-success bg-success px-ms-3 py-ms-2 text-ms-xs text-success"
                     >
                       <div className="min-w-0">
                         <div className="font-semibold">Auto-Kirim tercatat</div>
-                        <div className="text-emerald-800/90">
+                        <div className="text-success/90">
                           {autoSendSummary.count} kotak · Total {autoSendSummary.grams} {autoSendSummary.unit} ·
                           {" "}
                           {new Date(autoSendSummary.at).toLocaleTimeString("id-ID", {
@@ -1792,7 +1792,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                         type="button"
                         aria-label="Tutup ringkasan"
                         onClick={() => setAutoSendSummary(null)}
-                        className="rounded p-ms-1 text-emerald-800/70 hover:bg-emerald-100"
+                        className="rounded p-ms-1 text-success/70 hover:bg-success"
                       >
                         ×
                       </button>
@@ -1801,11 +1801,11 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   {autoSendCancelSummary && (
                     <div
                       data-testid="auto-send-cancel-summary"
-                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-amber-200 bg-amber-50 px-ms-3 py-ms-2 text-ms-xs text-amber-900"
+                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-warning bg-warning px-ms-3 py-ms-2 text-ms-xs text-warning"
                     >
                       <div className="min-w-0">
                         <div className="font-semibold">Auto-Kirim dibatalkan</div>
-                        <div className="text-amber-800/90">
+                        <div className="text-warning/90">
                           {autoSendCancelSummary.count} kotak · {autoSendCancelSummary.grams} {autoSendCancelSummary.unit} ·
                           {" "}
                           {(
@@ -1820,7 +1820,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                           })}
                         </div>
                         {autoSendCancelSummary.detail ? (
-                          <div className="mt-0.5 line-clamp-2 text-amber-800/80">
+                          <div className="mt-0.5 line-clamp-2 text-warning/80">
                             “{autoSendCancelSummary.detail}”
                           </div>
                         ) : null}
@@ -1829,7 +1829,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                         type="button"
                         aria-label="Tutup ringkasan pembatalan"
                         onClick={() => setAutoSendCancelSummary(null)}
-                        className="rounded p-ms-1 text-amber-800/70 hover:bg-amber-100"
+                        className="rounded p-ms-1 text-warning/70 hover:bg-warning"
                       >
                         ×
                       </button>
@@ -2835,7 +2835,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   ? "Buka tugas pegawai untuk judul ini"
                   : `Kirim ${visibleShots.length} kiriman pegawai via WhatsApp`
               }
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-success hover:bg-success"
               asChild={visibleShots.length === 0}
             >
               {visibleShots.length === 0 ? (
@@ -2870,7 +2870,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       </CardHeader>
       <CardContent>
         {!title.warehouse_item_id ? (
-          <div className="rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 p-ms-4 text-center text-ms-xs text-amber-700 dark:text-amber-300">
+          <div className="rounded-md border border-dashed border-warning/40 bg-warning/5 p-ms-4 text-center text-ms-xs text-warning dark:text-warning">
             Judul ini belum terhubung ke produk gudang (<code>warehouse_item_id</code> kosong), jadi tidak bisa mencocokkan kiriman pegawai. Set produk gudang pada judul ini terlebih dahulu.
           </div>
         ) : loading ? (
@@ -2907,7 +2907,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   </div>
                 {s.match !== "strict" && (
                   <span
-                    className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-amber-500/90 px-1.5 text-ms-2xs font-semibold leading-none text-white"
+                    className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-warning/90 px-1.5 text-ms-2xs font-semibold leading-none text-white"
                     title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}
                   >
                     {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
@@ -3087,7 +3087,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 <div className="rounded-md border bg-muted/30 p-ms-2">
                   <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs font-medium text-muted-foreground">
                     <span>
-                      <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
+                      <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-success" aria-hidden />
                       Lokasi — akan dilampirkan sebagai baris terakhir caption
                     </span>
                     {desc.kind ? (
@@ -3151,7 +3151,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               <div className="rounded-md border bg-muted/30 p-ms-2.5">
                 <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs font-medium text-muted-foreground">
                   <span>
-                    <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
+                    <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-success" aria-hidden />
                     Preview caption{previewReq.captionLabel ? ` ${previewReq.captionLabel}` : ""} — live · {totalShown - excludedInShown}/{totalShown} foto
                   </span>
                   <span className="tabular-nums">{caption.length} karakter</span>
@@ -3174,7 +3174,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 previewReq.paths.length > 0 &&
                 previewReq.paths.length - Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length === 0
               }
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-success hover:bg-success"
             >
               {previewReq?.confirmText ?? "Kirim"}
             </Button>
@@ -3348,7 +3348,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           <div className="absolute right-1 top-1 rounded bg-blue-500/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">Pegawai</div>
         )}
         {sold && (
-          <div className="absolute inset-x-1 bottom-1 rounded bg-emerald-600/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-semibold text-white">
+          <div className="absolute inset-x-1 bottom-1 rounded bg-success/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-semibold text-white">
             Terkirim{prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
           </div>
         )}
@@ -3362,7 +3362,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         <div className="text-ms-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
         {prep.note && <div className="line-clamp-2 text-ms-2xs leading-snug text-muted-foreground">{prep.note}</div>}
         {sold && (
-          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-1 text-ms-2xs leading-snug text-emerald-800 dark:text-emerald-200">
+          <div className="rounded-md border border-success/40 bg-success/10 px-1.5 py-1 text-ms-2xs leading-snug text-success dark:text-success">
             {formatSoldPaymentSummary(
               prep.sold_payment_method,
               Number(prep.sold_total ?? 0),
@@ -3397,7 +3397,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
               <span className="font-semibold text-destructive">Diagnostik kirim WA</span>
               <button type="button" onClick={() => setShareDiag(null)} className="text-muted-foreground hover:underline">Tutup</button>
             </div>
-            <div>Jaringan: <span className={shareDiag.online ? "text-emerald-600" : "text-destructive"}>{shareDiag.online ? "online" : "offline"}</span></div>
+            <div>Jaringan: <span className={shareDiag.online ? "text-success" : "text-destructive"}>{shareDiag.online ? "online" : "offline"}</span></div>
             <div>Web Share API: {shareDiag.hasWebShare ? "ya" : "tidak"}{shareDiag.canShareFiles !== null && ` · file: ${shareDiag.canShareFiles ? "didukung" : "tidak"}`}</div>
             {shareDiag.photoFetch && (
               <div>
@@ -3942,7 +3942,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           {photo ? (
             <div>
               <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs">
-                <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-ms-2 font-medium leading-none text-emerald-700 dark:text-emerald-400">
+                <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/10 px-ms-2 font-medium leading-none text-success dark:text-success">
                   ✓ Pratinjau foto
                 </span>
                 <span className="min-w-0 truncate text-right leading-none text-muted-foreground tabular-nums">
@@ -4215,7 +4215,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                   progress.step === "error"
                     ? "border-destructive/40 bg-destructive/10 text-destructive"
                     : progress.step === "done"
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                    ? "border-success/40 bg-success/10 text-success dark:text-success"
                     : "border-border bg-muted text-foreground"
                 }`}
               >
@@ -4766,12 +4766,12 @@ function SendEcerPrepsDialog({
               </div>
             )}
             {payMethod === "hutang" && (
-              <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-1.5 text-ms-2xs text-amber-800 dark:text-amber-200">
+              <div className="mt-2 rounded-md border border-warning/40 bg-warning/10 p-ms-1.5 text-ms-2xs text-warning dark:text-warning">
                 Seluruh total dicatat sebagai piutang atas <b>{party.name || "-"}</b>.
               </div>
             )}
             {payMethod === "kas" && totalAmount > 0 && (
-              <div className="mt-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-ms-1.5 text-ms-2xs text-emerald-800 dark:text-emerald-200">
+              <div className="mt-2 rounded-md border border-success/40 bg-success/10 p-ms-1.5 text-ms-2xs text-success dark:text-success">
                 Tercatat lunas — {rupiah(totalAmount)} langsung masuk kas.
               </div>
             )}

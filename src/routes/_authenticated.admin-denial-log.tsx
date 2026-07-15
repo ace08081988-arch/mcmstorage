@@ -175,7 +175,7 @@ function AdminDenialLogPage() {
 
       <div>
         <h1 className="text-ms-2xl font-semibold flex items-center gap-ms-2">
-          <ShieldAlert className="h-6 w-6 text-amber-600" />
+          <ShieldAlert className="h-6 w-6 text-warning" />
           Log Penolakan Admin
         </h1>
         <p className="text-ms-sm text-muted-foreground">
@@ -273,7 +273,7 @@ function AdminDenialLogPage() {
                   <span
                     className={`mr-2 inline-flex items-center gap-ms-1 rounded-full px-ms-2 py-0.5 text-ms-2xs leading-snug ${
                       liveOn
-                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        ? "bg-success/10 text-success dark:text-success"
                         : "bg-muted text-muted-foreground"
                     }`}
                     title={
@@ -284,7 +284,7 @@ function AdminDenialLogPage() {
                   >
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${
-                        liveOn ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/60"
+                        liveOn ? "bg-success animate-pulse" : "bg-muted-foreground/60"
                       }`}
                     />
                     {liveOn ? "Live" : "Polling"}

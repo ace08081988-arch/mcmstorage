@@ -269,13 +269,13 @@ function DiagnosticsPage() {
           ) : browserChecks.map((c) => (
             <div key={c.label} className="flex items-start gap-ms-2 rounded-md border bg-card/50 p-ms-2">
               {c.ok ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
               ) : (
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
               )}
               <div className="min-w-0 flex-1 text-ms-xs">
                 <div className="font-medium">{c.label}</div>
-                <div className={c.ok ? "text-muted-foreground" : "text-amber-600 dark:text-amber-400"}>{c.detail}</div>
+                <div className={c.ok ? "text-muted-foreground" : "text-warning dark:text-warning"}>{c.detail}</div>
               </div>
             </div>
           ))}
@@ -319,7 +319,7 @@ function DiagnosticsPage() {
                 {authEvents.slice().reverse().map((e, i) => (
                   <li key={i} className={
                     e.level === "error" ? "text-destructive"
-                    : e.level === "warn" ? "text-amber-600 dark:text-amber-400"
+                    : e.level === "warn" ? "text-warning dark:text-warning"
                     : "text-foreground/80"
                   }>
                     <span className="opacity-60">{new Date(e.ts).toLocaleTimeString()} </span>
@@ -337,7 +337,7 @@ function DiagnosticsPage() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-ms-2 text-ms-base">
             {allOk ? (
-              <><CheckCircle2 className="h-5 w-5 text-emerald-600" /> Versi paket router kompatibel</>
+              <><CheckCircle2 className="h-5 w-5 text-success" /> Versi paket router kompatibel</>
             ) : (
               <><AlertTriangle className="h-5 w-5 text-destructive" /> Terdeteksi ketidakcocokan versi</>
             )}
@@ -347,7 +347,7 @@ function DiagnosticsPage() {
           {checks.map((c) => (
             <div key={c.label} className="flex items-start gap-ms-2 rounded-md border bg-card/50 p-ms-2">
               {c.ok ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
               ) : (
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
               )}

@@ -288,7 +288,7 @@
 }
 
 /*
- * Utility soft-status — pengganti hardcoded `bg-amber-500/15 text-amber-700`
+ * Utility soft-status — pengganti hardcoded `bg-warning/15 text-warning`
  * agar konsisten light/dark & mengikuti aksen aksesibilitas kontras tinggi.
  */
 @utility status-success { background-color: var(--success-soft); color: var(--success); }

@@ -191,7 +191,7 @@ export function WhatsAppTargetHost() {
     const pkg = isBiz ? "com.whatsapp.w4b" : "com.whatsapp";
     const url = isBiz ? PLAY_BUSINESS : PLAY_REGULAR;
     return (
-      <div className="rounded-lg border border-amber-300/60 bg-amber-50/80 p-ms-3 text-ms-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100">
+      <div className="rounded-lg border border-warning/60 bg-warning/80 p-ms-3 text-ms-xs text-warning dark:border-warning/40 dark:bg-warning/30 dark:text-warning">
         <div className="flex items-center gap-ms-2 font-semibold">
           <AlertTriangle className="h-3.5 w-3.5" />
           Cara memasang {label}
@@ -207,7 +207,7 @@ export function WhatsAppTargetHost() {
           <Button
             asChild
             size="sm"
-            className="h-8 bg-amber-600 text-white hover:bg-amber-700"
+            className="h-8 bg-warning text-white hover:bg-warning"
           >
             <a href={url} target="_blank" rel="noopener noreferrer">
               <Download className="mr-1.5 h-3.5 w-3.5" />
@@ -258,7 +258,7 @@ export function WhatsAppTargetHost() {
       : { tone: "muted", label: "Tidak terdeteksi (browser)", Icon: ShieldCheck };
     const toneCls =
       status.tone === "ok"
-        ? "text-emerald-600 dark:text-emerald-400"
+        ? "text-success dark:text-success"
         : status.tone === "danger"
           ? "text-destructive"
           : "text-muted-foreground";
@@ -278,7 +278,7 @@ export function WhatsAppTargetHost() {
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
               isBiz
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                ? "bg-success/10 text-success dark:text-success"
                 : "bg-sky-500/10 text-sky-600 dark:text-sky-400"
             }`}
           >
@@ -328,7 +328,7 @@ export function WhatsAppTargetHost() {
           )}
         </div>
         {missing && (
-          <div className="border-t bg-amber-50/60 p-ms-3 dark:bg-amber-950/20">
+          <div className="border-t bg-warning/60 p-ms-3 dark:bg-warning/20">
             <InstallHelp kind={kind} />
           </div>
         )}
@@ -346,7 +346,7 @@ export function WhatsAppTargetHost() {
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                     confirming === "business"
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      ? "bg-success/10 text-success dark:text-success"
                       : "bg-sky-500/10 text-sky-600 dark:text-sky-400"
                   }`}
                 >
@@ -416,7 +416,7 @@ export function WhatsAppTargetHost() {
                   size="sm"
                   disabled={confirmMissing}
                   onClick={() => finish(confirming)}
-                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                  className="bg-success text-white hover:bg-success"
                 >
                   Buka {confirmLabel}
                 </Button>
@@ -427,7 +427,7 @@ export function WhatsAppTargetHost() {
           <div className="flex flex-col">
             <DialogHeader className="border-b bg-muted/30 px-ms-5 pb-4 pt-5">
               <div className="flex items-center gap-ms-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success">
                   <MessageCircle className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1 text-left">

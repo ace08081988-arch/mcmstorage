@@ -138,9 +138,9 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     { id: "gallery",  label: "Galeri",  keywords: ["galeri","foto","gambar","image","jpg","png","photo"], color: "bg-fuchsia-500/15 text-fuchsia-500", icon: ImageIcon },
     { id: "camera",   label: "Kamera",  keywords: ["kamera","camera","jepret","selfie","foto"], color: "bg-sky-500/15 text-sky-500", icon: Camera },
     { id: "video",    label: "Video",   keywords: ["video","film","mp4","rekaman","movie"], color: "bg-rose-500/15 text-rose-500", icon: Film },
-    { id: "location", label: "Lokasi",  keywords: ["lokasi","maps","gps","alamat","peta","location"], color: "bg-emerald-500/15 text-emerald-500", icon: MapPin },
+    { id: "location", label: "Lokasi",  keywords: ["lokasi","maps","gps","alamat","peta","location"], color: "bg-success/15 text-success", icon: MapPin },
     { id: "contact",  label: "Kontak",  keywords: ["kontak","contact","nomor","telpon","wa","whatsapp"], color: "bg-blue-500/15 text-blue-500", icon: UserRound },
-    { id: "product",  label: "Produk",  keywords: ["produk","product","barang","item","kartu"], color: "bg-amber-500/15 text-amber-500", icon: Package },
+    { id: "product",  label: "Produk",  keywords: ["produk","product","barang","item","kartu"], color: "bg-warning/15 text-warning", icon: Package },
     { id: "sticker",  label: "Stiker",  keywords: ["stiker","sticker","panah","rekening","teks","ai","emoji"], color: "bg-pink-500/15 text-pink-500", icon: Sticker },
   ];
   const norm = (s: string) => s.toLowerCase().trim();
@@ -669,7 +669,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                     key={p.id}
                     role={selectMode ? "button" : undefined}
                     onClick={selectMode && !busy ? () => toggleSelected(p.id) : undefined}
-                    className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${selectMode ? "cursor-pointer" : ""} ${isSelected ? "ring-2 ring-primary" : st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-emerald-500/70" : ""}`}
+                    className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${selectMode ? "cursor-pointer" : ""} ${isSelected ? "ring-2 ring-primary" : st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-success/70" : ""}`}
                   >
                     {p.previewUrl && p.file.type.startsWith("image/") ? (
                       <img src={p.previewUrl} alt={p.file.name} className="h-full w-full object-cover" />
@@ -703,7 +703,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
                     ) : st === "sent" && !selectMode ? (
-                      <div className="absolute right-7 top-1 rounded-full bg-emerald-500/95 p-0.5 text-white shadow">
+                      <div className="absolute right-7 top-1 rounded-full bg-success/95 p-0.5 text-white shadow">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       </div>
                     ) : (st === "error" || retryingIds.has(p.id)) && !selectMode ? (
@@ -939,7 +939,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       ? "Tidak ada berkas yang dapat dihapus."
                       : `Total ${formatBytes(totalBytes)} akan dibuang dari antrean dan tidak bisa dikembalikan.`}
                     {deleteSnapshot && (deleteSnapshot.count !== removable.length || deleteSnapshot.bytes !== totalBytes) ? (
-                      <span className="mt-1 block text-ms-2xs text-amber-600 dark:text-amber-400">
+                      <span className="mt-1 block text-ms-2xs text-warning dark:text-warning">
                         Daftar diperbarui:{" "}
                         {deleteSnapshot.count !== removable.length
                           ? `${removable.length - deleteSnapshot.count > 0 ? "+" : ""}${removable.length - deleteSnapshot.count} berkas`
@@ -956,20 +956,20 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 <div className="flex flex-wrap items-center gap-ms-1.5 text-ms-2xs">
                   <span className="font-medium text-muted-foreground">Terpilih:</span>
                   <span className="rounded-full border border-muted-foreground/30 bg-background px-1.5 py-0.5">menunggu {tSel.pendingN}</span>
-                  <span className="rounded-full border border-amber-400/50 bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-400">uploading {tSel.uploadingN}</span>
+                  <span className="rounded-full border border-warning/50 bg-warning/10 px-1.5 py-0.5 text-warning dark:text-warning">uploading {tSel.uploadingN}</span>
                   <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">gagal {tSel.errorN}</span>
                   {tSel.rejectedN > 0 ? (
                     <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">ditolak {tSel.rejectedN}</span>
                   ) : null}
                   {tSel.sentN > 0 ? (
-                    <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-400">terkirim {tSel.sentN}</span>
+                    <span className="rounded-full border border-success/40 bg-success/10 px-1.5 py-0.5 text-success dark:text-success">terkirim {tSel.sentN}</span>
                   ) : null}
                 </div>
                 {confirmDelete !== "all" && (pending?.length ?? 0) > targets.length ? (
                   <div className="flex flex-wrap items-center gap-ms-1.5 text-ms-2xs">
                     <span className="font-medium text-muted-foreground">Total antrean ({(pending ?? []).length}):</span>
                     <span className="rounded-full border border-muted-foreground/30 bg-background px-1.5 py-0.5">menunggu {tAll.pendingN}</span>
-                    <span className="rounded-full border border-amber-400/50 bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-400">uploading {tAll.uploadingN}</span>
+                    <span className="rounded-full border border-warning/50 bg-warning/10 px-1.5 py-0.5 text-warning dark:text-warning">uploading {tAll.uploadingN}</span>
                     <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">gagal {tAll.errorN}</span>
                   </div>
                 ) : null}
@@ -994,21 +994,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                           : preflight ? "ditolak"
                           : "menunggu";
                       const tone =
-                        st === "uploading" ? "border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                        st === "uploading" ? "border-warning/50 bg-warning/10 text-warning dark:text-warning"
                           : st === "error" ? "border-destructive/40 bg-destructive/10 text-destructive"
-                          : st === "sent" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                          : st === "sent" ? "border-success/40 bg-success/10 text-success dark:text-success"
                           : preflight ? "border-destructive/40 bg-destructive/10 text-destructive"
                           : "border-muted-foreground/30 bg-background text-muted-foreground";
                       return (
                         <li key={p.id} className={`flex items-center justify-between gap-ms-2 py-0.5 ${isLocked ? "opacity-60" : ""}`}>
                           <span className="min-w-0 flex-1 truncate" title={p.file.name}>
-                            <span className="truncate">• {p.file.name}{isLocked ? <span className="ml-1 text-ms-2xs italic text-amber-600 dark:text-amber-400">(dilewati)</span> : null}</span>
+                            <span className="truncate">• {p.file.name}{isLocked ? <span className="ml-1 text-ms-2xs italic text-warning dark:text-warning">(dilewati)</span> : null}</span>
                             {startedAt && (st === "uploading" || st === "sent" || st === "error") ? (
                               <span className="block text-ms-2xs text-muted-foreground">
                                 mulai {fmtStart(startedAt)}
                                 {elapsedMs != null ? ` · ${st === "uploading" ? "berjalan" : "selesai"} ${fmtDur(elapsedMs)}` : ""}
                                 {st === "uploading" && estMs != null ? (
-                                  <span className={isSlow ? "ml-1 font-medium text-amber-600 dark:text-amber-400" : "ml-1"}>
+                                  <span className={isSlow ? "ml-1 font-medium text-warning dark:text-warning" : "ml-1"}>
                                     · est {fmtDur(estMs)}{remainMs != null && remainMs > 0 ? ` (sisa ~${fmtDur(remainMs)})` : remainMs != null && remainMs <= 0 ? " (melebihi estimasi)" : ""}
                                   </span>
                                 ) : null}
@@ -1048,7 +1048,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                   </ul>
                 ) : null}
                 {lockedCount > 0 ? (
-                  <p className="text-ms-2xs text-amber-600 dark:text-amber-400">
+                  <p className="text-ms-2xs text-warning dark:text-warning">
                     {lockedCount} berkas sedang diunggah dan akan dilewati.
                   </p>
                 ) : null}

@@ -54,9 +54,9 @@ function fmtAgo(iso: string | null | undefined) {
 function statusBadge(status: string) {
   const s = status.toLowerCase();
   if (s === "sent")
-    return <Badge className="bg-emerald-600 hover:bg-emerald-600">Terkirim</Badge>;
+    return <Badge className="bg-success hover:bg-success">Terkirim</Badge>;
   if (s === "pending")
-    return <Badge className="bg-amber-500 hover:bg-amber-500">Antrian</Badge>;
+    return <Badge className="bg-warning hover:bg-warning">Antrian</Badge>;
   if (s === "dlq")
     return <Badge variant="destructive">Gagal (DLQ)</Badge>;
   if (s === "suppressed")
@@ -181,16 +181,16 @@ function EmailQueuePage() {
           <Card
             className={
               cronHealthy
-                ? "border-emerald-500/40 bg-emerald-500/5"
-                : "border-amber-500/40 bg-amber-500/5"
+                ? "border-success/40 bg-success/5"
+                : "border-warning/40 bg-warning/5"
             }
           >
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-ms-2 text-ms-base">
                 {cronHealthy ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  <CheckCircle2 className="h-5 w-5 text-success" />
                 ) : (
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <AlertTriangle className="h-5 w-5 text-warning" />
                 )}
                 Pemroses antrian {cronHealthy ? "berjalan normal" : "perlu diperiksa"}
               </CardTitle>
@@ -206,7 +206,7 @@ function EmailQueuePage() {
                 Diperbarui {fmtAgo(data.fetchedAt)} · {fmtAbs(data.fetchedAt)}
               </div>
               {!cronHealthy && (
-                <div className="mt-2 rounded-md bg-amber-500/10 p-ms-2 text-ms-xs text-amber-900 dark:text-amber-200">
+                <div className="mt-2 rounded-md bg-warning/10 p-ms-2 text-ms-xs text-warning dark:text-warning">
                   Tidak ada email terkirim &gt;30 menit terakhir. Cek apakah cron pemroses
                   antrian aktif atau apakah ada error provider.
                 </div>
@@ -327,7 +327,7 @@ function StatCard({
     tone === "danger"
       ? "border-destructive/40 bg-destructive/5"
       : tone === "warn"
-      ? "border-amber-500/40 bg-amber-500/5"
+      ? "border-warning/40 bg-warning/5"
       : "border-border/60";
   return (
     <Card className={toneClass}>

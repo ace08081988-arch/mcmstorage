@@ -31,7 +31,7 @@ export function SendLogViewer({ entries, defaultOpen = false }: { entries: SendL
         <ol className="max-h-56 space-y-1 overflow-auto border-t bg-background/40 px-ms-2.5 py-ms-2 text-[11.5px]">
           {entries.map((e, i) => {
             const Icon = e.kind === "error" ? XCircle : e.kind === "outcome" ? AlertCircle : e.kind === "info" ? Info : CheckCircle2;
-            const tone = e.kind === "error" ? "text-destructive" : e.kind === "outcome" ? "text-amber-600 dark:text-amber-400" : e.kind === "info" ? "text-muted-foreground" : "text-emerald-600 dark:text-emerald-400";
+            const tone = e.kind === "error" ? "text-destructive" : e.kind === "outcome" ? "text-warning dark:text-warning" : e.kind === "info" ? "text-muted-foreground" : "text-success dark:text-success";
             return (
               <li key={i} className="flex items-start gap-ms-2">
                 <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${tone}`} />

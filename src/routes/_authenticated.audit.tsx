@@ -240,7 +240,7 @@ function AuditPage() {
               <tr key={r.to} className="border-t">
                 <td className="px-ms-2 py-1.5">
                   {r.status === "ok" && (
-                    <span className="inline-flex items-center gap-ms-1 text-emerald-600 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-ms-1 text-success dark:text-success">
                       <CheckCircle2 className="h-3.5 w-3.5" /> OK
                     </span>
                   )}

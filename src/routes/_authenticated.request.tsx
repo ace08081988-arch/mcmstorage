@@ -280,7 +280,7 @@ function RequestPage() {
           </div>
           <div className="space-y-1 text-ms-xs">
             <div><b>Sumber:</b> {loadError.source}</div>
-            <div className="rounded bg-amber-500/10 p-ms-2 text-amber-700 dark:text-amber-300"><b>Diagnosa:</b> {loadError.diagnosis}</div>
+            <div className="rounded bg-warning/10 p-ms-2 text-warning dark:text-warning"><b>Diagnosa:</b> {loadError.diagnosis}</div>
             <div><b>Pesan:</b> {loadError.message}</div>
             {loadError.code && <div><b>Kode:</b> {loadError.code}</div>}
             {loadError.status !== undefined && <div><b>HTTP:</b> {loadError.status}</div>}
@@ -343,13 +343,13 @@ function RequestPage() {
       <PendingVerificationSection />
 
       {unrouted.length > 0 && (
-        <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">
+        <Card className="border-warning/40 bg-warning/40 dark:bg-warning/20">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between gap-ms-2 text-ms-base">
-              <div className="flex items-center gap-ms-2 text-amber-800 dark:text-amber-200">
+              <div className="flex items-center gap-ms-2 text-warning dark:text-warning">
                 <AlertTriangle className="h-4 w-4" />
                 Kiriman tanpa folder ecer
-                <span className="rounded-full bg-amber-500/20 px-ms-2 py-0.5 text-ms-2xs font-medium">
+                <span className="rounded-full bg-warning/20 px-ms-2 py-0.5 text-ms-2xs font-medium">
                   {unrouted.length}
                 </span>
               </div>
@@ -554,7 +554,7 @@ function RequestPage() {
                       tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); void requestReprep(); }}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void requestReprep(); } }}
-                      className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
+                      className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-warning/40 bg-warning/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-warning hover:bg-warning/20 dark:text-warning"
                       aria-label="Minta penyiapan ulang"
                       title={`Sudah disiapkan ${activePrepCount}× pada siklus ini. Reset agar bisa disiapkan lagi di task baru tanpa mengubah riwayat.`}
                     >
@@ -1425,7 +1425,7 @@ function SendPrepLinkDialog({
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Buka di tab baru untuk cek
               </a>
             </Button>
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
+            <div className="rounded-md border border-warning/40 bg-warning/5 p-ms-2.5 text-ms-2xs leading-relaxed text-warning dark:text-warning">
               <b>1 link + PIN = 1 paket penyiapan.</b> Setelah pegawai kirim foto & lokasi, PIN otomatis mati.
               Untuk pesanan berikutnya, tekan tombol di bawah agar dapat link + PIN baru.
             </div>
@@ -1464,7 +1464,7 @@ function SendPrepLinkDialog({
                 <div className="mt-1.5 text-ms-2xs text-muted-foreground">Wajib diisi sebelum link & PIN dibuat.</div>
               )}
             </div>
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
+            <div className="rounded-md border border-warning/40 bg-warning/5 p-ms-2.5 text-ms-2xs leading-relaxed text-warning dark:text-warning">
               <b>Langkah:</b> masukkan nama pegawai yang akan mengerjakan, lalu tekan <b>Buat link & PIN</b>. Setelah itu baru bisa menyalin atau mengunduh pesan.
             </div>
             <Button className="w-full" onClick={() => void createSession()} disabled={busy}>
@@ -1820,7 +1820,7 @@ function PrepSections({
       }}
       className={[
         inSent && justSentId === p.id
-          ? "rounded-xl ring-2 ring-emerald-500 ring-offset-2 ring-offset-background transition"
+          ? "rounded-xl ring-2 ring-success ring-offset-2 ring-offset-background transition"
           : "",
         isReadOnly ? "group/readonly" : "",
       ].filter(Boolean).join(" ") || undefined}
@@ -1851,7 +1851,7 @@ function PrepSections({
           className={
             syncError
               ? "flex items-start gap-ms-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-2 text-ms-2xs text-destructive"
-              : "flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-800 dark:text-amber-200"
+              : "flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning"
           }
         >
           {syncError ? (
@@ -2053,7 +2053,7 @@ function PrepCard({
               <Send className="h-3 w-3" /> Kirim
             </button>
           ) : (
-            <span className="inline-flex items-center gap-ms-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-ms-2 py-1 text-ms-2xs font-semibold text-emerald-700 dark:text-emerald-300">
+            <span className="inline-flex items-center gap-ms-1 rounded-md border border-success/40 bg-success/10 px-ms-2 py-1 text-ms-2xs font-semibold text-success dark:text-success">
               <CheckCircle2 className="h-3 w-3" /> Terkirim
             </span>
           )}
@@ -2076,7 +2076,7 @@ function PrepCard({
       )}
       <div className="space-y-1.5 p-ms-3 text-ms-2xs">
         {sold && (
-          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-ms-2 text-ms-2xs text-emerald-800 dark:text-emerald-200 space-y-0.5">
+          <div className="rounded-md border border-success/30 bg-success/5 p-ms-2 text-ms-2xs text-success dark:text-success space-y-0.5">
             <div className="flex items-center gap-ms-1 font-semibold">
               {prep.sold_payment_method === "kas" ? <Wallet className="h-3 w-3" /> : <HandCoins className="h-3 w-3" />}
               {formatSoldPaymentSummary(
@@ -2085,7 +2085,7 @@ function PrepCard({
                 Number(prep.sold_paid_amount ?? 0),
               )}
             </div>
-            <div className="text-emerald-900/80 dark:text-emerald-100/80">
+            <div className="text-success/80 dark:text-success/80">
               ke <b>{prep.sold_party_name ?? "-"}</b>
               {prep.sold_at && <> · {new Date(prep.sold_at).toLocaleString("id-ID")}</>}
             </div>
@@ -2537,7 +2537,7 @@ function SendPrepToCustomerDialog({
               </div>
             )}
             {payMethod === "hutang" && (
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-1.5 text-ms-2xs text-amber-800 dark:text-amber-200">
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-ms-1.5 text-ms-2xs text-warning dark:text-warning">
                 Akan otomatis dicatat sebagai piutang di menu Hutang-Piutang atas nama <b>{resolvedParty.name || "-"}</b>.
               </div>
             )}
@@ -3320,7 +3320,7 @@ function WorkerTestDialog({
                 </div>
               </div>
             </div>
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
+            <div className="rounded-md border border-warning/40 bg-warning/5 p-ms-2.5 text-ms-2xs leading-relaxed text-warning dark:text-warning">
               <b>Tips uji:</b> Buka link di tab baru / HP, masukkan PIN, scroll ke <b>"Paket Request"</b>,
               pilih satu judul, isi gram tiap produk, ambil foto + lokasi, lalu Kirim.
               Stok produk akan benar-benar berkurang. Tekan <b>"Batalkan sesi uji coba"</b> untuk mengembalikan stok &amp; menghapus paket uji.
@@ -3390,9 +3390,9 @@ function channelLabel(c: DeliveryRow["channel"]): string {
 function taskStatusLabel(t: TaskStatusRow | undefined): { label: string; tone: string } {
   if (!t) return { label: "Tugas dihapus", tone: "border-muted text-muted-foreground bg-muted/40" };
   const expired = t.status === "expired" || new Date(t.expires_at).getTime() < Date.now();
-  if (t.status === "done") return { label: "Selesai", tone: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" };
+  if (t.status === "done") return { label: "Selesai", tone: "border-success/40 bg-success/10 text-success dark:text-success" };
   if (t.status === "cancelled") return { label: "Dibatalkan", tone: "border-destructive/40 bg-destructive/10 text-destructive" };
-  if (expired) return { label: "Kedaluwarsa", tone: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400" };
+  if (expired) return { label: "Kedaluwarsa", tone: "border-warning/40 bg-warning/10 text-warning dark:text-warning" };
   return { label: "Menunggu", tone: "border-primary/40 bg-primary/10 text-primary" };
 }
 

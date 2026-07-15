@@ -1423,7 +1423,7 @@ function CompatibilityBanner({ info }: { info: CompatibilityInfo }) {
   const isForward = info.mode === "forward_migrated";
   const isExact = info.mode === "exact";
   const tone = isPartial
-    ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200"
+    ? "border-warning/40 bg-warning/10 text-warning dark:text-warning"
     : isForward
       ? "border-border bg-muted/50 text-foreground"
       : "border-border bg-muted/30 text-muted-foreground";
@@ -1491,7 +1491,7 @@ function _MigrationDiffViewImpl({
     <details className="rounded-md border p-ms-2 text-ms-2xs" open>
       <summary className="cursor-pointer text-ms-xs font-medium flex flex-wrap items-center gap-ms-2">
         <span>Preview diff migrasi</span>
-        <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">
+        <Badge variant="outline" className="text-success border-success/40">
           +{stats.added}
         </Badge>
         <Badge variant="outline" className="text-destructive border-destructive/40">
@@ -1528,7 +1528,7 @@ function _MigrationDiffViewImpl({
               {visible.map((l, i) => {
                 const bg =
                   l.kind === "add"
-                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    ? "bg-success/10 text-success dark:text-success"
                     : l.kind === "del"
                       ? "bg-destructive/10 text-destructive"
                       : "";

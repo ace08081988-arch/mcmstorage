@@ -346,9 +346,9 @@ function AdminWorkerPortalPage() {
         <div className="space-ms-3 rounded-lg border bg-card p-ms-4 shadow-sm">
           <div className="flex items-center gap-ms-2">
             {testResult.ok ? (
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              <CheckCircle2 className="h-5 w-5 text-success" />
             ) : (
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <AlertTriangle className="h-5 w-5 text-warning" />
             )}
             <h2 className="text-ms-base font-semibold">
               {testResult.ok ? "Validasi lolos" : "Ada nilai tidak valid"}
@@ -365,7 +365,7 @@ function AdminWorkerPortalPage() {
             </ul>
           ) : null}
           {testResult.invariantsAdjusted.length > 0 ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-ms-2 text-ms-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+            <div className="rounded-md border border-warning bg-warning p-ms-2 text-ms-xs text-warning dark:border-warning/40 dark:bg-warning/30 dark:text-warning">
               <strong>Invariant antar-field disesuaikan:</strong>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
                 {testResult.invariantsAdjusted.map((m, i) => <li key={i}>{m}</li>)}
@@ -421,7 +421,7 @@ function AdminWorkerPortalPage() {
         </div>
       ) : null}
 
-      <div className="rounded-md border border-amber-200 bg-amber-50 p-ms-3 text-ms-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+      <div className="rounded-md border border-warning bg-warning p-ms-3 text-ms-xs text-warning dark:border-warning/40 dark:bg-warning/30 dark:text-warning">
         <strong>Catatan:</strong> Nilai berlaku saat portal pegawai (mis. <code>/t/&lt;token&gt;</code>) dimount ulang. Pegawai yang sudah membuka halaman akan mengambil nilai baru ketika tab dibuka kembali atau halaman di-refresh.
       </div>
     </div>
@@ -492,7 +492,7 @@ function PreviewPortalLauncher({
           {previewUrl}
         </p>
       ) : (
-        <p className="text-ms-xs text-amber-700 dark:text-amber-200">
+        <p className="text-ms-xs text-warning dark:text-warning">
           Masukkan token tugas dulu — token sama yang dipakai di link <code>/t/&lt;token&gt;</code> untuk pegawai.
         </p>
       )}

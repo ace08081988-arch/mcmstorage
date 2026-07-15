@@ -220,7 +220,7 @@ export function CallHost() {
           </Button>
           <Button
             size="icon"
-            className="h-10 w-10 rounded-full bg-emerald-600 hover:bg-emerald-700"
+            className="h-10 w-10 rounded-full bg-success hover:bg-success"
             onClick={acceptIncoming}
             aria-label="Terima"
           >

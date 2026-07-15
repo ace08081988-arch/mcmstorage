@@ -538,9 +538,9 @@ function LinkPegawaiPage() {
           </div>
           <div className="mt-0.5 leading-relaxed">
             Indikator status token tampil di tiap baris:{" "}
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">Valid</span> ·{" "}
+            <span className="font-medium text-success dark:text-success">Valid</span> ·{" "}
             <span className="font-medium text-sky-600 dark:text-sky-400">Baru dibuat</span> ·{" "}
-            <span className="font-medium text-amber-600 dark:text-amber-400">Invalid</span> ·{" "}
+            <span className="font-medium text-warning dark:text-warning">Invalid</span> ·{" "}
             <span className="font-medium text-destructive">Kosong</span>. Hitung mundur kedaluwarsa diperbarui tiap detik.
           </div>
         </div>
@@ -596,7 +596,7 @@ function LinkPegawaiPage() {
                 <> · <span className="tabular-nums">{remaining}</span> belum tampil</>
               )}
               {sort === "status" && hasMore && (
-                <> · <span className="text-amber-600 dark:text-amber-400">urutan status berdasarkan data yang dimuat</span></>
+                <> · <span className="text-warning dark:text-warning">urutan status berdasarkan data yang dimuat</span></>
               )}
             </>
           );
@@ -653,9 +653,9 @@ function LinkPegawaiPage() {
         </span>
         {([
           ["all", "Semua", ""],
-          ["valid", "Valid", "data-[active=true]:border-emerald-500/50 data-[active=true]:bg-emerald-500/10 data-[active=true]:text-emerald-700 dark:data-[active=true]:text-emerald-400"],
+          ["valid", "Valid", "data-[active=true]:border-success/50 data-[active=true]:bg-success/10 data-[active=true]:text-success dark:data-[active=true]:text-success"],
           ["fresh", "Baru dibuat", "data-[active=true]:border-sky-500/50 data-[active=true]:bg-sky-500/10 data-[active=true]:text-sky-700 dark:data-[active=true]:text-sky-400"],
-          ["invalid", "Invalid", "data-[active=true]:border-amber-500/50 data-[active=true]:bg-amber-500/10 data-[active=true]:text-amber-700 dark:data-[active=true]:text-amber-400"],
+          ["invalid", "Invalid", "data-[active=true]:border-warning/50 data-[active=true]:bg-warning/10 data-[active=true]:text-warning dark:data-[active=true]:text-warning"],
           ["empty", "Kosong", "data-[active=true]:border-destructive/50 data-[active=true]:bg-destructive/10 data-[active=true]:text-destructive"],
         ] as const).map(([key, label, activeCls]) => {
           const active = tokenFilter === key;
@@ -766,8 +766,8 @@ function LinkPegawaiPage() {
               countdown.tone === "danger"
                 ? "bg-destructive/10 text-destructive ring-destructive/20"
                 : countdown.tone === "warn"
-                ? "bg-amber-500/10 text-amber-700 ring-amber-500/20 dark:text-amber-400"
-                : "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400";
+                ? "bg-warning/10 text-warning ring-warning/20 dark:text-warning"
+                : "bg-success/10 text-success ring-success/20 dark:text-success";
             return (
               <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div className="flex items-start gap-ms-2 p-ms-3">
@@ -878,7 +878,7 @@ function LinkPegawaiPage() {
                       }}
                       disabled={regenId === t.id}
                       title="Perpanjang masa aktif 7 hari & terbitkan token baru"
-                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 text-ms-2xs font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-warning/40 bg-warning/10 px-ms-2 text-ms-2xs font-medium text-warning hover:bg-warning/20 disabled:opacity-50 dark:text-warning"
                     >
                       {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
                       Perpanjang &amp; Token Baru (7 hari)
@@ -898,7 +898,7 @@ function LinkPegawaiPage() {
                   <button
                     onClick={() => openResetPin(t)}
                     title="Buat PIN baru — PIN lama otomatis tidak berlaku"
-                    className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 text-ms-2xs font-medium text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
+                    className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-warning/40 bg-warning/10 px-ms-2 text-ms-2xs font-medium text-warning hover:bg-warning/20 dark:text-warning"
                   >
                     <LockKeyhole className="h-3.5 w-3.5" /> Reset PIN
                   </button>
@@ -942,7 +942,7 @@ function LinkPegawaiPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-ms-2">
-              <LockKeyhole className="h-4 w-4 text-amber-600" /> Reset PIN
+              <LockKeyhole className="h-4 w-4 text-warning" /> Reset PIN
             </DialogTitle>
             <DialogDescription>
               {resetDone
@@ -983,15 +983,15 @@ function LinkPegawaiPage() {
             </div>
           ) : (
             <div className="space-ms-3">
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-3 text-center">
-                <div className="text-ms-2xs uppercase tracking-wider text-amber-700 dark:text-amber-400">PIN Baru</div>
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-ms-3 text-center">
+                <div className="text-ms-2xs uppercase tracking-wider text-warning dark:text-warning">PIN Baru</div>
                 <div className="mt-1 font-mono text-ms-2xl tracking-[0.4em]">{resetPin}</div>
               </div>
               <div className="flex gap-ms-2">
                 <Button variant="outline" className="flex-1" onClick={() => void copyPin()}>
                   <Copy className="h-4 w-4" /> Salin
                 </Button>
-                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-600/90" onClick={() => void sharePinToWa()}>
+                <Button className="flex-1 bg-success hover:bg-success/90" onClick={() => void sharePinToWa()}>
                   <MessageCircle className="h-4 w-4" /> Kirim via MCM
                 </Button>
               </div>
@@ -1012,15 +1012,15 @@ function LinkPegawaiPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-ms-2">
-              <Timer className="h-4 w-4 text-emerald-600" /> Tugas diperpanjang
+              <Timer className="h-4 w-4 text-success" /> Tugas diperpanjang
             </DialogTitle>
             <DialogDescription>
               Tugas <span className="font-medium">"{extendedInfo?.title}"</span> diperpanjang {extendedInfo?.extendDays} hari & token baru aktif. Link lama tidak bisa lagi dibuka pegawai.
             </DialogDescription>
           </DialogHeader>
           <div key={extendedInfo?.seq ?? 0} className="space-ms-3 animate-fade-in motion-reduce:animate-none">
-            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-ms-3">
-              <div className="text-ms-2xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Kedaluwarsa baru</div>
+            <div className="rounded-md border border-success/40 bg-success/10 p-ms-3">
+              <div className="text-ms-2xs uppercase tracking-wider text-success dark:text-success">Kedaluwarsa baru</div>
               <div className="mt-1 text-ms-sm font-semibold">
                 {extendedInfo?.expiresLabel ?? "—"}
               </div>

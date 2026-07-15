@@ -204,7 +204,7 @@ export function UpgradeToStorageCard() {
               <li key={r.key} className="flex items-start gap-ms-2">
                 {r.done ? (
                   <CheckCircle2
-                    className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-success"
                     aria-hidden="true"
                   />
                 ) : (
@@ -242,7 +242,7 @@ export function UpgradeToStorageCard() {
             ))}
           </ul>
           {!emailConfirmed && (
-            <div className="mt-2 flex items-start gap-ms-1.5 rounded border border-amber-500/40 bg-amber-500/10 p-ms-1.5 text-ms-2xs text-amber-700 dark:text-amber-300">
+            <div className="mt-2 flex items-start gap-ms-1.5 rounded border border-warning/40 bg-warning/10 p-ms-1.5 text-ms-2xs text-warning dark:text-warning">
               <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
               <span>Upgrade dikunci sampai email diverifikasi agar akses tidak diblokir setelahnya.</span>
             </div>

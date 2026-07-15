@@ -333,11 +333,11 @@ function DomainSection({
       <div className="flex items-baseline justify-between">
         <h2 className="text-ms-sm font-semibold">{label}</h2>
         <p className="text-ms-2xs text-muted-foreground">
-          {totalPreps} prep · <span className="text-emerald-600 dark:text-emerald-400">{totalActive} aktif</span> ·{" "}
-          <span className="text-amber-600 dark:text-amber-400">{totalSent} terkirim</span>
+          {totalPreps} prep · <span className="text-success dark:text-success">{totalActive} aktif</span> ·{" "}
+          <span className="text-warning dark:text-warning">{totalSent} terkirim</span>
         </p>
       </div>
-      <p className="rounded border border-amber-500/30 bg-amber-500/5 px-ms-2 py-1 text-ms-2xs text-amber-700 dark:text-amber-300">
+      <p className="rounded border border-warning/30 bg-warning/5 px-ms-2 py-1 text-ms-2xs text-warning dark:text-warning">
         Debug-only: tombol Tandai/Batalkan pada tabel ini menulis <code>sold_at</code> langsung
         pada 1 prep dari <code>title_id</code> tersebut — TIDAK mencatat penjualan/hutang.
         Gunakan hanya untuk uji konsistensi angka selector. Untuk alur nyata pakai tombol Buka.
@@ -377,13 +377,13 @@ function DomainSection({
                   </td>
                   <td
                     data-testid={`cell-active-${domain}-${r.title_id}`}
-                    className={"px-ms-2 py-1.5 text-right tabular-nums " + (r.active > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}
+                    className={"px-ms-2 py-1.5 text-right tabular-nums " + (r.active > 0 ? "font-semibold text-success dark:text-success" : "text-muted-foreground")}
                   >
                     {r.active}
                   </td>
                   <td
                     data-testid={`cell-sent-${domain}-${r.title_id}`}
-                    className={"px-ms-2 py-1.5 text-right tabular-nums " + (r.sent > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}
+                    className={"px-ms-2 py-1.5 text-right tabular-nums " + (r.sent > 0 ? "font-semibold text-warning dark:text-warning" : "text-muted-foreground")}
                   >
                     {r.sent}
                   </td>
@@ -397,7 +397,7 @@ function DomainSection({
                         data-testid={`debug-mark-${domain}-${r.title_id}`}
                         disabled={busy || r.active <= 0}
                         onClick={() => void onQuickAction(domain, r.title_id, "mark")}
-                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-ms-2xs text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-40 dark:text-emerald-300"
+                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-ms-2xs text-success hover:bg-success/10 disabled:opacity-40 dark:text-success"
                         title="Tandai 1 prep aktif → terkirim (debug: tanpa mencatat sales/hutang)"
                       >
                         <Check className="h-3 w-3" /> Tandai
@@ -407,7 +407,7 @@ function DomainSection({
                         data-testid={`debug-cancel-${domain}-${r.title_id}`}
                         disabled={busy || r.sent <= 0}
                         onClick={() => void onQuickAction(domain, r.title_id, "cancel")}
-                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-ms-2xs text-amber-700 hover:bg-amber-500/10 disabled:opacity-40 dark:text-amber-300"
+                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-ms-2xs text-warning hover:bg-warning/10 disabled:opacity-40 dark:text-warning"
                         title="Batalkan 1 prep terkirim → aktif (debug: tidak menyentuh sales/hutang)"
                       >
                         <Undo2 className="h-3 w-3" /> Batalkan

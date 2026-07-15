@@ -793,7 +793,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     Dibuat {new Date(r.created_at).toLocaleString("id-ID")}
                   </div>
                   {r.sold_at && (
-                    <div className="mt-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-ms-2 py-1 text-ms-2xs text-emerald-800 dark:text-emerald-200">
+                    <div className="mt-1 rounded-md border border-success/40 bg-success/10 px-ms-2 py-1 text-ms-2xs text-success dark:text-success">
                       <div className="flex items-center gap-ms-1 font-semibold">
                         {r.sold_payment_method === "kas" ? <Wallet className="h-3 w-3" /> : <HandCoins className="h-3 w-3" />}
                         {formatSoldPaymentSummary(
@@ -802,7 +802,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                           Number(r.sold_paid_amount ?? 0),
                         )}
                       </div>
-                      <div className="text-ms-2xs text-emerald-900/80 dark:text-emerald-100/80">
+                      <div className="text-ms-2xs text-success/80 dark:text-success/80">
                         {new Date(r.sold_at).toLocaleString("id-ID")}
                       </div>
                     </div>

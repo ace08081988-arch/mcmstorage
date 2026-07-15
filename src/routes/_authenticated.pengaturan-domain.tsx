@@ -56,12 +56,12 @@ const STATUS_STYLES: Record<CheckStatus, { badge: string; label: string; icon: R
     icon: <Loader2 className="h-4 w-4 animate-spin" />,
   },
   ok: {
-    badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    badge: "bg-success/15 text-success dark:text-success",
     label: "OK",
     icon: <CheckCircle2 className="h-4 w-4" />,
   },
   warn: {
-    badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    badge: "bg-warning/15 text-warning dark:text-warning",
     label: "Perlu review",
     icon: <AlertTriangle className="h-4 w-4" />,
   },
@@ -219,9 +219,9 @@ function DomainSettingsPage() {
                     {c.found.map((v, i) => (
                       <li key={`${c.key}-${i}`} className="flex items-center gap-ms-2 font-mono">
                         {c.type === "A" && v === LOVABLE_IP ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                         ) : c.type === "TXT" && v.toLowerCase().startsWith("lovable_verify=") ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                         ) : (
                           <XCircle className="h-3.5 w-3.5 text-red-500" />
                         )}

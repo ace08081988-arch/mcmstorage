@@ -11,7 +11,7 @@ export type SummaryTone = "primary" | "warning" | "danger" | "info";
 
 const TONE_CLASS: Record<SummaryTone, string> = {
   primary: "text-primary bg-primary/10 ring-primary/20",
-  warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+  warning: "text-warning bg-warning/10 ring-warning/20 dark:text-warning",
   danger: "text-destructive bg-destructive/10 ring-destructive/20",
   info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
 };

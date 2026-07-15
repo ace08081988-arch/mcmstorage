@@ -639,8 +639,8 @@ export function ReadyEcerSection() {
           aria-live="polite"
           className={`flex items-center justify-between gap-ms-2 rounded-md border px-ms-2 py-1 text-ms-2xs transition-colors ${
             crossTabSync.status === "pending"
-              ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
+              : "border-success/30 bg-success/10 text-success dark:text-success"
           }`}
         >
           <div className="flex min-w-0 items-center gap-ms-2">
@@ -1070,10 +1070,10 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   }
   if (status === "live") {
     return (
-      <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-1.5 text-ms-2xs font-medium leading-none text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/10 px-1.5 text-ms-2xs font-medium leading-none text-success dark:text-success">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
         </span>
         Live
       </span>
@@ -1114,9 +1114,9 @@ function EcerCard(props: EcerCardProps) {
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
-  ok:              { label: "Tersinkron",        cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
-  fallback_grams:  { label: "Cocok ukuran",      cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400",       dot: "bg-amber-500" },
-  fallback_wid:    { label: "Cocok produk",      cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400",       dot: "bg-amber-500" },
+  ok:              { label: "Tersinkron",        cls: "bg-success/10 text-success dark:text-success", dot: "bg-success" },
+  fallback_grams:  { label: "Cocok ukuran",      cls: "bg-warning/10 text-warning dark:text-warning",       dot: "bg-warning" },
+  fallback_wid:    { label: "Cocok produk",      cls: "bg-warning/10 text-warning dark:text-warning",       dot: "bg-warning" },
   self_only:       { label: "Mandiri saja",      cls: "bg-sky-500/10 text-sky-600 dark:text-sky-400",             dot: "bg-sky-500" },
   no_match:        { label: "Tidak cocok",       cls: "bg-destructive/10 text-destructive",                       dot: "bg-destructive" },
   no_wid:          { label: "Tanpa produk",      cls: "bg-destructive/10 text-destructive",                       dot: "bg-destructive" },
@@ -1220,7 +1220,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onRe
   if (status === "success" || (view === "sent" && lastSentAt)) {
     const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!, now)}`;
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-success/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-success dark:text-success" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
         <CheckCircle2 className="h-2.5 w-2.5" /> {label}
       </span>
     );
@@ -1261,11 +1261,11 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
           const maps = entry.mapsUrl ?? shot.location_url ?? null;
           return (
             <li key={shot.id} className="flex flex-wrap items-center gap-ms-1 text-ms-2xs leading-snug">
-              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`}>
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-success/10 text-success dark:text-success"}`}>
                 {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
                 {channel === "chat" ? "Chat" : "MCM"}
               </span>
-              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-success/10 text-success dark:text-success" : "bg-destructive/10 text-destructive"}`}>
                 {ok ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
                 {ok ? "Sukses" : "Gagal"}
               </span>
@@ -2205,7 +2205,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm outline-none transition hover:border-primary/60 hover:shadow-md active:scale-[0.997] active:bg-accent/30 focus-visible:z-10 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer ${
         selected ? "ring-2 ring-primary ring-offset-1" : ""
       } ${
-        justMoved ? "ring-2 ring-emerald-400 ring-offset-2 shadow-lg shadow-emerald-500/20 animate-pulse" : ""
+        justMoved ? "ring-2 ring-success ring-offset-2 shadow-lg shadow-success/20 animate-pulse" : ""
       }`}
       onClickCapture={
         selectMode
@@ -2367,7 +2367,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                   <li
                     key={i}
                     className={`flex items-center justify-between gap-ms-2 rounded px-1.5 py-1 ${
-                      f.included ? "bg-emerald-500/10 text-foreground" : "bg-muted/60 text-muted-foreground line-through"
+                      f.included ? "bg-success/10 text-foreground" : "bg-muted/60 text-muted-foreground line-through"
                     }`}
                   >
                     <span className="truncate">{f.label}</span>
@@ -2582,7 +2582,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             <span
               data-testid={`ready-ecer-badge-${r.id}`}
               data-badge-count={r.prep_count}
-              className={r.prep_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}
+              className={r.prep_count > 0 ? "font-semibold text-success dark:text-success" : "text-muted-foreground"}
             >
               {r.prep_count} kotak siap
             </span>

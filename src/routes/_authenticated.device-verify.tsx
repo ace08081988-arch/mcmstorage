@@ -243,7 +243,7 @@ function DeviceVerifyPage() {
         {stage === "otp" && (
           <form onSubmit={submit} className="space-ms-3">
             {emailWarning && (
-              <p className="rounded-md border border-amber-300 bg-amber-50 p-ms-2 text-ms-2xs text-amber-800">
+              <p className="rounded-md border border-warning bg-warning p-ms-2 text-ms-2xs text-warning">
                 {emailWarning}
               </p>
             )}

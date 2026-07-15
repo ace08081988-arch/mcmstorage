@@ -273,10 +273,10 @@ function NotifikasiPage() {
                 <span
                   className={
                     permission === "granted"
-                      ? "font-medium text-emerald-600"
+                      ? "font-medium text-success"
                       : permission === "denied"
                         ? "font-medium text-destructive"
-                        : "font-medium text-amber-600"
+                        : "font-medium text-warning"
                   }
                 >
                   {permission === "granted" ? "Diizinkan" : permission === "denied" ? "Diblokir" : "Belum diatur"}
@@ -287,9 +287,9 @@ function NotifikasiPage() {
                 <span
                   className={
                     subscribed === true
-                      ? "font-medium text-emerald-600"
+                      ? "font-medium text-success"
                       : subscribed === false
-                        ? "font-medium text-amber-600"
+                        ? "font-medium text-warning"
                         : "font-medium text-muted-foreground"
                   }
                 >
@@ -489,8 +489,8 @@ function NotifikasiPage() {
 
 const KIND_META: Record<FeedItem["kind"], { label: string; Icon: typeof MessageCircle; tone: string }> = {
   chat: { label: "Chat", Icon: MessageCircle, tone: "bg-blue-500/10 text-blue-600" },
-  tugas: { label: "Tugas", Icon: ClipboardList, tone: "bg-emerald-500/10 text-emerald-600" },
-  order: { label: "Pesanan", Icon: PackagePlus, tone: "bg-amber-500/10 text-amber-700" },
+  tugas: { label: "Tugas", Icon: ClipboardList, tone: "bg-success/10 text-success" },
+  order: { label: "Pesanan", Icon: PackagePlus, tone: "bg-warning/10 text-warning" },
   system: { label: "Sistem", Icon: Settings2, tone: "bg-destructive/10 text-destructive" },
 };
 
@@ -1015,7 +1015,7 @@ function FeedEmptyState({
   if (filteredOut) {
     return (
       <div className="grid place-items-center gap-ms-2 py-8 text-center">
-        <span className="grid size-10 place-items-center rounded-full bg-amber-500/10 text-amber-700">
+        <span className="grid size-10 place-items-center rounded-full bg-warning/10 text-warning">
           <FilterX className="size-5" />
         </span>
         <div className="text-ms-sm font-medium">Tidak ada yang cocok dengan filter</div>

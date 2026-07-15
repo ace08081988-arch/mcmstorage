@@ -94,12 +94,12 @@ const STYLES: Record<SaveStatus, { label: string; icon: React.ReactNode; wrap: s
   clean: {
     label: "Tersimpan",
     icon: <Check className="h-3 w-3" aria-hidden />,
-    wrap: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    wrap: "border-success/40 bg-success/10 text-success dark:text-success",
   },
   dirty: {
     label: "Perubahan belum tersimpan",
     icon: <CircleDot className="h-3 w-3" aria-hidden />,
-    wrap: "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200",
+    wrap: "border-warning/40 bg-warning/10 text-warning dark:text-warning",
   },
   saving: {
     label: "Menyimpan…",

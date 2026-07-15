@@ -49,14 +49,14 @@ export function getCallStatusVisual(
     case "declined":
       return {
         Icon: PhoneOff,
-        colorClass: "text-amber-500",
+        colorClass: "text-warning",
         label: "Ditolak",
         hint: "Ditolak — penerima menolak panggilan.",
       };
     case "cancelled":
       return {
         Icon: Ban,
-        colorClass: "text-amber-500",
+        colorClass: "text-warning",
         label: "Dibatalkan",
         hint: "Dibatalkan — panggilan dihentikan sebelum diangkat.",
       };
@@ -91,7 +91,7 @@ export function getCallStatusVisual(
     case "in-call":
       return {
         Icon: PhoneCall,
-        colorClass: "text-emerald-500",
+        colorClass: "text-success",
         label: "Tersambung",
         hint: "Diterima — panggilan sedang berlangsung.",
       };
@@ -104,7 +104,7 @@ export function getCallStatusVisual(
       if (opts.outgoing === true) {
         return {
           Icon: PhoneOutgoing,
-          colorClass: "text-emerald-500",
+          colorClass: "text-success",
           label: "Diterima",
           hint: "Diterima — panggilan keluar berhasil tersambung.",
         };
@@ -112,14 +112,14 @@ export function getCallStatusVisual(
       if (opts.outgoing === false) {
         return {
           Icon: PhoneIncoming,
-          colorClass: "text-emerald-500",
+          colorClass: "text-success",
           label: "Diterima",
           hint: "Diterima — panggilan masuk berhasil tersambung.",
         };
       }
       return {
         Icon: CheckCircle2,
-        colorClass: "text-emerald-500",
+        colorClass: "text-success",
         label: "Diterima",
         hint: "Diterima — panggilan berhasil tersambung.",
       };

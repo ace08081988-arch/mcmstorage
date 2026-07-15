@@ -85,12 +85,12 @@ export function BuildVersionBadge() {
       data-no-press
     >
       {stale && (
-        <div className="pointer-events-auto flex items-center gap-ms-2 rounded-full border border-amber-400/60 bg-amber-500/95 px-ms-3 py-1 text-ms-2xs font-medium text-amber-950 shadow-lg">
+        <div className="pointer-events-auto flex items-center gap-ms-2 rounded-full border border-warning/60 bg-warning/95 px-ms-3 py-1 text-ms-2xs font-medium text-warning shadow-lg">
           <span>Versi baru tersedia</span>
           <button
             type="button"
             onClick={hardReload}
-            className="rounded-full bg-amber-950/20 px-ms-2 py-0.5 text-ms-2xs font-semibold text-amber-950 hover:bg-amber-950/30"
+            className="rounded-full bg-warning/20 px-ms-2 py-0.5 text-ms-2xs font-semibold text-warning hover:bg-warning/30"
           >
             Muat ulang
           </button>
@@ -105,14 +105,14 @@ export function BuildVersionBadge() {
           className={
             "flex items-center gap-ms-1.5 rounded-full border px-ms-2 py-0.5 font-mono text-ms-2xs leading-none shadow-sm backdrop-blur-md transition " +
             (stale
-              ? "border-amber-400/60 bg-amber-500/20 text-amber-200"
+              ? "border-warning/60 bg-warning/20 text-warning"
               : "border-white/10 bg-black/50 text-white/60 hover:text-white/90")
           }
         >
           <span
             className={
               "inline-block h-1.5 w-1.5 rounded-full " +
-              (stale ? "bg-amber-400" : "bg-emerald-400")
+              (stale ? "bg-warning" : "bg-success")
             }
           />
           <span>build {shortId(BUILD_ID)}</span>
@@ -145,7 +145,7 @@ export function BuildVersionBadge() {
                   <dt className="text-zinc-500">Server</dt>
                   <dd
                     className={
-                      "truncate text-right " + (stale ? "text-amber-300" : "text-emerald-300")
+                      "truncate text-right " + (stale ? "text-warning" : "text-success")
                     }
                   >
                     {shortId(remoteId)} {stale ? "· baru" : "· sama"}
@@ -164,7 +164,7 @@ export function BuildVersionBadge() {
               <button
                 type="button"
                 onClick={hardReload}
-                className="rounded-md border border-emerald-500/30 bg-emerald-600/20 px-ms-2 py-1 text-ms-2xs font-medium text-emerald-200 hover:bg-emerald-600/30"
+                className="rounded-md border border-success/30 bg-success/20 px-ms-2 py-1 text-ms-2xs font-medium text-success hover:bg-success/30"
               >
                 Muat ulang paksa
               </button>
