@@ -1888,9 +1888,12 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         // unit (mis. 1 karton berisi 10 botol), bukan berat. Label
                         // & placeholder mengikuti supaya pegawai tidak bingung
                         // (screenshot: GS · stok botol seharusnya bukan "Berat").
-                        const perUnitLabel = isPcs ? "Jumlah / unit" : "Berat / unit";
+                        // Label & bantu-teks kolom kanan konsisten untuk item pcs:
+                        // "Jumlah / isi" (isi per unit — mis. 1 karton = 12 botol).
+                        const perUnitLabel = isPcs ? "Jumlah / isi" : "Berat / unit";
+                        const perUnitPlaceholder = isPcs ? "isi manual (pcs)" : "isi manual";
                         const manualHint = isPcs
-                          ? "Manual — isi jumlah di kolom kanan"
+                          ? "Manual — isi jumlah/isi di kolom kanan"
                           : "Manual — isi berat di kolom kanan";
                         return (
                           <div key={l.key} className="space-y-1.5 rounded border bg-background/60 p-ms-2">
@@ -1939,7 +1942,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   max={isManual ? (isPcs ? MAX_PER_UNIT_PCS : MAX_PER_UNIT_G) : undefined}
                                   disabled={!isManual}
                                   emptyAs={isManual ? 0 : null}
-                                  placeholder={isManual ? "isi manual" : undefined}
+                                  placeholder={isManual ? perUnitPlaceholder : undefined}
                                   onChange={(n) => updateLine(it.id, l.key, { weightOverride: n })}
                                   onStatusChange={(s) => setFieldStatus(l.key, "weight", s)}
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-ms-xs tabular-nums disabled:opacity-60"
