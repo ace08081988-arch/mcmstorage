@@ -572,10 +572,15 @@ function PosKasirPage() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const displayBerat = berat.toFixed(3).padStart(9, " ");
+  // Tampilan LCD-style: pcs dibulatkan (5 digit) supaya tidak ada
+  // ",000" palsu; berat kg/gram tetap 3 desimal.
+  const displayBerat = isPcs
+    ? Math.floor(berat).toString().padStart(5, " ")
+    : berat.toFixed(3).padStart(9, " ");
 
   const addBerat = (delta: number) => {
-    const next = Math.max(0, +(berat + delta).toFixed(3));
+    const raw = berat + delta;
+    const next = isPcs ? Math.max(0, Math.floor(raw)) : Math.max(0, +raw.toFixed(3));
     setBeratStr(String(next));
   };
 
