@@ -840,7 +840,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     <WaShareButton
                       size="sm"
                       variant="soft"
-                      fullWidth
+                      className="w-full"
                       disabled={!gate.enabled}
                       reason={gate.enabled ? null : gate.reason}
                       onClick={() => onSendWA(r)}
@@ -848,7 +848,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     <ChatShareButton
                       size="sm"
                       variant="soft"
-                      fullWidth
+                      className="w-full"
                       disabled={!gate.enabled}
                       busy={chatBusy}
                       reason={gate.enabled ? null : gate.reason}
