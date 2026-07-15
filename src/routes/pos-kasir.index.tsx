@@ -241,8 +241,11 @@ function PosKasirPage() {
   const selected = produk.find((p) => p.id === selectedId) ?? produk[0];
   const berat = useMemo(() => {
     const n = parseFloat(beratStr.replace(",", "."));
-    return Number.isFinite(n) && n >= 0 ? n : 0;
-  }, [beratStr]);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    // Item pcs/botol/karton dijual bulat — floor supaya stok & sisa
+    // ikut hitungan `Jumlah/pcs`, bukan pecahan berat.
+    return isDiscreteUnit(selected?.unitLabel) ? Math.floor(n) : n;
+  }, [beratStr, selected?.unitLabel]);
   const hargaInput = useMemo(() => {
     const n = parseFloat(hargaStr.replace(",", "."));
     return Number.isFinite(n) && n >= 0 ? n : 0;
