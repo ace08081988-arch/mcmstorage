@@ -850,7 +850,11 @@ function PackageForm({
                     type="number" step="0.01" min="0"
                     value={newGrams}
                     onChange={(e) => setNewGrams(e.target.value)}
-                    placeholder={`Berat (${item.base_unit === "g" ? ecerUnit : item.base_unit})`}
+                    placeholder={
+                      item.base_unit === "pcs"
+                        ? "Isi (pcs)"
+                        : `Berat (${item.base_unit === "g" ? ecerUnit : item.base_unit})`
+                    }
                     className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs tabular-nums"
                   />
                   <button
@@ -860,7 +864,11 @@ function PackageForm({
                   >+ Tambah</button>
                 </div>
                 <p className="text-ms-2xs text-muted-foreground">
-                  Contoh: label <b>1G</b> berat <b>0.90</b>. Klik chip preset untuk auto-isi jumlah.
+                  {item.base_unit === "pcs" ? (
+                    <>Contoh: label <b>1P</b> isi <b>1</b> pcs. Klik chip preset untuk auto-isi jumlah.</>
+                  ) : (
+                    <>Contoh: label <b>1G</b> berat <b>0.90</b>. Klik chip preset untuk auto-isi jumlah.</>
+                  )}
                 </p>
               </div>
             )}
@@ -868,7 +876,7 @@ function PackageForm({
 
           <label className="block">
             <span className="text-ms-2xs text-muted-foreground">
-              Jumlah ({item.base_unit}) · stok: {fmtItemQty(item.stock_base, item)}
+              {item.base_unit === "pcs" ? "Jumlah / isi" : "Jumlah"} ({item.base_unit}) · stok: {fmtItemQty(item.stock_base, item)}
             </span>
             <input
               type="number"
