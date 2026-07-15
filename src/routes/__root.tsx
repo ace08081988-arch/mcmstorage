@@ -405,9 +405,11 @@ function RootComponent() {
       <Outlet />
       <Toaster richColors position="top-center" />
       <ConfirmHost />
-      <WhatsAppTargetHost />
-      <WaPreviewHost />
-      <BuildVersionBadge />
+      <Suspense fallback={null}>
+        <WhatsAppTargetHostLazy />
+        <WaPreviewHostLazy />
+        <BuildVersionBadge />
+      </Suspense>
     </QueryClientProvider>
   );
 }
