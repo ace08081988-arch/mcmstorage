@@ -360,12 +360,40 @@ export function useConversations() {
       // Hide conversations the user cleared that have no newer activity.
       // As soon as a peer sends a fresh message (or the user starts chatting
       // again), lastByConv gets an entry and the row reappears automatically.
-      return items.filter((c) => {
+      const visible = items.filter((c) => {
         if (!c.cleared_at) return true;
         if (c.pinned_at) return true; // keep pinned rows visible
         if (lastByConv.has(c.id)) return true;
         return false;
       });
+
+      // Dedupe DM rows ke kontak yang sama (bisa terbentuk kalau DM
+      // dibuat dari beberapa jalur: dari kontak, dari order, dsb).
+      // Kelompokkan per peer user_id (fallback ke display_title lower-case),
+      // simpan baris dengan aktivitas terbaru / pesan terbaru / pinned.
+      const dmScore = (c: (typeof visible)[number]) => {
+        const lastMs = c.last_at ? new Date(c.last_at).getTime() : 0;
+        const hasMsg = lastByConv.has(c.id) ? 1 : 0;
+        const pinned = c.pinned_at ? 1 : 0;
+        return pinned * 1e15 + hasMsg * 1e13 + lastMs;
+      };
+      const bestDm = new Map<string, (typeof visible)[number]>();
+      const nonDm: typeof visible = [];
+      for (const c of visible) {
+        if (c.kind !== "dm") {
+          nonDm.push(c);
+          continue;
+        }
+        const other = (c.member_ids ?? []).find((u) => u !== myId);
+        const key = other ?? `title:${(c.display_title ?? "").trim().toLowerCase()}`;
+        const prev = bestDm.get(key);
+        if (!prev || dmScore(c) > dmScore(prev)) bestDm.set(key, c);
+      }
+      const dedup = [...nonDm, ...bestDm.values()];
+      // Preserve original ordering (already sorted by last_message_at desc).
+      const orderIndex = new Map(visible.map((c, i) => [c.id, i] as const));
+      dedup.sort((a, b) => (orderIndex.get(a.id)! - orderIndex.get(b.id)!));
+      return dedup;
     },
   });
 
