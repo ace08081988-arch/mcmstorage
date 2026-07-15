@@ -273,6 +273,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import { isCardBody } from "@/lib/chat-cards";
 import { goBackOr } from "@/lib/back-nav";
+import { ChatMessagesSkeleton } from "@/components/chat/ChatSkeletons";
 import {
   DELETED_PLACEHOLDER,
   MessagePreview,
@@ -1588,9 +1589,7 @@ function ChatRoomPage() {
 
       <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg relative flex-1 space-ms-3 overflow-y-auto p-ms-3">
         {isLoading ? (
-          <div className="flex items-center justify-center p-8 text-ms-sm text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat pesan…
-          </div>
+          <ChatMessagesSkeleton bubbles={6} />
         ) : (messages ?? []).length === 0 ? (
           <div className="grid place-items-center p-12 text-center text-ms-xs text-muted-foreground">
             Belum ada pesan. Sapa dulu yuk.

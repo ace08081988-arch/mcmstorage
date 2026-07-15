@@ -33,6 +33,7 @@ import { CHAT_CATEGORY_LABEL_ID, type ChatCategory } from "@/lib/chat-category";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
 import { goBackOr } from "@/lib/back-nav";
+import { ChatListSkeleton } from "@/components/chat/ChatSkeletons";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   // Terima query `?filter=unread` sebagai deep-link dari tab Chat di bottom
@@ -876,11 +877,7 @@ function ConvList({
   onRowTap: (id: string) => void;
 }) {
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8 text-ms-sm text-[var(--wa-text-muted)]">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
-      </div>
-    );
+    return <ChatListSkeleton rows={7} />;
   }
   if (list.length === 0) {
     return <div className="rounded-lg border border-[var(--wa-border)] p-6">{empty}</div>;
