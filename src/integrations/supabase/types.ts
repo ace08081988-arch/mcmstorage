@@ -3811,6 +3811,10 @@ export type Database = {
         }[]
       }
       record_prep_pin_failure: { Args: { _token: string }; Returns: undefined }
+      rename_warehouse_category: {
+        Args: { _new_name: string; _old_name: string }
+        Returns: number
+      }
       request_list_titles_via_task: {
         Args: { _pin: string; _token: string }
         Returns: Json
