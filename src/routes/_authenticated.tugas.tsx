@@ -787,19 +787,38 @@ function TugasPage() {
       </div>
 
       {(() => {
-        const chip = (key: typeof statusFilter, label: string, n: number) => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={statusFilter === key}
-            onClick={() => setStatusFilter(key)}
-            className={`inline-flex h-8 items-center gap-ms-1 rounded-full border px-ms-3 text-ms-2xs font-semibold transition ${statusFilter === key ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground hover:bg-accent"}`}
-          >
-            {label} <span className="opacity-70 tabular-nums">({n})</span>
-          </button>
-        );
+        const chip = (key: typeof statusFilter, label: string, n: number) => {
+          const isActive = statusFilter === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setStatusFilter(key)}
+              className={
+                "relative shrink-0 whitespace-nowrap text-ms-xs transition-colors " +
+                (isActive
+                  ? "font-semibold text-foreground"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              {label} <span className="opacity-60 tabular-nums">({n})</span>
+              {isActive ? (
+                <span
+                  aria-hidden
+                  className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-primary"
+                />
+              ) : null}
+            </button>
+          );
+        };
         return (
-          <div className="mb-3 flex flex-wrap gap-ms-1.5" role="group" aria-label="Filter status tugas">
+          <div
+            className="-mx-1 mb-3 flex items-center gap-ms-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            role="tablist"
+            aria-label="Filter status tugas"
+          >
             {chip("all", "Semua", counts.all)}
             {chip("waiting", "Menunggu", counts.waiting)}
             {chip("progress", "Dikerjakan", counts.progress)}
