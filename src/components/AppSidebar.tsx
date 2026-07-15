@@ -469,8 +469,8 @@ export function AppSidebar() {
     : "Belum ada sinkronisasi";
   const syncMeta = {
     offline: { label: "Offline", Icon: WifiOff, cls: "bg-destructive/15 text-destructive border-destructive/30" },
-    syncing: { label: "Syncing…", Icon: RefreshCw, cls: "bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400" },
-    online:  { label: "Online", Icon: Wifi, cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400" },
+    syncing: { label: "Menyinkronkan", Icon: RefreshCw, cls: "bg-primary/10 text-primary border-primary/25" },
+    online:  { label: "Online", Icon: Wifi, cls: "bg-primary/12 text-primary border-primary/25" },
   }[syncState];
   const chatCounts = (() => {
     const list = conversations ?? [];
@@ -648,22 +648,22 @@ export function AppSidebar() {
                 className={
                   "absolute inset-0 rounded-full " +
                   (syncState === "online"
-                    ? "bg-emerald-400 shadow-[0_0_8px_1px_rgba(52,211,153,0.55)]"
+                    ? "bg-primary shadow-[0_0_8px_1px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
                     : syncState === "syncing"
-                      ? "bg-amber-400 animate-pulse"
+                      ? "bg-primary/80 animate-pulse"
                       : "bg-destructive")
                 }
               />
               {syncState === "online" ? (
-                <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
+                <span className="absolute inset-0 animate-ping rounded-full bg-primary/50" />
               ) : null}
             </span>
             <span
               className={
                 syncState === "online"
-                  ? "text-emerald-500 dark:text-emerald-400"
+                  ? "text-primary"
                   : syncState === "syncing"
-                    ? "text-amber-500 dark:text-amber-400"
+                    ? "text-primary/85"
                     : "text-destructive"
               }
             >
