@@ -338,13 +338,15 @@ function GudangPage() {
   }, [items, suppliers]);
 
   const navItems = [
+    // Label 1 kata konsisten Bahasa Indonesia, urut sesuai alur kerja:
+    // barang → mitra → transaksi masuk/keluar → utang-piutang → arsip.
     { k: "stok", label: "Stok", icon: Boxes },
-    { k: "supplier", label: "Supplier", icon: Truck },
+    { k: "supplier", label: "Pemasok", icon: Truck },
     { k: "beli", label: "Beli", icon: ShoppingCart },
     { k: "jual", label: "Jual", icon: Banknote },
     { k: "pesanan", label: "Pesanan", icon: ClipboardList },
-    { k: "hutang", label: "Hutang", icon: CreditCard },
     { k: "pelanggan", label: "Pelanggan", icon: Users },
+    { k: "hutang", label: "Hutang", icon: CreditCard },
     { k: "piutang", label: "Piutang", icon: Wallet },
     { k: "riwayat", label: "Riwayat", icon: History },
   ] as const;
