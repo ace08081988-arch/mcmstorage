@@ -107,6 +107,7 @@ import {
 } from "@/lib/worker-portal-config";
 import { StatusBadge } from "@/components/StatusBadge";
 import { reportPortalError } from "@/lib/portal-error-report";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
