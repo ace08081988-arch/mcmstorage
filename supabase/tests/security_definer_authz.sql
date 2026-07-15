@@ -74,12 +74,18 @@ END $$;
 
 -- Anon call must be rejected.
 DO $$
+DECLARE v_oid oid;
 BEGIN
-  -- prep_create_task must NOT be EXECUTE-able by anon.
-  IF has_function_privilege('anon',
-       'public.prep_create_task(text,text,text,text,jsonb)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'FAIL prep_create_task is granted to anon';
-  END IF;
+  -- prep_create_task must NOT be EXECUTE-able by anon, regardless of
+  -- which overload / signature revision currently exists.
+  FOR v_oid IN
+    SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+     WHERE n.nspname='public' AND p.proname='prep_create_task'
+  LOOP
+    IF has_function_privilege('anon', v_oid, 'EXECUTE') THEN
+      RAISE EXCEPTION 'FAIL prep_create_task (oid %) is granted to anon', v_oid;
+    END IF;
+  END LOOP;
   RAISE NOTICE 'PASS prep_create_task is not granted to anon';
 END $$;
 
