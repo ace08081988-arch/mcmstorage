@@ -251,7 +251,7 @@ function ChatListPage() {
       // `--chat-nav-h` disebar di sini supaya FAB (sibling di luar <nav>)
       // bisa membaca variabel yang sama lewat inheritance CSS. Nilainya
       // sama dengan yang di-set ulang oleh `<ChatBottomNav>`.
-      className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem)]"
+      className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface pb-[calc(env(safe-area-inset-bottom,0px)+var(--chat-nav-h,4rem))] [--chat-nav-h:calc(var(--ms-tap)+1.25rem)]"
     >
       {selecting ? (
         <header
