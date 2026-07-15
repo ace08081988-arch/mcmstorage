@@ -99,12 +99,14 @@ function SortableCategoryRow({
   tag,
   onOpen,
   onDelete,
+  onRename,
 }: {
   name: string;
   count: number;
   tag: string;
   onOpen: () => void;
   onDelete: () => void;
+  onRename: () => void;
 }) {
   const {
     attributes,
@@ -171,10 +173,20 @@ function SortableCategoryRow({
         </span>
       </button>
       <button
+        onClick={onRename}
+        className="shrink-0 rounded-md border border-primary/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-primary transition-colors hover:bg-primary/10"
+        title={`Ubah nama kategori ${name}`}
+        aria-label={`Ubah nama kategori ${name}`}
+        data-testid={`rename-cat-${name}`}
+      >
+        Ubah
+      </button>
+      <button
         onClick={onDelete}
         className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
         title={`Hapus kategori ${name}`}
         aria-label={`Hapus kategori ${name}`}
+        data-testid={`delete-cat-${name}`}
       >
         Hapus
       </button>
