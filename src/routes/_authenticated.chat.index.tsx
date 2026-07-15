@@ -262,10 +262,12 @@ function ChatListPage() {
   return (
     <main
       data-industrial="chat"
-      // `--chat-nav-h` disebar di sini supaya FAB (sibling di luar <nav>)
-      // bisa membaca variabel yang sama lewat inheritance CSS. Nilainya
-      // sama dengan yang di-set ulang oleh `<ChatBottomNav>`.
-      className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface pb-[calc(env(safe-area-inset-bottom,0px)+var(--chat-nav-h,4rem))] [--chat-nav-h:calc(var(--ms-tap)+1.25rem)]"
+      // `--chat-nav-h` didefinisikan di container ini supaya SEMUA sibling
+      // (nav, FAB, konten) mewarisi nilai yang sama. Nilai sudah termasuk
+      // `env(safe-area-inset-bottom)`, jadi `pb-[var(--chat-nav-h)]`
+      // otomatis menyediakan ruang untuk notch/home indicator iOS tanpa
+      // menghitung safe-area dua kali.
+      className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
     >
       {selecting ? (
         <header
