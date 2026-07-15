@@ -945,12 +945,13 @@ html[data-reduce-motion="on"] [data-press-scope="on"] :is(
  * pas dalam gutter 12px. */
 [data-sonner-toaster] {
   max-width: calc(100vw - 24px) !important;
+  box-sizing: border-box;
 }
 @media (max-width: 640px) {
-  [data-sonner-toaster][data-x-position="center"] {
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%);
-    width: calc(100vw - 24px);
+  [data-sonner-toaster] {
+    left: 12px !important;
+    right: 12px !important;
+    width: calc(100vw - 24px) !important;
+    transform: none !important;
   }
 }
