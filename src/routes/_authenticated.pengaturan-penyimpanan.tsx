@@ -3,13 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { HardDrive, Trash2, RefreshCw, Download, Upload } from "lucide-react";
+import { HardDrive, Trash2, RefreshCw, Download, Upload, RotateCcw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
-import { useAppPrefs } from "@/lib/app-prefs";
+import { useAppPrefs, resetAppPrefs, DEFAULT_APP_PREFS } from "@/lib/app-prefs";
 import {
   downloadBackup,
   parseBackup,
@@ -85,6 +86,11 @@ function PenyimpananPage() {
     if (typeof localStorage === "undefined") return true;
     return localStorage.getItem(AUTO_BACKUP_KEY) !== "0";
   });
+  const [factoryOpen, setFactoryOpen] = useState(false);
+  const [factoryConfirm, setFactoryConfirm] = useState("");
+  const [factoryPhase, setFactoryPhase] = useState<"idle" | "processing" | "done">("idle");
+  const [factoryBackup, setFactoryBackup] = useState<boolean>(true);
+  const FACTORY_CONFIRM_WORD = "RESET";
   useEffect(() => {
     try {
       localStorage.setItem(AUTO_BACKUP_KEY, backupBeforeClear ? "1" : "0");
@@ -293,6 +299,111 @@ function PenyimpananPage() {
     }, 900);
   };
 
+  /**
+   * Reset ke setelan awal pabrik:
+   * - Ekspor cadangan penuh semua kunci `mcm.*` (opsional, default on)
+   * - Hapus semua kunci `mcm.*` dari localStorage
+   * - Kembalikan AppPrefs ke DEFAULT_APP_PREFS
+   * Data server tidak disentuh.
+   */
+  const runFactoryReset = async () => {
+    // Kumpulkan semua entri mcm.*
+    const entries: Array<{ key: string; value: string; bytes: number }> = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith("mcm.")) continue;
+      const v = localStorage.getItem(k) ?? "";
+      entries.push({ key: k, value: v, bytes: k.length + v.length });
+    }
+    const totalBytes = entries.reduce((s, e) => s + e.bytes, 0);
+
+    if (factoryBackup && entries.length > 0) {
+      try {
+        const payload = {
+          kind: "mcm-factory-reset-backup",
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          count: entries.length,
+          entries: entries.map((e) => ({ key: e.key, value: e.value })),
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+        a.href = url;
+        a.download = `mcm-factory-reset-${stamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      } catch (e) {
+        toast.error("Gagal ekspor cadangan — reset dibatalkan.", {
+          description: e instanceof Error ? e.message : "Coba lagi.",
+        });
+        return;
+      }
+    }
+
+    setFactoryPhase("processing");
+    // Snapshot untuk undo
+    const snapshotForUndo = entries.map((e) => ({ key: e.key, value: e.value }));
+    for (const e of entries) {
+      try {
+        localStorage.removeItem(e.key);
+      } catch {
+        /* ignore */
+      }
+    }
+    // Kembalikan AppPrefs ke default (akan menulis ulang KEY dengan nilai default)
+    try {
+      resetAppPrefs();
+    } catch {
+      /* ignore */
+    }
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    setFactoryPhase("done");
+
+    let undone = false;
+    toast.success("Reset pabrik selesai", {
+      description: `${entries.length} entri dihapus · ${formatKB(totalBytes)} dibebaskan. Preferensi kembali ke default.`,
+      duration: 12000,
+      action: {
+        label: "Batalkan",
+        onClick: () => {
+          if (undone) return;
+          undone = true;
+          let restored = 0;
+          for (const item of snapshotForUndo) {
+            try {
+              localStorage.setItem(item.key, item.value);
+              restored++;
+            } catch {
+              /* quota — skip */
+            }
+          }
+          // Re-apply AppPrefs dari data yang dipulihkan (jika ada)
+          try {
+            window.dispatchEvent(new CustomEvent("mcm:app-prefs-changed"));
+          } catch {
+            /* ignore */
+          }
+          toast.success("Reset dibatalkan", {
+            description: `${restored} entri dipulihkan. Muat ulang halaman untuk konsistensi penuh.`,
+          });
+          refresh();
+        },
+      },
+    });
+    await refresh();
+    setTimeout(() => {
+      setFactoryOpen(false);
+      setFactoryConfirm("");
+      setFactoryPhase("idle");
+    }, 900);
+  };
+
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
       <SettingsHeader title="Penyimpanan dan Data" subtitle="Penggunaan lokal & unduhan otomatis" icon={HardDrive} />
@@ -437,6 +548,49 @@ function PenyimpananPage() {
                 onChange={onFileChange}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-ms-base flex items-center gap-ms-2 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              Reset ke setelan awal pabrik
+            </CardTitle>
+            <CardDescription className="text-ms-xs">
+              Menghapus <span className="font-medium">semua preferensi lokal</span> aplikasi di
+              perangkat ini (kunci <span className="font-mono">mcm.*</span> di localStorage) dan
+              mengembalikan aksesibilitas, bahasa, penyimpanan, serta URL sosial ke nilai bawaan.
+              Data di server (chat, produk, akun) tidak terpengaruh.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-ms-3">
+            <div className="rounded-md border bg-destructive/5 p-ms-3 text-ms-2xs leading-snug text-muted-foreground">
+              <p className="text-foreground">Yang akan dihapus / dikembalikan:</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                <li>Preferensi aksesibilitas (skala font, kontras, gerakan)</li>
+                <li>Bahasa aplikasi, URL Facebook / Instagram</li>
+                <li>Toggle auto-unduh Wi-Fi &amp; data seluler</li>
+                <li>Semua cache lokal MCM (riwayat kirim, stiker, log, filter, PIN memo)</li>
+              </ul>
+              <p className="mt-2">
+                Cadangan JSON akan otomatis diunduh sebelum reset supaya bisa dipulihkan manual.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => {
+                setFactoryConfirm("");
+                setFactoryPhase("idle");
+                setFactoryBackup(true);
+                setFactoryOpen(true);
+              }}
+            >
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+              Reset ke setelan pabrik
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -714,6 +868,118 @@ function PenyimpananPage() {
                 </>
               ) : (
                 <>Hapus{selectedKeys.size > 0 ? ` (${selectedKeys.size})` : ""}</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={factoryOpen}
+        onOpenChange={(o) => {
+          if (o) return;
+          if (factoryPhase === "processing") return;
+          setFactoryOpen(false);
+          setFactoryConfirm("");
+          setFactoryPhase("idle");
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-ms-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              Reset ke setelan awal pabrik?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-ms-2 text-ms-xs">
+                <p>
+                  Semua preferensi lokal di perangkat ini akan dihapus dan dikembalikan ke
+                  bawaan. Aksi ini bisa dibatalkan sebentar lewat toast setelah selesai, tapi
+                  paling aman adalah menyimpan cadangan JSON dulu.
+                </p>
+                <label className="flex items-start gap-ms-2 rounded-md border bg-muted/30 p-ms-2 text-ms-2xs leading-snug">
+                  <Checkbox
+                    checked={factoryBackup}
+                    onCheckedChange={(v) => setFactoryBackup(Boolean(v))}
+                    disabled={factoryPhase !== "idle"}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="font-medium text-foreground">
+                      Ekspor cadangan JSON sebelum reset
+                    </span>
+                    <span className="block text-muted-foreground">
+                      Menyimpan semua kunci <span className="font-mono">mcm.*</span> ke satu
+                      file yang bisa diimpor manual jika perlu.
+                    </span>
+                  </span>
+                </label>
+                <div className="space-ms-1">
+                  <label className="text-ms-2xs text-muted-foreground">
+                    Ketik{" "}
+                    <span className="font-mono font-semibold text-foreground">
+                      {FACTORY_CONFIRM_WORD}
+                    </span>{" "}
+                    untuk konfirmasi.
+                  </label>
+                  <Input
+                    value={factoryConfirm}
+                    onChange={(e) => setFactoryConfirm(e.target.value)}
+                    disabled={factoryPhase !== "idle"}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="h-8 font-mono text-ms-xs"
+                    placeholder={FACTORY_CONFIRM_WORD}
+                  />
+                </div>
+                <p className="text-ms-2xs text-muted-foreground">
+                  Preview default: bahasa{" "}
+                  <span className="font-mono text-foreground">
+                    {DEFAULT_APP_PREFS.language.toUpperCase()}
+                  </span>
+                  , skala font{" "}
+                  <span className="font-mono text-foreground">
+                    {Math.round(DEFAULT_APP_PREFS.fontScale * 100)}%
+                  </span>
+                  , kontras{" "}
+                  <span className="font-mono text-foreground">
+                    {DEFAULT_APP_PREFS.highContrast ? "on" : "off"}
+                  </span>
+                  , Wi-Fi auto{" "}
+                  <span className="font-mono text-foreground">
+                    {DEFAULT_APP_PREFS.autoDownloadWifi ? "on" : "off"}
+                  </span>
+                  .
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={factoryPhase === "processing"}>
+              {factoryPhase === "done" ? "Tutup" : "Batal"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={runFactoryReset}
+              disabled={
+                factoryConfirm.trim() !== FACTORY_CONFIRM_WORD || factoryPhase !== "idle"
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {factoryPhase === "processing" ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Memproses…
+                </>
+              ) : factoryPhase === "done" ? (
+                <>
+                  <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                  Selesai
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  Reset sekarang
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
