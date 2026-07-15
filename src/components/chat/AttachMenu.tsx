@@ -376,6 +376,25 @@ export function AttachMenu({ conversationId, disabled, onSent, onStageFiles }: P
     const arr = Array.isArray(files) ? files : files ? [files] : [];
     if (arr.length === 0) return;
     setOpenSheet(false);
+    // Bila parent meng-handle staging (pratinjau di atas tombol Kirim),
+    // validasi di sini, teruskan yang valid, dan lewati pratinjau internal.
+    if (onStageFiles) {
+      const errors = arr.map((f) => validateFile(f));
+      const valid: File[] = [];
+      arr.forEach((f, i) => { if (!errors[i]) valid.push(f); });
+      const invalidCount = errors.filter(Boolean).length;
+      if (invalidCount > 0) {
+        const first = errors.find(Boolean) as string;
+        toast.error(
+          invalidCount === arr.length
+            ? "Semua lampiran tidak valid"
+            : `${invalidCount} dari ${arr.length} lampiran ditolak`,
+          { description: first },
+        );
+      }
+      if (valid.length > 0) onStageFiles(valid);
+      return;
+    }
     setCaption("");
     // Validasi tiap berkas; tetap ditampilkan agar pengguna langsung tahu alasannya.
     const errors = arr.map((f) => validateFile(f));
