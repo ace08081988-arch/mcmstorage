@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
-  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus,
+  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
   Trash2, CheckSquare, Square,
 } from "lucide-react";
@@ -305,16 +305,26 @@ function ChatListPage() {
           </div>
         </header>
       ) : (
-      <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-ms-2 border-b px-ms-4 py-ms-3">
-        <div className="flex items-center gap-ms-2">
+      <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-ms-2 border-b px-ms-3 py-ms-2">
+        <div className="flex min-w-0 items-center gap-ms-2">
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-full"
+            aria-label="Kembali ke Beranda"
+            title="Beranda"
+          >
+            <Link to="/"><ArrowLeft className="h-5 w-5" /></Link>
+          </Button>
           <span
             aria-hidden
-            className="grid h-8 w-8 place-items-center rounded-lg text-ms-sm font-bold text-white shadow-sm"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-ms-sm font-bold text-white shadow-sm"
             style={{ backgroundColor: "var(--mcm-brand)" }}
           >
             M
           </span>
-          <h1 className="text-ms-2xl font-bold tracking-tight">MCM</h1>
+          <h1 className="truncate text-ms-xl font-bold tracking-tight">MCM</h1>
         </div>
         <div className="flex items-center gap-ms-1">
           <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Siapkan kontak">
