@@ -100,3 +100,83 @@ describe("guard viewport 411/390px — copy tidak boleh dipangkas per breakpoint
     }
   });
 });
+
+/**
+ * Skenario campuran pcs + g dalam SATU daftar penyiapan.
+ *
+ * Karena `evaluateLine` dan blok JSX ringkasan tidak diekspor (dan me-render
+ * route `/tugas` butuh sesi + data), tes ini bekerja pada level sumber:
+ * memastikan cabang pcs dan g di `evaluateLine` menghasilkan prefix pesan
+ * yang berbeda dan tidak saling bocor, dan bahwa blok "Siap dikirim"
+ * merender KEDUA prefix (Berat / unit dan Jumlah / isi) dipisah `·` saat
+ * `readyWeightG > 0 && readyCountPcs > 0`.
+ */
+describe("skenario campuran pcs + g — pesan validasi tetap per-item", () => {
+  it("cabang pcs di evaluateLine memakai '(pcs)' dan TIDAK memakai kata 'Berat'", () => {
+    // Ambil blok evaluateLine (dari deklarasi sampai penutup fungsi).
+    const fn = TUGAS.match(/function evaluateLine[\s\S]*?\n\}\n/);
+    expect(fn, "evaluateLine harus ditemukan").toBeTruthy();
+    const body = fn![0];
+
+    // Cari baris pesan yang diapit oleh guard `isPcs && ...`.
+    // Cukup pastikan setiap kemunculan "isPcs && ... reason = ..." memakai
+    // frasa "(pcs)" — bukan "Berat / unit".
+    const pcsReasons = [
+      /isPcs && !Number\.isInteger\(weight\)[\s\S]*?reason = "([^"]+)"/,
+      /isPcs && weight > MAX_PER_UNIT_PCS[\s\S]*?reason = `([^`]+)`/,
+    ];
+    for (const re of pcsReasons) {
+      const m = body.match(re);
+      expect(m, `pola pcs harus cocok: ${re}`).toBeTruthy();
+      const reason = m![1];
+      expect(reason).toMatch(/\(pcs\)/);
+      expect(reason).not.toMatch(/Berat/);
+    }
+  });
+
+  it("cabang g di evaluateLine memakai 'Berat / unit (g)' dan TIDAK memakai kata 'pcs'", () => {
+    const fn = TUGAS.match(/function evaluateLine[\s\S]*?\n\}\n/);
+    expect(fn).toBeTruthy();
+    const body = fn![0];
+    const m = body.match(/!isPcs && weight > MAX_PER_UNIT_G[\s\S]*?reason = `([^`]+)`/);
+    expect(m, "cabang g harus ada").toBeTruthy();
+    const reason = m![1];
+    expect(reason).toMatch(/Berat \/ unit \(g\)/);
+    expect(reason).not.toMatch(/pcs/);
+  });
+
+  it("ringkasan 'Siap dikirim' merender kedua prefix (pcs + g) di skenario campuran", () => {
+    // Ambil blok JSX ringkasan (dari kata "Siap dikirim:" sampai penutup
+    // `<span> ({summary.readyLines} baris)`) dan pastikan urutannya:
+    //   readyWeightG > 0  → "Berat / unit"
+    //   AND readyCountPcs → separator "·"
+    //   readyCountPcs > 0 → "Jumlah / isi"
+    const block = TUGAS.match(/Siap dikirim:[\s\S]*?readyLines\} baris\)/);
+    expect(block, "blok ringkasan 'Siap dikirim' harus ditemukan").toBeTruthy();
+    const src = block![0];
+
+    // Guard mixed: baik prefix "Berat / unit" maupun "Jumlah / isi" harus
+    // ada di blok yang sama (bukan cabang either/or) dan `·` dipakai
+    // sebagai pemisah saat keduanya > 0.
+    expect(src).toMatch(/readyWeightG > 0[\s\S]*?Berat \/ unit/);
+    expect(src).toMatch(/readyCountPcs > 0[\s\S]*?Jumlah \/ isi/);
+    expect(src).toMatch(/readyWeightG > 0 && summary\.readyCountPcs > 0[\s\S]*? · /);
+
+    // Urutan render: prefix "Berat / unit" muncul SEBELUM separator, dan
+    // "Jumlah / isi" muncul SETELAH separator — supaya di 411/390px kedua
+    // angka terbaca berdampingan, bukan bertumpuk atau saling menimpa.
+    const idxBerat = src.indexOf("Berat / unit");
+    const idxSep = src.indexOf(" · ");
+    const idxIsi = src.indexOf("Jumlah / isi");
+    expect(idxBerat).toBeGreaterThanOrEqual(0);
+    expect(idxSep).toBeGreaterThan(idxBerat);
+    expect(idxIsi).toBeGreaterThan(idxSep);
+  });
+
+  it("akumulator ringkasan memisahkan pcs vs g (readyCountPcs vs readyWeightG)", () => {
+    // Loop akumulator harus menaruh total pcs ke readyCountPcs dan total g
+    // ke readyWeightG — bukan sebaliknya. Regresi ini akan menyembunyikan
+    // prefix yang salah di UI meskipun copy-nya benar.
+    expect(TUGAS).toMatch(/if \(isPcs\) readyCountPcs \+= ev\.total;\s*else readyWeightG \+= ev\.total;/);
+  });
+});
