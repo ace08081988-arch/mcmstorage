@@ -388,6 +388,8 @@ function TugasPage() {
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
   const [catVariants, setCatVariants] = useState<CatVariant[]>([]);
+  // Slice 2: master kategori dari `warehouse_categories` (SSOT dengan Beranda).
+  const [masterCategories, setMasterCategories] = useState<string[]>([]);
   const [openCreate, setOpenCreate] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -422,7 +424,7 @@ function TugasPage() {
 
   async function load() {
     if (!uid) return;
-    const [{ data: t }, { data: w }, { data: v }, { data: cv }, { data: ti }, { data: sb }] = await Promise.all([
+    const [{ data: t }, { data: w }, { data: v }, { data: cv }, { data: ti }, { data: sb }, { data: mc }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("id,name,category,image_path,stock_base,base_unit,package_type,package_size").order("name"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -431,11 +433,17 @@ function TugasPage() {
       (supabase.from as any)("warehouse_category_variants").select("*").order("position"),
       supabase.from("prep_task_items").select("id,task_id"),
       supabase.from("prep_submissions").select("task_id,task_item_id,verification_status"),
+      supabase
+        .from("warehouse_categories")
+        .select("name, position")
+        .order("position", { ascending: true })
+        .order("name", { ascending: true }),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
     setVariants((v ?? []) as Variant[]);
     setCatVariants((cv ?? []) as CatVariant[]);
+    setMasterCategories(((mc ?? []) as { name: string }[]).map((r) => r.name));
     const itemsByTask: Record<string, number> = {};
     for (const row of (ti ?? []) as { task_id: string }[]) {
       itemsByTask[row.task_id] = (itemsByTask[row.task_id] ?? 0) + 1;
@@ -1019,6 +1027,9 @@ function TugasPage() {
         <VariantsHub
           warehouse={warehouse}
           catVariants={catVariants}
+          masterCategories={masterCategories}
+          uid={uid}
+          onCategoriesChanged={load}
           onPickCategory={(cat) => setManageCategoryFor(cat)}
           onClose={() => setOpenVariantsHub(false)}
         />
@@ -2726,16 +2737,43 @@ function CompleteTaskDialog({ busy, onClose, onConfirm }: { busy: boolean; onClo
 }
 
 // ---------- Variant manager ----------
-function VariantsHub({ warehouse, catVariants, onPickCategory, onClose }: { warehouse: WItem[]; catVariants: CatVariant[]; onPickCategory: (cat: string) => void; onClose: () => void }) {
+function VariantsHub({ warehouse, catVariants, masterCategories, uid, onCategoriesChanged, onPickCategory, onClose }: { warehouse: WItem[]; catVariants: CatVariant[]; masterCategories: string[]; uid: string | null; onCategoriesChanged: () => void | Promise<void>; onPickCategory: (cat: string) => void; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [newCat, setNewCat] = useState("");
   const categories = useMemo(() => {
     const set = new Set<string>();
+    for (const c of masterCategories) { const v = c.trim(); if (v) set.add(v); }
     for (const w of warehouse) { const c = (w.category ?? "").trim(); if (c) set.add(c); }
     for (const v of catVariants) { const c = v.category.trim(); if (c) set.add(c); }
     const s = q.toLowerCase().trim();
     return Array.from(set).filter((c) => !s || c.toLowerCase().includes(s)).sort();
-  }, [warehouse, catVariants, q]);
+  }, [warehouse, catVariants, masterCategories, q]);
+
+  async function createCategory(name: string) {
+    const v = name.trim();
+    if (!v) return;
+    if (categories.some((c) => c.toLowerCase() === v.toLowerCase())) {
+      // Sudah ada — langsung buka pengelola varian.
+      setNewCat("");
+      onPickCategory(v);
+      return;
+    }
+    if (!uid) {
+      toast.error("Harus login untuk membuat kategori");
+      return;
+    }
+    const { error } = await supabase
+      .from("warehouse_categories")
+      .insert({ user_id: uid, name: v, position: masterCategories.length });
+    if (error && (error as { code?: string }).code !== "23505") {
+      toast.error(error.message);
+      return;
+    }
+    setNewCat("");
+    await onCategoriesChanged();
+    onPickCategory(v);
+  }
+
   return (
     <Modal title="Kelola Varian per Kategori" onClose={onClose}>
       <p className="mb-2 text-ms-2xs text-muted-foreground">
@@ -2767,7 +2805,7 @@ function VariantsHub({ warehouse, catVariants, onPickCategory, onClose }: { ware
           <input value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="KRISTAL" className="h-9 w-full rounded border bg-background px-ms-2 text-ms-sm" />
         </label>
         <button
-          onClick={() => { const c = newCat.trim(); if (!c) return; setNewCat(""); onPickCategory(c); }}
+          onClick={() => { void createCategory(newCat); }}
           className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground">
           <Plus className="h-3.5 w-3.5" /> Atur
         </button>

@@ -467,16 +467,27 @@ function Index() {
       }
       const { data, error } = await supabase
         .from("user_storage")
-        .select("items, categories")
+        .select("items")
         .eq("user_id", uid)
         .maybeSingle();
       if (error) {
         notifyError(error, { prefix: "Gagal memuat data: " });
       } else {
         const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
-        const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
         skipNextSaveRef.current = true;
         setItems(loadedItems);
+      }
+      // Slice 2: kategori sekarang dibaca dari master `warehouse_categories`
+      // (SSOT dengan Gudang), bukan dari kolom JSON `user_storage.categories`.
+      const { data: catRows, error: catErr } = await supabase
+        .from("warehouse_categories")
+        .select("name, position")
+        .order("position", { ascending: true })
+        .order("name", { ascending: true });
+      if (catErr) {
+        notifyError(catErr, { prefix: "Gagal memuat kategori: " });
+      } else {
+        const loadedCats = (catRows ?? []).map((r) => r.name);
         setCategories(loadedCats);
         try {
           const saved = localStorage.getItem(ACTIVE_CAT_KEY);
@@ -500,14 +511,14 @@ function Index() {
       if (!uid || cancelled) return;
       const { error } = await supabase
         .from("user_storage")
-        .upsert({ user_id: uid, items: items as any, categories: categories as any });
+        .upsert({ user_id: uid, items: items as any });
       if (error && !cancelled) notifyError(error, { prefix: "Gagal menyimpan: " });
     }, 600);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [items, categories, hydrated]);
+  }, [items, hydrated]);
 
   useEffect(() => {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
@@ -588,11 +599,31 @@ function Index() {
     if (ok) setItems((arr) => arr.filter((i) => i.kategori !== activeCat));
   };
 
-  const addCategory = (name: string) => {
+  const addCategory = async (name: string) => {
     const v = name.trim();
     if (!v) return;
-    if (categories.includes(v)) {
+    // Case-insensitive dedupe (mirror unique index di DB).
+    if (categories.some((c) => c.toLowerCase() === v.toLowerCase())) {
       toast.error("Kategori sudah ada");
+      return;
+    }
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    if (!uid) {
+      toast.error("Harus login untuk membuat kategori");
+      return;
+    }
+    const nextPos = categories.length;
+    const { error } = await supabase
+      .from("warehouse_categories")
+      .insert({ user_id: uid, name: v, position: nextPos });
+    if (error) {
+      // Unique-violation → race dengan tab lain / Gudang.
+      if ((error as { code?: string }).code === "23505") {
+        toast.error("Kategori sudah ada");
+      } else {
+        notifyError(error, { prefix: "Gagal membuat kategori: " });
+      }
       return;
     }
     setCategories((c) => [...c, v]);
@@ -602,20 +633,33 @@ function Index() {
   };
 
   const deleteCategory = async (name: string) => {
-    if (categories.length <= 1) {
-      toast.error("Tidak bisa menghapus kategori terakhir. Buat kategori lain dulu.");
-      return;
-    }
     const ok = await confirm({
       title: `Hapus kategori "${name}"?`,
-      description: "Kategori beserta seluruh pesanannya akan dihapus.",
+      description:
+        "Kategori akan dihapus dari Beranda dan Gudang. Pesanan lama di kategori ini ikut dihapus dari Beranda.",
       confirmText: "Hapus",
       destructive: true,
     });
     if (!ok) return;
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    if (!uid) {
+      toast.error("Harus login untuk menghapus kategori");
+      return;
+    }
+    const { error } = await supabase
+      .from("warehouse_categories")
+      .delete()
+      .eq("user_id", uid)
+      .eq("name", name);
+    if (error) {
+      notifyError(error, { prefix: "Gagal menghapus kategori: " });
+      return;
+    }
     setCategories((c) => c.filter((x) => x !== name));
     setItems((arr) => arr.filter((i) => i.kategori !== name));
     if (activeCat === name) setActiveCat(null);
+    toast.success(`Kategori "${name}" dihapus`);
   };
 
   const addProduk = () => {
@@ -913,9 +957,8 @@ function Index() {
                       </button>
                       <button
                         onClick={() => deleteCategory(c)}
-                        disabled={categories.length <= 1}
-                        className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-30"
-                        title={categories.length <= 1 ? "Minimal harus ada 1 kategori" : `Hapus kategori ${c}`}
+                        className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
+                        title={`Hapus kategori ${c}`}
                         aria-label={`Hapus kategori ${c}`}
                       >
                         Hapus
