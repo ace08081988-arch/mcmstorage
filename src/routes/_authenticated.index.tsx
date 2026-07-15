@@ -1422,7 +1422,7 @@ function Index() {
               <div className="grid grid-cols-2 gap-ms-2.5">
                 {[
                   { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
-                  { to: "/kontak", label: "Pelanggan & Pemasok", emoji: "👥", desc: "Tautkan akun pengguna" },
+                  { to: "/kontak", label: "Pelanggan & Supplier", emoji: "👥", desc: "Tautkan akun pengguna" },
                   { to: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
                   { to: "/label-preview", label: "Pratinjau Label", emoji: "🏷️", desc: "Cetak label produk" },
                   { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
