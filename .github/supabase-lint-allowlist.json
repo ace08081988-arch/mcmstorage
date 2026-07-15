@@ -1,5 +1,6 @@
 {
   "$schema": "./supabase-lint-allowlist.schema.json",
+  "schemaVersion": 1,
   "_comment": "Intentional Supabase linter findings. Multiple entries per rule are supported so we can group functions by architectural role with an explicit justification for each bucket. Add a NEW entry (not a new function to an existing bucket) whenever you accept a finding for a new architectural reason. See docs/supabase-lint-allowlist.md for the taxonomy.",
   "allow": [
     {

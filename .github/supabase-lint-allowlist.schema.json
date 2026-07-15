@@ -4,10 +4,16 @@
   "title": "Supabase Lint Allowlist",
   "description": "Schema for .github/supabase-lint-allowlist.json. Every accepted Supabase linter finding must be grouped under an architectural category with a substantive justification. Mirrors the runtime checks in scripts/check-supabase-lints.mjs.",
   "type": "object",
-  "required": ["allow"],
+  "required": ["schemaVersion", "allow"],
   "additionalProperties": true,
   "properties": {
     "_comment": { "type": "string" },
+    "$schema": { "type": "string" },
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Allowlist schema version. Bump in lockstep with SUPPORTED_ALLOWLIST_SCHEMA_VERSION in scripts/check-supabase-lints.mjs when the shape of an entry changes in a backwards-incompatible way. The validator rejects any file whose schemaVersion does not match, so old checkouts fail loudly instead of silently accepting a stale format."
+    },
     "allow": {
       "type": "array",
       "minItems": 1,

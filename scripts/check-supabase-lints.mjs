@@ -23,6 +23,48 @@ const schemaPath = resolve(here, "..", ".github", "supabase-lint-allowlist.schem
 const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
 const allowlistSchema = JSON.parse(readFileSync(schemaPath, "utf8"));
 
+// ---------- Schema version compatibility ----------
+// The validator only accepts allowlist files whose `schemaVersion` matches
+// this constant. When a future change adds/renames/removes fields in a way
+// that old checkouts cannot understand, bump BOTH this constant AND the
+// `const` value under `schemaVersion` in the JSON Schema. That way an old
+// script running against a newer file (or vice-versa) fails loudly instead
+// of silently accepting a stale format. Additive, backwards-compatible
+// changes do NOT require a bump — extend the schema properties instead.
+const SUPPORTED_ALLOWLIST_SCHEMA_VERSION = 1;
+
+if (allowlist.schemaVersion !== SUPPORTED_ALLOWLIST_SCHEMA_VERSION) {
+  const got =
+    allowlist.schemaVersion === undefined
+      ? "missing (legacy pre-v1 file)"
+      : JSON.stringify(allowlist.schemaVersion);
+  console.error(
+    `\n❌ Allowlist schemaVersion mismatch: expected ${SUPPORTED_ALLOWLIST_SCHEMA_VERSION}, got ${got}.\n` +
+      `   File: .github/supabase-lint-allowlist.json\n` +
+      `   Either update the file to the current schema and set "schemaVersion": ${SUPPORTED_ALLOWLIST_SCHEMA_VERSION},\n` +
+      `   or update SUPPORTED_ALLOWLIST_SCHEMA_VERSION in scripts/check-supabase-lints.mjs\n` +
+      `   together with the JSON Schema's schemaVersion.const. See docs/supabase-lint-allowlist.md.`,
+  );
+  const summaryPathVer = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryPathVer) {
+    appendFileSync(
+      summaryPathVer,
+      [
+        "# Supabase Security Linter",
+        "",
+        "## ❌ Allowlist schemaVersion mismatch",
+        "",
+        `- Expected: \`${SUPPORTED_ALLOWLIST_SCHEMA_VERSION}\``,
+        `- Got: \`${got}\``,
+        "",
+        "Bump the allowlist to the current schema, or update `SUPPORTED_ALLOWLIST_SCHEMA_VERSION` in the checker.",
+        "",
+      ].join("\n") + "\n",
+    );
+  }
+  process.exit(1);
+}
+
 // ---------- Allowlist schema validation ----------
 // Two-phase validation:
 //   1. JSON Schema (Ajv) enforces the structural contract — required fields,
