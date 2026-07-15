@@ -186,7 +186,7 @@ function NavLinkItem({
     <Link
       to={item.url}
       preload="intent"
-      className="flex items-center gap-ms-2.5"
+      className="flex min-w-0 items-center gap-ms-2.5"
       onPointerDown={(e) => {
         if (!isMobile) return;
         if (e.pointerType === "mouse") return;
@@ -598,7 +598,7 @@ export function AppSidebar() {
                   onClick={() => setShowMore((v) => !v)}
                   aria-expanded={showMore}
                   aria-controls="mcm-sidebar-more"
-                  className="group/nav flex h-10 w-full items-center gap-ms-2.5 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/25 px-ms-2.5 text-ms-sm font-medium text-sidebar-foreground/90 transition-colors hover:border-primary/30 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  className="group/nav flex h-10 w-full min-w-0 items-center gap-ms-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/25 px-ms-2.5 text-ms-sm font-medium text-sidebar-foreground/90 transition-colors hover:border-primary/30 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 >
                   <span
                     aria-hidden
@@ -607,8 +607,8 @@ export function AppSidebar() {
                   >
                     <MoreHorizontal className="h-3.5 w-3.5 text-primary" />
                   </span>
-                  <span className="flex-1 truncate text-left tracking-[-0.005em]">Lainnya</span>
-                  <span className="text-ms-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+                  <span className="min-w-0 flex-1 truncate text-left tracking-[-0.005em]">Lainnya</span>
+                  <span className="shrink-0 text-ms-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
                     {showMore ? "Tutup" : "Buka"}
                   </span>
                   <ChevronDown
@@ -640,9 +640,9 @@ export function AppSidebar() {
                 ? `Tidak ada koneksi — badge mungkin tertinggal. ${lastSyncTitle}`
                 : lastSyncTitle
           }
-          className="flex items-center justify-between gap-ms-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-ms-2.5 py-1.5 text-ms-2xs font-medium backdrop-blur-sm"
+          className="flex min-w-0 items-center justify-between gap-ms-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-ms-2.5 py-1.5 text-ms-2xs font-medium backdrop-blur-sm"
         >
-          <span className="flex items-center gap-ms-2">
+          <span className="flex min-w-0 items-center gap-ms-2">
             <span className="relative inline-flex h-2 w-2 shrink-0">
               <span
                 className={
@@ -660,18 +660,18 @@ export function AppSidebar() {
             </span>
             <span
               className={
-                syncState === "online"
+                (syncState === "online"
                   ? "text-primary"
                   : syncState === "syncing"
                     ? "text-primary/85"
-                    : "text-destructive"
+                    : "text-destructive") + " truncate"
               }
             >
               {syncMeta.label}
             </span>
           </span>
-          <span className="flex items-center gap-ms-1.5">
-            <span className="text-muted-foreground">
+          <span className="flex shrink-0 items-center gap-ms-1.5">
+            <span className="truncate text-muted-foreground">
               {syncState === "syncing" ? "…" : lastSyncLabel}
             </span>
             <button
@@ -701,7 +701,7 @@ export function AppSidebar() {
         {!chatOnly && (
           <a
             href="/download#chat"
-            className="group/chat relative mt-1 flex items-center gap-ms-2.5 overflow-hidden rounded-xl px-ms-2.5 py-ms-2 text-ms-2xs font-medium text-foreground transition-all hover:translate-y-[-1px]"
+            className="group/chat relative mt-1 flex min-w-0 items-center gap-ms-2.5 overflow-hidden rounded-xl px-ms-2.5 py-ms-2 text-ms-2xs font-medium text-foreground transition-all hover:translate-y-[-1px]"
             style={{
               background:
                 "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent), color-mix(in oklab, var(--primary) 6%, transparent))",
@@ -719,11 +719,11 @@ export function AppSidebar() {
             >
               <MessageCircle className="h-3.5 w-3.5" />
             </span>
-            <span className="flex-1 leading-tight">
+            <span className="min-w-0 flex-1 leading-tight">
               Coba <b className="tracking-tight">MCM Chat</b>
-              <span className="mt-0.5 block text-ms-2xs font-normal text-muted-foreground">APK khusus chat · akun sama</span>
+              <span className="mt-0.5 block truncate text-ms-2xs font-normal text-muted-foreground">APK khusus chat · akun sama</span>
             </span>
-            <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-primary/70 transition-transform group-hover/chat:translate-x-0.5" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 -rotate-90 text-primary/70 transition-transform group-hover/chat:translate-x-0.5" />
           </a>
         )}
       </SidebarFooter>
