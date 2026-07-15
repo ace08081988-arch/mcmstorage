@@ -234,4 +234,131 @@ BEGIN
   RAISE NOTICE 'PASS every authenticated SECURITY DEFINER RPC is auth.uid()-scoped or on the helper allow-list';
 END $$;
 
+-- =====================================================================
+-- 9) has_role() gate coverage.
+--    Every SECURITY DEFINER RPC that references has_role(*, 'admin')
+--    in its body MUST reject a caller that does not hold that role.
+--    Rejection = either RAISE (any SQLSTATE) OR a jsonb return with
+--    ok=false / error='forbidden'. See docs/security-definer-inventory.md.
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid := current_setting('test.user_a')::uuid;
+  -- (rpc_signature, sql_to_call, mode)
+  --   mode = 'raise'   → function must throw
+  --   mode = 'jsonb'   → function must return jsonb with ok=false / error='forbidden'
+  --   mode = 'either'  → either raise OR return ok=false/error='forbidden'
+  v_cases text[][] := ARRAY[
+    -- signature                                                    call SQL                                                                                            mode
+    ARRAY['admin_approve_payment(uuid,text)',                       $q$SELECT public.admin_approve_payment(gen_random_uuid(), 'x')$q$,                                  'raise'],
+    ARRAY['admin_reject_payment(uuid,text)',                        $q$SELECT public.admin_reject_payment(gen_random_uuid(), 'x')$q$,                                   'raise'],
+    ARRAY['admin_list_users(text,int)',                             $q$SELECT public.admin_list_users(NULL, 1)$q$,                                                     'raise'],
+    ARRAY['admin_set_admin_role(uuid,boolean)',                     $q$SELECT public.admin_set_admin_role(gen_random_uuid(), true)$q$,                                  'raise'],
+    ARRAY['prep_share_token_exists(text)',                          $q$SELECT public.prep_share_token_exists('does-not-matter-xxxxxxxx')$q$,                            'raise'],
+    ARRAY['prep_submission_verify(uuid,text,text)',                 $q$SELECT public.prep_submission_verify(gen_random_uuid(), 'approved', NULL)$q$,                    'raise'],
+    ARRAY['prep_pin_reset(text)',                                   $q$SELECT public.prep_pin_reset('nonexistent-token-authz')$q$,                                      'jsonb'],
+    ARRAY['run_internal_security_scan()',                           $q$SELECT public.run_internal_security_scan()$q$,                                                   'raise'],
+    ARRAY['security_findings_acknowledge(uuid[])',                  $q$SELECT public.security_findings_acknowledge(ARRAY[gen_random_uuid()]::uuid[])$q$,                'raise']
+  ];
+  v_sig text; v_sql text; v_mode text;
+  v_i int;
+  v_result jsonb;
+  v_ok boolean;
+  v_err text;
+BEGIN
+  -- Pre-flight: user A must NOT hold admin, otherwise the whole block is meaningless.
+  IF public.has_role(v_a, 'admin') THEN
+    RAISE EXCEPTION 'FAIL cannot run has_role gate coverage: test user A already has admin role';
+  END IF;
+
+  PERFORM pg_temp.as_user(v_a);
+
+  FOR v_i IN 1 .. array_length(v_cases, 1) LOOP
+    v_sig  := v_cases[v_i][1];
+    v_sql  := v_cases[v_i][2];
+    v_mode := v_cases[v_i][3];
+    v_ok   := false;
+    v_err  := NULL;
+    v_result := NULL;
+
+    BEGIN
+      IF v_mode = 'jsonb' OR v_mode = 'either' THEN
+        EXECUTE 'SELECT (' || v_sql || ')::jsonb' INTO v_result;
+      ELSE
+        EXECUTE v_sql;
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      v_err := SQLERRM;
+      -- 'raise' and 'either' modes are happy with any exception; 'jsonb'
+      -- mode wants a structured response, but a RAISE 'forbidden'/'unauthenticated'
+      -- is an equally valid rejection.
+      IF v_mode = 'jsonb' AND v_err !~* '(forbidden|unauthenticated|permission denied)' THEN
+        RAISE EXCEPTION 'FAIL % raised unrelated error under non-admin caller: %', v_sig, v_err;
+      END IF;
+      v_ok := true;
+    END;
+
+    IF NOT v_ok THEN
+      IF v_mode = 'raise' THEN
+        RAISE EXCEPTION 'FAIL % did NOT raise under non-admin caller (returned silently)', v_sig;
+      END IF;
+      -- jsonb / either: inspect the return payload
+      IF v_result IS NULL THEN
+        RAISE EXCEPTION 'FAIL % returned NULL under non-admin caller (expected forbidden)', v_sig;
+      END IF;
+      IF (v_result->>'ok') IS DISTINCT FROM 'false'
+         OR (v_result->>'error') NOT IN ('forbidden','unauthenticated') THEN
+        RAISE EXCEPTION 'FAIL % returned % under non-admin caller (expected ok=false,error=forbidden)', v_sig, v_result;
+      END IF;
+    END IF;
+
+    RAISE NOTICE 'PASS has_role gate rejects non-admin for %', v_sig;
+  END LOOP;
+END $$;
+
+-- =====================================================================
+-- 10) Static drift check: every SECURITY DEFINER function whose body
+--     references has_role(*, 'admin') MUST be covered by block 9 above.
+--     If a new admin-only RPC is added and this list is not updated,
+--     the suite fails so the author is forced to write a test case.
+-- =====================================================================
+DO $$
+DECLARE
+  r record;
+  -- Keep this list in sync with block 9's v_cases signatures (proname only).
+  v_covered text[] := ARRAY[
+    'admin_approve_payment',
+    'admin_reject_payment',
+    'admin_list_users',
+    'admin_set_admin_role',
+    'prep_share_token_exists',
+    'prep_submission_verify',
+    'prep_pin_reset',
+    'run_internal_security_scan',
+    'security_findings_acknowledge'
+  ];
+  v_missing text[] := ARRAY[]::text[];
+  v_src text;
+BEGIN
+  FOR r IN
+    SELECT p.oid, p.proname
+      FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public' AND p.prosecdef
+  LOOP
+    v_src := pg_get_functiondef(r.oid);
+    -- Match "has_role(<anything>, 'admin')" — same pattern the RPCs actually use.
+    -- Also catches "has_role(auth.uid(), 'admin'::public.app_role)".
+    IF v_src ~* 'has_role\s*\([^)]*''admin''' THEN
+      IF NOT (r.proname = ANY (v_covered)) THEN
+        v_missing := array_append(v_missing, r.proname);
+      END IF;
+    END IF;
+  END LOOP;
+
+  IF array_length(v_missing, 1) IS NOT NULL THEN
+    RAISE EXCEPTION $err$FAIL has_role gate coverage drift: the following SECURITY DEFINER RPCs check has_role('admin') but are NOT in block 9's tested list — add them to v_cases and v_covered: %$err$, v_missing;
+  END IF;
+  RAISE NOTICE 'PASS has_role gate coverage list is in sync with pg_proc';
+END $$;
+
 ROLLBACK;
