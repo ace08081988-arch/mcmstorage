@@ -701,7 +701,7 @@ export function AppSidebar() {
         {!chatOnly && (
           <a
             href="/download#chat"
-            className="group/chat relative mt-1 flex items-center gap-ms-2.5 overflow-hidden rounded-xl px-ms-2.5 py-ms-2 text-ms-2xs font-medium text-foreground transition-all hover:translate-y-[-1px]"
+            className="group/chat relative mt-1 flex min-w-0 items-center gap-ms-2.5 overflow-hidden rounded-xl px-ms-2.5 py-ms-2 text-ms-2xs font-medium text-foreground transition-all hover:translate-y-[-1px]"
             style={{
               background:
                 "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent), color-mix(in oklab, var(--primary) 6%, transparent))",
@@ -719,11 +719,11 @@ export function AppSidebar() {
             >
               <MessageCircle className="h-3.5 w-3.5" />
             </span>
-            <span className="flex-1 leading-tight">
+            <span className="min-w-0 flex-1 leading-tight">
               Coba <b className="tracking-tight">MCM Chat</b>
-              <span className="mt-0.5 block text-ms-2xs font-normal text-muted-foreground">APK khusus chat · akun sama</span>
+              <span className="mt-0.5 block truncate text-ms-2xs font-normal text-muted-foreground">APK khusus chat · akun sama</span>
             </span>
-            <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-primary/70 transition-transform group-hover/chat:translate-x-0.5" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 -rotate-90 text-primary/70 transition-transform group-hover/chat:translate-x-0.5" />
           </a>
         )}
       </SidebarFooter>
