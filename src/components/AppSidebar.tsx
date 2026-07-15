@@ -468,10 +468,29 @@ export function AppSidebar() {
     ? `Terakhir sinkron: ${new Date(lastSyncAt).toLocaleString()}`
     : "Belum ada sinkronisasi";
   const syncMeta = {
-    offline: { label: "Offline", Icon: WifiOff, cls: "bg-destructive/15 text-destructive border-destructive/30" },
-    syncing: { label: "Menyinkronkan", Icon: RefreshCw, cls: "bg-primary/10 text-primary border-primary/25" },
-    online:  { label: "Online", Icon: Wifi, cls: "bg-primary/12 text-primary border-primary/25" },
+    offline: {
+      label: "Offline",
+      Icon: WifiOff,
+      tone: "text-destructive",
+      dot: "bg-destructive",
+      chip: "border-destructive/25 bg-destructive/10 text-destructive",
+    },
+    syncing: {
+      label: "Menyinkronkan",
+      Icon: RefreshCw,
+      tone: "text-primary",
+      dot: "bg-primary/85",
+      chip: "border-primary/25 bg-primary/10 text-primary",
+    },
+    online: {
+      label: "Online",
+      Icon: Wifi,
+      tone: "text-success",
+      dot: "bg-success",
+      chip: "border-success/25 bg-success/10 text-success",
+    },
   }[syncState];
+  const SyncIcon = syncMeta.Icon;
   const chatCounts = (() => {
     const list = conversations ?? [];
     let unread = 0;
@@ -640,38 +659,43 @@ export function AppSidebar() {
                 ? `Tidak ada koneksi — badge mungkin tertinggal. ${lastSyncTitle}`
                 : lastSyncTitle
           }
-          className="flex min-w-0 items-center justify-between gap-ms-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-ms-2.5 py-1.5 text-ms-2xs font-medium backdrop-blur-sm"
+          data-sync-state={syncState}
+          className="group/sync flex min-w-0 items-center justify-between gap-ms-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-ms-2.5 py-1.5 text-ms-2xs font-medium backdrop-blur-sm transition-colors duration-300"
         >
           <span className="flex min-w-0 items-center gap-ms-2">
-            <span className="relative inline-flex h-2 w-2 shrink-0">
+            <span
+              aria-hidden
+              className={
+                "relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 " +
+                syncMeta.chip
+              }
+            >
+              <SyncIcon
+                className={
+                  "h-3 w-3 transition-transform duration-300 " +
+                  (syncState === "syncing" ? "animate-spin" : "")
+                }
+              />
               <span
                 className={
-                  "absolute inset-0 rounded-full " +
-                  (syncState === "online"
-                    ? "bg-primary shadow-[0_0_8px_1px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-                    : syncState === "syncing"
-                      ? "bg-primary/80 animate-pulse"
-                      : "bg-destructive")
+                  "absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full ring-2 ring-sidebar transition-colors duration-300 " +
+                  syncMeta.dot
                 }
               />
               {syncState === "online" ? (
-                <span className="absolute inset-0 animate-ping rounded-full bg-primary/50" />
+                <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 animate-ping rounded-full bg-success/60" />
               ) : null}
             </span>
             <span
               className={
-                (syncState === "online"
-                  ? "text-primary"
-                  : syncState === "syncing"
-                    ? "text-primary/85"
-                    : "text-destructive") + " truncate"
+                "truncate transition-colors duration-300 " + syncMeta.tone
               }
             >
               {syncMeta.label}
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-ms-1.5">
-            <span className="truncate text-muted-foreground">
+            <span className="truncate tabular-nums text-muted-foreground">
               {syncState === "syncing" ? "…" : lastSyncLabel}
             </span>
             <button
@@ -688,7 +712,7 @@ export function AppSidebar() {
                     : "Sinkronkan ulang percakapan"
               }
               aria-label="Sinkronkan ulang percakapan"
-              className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-sidebar-border/60 bg-background/40 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-background/70 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-md border border-sidebar-border/60 bg-background/40 text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-background/70 hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw className={`h-3 w-3 ${syncState === "syncing" ? "animate-spin" : ""}`} />
             </button>
