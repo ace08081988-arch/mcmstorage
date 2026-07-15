@@ -403,7 +403,12 @@ function RootComponent() {
       <ChatModeSplash />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <Toaster richColors position="top-center" />
+      <Toaster
+        richColors
+        position="top-center"
+        mobileOffset={{ top: 12, left: 12, right: 12, bottom: 12 }}
+        toastOptions={{ style: { maxWidth: "calc(100vw - 24px)" } }}
+      />
       <ConfirmHost />
       <Suspense fallback={null}>
         <WhatsAppTargetHostLazy />
