@@ -46,6 +46,14 @@ function unitOf(t: { unitLabel?: string | null }): string {
   const u = (t.unitLabel ?? "").trim();
   return u || "kg";
 }
+// Item dengan `base_unit === "pcs"` (botol, karton, pack, unit) tidak
+// pernah dijual pecahan — input, step & pembulatan mengikuti bilangan
+// bulat. Kesalahan input (mis. 1.5 botol) akan otomatis di-floor saat
+// disimpan supaya stok/sisa tetap konsisten dengan `Jumlah/pcs`.
+function isDiscreteUnit(unitLabel: string | null | undefined): boolean {
+  const u = (unitLabel ?? "").trim().toLowerCase();
+  return u === "pcs" || u === "botol" || u === "karton" || u === "pack" || u === "unit";
+}
 const MODE_RINGKAS_KEY = "mcm-pos-kasir-mode-ringkas";
 const URUTAN_KEY = "mcm-pos-kasir-urutan";
 
@@ -233,8 +241,11 @@ function PosKasirPage() {
   const selected = produk.find((p) => p.id === selectedId) ?? produk[0];
   const berat = useMemo(() => {
     const n = parseFloat(beratStr.replace(",", "."));
-    return Number.isFinite(n) && n >= 0 ? n : 0;
-  }, [beratStr]);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    // Item pcs/botol/karton dijual bulat — floor supaya stok & sisa
+    // ikut hitungan `Jumlah/pcs`, bukan pecahan berat.
+    return isDiscreteUnit(selected?.unitLabel) ? Math.floor(n) : n;
+  }, [beratStr, selected?.unitLabel]);
   const hargaInput = useMemo(() => {
     const n = parseFloat(hargaStr.replace(",", "."));
     return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -249,6 +260,9 @@ function PosKasirPage() {
   const bayarSiap = stokCukup && hargaCukup && !bayarBusy;
   const quickAdds = useMemo(() => quickAddsFor(selected.unitLabel), [selected.unitLabel]);
   const unit = selected.unitLabel;
+  const isPcs = isDiscreteUnit(selected.unitLabel);
+  const inputStep = isPcs ? "1" : "0.001";
+  const inputPlaceholder = isPcs ? "0" : "0.000";
 
   // Sinkronisasi produk dengan gudang saat user login.
   const refreshGudang = async (opts?: { silent?: boolean }) => {
@@ -558,10 +572,15 @@ function PosKasirPage() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const displayBerat = berat.toFixed(3).padStart(9, " ");
+  // Tampilan LCD-style: pcs dibulatkan (5 digit) supaya tidak ada
+  // ",000" palsu; berat kg/gram tetap 3 desimal.
+  const displayBerat = isPcs
+    ? Math.floor(berat).toString().padStart(5, " ")
+    : berat.toFixed(3).padStart(9, " ");
 
   const addBerat = (delta: number) => {
-    const next = Math.max(0, +(berat + delta).toFixed(3));
+    const raw = berat + delta;
+    const next = isPcs ? Math.max(0, Math.floor(raw)) : Math.max(0, +raw.toFixed(3));
     setBeratStr(String(next));
   };
 
@@ -688,7 +707,7 @@ function PosKasirPage() {
                   <div className="text-left min-w-0">
                     <div className="font-medium truncate max-w-[80px]">{p.nama}</div>
                     <div className={`font-mono ${level === "aman" ? "text-slate-400" : meta.text}`}>
-                      {p.stokKg.toLocaleString("id-ID")} kg
+                      {p.stokKg.toLocaleString("id-ID")} {unitOf(p)}
                     </div>
                   </div>
                   {level !== "aman" && (
@@ -706,12 +725,12 @@ function PosKasirPage() {
           <div className={`mt-2 flex flex-col gap-ms-1 ${modeRingkas ? "hidden" : ""}`}>
             {produkKritis.length > 0 && (
               <div className="text-ms-2xs text-rose-300">
-                🚨 Stok kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                🚨 Stok kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg} ${unitOf(p)})`).join(", ")}
               </div>
             )}
             {produkMenipis.length > 0 && (
               <div className="text-ms-2xs text-warning">
-                ⚠ Stok menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                ⚠ Stok menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg} ${unitOf(p)})`).join(", ")}
               </div>
             )}
             {produkHabis.length > 0 && (
@@ -732,7 +751,7 @@ function PosKasirPage() {
                 }}
                 className="w-16 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-0.5 text-ms-xs text-slate-100 focus:outline-none focus:border-success"
               />
-              kg
+              unit
             </label>
           </div>
         </section>
@@ -759,19 +778,19 @@ function PosKasirPage() {
                     }}
                     className="w-20 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-1 text-ms-xs text-slate-100 focus:outline-none focus:border-success"
                   />
-                  kg
+                  unit
                 </label>
               </div>
               {(produkKritis.length > 0 || produkMenipis.length > 0 || produkHabis.length > 0) && (
                 <div className="mb-3 flex flex-col gap-ms-1 text-ms-xs">
                   {produkKritis.length > 0 && (
                     <div className="text-rose-300">
-                      🚨 Kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                      🚨 Kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg} ${unitOf(p)})`).join(", ")}
                     </div>
                   )}
                   {produkMenipis.length > 0 && (
                     <div className="text-warning">
-                      ⚠ Menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                      ⚠ Menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg} ${unitOf(p)})`).join(", ")}
                     </div>
                   )}
                   {produkHabis.length > 0 && (
@@ -800,9 +819,9 @@ function PosKasirPage() {
                     >
                       <div className="text-ms-3xl mb-2">{p.emoji}</div>
                       <div className="font-semibold text-ms-sm">{p.nama}</div>
-                      <div className="text-ms-xs text-slate-400 mt-1">{rupiah(p.hargaPerKg)}/kg</div>
+                      <div className="text-ms-xs text-slate-400 mt-1">{rupiah(p.hargaPerKg)}/{unitOf(p)}</div>
                       <div className={`text-ms-xs mt-2 ${meta.text}`}>
-                        Stok: {p.stokKg.toLocaleString("id-ID")} kg
+                        Stok: {p.stokKg.toLocaleString("id-ID")} {unitOf(p)}
                       </div>
                       {level !== "aman" && (
                         <span
@@ -847,7 +866,7 @@ function PosKasirPage() {
                 <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">Input Jumlah ({unit})</label>
                 <input
                   type="number"
-                  step="0.001"
+                  step={inputStep}
                   min="0"
                   max={selected.stokKg}
                   value={beratStr}
@@ -857,7 +876,7 @@ function PosKasirPage() {
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
                       : "border-slate-700 focus:border-success focus:ring-success/30"
                   } ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
-                  placeholder="0.000"
+                  placeholder={inputPlaceholder}
                 />
                 {berat > selected.stokKg && (
                   <div className={`flex items-start gap-ms-2 rounded-lg bg-red-500/15 border border-red-500/40 text-ms-xs text-red-200 ${modeRingkas ? "mt-1 p-ms-1.5" : "mt-2 p-ms-2"}`}>
@@ -966,7 +985,7 @@ function PosKasirPage() {
                 </label>
                 <input
                   type="number"
-                  step="0.001"
+                  step={inputStep}
                   min="0"
                   max={selected.stokKg}
                   value={beratStr}
@@ -976,25 +995,25 @@ function PosKasirPage() {
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
                       : "border-slate-700 focus:border-success focus:ring-success/30"
                   }`}
-                  placeholder="0.000"
+                  placeholder={inputPlaceholder}
                 />
-                {berat > selected.stokKg && (
-                  <div className="mt-3 flex items-start gap-ms-2 rounded-lg bg-red-500/15 border border-red-500/40 p-ms-3 text-ms-sm text-red-200">
-                    <span className="shrink-0 text-red-400">⚠</span>
-                    <div>
-                      <p className="font-semibold">Berat melebihi stok</p>
-                      <p className="text-ms-xs text-red-300/80 mt-0.5">
-                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} {unit}.
-                      </p>
-                      <p className="text-ms-xs text-red-300/80 mt-0.5">
-                        Kurangi berat agar tidak melebihi stok yang ada.
-                      </p>
-                    </div>
-                  </div>
-                )}
+                 {berat > selected.stokKg && (
+                   <div className="mt-3 flex items-start gap-ms-2 rounded-lg bg-red-500/15 border border-red-500/40 p-ms-3 text-ms-sm text-red-200">
+                     <span className="shrink-0 text-red-400">⚠</span>
+                     <div>
+                       <p className="font-semibold">Jumlah melebihi stok</p>
+                       <p className="text-ms-xs text-red-300/80 mt-0.5">
+                         Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} {unit}.
+                       </p>
+                       <p className="text-ms-xs text-red-300/80 mt-0.5">
+                         Kurangi jumlah agar tidak melebihi stok yang ada.
+                       </p>
+                     </div>
+                   </div>
+                 )}
 
-                <div className="mt-3 grid grid-cols-4 gap-ms-2">
-                  {[0.25, 0.5, 1, 2].map((v) => {
+                 <div className="mt-3 grid grid-cols-4 gap-ms-2">
+                   {quickAdds.slice(0, 4).map((v) => {
                     const wouldExceed = berat + v > selected.stokKg;
                     return (
                       <button
