@@ -1027,6 +1027,9 @@ function TugasPage() {
         <VariantsHub
           warehouse={warehouse}
           catVariants={catVariants}
+          masterCategories={masterCategories}
+          uid={uid}
+          onCategoriesChanged={load}
           onPickCategory={(cat) => setManageCategoryFor(cat)}
           onClose={() => setOpenVariantsHub(false)}
         />
