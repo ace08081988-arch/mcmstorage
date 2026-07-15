@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { MessageCircle, Phone, Bell, LayoutGrid } from "lucide-react";
 import { useMemo } from "react";
 import { useUnreadStatus } from "@/lib/chat";
+import { cn } from "@/lib/utils";
 
 type Item = {
   to: "/chat" | "/panggilan" | "/pembaruan" | "/fitur";
@@ -14,6 +15,10 @@ type Item = {
 /**
  * Bottom navigation ala WhatsApp untuk area chat.
  * Chat / Panggilan / Pembaruan / Fitur — sticky di bawah, hormati safe-area iOS.
+ *
+ * Layout pakai grid 4 kolom sama rata supaya label panjang seperti
+ * "Panggilan" dan "Pembaruan" tidak saling tumpang tindih di 390/411px.
+ * Setiap label di-truncate dan setiap tab memiliki min tap target 44px.
  */
 export function ChatBottomNav() {
   const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
@@ -36,12 +41,29 @@ export function ChatBottomNav() {
     return match?.to;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
+
+  const activeIndex = activeTo ? items.findIndex((it) => it.to === activeTo) : -1;
+
   return (
     <nav
       aria-label="Navigasi utama chat"
-      className="sticky bottom-0 z-20 mt-auto flex shrink-0 items-stretch justify-around border-t bg-background/95 backdrop-blur px-1 pt-1"
+      className="relative sticky bottom-0 z-20 mt-auto grid shrink-0 grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)" }}
     >
+      {/* Indikator aktif — pill halus yang meluncur di bawah ikon aktif. */}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute bottom-1 left-0 h-1 rounded-full transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          activeIndex >= 0 ? "opacity-100" : "opacity-0",
+        )}
+        style={{
+          width: "25%",
+          transform: `translateX(calc(${Math.max(activeIndex, 0)} * 100%))`,
+          background:
+            "linear-gradient(90deg, color-mix(in oklab, var(--wa-green) 70%, transparent), color-mix(in oklab, var(--wa-green) 40%, transparent))",
+        }}
+      />
       {items.map(({ to, label, Icon, badge, badgeLoading }) => {
         const active = activeTo === to;
         return (
@@ -56,36 +78,41 @@ export function ChatBottomNav() {
                   ? `${label}, ${badge} belum dibaca`
                   : label
             }
-            className={
-              "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-ms-2 py-1.5 text-ms-2xs leading-snug transition-colors duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
-              (active
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground")
-            }
+            className={cn(
+              "group/tab relative flex min-h-[var(--ms-tap)] flex-col items-center justify-center gap-0.5 px-1 py-1 outline-none transition-colors duration-200",
+              "focus-visible:ring-2 focus-visible:ring-[var(--wa-green)]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--wa-header)]",
+              active ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
+            )}
           >
             <span
               aria-hidden="true"
-              className={
-                "grid h-7 w-14 place-items-center rounded-full transition-[background-color,transform] duration-300 ease-out " +
-                (active ? "bg-primary/15 scale-100" : "bg-transparent scale-95")
-              }
+              className={cn(
+                "relative grid h-7 w-12 place-items-center rounded-full transition-[background-color,transform] duration-200",
+                active ? "bg-[var(--wa-green)]/15 scale-100" : "bg-transparent scale-95 group-hover/tab:scale-100",
+              )}
             >
               <Icon className="h-5 w-5" />
               {badgeLoading ? (
                 <span
                   aria-hidden="true"
-                  className="absolute right-[calc(50%-1.75rem)] top-0.5 block h-4 min-w-[16px] animate-pulse rounded-full bg-muted/70 ring-2 ring-background motion-reduce:animate-none"
+                  className="absolute -right-0.5 -top-0.5 block h-4 min-w-[16px] animate-pulse rounded-full bg-[var(--wa-text-muted)]/40 ring-2 ring-[var(--wa-header)] motion-reduce:animate-none"
                 />
               ) : badge && badge > 0 ? (
                 <span
-                  className="absolute right-[calc(50%-1.75rem)] top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-ms-2xs font-semibold text-white"
+                  className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-ms-2xs font-semibold text-white ring-2 ring-[var(--wa-header)]"
                   aria-hidden="true"
                 >
                   {badge > 99 ? "99+" : badge}
                 </span>
               ) : null}
             </span>
-            <span aria-hidden="true" className={active ? "font-semibold" : ""}>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "w-full min-w-0 truncate text-center text-ms-2xs leading-tight",
+                active ? "font-semibold" : "font-normal",
+              )}
+            >
               {label}
             </span>
           </Link>
