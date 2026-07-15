@@ -1,88 +1,37 @@
-# Rename Kategori + E2E Konsistensi Beranda ↔ Gudang
+Kerjakan bertahap, per slice minta approval sebelum lanjut. Fokus hasil: cepat dimuat, konsisten di 390/411, logika tanpa jebakan overwrite/race.
 
-## 1. Fitur rename (prasyarat E2E)
+## Slice 1 — Performa fondasi (quick wins, low risk)
+1. Audit bundle: jalankan `vite build` dan lihat chunk terbesar (rute + vendor).
+2. `src/routes/__root.tsx` — pastikan `<BuildVersionBadge />` dan komponen non-kritis lain **tidak** dieksekusi saat SSR bila menyentuh `window`. Bungkus dengan lazy import + `<Suspense>` sehingga tidak masuk critical bundle.
+3. Route berat (`_authenticated.index.tsx` 2285 baris, `_authenticated.gudang.tsx`, `chat.$conversationId.tsx`) — jangan `export` fungsi komponen dari file rute (memblok automatic code splitting TanStack). Perbaiki yang menyimpang.
+4. Angkat dialog/dropdown besar (ProductEditDrawer, PhotoEditor, PickChatConversationDialog, QrScanner) jadi `React.lazy` + `<Suspense fallback={null}>` — hanya di-load saat dibuka.
+5. QueryClient defaults: naikkan `staleTime` default ke 30 dtk untuk daftar berat, matikan `refetchOnWindowFocus` global (opt-in per query). Kurangi jumlah refetch saat balik ke tab.
+6. Ganti listener realtime yang selalu invalidate → debounce 300–500ms + invalidate satu query key, bukan multiple.
+7. Hapus dependency yang tak dipakai dari `package.json` (audit cepat via `depcheck`), tanpa mengganggu skrip Android.
 
-Tambahkan rename di baris kategori Beranda, dieksekusi lewat satu **server function** supaya update dua tabel atomik dan aman terhadap RLS.
+**Deliverable:** angka before/after — total JS transferred untuk `/` mobile, waktu TTI di preview, size chunk terbesar. Belum menyentuh visual.
 
-**Server fn baru** `src/lib/warehouse.functions.ts` — `renameCategory({ oldName, newName })`, pakai `requireSupabaseAuth`:
+## Slice 2 — Konsistensi mobile 390/411
+1. Terapkan `PageContainer` + `PageHeader` (yang sudah ada di `src/components/shell/`) ke semua halaman aplikasi utama: Beranda, Gudang, Ecer, Request, Tugas, Chat list, Catatan, Buku Alamat. Hilangkan header ad-hoc.
+2. Audit tiap baris campuran teks + badge/angka mengikuti `docs/responsive-layout-rules.md`: `min-w-0` di container teks, `shrink-0` di badge, `tabular-nums` untuk angka.
+3. Tinggi bottom-nav + safe-area diselaraskan; padding bawah `PageContainer` tambah `pb-[calc(env(safe-area-inset-bottom)+72px)]` di mobile agar konten tidak ketutup nav.
+4. Snapshot visual di 320/360/390/411/480 untuk halaman yang disentuh — masuk ke `tests/visual/`.
 
-```text
-1. Normalisasi newName (trim, kolaps spasi). Tolak string kosong.
-2. Cek duplikat case-insensitive di warehouse_categories
-   (lower(btrim(name)) = lower(btrim(newName)) AND name <> oldName)
-   → error "Nama kategori sudah dipakai".
-3. UPDATE warehouse_categories SET name = newName WHERE user_id = uid AND name = oldName.
-4. UPDATE warehouse_items   SET category = newName WHERE user_id = uid AND category ILIKE oldName.
-5. Kembalikan { renamedItems: number }.
-```
+**Deliverable:** semua halaman utama pakai shell yang sama, tidak ada wrap/overflow di 411, tap target ≥ 44px.
 
-**UI Beranda** (`_authenticated.index.tsx`):
-- Baris kategori dapat tombol pensil (icon-only, tidak mengganggu drag handle & tombol hapus).
-- Klik → dialog input pre-filled + tombol Simpan; loading state saat pending; toast sukses ("N produk ikut di-rename") / error.
-- Rename yang case-only (mis. `kristal` → `Kristal`) diperbolehkan — bandingkan dengan `lower(btrim(...))` terhadap kategori lain, bukan diri sendiri.
+## Slice 3 — Logika (race, invariant, realtime)
+1. Perbaikan reorder Beranda: pastikan `updated_at` guard (dari slice sebelumnya) juga dipatuhi oleh mutasi lain (edit judul, hide). Tambah test integrasi konflik dua-tab.
+2. Send-confirmation contract: audit Ecer / Request / Paket / Beranda bulk — semua path harus lewat RPC record-before-send yang sama (`create_sale_then_send`, dst.). Turunkan cabang forked ke satu helper `useConfirmedSend`.
+3. Payment invariant: verifikasi tidak ada default silent `Lunas`; unit tests untuk enum guard.
+4. Realtime debounce di slice 1 direview ulang agar tidak menutupi update yang seharusnya instan (mis. pesan chat baru — tetap instan, bukan debounce).
 
-Beranda & Gudang auto-refresh via realtime yang sudah ada.
+**Deliverable:** satu helper terpakai di 4 surface, test race dua-tab hijau, tidak ada regression di CI existing.
 
-## 2. Test: Vitest integration (`tests/integration/warehouse-categories.test.ts`)
+---
 
-Runner sudah tersedia (`bunx vitest run`). Test fokus pada **kontrak data**, tidak render:
+### Cara kerja per slice
+- Selesai slice → laporkan diff + angka + screenshot 411px.
+- Anda approve on-device → lanjut slice berikutnya.
+- Kalau mid-slice ada temuan Cloud compute (RLS lambat, dsb.), saya flag terpisah — tidak dicampur ke slice UI.
 
-- **rename case-insensitive collision**: seed `kristal` + `Batu`. Panggil `renameCategory({ oldName: 'Batu', newName: 'KRISTAL' })` → throws "sudah dipakai". Row tidak berubah.
-- **rename case-only allowed**: seed `kristal`. Rename → `Kristal`. Row ter-update.
-- **rename cascades to items**: seed kategori `kristal` + 2 warehouse_items dengan category `Kristal` & `kristal`. Rename → `Kristal Premium`. Kedua items ikut ter-update (ILIKE match).
-- **delete blocked when used**: seed kategori + 1 item memakai. `deleteCategory` (query yang sama dengan Beranda) → error, kategori masih ada.
-- **delete allowed when unused**: hapus setelah rename item ke kategori lain → sukses.
-- **add duplicate case-insensitive**: seed `kristal`, INSERT `KRISTAL` → error unique index.
-- **position persists**: insert 3 kategori pos 0/1/2, tukar 0↔2 via UPDATE, SELECT ordered by position → urutan baru.
-
-Setup pakai supabase service-role client via env test-only (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) untuk seed/cleanup; user id fixture disiapkan sekali di `beforeAll` dari auth.admin.createUser lalu delete di `afterAll`. Beri `describe.skipIf(!process.env.SUPABASE_SERVICE_ROLE_KEY)` supaya lokal tanpa key tidak crash.
-
-## 3. Test: Playwright E2E (`tests/e2e/warehouse-categories.spec.ts`)
-
-Ikuti pola storage-state yang sudah dipakai suite chat-pin (login sekali → `storageState.json`). Runner: `bunx playwright test`.
-
-**Setup**:
-- `tests/e2e/fixtures/auth.setup.ts` (kalau belum ada) — login user test → simpan storage.
-- `playwright.config.ts` — projects: `setup` + `chromium` viewport 411×915 (device Ace).
-- Setiap test bersih: nama kategori random (`kat_${uuid()}`) supaya paralel-safe; `afterEach` bersihkan via API.
-
-**Skenario**:
-
-1. **Tambah muncul di dua halaman**
-   - Beranda → klik "Tambah kategori" → isi nama unik → assert chip muncul di list.
-   - Buka `/gudang` → assert nama tampil di daftar grup StokTab (walau belum ada item, kategori muncul karena master list).
-
-2. **Rename ikut di label produk Gudang**
-   - Seed via API: 1 warehouse_items dengan `category = 'kat_A'`.
-   - Beranda → rename `kat_A` → `kat_A_renamed`.
-   - `/gudang` → tab Stok → assert grup baru bernama `kat_A_renamed` berisi produk seed; grup lama tidak ada.
-
-3. **Hapus terblokir jika masih dipakai**
-   - Seed: 1 item pakai `kat_B`. Beranda → klik hapus → assert toast error muncul, chip kategori tetap ada.
-   - Hapus item via API → hapus lagi → sukses, chip hilang.
-
-4. **Urutan (position) konsisten**
-   - Beranda: buat 3 kategori C1, C2, C3.
-   - Drag C3 ke posisi 1 (pakai `page.locator(...).dragTo(...)` + `hover force`). Assert urutan chip.
-   - `/gudang` → assert grup muncul dalam urutan C3, C1, C2.
-
-Waktu tunggu pakai `expect.toHaveText` bukan `waitForTimeout`.
-
-## 4. Package & script
-
-- `bun add -D @playwright/test` bila belum ada; jalankan `bunx playwright install chromium` di CI script.
-- `package.json`:
-  - `"test:integration": "vitest run tests/integration"`
-  - `"test:e2e": "playwright test"`
-
-## 5. Verifikasi
-
-- `bunx tsgo --noEmit` bersih.
-- `bunx vitest run tests/integration/warehouse-categories.test.ts` lulus lokal (skip kalau tanpa service key).
-- Playwright dijalankan headless di sandbox pakai `LOVABLE_BROWSER_SUPABASE_*` — pastikan `LOVABLE_BROWSER_AUTH_STATUS=injected` sebelum test, bila `signed_out` laporkan dan minta Ace sign-in dulu di preview.
-
-## 6. Catatan
-
-- Rename cascade pakai ILIKE — konsisten dengan validator delete yang sudah ada.
-- Server fn tunggal menghindari race UPDATE ganda dari client.
-- Tidak ada perubahan schema baru; migrasi position + unique index sudah ada dari refactor sebelumnya.
+Mulai dari **Slice 1** karena efeknya paling terasa "enteng" dan risikonya paling rendah (tidak menyentuh tampilan).
