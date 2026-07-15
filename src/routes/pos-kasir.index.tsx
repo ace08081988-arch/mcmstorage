@@ -977,7 +977,7 @@ function PosKasirPage() {
                 </label>
                 <input
                   type="number"
-                  step="0.001"
+                  step={inputStep}
                   min="0"
                   max={selected.stokKg}
                   value={beratStr}
@@ -987,7 +987,7 @@ function PosKasirPage() {
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
                       : "border-slate-700 focus:border-success focus:ring-success/30"
                   }`}
-                  placeholder="0.000"
+                  placeholder={inputPlaceholder}
                 />
                  {berat > selected.stokKg && (
                    <div className="mt-3 flex items-start gap-ms-2 rounded-lg bg-red-500/15 border border-red-500/40 p-ms-3 text-ms-sm text-red-200">
