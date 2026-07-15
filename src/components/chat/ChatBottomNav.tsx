@@ -50,7 +50,7 @@ export function ChatBottomNav() {
   return (
     <nav
       aria-label="Navigasi utama chat"
-      className="sticky bottom-0 z-20 mt-auto grid shrink-0 grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur"
+      className="relative sticky bottom-0 z-20 mt-auto grid shrink-0 grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)" }}
     >
       {/* Indikator aktif — pill halus yang meluncur di bawah ikon aktif. */}
