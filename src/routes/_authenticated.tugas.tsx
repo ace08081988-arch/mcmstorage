@@ -1811,6 +1811,16 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         const total = ev.total;
                         const isManual = !l.variantId;
                         const rs = ev.status;
+                        // Item dengan `base_unit === "pcs"` (botol, pcs, sachet, dsb.)
+                        // tidak diisi berat — kolom kedua mengukur JUMLAH ISI per
+                        // unit (mis. 1 karton berisi 10 botol), bukan berat. Label
+                        // & placeholder mengikuti supaya pegawai tidak bingung
+                        // (screenshot: GS · stok botol seharusnya bukan "Berat").
+                        const isPcs = (it.base_unit ?? "pcs") === "pcs";
+                        const perUnitLabel = isPcs ? "Jumlah / unit" : "Berat / unit";
+                        const manualHint = isPcs
+                          ? "Manual — isi jumlah di kolom kanan"
+                          : "Manual — isi berat di kolom kanan";
                         return (
                           <div key={l.key} className="space-y-1.5 rounded border bg-background/60 p-ms-2">
                             <div className="flex items-start gap-ms-1.5">
@@ -1819,7 +1829,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <select value={l.variantId ?? ""}
                                   onChange={(e) => updateLine(it.id, l.key, { variantId: e.target.value || null, weightOverride: null })}
                                   className="h-8 w-full rounded border bg-background px-1 text-ms-2xs">
-                                  <option value="">Manual — isi berat di kolom kanan</option>
+                                  <option value="">{manualHint}</option>
                                    {itemVariants.map((v) => (
                                      <option key={v.id} value={v.id}>{v.label} · {fmtNum(Number(v.weight_per_unit), 3)} {v.unit_label ?? ""}</option>
                                    ))}
@@ -1844,7 +1854,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                               <span className="pb-2 text-ms-xs text-muted-foreground">×</span>
                               <label className="w-24">
                                 <div className="mb-0.5 text-ms-2xs text-muted-foreground">
-                                  Berat / unit{isManual ? "" : " (preset)"}
+                                  {perUnitLabel}{isManual ? "" : " (preset)"}
                                 </div>
                                 <NumberInput
                                   key={`${l.key}-${l.variantId ?? "m"}`}
