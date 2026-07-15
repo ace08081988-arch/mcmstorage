@@ -17,8 +17,6 @@ import { applyCompactMode } from "@/components/CompactModeToggle";
 import { applyReduceMotion } from "@/components/ReduceMotionToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
-import { WhatsAppTargetHost } from "@/lib/wa-target";
-import { WaPreviewHost } from "@/lib/wa-preview";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
 // Komponen non-kritis di-lazy-load supaya tidak masuk critical bundle
