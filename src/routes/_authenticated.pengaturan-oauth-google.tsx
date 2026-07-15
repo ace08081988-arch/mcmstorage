@@ -464,7 +464,7 @@ function OAuthGooglePage() {
         icon={KeyRound}
       />
       <div className="space-ms-4 px-ms-4 pt-2">
-        <Card className="border-amber-500/40 bg-amber-500/5">
+        <Card className="border-warning/40 bg-warning/5">
           <CardContent className="py-ms-4 text-ms-xs leading-snug text-muted-foreground">
             Kredensial (Client ID & Secret) tidak disimpan di aplikasi ini. Setelah dibuat di
             Google Cloud Console, tempel ke <b>Backend → Users → Auth Settings → Google</b>.
@@ -488,7 +488,7 @@ function OAuthGooglePage() {
                 key={s.id}
                 className={`flex cursor-pointer items-start gap-ms-3 rounded-md border p-ms-2 hover:bg-muted/50 ${
                   flaggedSteps.has(s.id)
-                    ? "border-amber-500/60 bg-amber-500/10"
+                    ? "border-warning/60 bg-warning/10"
                     : "border-border/50"
                 }`}
               >
@@ -507,7 +507,7 @@ function OAuthGooglePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="ml-2 inline-flex items-center gap-ms-1 rounded border border-amber-500/60 bg-background px-1.5 py-0.5 text-ms-2xs font-medium text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
+                      className="ml-2 inline-flex items-center gap-ms-1 rounded border border-warning/60 bg-background px-1.5 py-0.5 text-ms-2xs font-medium text-warning hover:bg-warning/10 dark:text-warning"
                     >
                       <ExternalLink className="h-3 w-3" />
                       Buka Cloud Console
@@ -517,13 +517,13 @@ function OAuthGooglePage() {
                 {flaggedSteps.has(s.id) && (
                   <Badge
                     variant="outline"
-                    className="mt-0.5 gap-ms-1 border-amber-500/60 text-ms-2xs text-amber-600"
+                    className="mt-0.5 gap-ms-1 border-warning/60 text-ms-2xs text-warning"
                   >
                     <AlertTriangle className="h-3 w-3" />
                     cek ini
                   </Badge>
                 )}
-                {checks[s.id] && <Check className="mt-0.5 h-4 w-4 text-emerald-500" />}
+                {checks[s.id] && <Check className="mt-0.5 h-4 w-4 text-success" />}
               </label>
             ))}
           </CardContent>
@@ -774,8 +774,8 @@ function OAuthGooglePage() {
             )}
 
             {testState.status === "success" && (
-              <div className="flex items-start gap-ms-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-ms-3">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+              <div className="flex items-start gap-ms-2 rounded-md border border-success/40 bg-success/5 p-ms-3">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                 <div className="min-w-0 space-y-0.5 text-ms-xs leading-snug">
                   <div className="font-medium text-foreground">Login Google berhasil</div>
                   {testState.email && (
@@ -796,8 +796,8 @@ function OAuthGooglePage() {
             )}
 
             {testState.status === "redirected" && (
-              <div className="flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-3">
-                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-500" />
+              <div className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/5 p-ms-3">
+                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-warning" />
                 <div className="text-ms-xs leading-snug text-muted-foreground">
                   Browser sedang berpindah ke Google. Setelah kembali ke halaman ini,
                   buka ulang menu <b>OAuth Google</b> untuk melihat hasil.
@@ -813,8 +813,8 @@ function OAuthGooglePage() {
                   <code className="block break-all rounded bg-background/60 px-1.5 py-1 text-foreground">
                     {testState.message}
                   </code>
-                  <div className="flex items-start gap-ms-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-foreground">
-                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+                  <div className="flex items-start gap-ms-1.5 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-foreground">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
                     <div>
                       <div className="font-medium">Kemungkinan penyebab</div>
                       <div className="text-muted-foreground">{diagnosis.hint}</div>
@@ -933,7 +933,7 @@ function ListBlock({
     <div
       className={
         flagged
-          ? "-mx-2 rounded-md border border-amber-500/50 bg-amber-500/5 p-ms-2"
+          ? "-mx-2 rounded-md border border-warning/50 bg-warning/5 p-ms-2"
           : undefined
       }
     >
@@ -943,7 +943,7 @@ function ListBlock({
           {flagged && (
             <Badge
               variant="outline"
-              className="gap-ms-1 border-amber-500/60 text-ms-2xs text-amber-600"
+              className="gap-ms-1 border-warning/60 text-ms-2xs text-warning"
             >
               <AlertTriangle className="h-3 w-3" />
               cek ini

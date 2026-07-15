@@ -284,8 +284,8 @@ function AuthCallbackPage() {
     },
     done: {
       Icon: CheckCircle2,
-      iconClass: "text-emerald-600",
-      bgClass: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900",
+      iconClass: "text-success",
+      bgClass: "bg-success border-success dark:bg-success/30 dark:border-success",
       title: "Verifikasi berhasil",
       badge: "Akun aktif",
     },
@@ -456,7 +456,7 @@ function AuthCallbackPage() {
                     {debugEvents.slice().reverse().map((e, i) => (
                       <li key={i} className={
                         e.level === "error" ? "text-destructive"
-                        : e.level === "warn" ? "text-amber-600 dark:text-amber-400"
+                        : e.level === "warn" ? "text-warning dark:text-warning"
                         : "text-foreground/80"
                       }>
                         <span className="opacity-60">{new Date(e.ts).toLocaleTimeString()} </span>

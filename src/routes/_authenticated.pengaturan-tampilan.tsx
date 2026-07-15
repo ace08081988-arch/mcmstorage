@@ -965,7 +965,7 @@ function PengaturanTampilanPage() {
             <div className="grid grid-cols-1 gap-ms-2 rounded-md border bg-muted/30 p-ms-3 sm:grid-cols-2">
               <div>
                 <p className="mb-1.5 flex items-center gap-ms-1.5 text-ms-2xs font-semibold text-foreground">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success dark:text-success" />
                   Yang disimpan
                 </p>
                 <ul className="space-y-1 text-ms-2xs leading-ms-snug text-muted-foreground">
@@ -980,7 +980,7 @@ function PengaturanTampilanPage() {
                     "Versi skema (untuk kompatibilitas)",
                   ].map((t) => (
                     <li key={t} className="flex gap-ms-1.5">
-                      <CheckCircle2 className="mt-[2px] h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <CheckCircle2 className="mt-[2px] h-3 w-3 shrink-0 text-success dark:text-success" />
                       <span>{t}</span>
                     </li>
                   ))}

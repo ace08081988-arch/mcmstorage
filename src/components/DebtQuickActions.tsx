@@ -739,15 +739,15 @@ export function DebtQuickActions({
       className={
         "rounded-md border p-ms-2.5 " +
         (kind === "piutang"
-          ? "border-emerald-500/40 bg-emerald-500/5"
-          : "border-amber-500/40 bg-amber-500/5")
+          ? "border-success/40 bg-success/5"
+          : "border-warning/40 bg-warning/5")
       }
     >
       <div className="flex items-center gap-ms-1.5 text-ms-2xs">
         <Wallet
           className={
             "h-3.5 w-3.5 " +
-            (kind === "piutang" ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300")
+            (kind === "piutang" ? "text-success dark:text-success" : "text-warning dark:text-warning")
           }
         />
         <span className="font-semibold text-foreground">
@@ -756,7 +756,7 @@ export function DebtQuickActions({
         <span
           className={
             "ml-auto font-mono font-semibold " +
-            (kind === "piutang" ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300")
+            (kind === "piutang" ? "text-success dark:text-success" : "text-warning dark:text-warning")
           }
         >
           {rupiah(saldo)}
@@ -779,8 +779,8 @@ export function DebtQuickActions({
           className={
             "inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-semibold disabled:opacity-50 " +
             (kind === "piutang"
-              ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20 dark:text-emerald-200"
-              : "border-amber-500/60 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 dark:text-amber-200")
+              ? "border-success/60 bg-success/10 text-success hover:bg-success/20 dark:text-success"
+              : "border-warning/60 bg-warning/10 text-warning hover:bg-warning/20 dark:text-warning")
           }
           title={
             kind === "piutang"
@@ -884,7 +884,7 @@ export function DebtQuickActions({
                   {log.map((e) => {
                     const statusColor =
                       e.status === "confirmed"
-                        ? "text-emerald-700 dark:text-emerald-300"
+                        ? "text-success dark:text-success"
                         : e.status === "failed"
                           ? "text-red-700 dark:text-red-300"
                           : "text-muted-foreground";
@@ -998,7 +998,7 @@ export function DebtQuickActions({
             if (!preview) return null;
             if (!preview.valid) {
               return (
-                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-800 dark:text-amber-200">
+                <div className="rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
                   {preview.reason}
                 </div>
               );
@@ -1007,7 +1007,7 @@ export function DebtQuickActions({
               preview.deltaSaldo === 0
                 ? "text-muted-foreground"
                 : preview.deltaSaldo > 0
-                  ? (lastTx && lastTx.kind === "piutang" ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300")
+                  ? (lastTx && lastTx.kind === "piutang" ? "text-success dark:text-success" : "text-warning dark:text-warning")
                   : "text-red-700 dark:text-red-300";
             const deltaSign = preview.deltaSaldo > 0 ? "+" : preview.deltaSaldo < 0 ? "−" : "";
             return (
@@ -1026,7 +1026,7 @@ export function DebtQuickActions({
                     )}
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Sisa tagihan ini</span>
-                      <span className="font-mono">{rupiah(preview.sisaBefore)} → <b className={preview.sisaAfter === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}>{rupiah(preview.sisaAfter)}{preview.sisaAfter === 0 ? " · lunas" : ""}</b></span>
+                      <span className="font-mono">{rupiah(preview.sisaBefore)} → <b className={preview.sisaAfter === 0 ? "text-success dark:text-success" : "text-foreground"}>{rupiah(preview.sisaAfter)}{preview.sisaAfter === 0 ? " · lunas" : ""}</b></span>
                     </div>
                   </>
                 ) : (
@@ -1047,7 +1047,7 @@ export function DebtQuickActions({
                             </span>
                             <span className="shrink-0 text-right font-mono">
                               − {rupiah(ln.take)}
-                              <span className={"ml-1 " + (ln.sisaAfter === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                              <span className={"ml-1 " + (ln.sisaAfter === 0 ? "text-success dark:text-success" : "text-muted-foreground")}>
                                 → {rupiah(ln.sisaAfter)}{ln.sisaAfter === 0 ? " · lunas" : ""}
                               </span>
                             </span>
@@ -1060,7 +1060,7 @@ export function DebtQuickActions({
                       <span className="font-mono font-semibold">{rupiah(preview.prevApplied)} → <b className="text-foreground">{rupiah(preview.applied)}</b></span>
                     </div>
                     {preview.leftover > 0 && (
-                      <div className="flex items-center justify-between text-amber-700 dark:text-amber-300">
+                      <div className="flex items-center justify-between text-warning dark:text-warning">
                         <span>Sisa input tidak terpakai</span>
                         <span className="font-mono">{rupiah(preview.leftover)}</span>
                       </div>
@@ -1134,7 +1134,7 @@ export function DebtQuickActions({
                           </span>
                           <span className="shrink-0 text-right">
                             <span className="font-mono font-semibold text-foreground">− {rupiah(ln.take)}</span>
-                            <span className={"ml-1 font-mono " + (ln.sisaAfter === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                            <span className={"ml-1 font-mono " + (ln.sisaAfter === 0 ? "text-success dark:text-success" : "text-muted-foreground")}>
                               → {rupiah(ln.sisaAfter)}
                               {ln.sisaAfter === 0 ? " · lunas" : ""}
                             </span>
@@ -1147,7 +1147,7 @@ export function DebtQuickActions({
                       <span className="font-mono text-foreground">{rupiah(preview.applied)}</span>
                     </div>
                     {preview.leftover > 0 && (
-                      <div className="mt-0.5 flex items-center justify-between text-amber-700 dark:text-amber-300">
+                      <div className="mt-0.5 flex items-center justify-between text-warning dark:text-warning">
                         <span>Sisa input tidak terpakai</span>
                         <span className="font-mono">{rupiah(preview.leftover)}</span>
                       </div>

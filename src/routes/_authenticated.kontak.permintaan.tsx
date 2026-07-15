@@ -445,7 +445,7 @@ function RequestCard(props: {
           {props.statusHint}
         </div>
         {props.isSyncing && (
-          <div className="mt-1 inline-flex items-center gap-ms-1 text-ms-xs font-medium text-amber-600">
+          <div className="mt-1 inline-flex items-center gap-ms-1 text-ms-xs font-medium text-warning">
             <Loader2 className="h-3 w-3 animate-spin" /> Menyinkronkan ke server…
           </div>
         )}
@@ -493,7 +493,7 @@ function StatusChip({
     return (
       <span
         aria-label="Status: diterima"
-        className="inline-flex items-center gap-ms-1 rounded-full bg-emerald-500/10 px-ms-2 py-0.5 text-ms-xs font-medium text-emerald-600"
+        className="inline-flex items-center gap-ms-1 rounded-full bg-success/10 px-ms-2 py-0.5 text-ms-xs font-medium text-success"
       >
         <CheckCircle2 className="h-3 w-3" /> Diterima
       </span>
@@ -522,7 +522,7 @@ function StatusChip({
   return (
     <span
       aria-label="Status: menunggu diterima"
-      className="inline-flex items-center gap-ms-1 rounded-full bg-amber-500/10 px-ms-2 py-0.5 text-ms-xs font-medium text-amber-600"
+      className="inline-flex items-center gap-ms-1 rounded-full bg-warning/10 px-ms-2 py-0.5 text-ms-xs font-medium text-warning"
     >
       <Clock className="h-3 w-3" /> Menunggu
     </span>

@@ -352,9 +352,9 @@ function ProfilChatPage() {
             <div
               className={`rounded-lg border px-ms-3 py-ms-2 text-ms-xs ${
                 validation.active
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+                  ? "border-success/40 bg-success/10 text-success dark:text-success"
                   : validation.reason === "expired"
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                  ? "border-warning/40 bg-warning/10 text-warning dark:text-warning"
                   : "border-destructive/40 bg-destructive/10 text-destructive"
               }`}
               role="status"
@@ -559,7 +559,7 @@ function ProfilChatPage() {
                             </span>
                           )}
                           {r.belowMinimum && !isLatest && (
-                            <span className="rounded-full bg-amber-500/15 px-ms-2 py-0.5 text-ms-2xs font-semibold text-amber-700 dark:text-amber-300">
+                            <span className="rounded-full bg-warning/15 px-ms-2 py-0.5 text-ms-2xs font-semibold text-warning dark:text-warning">
                               Lawas
                             </span>
                           )}
@@ -583,7 +583,7 @@ function ProfilChatPage() {
                         className="grid h-8 w-8 shrink-0 place-items-center rounded-md border hover:bg-accent"
                       >
                         {copiedKey === r.name ? (
-                          <Check className="h-4 w-4 text-emerald-600" />
+                          <Check className="h-4 w-4 text-success" />
                         ) : (
                           <Copy className="h-4 w-4 text-muted-foreground" />
                         )}

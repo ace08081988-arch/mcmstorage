@@ -378,7 +378,7 @@ function SettingLink({ entry }: { entry: SettingEntry }) {
         <span className="block truncate text-ms-sm font-medium leading-tight">
           {entry.title}
           {entry.adminOnly ? (
-            <span className="ml-1.5 rounded bg-amber-500/15 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">
+            <span className="ml-1.5 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-warning dark:text-warning">
               Admin
             </span>
           ) : null}

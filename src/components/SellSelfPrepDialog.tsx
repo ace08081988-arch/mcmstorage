@@ -492,7 +492,7 @@ export function SellSelfPrepDialog({
               </div>
             )}
             {(payment.method === "hutang" || (payment.method === "partial" && payment.partialValid)) && (
-              <div className="mt-1 rounded-md border border-amber-500/30 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-800 dark:text-amber-200">
+              <div className="mt-1 rounded-md border border-warning/30 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
                 Sisa piutang: <b>{formatPaymentRupiah(payment.remaining)}</b>
                 {party.name ? <> · atas nama <b>{party.name}</b></> : null}
               </div>

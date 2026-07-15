@@ -53,14 +53,14 @@ function statusBadge(status: string) {
   const s = status.toLowerCase();
   if (s === "sent") {
     return (
-      <span className="inline-flex items-center gap-ms-1 rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-ms-2xs font-medium text-emerald-700 dark:text-emerald-200">
+      <span className="inline-flex items-center gap-ms-1 rounded-md bg-success/15 px-1.5 py-0.5 text-ms-2xs font-medium text-success dark:text-success">
         <CheckCircle2 className="h-3 w-3" /> {status}
       </span>
     );
   }
   if (s === "pending") {
     return (
-      <span className="inline-flex items-center gap-ms-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-ms-2xs font-medium text-amber-700 dark:text-amber-200">
+      <span className="inline-flex items-center gap-ms-1 rounded-md bg-warning/15 px-1.5 py-0.5 text-ms-2xs font-medium text-warning dark:text-warning">
         {status}
       </span>
     );
@@ -215,12 +215,12 @@ function EmailStatusPage() {
                   </dt>
                   <dd>
                     {result.emailConfirmedAt ? (
-                      <span className="inline-flex items-center gap-ms-1 rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-ms-2xs font-medium text-emerald-700 dark:text-emerald-200">
+                      <span className="inline-flex items-center gap-ms-1 rounded-md bg-success/15 px-1.5 py-0.5 text-ms-2xs font-medium text-success dark:text-success">
                         <MailCheck className="h-3.5 w-3.5" /> Terverifikasi ·{" "}
                         {fmt(result.emailConfirmedAt)}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-ms-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-ms-2xs font-medium text-amber-700 dark:text-amber-200">
+                      <span className="inline-flex items-center gap-ms-1 rounded-md bg-warning/15 px-1.5 py-0.5 text-ms-2xs font-medium text-warning dark:text-warning">
                         <MailX className="h-3.5 w-3.5" /> Belum diverifikasi
                       </span>
                     )}

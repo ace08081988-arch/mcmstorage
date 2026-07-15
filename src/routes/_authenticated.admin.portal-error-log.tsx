@@ -128,7 +128,7 @@ function PortalErrorLogPage() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-ms-sm flex items-center gap-ms-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" /> Alert (error berulang)
+            <AlertTriangle className="h-4 w-4 text-warning" /> Alert (error berulang)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-ms-2">

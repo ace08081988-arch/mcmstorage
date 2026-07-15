@@ -113,8 +113,8 @@ function TugasSummaryCard({
   const map: Record<TugasChipTone, string> = {
     primary: "text-primary bg-primary/10 ring-primary/20",
     info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
-    success: "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20 dark:text-emerald-400",
-    warning: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+    success: "text-success bg-success/10 ring-success/20 dark:text-success",
+    warning: "text-warning bg-warning/10 ring-warning/20 dark:text-warning",
     danger: "text-destructive bg-destructive/10 ring-destructive/20",
   };
   return (
@@ -268,13 +268,13 @@ function TokenStatusPanel({ tasks, loaded }: { tasks: Task[]; loaded: boolean })
           <div className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Total</div>
           <div className="text-ms-lg font-bold tabular-nums">{counts.total}</div>
         </div>
-        <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-ms-2 text-center">
-          <div className="text-ms-2xs uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Valid</div>
-          <div className="text-ms-lg font-bold tabular-nums text-emerald-700 dark:text-emerald-400">{counts.valid}</div>
+        <div className="rounded-lg border border-success/40 bg-success/5 p-ms-2 text-center">
+          <div className="text-ms-2xs uppercase tracking-wide text-success dark:text-success">Valid</div>
+          <div className="text-ms-lg font-bold tabular-nums text-success dark:text-success">{counts.valid}</div>
         </div>
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-ms-2 text-center">
-          <div className="text-ms-2xs uppercase tracking-wide text-amber-700 dark:text-amber-400">Kedaluwarsa</div>
-          <div className="text-ms-lg font-bold tabular-nums text-amber-700 dark:text-amber-400">{counts.expired}</div>
+        <div className="rounded-lg border border-warning/40 bg-warning/5 p-ms-2 text-center">
+          <div className="text-ms-2xs uppercase tracking-wide text-warning dark:text-warning">Kedaluwarsa</div>
+          <div className="text-ms-lg font-bold tabular-nums text-warning dark:text-warning">{counts.expired}</div>
         </div>
         <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-ms-2 text-center">
           <div className="text-ms-2xs uppercase tracking-wide text-destructive">Dicabut/Selesai</div>
@@ -325,9 +325,9 @@ function TokenStatusPanel({ tasks, loaded }: { tasks: Task[]; loaded: boolean })
               ? (t.status === "done" ? "Selesai" : "Dicabut")
               : r.isExpired ? "Kedaluwarsa" : "Valid";
             const statusClass = r.isValid
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+              ? "border-success/40 bg-success/10 text-success dark:text-success"
               : r.isExpired
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                ? "border-warning/40 bg-warning/10 text-warning dark:text-warning"
                 : "border-destructive/40 bg-destructive/10 text-destructive";
             return (
               <li key={t.id} className="rounded-lg border bg-background p-ms-3 shadow-sm">
@@ -362,7 +362,7 @@ function TokenStatusPanel({ tasks, loaded }: { tasks: Task[]; loaded: boolean })
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Kedaluwarsa</dt>
-                    <dd className={`font-medium tabular-nums ${r.isExpired ? "text-amber-700 dark:text-amber-400" : ""}`}>{fmtDateTime(t.expires_at)}</dd>
+                    <dd className={`font-medium tabular-nums ${r.isExpired ? "text-warning dark:text-warning" : ""}`}>{fmtDateTime(t.expires_at)}</dd>
                     <dd className="text-ms-2xs text-muted-foreground">{fmtRelative(t.expires_at)}</dd>
                   </div>
                   <div>
@@ -782,7 +782,7 @@ function TugasPage() {
           })}
         </div>
       )}
-      <div className="mt-3 mb-4 rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2 text-ms-2xs text-amber-700 dark:text-amber-400">
+      <div className="mt-3 mb-4 rounded-md border border-warning/40 bg-warning/5 p-ms-2 text-ms-2xs text-warning dark:text-warning">
         ⚖️ <b>Anda</b> yang menentukan <b>berat / jumlah</b> yang harus disiapkan per item (boleh desimal, mis. <b>0.90</b> gram untuk eceran kristal). Pegawai cukup mengirim <b>foto + lokasi</b>. Stok gudang induk otomatis berkurang sesuai angka yang Anda isi (mis. 100 − 0.90 = 99.10).
       </div>
 
@@ -838,8 +838,8 @@ function TugasPage() {
           const s = deriveTaskStatus(t.status, p);
           const pct = p.items > 0 ? Math.min(100, Math.round((p.submitted / p.items) * 100)) : 0;
           const badgeCls =
-            s === "Selesai" ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 dark:text-emerald-400"
-            : s === "Dikerjakan" ? "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-400"
+            s === "Selesai" ? "bg-success/15 text-success border-success/40 dark:text-success"
+            : s === "Dikerjakan" ? "bg-warning/15 text-warning border-warning/40 dark:text-warning"
             : "bg-muted text-muted-foreground border-border";
           const expMs = t.expires_at ? new Date(t.expires_at).getTime() : 0;
           const remainingMs = expMs ? expMs - now : 0;
@@ -859,7 +859,7 @@ function TugasPage() {
           const urgLabel = { urgent: "Mendesak", high: "Tinggi", medium: "Sedang", low: "Rendah" }[urg];
           const urgCls = {
             urgent: "bg-destructive/15 text-destructive border-destructive/40",
-            high: "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-400",
+            high: "bg-warning/15 text-warning border-warning/40 dark:text-warning",
             medium: "bg-sky-500/15 text-sky-700 border-sky-500/40 dark:text-sky-400",
             low: "bg-muted text-muted-foreground border-border",
           }[urg];
@@ -922,7 +922,7 @@ function TugasPage() {
                   onClick={() => resetPinAttempts(t.share_token, t.title)}
                   title="Reset percobaan PIN (pemilik / admin)"
                   aria-label="Reset percobaan PIN"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-warning/40 bg-warning/10 text-warning hover:bg-warning/20 dark:text-warning"
                 >
                   <RotateCcw className="h-4 w-4" />
                 </button>
@@ -932,7 +932,7 @@ function TugasPage() {
             {p.items > 0 && (
               <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className={`h-full rounded-full transition-all duration-300 ${s === "Selesai" ? "bg-emerald-500" : s === "Dikerjakan" ? "bg-amber-500" : "bg-muted-foreground/40"}`}
+                  className={`h-full rounded-full transition-all duration-300 ${s === "Selesai" ? "bg-success" : s === "Dikerjakan" ? "bg-warning" : "bg-muted-foreground/40"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -1192,7 +1192,7 @@ function NumberInput({
   const statusRing =
     disabled ? "" :
     status === "invalid" ? "ring-1 ring-destructive border-destructive" :
-    status === "partial" ? "ring-1 ring-amber-400 border-amber-400" :
+    status === "partial" ? "ring-1 ring-warning border-warning" :
     "";
   return (
     <input
@@ -1587,11 +1587,11 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-semibold">Ringkasan</span>
             <span><b>{summary.items}</b> barang · <b>{summary.totalLines}</b> baris</span>
-            <span className="inline-flex items-center gap-ms-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600">
+            <span className="inline-flex items-center gap-ms-1 rounded bg-success/10 px-1.5 py-0.5 text-success">
               <CheckCircle2 className="h-3 w-3" /> {summary.validLines} valid
             </span>
             {summary.partialLines > 0 && (
-              <span className="inline-flex items-center gap-ms-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-600">
+              <span className="inline-flex items-center gap-ms-1 rounded bg-warning/10 px-1.5 py-0.5 text-warning">
                 <AlertTriangle className="h-3 w-3" /> {summary.partialLines} belum lengkap
               </span>
             )}
@@ -1617,7 +1617,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             </span>
           </div>
           {summary.linesWithoutPhoto > 0 && (
-            <div className="mt-1 flex items-start gap-ms-1 text-ms-2xs text-amber-600">
+            <div className="mt-1 flex items-start gap-ms-1 text-ms-2xs text-warning">
               <ImageIcon className="mt-0.5 h-3 w-3 shrink-0" />
               <span>
                 <b>{summary.itemsWithoutPhoto.length}</b> barang belum punya foto referensi — tugas tetap bisa dikirim, hanya tanpa lampiran foto:{" "}
@@ -1720,7 +1720,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             }
             return (
               <div className="mt-1 flex flex-wrap items-center gap-ms-1 text-ms-2xs">
-                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 font-medium text-emerald-600">
+                <span className="inline-flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 font-medium text-success">
                   <CheckCircle2 className="h-3 w-3" /> {match.name}
                 </span>
                 <span className="text-muted-foreground">
@@ -1848,8 +1848,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   (rs === "invalid"
                                     ? "bg-destructive/10 text-destructive"
                                     : rs === "partial"
-                                    ? "bg-amber-500/10 text-amber-600"
-                                    : "bg-emerald-500/10 text-emerald-600")
+                                    ? "bg-warning/10 text-warning"
+                                    : "bg-success/10 text-success")
                                 }
                                 title={
                                   rs === "invalid"
@@ -2243,7 +2243,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
             <div><div className="text-muted-foreground">Sisa</div><div className="font-semibold tabular-nums">{fmtNum(agg.remaining, 2)}</div></div>
           </div>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-background">
-            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progressPct}%` }} />
+            <div className="h-full bg-success transition-all" style={{ width: `${progressPct}%` }} />
           </div>
           <div className="mt-1 text-right text-ms-2xs text-muted-foreground">{progressPct}% selesai</div>
         </div>
@@ -2297,16 +2297,16 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
           const isFixed = hasIssues && isResolved(r);
           const ok = !hasIssues;
           return (
-            <div key={r.task.id} className={`rounded-md border p-ms-2 text-ms-xs ${ok ? "" : isFixed ? "border-emerald-500/40 bg-emerald-500/5" : "border-destructive/40 bg-destructive/5"}`}>
+            <div key={r.task.id} className={`rounded-md border p-ms-2 text-ms-xs ${ok ? "" : isFixed ? "border-success/40 bg-success/5" : "border-destructive/40 bg-destructive/5"}`}>
               <div className="flex items-start gap-ms-2">
                 {ok || isFixed
-                  ? <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  ? <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" />
                   : <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-ms-2">
                     <div className="truncate font-semibold">{r.task.title}</div>
                     {isFixed && (
-                      <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-ms-2xs font-medium text-emerald-700">Ditandai dibetulkan</span>
+                      <span className="rounded bg-success/15 px-1.5 py-0.5 text-ms-2xs font-medium text-success">Ditandai dibetulkan</span>
                     )}
                   </div>
                   <div className="text-ms-2xs text-muted-foreground">
@@ -2364,7 +2364,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                       ) : (
                         <button
                           onClick={() => markFixed(r)}
-                          className="h-7 rounded-md border border-emerald-600/40 bg-emerald-600/10 px-ms-2 text-ms-2xs font-medium text-emerald-700 hover:bg-emerald-600/20"
+                          className="h-7 rounded-md border border-success/40 bg-success/10 px-ms-2 text-ms-2xs font-medium text-success hover:bg-success/20"
                         >
                           Tandai sudah dibetulkan
                         </button>
@@ -2593,13 +2593,13 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
         {task.status === "done" ? (
           <button disabled={busy} onClick={reopenTask} className="inline-flex h-9 items-center gap-ms-1 rounded-md border px-ms-3 text-ms-xs">Aktifkan lagi</button>
         ) : (
-          <button disabled={busy} onClick={() => setCompleteOpen(true)} className="inline-flex h-9 items-center gap-ms-1 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-ms-3 text-ms-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"><CheckCircle2 className="h-4 w-4" /> Tandai selesai</button>
+          <button disabled={busy} onClick={() => setCompleteOpen(true)} className="inline-flex h-9 items-center gap-ms-1 rounded-md border border-success/50 bg-success/10 px-ms-3 text-ms-xs font-semibold text-success hover:bg-success/20 dark:text-success"><CheckCircle2 className="h-4 w-4" /> Tandai selesai</button>
         )}
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-ms-1 rounded-md border px-ms-3 text-ms-xs"><ExternalLink className="h-4 w-4" /> Pratinjau link pegawai</a>
       </div>
       {task.status === "done" && task.completed_at && (
-        <div className="mb-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-ms-3 text-ms-xs">
-          <div className="flex items-center gap-ms-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+        <div className="mb-3 rounded-lg border border-success/40 bg-success/5 p-ms-3 text-ms-xs">
+          <div className="flex items-center gap-ms-1.5 font-semibold text-success dark:text-success">
             <CheckCircle2 className="h-4 w-4" /> Selesai pada {new Date(task.completed_at).toLocaleString("id-ID")}
           </div>
           {task.completion_note && (
@@ -2712,7 +2712,7 @@ function CompleteTaskDialog({ busy, onClose, onConfirm }: { busy: boolean; onClo
   return (
     <Modal title="Tandai tugas selesai" onClose={onClose}>
       <div className="space-ms-3 text-ms-sm">
-        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/5 p-ms-2 text-ms-2xs text-emerald-700 dark:text-emerald-400">
+        <div className="rounded-md border border-success/40 bg-success/5 p-ms-2 text-ms-2xs text-success dark:text-success">
           Waktu selesai akan otomatis dicatat: <b>{new Date().toLocaleString("id-ID")}</b>.
         </div>
         <div>
@@ -2732,7 +2732,7 @@ function CompleteTaskDialog({ busy, onClose, onConfirm }: { busy: boolean; onClo
           <button
             onClick={() => void onConfirm(note)}
             disabled={busy}
-            className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-emerald-600 px-ms-3 text-ms-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-success px-ms-3 text-ms-xs font-semibold text-white hover:bg-success disabled:opacity-60"
           >
             <CheckCircle2 className="h-4 w-4" /> Simpan & tandai selesai
           </button>

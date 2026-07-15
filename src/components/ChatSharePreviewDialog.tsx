@@ -61,7 +61,7 @@ export type ChatShareLiveStatus = {
 
 function StepRow({ label, status, hint }: { label: string; status: "pending" | "running" | "ok" | "fail"; hint?: string }) {
   const icon =
-    status === "ok" ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+    status === "ok" ? <CheckCircle2 className="h-3.5 w-3.5 text-success" />
     : status === "fail" ? <XCircle className="h-3.5 w-3.5 text-destructive" />
     : status === "running" ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
     : <span className="inline-block h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />;
@@ -196,7 +196,7 @@ export function ChatSharePreviewDialog({
               />
             ) : null}
             {effectiveDup && !progressActive && !outcome ? (
-              <div className="flex items-start gap-ms-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-ms-2.5 text-ms-xs text-amber-900 dark:text-amber-200">
+              <div className="flex items-start gap-ms-2 rounded-md border border-warning/50 bg-warning/10 p-ms-2.5 text-ms-xs text-warning dark:text-warning">
                 <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">
@@ -224,7 +224,7 @@ export function ChatSharePreviewDialog({
                     className={
                       "mt-2 rounded-md border px-ms-2 py-1.5 text-ms-2xs " +
                       (payloadMatches
-                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                        ? "border-success/40 bg-success/10 text-success dark:text-success"
                         : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
                     }
                   >
@@ -271,7 +271,7 @@ export function ChatSharePreviewDialog({
               <h3 className="mb-1 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Foto · {data.totalPhotos}
                 {data.missingPhotos > 0 && (
-                  <span className="ml-1 font-normal normal-case text-amber-600">({data.missingPhotos} gagal diunduh)</span>
+                  <span className="ml-1 font-normal normal-case text-warning">({data.missingPhotos} gagal diunduh)</span>
                 )}
               </h3>
               {data.totalPhotos === 0 ? (
@@ -293,7 +293,7 @@ export function ChatSharePreviewDialog({
               {data.failedPhotoLabels && data.failedPhotoLabels.length > 0 && (
                 <div
                   role="alert"
-                  className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-ms-2 text-[11.5px] leading-snug text-amber-900"
+                  className="mt-2 rounded-md border border-warning bg-warning p-ms-2 text-[11.5px] leading-snug text-warning"
                 >
                   <div className="font-semibold">Foto berikut gagal dibaca dan tidak ikut dilampirkan:</div>
                   <ul className="mt-1 list-disc space-y-0.5 pl-4">
@@ -340,8 +340,8 @@ export function ChatSharePreviewDialog({
               <div
                 className={
                   outcome?.kind === "failed" ? "h-full bg-destructive transition-all"
-                  : outcome?.kind === "partial" ? "h-full bg-amber-500 transition-all"
-                  : outcome?.kind === "success" ? "h-full bg-emerald-600 transition-all"
+                  : outcome?.kind === "partial" ? "h-full bg-warning transition-all"
+                  : outcome?.kind === "success" ? "h-full bg-success transition-all"
                   : "h-full bg-primary transition-all"
                 }
                 style={{ width: `${outcome ? 100 : pct}%` }}
@@ -370,8 +370,8 @@ export function ChatSharePreviewDialog({
               <div
                 className={
                   "flex items-start gap-ms-2 rounded-md border p-ms-2 text-ms-xs " +
-                  (outcome.kind === "success" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
-                  : outcome.kind === "partial" ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200"
+                  (outcome.kind === "success" ? "border-success/40 bg-success/10 text-success dark:text-success"
+                  : outcome.kind === "partial" ? "border-warning/40 bg-warning/10 text-warning dark:text-warning"
                   : outcome.kind === "cancelled" ? "border-muted-foreground/30 bg-muted text-muted-foreground"
                   : "border-destructive/40 bg-destructive/10 text-destructive")
                 }
@@ -437,7 +437,7 @@ export function ChatSharePreviewDialog({
                         ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                         : "Kirim ulang meski klik ganda terdeteksi"
                   }
-                  className="inline-flex h-9 items-center justify-center gap-ms-1.5 rounded-md border border-amber-500 bg-amber-500 px-ms-3 text-ms-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
+                  className="inline-flex h-9 items-center justify-center gap-ms-1.5 rounded-md border border-warning bg-warning px-ms-3 text-ms-sm font-semibold text-white shadow-sm transition hover:bg-warning disabled:opacity-50"
                 >
                   <ShieldAlert className="h-4 w-4" />
                   Kirim ulang (paksa)

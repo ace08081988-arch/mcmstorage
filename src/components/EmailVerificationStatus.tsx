@@ -165,7 +165,7 @@ export function EmailVerificationStatus() {
   return (
     <Card
       aria-labelledby="email-verify-title"
-      className={verified ? "border-emerald-500/40" : "border-amber-500/40"}
+      className={verified ? "border-success/40" : "border-warning/40"}
       data-testid="email-verify-card"
       data-state={verified ? "verified" : "pending"}
     >
@@ -173,12 +173,12 @@ export function EmailVerificationStatus() {
         <div className="flex items-center gap-ms-2">
           {verified ? (
             <CheckCircle2
-              className="h-5 w-5 text-emerald-500"
+              className="h-5 w-5 text-success"
               aria-hidden="true"
             />
           ) : (
             <MailWarning
-              className="h-5 w-5 text-amber-500"
+              className="h-5 w-5 text-warning"
               aria-hidden="true"
             />
           )}

@@ -398,7 +398,7 @@ function DiagnostikPaket() {
           </section>
         ) : (
           <section
-            className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-ms-3 text-emerald-700 dark:text-emerald-300"
+            className="rounded-lg border border-success/50 bg-success/10 p-ms-3 text-success dark:text-success"
             data-testid="diag-ok"
           >
             <span className="text-ms-xs font-medium">✓ display fields konsisten dengan derived</span>

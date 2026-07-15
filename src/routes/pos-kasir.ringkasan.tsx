@@ -172,7 +172,7 @@ function PosKasirRingkasanPage() {
           </div>
           <Link
             to="/pos-kasir"
-            className="inline-flex items-center justify-center px-ms-4 py-ms-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-ms-sm font-medium transition-colors"
+            className="inline-flex items-center justify-center px-ms-4 py-ms-2 rounded-lg bg-success hover:bg-success text-white text-ms-sm font-medium transition-colors"
           >
             ⬅ Kembali ke Kasir
           </Link>
@@ -181,7 +181,7 @@ function PosKasirRingkasanPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-ms-4 mb-6">
           <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-ms-5 border border-slate-700">
             <div className="text-ms-xs text-slate-400 uppercase tracking-wider">Omzet Hari Ini</div>
-            <div className="text-ms-2xl md:text-ms-3xl font-bold text-emerald-400 font-mono mt-2">
+            <div className="text-ms-2xl md:text-ms-3xl font-bold text-success font-mono mt-2">
               {rupiah(omzetHariIni)}
             </div>
           </div>
@@ -193,7 +193,7 @@ function PosKasirRingkasanPage() {
           </div>
           <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-ms-5 border border-slate-700">
             <div className="text-ms-xs text-slate-400 uppercase tracking-wider">Jumlah Transaksi Hari Ini</div>
-            <div className="text-ms-2xl md:text-ms-3xl font-bold text-amber-400 font-mono mt-2">
+            <div className="text-ms-2xl md:text-ms-3xl font-bold text-warning font-mono mt-2">
               {jumlahHariIni}
             </div>
           </div>
@@ -236,7 +236,7 @@ function PosKasirRingkasanPage() {
                   value={dariTanggal}
                   max={sampaiTanggal || undefined}
                   onChange={(e) => setDariTanggal(e.target.value)}
-                  className="rounded-lg bg-slate-900 border border-slate-700 px-ms-3 py-ms-2 text-ms-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                  className="rounded-lg bg-slate-900 border border-slate-700 px-ms-3 py-ms-2 text-ms-sm text-slate-100 focus:outline-none focus:border-success"
                 />
               </label>
               <label className="flex flex-col gap-ms-1 text-ms-xs text-slate-400">
@@ -247,7 +247,7 @@ function PosKasirRingkasanPage() {
                   min={dariTanggal || undefined}
                   max={todayKey()}
                   onChange={(e) => setSampaiTanggal(e.target.value)}
-                  className="rounded-lg bg-slate-900 border border-slate-700 px-ms-3 py-ms-2 text-ms-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                  className="rounded-lg bg-slate-900 border border-slate-700 px-ms-3 py-ms-2 text-ms-sm text-slate-100 focus:outline-none focus:border-success"
                 />
               </label>
             </div>
@@ -323,7 +323,7 @@ function PosKasirRingkasanPage() {
             <button
               onClick={exportCSV}
               disabled={hariIni.length === 0}
-              className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
+              className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-success text-white font-medium"
             >
               ⬇ Ekspor CSV ({hariIni.length})
             </button>
@@ -357,7 +357,7 @@ function PosKasirRingkasanPage() {
                       <td className="py-ms-2 pr-3 text-right font-mono">
                         {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
                       </td>
-                      <td className="py-ms-2 pr-3 text-right font-mono font-semibold text-emerald-400">
+                      <td className="py-ms-2 pr-3 text-right font-mono font-semibold text-success">
                         {rupiah(t.total)}
                       </td>
                       <td className="py-ms-2 text-right font-mono text-slate-300">

@@ -225,7 +225,7 @@ function MinSupportedFormHarness() {
                 {below ? (
                   <span
                     data-testid={`mf-rel-${r.id}-badge`}
-                    className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800"
+                    className="rounded bg-warning px-1.5 py-0.5 text-warning"
                   >
                     lawas
                   </span>

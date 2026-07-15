@@ -26,10 +26,10 @@ function variantClass(v: StatusVariant): string {
   switch (v) {
     case "menunggu":
     case "hutang":
-      return "bg-amber-500/15 text-amber-700 dark:text-amber-400";
+      return "bg-warning/15 text-warning dark:text-warning";
     case "siap":
     case "lunas":
-      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
+      return "bg-success/15 text-success dark:text-success";
     case "kelebihan":
     case "info":
       return "bg-sky-500/15 text-sky-700 dark:text-sky-400";

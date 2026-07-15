@@ -328,7 +328,7 @@ function UndangPage() {
           {/* Status preview */}
           <div className="mt-3 min-h-[3rem] text-ms-sm">
             {!looksValid && input.length > 0 && (
-              <span className="text-amber-500">
+              <span className="text-warning">
                 PIN belum lengkap. Butuh 6–16 karakter huruf/angka.
               </span>
             )}

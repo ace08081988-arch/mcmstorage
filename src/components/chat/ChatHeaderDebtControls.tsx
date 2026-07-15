@@ -174,8 +174,8 @@ export function ChatHeaderDebtControls({
           type="button"
           className={`inline-flex max-w-full items-center gap-ms-1 whitespace-nowrap rounded-full border px-ms-2 py-0.5 text-ms-2xs font-semibold transition hover:bg-accent ${
             dominantKind === "piutang"
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
-              : "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+              ? "border-success/40 bg-success/10 text-success dark:text-success"
+              : "border-warning/40 bg-warning/10 text-warning dark:text-warning"
           }`}
           aria-label={
             dominantKind === "piutang"
@@ -280,8 +280,8 @@ function KindRow({
         <span
           className={`font-mono font-semibold ${
             kind === "piutang"
-              ? "text-emerald-700 dark:text-emerald-300"
-              : "text-amber-700 dark:text-amber-300"
+              ? "text-success dark:text-success"
+              : "text-warning dark:text-warning"
           }`}
         >
           {rupiah(balance)}

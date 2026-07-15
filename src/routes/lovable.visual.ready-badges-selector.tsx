@@ -254,13 +254,13 @@ function Surface({
               <span className="flex items-center gap-ms-1 tabular-nums">
                 <span
                   data-testid={`badge-active-${scope}-${t.id}`}
-                  className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300"
+                  className="rounded bg-success/10 px-1.5 py-0.5 text-success dark:text-success"
                 >
                   {active}
                 </span>
                 <span
                   data-testid={`badge-sent-${scope}-${t.id}`}
-                  className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300"
+                  className="rounded bg-warning/10 px-1.5 py-0.5 text-warning dark:text-warning"
                 >
                   {sent}
                 </span>
@@ -327,10 +327,10 @@ function Surface({
           Spec memverifikasi item pindah kesini seketika setelah dialog
           pembayaran dikonfirmasi (tanpa reload). */}
       <div
-        className="mt-2 rounded border border-emerald-500/40 bg-emerald-500/5 p-ms-1.5"
+        className="mt-2 rounded border border-success/40 bg-success/5 p-ms-1.5"
         data-testid={`riwayat-${scope}`}
       >
-        <div className="mb-1 text-ms-2xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+        <div className="mb-1 text-ms-2xs font-semibold uppercase text-success dark:text-success">
           Riwayat Terkirim ({sent.length})
         </div>
         <div className="space-y-1">
@@ -343,11 +343,11 @@ function Surface({
               <span className="font-mono text-muted-foreground">
                 {p.id} · {p.title_id}
               </span>
-              <span className="flex items-center gap-ms-1 text-emerald-700 dark:text-emerald-300">
+              <span className="flex items-center gap-ms-1 text-success dark:text-success">
                 {typeof p.paid_amount === "number" ? (
                   <span
                     data-testid={`riwayat-paid-${scope}-${p.id}`}
-                    className="rounded bg-emerald-500/10 px-1 py-0.5 tabular-nums"
+                    className="rounded bg-success/10 px-1 py-0.5 tabular-nums"
                   >
                     Rp{p.paid_amount.toLocaleString("id-ID")}
                   </span>

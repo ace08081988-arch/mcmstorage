@@ -264,7 +264,7 @@ export function OrderSummaryCard({
             <span className="truncate">
               Total Rp {soldTotal.toLocaleString("id-ID")}
               {sisa != null && sisa > 0 ? (
-                <span className="text-amber-600 dark:text-amber-400">
+                <span className="text-warning dark:text-warning">
                   {" "}
                   · Sisa Rp {sisa.toLocaleString("id-ID")}
                 </span>

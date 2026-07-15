@@ -50,14 +50,14 @@ function scheduleBadge(scheduled: string | null): { label: string; className: st
   if (Number.isNaN(t)) return { label: "Jadwal tidak valid", className: "bg-destructive/15 text-destructive" };
   const diffH = (t - now) / 36e5;
   if (diffH < -1) return { label: "Lewat jadwal", className: "bg-destructive/15 text-destructive" };
-  if (diffH < 0) return { label: "Sedang berjalan", className: "bg-amber-500/15 text-amber-700 dark:text-amber-200" };
-  if (diffH < 24) return { label: "Hari ini", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200" };
+  if (diffH < 0) return { label: "Sedang berjalan", className: "bg-warning/15 text-warning dark:text-warning" };
+  if (diffH < 24) return { label: "Hari ini", className: "bg-success/15 text-success dark:text-success" };
   return { label: "Terjadwal", className: "bg-sky-500/15 text-sky-700 dark:text-sky-200" };
 }
 
 function statusBadge(status: string): { label: string; className: string } {
   const s = status.toLowerCase();
-  if (s === "done") return { label: "Selesai", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200" };
+  if (s === "done") return { label: "Selesai", className: "bg-success/15 text-success dark:text-success" };
   if (s === "cancelled") return { label: "Dibatalkan", className: "bg-muted text-muted-foreground" };
   if (s === "expired") return { label: "Kedaluwarsa", className: "bg-destructive/10 text-destructive" };
   return { label: "Aktif", className: "bg-sky-500/15 text-sky-700 dark:text-sky-200" };
@@ -257,7 +257,7 @@ function TugasDaftarPage() {
                 ) : null}
 
                 {t.completion_note && t.completion_note.trim().length > 0 ? (
-                  <div className="mt-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-ms-2 py-1.5 text-ms-xs text-emerald-900 dark:text-emerald-200">
+                  <div className="mt-2 rounded-md border border-success/30 bg-success/10 px-ms-2 py-1.5 text-ms-xs text-success dark:text-success">
                     <div className="text-ms-2xs font-semibold uppercase tracking-wide">Catatan penyelesaian</div>
                     <p className="whitespace-pre-wrap break-words">{t.completion_note}</p>
                   </div>

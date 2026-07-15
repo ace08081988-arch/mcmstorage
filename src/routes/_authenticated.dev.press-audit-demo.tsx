@@ -567,7 +567,7 @@ function ExampleCard({
             {results.map((r) => (
               <li
                 key={r.preset}
-                className={r.pass ? "text-emerald-600" : "text-destructive"}
+                className={r.pass ? "text-success" : "text-destructive"}
                 data-pass={r.pass ? "1" : "0"}
               >
                 {r.pass ? "✓" : "✗"} <b>{r.preset}</b> — expected [
@@ -588,7 +588,7 @@ function ExampleCard({
               (garis putus-putus). Warna:{" "}
               <span className="text-destructive">merah</span> = block
               (deny/skip/off/allowlist-miss),{" "}
-              <span className="text-emerald-600">hijau</span> = allow
+              <span className="text-success">hijau</span> = allow
               (on/allow-match/scope.allow).
             </div>
             {traces.map((t) => (
@@ -597,7 +597,7 @@ function ExampleCard({
                   {t.code} · {t.rule} —{" "}
                   <span
                     className={
-                      t.allowed ? "text-emerald-600" : "text-destructive"
+                      t.allowed ? "text-success" : "text-destructive"
                     }
                   >
                     {t.allowed ? "ALLOWED" : "BLOCKED"}
@@ -661,7 +661,7 @@ function ExampleCard({
                       className={
                         "pr-2 " +
                         (r.expectedKept
-                          ? "text-emerald-600"
+                          ? "text-success"
                           : "text-destructive")
                       }
                     >
@@ -671,7 +671,7 @@ function ExampleCard({
                       className={
                         "pr-2 " +
                         (r.actualKept
-                          ? "text-emerald-600"
+                          ? "text-success"
                           : "text-destructive")
                       }
                     >
@@ -684,7 +684,7 @@ function ExampleCard({
                     </td>
                     <td>
                       {r.match ? (
-                        <span className="text-emerald-600">=</span>
+                        <span className="text-success">=</span>
                       ) : (
                         <span className="text-destructive">
                           {r.expectedKept ? "kept→blocked" : "blocked→kept"}
@@ -785,7 +785,7 @@ function PressAuditDemoPage() {
               }}
             />
             <span>
-              <b className="text-emerald-600">Hijau</b> — allow (on / allow-match / scope.allow)
+              <b className="text-success">Hijau</b> — allow (on / allow-match / scope.allow)
             </span>
           </li>
           <li className="flex items-center gap-ms-2">
@@ -850,7 +850,7 @@ function PressAuditDemoPage() {
               {!c.verified ? (
                 <span className="text-muted-foreground">—</span>
               ) : c.diff === 0 ? (
-                <span className="text-emerald-600 font-mono">
+                <span className="text-success font-mono">
                   ✓ {c.match}/{c.total}
                 </span>
               ) : (

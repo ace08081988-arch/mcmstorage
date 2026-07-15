@@ -184,7 +184,7 @@ function PesananDetailPage() {
                     <div className="text-muted-foreground">Dibutuhkan</div>
                     <div className="font-semibold">{fmtItemQty(qtyBase, item)}</div>
                   </div>
-                  <div className={`rounded p-ms-2 ${cukup ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
+                  <div className={`rounded p-ms-2 ${cukup ? "bg-success/10" : "bg-destructive/10"}`}>
                     <div className="text-muted-foreground">Sisa setelah</div>
                     <div className={`font-semibold ${cukup ? "" : "text-destructive"}`}>
                       {cukup ? fmtItemQty(item.stock_base - qtyBase, item) : "KURANG"}

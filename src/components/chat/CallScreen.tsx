@@ -1520,9 +1520,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 className={
                   "flex items-center gap-ms-1 rounded-full bg-black/40 px-ms-2 py-1 text-ms-2xs backdrop-blur " +
                   (netStats.tier === "good"
-                    ? "text-emerald-300"
+                    ? "text-success"
                     : netStats.tier === "fair"
-                      ? "text-amber-300"
+                      ? "text-warning"
                       : "text-red-300")
                 }
               >
@@ -1680,7 +1680,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           <div
             role="note"
             data-testid="call-turn-warning"
-            className="absolute inset-x-4 top-14 flex items-start gap-ms-2 rounded-md bg-amber-500/15 px-ms-3 py-ms-2 text-ms-2xs text-amber-100 backdrop-blur"
+            className="absolute inset-x-4 top-14 flex items-start gap-ms-2 rounded-md bg-warning/15 px-ms-3 py-ms-2 text-ms-2xs text-warning backdrop-blur"
           >
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>

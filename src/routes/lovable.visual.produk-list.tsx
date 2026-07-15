@@ -86,7 +86,7 @@ function HeroCard({ name, product, target, ref }: typeof HERO_FIXTURES[number]) 
               <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/15 px-ms-2 leading-none">
                 Target <b className="ml-0.5">{target}</b>
               </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-ms-2 font-semibold leading-none text-emerald-50 ring-1 ring-emerald-300/50">
+              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/25 px-ms-2 font-semibold leading-none text-success ring-1 ring-success/50">
                 <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
               </span>
               <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/10 px-ms-2 font-mono leading-none text-primary-foreground/90">

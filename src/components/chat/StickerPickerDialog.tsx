@@ -331,7 +331,7 @@ function Grid({
                 <button type="button" aria-label="Favorit"
                   onClick={(e) => { e.stopPropagation(); onToggleFav(s.id); }}
                   className="absolute left-0.5 top-0.5 rounded-full bg-background/80 p-0.5 backdrop-blur">
-                  <Star className={`h-3 w-3 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                  <Star className={`h-3 w-3 ${isFav ? "fill-warning text-warning" : "text-muted-foreground"}`} />
                 </button>
                 {/* Edit + Hapus selalu terlihat — Android tidak punya hover. */}
                 <div className="absolute right-0.5 top-0.5 flex gap-0.5">

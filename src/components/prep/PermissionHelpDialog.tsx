@@ -17,7 +17,7 @@ export function PermissionHelpDialog({ open, onClose, kind }: Props) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
-            <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden />
+            <AlertTriangle className="h-5 w-5 text-warning" aria-hidden />
             <span>{guide.title}</span>
           </DialogTitle>
           <DialogDescription className="text-ms-xs leading-relaxed">

@@ -77,9 +77,9 @@ const KIND_ICON: Record<FeedItemKind, React.ComponentType<{ className?: string }
 };
 
 const KIND_TONE: Record<FeedItemKind, string> = {
-  chat: "bg-emerald-500/15 text-emerald-500",
+  chat: "bg-success/15 text-success",
   tugas: "bg-sky-500/15 text-sky-400",
-  order: "bg-amber-500/15 text-amber-400",
+  order: "bg-warning/15 text-warning",
   system: "bg-violet-500/15 text-violet-400",
 };
 
@@ -532,7 +532,7 @@ function PembaruanPage() {
                     <div className="flex items-baseline gap-ms-2">
                       <span className="truncate text-ms-base font-semibold">{ch.title}</span>
                       <span
-                        className="ml-auto shrink-0 text-ms-xs tabular-nums text-emerald-500"
+                        className="ml-auto shrink-0 text-ms-xs tabular-nums text-success"
                         aria-hidden="true"
                       >
                         {formatTimeShort(ch.time)}
@@ -589,7 +589,7 @@ function PembaruanPage() {
           <SuggestionRow
             to="/chat"
             Icon={MessageCircle}
-            tone="bg-emerald-500/15 text-emerald-500"
+            tone="bg-success/15 text-success"
             title="Chat pelanggan"
             subtitle="Ikuti percakapan aktif"
           />
@@ -603,7 +603,7 @@ function PembaruanPage() {
           <SuggestionRow
             to="/pesanan"
             Icon={Store}
-            tone="bg-amber-500/15 text-amber-400"
+            tone="bg-warning/15 text-warning"
             title="Pesanan"
             subtitle="Order request & update"
           />

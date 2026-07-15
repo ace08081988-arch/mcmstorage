@@ -132,7 +132,7 @@ export function CopyChatApkLinksButton({
         {busy || isChecking ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : copied ? (
-          <Check className="h-3.5 w-3.5 text-emerald-500" />
+          <Check className="h-3.5 w-3.5 text-success" />
         ) : (
           <Copy className="h-3.5 w-3.5" />
         )}
@@ -175,7 +175,7 @@ export function CopyChatApkLinksButton({
         {busy || isChecking ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : copied ? (
-          <Check className="h-4 w-4 text-emerald-500" />
+          <Check className="h-4 w-4 text-success" />
         ) : (
           "📋"
         )}

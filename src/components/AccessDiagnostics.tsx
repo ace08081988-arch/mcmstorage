@@ -244,9 +244,9 @@ export function AccessDiagnostics() {
                   key={r.key}
                   className={`rounded-md border p-ms-2.5 ${
                     r.ok
-                      ? "border-emerald-500/30 bg-emerald-500/5"
+                      ? "border-success/30 bg-success/5"
                       : denied
-                        ? "border-amber-500/40 bg-amber-500/5"
+                        ? "border-warning/40 bg-warning/5"
                         : "border-destructive/40 bg-destructive/5"
                   }`}
                   data-testid={`access-diagnostics-${r.key}`}
@@ -256,12 +256,12 @@ export function AccessDiagnostics() {
                   <div className="flex items-start gap-ms-2">
                     {r.ok ? (
                       <CheckCircle2
-                        className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+                        className="mt-0.5 h-4 w-4 shrink-0 text-success"
                         aria-label="Lolos"
                       />
                     ) : (
                       <XCircle
-                        className={`mt-0.5 h-4 w-4 shrink-0 ${denied ? "text-amber-500" : "text-destructive"}`}
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${denied ? "text-warning" : "text-destructive"}`}
                         aria-label="Gagal"
                       />
                     )}

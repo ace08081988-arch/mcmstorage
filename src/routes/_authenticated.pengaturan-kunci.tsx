@@ -75,10 +75,10 @@ function StatusRow({
 }) {
   const dot =
     tone === "ok"
-      ? "bg-emerald-500"
+      ? "bg-success"
       : tone === "err"
         ? "bg-rose-500"
-        : "bg-amber-500";
+        : "bg-warning";
   return (
     <li className="flex items-center justify-between gap-ms-2 rounded border bg-background px-ms-2 py-1">
       <span className="text-muted-foreground">{label}</span>
@@ -719,7 +719,7 @@ function PengaturanKunci() {
             }
             if (recs.length === 0 && bioAvailable && cfg?.biometric) {
               return (
-                <div className="mt-2 rounded border border-emerald-500/30 bg-emerald-500/5 px-ms-2 py-1.5 text-ms-2xs text-emerald-700 dark:text-emerald-300">
+                <div className="mt-2 rounded border border-success/30 bg-success/5 px-ms-2 py-1.5 text-ms-2xs text-success dark:text-success">
                   Sidik jari aktif dan siap dipakai.
                 </div>
               );
@@ -736,7 +736,7 @@ function PengaturanKunci() {
                       key={r.key}
                       className="flex items-start gap-ms-2 rounded border bg-background px-ms-2 py-1.5 text-ms-2xs"
                     >
-                      <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-ms-2xs font-semibold text-amber-700 dark:text-amber-300">
+                      <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-warning/15 text-ms-2xs font-semibold text-warning dark:text-warning">
                         {i + 1}
                       </span>
                       <div className="flex-1 space-y-1">
@@ -811,7 +811,7 @@ function PengaturanKunci() {
               </p>
             )}
             {!bioChecking && !bioAvailable && !cfg && (
-              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-900 dark:text-amber-200">
+              <div className="mt-3 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
                 Sidik jari belum tersedia. Buat <b>PIN cadangan</b> agar tetap bisa
                 mengaktifkan App Lock dan membuka aplikasi.
                 <div className="mt-2 flex flex-wrap gap-ms-2">

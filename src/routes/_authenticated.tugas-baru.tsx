@@ -849,7 +849,7 @@ function TugasBaruForm() {
 
       {created ? (
         <div className="space-ms-3 rounded-lg border bg-card p-ms-4 text-ms-sm">
-          <div className="flex items-center gap-ms-2 text-emerald-600">
+          <div className="flex items-center gap-ms-2 text-success">
             <ShieldCheck className="h-4 w-4" /> <span className="font-medium">Tugas siap dibagikan</span>
           </div>
           <div className="space-y-1">
@@ -907,7 +907,7 @@ function TugasBaruForm() {
                   return (
                     <>
                       {previewCheck.ok ? (
-                        <div className="mb-2 flex items-center gap-ms-1.5 rounded-md border border-emerald-300/60 bg-emerald-50 px-ms-2 py-1 text-ms-2xs font-medium text-emerald-800">
+                        <div className="mb-2 flex items-center gap-ms-1.5 rounded-md border border-success/60 bg-success px-ms-2 py-1 text-ms-2xs font-medium text-success">
                           <Check className="h-3.5 w-3.5" /> Pesan lengkap — {previewItems.length} barang siap difoto &amp; instruksi maps ada.
                         </div>
                       ) : (
@@ -949,7 +949,7 @@ function TugasBaruForm() {
                 placeholder="08xxxxxxxxxx"
                 className="flex-1 rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
               />
-              <button type="button" onClick={shareWa} className="inline-flex items-center gap-ms-1 rounded-md bg-emerald-600 px-ms-3 py-1.5 text-ms-xs font-medium text-white hover:bg-emerald-700">
+              <button type="button" onClick={shareWa} className="inline-flex items-center gap-ms-1 rounded-md bg-success px-ms-3 py-1.5 text-ms-xs font-medium text-white hover:bg-success">
                 <MessageCircle className="h-3.5 w-3.5" /> Kirim
               </button>
             </div>
@@ -972,14 +972,14 @@ function TugasBaruForm() {
           <LastSavedSummary savedAt={savedAt} reason={savedReason} tooltipMode={tooltipMode} />
           <AutosaveAnnouncer state={saveState} savedAt={savedAt} reason={savedReason} />
           {restored ? (
-            <div className="flex items-start justify-between gap-ms-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-ms-3 py-ms-2 text-ms-2xs text-emerald-900 dark:text-emerald-200">
+            <div className="flex items-start justify-between gap-ms-2 rounded-md border border-success/40 bg-success/10 px-ms-3 py-ms-2 text-ms-2xs text-success dark:text-success">
               <span>
                 Draft sebelumnya dipulihkan otomatis — lanjutkan dari yang terakhir Anda isi.
               </span>
               <button
                 type="button"
                 onClick={clearForm}
-                className="shrink-0 rounded border border-emerald-600/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-emerald-600/10"
+                className="shrink-0 rounded border border-success/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-success/10"
               >
                 Bersihkan draft
               </button>
@@ -1014,7 +1014,7 @@ function TugasBaruForm() {
               aria-live="polite"
               data-testid="tugas-baru-prefill-fallback"
               data-reason={prefillFallback.reason}
-              className="flex items-start justify-between gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-2xs text-amber-900 dark:text-amber-200"
+              className="flex items-start justify-between gap-ms-2 rounded-md border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-2xs text-warning dark:text-warning"
             >
               <span className="min-w-0">
                 {prefillFallback.reason === "invalid"
@@ -1029,7 +1029,7 @@ function TugasBaruForm() {
               <button
                 type="button"
                 onClick={() => setPrefillFallback(null)}
-                className="shrink-0 rounded border border-amber-600/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-amber-600/10"
+                className="shrink-0 rounded border border-warning/40 px-ms-2 py-0.5 text-ms-2xs hover:bg-warning/10"
                 aria-label="Tutup peringatan judul ecer"
               >
                 Tutup
@@ -1204,7 +1204,7 @@ function TugasBaruForm() {
                       const v = verify[r.key];
                       if (!r.warehouse_item_id) {
                         return (
-                          <span className="text-amber-600">
+                          <span className="text-warning">
                             ⚠ Belum terhubung produk — foto pegawai tidak akan tampil di kartu Beranda untuk barang ini.
                           </span>
                         );
@@ -1214,7 +1214,7 @@ function TugasBaruForm() {
                       }
                       if (v.status === "ok") {
                         return (
-                          <span className="text-emerald-600">
+                          <span className="text-success">
                             ✓ Terhubung ke produk gudang <strong>{v.productName}</strong> — foto pegawai akan otomatis muncul di Beranda.
                           </span>
                         );
@@ -1358,7 +1358,7 @@ function TugasBaruForm() {
                         <span className="truncate">
                           <span className="text-muted-foreground">{i + 1}.</span> {it.name}
                           {!it.warehouse_item_id && (
-                            <span className="ml-1 text-ms-2xs text-amber-600 dark:text-amber-400">(tanpa cocok produk)</span>
+                            <span className="ml-1 text-ms-2xs text-warning dark:text-warning">(tanpa cocok produk)</span>
                           )}
                         </span>
                         <span className="shrink-0 font-mono">
@@ -1381,7 +1381,7 @@ function TugasBaruForm() {
                       <Copy className="h-3 w-3" /> Salin
                     </button>
                   </div>
-                  <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg border bg-[#dcf8c6] p-ms-3 text-ms-2xs leading-relaxed text-[#111] dark:bg-emerald-950/40 dark:text-emerald-50">
+                  <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg border bg-[#dcf8c6] p-ms-3 text-ms-2xs leading-relaxed text-[#111] dark:bg-success/40 dark:text-success">
                     {waMessage}
                   </pre>
                 </div>
@@ -1429,7 +1429,7 @@ function TokenDuplicateBadge({
   }
   if (check.status === "unique") {
     return (
-      <div className="mt-1 inline-flex items-center gap-ms-1 rounded-md bg-emerald-500/15 px-ms-2 py-0.5 text-ms-2xs font-medium text-emerald-700 dark:text-emerald-200">
+      <div className="mt-1 inline-flex items-center gap-ms-1 rounded-md bg-success/15 px-ms-2 py-0.5 text-ms-2xs font-medium text-success dark:text-success">
         <Check className="h-3 w-3" /> Token belum dipakai — aman
       </div>
     );
@@ -1454,7 +1454,7 @@ function TokenDuplicateBadge({
     );
   }
   return (
-    <div className="mt-1 inline-flex items-center gap-ms-1 rounded-md bg-amber-500/15 px-ms-2 py-0.5 text-ms-2xs text-amber-700 dark:text-amber-200">
+    <div className="mt-1 inline-flex items-center gap-ms-1 rounded-md bg-warning/15 px-ms-2 py-0.5 text-ms-2xs text-warning dark:text-warning">
       <Info className="h-3 w-3" /> Gagal memeriksa token{check.error ? `: ${check.error}` : ""}. Coba lagi.
     </div>
   );
@@ -1526,7 +1526,7 @@ function reasonMeta(reason: "auto" | "navigation" | "manual") {
     };
   return {
     label: "Otomatis",
-    cls: "bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/25 dark:text-emerald-200",
+    cls: "bg-success/15 text-success dark:bg-success/25 dark:text-success",
   };
 }
 
@@ -1860,7 +1860,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
   const content =
     state === "pending" ? (
       <span
-        className="inline-flex items-center gap-ms-1 rounded-sm bg-amber-500/15 px-1.5 py-px text-amber-700 dark:bg-amber-400/25 dark:text-amber-200"
+        className="inline-flex items-center gap-ms-1 rounded-sm bg-warning/15 px-1.5 py-px text-warning dark:bg-warning/25 dark:text-warning"
         title={info.tooltip}
       >
         <svg
@@ -1879,7 +1879,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
         className="inline-flex items-center gap-ms-1"
         title={info.tooltip}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <span className="h-1.5 w-1.5 rounded-full bg-success" />
         Tersimpan
         {savedStamp ? (
           <>
@@ -1895,7 +1895,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
           </span>
         )}
         {reasonLabel ? (
-          <span className="ml-1 rounded-sm bg-emerald-500/15 px-1 py-px text-[9px] font-medium text-emerald-700 dark:bg-emerald-400/25 dark:text-emerald-200">
+          <span className="ml-1 rounded-sm bg-success/15 px-1 py-px text-[9px] font-medium text-success dark:bg-success/25 dark:text-success">
             {reasonLabel}
           </span>
         ) : null}

@@ -397,7 +397,7 @@ function ChatListPage() {
 
       <div className="flex-1 space-ms-3 px-ms-3 py-ms-3">
       {isError && (conversations?.length ?? 0) > 0 ? (
-        <div className="flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-xs text-amber-900 dark:text-amber-200">
+        <div className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-xs text-warning dark:text-warning">
           <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="font-medium">Menampilkan data offline</p>

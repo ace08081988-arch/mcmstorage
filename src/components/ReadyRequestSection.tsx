@@ -269,7 +269,7 @@ function RequestCard({
             <span
               className={
                 hasPrep
-                  ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                  ? "font-semibold text-success dark:text-success"
                   : "text-muted-foreground"
               }
             >

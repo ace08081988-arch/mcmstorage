@@ -222,7 +222,7 @@ export function WaPreviewHost() {
       <DialogContent className="max-w-md gap-0 overflow-hidden p-0 sm:max-w-md">
         <DialogHeader className="border-b bg-muted/30 px-ms-5 pb-4 pt-5">
           <div className="flex items-center gap-ms-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success">
               <MessageCircle className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1 text-left">
@@ -246,7 +246,7 @@ export function WaPreviewHost() {
             />
           ) : null}
           {dupActive ? (
-            <div className="flex items-start gap-ms-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-ms-3 text-ms-xs text-amber-900 dark:text-amber-200">
+            <div className="flex items-start gap-ms-2 rounded-lg border border-warning/50 bg-warning/10 p-ms-3 text-ms-xs text-warning dark:text-warning">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">
@@ -276,7 +276,7 @@ export function WaPreviewHost() {
                     className={
                       "mt-2 rounded-md border px-ms-2 py-1.5 text-ms-2xs " +
                       (payloadMatches
-                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                        ? "border-success/40 bg-success/10 text-success dark:text-success"
                         : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
                     }
                   >
@@ -377,7 +377,7 @@ export function WaPreviewHost() {
               </span>
             </div>
             {missing > 0 ? (
-              <div className="mb-2 flex items-start gap-ms-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-ms-2xs text-amber-800 dark:text-amber-200">
+              <div className="mb-2 flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">{missing} foto gagal diunduh.</div>
@@ -392,7 +392,7 @@ export function WaPreviewHost() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-7 shrink-0 border-amber-500/60 bg-background px-ms-2 text-ms-2xs text-amber-800 hover:bg-amber-500/10 dark:text-amber-200"
+                    className="h-7 shrink-0 border-warning/60 bg-background px-ms-2 text-ms-2xs text-warning hover:bg-warning/10 dark:text-warning"
                     onClick={handleRetry}
                     disabled={retrying}
                   >
@@ -463,7 +463,7 @@ export function WaPreviewHost() {
                       ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                       : "Kirim ulang meski klik ganda terdeteksi"
                 }
-                className="bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+                className="bg-warning text-white hover:bg-warning disabled:opacity-50"
               >
                 <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
                 Kirim ulang (paksa)
@@ -475,7 +475,7 @@ export function WaPreviewHost() {
                 onClick={() => finish(true)}
                 disabled={live?.status === "in-flight"}
                 title={live?.status === "in-flight" ? (crossChannel ? "Kiriman Chat untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
-                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                className="bg-success text-white hover:bg-success"
               >
                 <Send className="mr-1.5 h-3.5 w-3.5" />
                 {live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via MCM"}

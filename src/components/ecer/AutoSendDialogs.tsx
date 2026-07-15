@@ -437,7 +437,7 @@ export function AutoSendConfirmDialog({
                   data-testid="auto-send-location-breakdown-row"
                   data-location-url={g.url ?? ""}
                   className={`flex items-center justify-between gap-ms-2 tabular-nums ${
-                    hasUrl ? "text-foreground" : "text-amber-600 dark:text-amber-400"
+                    hasUrl ? "text-foreground" : "text-warning dark:text-warning"
                   }`}
                 >
                   <span className="flex min-w-0 items-center gap-ms-1">
@@ -465,7 +465,7 @@ export function AutoSendConfirmDialog({
             })}
           </ul>
           {locationBreakdown.some((g) => !g.url) && (
-            <div className="mt-1 text-ms-2xs text-amber-600 dark:text-amber-400">
+            <div className="mt-1 text-ms-2xs text-warning dark:text-warning">
               Ada kotak tanpa link lokasi — pembeli tidak akan menerima titik pengambilan untuk kotak tersebut.
             </div>
           )}
@@ -619,7 +619,7 @@ export function AutoSendConfirmDialog({
                           type="button"
                           aria-label="Simpan berat"
                           data-testid="auto-send-item-save"
-                          className="rounded p-ms-1 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                          className="rounded p-ms-1 text-success hover:bg-success disabled:opacity-50"
                           onClick={() => void commitEdit(p)}
                           disabled={isSaving}
                         >

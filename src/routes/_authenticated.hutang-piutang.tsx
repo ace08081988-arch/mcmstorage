@@ -101,9 +101,9 @@ function FinanceStatCard({
   tone?: FinanceTone;
 }) {
   const tones: Record<FinanceTone, string> = {
-    emerald: "from-emerald-500/15 to-emerald-500/5 text-emerald-600 dark:text-emerald-300",
+    emerald: "from-success/15 to-success/5 text-success dark:text-success",
     rose: "from-rose-500/15 to-rose-500/5 text-rose-600 dark:text-rose-300",
-    amber: "from-amber-500/15 to-amber-500/5 text-amber-700 dark:text-amber-300",
+    amber: "from-warning/15 to-warning/5 text-warning dark:text-warning",
     sky: "from-sky-500/15 to-sky-500/5 text-sky-600 dark:text-sky-300",
     danger: "from-destructive/20 to-destructive/5 text-destructive",
     muted: "from-muted/60 to-muted/20 text-foreground",
@@ -585,7 +585,7 @@ function HutangPiutangPage() {
               <span
                 className={
                   "font-semibold tabular-nums " +
-                  (overall.net >= 0 ? "text-emerald-600" : "text-red-600")
+                  (overall.net >= 0 ? "text-success" : "text-red-600")
                 }
               >
                 {(overall.net >= 0 ? "+" : "−") + rupiah(Math.abs(overall.net))}
@@ -747,19 +747,19 @@ function HutangPiutangPage() {
                   </div>
                   <div className="mt-0.5 font-semibold tabular-nums">{rupiah(totals.total)}</div>
                 </div>
-                <div className="rounded-xl bg-emerald-500/10 p-ms-2">
-                  <div className="flex items-center justify-center gap-ms-1 text-emerald-700 dark:text-emerald-300">
+                <div className="rounded-xl bg-success/10 p-ms-2">
+                  <div className="flex items-center justify-center gap-ms-1 text-success dark:text-success">
                     <CheckCircle2 className="h-3 w-3" /> Terbayar
                   </div>
-                  <div className="mt-0.5 font-semibold tabular-nums text-emerald-600">
+                  <div className="mt-0.5 font-semibold tabular-nums text-success">
                     {rupiah(totals.paid)}
                   </div>
                 </div>
-                <div className="rounded-xl bg-amber-500/10 p-ms-2">
-                  <div className="flex items-center justify-center gap-ms-1 text-amber-700 dark:text-amber-300">
+                <div className="rounded-xl bg-warning/10 p-ms-2">
+                  <div className="flex items-center justify-center gap-ms-1 text-warning dark:text-warning">
                     <Coins className="h-3 w-3" /> Sisa
                   </div>
-                  <div className="mt-0.5 font-semibold tabular-nums text-amber-600">
+                  <div className="mt-0.5 font-semibold tabular-nums text-warning">
                     {rupiah(totals.sisa)}
                   </div>
                 </div>
@@ -828,7 +828,7 @@ function HutangPiutangPage() {
                             </div>
                             <div className="text-ms-2xs text-muted-foreground">
                               {group.items.length} catatan · sisa{" "}
-                              <span className="font-semibold tabular-nums text-amber-600">
+                              <span className="font-semibold tabular-nums text-warning">
                                 {rupiah(gSisa)}
                               </span>{" "}
                               dari <span className="tabular-nums">{rupiah(gTotal)}</span>
@@ -933,10 +933,10 @@ function HutangPiutangPage() {
                               className={
                                 "text-ms-2xs font-medium tabular-nums " +
                                 (lunas
-                                  ? "text-emerald-600"
+                                  ? "text-success"
                                   : overdue
                                     ? "text-destructive"
-                                    : "text-amber-600")
+                                    : "text-warning")
                               }
                             >
                               sisa {rupiah(Math.max(0, sisa))}
@@ -1127,7 +1127,7 @@ function PaymentHistory({
                   {p.note ? ` · ${p.note}` : ""}
                 </span>
                 <span className="flex items-center gap-ms-2">
-                  <span className="font-medium text-emerald-600">
+                  <span className="font-medium text-success">
                     {rupiah(Number(p.amount))}
                   </span>
                   <button
@@ -1236,7 +1236,7 @@ function PaymentsReport({
         <div className="mt-3 grid grid-cols-3 gap-ms-2 text-center text-ms-xs">
           <div>
             <div className="text-muted-foreground">Uang masuk</div>
-            <div className="font-semibold text-emerald-600">
+            <div className="font-semibold text-success">
               {rupiah(totals.masuk)}
             </div>
           </div>
@@ -1251,7 +1251,7 @@ function PaymentsReport({
             <div
               className={
                 "font-semibold " +
-                (totals.net >= 0 ? "text-emerald-600" : "text-red-600")
+                (totals.net >= 0 ? "text-success" : "text-red-600")
               }
             >
               {(totals.net >= 0 ? "+" : "−") + rupiah(Math.abs(totals.net))}
@@ -1302,7 +1302,7 @@ function PaymentsReport({
                         <div
                           className={
                             "font-semibold " +
-                            (isIn ? "text-emerald-600" : "text-red-600")
+                            (isIn ? "text-success" : "text-red-600")
                           }
                         >
                           {(isIn ? "+" : "−") + rupiah(Number(p.amount))}
@@ -1743,7 +1743,7 @@ function ReminderDialog({
               onChange={(e) => setAmount(e.target.value)}
             />
             {hasAmt && amt > sisa && (
-              <p className="text-ms-2xs text-amber-600">
+              <p className="text-ms-2xs text-warning">
                 Melebihi sisa ({rupiah(sisa)}). Tetap dapat disimpan.
               </p>
             )}

@@ -56,13 +56,13 @@ export function InflightStepProgress({
   }
 
   return (
-    <section className="mt-2 rounded-md border border-amber-500/40 bg-background/70 p-ms-2.5 text-ms-xs">
+    <section className="mt-2 rounded-md border border-warning/40 bg-background/70 p-ms-2.5 text-ms-xs">
       <header className="mb-1.5 flex items-center justify-between gap-ms-2">
         <div className="flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
           {terminal ? (
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-success" />
           ) : stale ? (
-            <CloudOff className="h-3.5 w-3.5 text-amber-600" />
+            <CloudOff className="h-3.5 w-3.5 text-warning" />
           ) : (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
           )}
@@ -76,7 +76,7 @@ export function InflightStepProgress({
         ) : null}
       </header>
       {stale && !terminal ? (
-        <div className="mb-1.5 flex items-start gap-ms-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 py-1.5 text-[10.5px] text-amber-900 dark:text-amber-200">
+        <div className="mb-1.5 flex items-start gap-ms-1.5 rounded-md border border-warning/40 bg-warning/10 px-ms-2 py-1.5 text-[10.5px] text-warning dark:text-warning">
           <CloudOff className="mt-0.5 h-3 w-3 shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="font-semibold">Data belum tersinkron</div>
@@ -109,10 +109,10 @@ export function InflightStepProgress({
               e.kind === "error"
                 ? "text-rose-600 dark:text-rose-400"
                 : e.kind === "outcome"
-                ? "text-amber-600 dark:text-amber-400"
+                ? "text-warning dark:text-warning"
                 : e.kind === "info"
                 ? "text-muted-foreground"
-                : "text-emerald-600 dark:text-emerald-400";
+                : "text-success dark:text-success";
             return (
               <li key={`${e.at}-${i}`} className="flex items-start gap-ms-2">
                 {running ? (

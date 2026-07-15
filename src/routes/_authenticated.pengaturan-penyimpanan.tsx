@@ -488,7 +488,7 @@ function PenyimpananPage() {
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                            <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                             Selesai
                           </>
                         )}
@@ -779,7 +779,7 @@ function BackupSummary({
         </div>
         <div className="flex flex-wrap items-center justify-between gap-ms-2">
           <span className="text-muted-foreground">Field berubah</span>
-          <span className={`font-medium tabular-nums ${changed > 0 ? "text-amber-600 dark:text-amber-400" : ""}`}>
+          <span className={`font-medium tabular-nums ${changed > 0 ? "text-warning dark:text-warning" : ""}`}>
             {changed} / {rows.length}
           </span>
         </div>
@@ -803,7 +803,7 @@ function BackupSummary({
                       </span>
                       <span className="text-ms-2xs text-muted-foreground">→</span>
                       <span
-                        className={`truncate font-mono text-ms-2xs max-w-[9rem] ${diff ? "font-semibold text-amber-600 dark:text-amber-400" : "text-foreground"}`}
+                        className={`truncate font-mono text-ms-2xs max-w-[9rem] ${diff ? "font-semibold text-warning dark:text-warning" : "text-foreground"}`}
                       >
                         {r.next}
                       </span>

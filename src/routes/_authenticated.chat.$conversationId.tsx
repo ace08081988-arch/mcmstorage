@@ -409,8 +409,8 @@ function ChatRoomPage() {
     const el = document.getElementById(`msg-${id}`);
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.add("ring-2", "ring-amber-400");
-    setTimeout(() => el.classList.remove("ring-2", "ring-amber-400"), 1500);
+    el.classList.add("ring-2", "ring-warning");
+    setTimeout(() => el.classList.remove("ring-2", "ring-warning"), 1500);
   }, []);
 
   // Quick reply popover state (driven by `/shortcut` in composer)
@@ -1334,7 +1334,7 @@ function ChatRoomPage() {
                   : `${typingNames.join(", ")} sedang menulis…`}
               </span>
             ) : !online ? (
-              <span className="inline-flex items-center gap-ms-1 text-amber-600 dark:text-amber-400">
+              <span className="inline-flex items-center gap-ms-1 text-warning dark:text-warning">
                 <WifiOff className="h-3 w-3" /> Offline · pesan akan dikirim saat online
               </span>
             ) : meta.data?.kind === "dm" ? (
@@ -1666,7 +1666,7 @@ function ChatRoomPage() {
                           <div className="mb-0.5 text-ms-2xs font-semibold opacity-80">{senderName}</div>
                         ) : null}
                         {m.pinned_at && !m.deleted_at ? (
-                          <div className={`mb-0.5 inline-flex items-center gap-ms-1 text-ms-2xs ${mine ? "text-primary-foreground/80" : "text-amber-600 dark:text-amber-400"}`}>
+                          <div className={`mb-0.5 inline-flex items-center gap-ms-1 text-ms-2xs ${mine ? "text-primary-foreground/80" : "text-warning dark:text-warning"}`}>
                             <Pin className="h-3 w-3" /> Disematkan
                           </div>
                         ) : null}
@@ -1755,7 +1755,7 @@ function ChatRoomPage() {
                         >
                           {m.edited_at && !m.deleted_at ? <span className="italic">diedit</span> : null}
                           {(m.starred_by ?? []).length > 0 && !m.deleted_at ? (
-                            <Star className="h-3 w-3 fill-current text-amber-400" aria-label="Berbintang" />
+                            <Star className="h-3 w-3 fill-current text-warning" aria-label="Berbintang" />
                           ) : null}
                           <span>{fmtTime(m.deleted_at ?? m.created_at)}</span>
                           {mine && !m.deleted_at ? (
@@ -2121,7 +2121,7 @@ function ChatRoomPage() {
                   Produk siap dikirim ({pendingProducts.length})
                 </span>
                 {saveStatus === "saved" ? (
-                  <span className="inline-flex shrink-0 items-center rounded bg-emerald-500/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                  <span className="inline-flex shrink-0 items-center rounded bg-success/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-success dark:text-success">
                     tersimpan
                   </span>
                 ) : null}
@@ -2223,7 +2223,7 @@ function ChatRoomPage() {
                           </span>
                         ) : sendStatus === "pending" ? (
                           <span
-                            className="shrink-0 rounded bg-amber-500/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400"
+                            className="shrink-0 rounded bg-warning/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-warning dark:text-warning"
                             aria-label="Menunggu antrean kirim"
                           >
                             menunggu

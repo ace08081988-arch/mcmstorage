@@ -116,7 +116,7 @@ export function EditContactNameDialog({ open, onOpenChange, peerKey, initialName
             {status === "saving" ? (
               <span className="flex items-center gap-ms-1 text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Menyimpan…</span>
             ) : status === "saved" ? (
-              <span className="flex items-center gap-ms-1 text-emerald-600"><Check className="h-3 w-3" /> Tersimpan & tersinkron</span>
+              <span className="flex items-center gap-ms-1 text-success"><Check className="h-3 w-3" /> Tersimpan & tersinkron</span>
             ) : status === "error" ? (
               <span className="flex items-center gap-ms-1 text-destructive"><AlertCircle className="h-3 w-3" /> {errorMsg ?? "Gagal menyimpan"}</span>
             ) : (

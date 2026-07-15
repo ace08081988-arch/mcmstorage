@@ -43,7 +43,7 @@ const ROWS: Row[] = [
     key: "1",
     worker_name: "PegawaiDenganNamaSangatPanjangTanpaSpasiUntukUjiTruncateDiMobile",
     title_name: "PaketRequestPromoAkhirBulanDenganLabelSuperPanjangTanpaSpasi",
-    status: { label: "Menunggu diambil", tone: "border-amber-500/40 bg-amber-500/10 text-amber-800" },
+    status: { label: "Menunggu diambil", tone: "border-warning/40 bg-warning/10 text-warning" },
     firstSent: "06/07/2026 09:12:34",
     lastSent: "06/07/2026 10:45:00",
     entries: [
@@ -55,7 +55,7 @@ const ROWS: Row[] = [
     key: "2",
     worker_name: "Ali",
     title_name: "Paket Mie Instan",
-    status: { label: "Selesai", tone: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700" },
+    status: { label: "Selesai", tone: "border-success/40 bg-success/10 text-success" },
     firstSent: "05/07/2026 14:00",
     lastSent: "05/07/2026 14:00",
     completed: "05/07/2026 15:20",

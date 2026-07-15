@@ -682,7 +682,7 @@ function PiutangTab({
       <div className="grid grid-cols-2 gap-ms-2 text-[0.6875rem]">
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
-          <div className="text-ms-sm font-semibold text-amber-600 dark:text-amber-400">{rupiah(totals.owed)}</div>
+          <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(totals.owed)}</div>
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total kelebihan/deposit</div>
@@ -1121,7 +1121,7 @@ function EditablePaymentRow({
     <li className="flex items-center justify-between gap-ms-2 text-[0.6875rem]">
       <span className="min-w-0 truncate">
         {new Date(payment.created_at).toLocaleDateString("id-ID")} ·{" "}
-        <b className="text-emerald-600 dark:text-emerald-400">{rupiah(Number(payment.amount))}</b>
+        <b className="text-success dark:text-success">{rupiah(Number(payment.amount))}</b>
         {payment.note && <span className="text-muted-foreground"> · {payment.note}</span>}
       </span>
       <div className="flex shrink-0 gap-ms-1">
@@ -1195,7 +1195,7 @@ function CustomerPayForm({
         </button>
         {balance > 0.001 && (
           <button type="button" disabled={busy} onClick={() => pay(balance)}
-            className="rounded border border-emerald-500 px-ms-2 py-1 text-ms-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400">
+            className="rounded border border-success px-ms-2 py-1 text-ms-xs font-semibold text-success hover:bg-success/10 disabled:opacity-50 dark:text-success">
             Lunasi
           </button>
         )}
@@ -1324,11 +1324,11 @@ function ShareCustomer({
   }
 
   const links = [
-    { label: "Kirim via MCM", emoji: "💬", href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`, cls: "border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400" },
-    { label: "Kirim via MCM Business", emoji: "🏪", href: waPhone ? `whatsapp://send?phone=${waPhone}&text=${encoded}` : `whatsapp://send?text=${encoded}`, cls: "border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 dark:text-emerald-400" },
+    { label: "Kirim via MCM", emoji: "💬", href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`, cls: "border-success text-success hover:bg-success/10 dark:text-success" },
+    { label: "Kirim via MCM Business", emoji: "🏪", href: waPhone ? `whatsapp://send?phone=${waPhone}&text=${encoded}` : `whatsapp://send?text=${encoded}`, cls: "border-success text-success hover:bg-success/10 dark:text-success" },
     { label: "Viber", emoji: "📞", href: waPhone ? `viber://chat?number=%2B${waPhone}&text=${encoded}` : `viber://forward?text=${encoded}`, cls: "border-purple-500 text-purple-600 hover:bg-purple-500/10 dark:text-purple-400" },
     { label: "Telegram", emoji: "✈️", href: `https://t.me/share/url?url=${encodeURIComponent(" ")}&text=${encoded}`, cls: "border-sky-500 text-sky-600 hover:bg-sky-500/10 dark:text-sky-400" },
-    { label: "SMS", emoji: "✉️", href: waPhone ? `sms:+${waPhone}?body=${encoded}` : `sms:?body=${encoded}`, cls: "border-amber-500 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400" },
+    { label: "SMS", emoji: "✉️", href: waPhone ? `sms:+${waPhone}?body=${encoded}` : `sms:?body=${encoded}`, cls: "border-warning text-warning hover:bg-warning/10 dark:text-warning" },
   ];
 
   return (
@@ -1427,7 +1427,7 @@ function ShareDebt({
       label: "Kirim via MCM",
       emoji: "💬",
       href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`,
-      cls: "border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400",
+      cls: "border-success text-success hover:bg-success/10 dark:text-success",
     },
     {
       label: "Kirim via MCM Business",
@@ -1435,7 +1435,7 @@ function ShareDebt({
       href: waPhone
         ? `whatsapp://send?phone=${waPhone}&text=${encoded}`
         : `whatsapp://send?text=${encoded}`,
-      cls: "border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 dark:text-emerald-400",
+      cls: "border-success text-success hover:bg-success/10 dark:text-success",
     },
     {
       label: "Viber",
@@ -1455,7 +1455,7 @@ function ShareDebt({
       label: "SMS",
       emoji: "✉️",
       href: waPhone ? `sms:+${waPhone}?body=${encoded}` : `sms:?body=${encoded}`,
-      cls: "border-amber-500 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400",
+      cls: "border-warning text-warning hover:bg-warning/10 dark:text-warning",
     },
   ];
 
@@ -1939,7 +1939,7 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
             <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={avgCost} onChange={(e) => setAvgCost(e.target.value)} />
           </label>
         </div>
-        <div className="text-[0.6875rem] text-amber-500">
+        <div className="text-[0.6875rem] text-warning">
           ⚠️ Mengubah stok / HPP manual akan menimpa nilai dari riwayat pembelian.
         </div>
         {baseUnitChanged && (
@@ -2120,7 +2120,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                               href={`https://wa.me/${wa}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="rounded border border-emerald-500 px-1.5 py-0.5 text-[0.6875rem] font-semibold text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                              className="rounded border border-success px-1.5 py-0.5 text-[0.6875rem] font-semibold text-success hover:bg-success/10 dark:text-success"
                               aria-label={`Kirim via MCM ke ${s.name}`}
                             >
                               💬 Chat
@@ -2158,7 +2158,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                         {bccAll.length > 0 && <span>BCC: {bccAll.join(", ")}</span>}
                       </div>
                       {(ccInvalid.length > 0 || bccInvalid.length > 0) && (
-                        <div className="mt-0.5 text-[0.6875rem] text-amber-500">
+                        <div className="mt-0.5 text-[0.6875rem] text-warning">
                           ⚠️ Alamat tidak valid diabaikan: {[...ccInvalid, ...bccInvalid].join(", ")}
                         </div>
                       )}
@@ -2605,7 +2605,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <button
             type="button"
             onClick={() => setPaymentMethod("hutang")}
-            className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-amber-500 text-white border-amber-500" : ""}`}
+            className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-warning text-white border-warning" : ""}`}
           >
             📝 Hutang
           </button>
@@ -2723,7 +2723,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 
       {warnings.length > 0 && (
         <ul
-          className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-ms-2 text-[0.6875rem] text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+          className="space-y-1 rounded-md border border-warning bg-warning p-ms-2 text-[0.6875rem] text-warning dark:border-warning dark:bg-warning/40 dark:text-warning"
           role="alert"
           aria-label="Peringatan pembelian"
         >
@@ -2733,7 +2733,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
               <span>{w.message}</span>
             </li>
           ))}
-          <li className="pt-0.5 text-[0.625rem] text-amber-800/80 dark:text-amber-300/80">
+          <li className="pt-0.5 text-[0.625rem] text-warning/80 dark:text-warning/80">
             Periksa kembali sebelum menyimpan. Tekan "Simpan pembelian" untuk tetap melanjutkan.
           </li>
         </ul>
@@ -3019,7 +3019,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             <div className="text-[0.6875rem] text-muted-foreground mb-1">Cara bayar</div>
             <div className="flex gap-ms-1 text-ms-xs">
               <button type="button" onClick={() => setPaymentMethod("kas")} className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "kas" ? "bg-primary text-primary-foreground border-primary" : ""}`}>💵 Kas (lunas)</button>
-              <button type="button" onClick={() => setPaymentMethod("hutang")} className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-amber-500 text-white border-amber-500" : ""}`}>📝 Hutang pelanggan</button>
+              <button type="button" onClick={() => setPaymentMethod("hutang")} className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-warning text-white border-warning" : ""}`}>📝 Hutang pelanggan</button>
             </div>
           </div>
 
@@ -3041,7 +3041,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
                     : <>Sisa setelah jual: <b>{fmtQtyDual(sisa, item.base_unit, item.package_type, item.package_size, dispMode, item.name)}</b></>}
                 </div>
                 <div>Total pendapatan: <b>{rupiah(total)}</b> ({paymentMethod === "hutang" ? "piutang ke pelanggan" : "lunas tunai"})</div>
-                <div className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}>
+                <div className={profit >= 0 ? "text-success dark:text-success" : "text-destructive"}>
                   Estimasi laba: <b>{rupiah(profit)}</b>
                 </div>
               </div>
@@ -3098,7 +3098,7 @@ function RiwayatTab({
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Laba</div>
-          <div className={`text-ms-sm font-semibold ${totalRevenue - totalCost >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
+          <div className={`text-ms-sm font-semibold ${totalRevenue - totalCost >= 0 ? "text-success dark:text-success" : "text-destructive"}`}>
             {rupiah(totalRevenue - totalCost)}
           </div>
         </div>
@@ -3271,11 +3271,11 @@ function HutangTab({
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sudah dibayar</div>
-          <div className="text-ms-sm font-semibold text-emerald-600 dark:text-emerald-400">{rupiah(totals.paid)}</div>
+          <div className="text-ms-sm font-semibold text-success dark:text-success">{rupiah(totals.paid)}</div>
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sisa</div>
-          <div className="text-ms-sm font-semibold text-amber-600 dark:text-amber-400">{rupiah(totals.remaining)}</div>
+          <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(totals.remaining)}</div>
         </div>
       </div>
 
@@ -3284,7 +3284,7 @@ function HutangTab({
           <div className="flex items-center justify-between">
             <div className="text-ms-sm font-semibold">{g.supplier?.name || "(tanpa supplier)"}</div>
             <div className="text-[0.6875rem]">
-              Sisa: <span className="font-semibold text-amber-600 dark:text-amber-400">{rupiah(g.remaining)}</span>
+              Sisa: <span className="font-semibold text-warning dark:text-warning">{rupiah(g.remaining)}</span>
               <span className="text-muted-foreground"> / {rupiah(g.total)}</span>
             </div>
           </div>
@@ -3320,8 +3320,8 @@ function HutangTab({
                   </div>
                   <div className="mt-1 grid grid-cols-3 gap-ms-2 text-[0.6875rem]">
                     <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(d.total_cost))}</b></div>
-                    <div><span className="text-muted-foreground">Bayar </span><b className="text-emerald-600 dark:text-emerald-400">{rupiah(paid)}</b></div>
-                    <div><span className="text-muted-foreground">Sisa </span><b className="text-amber-600 dark:text-amber-400">{rupiah(remaining)}</b></div>
+                    <div><span className="text-muted-foreground">Bayar </span><b className="text-success dark:text-success">{rupiah(paid)}</b></div>
+                    <div><span className="text-muted-foreground">Sisa </span><b className="text-warning dark:text-warning">{rupiah(remaining)}</b></div>
                   </div>
                   {!isPaid && g.supplier && (
                     <PayForm purchase={d} supplierId={g.supplier.id} remaining={remaining} uid={uid} onChanged={onChanged} onLocalPayment={onLocalPayment} />
@@ -3332,7 +3332,7 @@ function HutangTab({
                         <li key={pay.id} className="flex items-center justify-between gap-ms-2 text-[0.6875rem]">
                           <span className="truncate">
                             {new Date(pay.created_at).toLocaleDateString("id-ID")} ·{" "}
-                            <b className="text-emerald-600 dark:text-emerald-400">{rupiah(Number(pay.amount))}</b>
+                            <b className="text-success dark:text-success">{rupiah(Number(pay.amount))}</b>
                             {pay.note && <span className="text-muted-foreground"> · {pay.note}</span>}
                           </span>
                           <button
@@ -3444,7 +3444,7 @@ function PayForm({
           type="button"
           disabled={busy}
           onClick={() => pay(remaining)}
-          className="rounded border border-emerald-500 px-ms-2 py-1 text-ms-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400"
+          className="rounded border border-success px-ms-2 py-1 text-ms-xs font-semibold text-success hover:bg-success/10 disabled:opacity-50 dark:text-success"
         >
           Lunas
         </button>

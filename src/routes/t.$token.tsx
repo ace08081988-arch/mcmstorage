@@ -1310,12 +1310,12 @@ function PublicPrepPage() {
         <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-ms-4 py-8">
           {successFlash && (
             <div
-              className="success-banner mb-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-ms-3.5 text-emerald-700 shadow-lg shadow-emerald-500/10 sm:p-ms-5 dark:text-emerald-300"
+              className="success-banner mb-4 w-full rounded-2xl border border-success/40 bg-success/10 p-ms-3.5 text-success shadow-lg shadow-success/10 sm:p-ms-5 dark:text-success"
               role="status"
               aria-live="polite"
             >
               <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-ms-3 sm:gap-ms-4">
-                <div className="success-check-badge flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/40 sm:h-12 sm:w-12">
+                <div className="success-check-badge flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-success/20 ring-1 ring-success/40 sm:h-12 sm:w-12">
                   <CheckCircle2 className="h-6 w-6 sm:h-7 sm:w-7" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
@@ -1352,7 +1352,7 @@ function PublicPrepPage() {
             )}
             {peekStatus.state === "ok" && (
               <div
-                className="mb-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-ms-3 py-ms-2 text-ms-2xs text-emerald-700 dark:text-emerald-400"
+                className="mb-3 rounded-md border border-success/40 bg-success/5 px-ms-3 py-ms-2 text-ms-2xs text-success dark:text-success"
                 role="status"
               >
                 <div className="flex items-start gap-ms-2">
@@ -1384,7 +1384,7 @@ function PublicPrepPage() {
                   "mb-3 rounded-md border px-ms-3 py-ms-2 text-ms-2xs leading-relaxed " +
                   (peekStatus.state === "rate_limited" || peekStatus.state === "network"
                     ? "border-destructive/40 bg-destructive/5 text-destructive"
-                    : "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400")
+                    : "border-warning/40 bg-warning/5 text-warning dark:text-warning")
                 }
                 role="alert"
               >
@@ -1453,7 +1453,7 @@ function PublicPrepPage() {
                     : lastError.kind === "expired" ||
                         lastError.kind === "closed" ||
                         lastError.kind === "not_found"
-                      ? "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400"
+                      ? "border-warning/40 bg-warning/5 text-warning dark:text-warning"
                       : "border-destructive/40 bg-destructive/5 text-destructive")
                 }
                 role="alert"
@@ -1494,7 +1494,7 @@ function PublicPrepPage() {
                   "mb-4 grid grid-cols-2 gap-ms-2 rounded-lg border p-ms-2 text-center " +
                   (isLocked
                     ? "border-destructive/40 bg-destructive/5"
-                    : "border-amber-500/40 bg-amber-500/5")
+                    : "border-warning/40 bg-warning/5")
                 }
               >
                 <div>
@@ -1508,7 +1508,7 @@ function PublicPrepPage() {
                         ? "text-destructive"
                         : attemptsLeft <= 1
                           ? "text-destructive"
-                          : "text-amber-700 dark:text-amber-400")
+                          : "text-warning dark:text-warning")
                     }
                   >
                     {attemptsLeft}
@@ -1537,7 +1537,7 @@ function PublicPrepPage() {
             )}
             {sessionJustExpired && !isLocked && (
               <div
-                className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-ms-3 text-amber-800 dark:text-amber-300"
+                className="mb-4 rounded-lg border border-warning/40 bg-warning/10 p-ms-3 text-warning dark:text-warning"
                 role="alert"
               >
                 <div className="flex items-start gap-ms-2">
@@ -1555,7 +1555,7 @@ function PublicPrepPage() {
                     setSessionJustExpired(false);
                     focusPinInput();
                   }}
-                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-ms-2 rounded-lg bg-amber-600 text-ms-xs font-semibold text-white shadow-sm transition hover:bg-amber-700"
+                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-ms-2 rounded-lg bg-warning text-ms-xs font-semibold text-white shadow-sm transition hover:bg-warning"
                 >
                   <Lock className="h-4 w-4" /> Re-login sekarang
                 </button>
@@ -1600,7 +1600,7 @@ function PublicPrepPage() {
               </div>
             )}
             {!isLocked && justUnlocked && (
-              <div className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-emerald-700 dark:text-emerald-400">
+              <div className="mt-3 rounded-md border border-success/40 bg-success/5 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-success dark:text-success">
                 <div className="font-semibold">Kunci dibuka — silakan coba lagi</div>
                 <div className="mt-0.5 opacity-90">
                   Pastikan PIN dari pemilik benar. Anda punya {MAX_ATTEMPTS} percobaan baru.
@@ -1608,7 +1608,7 @@ function PublicPrepPage() {
               </div>
             )}
             {!isLocked && attempts > 0 && (
-              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
+              <div className="mt-3 rounded-md border border-warning/40 bg-warning/5 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-warning dark:text-warning">
                 <div className="font-semibold">Silakan coba lagi</div>
                 <div className="mt-0.5 opacity-90">
                   Sisa percobaan: <b>{attemptsLeft}</b> dari {MAX_ATTEMPTS}. Setelah {MAX_ATTEMPTS}{" "}
@@ -1689,7 +1689,7 @@ function PublicPrepPage() {
       <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
         <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-ms-4 py-8">
           <div className="w-full rounded-2xl border bg-card p-ms-6 text-center shadow-lg shadow-black/5">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/30">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-warning/10 text-warning ring-1 ring-warning/30">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div className="text-ms-base font-semibold">{copy.title}</div>
@@ -1747,7 +1747,7 @@ function PublicPrepPage() {
                 (sessionSecondsLeft <= 60
                   ? "border-destructive/30 bg-destructive/10 text-destructive"
                   : sessionSecondsLeft <= 300
-                    ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                    ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
                     : "border-border bg-muted/60 text-muted-foreground")
               }
               title={`Sesi PIN aktif sampai ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
@@ -1763,7 +1763,7 @@ function PublicPrepPage() {
                   "inline-flex items-center gap-ms-1 rounded-full px-ms-2.5 py-0.5 text-ms-2xs font-semibold text-white shadow-sm transition " +
                   (sessionSecondsLeft <= 60
                     ? "bg-destructive hover:bg-destructive/90"
-                    : "bg-amber-600 hover:bg-amber-700")
+                    : "bg-warning hover:bg-warning")
                 }
                 title="Masuk ulang dengan PIN sekarang"
               >
@@ -1783,7 +1783,7 @@ function PublicPrepPage() {
             aria-live="polite"
             className="mx-auto max-w-2xl px-ms-4 pb-2"
           >
-            <div className="flex items-start gap-ms-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-2xs leading-snug text-amber-800 dark:text-amber-200">
+            <div className="flex items-start gap-ms-2 rounded-lg border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-2xs leading-snug text-warning dark:text-warning">
               <RefreshCw className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse" />
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">Versi baru menunggu — refresh ditahan</div>
@@ -1998,13 +1998,13 @@ function PublicPrepPage() {
                           </div>
                           <div className="flex shrink-0 items-center gap-ms-2">
                             <div className="flex items-baseline gap-ms-1 tabular-nums">
-                              <span className={`text-ms-sm font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
+                              <span className={`text-ms-sm font-semibold ${allDone ? "text-success dark:text-success" : "text-foreground"}`}>
                                 {doneCount}/{totalCount}
                               </span>
                               <span className="text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">
                                 paket
                               </span>
-                              <span className={`ml-1 rounded-md px-1.5 py-0.5 text-ms-2xs font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
+                              <span className={`ml-1 rounded-md px-1.5 py-0.5 text-ms-2xs font-semibold tabular-nums ${allDone ? "bg-success/15 text-success dark:text-success" : "bg-primary/10 text-primary"}`}>
                                 {pct}%
                               </span>
                               <Info className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -2025,7 +2025,7 @@ function PublicPrepPage() {
                         </div>
                         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                           <div
-                            className={`h-full rounded-full transition-[width] duration-300 ease-out ${allDone ? "bg-emerald-500" : "bg-primary"}`}
+                            className={`h-full rounded-full transition-[width] duration-300 ease-out ${allDone ? "bg-success" : "bg-primary"}`}
                             style={{ width: `${pct}%` }}
                             aria-hidden
                           />
@@ -2033,7 +2033,7 @@ function PublicPrepPage() {
                         <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-ms-2xs tabular-nums text-muted-foreground">
                           <span className="inline-flex items-baseline gap-ms-1">
                             <span className="uppercase tracking-wide">Siap</span>
-                            <span className={`font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{doneReq}</span>
+                            <span className={`font-semibold ${allDone ? "text-success dark:text-success" : "text-foreground"}`}>{doneReq}</span>
                             <span>{unit}</span>
                           </span>
                           <span className="inline-flex items-baseline gap-ms-1">
@@ -2130,7 +2130,7 @@ function PublicPrepPage() {
                                 </div>
                                 <div className="rounded-md border p-ms-2 text-center">
                                   <div className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Siap</div>
-                                  <div className={`text-ms-base font-semibold tabular-nums ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{doneReq}</div>
+                                  <div className={`text-ms-base font-semibold tabular-nums ${allDone ? "text-success dark:text-success" : "text-foreground"}`}>{doneReq}</div>
                                   <div className="text-ms-2xs text-muted-foreground">{doneCount} paket</div>
                                 </div>
                                 <div className="rounded-md border p-ms-2 text-center">
@@ -2145,7 +2145,7 @@ function PublicPrepPage() {
                                   <span className="font-semibold tabular-nums">{doneCount}/{totalCount} · {pct}%</span>
                                 </div>
                                 <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                                  <div className={`h-full rounded-full ${allDone ? "bg-emerald-500" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+                                  <div className={`h-full rounded-full ${allDone ? "bg-success" : "bg-primary"}`} style={{ width: `${pct}%` }} />
                                 </div>
                               </div>
                               <div className="max-h-60 overflow-y-auto rounded-md border">
@@ -2155,7 +2155,7 @@ function PublicPrepPage() {
                                     return (
                                       <div key={it.id} className="flex items-center justify-between p-ms-2 text-ms-sm">
                                         <div className="flex items-center gap-ms-2 min-w-0">
-                                          <div className={`h-2 w-2 shrink-0 rounded-full ${done ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                                          <div className={`h-2 w-2 shrink-0 rounded-full ${done ? "bg-success" : "bg-muted-foreground"}`} />
                                           <span className="truncate">{it.name}</span>
                                         </div>
                                         <div className="shrink-0 tabular-nums text-muted-foreground">
@@ -2216,7 +2216,7 @@ function PublicPrepPage() {
 
         <WorkerSectionBoundary
           renderFallback={(error) => (
-            <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-ms-4 text-ms-sm text-amber-800 dark:text-amber-300">
+            <div className="mt-6 rounded-xl border border-warning/40 bg-warning/5 p-ms-4 text-ms-sm text-warning dark:text-warning">
               <div className="flex items-start gap-ms-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0">
@@ -2834,10 +2834,10 @@ function ItemCard({
   return (
     <div
       ref={cardRef}
-      className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
+      className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-warning/60 ring-1 ring-warning/30" : isDone ? "border-success/30" : ""}`}
     >
       {isStale && (
-        <div className="flex items-start gap-ms-2 border-b border-amber-500/30 bg-amber-500/10 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-amber-800 dark:text-amber-300">
+        <div className="flex items-start gap-ms-2 border-b border-warning/30 bg-warning/10 px-ms-3 py-ms-2 text-ms-2xs leading-relaxed text-warning dark:text-warning">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div className="flex-1">
             <b>Item ini baru saja diubah admin.</b> Periksa kembali sebelum kirim.
@@ -2845,7 +2845,7 @@ function ItemCard({
           <button
             type="button"
             onClick={onAcknowledgeStale}
-            className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-amber-500/40 bg-background px-ms-2 text-ms-2xs font-semibold text-amber-700 hover:bg-amber-500/10 dark:text-amber-300"
+            className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-warning/40 bg-background px-ms-2 text-ms-2xs font-semibold text-warning hover:bg-warning/10 dark:text-warning"
           >
             <RefreshCw className="h-3 w-3" /> Lanjutkan
           </button>
@@ -2876,7 +2876,7 @@ function ItemCard({
                 <CheckCircle2 className="mr-1 h-3 w-3" /> Berhasil
               </StatusBadge>
             ) : hasDraft ? (
-              <span className="inline-flex items-center gap-ms-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-ms-2xs font-semibold text-amber-700 dark:text-amber-300">
+              <span className="inline-flex items-center gap-ms-1 rounded-md bg-warning/15 px-1.5 py-0.5 text-ms-2xs font-semibold text-warning dark:text-warning">
                 <Clock className="h-3 w-3" aria-hidden="true" /> Menunggu {photos.length + pending.length}
               </span>
             ) : (
@@ -2945,7 +2945,7 @@ function ItemCard({
           <div
             role="status"
             aria-live="polite"
-            className="mb-2 flex items-start gap-ms-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-ms-3 py-ms-2 text-ms-xs leading-relaxed text-emerald-700 dark:text-emerald-300"
+            className="mb-2 flex items-start gap-ms-2 rounded-lg border border-success/40 bg-success/5 px-ms-3 py-ms-2 text-ms-xs leading-relaxed text-success dark:text-success"
           >
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <div className="min-w-0 flex-1">
@@ -2962,12 +2962,12 @@ function ItemCard({
           </div>
         )}
         {isDone && !isStale ? (
-          <div className="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-ms-3 text-ms-2xs leading-relaxed text-emerald-700 dark:text-emerald-300">
+          <div className="mt-3 rounded-lg border border-success/40 bg-success/5 p-ms-3 text-ms-2xs leading-relaxed text-success dark:text-success">
             <div className="flex items-center gap-ms-1.5 font-semibold">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Sudah terkirim
             </div>
-            <div className="mt-1 text-emerald-700/80 dark:text-emerald-300/80">
+            <div className="mt-1 text-success/80 dark:text-success/80">
               Foto & link sudah masuk folder <b>{item.name}</b>. Kolom
               penyiapan disembunyikan supaya tidak dikirim dua kali.
             </div>
@@ -3074,7 +3074,7 @@ function ItemCard({
           </button>
         </div>
 
-        <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-ms-2.5 text-ms-2xs leading-relaxed text-amber-700 dark:text-amber-400">
+        <div className="mt-3 rounded-lg border border-warning/40 bg-warning/5 p-ms-2.5 text-ms-2xs leading-relaxed text-warning dark:text-warning">
           Siapkan{" "}
           <b>
             {formatQtyShort(item.qty_requested, item.unit_label, item.name)}
@@ -3371,9 +3371,9 @@ function PhotoTileGrid({
                   : up === "uploading"
                     ? "ring-2 ring-primary"
                     : up === "done"
-                      ? "ring-2 ring-emerald-500"
+                      ? "ring-2 ring-success"
                       : ok
-                        ? "ring-2 ring-emerald-500"
+                        ? "ring-2 ring-success"
                         : ""
               }`}
             >
@@ -3426,9 +3426,9 @@ function PhotoTileGrid({
                 </div>
               )}
               {up === "done" && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/25">
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-success/25">
                   <div
-                    className="rounded-full bg-emerald-500 p-ms-1 text-white shadow"
+                    className="rounded-full bg-success p-ms-1 text-white shadow"
                     aria-label="Foto terunggah"
                   >
                     <CheckCircle2 className="h-4 w-4" />
@@ -3457,7 +3457,7 @@ function PhotoTileGrid({
               )}
               {ok && up === "idle" && (
                 <div
-                  className="pointer-events-none absolute right-1 top-1 rounded-full bg-emerald-500 p-0.5 text-white shadow"
+                  className="pointer-events-none absolute right-1 top-1 rounded-full bg-success p-0.5 text-white shadow"
                   aria-label="Foto siap"
                 >
                   <CheckCircle2 className="h-3 w-3" />
@@ -3572,13 +3572,13 @@ function SyncBadge({
       spin: true,
     },
     connected: {
-      cls: "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400",
+      cls: "bg-success/10 text-success ring-success/20 dark:text-success",
       label: "Sinkron",
       Icon: Wifi,
       spin: false,
     },
     lag: {
-      cls: "bg-amber-500/10 text-amber-700 ring-amber-500/30 dark:text-amber-400",
+      cls: "bg-warning/10 text-warning ring-warning/30 dark:text-warning",
       label: ageSec != null ? `Tertunda ${ageSec}d` : "Tertunda",
       Icon: Wifi,
       spin: false,
@@ -3747,7 +3747,7 @@ function RequestSection({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-ms-1.5">
                       <div className="truncate text-ms-sm font-semibold">{t.name}</div>
-                      <span className="inline-flex shrink-0 items-center gap-ms-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-ms-2xs font-semibold text-emerald-600 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+                      <span className="inline-flex shrink-0 items-center gap-ms-1 rounded-full bg-success/15 px-1.5 py-0.5 text-ms-2xs font-semibold text-success ring-1 ring-success/30 dark:text-success">
                         <CheckCircle2 className="h-3 w-3" /> Selesai
                       </span>
                     </div>
@@ -3807,7 +3807,7 @@ function RequestSection({
             renderedRow = (
               <div
                 key={t?.id ?? `request-title-error-${titleIndex}`}
-                className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-ms-3 py-ms-2 text-ms-2xs text-amber-700 dark:text-amber-300"
+                className="rounded-xl border border-warning/40 bg-warning/5 px-ms-3 py-ms-2 text-ms-2xs text-warning dark:text-warning"
               >
                 Paket &quot;{t?.name ?? "tanpa nama"}&quot; tidak bisa ditampilkan. Muat ulang portal atau hubungi admin.
               </div>
@@ -4565,7 +4565,7 @@ function RequestForm({
         return (
           <div className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 border-t bg-background/95 px-ms-3 py-ms-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
             {reason ? (
-              <p className="mb-1.5 text-center text-ms-2xs font-medium text-amber-600 dark:text-amber-400">
+              <p className="mb-1.5 text-center text-ms-2xs font-medium text-warning dark:text-warning">
                 {reason}
               </p>
             ) : null}

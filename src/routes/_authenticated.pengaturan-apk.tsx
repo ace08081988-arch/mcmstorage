@@ -128,7 +128,7 @@ function PengaturanApkPage() {
           </button>
         </div>
       ) : !isAdmin || (data && data.isAdmin === false) ? (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-ms-4 text-ms-sm text-amber-900">
+        <div className="rounded-xl border border-warning bg-warning p-ms-4 text-ms-sm text-warning">
           <div className="flex items-start gap-ms-2">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="min-w-0">
@@ -455,7 +455,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
       </div>
 
       {entry.belowMinimum && (
-        <div className="mt-3 flex items-start gap-ms-1.5 rounded-lg border border-amber-300 bg-amber-50 p-ms-2.5 text-ms-2xs leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="mt-3 flex items-start gap-ms-1.5 rounded-lg border border-warning bg-warning p-ms-2.5 text-ms-2xs leading-snug text-warning dark:border-warning/60 dark:bg-warning/40 dark:text-warning">
           <History className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
             Build ini di bawah minimum versi yang ditetapkan. User akan
@@ -469,7 +469,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
           className={`mt-3 rounded-lg border p-ms-2.5 text-ms-2xs leading-snug ${
             hasError
               ? "border-red-300 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
-              : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+              : "border-warning bg-warning text-warning dark:border-warning/60 dark:bg-warning/40 dark:text-warning"
           }`}
         >
           <div className="flex items-start gap-ms-1.5 font-semibold">
@@ -497,7 +497,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
         <label className="flex items-center justify-between gap-ms-3 text-ms-xs">
           <span className="flex items-center gap-ms-2">
             {enabled ? (
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
             ) : (
               <XCircle className="h-3.5 w-3.5 text-red-600" />
             )}
@@ -589,7 +589,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
               {hasError ? (
                 <ShieldAlert className="h-4 w-4 text-red-600" />
               ) : (
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertTriangle className="h-4 w-4 text-warning" />
               )}
               Rilis berkas dengan nama bermasalah?
             </AlertDialogTitle>
@@ -603,7 +603,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
                         className={
                           i.severity === "error"
                             ? "text-red-700 dark:text-red-300"
-                            : "text-amber-700 dark:text-amber-300"
+                            : "text-warning dark:text-warning"
                         }
                       >
                         {i.message}
@@ -643,8 +643,8 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
 
 function StatusBadge({ status }: { status: AdminApkEntry["status"] }) {
   const map = {
-    published: "bg-emerald-600/10 text-emerald-700 dark:text-emerald-300",
-    scheduled: "bg-amber-600/10 text-amber-700 dark:text-amber-300",
+    published: "bg-success/10 text-success dark:text-success",
+    scheduled: "bg-warning/10 text-warning dark:text-warning",
     disabled: "bg-red-600/10 text-red-700 dark:text-red-300",
   } as const;
   return (
@@ -785,7 +785,7 @@ function StatTile({
 }) {
   const cls =
     tone === "emerald"
-      ? "border-emerald-300/60 bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+      ? "border-success/60 bg-success dark:border-success/60 dark:bg-success/30"
       : "border-sky-300/60 bg-sky-50 dark:border-sky-900/60 dark:bg-sky-950/30";
   return (
     <div className={`rounded-lg border p-ms-2.5 ${cls}`}>
@@ -910,7 +910,7 @@ function UploadApkCard() {
             className={`rounded-lg border p-ms-2 text-ms-2xs leading-snug ${
               validation.severity === "error"
                 ? "border-red-300 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
-                : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+                : "border-warning bg-warning text-warning dark:border-warning/60 dark:bg-warning/40 dark:text-warning"
             }`}
           >
             <div className="flex items-start gap-ms-1.5">

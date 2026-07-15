@@ -92,9 +92,9 @@ function initialsOf(name: string): string {
 function avatarTone(name: string): string {
   const tones = [
     "bg-primary/15 text-primary",
-    "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
+    "bg-success/15 text-success dark:text-success",
     "bg-sky-500/15 text-sky-600 dark:text-sky-300",
-    "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    "bg-warning/15 text-warning dark:text-warning",
     "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-300",
     "bg-rose-500/15 text-rose-600 dark:text-rose-300",
   ];
@@ -119,9 +119,9 @@ function StatCard({
 }) {
   const tones: Record<StatTone, string> = {
     primary: "from-primary/12 to-primary/5 text-primary",
-    emerald: "from-emerald-500/12 to-emerald-500/5 text-emerald-600 dark:text-emerald-300",
+    emerald: "from-success/12 to-success/5 text-success dark:text-success",
     sky: "from-sky-500/12 to-sky-500/5 text-sky-600 dark:text-sky-300",
-    amber: "from-amber-500/12 to-amber-500/5 text-amber-700 dark:text-amber-300",
+    amber: "from-warning/12 to-warning/5 text-warning dark:text-warning",
     muted: "from-muted/50 to-muted/20 text-foreground",
   };
   return (
@@ -395,7 +395,7 @@ function BukuAlamatPage() {
           </Button>
         </div>
         {support === "unsupported" && (
-          <p className="rounded-xl border border-amber-300/50 bg-amber-50 px-ms-3 py-ms-2 text-ms-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="rounded-xl border border-warning/50 bg-warning px-ms-3 py-ms-2 text-ms-xs text-warning dark:bg-warning/40 dark:text-warning">
             Akses kontak HP hanya tersedia di aplikasi Android MCM Storage, atau di Chrome Android
             (Contact Picker). Tambah manual tetap bisa di semua perangkat.
           </p>
@@ -498,7 +498,7 @@ function BukuAlamatPage() {
                               {r.name}
                             </span>
                             {r.linked_user_id && (
-                              <span className="inline-flex items-center gap-ms-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-ms-2xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                              <span className="inline-flex items-center gap-ms-1 rounded-full bg-success px-1.5 py-0.5 text-ms-2xs font-medium text-success dark:bg-success/40 dark:text-success">
                                 <CheckCircle2 className="h-3 w-3" /> Terdaftar
                               </span>
                             )}
@@ -843,13 +843,13 @@ function EditDialog({
                     <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memeriksa PIN…
                   </p>
                 ) : pinPreview ? (
-                  <p className="text-emerald-600">
+                  <p className="text-success">
                     Tertaut ke:{" "}
                     <span className="font-medium">{pinPreview.display_name || "Pengguna MCM"}</span>
                     {" · "}PIN {formatInviteCode(pinPreview.invite_code)}
                   </p>
                 ) : (
-                  <p className="text-amber-600">
+                  <p className="text-warning">
                     PIN tidak ditemukan. Periksa lagi kode dari teman.
                   </p>
                 )}

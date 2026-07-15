@@ -377,7 +377,7 @@ export function OrgNameSettings() {
               )}
               {pendingLogo && (
                 <span
-                  className="absolute inset-x-0 bottom-0 bg-amber-500/90 text-center text-[9px] font-semibold uppercase tracking-wider text-white"
+                  className="absolute inset-x-0 bottom-0 bg-warning/90 text-center text-[9px] font-semibold uppercase tracking-wider text-white"
                   aria-hidden="true"
                 >
                   Baru
@@ -437,8 +437,8 @@ export function OrgNameSettings() {
             </div>
           </div>
           {pendingLogo && (
-            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-ms-2 text-ms-2xs">
-              <div className="mb-1 flex items-center gap-ms-1.5 font-semibold text-amber-700 dark:text-amber-500">
+            <div className="rounded-md border border-warning/40 bg-warning/5 p-ms-2 text-ms-2xs">
+              <div className="mb-1 flex items-center gap-ms-1.5 font-semibold text-warning dark:text-warning">
                 <ImagePlus className="h-3 w-3" aria-hidden="true" />
                 Pratinjau logo baru — belum disimpan
               </div>
@@ -692,7 +692,7 @@ export function OrgNameSettings() {
             </div>
           </div>
           {dirty && (
-            <p className="text-ms-2xs text-amber-600 dark:text-amber-500">
+            <p className="text-ms-2xs text-warning dark:text-warning">
               Perubahan belum disimpan — tekan Simpan untuk menerapkan.
             </p>
           )}
@@ -711,7 +711,7 @@ export function OrgNameSettings() {
           <div className="flex items-center gap-ms-3">
             {lastSavedAt && !dirty && (
               <span
-                className="inline-flex items-center gap-ms-1 text-ms-2xs font-medium text-emerald-600 dark:text-emerald-500"
+                className="inline-flex items-center gap-ms-1 text-ms-2xs font-medium text-success dark:text-success"
                 title={new Date(lastSavedAt).toLocaleString("id-ID")}
               >
                 <Check className="h-3 w-3" aria-hidden="true" />
