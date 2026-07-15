@@ -1090,7 +1090,7 @@ function ChatRoomPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
-    if (!t && pendingProducts.length === 0) return;
+    if (!t && pendingProducts.length === 0 && pendingAttachments.length === 0) return;
     if (sendingLockRef.current) return;
     sendingLockRef.current = true;
     setIsSending(true);
@@ -1116,8 +1116,10 @@ function ChatRoomPage() {
       return;
     }
     const replyId = replyTo?.id ?? null;
-    // Kirim teks (kalau ada) via jalur outbox biasa.
-    if (t) {
+    const hasAttachments = pendingAttachments.length > 0;
+    // Kirim teks (kalau ada) via jalur outbox biasa — kecuali ada lampiran,
+    // maka teks akan dipakai sebagai caption pada lampiran pertama.
+    if (t && !hasAttachments) {
       const item: OutboxItem = {
         tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         body: t,
@@ -1126,6 +1128,65 @@ function ChatRoomPage() {
       };
       setOutbox((prev) => [...prev, item]);
       void doSendWith(item, replyId);
+    }
+    // Unggah + kirim lampiran (foto/video/dokumen) yang di-stage dari
+    // AttachMenu. Caption dari textarea otomatis menempel pada lampiran
+    // pertama saja (perilaku ala WhatsApp).
+    if (hasAttachments) {
+      const queue = pendingAttachments.slice();
+      const captionForFirst = t;
+      setAttachmentSendStatuses(() => {
+        const next: Record<string, "pending" | "sending" | "failed"> = {};
+        for (const a of queue) next[a.id] = "pending";
+        return next;
+      });
+      const progressToast = toast.loading(`Mengirim 0 dari ${queue.length} lampiran…`);
+      void (async () => {
+        let done = 0;
+        let failed = 0;
+        for (let i = 0; i < queue.length; i++) {
+          const a = queue[i];
+          setAttachmentSendStatuses((prev) => ({ ...prev, [a.id]: "sending" }));
+          toast.loading(`Mengirim ${i + 1}/${queue.length}: ${a.file.name}…`, { id: progressToast });
+          try {
+            const up = await uploadChatFile({ conversationId, file: a.file });
+            await sendMessage({
+              data: {
+                conversationId,
+                attachmentPath: up.path,
+                attachmentMime: up.mime,
+                attachmentName: up.name,
+                attachmentSize: up.size,
+                ...(i === 0 && captionForFirst ? { body: captionForFirst } : {}),
+              },
+            });
+            done++;
+            // Buang dari pratinjau segera setelah sukses.
+            setPendingAttachments((prev) => {
+              const found = prev.find((p) => p.id === a.id);
+              if (found?.previewUrl) { try { URL.revokeObjectURL(found.previewUrl); } catch { /* ignore */ } }
+              return prev.filter((p) => p.id !== a.id);
+            });
+            setAttachmentSendStatuses((prev) => {
+              const { [a.id]: _drop, ...rest } = prev;
+              return rest;
+            });
+          } catch (err) {
+            failed++;
+            setAttachmentSendStatuses((prev) => ({ ...prev, [a.id]: "failed" }));
+            toast.error((err as Error)?.message || `Gagal mengirim: ${a.file.name}`);
+          }
+        }
+        toast.dismiss(progressToast);
+        if (failed === 0) {
+          toast.success(queue.length > 1 ? `${done} lampiran terkirim` : `Lampiran terkirim`);
+        } else if (done === 0) {
+          toast.error(`Semua ${queue.length} lampiran gagal — tekan Kirim untuk coba lagi`);
+        } else {
+          toast.warning(`${done} terkirim, ${failed} gagal — item gagal masih di composer`);
+        }
+        void othersRead.refetch();
+      })();
     }
     // Kirim produk-produk yang di-queue secara berurutan supaya urutan
     // pesan konsisten dan status/riwayat paket ter-update satu-satu.
