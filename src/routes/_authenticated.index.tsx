@@ -37,6 +37,7 @@ const ProductEditDrawer = lazy(() =>
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
+import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
 import {
   DndContext,
   closestCenter,
