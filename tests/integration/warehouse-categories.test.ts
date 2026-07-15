@@ -65,7 +65,14 @@ async function seedCategory(name: string, position: number) {
 async function seedItem(category: string, itemName = `item-${Math.random().toString(36).slice(2, 7)}`) {
   const { error } = await admin
     .from("warehouse_items")
-    .insert({ user_id: userId, name: itemName, category });
+    .insert({
+      user_id: userId,
+      name: itemName,
+      category,
+      package_type: "unit",
+      package_size: 1,
+      base_unit: "pcs",
+    });
   if (error) throw error;
   return itemName;
 }
