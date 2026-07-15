@@ -672,6 +672,61 @@ function Index() {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
   }, [viewMode, hydrated]);
 
+  /**
+   * Sinkron realtime `warehouse_categories`:
+   * - subscribe INSERT/UPDATE/DELETE untuk uid saat ini,
+   * - juga refresh saat tab kembali fokus / visibility berubah,
+   *   supaya user yang balik dari tab lain langsung lihat urutan
+   *   terkini.
+   * Guard reorder ada di dalam `refreshCategories` supaya event yang
+   * datang tepat di tengah drag tidak menimpa urutan optimistic.
+   */
+  useEffect(() => {
+    if (!hydrated) return;
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (!uid || cancelled) return;
+      channel = supabase
+        .channel(`warehouse_categories:${uid}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "warehouse_categories",
+            filter: `user_id=eq.${uid}`,
+          },
+          () => {
+            void refreshCategories();
+          },
+        )
+        .subscribe();
+    })();
+    const onFocus = () => {
+      void refreshCategories();
+    };
+    const onVisibility = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void refreshCategories();
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", onFocus);
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
+    };
+  }, [hydrated, refreshCategories]);
+
   useEffect(() => {
     if (!hydrated) return;
     try {
