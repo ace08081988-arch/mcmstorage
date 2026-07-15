@@ -673,6 +673,29 @@ function Index() {
   }, [viewMode, hydrated]);
 
   /**
+   * Ambil ulang urutan kategori dari server (SSOT `warehouse_categories`).
+   * Dipakai oleh realtime channel, listener focus/visibilitychange, dan
+   * reconcile pasca-reorder. Guard: bila reorder sedang jalan, drop
+   * snapshot supaya urutan optimistic lokal tidak dilibas snapshot
+   * server yang lebih lama. Kalau hasil fetch identik dengan state
+   * sekarang, tidak re-render.
+   */
+  const refreshCategories = useCallback(async () => {
+    if (reorderInFlightRef.current) return;
+    const { data, error } = await supabase
+      .from("warehouse_categories")
+      .select("name, position")
+      .order("position", { ascending: true })
+      .order("name", { ascending: true });
+    if (error || !data) return;
+    if (reorderInFlightRef.current) return;
+    const next = data.map((r) => r.name);
+    setCategories((prev) =>
+      prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next,
+    );
+  }, []);
+
+  /**
    * Sinkron realtime `warehouse_categories`:
    * - subscribe INSERT/UPDATE/DELETE untuk uid saat ini,
    * - juga refresh saat tab kembali fokus / visibility berubah,
