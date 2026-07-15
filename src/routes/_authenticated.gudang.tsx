@@ -219,6 +219,12 @@ function GudangPage() {
   const [beliDefaultPayment, setBeliDefaultPayment] = useState<"kas" | "hutang">("kas");
   const [beliPresetKey, setBeliPresetKey] = useState(0);
   const [items, setItems] = useState<WItem[]>([]);
+  // Urutan kategori dari `warehouse_categories` (SSOT dengan Beranda).
+  // Map key = lower(btrim(name)) supaya cocok dengan unique index DB
+  // dan tidak sensitif terhadap kapitalisasi label item.
+  const [categoryOrder, setCategoryOrder] = useState<Map<string, number>>(
+    () => new Map(),
+  );
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -239,7 +245,7 @@ function GudangPage() {
   const reloadPendingRef = useRef(false);
 
   async function reloadAllNow() {
-    const [s, w, p, sa, py, c, cp, or] = await Promise.all([
+    const [s, w, p, sa, py, c, cp, or, wc] = await Promise.all([
       supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("*").order("name"),
       supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
@@ -248,6 +254,10 @@ function GudangPage() {
       supabase.from("customers").select("*").order("created_at", { ascending: false }),
       supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase
+        .from("warehouse_categories")
+        .select("name, position")
+        .order("position", { ascending: true }),
     ]);
     if (s.data) setSuppliers(s.data as Supplier[]);
     if (w.data) setItems(w.data as WItem[]);
@@ -257,6 +267,14 @@ function GudangPage() {
     if (c.data) setCustomers(c.data as Customer[]);
     if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
     if (or.data) setOrders(or.data as OrderRequest[]);
+    if (wc.data) {
+      const m = new Map<string, number>();
+      (wc.data as { name: string; position: number }[]).forEach((r, i) => {
+        // fallback ke urutan array kalau position null / duplikat.
+        m.set(r.name.trim().toLowerCase(), r.position ?? i);
+      });
+      setCategoryOrder(m);
+    }
     setLoading(false);
   }
 
@@ -421,7 +439,12 @@ function GudangPage() {
         {loading && <GudangLoadingSkeleton />}
 
         {tab === "stok" && (
-          <StokTab items={items} uid={uid} onChanged={reloadAll} />
+          <StokTab
+            items={items}
+            uid={uid}
+            categoryOrder={categoryOrder}
+            onChanged={reloadAll}
+          />
         )}
         {tab === "supplier" && (
           <SupplierTab suppliers={suppliers} uid={uid} onChanged={reloadAll} />
@@ -1484,7 +1507,41 @@ function ShareDebt({
 }
 
 /* ----------------- STOK ----------------- */
-function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null; onChanged: () => void }) {
+function StokTab({
+  items,
+  uid,
+  categoryOrder,
+  onChanged,
+}: {
+  items: WItem[];
+  uid: string | null;
+  /**
+   * Peta urutan kategori dari `warehouse_categories.position` (SSOT
+   * dengan Beranda). Key = `name.trim().toLowerCase()` supaya cocok
+   * dengan unique index DB dan tidak terganggu oleh perbedaan
+   * kapitalisasi antara label item vs master.
+   */
+  categoryOrder: Map<string, number>;
+  onChanged: () => void;
+}) {
+  /**
+   * Comparator konsisten Beranda-Gudang:
+   * - Kategori yang ada di master → urut posisi.
+   * - Kategori "orphan" (belum ada di master) → setelah semua master,
+   *   dan di antara mereka urut alfabetis.
+   * - "Tanpa Kategori" selalu terakhir.
+   */
+  const compareCats = (a: string, b: string) => {
+    if (a === b) return 0;
+    if (a === "Tanpa Kategori") return 1;
+    if (b === "Tanpa Kategori") return -1;
+    const pa = categoryOrder.get(a.trim().toLowerCase());
+    const pb = categoryOrder.get(b.trim().toLowerCase());
+    if (pa != null && pb != null) return pa - pb;
+    if (pa != null) return -1;
+    if (pb != null) return 1;
+    return a.localeCompare(b, "id");
+  };
   const [editing, setEditing] = useState<WItem | null>(null);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -1520,11 +1577,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(it);
   }
-  const groupKeys = Array.from(groups.keys()).sort((a, b) => {
-    if (a === "Tanpa Kategori") return 1;
-    if (b === "Tanpa Kategori") return -1;
-    return a.localeCompare(b, "id");
-  });
+  const groupKeys = Array.from(groups.keys()).sort(compareCats);
   for (const k of groupKeys) {
     groups.get(k)!.sort((a, b) => a.name.localeCompare(b.name, "id"));
   }
@@ -1574,9 +1627,11 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
         cur.value += it.stock_base * it.avg_cost_per_base;
         catSummary.set(key, cur);
       }
+      // Urutan ringkasan per-kategori: ikuti master (SSOT Beranda),
+      // baru fallback ke nilai stok terbesar untuk kategori orphan.
       const rows = Array.from(catSummary.entries()).sort((a, b) => {
-        if (a[0] === "Tanpa Kategori") return 1;
-        if (b[0] === "Tanpa Kategori") return -1;
+        const c = compareCats(a[0], b[0]);
+        if (c !== 0) return c;
         return b[1].value - a[1].value;
       });
       if (rows.length === 0) return null;
