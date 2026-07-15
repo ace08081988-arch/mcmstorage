@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { fetchPiutangSummary } from "@/lib/piutang";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -804,47 +805,73 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* Period filter chips */}
-        <div className="flex flex-wrap items-center gap-ms-2">
-          <span className="inline-flex items-center gap-ms-1 text-ms-2xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {/* Period filter chips — satu baris scroll, custom-date pakai popover overlay */}
+        <div
+          className="-mx-1 flex items-center gap-ms-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label="Rentang periode"
+        >
+          <span className="inline-flex shrink-0 items-center gap-ms-1 text-ms-2xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Filter className="h-3 w-3" /> Rentang
           </span>
-          {PERIOD_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setPeriod(opt.key)}
-              aria-pressed={period === opt.key}
-              className={cn(
-                "rounded-full border px-ms-3 py-1 text-ms-xs font-semibold transition-all",
-                period === opt.key
-                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                  : "bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-          {period === "custom" ? (
-            <div className="flex items-center gap-ms-1.5 rounded-full border bg-background px-ms-2 py-1 shadow-sm">
-              <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                type="date"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
-                aria-label="Tanggal mulai"
-                className="bg-transparent text-ms-xs font-medium outline-none tabular-nums"
-              />
-              <span className="text-ms-xs text-muted-foreground">→</span>
-              <input
-                type="date"
-                value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
-                aria-label="Tanggal akhir"
-                className="bg-transparent text-ms-xs font-medium outline-none tabular-nums"
-              />
-            </div>
-          ) : null}
+          {PERIOD_OPTIONS.map((opt) => {
+            const isActive = period === opt.key;
+            const isCustom = opt.key === "custom";
+            const btn = (
+              <button
+                key={opt.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setPeriod(opt.key)}
+                className={cn(
+                  "relative shrink-0 whitespace-nowrap text-ms-xs transition-colors",
+                  isActive
+                    ? "font-semibold text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {opt.label}
+                {isCustom && isActive && (customStart || customEnd) ? (
+                  <span className="ml-ms-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary tabular-nums">
+                    {customStart || "…"}→{customEnd || "…"}
+                  </span>
+                ) : null}
+                {isActive ? (
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-primary"
+                  />
+                ) : null}
+              </button>
+            );
+            if (!isCustom) return btn;
+            return (
+              <Popover key={opt.key}>
+                <PopoverTrigger asChild>{btn}</PopoverTrigger>
+                <PopoverContent align="end" sideOffset={8} className="w-auto p-ms-3">
+                  <div className="flex items-center gap-ms-2">
+                    <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      type="date"
+                      value={customStart}
+                      onChange={(e) => setCustomStart(e.target.value)}
+                      aria-label="Tanggal mulai"
+                      className="rounded border bg-background px-ms-2 py-1 text-ms-xs font-medium outline-none tabular-nums focus:ring-2 focus:ring-ring"
+                    />
+                    <span className="text-ms-xs text-muted-foreground">→</span>
+                    <input
+                      type="date"
+                      value={customEnd}
+                      onChange={(e) => setCustomEnd(e.target.value)}
+                      aria-label="Tanggal akhir"
+                      className="rounded border bg-background px-ms-2 py-1 text-ms-xs font-medium outline-none tabular-nums focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            );
+          })}
         </div>
 
         {/* Exec KPI grid */}
