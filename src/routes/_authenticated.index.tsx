@@ -26,6 +26,24 @@ import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 // Bagian "Lainnya" hanya dipakai setelah user membuka <details>.
 // Dipecah jadi chunk terpisah lewat React.lazy agar landing inti (hero
 // stepper + form kategori) tidak menyeret JS ini di initial bundle.
