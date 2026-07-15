@@ -27,6 +27,116 @@ const here = dirname(fileURLToPath(import.meta.url));
 const allowlistPath = resolve(here, "..", ".github", "supabase-lint-allowlist.json");
 const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
 
+// ---------- Allowlist schema validation ----------
+// Every entry MUST declare: name, level, category (non-empty, unique per rule),
+// reason (substantive, >= 40 chars), and a non-empty functions[] with unique,
+// schema-qualified identifiers. No function may appear twice under the same
+// rule (duplicate suppression hides regressions).
+const VALID_LEVELS = new Set(["INFO", "WARN", "ERROR"]);
+const MIN_REASON_LEN = 40;
+const schemaValidationErrors = [];
+const seenCategoryPerRule = new Map(); // rule -> Set<category>
+const seenFunctionPerRule = new Map(); // rule -> Map<fn, category>
+
+if (!Array.isArray(allowlist.allow)) {
+  schemaValidationErrors.push("`allow` must be an array.");
+}
+
+(allowlist.allow || []).forEach((entry, idx) => {
+  const loc = `allow[${idx}]${entry?.category ? ` (category=${entry.category})` : ""}`;
+  if (!entry || typeof entry !== "object") {
+    schemaValidationErrors.push(`${loc}: entry must be an object.`);
+    return;
+  }
+  if (!entry.name || typeof entry.name !== "string") {
+    schemaValidationErrors.push(`${loc}: missing/empty 'name' (linter rule id).`);
+  }
+  const level = (entry.level || "").toUpperCase();
+  if (!VALID_LEVELS.has(level)) {
+    schemaValidationErrors.push(
+      `${loc}: 'level' must be one of ${[...VALID_LEVELS].join("|")} (got '${entry.level}').`,
+    );
+  }
+  if (!entry.category || typeof entry.category !== "string" || !entry.category.trim()) {
+    schemaValidationErrors.push(`${loc}: 'category' is required and must be a non-empty string.`);
+  }
+  if (!entry.reason || typeof entry.reason !== "string" || !entry.reason.trim()) {
+    schemaValidationErrors.push(`${loc}: 'reason' is required and must be a non-empty string.`);
+  } else if (entry.reason.trim().length < MIN_REASON_LEN) {
+    schemaValidationErrors.push(
+      `${loc}: 'reason' too short (${entry.reason.trim().length} chars, need >= ${MIN_REASON_LEN}). Justification must be substantive.`,
+    );
+  }
+  if (!Array.isArray(entry.functions) || entry.functions.length === 0) {
+    schemaValidationErrors.push(`${loc}: 'functions' must be a non-empty array.`);
+  }
+
+  // Uniqueness: category per rule
+  if (entry.name && entry.category) {
+    const cats = seenCategoryPerRule.get(entry.name) || new Set();
+    if (cats.has(entry.category)) {
+      schemaValidationErrors.push(
+        `${loc}: duplicate category '${entry.category}' for rule '${entry.name}'. Merge into a single entry.`,
+      );
+    }
+    cats.add(entry.category);
+    seenCategoryPerRule.set(entry.name, cats);
+  }
+
+  // Uniqueness + shape: functions within entry and across entries per rule
+  if (Array.isArray(entry.functions) && entry.name) {
+    const seenInEntry = new Set();
+    const perRule = seenFunctionPerRule.get(entry.name) || new Map();
+    for (const fn of entry.functions) {
+      if (typeof fn !== "string" || !fn.trim()) {
+        schemaValidationErrors.push(`${loc}: functions[] contains empty/non-string value.`);
+        continue;
+      }
+      if (!/^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$/i.test(fn)) {
+        schemaValidationErrors.push(
+          `${loc}: function '${fn}' must be schema-qualified (e.g. 'public.my_fn').`,
+        );
+      }
+      if (seenInEntry.has(fn)) {
+        schemaValidationErrors.push(`${loc}: function '${fn}' listed twice in same entry.`);
+        continue;
+      }
+      seenInEntry.add(fn);
+      if (perRule.has(fn)) {
+        schemaValidationErrors.push(
+          `${loc}: function '${fn}' already allowlisted under category '${perRule.get(fn)}' for rule '${entry.name}'. A function must belong to exactly one bucket.`,
+        );
+      } else {
+        perRule.set(fn, entry.category || "(uncategorised)");
+      }
+    }
+    seenFunctionPerRule.set(entry.name, perRule);
+  }
+});
+
+if (schemaValidationErrors.length) {
+  console.error("\n❌ Allowlist schema validation failed:");
+  for (const err of schemaValidationErrors) console.error(`  - ${err}`);
+  console.error(
+    `\nFix .github/supabase-lint-allowlist.json — every entry needs a unique category, a substantive reason (>= ${MIN_REASON_LEN} chars), and no duplicate function suppressions.`,
+  );
+  const summaryPathEarly = process.env.GITHUB_STEP_SUMMARY;
+  if (summaryPathEarly) {
+    appendFileSync(
+      summaryPathEarly,
+      [
+        "# Supabase Security Linter",
+        "",
+        "## ❌ Allowlist schema validation failed",
+        "",
+        ...schemaValidationErrors.map((e) => `- ${e}`),
+        "",
+      ].join("\n") + "\n",
+    );
+  }
+  process.exit(1);
+}
+
 /** Build a quick lookup: name -> { level, functions:Set<string> } */
 const allowIndex = new Map();
 for (const entry of allowlist.allow || []) {
