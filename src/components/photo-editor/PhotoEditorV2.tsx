@@ -609,9 +609,9 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
               ref={(n) => { transformerRef.current = n; }}
               rotateEnabled
               anchorSize={12}
-              borderStroke="#3b82f6"
-              anchorStroke="#3b82f6"
-              anchorFill="#ffffff"
+              borderStroke={GOLD}
+              anchorStroke={GOLD}
+              anchorFill="#0d0d0d"
             />
           </Layer>
         </Stage>
