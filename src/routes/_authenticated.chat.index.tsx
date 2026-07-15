@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
@@ -32,6 +32,7 @@ import { ChatListIcon } from "@/lib/chat-list-icons";
 import { CHAT_CATEGORY_LABEL_ID, type ChatCategory } from "@/lib/chat-category";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
+import { goBackOr } from "@/lib/back-nav";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   // Terima query `?filter=unread` sebagai deep-link dari tab Chat di bottom
