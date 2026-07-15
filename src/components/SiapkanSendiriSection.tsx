@@ -771,29 +771,50 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           </div>
         ) : (
           <ul className="space-ms-2">
-            {ready.map((r) => (
-              <li key={r.id} className="flex gap-ms-3 rounded-xl border bg-card p-ms-3 shadow-sm">
-                {r.photo_path && thumbs[r.photo_path] ? (
-                  <img src={thumbs[r.photo_path]} alt="" className="h-16 w-16 shrink-0 rounded-md border object-cover" />
-                ) : (
-                  <div className="grid h-16 w-16 shrink-0 place-items-center rounded-md border bg-muted text-muted-foreground">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-ms-sm font-semibold">{r.title}</div>
-                  {r.location_url && (
-                    <a href={r.location_url} target="_blank" rel="noreferrer"
-                      className="mt-0.5 inline-flex items-center gap-ms-1 text-ms-2xs text-primary underline">
-                      <MapPin className="h-3 w-3" /> Lihat lokasi <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                  {r.note && <div className="mt-0.5 line-clamp-2 text-ms-2xs text-muted-foreground">{r.note}</div>}
-                  <div className="mt-1 text-ms-2xs text-muted-foreground">
-                    Dibuat {new Date(r.created_at).toLocaleString("id-ID")}
+            {ready.map((r) => {
+              const gate = saleShareGate({ sold_at: r.sold_at ?? null });
+              const chatBusy = chatSendingId === r.id;
+              const isDebt = r.sold_payment_method !== "kas";
+              return (
+                <li key={r.id} className="rounded-xl border bg-card p-ms-3 shadow-sm">
+                  <div className="flex gap-ms-3">
+                    {r.photo_path && thumbs[r.photo_path] ? (
+                      <img src={thumbs[r.photo_path]} alt="" className="h-16 w-16 shrink-0 rounded-md border object-cover" />
+                    ) : (
+                      <div className="grid h-16 w-16 shrink-0 place-items-center rounded-md border bg-muted text-muted-foreground">
+                        <ImageIcon className="h-5 w-5" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start gap-ms-2">
+                        <div className="min-w-0 flex-1 truncate text-ms-sm font-semibold">{r.title}</div>
+                        <span
+                          className={
+                            "shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none " +
+                            (!r.sold_at
+                              ? "border-muted-foreground/30 bg-muted/50 text-muted-foreground"
+                              : isDebt
+                                ? "border-warning/40 bg-warning/10 text-warning"
+                                : "border-success/40 bg-success/10 text-success")
+                          }
+                        >
+                          {!r.sold_at ? "Belum jual" : isDebt ? "Hutang" : "Lunas"}
+                        </span>
+                      </div>
+                      {r.location_url && (
+                        <a href={r.location_url} target="_blank" rel="noreferrer"
+                          className="mt-0.5 inline-flex items-center gap-ms-1 text-ms-2xs text-primary underline">
+                          <MapPin className="h-3 w-3" /> Lihat lokasi <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                      {r.note && <div className="mt-0.5 line-clamp-2 text-ms-2xs text-muted-foreground">{r.note}</div>}
+                      <div className="mt-1 text-ms-2xs text-muted-foreground">
+                        Dibuat {new Date(r.created_at).toLocaleString("id-ID")}
+                      </div>
+                    </div>
                   </div>
                   {r.sold_at && (
-                    <div className="mt-1 rounded-md border border-success/40 bg-success/10 px-ms-2 py-1 text-ms-2xs text-success dark:text-success">
+                    <div className="mt-ms-2 rounded-md border border-success/40 bg-success/10 px-ms-2 py-1 text-ms-2xs text-success">
                       <div className="flex items-center gap-ms-1 font-semibold">
                         {r.sold_payment_method === "kas" ? <Wallet className="h-3 w-3" /> : <HandCoins className="h-3 w-3" />}
                         {formatSoldPaymentSummary(
@@ -802,53 +823,47 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                           Number(r.sold_paid_amount ?? 0),
                         )}
                       </div>
-                      <div className="text-ms-2xs text-success/80 dark:text-success/80">
+                      <div className="text-ms-2xs text-success/80">
                         {new Date(r.sold_at).toLocaleString("id-ID")}
                       </div>
                     </div>
                   )}
-                  <div className="mt-2 flex flex-wrap gap-ms-2">
-                    {!r.sold_at ? (
-                      <button
-                        onClick={() => setSellTarget(r)}
-                        className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-primary bg-primary px-ms-2 text-ms-2xs font-semibold text-primary-foreground shadow-sm"
-                      >
-                        <Send className="h-3.5 w-3.5" /> Jual (catat penjualan)
-                      </button>
-                    ) : null}
-                    {(() => {
-                      const gate = saleShareGate({ sold_at: r.sold_at ?? null });
-                      const chatBusy = chatSendingId === r.id;
-                      return (
-                        <>
-                          <WaShareButton
-                            size="sm"
-                            variant="soft"
-                            disabled={!gate.enabled}
-                            reason={gate.enabled ? null : gate.reason}
-                            onClick={() => onSendWA(r)}
-                          />
-                          <ChatShareButton
-                            size="sm"
-                            variant="soft"
-                            disabled={!gate.enabled}
-                            busy={chatBusy}
-                            reason={gate.enabled ? null : gate.reason}
-                            onClick={() => setChatPickTarget(r)}
-                          />
-                        </>
-                      );
-                    })()}
+                  {!r.sold_at && (
+                    <button
+                      onClick={() => setSellTarget(r)}
+                      className="mt-ms-2 inline-flex h-9 w-full items-center justify-center gap-ms-1 rounded-md border border-primary bg-primary px-ms-2 text-ms-xs font-semibold text-primary-foreground shadow-sm"
+                    >
+                      <Send className="h-3.5 w-3.5" /> Jual (catat penjualan)
+                    </button>
+                  )}
+                  <div className="mt-ms-2 grid grid-cols-3 gap-ms-2">
+                    <WaShareButton
+                      size="sm"
+                      variant="soft"
+                      fullWidth
+                      disabled={!gate.enabled}
+                      reason={gate.enabled ? null : gate.reason}
+                      onClick={() => onSendWA(r)}
+                    />
+                    <ChatShareButton
+                      size="sm"
+                      variant="soft"
+                      fullWidth
+                      disabled={!gate.enabled}
+                      busy={chatBusy}
+                      reason={gate.enabled ? null : gate.reason}
+                      onClick={() => setChatPickTarget(r)}
+                    />
                     <button
                       onClick={() => onRemove(r)}
-                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs text-destructive"
+                      className="inline-flex h-8 items-center justify-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-medium text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Hapus
                     </button>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -863,65 +878,63 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
         ) : (
           <ul className="space-ms-2">
             {sent.map((r) => (
-              <li key={r.id} className="flex gap-ms-3 rounded-xl border bg-card p-ms-3 shadow-sm opacity-90">
-                {r.photo_path && thumbs[r.photo_path] ? (
-                  <img src={thumbs[r.photo_path]} alt="" className="h-14 w-14 shrink-0 rounded-md border object-cover" />
-                ) : (
-                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-md border bg-muted text-muted-foreground">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-ms-sm font-semibold">{r.title}</div>
-                  <div className="text-ms-2xs text-muted-foreground">
-                    Dikirim {r.sent_at ? new Date(r.sent_at).toLocaleString("id-ID") : "—"}
-                  </div>
-                  {r.sent_channel && (
-                    <div className="mt-1 flex flex-wrap items-center gap-ms-1 text-ms-2xs">
-                      <span
-                        className={
-                          "inline-flex items-center gap-ms-1 rounded-full border px-1.5 py-0.5 font-semibold " +
-                          (r.sent_channel === "chat"
-                            ? "border-primary/40 bg-primary/10 text-primary"
-                            : "border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]")
-                        }
-                      >
-                        {r.sent_channel === "chat" ? (
-                          <><MessageCircle className="h-3 w-3" /> MCM Chat</>
-                        ) : (
-                          <><Send className="h-3 w-3" /> WhatsApp</>
-                        )}
-                      </span>
-                      {r.sent_to && (
-                        <span className="truncate text-muted-foreground" title={r.sent_to}>
-                          → {r.sent_to}
+              <li key={r.id} className="rounded-xl border bg-card p-ms-3 shadow-sm opacity-95">
+                <div className="flex gap-ms-3">
+                  {r.photo_path && thumbs[r.photo_path] ? (
+                    <img src={thumbs[r.photo_path]} alt="" className="h-14 w-14 shrink-0 rounded-md border object-cover" />
+                  ) : (
+                    <div className="grid h-14 w-14 shrink-0 place-items-center rounded-md border bg-muted text-muted-foreground">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start gap-ms-2">
+                      <div className="min-w-0 flex-1 truncate text-ms-sm font-semibold">{r.title}</div>
+                      {r.sent_channel && (
+                        <span
+                          className={
+                            "inline-flex shrink-0 items-center gap-ms-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none " +
+                            (r.sent_channel === "chat"
+                              ? "border-primary/40 bg-primary/10 text-primary"
+                              : "border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]")
+                          }
+                        >
+                          {r.sent_channel === "chat" ? (
+                            <><MessageCircle className="h-3 w-3" /> Chat</>
+                          ) : (
+                            <><Send className="h-3 w-3" /> WA</>
+                          )}
                         </span>
                       )}
                     </div>
-                  )}
-                  {r.sent_summary && (
-                    <div className="mt-1 line-clamp-2 whitespace-pre-wrap rounded-md border border-dashed bg-muted/40 px-ms-2 py-1 text-ms-2xs text-muted-foreground" title={r.sent_summary}>
-                      {r.sent_summary}
+                    <div className="mt-0.5 text-ms-2xs text-muted-foreground">
+                      Dikirim {r.sent_at ? new Date(r.sent_at).toLocaleString("id-ID") : "—"}
+                      {r.sent_to ? <> · <span className="truncate" title={r.sent_to}>{r.sent_to}</span></> : null}
                     </div>
-                  )}
-                  {r.location_url && (
-                    <a href={r.location_url} target="_blank" rel="noreferrer"
-                      className="mt-0.5 inline-flex items-center gap-ms-1 text-ms-2xs text-primary underline">
-                      <MapPin className="h-3 w-3" /> Lokasi
-                    </a>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-ms-2">
-                    <button
-                      onClick={() => onUnsend(r)}
-                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs"
-                    >↩ Tandai belum terkirim</button>
-                    <button
-                      onClick={() => onRemove(r)}
-                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" /> Hapus
-                    </button>
+                    {r.location_url && (
+                      <a href={r.location_url} target="_blank" rel="noreferrer"
+                        className="mt-0.5 inline-flex items-center gap-ms-1 text-ms-2xs text-primary underline">
+                        <MapPin className="h-3 w-3" /> Lokasi
+                      </a>
+                    )}
                   </div>
+                </div>
+                {r.sent_summary && (
+                  <div className="mt-ms-2 line-clamp-2 whitespace-pre-wrap rounded-md border border-dashed bg-muted/40 px-ms-2 py-1 text-ms-2xs text-muted-foreground" title={r.sent_summary}>
+                    {r.sent_summary}
+                  </div>
+                )}
+                <div className="mt-ms-2 grid grid-cols-2 gap-ms-2">
+                  <button
+                    onClick={() => onUnsend(r)}
+                    className="inline-flex h-8 items-center justify-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-medium"
+                  >↩ Belum terkirim</button>
+                  <button
+                    onClick={() => onRemove(r)}
+                    className="inline-flex h-8 items-center justify-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-medium text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Hapus
+                  </button>
                 </div>
               </li>
             ))}
