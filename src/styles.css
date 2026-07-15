@@ -938,3 +938,20 @@ html[data-reduce-motion="on"] [data-press-scope="on"] :is(
   filter: none !important;
   background-color: inherit !important;
 }
+
+/* Sonner toaster: pastikan container `<ol>` tidak overflow di viewport
+ * sempit (411/390px). Sonner default menaruh offset 16px yang membuat
+ * lebar melampaui viewport sedikit. Clamp lebar + geser posisi supaya
+ * pas dalam gutter 12px. */
+[data-sonner-toaster] {
+  max-width: calc(100vw - 24px) !important;
+  box-sizing: border-box;
+}
+@media (max-width: 640px) {
+  [data-sonner-toaster] {
+    left: 12px !important;
+    right: 12px !important;
+    width: calc(100vw - 24px) !important;
+    transform: none !important;
+  }
+}
