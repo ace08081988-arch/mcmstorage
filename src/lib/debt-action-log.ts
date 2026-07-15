@@ -84,7 +84,7 @@ export function actionLabel(kind: DebtActionKind, balanceKind: "piutang" | "huta
     case "add":
       return balanceKind === "piutang" ? "Harga Jual" : "Harga Beli";
     case "cash":
-      return balanceKind === "piutang" ? "Tunai (jual)" : "Tunai (beli)";
+      return balanceKind === "piutang" ? "Kas (jual)" : "Kas (beli)";
     case "pay":
       return "Bayar";
     case "lunas":
