@@ -87,6 +87,101 @@ function LainnyaMountSentinel() {
   return null;
 }
 
+/**
+ * Baris kategori yang bisa di-drag-reorder. Handle drag (grip) dipisah
+ * dari tombol pilih kategori supaya tap-untuk-buka tetap responsif —
+ * di HP, drag hanya aktif kalau user menekan area handle. `useSortable`
+ * memberi transform untuk animasi geser saat item lain menyusul.
+ */
+function SortableCategoryRow({
+  name,
+  count,
+  tag,
+  onOpen,
+  onDelete,
+}: {
+  name: string;
+  count: number;
+  tag: string;
+  onOpen: () => void;
+  onDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: name });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-ms-2 rounded-xl border border-primary/15 bg-card px-ms-2 py-ms-3 transition-colors hover:border-primary/40 ${
+        isDragging ? "shadow-lg border-primary/60" : ""
+      }`}
+    >
+      <button
+        type="button"
+        aria-label={`Geser untuk ubah urutan kategori ${name}`}
+        title="Tahan lalu geser untuk ubah urutan"
+        className="shrink-0 touch-none cursor-grab rounded-md p-1.5 text-muted-foreground/70 hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        {/* GripVertical (inline SVG — hindari import lucide baru) */}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="9" cy="5" r="1" />
+          <circle cx="9" cy="12" r="1" />
+          <circle cx="9" cy="19" r="1" />
+          <circle cx="15" cy="5" r="1" />
+          <circle cx="15" cy="12" r="1" />
+          <circle cx="15" cy="19" r="1" />
+        </svg>
+      </button>
+      <button
+        onClick={onOpen}
+        className="flex min-w-0 flex-1 items-center gap-ms-3 text-left"
+      >
+        <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.08em] text-primary">
+          {tag}
+        </span>
+        <span className="truncate text-[0.84375rem] font-medium tracking-tight text-foreground">
+          {name}
+        </span>
+        <span className="ml-auto shrink-0 text-[0.65625rem] text-muted-foreground">
+          {count} pesanan
+        </span>
+      </button>
+      <button
+        onClick={onDelete}
+        className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
+        title={`Hapus kategori ${name}`}
+        aria-label={`Hapus kategori ${name}`}
+      >
+        Hapus
+      </button>
+    </li>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/")({
   beforeLoad: async () => {
     // Mode chat-only via build flag / localStorage override.
