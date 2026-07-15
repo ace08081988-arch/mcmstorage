@@ -1687,6 +1687,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
               Siap dikirim:{" "}
               {summary.readyWeightG > 0 && (
                 <>
+                  <span className="text-muted-foreground">Berat / unit </span>
                   <b>{fmtNum(summary.readyWeightG, 2)}</b>
                   <span className="text-muted-foreground"> g</span>
                 </>
@@ -1696,6 +1697,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
               )}
               {summary.readyCountPcs > 0 && (
                 <>
+                  <span className="text-muted-foreground">Jumlah / isi </span>
                   <b>{fmtNum(summary.readyCountPcs, 0)}</b>
                   <span className="text-muted-foreground"> pcs</span>
                 </>
