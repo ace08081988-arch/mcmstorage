@@ -47,7 +47,11 @@ export function ChatBottomNav() {
   return (
     <nav
       aria-label="Navigasi utama chat"
-      className="relative sticky bottom-0 z-20 mt-auto grid shrink-0 grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur"
+      // `--chat-nav-h` diekspos supaya FAB & elemen mengambang lain bisa
+      // menghitung offset yang selalu selaras dengan tinggi nav aktual —
+      // tidak lagi mengandalkan angka hardcoded (5.75rem) yang meleset di
+      // layar kecil ketika label wrap atau safe-area bertambah.
+      className="relative sticky bottom-0 z-20 mt-auto grid shrink-0 grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem)]"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)" }}
     >
       {/* Indikator aktif — pill halus yang meluncur di bawah ikon aktif. */}
@@ -79,7 +83,9 @@ export function ChatBottomNav() {
                   : label
             }
             className={cn(
-              "group/tab relative flex min-h-[var(--ms-tap)] flex-col items-center justify-center gap-0.5 px-1 py-1 outline-none transition-colors duration-200",
+              // px-0.5 di base → cukup ruang untuk label "Pembaruan" pada
+              // 360px tanpa memotong; naik ke px-1 mulai 400px.
+              "group/tab relative flex min-h-[var(--ms-tap)] flex-col items-center justify-center gap-0.5 px-0.5 py-1 outline-none transition-colors duration-200 min-[400px]:px-1",
               "focus-visible:ring-2 focus-visible:ring-[var(--wa-green)]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--wa-header)]",
               active ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
             )}
@@ -87,7 +93,9 @@ export function ChatBottomNav() {
             <span
               aria-hidden="true"
               className={cn(
-                "relative grid h-7 w-12 place-items-center rounded-full transition-[background-color,transform] duration-200",
+                // Lebar pill ikon menyempit di 360px supaya keempat kolom
+                // tidak berdesakan; melebar lagi mulai 400px.
+                "relative grid h-7 w-10 place-items-center rounded-full transition-[background-color,transform] duration-200 min-[400px]:w-12",
                 active ? "bg-[var(--wa-green)]/15 scale-100" : "bg-transparent scale-95 group-hover/tab:scale-100",
               )}
             >
