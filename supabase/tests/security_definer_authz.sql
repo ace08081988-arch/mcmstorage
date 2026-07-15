@@ -206,7 +206,9 @@ BEGIN
     NULL::double precision,
     NULL::double precision,
     NULL::text,
-    1::numeric
+    1::numeric,
+    NULL::timestamptz,
+    NULL::text[]
   );
   IF (v_res->>'error') IS DISTINCT FROM 'bad_pin' THEN
     RAISE EXCEPTION 'FAIL prep_submit accepted bad PIN: %', v_res;
