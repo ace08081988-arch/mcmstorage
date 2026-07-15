@@ -391,9 +391,9 @@ function PublicPrepPageWithBoundary() {
   const attemptRef = useRef(0);
   const onError = useCallback((error: Error) => {
     try {
-      // Kirim ke pipeline error-report portal supaya bisa ditelusuri di
-      // dashboard admin. reportPortalError sudah aman terhadap fetch gagal.
-      void reportPortalError(error, { where: "portal_top_boundary" });
+      // Kirim ke pipeline error-reporting global (sama dgn root ErrorComponent)
+      // supaya kita masih punya jejak walau UI-nya dipulihkan diam-diam.
+      reportLovableError(error, { boundary: "portal_top_boundary" });
     } catch {
       /* noop */
     }
