@@ -5,7 +5,7 @@
   "description": "Schema for .github/supabase-lint-allowlist.json. Every accepted Supabase linter finding must be grouped under an architectural category with a substantive justification. Mirrors the runtime checks in scripts/check-supabase-lints.mjs.",
   "type": "object",
   "required": ["schemaVersion", "allow"],
-  "additionalProperties": true,
+  "additionalProperties": false,
   "properties": {
     "_comment": { "type": "string" },
     "$schema": { "type": "string" },
