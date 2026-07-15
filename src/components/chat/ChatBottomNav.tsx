@@ -42,10 +42,7 @@ export function ChatBottomNav() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
 
-  const activeIndex = useMemo(
-    () => items.findIndex((it) => it.to === activeTo),
-    [activeTo, items],
-  );
+  const activeIndex = activeTo ? items.findIndex((it) => it.to === activeTo) : -1;
 
   return (
     <nav
