@@ -34,6 +34,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { previewText } from "@/lib/chat-cards";
 import { goBackOr } from "@/lib/back-nav";
 import { ChatListSkeleton } from "@/components/chat/ChatSkeletons";
+import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   // Terima query `?filter=unread` sebagai deep-link dari tab Chat di bottom
@@ -259,6 +260,11 @@ function ChatListPage() {
     }
   }, [selectedIds, qc, exitSelect]);
 
+  // Saat soft-keyboard terbuka (fokus di Input "Cari percakapan…"),
+  // kecilkan tinggi container agar search bar & daftar percakapan
+  // ter-reposisi di atas keyboard alih-alih tertutup. `ChatBottomNav`
+  // sengaja tetap `fixed` — nav tidak ikut naik.
+  const kbInset = useVisualViewportKeyboardInset();
   return (
     <main
       data-industrial="chat"
@@ -268,6 +274,11 @@ function ChatListPage() {
       // otomatis menyediakan ruang untuk notch/home indicator iOS tanpa
       // menghitung safe-area dua kali.
       className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
+      style={
+        kbInset > 0
+          ? { minHeight: `calc(100dvh - ${kbInset}px)`, height: `calc(100dvh - ${kbInset}px)` }
+          : undefined
+      }
     >
       {selecting ? (
         <header
