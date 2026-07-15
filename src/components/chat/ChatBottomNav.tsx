@@ -47,11 +47,10 @@ export function ChatBottomNav() {
   return (
     <nav
       aria-label="Navigasi utama chat"
-      // `--chat-nav-h` diekspos supaya FAB & elemen mengambang lain bisa
-      // menghitung offset yang selalu selaras dengan tinggi nav aktual —
-      // tidak lagi mengandalkan angka hardcoded (5.75rem) yang meleset di
-      // layar kecil ketika label wrap atau safe-area bertambah.
-      className="relative sticky bottom-0 z-20 mt-auto grid shrink-0 grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem)]"
+      // Fixed di viewport bawah supaya tidak "goyang" ikut scroll pada
+      // Android WebView dengan dynamic viewport (URL-bar auto-hide).
+      // `--chat-nav-h` tetap diekspos untuk FAB & spacer content.
+      className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem)]"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)" }}
     >
       {/* Indikator aktif — pill halus yang meluncur di bawah ikon aktif. */}
