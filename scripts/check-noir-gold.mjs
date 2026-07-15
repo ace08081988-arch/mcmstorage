@@ -15,6 +15,7 @@
  * Jalankan lokal: `node scripts/check-noir-gold.mjs`
  */
 import { readFileSync } from "node:fs";
+import { writeFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -22,6 +23,9 @@ import { dirname, resolve } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 const ALLOWLIST_PATH = resolve(REPO_ROOT, "src/lib/noir-gold-allowlist.json");
+const BASELINE_PATH = resolve(REPO_ROOT, ".noir-gold-baseline.json");
+const args = process.argv.slice(2);
+const UPDATE_BASELINE = args.includes("--update-baseline");
 
 function loadAllowlist() {
   const raw = JSON.parse(readFileSync(ALLOWLIST_PATH, "utf8"));
@@ -120,14 +124,73 @@ if (violations.length === 0) {
   process.exit(0);
 }
 
+// Baseline mode: bekukan pelanggaran saat ini (utang teknis Slice 2-6),
+// guard hanya menolak pelanggaran BARU yang bertambah setelah baseline.
+// Setiap slice audit akan `--update-baseline` untuk mengecilkan set.
+function baselineKey(v) {
+  // Kunci = label + file + normalisasi konten (bukan nomor baris — supaya
+  // pergeseran baris tidak "membuka" utang lama palsu).
+  return `${v.label}\u001f${v.file}\u001f${v.content}`;
+}
+
+const currentKeys = new Set(violations.map(baselineKey));
+
+if (UPDATE_BASELINE) {
+  const snapshot = {
+    $comment:
+      "Snapshot pelanggaran Noir & Gold yang di-grandfather. Diperbarui per slice audit; jangan edit tangan. Regenerasi: `node scripts/check-noir-gold.mjs --update-baseline`.",
+    generatedAt: new Date().toISOString(),
+    count: violations.length,
+    entries: violations
+      .map((v) => ({ label: v.label, file: v.file, content: v.content }))
+      .sort((a, b) =>
+        a.label === b.label
+          ? a.file === b.file
+            ? a.content.localeCompare(b.content)
+            : a.file.localeCompare(b.file)
+          : a.label.localeCompare(b.label),
+      ),
+  };
+  writeFileSync(BASELINE_PATH, JSON.stringify(snapshot, null, 2) + "\n");
+  console.log(
+    `noir-gold baseline diperbarui: ${violations.length} pelanggaran dibekukan di ${BASELINE_PATH}`,
+  );
+  process.exit(0);
+}
+
+let baselineKeys = new Set();
+if (existsSync(BASELINE_PATH)) {
+  const b = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
+  for (const e of b.entries ?? []) {
+    baselineKeys.add(`${e.label}\u001f${e.file}\u001f${e.content}`);
+  }
+}
+
+const newViolations = violations.filter((v) => !baselineKeys.has(baselineKey(v)));
+const removedFromBaseline = [...baselineKeys].filter((k) => !currentKeys.has(k));
+
+if (newViolations.length === 0) {
+  console.log(
+    `noir-gold guard OK — ${violations.length} pelanggaran baseline masih ada, tidak ada yang baru.`,
+  );
+  if (removedFromBaseline.length > 0) {
+    console.log(
+      `  ${removedFromBaseline.length} pelanggaran baseline berhasil dibersihkan — jalankan '--update-baseline' untuk memperkecil baseline.`,
+    );
+  }
+  process.exit(0);
+}
+
 const grouped = new Map();
-for (const v of violations) {
+for (const v of newViolations) {
   const key = v.label;
   if (!grouped.has(key)) grouped.set(key, []);
   grouped.get(key).push(v);
 }
 
-console.error("noir-gold guard FAILED — pelanggaran ditemukan:\n");
+console.error(
+  `noir-gold guard FAILED — ${newViolations.length} pelanggaran BARU (di luar baseline):\n`,
+);
 for (const [label, rows] of grouped) {
   console.error(`# ${label} (${rows.length}):`);
   for (const r of rows.slice(0, 20)) {
