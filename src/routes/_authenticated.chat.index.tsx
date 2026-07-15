@@ -446,10 +446,10 @@ function ChatListPage() {
           className="-mx-1 flex items-center gap-ms-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {([
-            { id: "all" as const, label: "Semua" },
-            { id: "unread" as const, label: "Belum dibaca" },
-            { id: "group" as const, label: "Grup" },
-            { id: "favorite" as const, label: "Favorit" },
+            { id: "all" as const, label: "Semua", n: chipCounts.all },
+            { id: "unread" as const, label: "Belum dibaca", n: chipCounts.unread },
+            { id: "group" as const, label: "Grup", n: chipCounts.group },
+            { id: "favorite" as const, label: "Favorit", n: chipCounts.favorite },
           ]).map((chip) => {
             const isActive = filter === chip.id;
             return (
@@ -466,7 +466,7 @@ function ChatListPage() {
                     : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]")
                 }
               >
-                {chip.label}
+                {chip.label} <span className="opacity-60 tabular-nums">({chip.n})</span>
                 {isActive ? (
                   <span
                     aria-hidden
@@ -479,6 +479,7 @@ function ChatListPage() {
           {(chatLists ?? []).map((l) => {
             const chipId = `list:${l.id}`;
             const isActive = filter === chipId;
+            const n = chipCounts.perList[l.id] ?? 0;
             return (
               <button
                 key={chipId}
@@ -495,7 +496,7 @@ function ChatListPage() {
                 title={l.name}
               >
                 <ChatListIcon name={l.icon} className="h-3 w-3" style={{ color: l.color }} />
-                {l.name}
+                {l.name} <span className="opacity-60 tabular-nums">({n})</span>
                 {isActive ? (
                   <span
                     aria-hidden
