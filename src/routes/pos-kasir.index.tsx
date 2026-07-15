@@ -46,6 +46,14 @@ function unitOf(t: { unitLabel?: string | null }): string {
   const u = (t.unitLabel ?? "").trim();
   return u || "kg";
 }
+// Item dengan `base_unit === "pcs"` (botol, karton, pack, unit) tidak
+// pernah dijual pecahan — input, step & pembulatan mengikuti bilangan
+// bulat. Kesalahan input (mis. 1.5 botol) akan otomatis di-floor saat
+// disimpan supaya stok/sisa tetap konsisten dengan `Jumlah/pcs`.
+function isDiscreteUnit(unitLabel: string | null | undefined): boolean {
+  const u = (unitLabel ?? "").trim().toLowerCase();
+  return u === "pcs" || u === "botol" || u === "karton" || u === "pack" || u === "unit";
+}
 const MODE_RINGKAS_KEY = "mcm-pos-kasir-mode-ringkas";
 const URUTAN_KEY = "mcm-pos-kasir-urutan";
 
