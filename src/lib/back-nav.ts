@@ -1,7 +1,11 @@
 import type { useRouter } from "@tanstack/react-router";
 
 type Router = ReturnType<typeof useRouter>;
-type NavigateOptions = Parameters<Router["navigate"]>[0];
+// TanStack's NavigateOptions is a heavily-typed union; call sites pass
+// route-literal objects that widen to `string`, so accept anything the
+// router itself accepts and let its runtime handle it.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NavigateOptions = any;
 
 /**
  * Kembali ke halaman sebelumnya bila ada history di dalam sesi router ini;
