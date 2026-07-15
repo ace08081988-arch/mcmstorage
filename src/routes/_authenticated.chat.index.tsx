@@ -254,7 +254,7 @@ function ChatListPage() {
   }, [selectedIds, qc, exitSelect]);
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
+    <main data-industrial="chat" className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
       {selecting ? (
         <header
           className="sticky top-0 z-20 flex items-center justify-between gap-ms-2 border-b bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
