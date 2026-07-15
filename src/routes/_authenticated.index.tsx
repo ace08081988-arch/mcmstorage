@@ -897,6 +897,12 @@ function Index() {
    *   (RLS `auth.uid() = user_id` sudah mengunci scope per pemilik).
    * - Rollback: kalau salah satu UPDATE gagal, kembalikan urutan lama +
    *   toast error supaya state UI dan DB tidak divergen.
+   * - Konkurensi: `reorderInFlightRef` mem-block realtime/refresh selama
+   *   batch UPDATE berjalan supaya urutan optimistic lokal tidak dilibas
+   *   snapshot lama dari server. Setelah selesai, `reorderSeqRef` memakai
+   *   token monotonik supaya hanya reorder ter-baru yang memicu
+   *   `refreshCategories` — mencegah reconcile urutan lama menimpa
+   *   urutan yang lebih baru dari user atau tab lain.
    */
   const reorderCategories = async (fromName: string, toName: string) => {
     if (fromName === toName) return;
@@ -905,6 +911,8 @@ function Index() {
     const toIdx = prev.indexOf(toName);
     if (fromIdx < 0 || toIdx < 0) return;
     const next = arrayMove(prev, fromIdx, toIdx);
+    const mySeq = ++reorderSeqRef.current;
+    reorderInFlightRef.current = true;
     setCategories(next);
 
     const {
@@ -913,6 +921,7 @@ function Index() {
     const uid = user?.id;
     if (!uid) {
       setCategories(prev);
+      reorderInFlightRef.current = false;
       toast.error("Sesi berakhir. Silakan masuk ulang.");
       return;
     }
@@ -932,7 +941,15 @@ function Index() {
     const failed = results.find((r) => r.error);
     if (failed?.error) {
       setCategories(prev);
+      reorderInFlightRef.current = false;
       notifyError(failed.error, { prefix: "Gagal menyimpan urutan kategori: " });
+      return;
+    }
+    reorderInFlightRef.current = false;
+    // Hanya reorder ter-baru yang boleh reconcile — reorder lain yang
+    // sudah keburu selesai duluan tidak boleh menimpa urutan yang baru.
+    if (mySeq === reorderSeqRef.current) {
+      void refreshCategories();
     }
   };
 
