@@ -317,19 +317,9 @@ function ChatListPage() {
           >
             <Link to="/"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
-          <span
-            aria-hidden
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-ms-sm font-bold text-white shadow-sm"
-            style={{ backgroundColor: "var(--mcm-brand)" }}
-          >
-            M
-          </span>
-          <h1 className="truncate text-ms-xl font-bold tracking-tight">MCM</h1>
+          <h1 className="truncate text-ms-lg font-semibold tracking-tight">MCM Chat</h1>
         </div>
         <div className="flex items-center gap-ms-1">
-          <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Siapkan kontak">
-            <Link to="/kontak"><Camera className="h-5 w-5" /></Link>
-          </Button>
           <NewDmDialog />
           <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
           <DropdownMenu>
@@ -337,12 +327,10 @@ function ChatListPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={
-                  "h-9 w-9 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
-                }
+                className="h-9 w-9 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
                 aria-label="Menu lainnya"
               >
-                <MoreVertical className="h-4 w-4" />
+                <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -351,22 +339,18 @@ function ChatListPage() {
                   | { label: string; to: string }
                   | { label: string; action: () => void };
                 const items: Item[] = [
-                  { label: "Pasang iklan", action: () => toast.info("Pasang iklan — segera hadir.") },
+                  { label: "Kontak", to: "/kontak" },
                   { label: "Grup baru", action: () => setGrupOpen(true) },
-                  { label: "Komunitas", action: () => toast.info("Komunitas — segera hadir.") },
                   { label: "Daftar", to: "/daftar" },
                   { label: "Perangkat tertaut", to: "/sesi" },
-                  { label: "Berbintang", action: () => toast.info("Berbintang — segera hadir.") },
                   { label: "Order", to: "/chat-audit" },
                 ];
                 const settings: Item = { label: "Pengaturan", to: "/profil-chat" };
                 const renderItem = (it: Item, key: string) => {
                   const active = "to" in it && isPathActive(it.to);
-                  const cls =
-                    "flex items-center justify-between gap-ms-2 " +
-                    (active
-                      ? "bg-primary/10 font-medium text-primary focus:bg-primary/15 focus:text-primary"
-                      : "");
+                  const cls = active
+                    ? "bg-primary/10 font-medium text-primary focus:bg-primary/15 focus:text-primary"
+                    : "";
                   const label = (
                     <>
                       <span className="truncate">{it.label}</span>
@@ -386,7 +370,7 @@ function ChatListPage() {
                     );
                   }
                   return (
-                    <DropdownMenuItem key={key} onSelect={it.action}>
+                    <DropdownMenuItem key={key} onSelect={it.action} className={cls}>
                       {it.label}
                     </DropdownMenuItem>
                   );
