@@ -262,7 +262,14 @@ if (allowlist.schemaVersion !== SUPPORTED_ALLOWLIST_SCHEMA_VERSION) {
 //      same rule (duplicate suppression hides regressions).
 const VALID_LEVELS = new Set(["INFO", "WARN", "ERROR"]);
 const MIN_REASON_LEN = 40;
+/**
+ * Structured validation errors. Each entry carries the human-readable
+ * message PLUS enough context to resolve a file line for GitHub
+ * annotations. Shape:
+ *   { msg, entryIdx?: number, key?: string, rootKey?: string }
+ */
 const schemaValidationErrors = [];
+const pushErr = (msg, ctx = {}) => schemaValidationErrors.push({ msg, ...ctx });
 const seenCategoryPerRule = new Map(); // rule -> Set<category>
 const seenFunctionPerRule = new Map(); // rule -> Map<fn, category>
 
@@ -272,50 +279,77 @@ const validateSchema = ajv.compile(allowlistSchema);
 if (!validateSchema(allowlist)) {
   for (const err of validateSchema.errors || []) {
     const path = err.instancePath || "(root)";
-    schemaValidationErrors.push(`${path} ${err.message}`);
+    // instancePath is like "/allow/3/reason" — parse it into entryIdx+key.
+    const parts = path.split("/").filter(Boolean);
+    let entryIdx;
+    let key;
+    let rootKey;
+    if (parts[0] === "allow" && parts[1] !== undefined) {
+      const n = Number(parts[1]);
+      if (Number.isInteger(n)) entryIdx = n;
+      if (parts[2]) key = parts[2];
+    } else if (parts[0]) {
+      rootKey = parts[0];
+    }
+    // Ajv reports the missing property under `params.missingProperty`
+    // with `instancePath` pointing at the parent — surface that as `key`.
+    if (!key && err.params?.missingProperty) key = err.params.missingProperty;
+    pushErr(`${path} ${err.message}`, { entryIdx, key, rootKey });
   }
 }
 
 // Phase 2: cross-entry invariants
 if (!Array.isArray(allowlist.allow)) {
-  schemaValidationErrors.push("`allow` must be an array.");
+  pushErr("`allow` must be an array.", { rootKey: "allow" });
 }
 
 (allowlist.allow || []).forEach((entry, idx) => {
   const loc = `allow[${idx}]${entry?.category ? ` (category=${entry.category})` : ""}`;
   if (!entry || typeof entry !== "object") {
-    schemaValidationErrors.push(`${loc}: entry must be an object.`);
+    pushErr(`${loc}: entry must be an object.`, { entryIdx: idx });
     return;
   }
   if (!entry.name || typeof entry.name !== "string") {
-    schemaValidationErrors.push(`${loc}: missing/empty 'name' (linter rule id).`);
+    pushErr(`${loc}: missing/empty 'name' (linter rule id).`, { entryIdx: idx, key: "name" });
   }
   const level = (entry.level || "").toUpperCase();
   if (!VALID_LEVELS.has(level)) {
-    schemaValidationErrors.push(
+    pushErr(
       `${loc}: 'level' must be one of ${[...VALID_LEVELS].join("|")} (got '${entry.level}').`,
+      { entryIdx: idx, key: "level" },
     );
   }
   if (!entry.category || typeof entry.category !== "string" || !entry.category.trim()) {
-    schemaValidationErrors.push(`${loc}: 'category' is required and must be a non-empty string.`);
+    pushErr(`${loc}: 'category' is required and must be a non-empty string.`, {
+      entryIdx: idx,
+      key: "category",
+    });
   }
   if (!entry.reason || typeof entry.reason !== "string" || !entry.reason.trim()) {
-    schemaValidationErrors.push(`${loc}: 'reason' is required and must be a non-empty string.`);
+    pushErr(`${loc}: 'reason' is required and must be a non-empty string.`, {
+      entryIdx: idx,
+      key: "reason",
+    });
   } else if (entry.reason.trim().length < MIN_REASON_LEN) {
-    schemaValidationErrors.push(
+    pushErr(
       `${loc}: 'reason' too short (${entry.reason.trim().length} chars, need >= ${MIN_REASON_LEN}). Justification must be substantive.`,
+      { entryIdx: idx, key: "reason" },
     );
   }
   if (!Array.isArray(entry.functions) || entry.functions.length === 0) {
-    schemaValidationErrors.push(`${loc}: 'functions' must be a non-empty array.`);
+    pushErr(`${loc}: 'functions' must be a non-empty array.`, {
+      entryIdx: idx,
+      key: "functions",
+    });
   }
 
   // Uniqueness: category per rule
   if (entry.name && entry.category) {
     const cats = seenCategoryPerRule.get(entry.name) || new Set();
     if (cats.has(entry.category)) {
-      schemaValidationErrors.push(
+      pushErr(
         `${loc}: duplicate category '${entry.category}' for rule '${entry.name}'. Merge into a single entry.`,
+        { entryIdx: idx, key: "category" },
       );
     }
     cats.add(entry.category);
@@ -328,22 +362,30 @@ if (!Array.isArray(allowlist.allow)) {
     const perRule = seenFunctionPerRule.get(entry.name) || new Map();
     for (const fn of entry.functions) {
       if (typeof fn !== "string" || !fn.trim()) {
-        schemaValidationErrors.push(`${loc}: functions[] contains empty/non-string value.`);
+        pushErr(`${loc}: functions[] contains empty/non-string value.`, {
+          entryIdx: idx,
+          key: "functions",
+        });
         continue;
       }
       if (!/^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$/i.test(fn)) {
-        schemaValidationErrors.push(
+        pushErr(
           `${loc}: function '${fn}' must be schema-qualified (e.g. 'public.my_fn').`,
+          { entryIdx: idx, key: "functions" },
         );
       }
       if (seenInEntry.has(fn)) {
-        schemaValidationErrors.push(`${loc}: function '${fn}' listed twice in same entry.`);
+        pushErr(`${loc}: function '${fn}' listed twice in same entry.`, {
+          entryIdx: idx,
+          key: "functions",
+        });
         continue;
       }
       seenInEntry.add(fn);
       if (perRule.has(fn)) {
-        schemaValidationErrors.push(
+        pushErr(
           `${loc}: function '${fn}' already allowlisted under category '${perRule.get(fn)}' for rule '${entry.name}'. A function must belong to exactly one bucket.`,
+          { entryIdx: idx, key: "functions" },
         );
       } else {
         perRule.set(fn, entry.category || "(uncategorised)");
@@ -357,8 +399,9 @@ if (!Array.isArray(allowlist.allow)) {
     const sorted = [...entry.functions].sort((a, b) => a.localeCompare(b));
     for (let i = 0; i < entry.functions.length; i++) {
       if (entry.functions[i] !== sorted[i]) {
-        schemaValidationErrors.push(
+        pushErr(
           `${loc}: 'functions' must be alphabetically sorted. Expected '${sorted[i]}' at index ${i}, got '${entry.functions[i]}'.`,
+          { entryIdx: idx, key: "functions" },
         );
         break;
       }
@@ -370,7 +413,15 @@ if (schemaValidationErrors.length) {
   console.error(
     `\n❌ Allowlist schema validation failed (${schemaValidationErrors.length} error${schemaValidationErrors.length === 1 ? "" : "s"}):`,
   );
-  for (const err of schemaValidationErrors) console.error(`  - ${err}`);
+  for (const err of schemaValidationErrors) {
+    console.error(`  - ${err.msg}`);
+    emitAnnotation({
+      file: ALLOWLIST_REL_PATH,
+      line: resolveLine(err),
+      title: "Allowlist validation error",
+      message: err.msg,
+    });
+  }
   console.error(
     `\nFix .github/supabase-lint-allowlist.json — every entry needs a unique category, a substantive reason (>= ${MIN_REASON_LEN} chars), and no duplicate function suppressions.`,
   );
@@ -383,7 +434,9 @@ if (schemaValidationErrors.length) {
         "",
         "## ❌ Allowlist schema validation failed",
         "",
-        ...schemaValidationErrors.map((e) => `- ${e}`),
+        ...schemaValidationErrors.map(
+          (e) => `- \`L${resolveLine(e)}\` ${e.msg}`,
+        ),
         "",
       ].join("\n") + "\n",
     );
