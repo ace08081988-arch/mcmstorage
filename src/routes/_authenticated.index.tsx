@@ -2287,25 +2287,33 @@ function Index() {
           </div>
         </div>
       )}
-      {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
-      <ProductEditDrawer
-        open={editId !== null}
-        onOpenChange={(v) => { if (!v) setEditId(null); }}
-        produk={items.find((i) => i.id === editId) ?? null}
-        categories={categories}
-        satuanList={SATUAN_LIST}
-        satuanBounds={satuanBounds}
-        formatJumlah={formatJumlah}
-        rupiah={rupiah}
-        update={update}
-        setFoto={setFoto}
-        addGaleri={addGaleri}
-        removeFoto={removeFoto}
-        removeGaleri={removeGaleri}
-        removeItem={removeItem}
-        markSent={markSent}
-        buildPesan={buildPesan}
-      />
+      {uid && setupOpen && (
+        <Suspense fallback={null}>
+          <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />
+        </Suspense>
+      )}
+      {editId !== null && (
+        <Suspense fallback={null}>
+          <ProductEditDrawer
+            open={editId !== null}
+            onOpenChange={(v) => { if (!v) setEditId(null); }}
+            produk={items.find((i) => i.id === editId) ?? null}
+            categories={categories}
+            satuanList={SATUAN_LIST}
+            satuanBounds={satuanBounds}
+            formatJumlah={formatJumlah}
+            rupiah={rupiah}
+            update={update}
+            setFoto={setFoto}
+            addGaleri={addGaleri}
+            removeFoto={removeFoto}
+            removeGaleri={removeGaleri}
+            removeItem={removeItem}
+            markSent={markSent}
+            buildPesan={buildPesan}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
