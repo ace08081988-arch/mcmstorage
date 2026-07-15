@@ -2496,7 +2496,7 @@ function ChatRoomPage() {
             <Button
               type="submit"
               size="icon"
-              disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending || !!productSendProgress}
+              disabled={(!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0) || chatBlocked || isSending || !!productSendProgress}
               aria-label="Kirim"
               aria-busy={isSending || !!productSendProgress}
               className="h-10 w-10 shrink-0"
@@ -2506,7 +2506,12 @@ function ChatRoomPage() {
           </div>
           {/* Baris bawah: strip alat sekunder */}
           <div className="flex items-center gap-ms-1">
-            <AttachMenu conversationId={conversationId} disabled={chatBlocked} onSent={() => { void othersRead.refetch(); }} />
+            <AttachMenu
+              conversationId={conversationId}
+              disabled={chatBlocked}
+              onSent={() => { void othersRead.refetch(); }}
+              onStageFiles={stageAttachments}
+            />
             <EmojiPickerPopover
               disabled={chatBlocked}
               onPick={(ch) => {
@@ -2527,7 +2532,7 @@ function ChatRoomPage() {
               onSent={() => { void othersRead.refetch(); }}
             />
             <div className="ml-auto">
-              {!body.trim() && pendingProducts.length === 0 ? (
+              {!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0 ? (
                 <VoiceRecorderButton
                   conversationId={conversationId}
                   disabled={chatBlocked}
