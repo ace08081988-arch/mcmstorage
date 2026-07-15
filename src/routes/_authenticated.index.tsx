@@ -1482,7 +1482,11 @@ function Index() {
             · MCM · Barokah Rizki ·
           </p>
         </main>
-        {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
+        {uid && setupOpen && (
+          <Suspense fallback={null}>
+            <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />
+          </Suspense>
+        )}
       </div>
     );
   }
