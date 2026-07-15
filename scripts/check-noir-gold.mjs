@@ -97,7 +97,7 @@ scan(`"text-\\[[0-9]+(\\.[0-9]+)?px\\]"`, {
 
 // 3. Hex color literal di .ts/.tsx (bukan komentar heuristik: skip baris
 //    yang isinya adalah komentar `//` atau di dalam `/* ... */` satu-baris).
-scan(`-t tsx -t ts "#[0-9a-fA-F]{6}\\b|#[0-9a-fA-F]{3}\\b"`, {
+scan(`--glob '*.ts' --glob '*.tsx' "#[0-9a-fA-F]{6}\\b|#[0-9a-fA-F]{3}\\b"`, {
   label: "hex color",
   skip: (file, content) => {
     if (isAllowed(ALLOW.hexColorAllow, file)) return true;
