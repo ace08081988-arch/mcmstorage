@@ -2390,8 +2390,19 @@ function ChatRoomPage() {
                 return (
                   <li
                     key={`${p.source}:${p.id}:${idx}`}
-                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-2 rounded-md border bg-background p-ms-1.5"
+                    className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-2 rounded-md border bg-background p-ms-1.5"
                   >
+                    <button
+                      type="button"
+                      aria-label={`Hapus ${p.productName} dari daftar kirim`}
+                      disabled={sendStatus === "sending"}
+                      onClick={() =>
+                        updatePendingProducts((prev) => prev.filter((_, i) => i !== idx))
+                      }
+                      className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-background text-muted-foreground shadow ring-1 ring-border hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                     <PendingProductThumb path={p.photoPath} bucket={p.bucket} />
                     <div className="min-w-0">
                       <div className="flex min-w-0 items-center gap-ms-1.5">
