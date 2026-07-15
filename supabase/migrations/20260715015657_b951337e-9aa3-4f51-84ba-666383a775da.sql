@@ -1,0 +1,1 @@
+ALTER TABLE public.user_storage DROP COLUMN IF EXISTS categories;

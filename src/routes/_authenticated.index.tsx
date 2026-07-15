@@ -477,8 +477,7 @@ function Index() {
         skipNextSaveRef.current = true;
         setItems(loadedItems);
       }
-      // Slice 2: kategori sekarang dibaca dari master `warehouse_categories`
-      // (SSOT dengan Gudang), bukan dari kolom JSON `user_storage.categories`.
+      // Kategori dibaca dari master `warehouse_categories` (SSOT dengan Gudang).
       const { data: catRows, error: catErr } = await supabase
         .from("warehouse_categories")
         .select("name, position")
