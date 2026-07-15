@@ -319,7 +319,7 @@ function BukuAlamatPage() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="min-w-0">
-            <h1 className="truncate text-ms-base font-semibold leading-tight">Pelanggan &amp; Pemasok</h1>
+            <h1 className="truncate text-ms-base font-semibold leading-tight">Pelanggan &amp; Supplier</h1>
             <p className="truncate text-ms-2xs text-muted-foreground">
               Buku alamat &middot; {numberFmt.format(rows.length)} kontak
             </p>
