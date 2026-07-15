@@ -8,6 +8,7 @@ import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { WaShareButton } from "@/components/share/SaleShareButtons";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 import { StatusBadge, type StatusVariant } from "@/components/StatusBadge";
+import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
 
 type Item = {
   id: string;
