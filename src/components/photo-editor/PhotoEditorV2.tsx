@@ -25,6 +25,7 @@ import {
   MousePointer2, Crop, RotateCw, FlipHorizontal2, FlipVertical2, Layers, X, Check,
   AlertTriangle, MapPin, Package, DollarSign, Clock, BadgeCheck, Trash2, Copy, Eye, EyeOff, Lock, Unlock,
   Highlighter, Brush, Eraser, Triangle as TriangleIcon, ZoomIn, ZoomOut, RotateCcw, ChevronLeft,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -48,9 +49,26 @@ type Tool =
   | "teks" | "stiker" | "panah" | "line" | "kotak" | "lingkaran" | "oval" | "segitiga"
   | "crop";
 
-const MCM_PALETTE = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#111827", "#ffffff"];
+// Noir & Gold-first palette: emas & krem sebagai aksen brand, disusul warna
+// operasional yang tetap dibutuhkan (marker merah/hijau untuk anotasi cepat).
+const MCM_PALETTE = [
+  "#c9a84c", // gold — brand primary
+  "#f0d78c", // gold light
+  "#ffffff",
+  "#f5f0e0", // cream
+  "#ef4444", // merah — flag / hapus
+  "#f97316", // oranye
+  "#22c55e", // hijau — checklist
+  "#06b6d4", // cyan — info
+  "#8b5cf6", // ungu
+  "#0d0d0d", // noir
+];
+
+// Aksen brand — dipakai untuk transformer, ring aktif, save button, dsb.
+const GOLD = "#c9a84c";
 
 const STICKER_PRESETS: Record<string, { label: string; Icon: typeof Check; defaultColor: string }> = {
+  arrow: { label: "Panah", Icon: ArrowRight, defaultColor: "#c9a84c" },
   check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e" },
   x: { label: "Silang", Icon: X, defaultColor: "#ef4444" },
   warning: { label: "Warning", Icon: AlertTriangle, defaultColor: "#f59e0b" },
@@ -554,7 +572,14 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const selectedObj = scene.objects.find((o) => o.id === selectedId) ?? null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-neutral-950 text-foreground" data-testid="photo-editor-v2">
+    <div
+      className="fixed inset-0 z-50 flex flex-col text-foreground"
+      style={{
+        background:
+          "radial-gradient(120% 80% at 50% 0%, #1a1a1a 0%, #0d0d0d 55%, #050505 100%)",
+      }}
+      data-testid="photo-editor-v2"
+    >
       {/* Canvas — full bleed. Chrome (header, pill toolbar, panel) melayang di atasnya
           agar foto punya ruang maksimum di HP 411px. */}
       <div ref={containerRef} className="relative flex-1 overflow-hidden touch-none">
@@ -590,16 +615,16 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
               ref={(n) => { transformerRef.current = n; }}
               rotateEnabled
               anchorSize={12}
-              borderStroke="#3b82f6"
-              anchorStroke="#3b82f6"
-              anchorFill="#ffffff"
+              borderStroke={GOLD}
+              anchorStroke={GOLD}
+              anchorFill="#0d0d0d"
             />
           </Layer>
         </Stage>
 
         {!img && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-ms-6 text-center">
-            <div className="rounded-lg border border-white/10 bg-neutral-900/75 px-ms-4 py-ms-3 text-ms-sm text-white/85 shadow-xl backdrop-blur-xl">
+            <div className="rounded-lg border border-[#c9a84c]/20 bg-[#0d0d0d]/80 px-ms-4 py-ms-3 text-ms-sm text-[#f0d78c] shadow-xl backdrop-blur-xl">
               {imageLoadStatus === "failed"
                 ? "Foto tidak bisa dibuka di editor. Tekan Batal lalu pilih ulang."
                 : "Membuka foto…"}
@@ -612,18 +637,19 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-ms-2 px-ms-2 py-ms-2"
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
         >
-          <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-white/10 bg-neutral-900/60 px-ms-1 py-ms-1 backdrop-blur-xl">
+          <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <IconPill onClick={onCancel} label="Batal"><ChevronLeft className="h-5 w-5" /></IconPill>
             <IconPill onClick={resetAll} label="Reset semua editan"><RotateCcw className="h-5 w-5" /></IconPill>
           </div>
-          <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-white/10 bg-neutral-900/60 px-ms-1 py-ms-1 backdrop-blur-xl">
+          <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <IconPill onClick={doUndo} disabled={!canUndo(history)} label="Undo"><Undo2 className="h-5 w-5" /></IconPill>
             <IconPill onClick={doRedo} disabled={!canRedo(history)} label="Redo"><Redo2 className="h-5 w-5" /></IconPill>
             <IconPill onClick={() => setShowLayers((v) => !v)} label="Layer" active={showLayers}><Layers className="h-5 w-5" /></IconPill>
             <Button
               size="sm"
               onClick={doSave}
-              className="ml-ms-1 h-9 rounded-full bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30"
+              className="ml-ms-1 h-9 rounded-full border border-[#c9a84c]/50 px-ms-4 text-ms-sm font-semibold text-[#0d0d0d] shadow-[0_6px_20px_-6px_rgba(201,168,76,0.55)] hover:brightness-105"
+              style={{ background: "linear-gradient(180deg, #f0d78c 0%, #c9a84c 55%, #a3873a 100%)" }}
             >
               Simpan
             </Button>
@@ -635,7 +661,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           className="pointer-events-none absolute left-ms-2 top-1/2 z-20 -translate-y-1/2"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="pointer-events-auto flex flex-col gap-ms-1 rounded-full border border-white/10 bg-neutral-900/50 p-ms-1 backdrop-blur-xl">
+          <div className="pointer-events-auto flex flex-col gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl">
             <IconPill onClick={rotate90} label="Putar 90°"><RotateCw className="h-5 w-5" /></IconPill>
             <IconPill onClick={flipH} label="Flip horizontal" active={!!scene.flipH}><FlipHorizontal2 className="h-5 w-5" /></IconPill>
             <IconPill onClick={flipV} label="Flip vertikal" active={!!scene.flipV}><FlipVertical2 className="h-5 w-5" /></IconPill>
@@ -645,9 +671,9 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
         {/* Kanan-tengah: zoom badge vertikal. */}
         <div className="pointer-events-none absolute right-ms-2 top-1/2 z-20 -translate-y-1/2">
-          <div className="pointer-events-auto flex flex-col items-center gap-ms-1 rounded-full border border-white/10 bg-neutral-900/50 p-ms-1 backdrop-blur-xl">
+          <div className="pointer-events-auto flex flex-col items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl">
             <IconPill onClick={() => setZoom((z) => Math.min(4, z + 0.25))} label="Zoom in"><ZoomIn className="h-5 w-5" /></IconPill>
-            <span className="min-w-10 text-center text-ms-2xs font-medium tabular-nums text-white/80">{Math.round(zoom * 100)}%</span>
+            <span className="min-w-10 text-center text-ms-2xs font-medium tabular-nums text-[#f0d78c]/85">{Math.round(zoom * 100)}%</span>
             <IconPill onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))} label="Zoom out"><ZoomOut className="h-5 w-5" /></IconPill>
           </div>
         </div>
@@ -655,7 +681,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         {/* Object action bar (when selected) — dipindah ke bawah header. */}
         {selectedObj && (
           <div
-            className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-1 rounded-full border border-white/10 bg-neutral-900/70 px-ms-1 py-ms-1 shadow-lg backdrop-blur-xl"
+            className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-1 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
             style={{ top: "calc(env(safe-area-inset-top) + 68px)" }}
           >
             <IconPill onClick={() => duplicateObject(selectedObj.id)} label="Duplikat"><Copy className="h-4 w-4" /></IconPill>
@@ -672,7 +698,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
       {/* Panel gaya kontekstual — muncul di atas toolbar HANYA saat tool
           coret/bentuk/teks aktif. Bisa disembunyikan lewat handle X. */}
       {needsStyle && !stylePanelClosed && (
-        <div className="pointer-events-auto relative z-20 border-t border-white/10 bg-neutral-900/60 px-ms-3 py-ms-2 backdrop-blur-xl animate-fade-in">
+        <div className="pointer-events-auto relative z-20 border-t border-[#c9a84c]/20 bg-[#0d0d0d]/75 px-ms-3 py-ms-2 backdrop-blur-xl animate-fade-in">
           <div className="flex items-center gap-ms-2 overflow-x-auto [scrollbar-width:none]">
             {MCM_PALETTE.map((c) => (
               <button
@@ -690,7 +716,9 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 }}
                 className={cn(
                   "h-8 w-8 shrink-0 rounded-full border-2 transition-transform",
-                  color === c ? "scale-110 border-white ring-2 ring-white/40" : "border-white/20",
+                  color === c
+                    ? "scale-110 border-[#c9a84c] ring-2 ring-[#c9a84c]/50"
+                    : "border-white/15",
                 )}
                 style={{ backgroundColor: c }}
               />
@@ -698,28 +726,28 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             <label className="relative shrink-0" aria-label="Warna kustom">
               <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
               <span
-                className="grid h-8 w-8 place-items-center rounded-full border-2 border-white/20 bg-[conic-gradient(from_0deg,#ef4444,#eab308,#22c55e,#06b6d4,#3b82f6,#8b5cf6,#ec4899,#ef4444)]"
+                className="grid h-8 w-8 place-items-center rounded-full border-2 border-[#c9a84c]/40 bg-[conic-gradient(from_0deg,#c9a84c,#f0d78c,#ffffff,#22c55e,#06b6d4,#8b5cf6,#ef4444,#c9a84c)]"
                 aria-hidden
               >
-                <span className="h-3 w-3 rounded-full bg-neutral-900" />
+                <span className="h-3 w-3 rounded-full bg-[#0d0d0d]" />
               </span>
             </label>
-            <div className="ml-ms-2 flex shrink-0 items-center gap-ms-2 text-white/80">
+            <div className="ml-ms-2 flex shrink-0 items-center gap-ms-2 text-[#f0d78c]/85">
               <span className="text-ms-2xs uppercase tracking-wide opacity-70">Tebal</span>
               <input
                 type="range" min={1} max={40} value={strokeWidth}
                 onChange={(e) => setStrokeWidth(Number(e.target.value))}
-                className="w-24 accent-white"
+                className="w-24 accent-[#c9a84c]"
                 aria-label="Ketebalan"
               />
               <span className="w-6 text-center text-ms-2xs tabular-nums">{strokeWidth}</span>
             </div>
-            <div className="flex shrink-0 items-center gap-ms-2 text-white/80">
+            <div className="flex shrink-0 items-center gap-ms-2 text-[#f0d78c]/85">
               <span className="text-ms-2xs uppercase tracking-wide opacity-70">Opac</span>
               <input
                 type="range" min={0.1} max={1} step={0.05} value={opacity}
                 onChange={(e) => setOpacity(Number(e.target.value))}
-                className="w-20 accent-white"
+                className="w-20 accent-[#c9a84c]"
                 aria-label="Opacity"
               />
               <span className="w-8 text-center text-ms-2xs tabular-nums">{Math.round(opacity * 100)}%</span>
@@ -728,7 +756,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
               type="button"
               onClick={() => setStylePanelClosed(true)}
               aria-label="Sembunyikan panel gaya"
-              className="ml-auto grid h-7 w-7 shrink-0 place-items-center rounded-full text-white/60 hover:bg-white/10"
+              className="ml-auto grid h-7 w-7 shrink-0 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"
             >
               <X className="h-4 w-4" />
             </button>
@@ -739,22 +767,22 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
       {/* Toolbar utama — glass, satu baris scrollable. Testid & aria-label
           dipertahankan agar spec e2e existing tetap hijau. */}
       <nav
-        className="relative z-20 shrink-0 border-t border-white/10 bg-neutral-900/70 backdrop-blur-xl"
+        className="relative z-20 shrink-0 border-t border-[#c9a84c]/20 bg-[#0d0d0d]/85 backdrop-blur-xl"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex items-stretch gap-ms-1 overflow-x-auto px-ms-2 py-ms-2 [scrollbar-width:none]">
           <ToolPill active={tool === "pilih"} onClick={() => { setTool("pilih"); setStylePanelClosed(false); }} label="Pilih" Icon={MousePointer2} testId="photo-editor-tool-pilih" />
-          <span className="mx-ms-1 my-auto h-8 w-px shrink-0 bg-white/10" aria-hidden />
+          <span className="mx-ms-1 my-auto h-8 w-px shrink-0 bg-[#c9a84c]/20" aria-hidden />
           <ToolPill active={tool === "coret"} onClick={() => { setTool("coret"); setStylePanelClosed(false); }} label="Coret" Icon={Pencil} testId="photo-editor-tool-coret" />
           <ToolPill active={tool === "highlighter"} onClick={() => { setTool("highlighter"); setStylePanelClosed(false); }} label="Marker" Icon={Highlighter} />
           <ToolPill active={tool === "brush"} onClick={() => { setTool("brush"); setStylePanelClosed(false); }} label="Brush" Icon={Brush} />
           <ToolPill active={tool === "eraser"} onClick={() => { setTool("eraser"); setStylePanelClosed(false); }} label="Hapus" Icon={Eraser} />
-          <span className="mx-ms-1 my-auto h-8 w-px shrink-0 bg-white/10" aria-hidden />
+          <span className="mx-ms-1 my-auto h-8 w-px shrink-0 bg-[#c9a84c]/20" aria-hidden />
           <ToolPill active={tool === "panah"} onClick={() => { setTool("panah"); setStylePanelClosed(false); }} label="Panah" Icon={MoveUpRight} testId="photo-editor-tool-panah" />
           <ToolPill active={tool === "kotak"} onClick={() => { setTool("kotak"); setStylePanelClosed(false); }} label="Kotak" Icon={Square} testId="photo-editor-tool-kotak" />
           <ToolPill active={tool === "lingkaran"} onClick={() => { setTool("lingkaran"); setStylePanelClosed(false); }} label="Lingkaran" Icon={CircleIcon} testId="photo-editor-tool-lingkaran" />
           <ToolPill active={tool === "segitiga"} onClick={() => { setTool("segitiga"); setStylePanelClosed(false); }} label="Segitiga" Icon={TriangleIcon} />
-          <span className="mx-ms-1 my-auto h-8 w-px shrink-0 bg-white/10" aria-hidden />
+          <span className="mx-ms-1 my-auto h-8 w-px shrink-0 bg-[#c9a84c]/20" aria-hidden />
           <ToolPill active={tool === "teks"} onClick={() => { setTool("teks"); setStylePanelClosed(false); }} label="Teks" Icon={Type} testId="photo-editor-tool-teks" />
           <ToolPill active={showStickers} onClick={() => setShowStickers((v) => !v)} label="Stiker" Icon={Sticker} testId="photo-editor-tool-stiker" />
         </div>
@@ -762,10 +790,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
       {/* Sticker sheet */}
       {showStickers && (
-        <div className="absolute inset-x-0 bottom-20 z-30 rounded-t-2xl border border-white/10 bg-neutral-900/95 p-ms-3 shadow-2xl backdrop-blur-xl animate-slide-in-right">
+        <div className="absolute inset-x-0 bottom-20 z-30 rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-ms-sm font-medium text-white">Stiker</div>
-            <button onClick={() => setShowStickers(false)} className="grid h-7 w-7 place-items-center rounded-full text-white/70 hover:bg-white/10"><X className="h-4 w-4" /></button>
+            <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Stiker</div>
+            <button onClick={() => setShowStickers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
           </div>
           <div className="grid grid-cols-4 gap-ms-2">
             {Object.entries(STICKER_PRESETS).map(([key, preset]) => {
@@ -775,12 +803,15 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   key={key}
                   type="button"
                   onClick={() => addSticker(key)}
-                  className="flex flex-col items-center gap-ms-1 rounded-xl border border-white/10 bg-white/5 p-ms-3 text-white/90 transition hover:bg-white/10"
+                  className="flex flex-col items-center gap-ms-1 rounded-xl border border-[#c9a84c]/15 bg-white/[0.03] p-ms-3 text-white/90 transition hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10"
                 >
-                  <div className="grid h-10 w-10 place-items-center rounded-full text-neutral-950" style={{ backgroundColor: preset.defaultColor }}>
+                  <div
+                    className="grid h-10 w-10 place-items-center rounded-full text-[#0d0d0d] shadow-inner"
+                    style={{ backgroundColor: preset.defaultColor }}
+                  >
                     <Ic className="h-5 w-5" />
                   </div>
-                  <span className="text-ms-xs">{preset.label}</span>
+                  <span className="text-ms-xs text-[#f0d78c]/90">{preset.label}</span>
                 </button>
               );
             })}
@@ -793,29 +824,29 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         const obj = scene.objects.find((o) => o.id === showText.id && o.kind === "text") as TextObj | undefined;
         if (!obj) return null;
         return (
-          <div className="absolute inset-x-0 bottom-0 z-40 rounded-t-2xl border border-white/10 bg-neutral-900/95 p-ms-3 shadow-2xl backdrop-blur-xl animate-fade-in">
+          <div className="absolute inset-x-0 bottom-0 z-40 rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in">
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-ms-sm font-medium text-white">Ubah Teks</div>
-              <button onClick={() => setShowText(null)} className="grid h-7 w-7 place-items-center rounded-full text-white/70 hover:bg-white/10"><X className="h-4 w-4" /></button>
+              <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Ubah Teks</div>
+              <button onClick={() => setShowText(null)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
             </div>
             <textarea
-              className="w-full rounded-lg border border-white/10 bg-white/5 p-ms-2 text-ms-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-lg border border-[#c9a84c]/25 bg-white/[0.03] p-ms-2 text-ms-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#c9a84c]/50"
               rows={3}
               value={obj.text}
               onChange={(e) => updateObject(obj.id, { text: e.target.value })}
               autoFocus
             />
             <div className="mt-2 flex flex-wrap items-center gap-ms-2">
-              <button className={cn("h-9 rounded-full border border-white/10 px-ms-3 text-ms-sm font-bold text-white transition", obj.bold ? "bg-white text-neutral-900" : "hover:bg-white/10")} onClick={() => updateObject(obj.id, { bold: !obj.bold })}>B</button>
-              <button className={cn("h-9 rounded-full border border-white/10 px-ms-3 text-ms-sm italic text-white transition", obj.italic ? "bg-white text-neutral-900" : "hover:bg-white/10")} onClick={() => updateObject(obj.id, { italic: !obj.italic })}>I</button>
-              <button className={cn("h-9 rounded-full border border-white/10 px-ms-3 text-ms-sm text-white transition", obj.outline ? "bg-white text-neutral-900" : "hover:bg-white/10")} onClick={() => updateObject(obj.id, { outline: obj.outline ? undefined : "#000000" })}>Outline</button>
-              <button className={cn("h-9 rounded-full border border-white/10 px-ms-3 text-ms-sm text-white transition", obj.shadow ? "bg-white text-neutral-900" : "hover:bg-white/10")} onClick={() => updateObject(obj.id, { shadow: !obj.shadow })}>Shadow</button>
-              <select className="h-9 rounded-full border border-white/10 bg-white/5 px-ms-2 text-ms-sm text-white" value={obj.align} onChange={(e) => updateObject(obj.id, { align: e.target.value as TextObj["align"] })}>
+              <button className={cn("h-9 rounded-full border px-ms-3 text-ms-sm font-bold transition", obj.bold ? "border-[#c9a84c] bg-[#c9a84c] text-[#0d0d0d]" : "border-[#c9a84c]/20 text-white hover:bg-[#c9a84c]/10")} onClick={() => updateObject(obj.id, { bold: !obj.bold })}>B</button>
+              <button className={cn("h-9 rounded-full border px-ms-3 text-ms-sm italic transition", obj.italic ? "border-[#c9a84c] bg-[#c9a84c] text-[#0d0d0d]" : "border-[#c9a84c]/20 text-white hover:bg-[#c9a84c]/10")} onClick={() => updateObject(obj.id, { italic: !obj.italic })}>I</button>
+              <button className={cn("h-9 rounded-full border px-ms-3 text-ms-sm transition", obj.outline ? "border-[#c9a84c] bg-[#c9a84c] text-[#0d0d0d]" : "border-[#c9a84c]/20 text-white hover:bg-[#c9a84c]/10")} onClick={() => updateObject(obj.id, { outline: obj.outline ? undefined : "#000000" })}>Outline</button>
+              <button className={cn("h-9 rounded-full border px-ms-3 text-ms-sm transition", obj.shadow ? "border-[#c9a84c] bg-[#c9a84c] text-[#0d0d0d]" : "border-[#c9a84c]/20 text-white hover:bg-[#c9a84c]/10")} onClick={() => updateObject(obj.id, { shadow: !obj.shadow })}>Shadow</button>
+              <select className="h-9 rounded-full border border-[#c9a84c]/25 bg-white/[0.03] px-ms-2 text-ms-sm text-white" value={obj.align} onChange={(e) => updateObject(obj.id, { align: e.target.value as TextObj["align"] })}>
                 <option value="left">Kiri</option>
                 <option value="center">Tengah</option>
                 <option value="right">Kanan</option>
               </select>
-              <input type="range" min={12} max={120} value={obj.fontSize} onChange={(e) => updateObject(obj.id, { fontSize: Number(e.target.value) })} className="w-28 accent-white" aria-label="Ukuran font" />
+              <input type="range" min={12} max={120} value={obj.fontSize} onChange={(e) => updateObject(obj.id, { fontSize: Number(e.target.value) })} className="w-28 accent-[#c9a84c]" aria-label="Ukuran font" />
             </div>
           </div>
         );
@@ -823,26 +854,26 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
       {/* Layers sheet */}
       {showLayers && (
-        <div className="absolute inset-x-0 bottom-20 z-30 max-h-[50vh] overflow-auto rounded-t-2xl border border-white/10 bg-neutral-900/95 p-ms-3 shadow-2xl backdrop-blur-xl animate-fade-in">
+        <div className="absolute inset-x-0 bottom-20 z-30 max-h-[50vh] overflow-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-ms-sm font-medium text-white">Layer ({scene.objects.length})</div>
-            <button onClick={() => setShowLayers(false)} className="grid h-7 w-7 place-items-center rounded-full text-white/70 hover:bg-white/10"><X className="h-4 w-4" /></button>
+            <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Layer ({scene.objects.length})</div>
+            <button onClick={() => setShowLayers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
           </div>
           <ul className="space-y-1">
             {[...scene.objects].reverse().map((o) => (
-              <li key={o.id} className={cn("flex items-center gap-ms-2 rounded-lg border border-white/10 p-ms-2 text-ms-sm text-white/90", selectedId === o.id ? "bg-white/10" : "bg-white/[0.03]")}>
+              <li key={o.id} className={cn("flex items-center gap-ms-2 rounded-lg border p-ms-2 text-ms-sm text-white/90 transition", selectedId === o.id ? "border-[#c9a84c]/60 bg-[#c9a84c]/10" : "border-[#c9a84c]/15 bg-white/[0.03] hover:border-[#c9a84c]/30")}>
                 <button className="flex-1 text-left" onClick={() => setSelectedId(o.id)}>{layerLabel(o)}</button>
-                <button aria-label="Sembunyikan" className="grid h-7 w-7 place-items-center rounded-md hover:bg-white/10" onClick={() => updateObject(o.id, { visible: o.visible === false })}>
+                <button aria-label="Sembunyikan" className="grid h-7 w-7 place-items-center rounded-md hover:bg-[#c9a84c]/10" onClick={() => updateObject(o.id, { visible: o.visible === false })}>
                   {o.visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
-                <button aria-label="Kunci" className="grid h-7 w-7 place-items-center rounded-md hover:bg-white/10" onClick={() => updateObject(o.id, { locked: !o.locked })}>
+                <button aria-label="Kunci" className="grid h-7 w-7 place-items-center rounded-md hover:bg-[#c9a84c]/10" onClick={() => updateObject(o.id, { locked: !o.locked })}>
                   {o.locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                 </button>
-                <button aria-label="Duplikat" className="grid h-7 w-7 place-items-center rounded-md hover:bg-white/10" onClick={() => duplicateObject(o.id)}><Copy className="h-4 w-4" /></button>
+                <button aria-label="Duplikat" className="grid h-7 w-7 place-items-center rounded-md hover:bg-[#c9a84c]/10" onClick={() => duplicateObject(o.id)}><Copy className="h-4 w-4" /></button>
                 <button aria-label="Hapus" className="grid h-7 w-7 place-items-center rounded-md text-destructive hover:bg-destructive/20" onClick={() => deleteObject(o.id)}><Trash2 className="h-4 w-4" /></button>
               </li>
             ))}
-            {scene.objects.length === 0 && <li className="text-ms-xs text-white/50">Belum ada objek</li>}
+            {scene.objects.length === 0 && <li className="text-ms-xs text-[#f0d78c]/50">Belum ada objek</li>}
           </ul>
         </div>
       )}
@@ -868,8 +899,8 @@ function ToolPill(props: { active: boolean; onClick: () => void; label: string; 
       className={cn(
         "flex min-h-[52px] min-w-[52px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-ms-2 text-ms-2xs transition-all",
         active
-          ? "bg-white text-neutral-900 shadow-lg shadow-white/10"
-          : "text-white/80 hover:bg-white/10 active:bg-white/15",
+          ? "bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_6px_16px_-6px_rgba(201,168,76,0.55)] ring-1 ring-[#c9a84c]/60"
+          : "text-[#f5f0e0]/85 hover:bg-[#c9a84c]/10 hover:text-[#f0d78c] active:bg-[#c9a84c]/15",
       )}
     >
       <Icon className="h-5 w-5" />
@@ -900,9 +931,9 @@ function IconPill(props: {
       aria-pressed={active}
       disabled={disabled}
       className={cn(
-        "grid h-10 w-10 place-items-center rounded-full text-white/85 transition-all",
-        !disabled && "hover:bg-white/10 active:scale-95",
-        active && "bg-white text-neutral-900",
+        "grid h-10 w-10 place-items-center rounded-full text-[#f5f0e0]/90 transition-all",
+        !disabled && "hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95",
+        active && "bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_4px_12px_-4px_rgba(201,168,76,0.55)]",
         tone === "danger" && "text-destructive-foreground hover:bg-destructive/30",
         disabled && "opacity-40",
       )}
@@ -914,6 +945,7 @@ function IconPill(props: {
 
 function stickerGlyph(k: string): string {
   switch (k) {
+    case "arrow": return "→";
     case "check": return "✓";
     case "x": return "✕";
     case "warning": return "!";
