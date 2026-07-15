@@ -858,7 +858,7 @@ function PosKasirPage() {
                 <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">Input Jumlah ({unit})</label>
                 <input
                   type="number"
-                  step="0.001"
+                  step={inputStep}
                   min="0"
                   max={selected.stokKg}
                   value={beratStr}
@@ -868,7 +868,7 @@ function PosKasirPage() {
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
                       : "border-slate-700 focus:border-success focus:ring-success/30"
                   } ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
-                  placeholder="0.000"
+                  placeholder={inputPlaceholder}
                 />
                 {berat > selected.stokKg && (
                   <div className={`flex items-start gap-ms-2 rounded-lg bg-red-500/15 border border-red-500/40 text-ms-xs text-red-200 ${modeRingkas ? "mt-1 p-ms-1.5" : "mt-2 p-ms-2"}`}>
