@@ -22,6 +22,7 @@ import {
   type ValidateApkLinkResult,
 } from "@/lib/apk.functions";
 import { trackApkDownload } from "@/lib/apk-download-track";
+import { goBackOr } from "@/lib/back-nav";
 import {
   useChatApkHistory,
   recordChatApkDownload,
@@ -166,7 +167,7 @@ function ProfilChatPage() {
         <button
           type="button"
           aria-label="Kembali"
-          onClick={() => router.history.back()}
+          onClick={() => goBackOr(router, { to: "/chat" })}
           className="grid h-9 w-9 place-items-center rounded-full hover:bg-accent"
         >
           <ArrowLeft className="h-5 w-5" />
