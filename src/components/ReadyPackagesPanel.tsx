@@ -612,6 +612,14 @@ function PackageForm({
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  // Editor mandatory step untuk foto paket (kamera & galeri).
+  const photoFlow = usePhotoEditorFlow();
+
+  async function pickAndEditPhoto(file: File) {
+    await photoFlow.open([file], async ({ file: edited }) => {
+      await uploadPhoto(edited);
+    });
+  }
 
   // ── Judul Ecer + preset berat (localStorage per item) ──
   type Preset = { label: string; grams: number };
