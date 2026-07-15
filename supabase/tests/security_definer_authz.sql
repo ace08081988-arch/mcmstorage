@@ -259,13 +259,13 @@ DECLARE r record; v_src text; v_allow text[] := ARRAY[
 ];
 BEGIN
   FOR r IN
-    SELECT p.proname
+    SELECT p.oid, p.proname
       FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
      WHERE n.nspname = 'public' AND p.prosecdef
        AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
   LOOP
     IF r.proname = ANY (v_allow) THEN CONTINUE; END IF;
-    SELECT pg_get_functiondef(('public.'||r.proname)::regproc) INTO v_src;
+    v_src := pg_get_functiondef(r.oid);
     IF v_src !~* 'auth\.uid\(\)' THEN
       RAISE EXCEPTION 'FAIL SECURITY DEFINER % is authenticated-callable but does not reference auth.uid()', r.proname;
     END IF;
