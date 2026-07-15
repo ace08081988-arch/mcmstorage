@@ -580,16 +580,14 @@ function ChatListPage() {
                 value={t.value}
                 className={
                   "relative shrink-0 whitespace-nowrap rounded-none border-0 bg-transparent px-0 py-2 " +
-                  "text-ms-xs font-medium text-[var(--wa-text-muted)] shadow-none " +
+                  "text-ms-xs font-medium text-[var(--wa-text-muted)] shadow-none transition-colors " +
+                  "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full " +
+                  "after:bg-[var(--wa-green)] after:opacity-0 after:transition-opacity " +
                   "hover:text-[var(--wa-text)] " +
-                  "data-[state=active]:text-[var(--wa-text)] data-[state=active]:shadow-none"
+                  "data-[state=active]:text-[var(--wa-text)] data-[state=active]:shadow-none data-[state=active]:after:opacity-100"
                 }
               >
                 {t.label}
-                <span
-                  aria-hidden
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[var(--wa-green)] opacity-0 transition-opacity data-[state=active]:opacity-100"
-                />
               </TabsTrigger>
             ))}
           </TabsList>
