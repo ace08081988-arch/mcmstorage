@@ -468,10 +468,29 @@ export function AppSidebar() {
     ? `Terakhir sinkron: ${new Date(lastSyncAt).toLocaleString()}`
     : "Belum ada sinkronisasi";
   const syncMeta = {
-    offline: { label: "Offline", Icon: WifiOff, cls: "bg-destructive/15 text-destructive border-destructive/30" },
-    syncing: { label: "Menyinkronkan", Icon: RefreshCw, cls: "bg-primary/10 text-primary border-primary/25" },
-    online:  { label: "Online", Icon: Wifi, cls: "bg-primary/12 text-primary border-primary/25" },
+    offline: {
+      label: "Offline",
+      Icon: WifiOff,
+      tone: "text-destructive",
+      dot: "bg-destructive",
+      chip: "border-destructive/25 bg-destructive/10 text-destructive",
+    },
+    syncing: {
+      label: "Menyinkronkan",
+      Icon: RefreshCw,
+      tone: "text-primary",
+      dot: "bg-primary/85",
+      chip: "border-primary/25 bg-primary/10 text-primary",
+    },
+    online: {
+      label: "Online",
+      Icon: Wifi,
+      tone: "text-success",
+      dot: "bg-success",
+      chip: "border-success/25 bg-success/10 text-success",
+    },
   }[syncState];
+  const SyncIcon = syncMeta.Icon;
   const chatCounts = (() => {
     const list = conversations ?? [];
     let unread = 0;
