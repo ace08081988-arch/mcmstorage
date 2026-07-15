@@ -12,25 +12,43 @@
 import { readFileSync, appendFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import Ajv from "ajv";
 
 const FAIL_ON_LEVEL = (process.env.FAIL_ON_LEVEL || "WARN").toUpperCase();
 const LEVEL_RANK = { INFO: 0, WARN: 1, ERROR: 2 };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const allowlistPath = resolve(here, "..", ".github", "supabase-lint-allowlist.json");
+const schemaPath = resolve(here, "..", ".github", "supabase-lint-allowlist.schema.json");
 const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
+const allowlistSchema = JSON.parse(readFileSync(schemaPath, "utf8"));
 
 // ---------- Allowlist schema validation ----------
-// Every entry MUST declare: name, level, category (non-empty, unique per rule),
-// reason (substantive, >= 40 chars), and a non-empty functions[] with unique,
-// schema-qualified identifiers. No function may appear twice under the same
-// rule (duplicate suppression hides regressions).
+// Two-phase validation:
+//   1. JSON Schema (Ajv) enforces the structural contract — required fields,
+//      types, enums, minLength, regex patterns, uniqueItems. The schema file
+//      is the canonical source of truth and lives next to the allowlist so
+//      editors can pick it up via the `$schema` reference.
+//   2. Cross-entry invariants that JSON Schema cannot express — category
+//      uniqueness per rule, and no function appearing in two buckets for the
+//      same rule (duplicate suppression hides regressions).
 const VALID_LEVELS = new Set(["INFO", "WARN", "ERROR"]);
 const MIN_REASON_LEN = 40;
 const schemaValidationErrors = [];
 const seenCategoryPerRule = new Map(); // rule -> Set<category>
 const seenFunctionPerRule = new Map(); // rule -> Map<fn, category>
 
+// Phase 1: JSON Schema
+const ajv = new Ajv({ allErrors: true, allowUnionTypes: true, strict: false });
+const validateSchema = ajv.compile(allowlistSchema);
+if (!validateSchema(allowlist)) {
+  for (const err of validateSchema.errors || []) {
+    const path = err.instancePath || "(root)";
+    schemaValidationErrors.push(`${path} ${err.message}`);
+  }
+}
+
+// Phase 2: cross-entry invariants
 if (!Array.isArray(allowlist.allow)) {
   schemaValidationErrors.push("`allow` must be an array.");
 }
