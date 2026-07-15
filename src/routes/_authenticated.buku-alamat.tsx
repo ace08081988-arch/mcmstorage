@@ -269,7 +269,7 @@ function BukuAlamatPage() {
     try {
       if (kind === "customer") await promoteToCustomer(row);
       else await promoteToSupplier(row);
-      toast.success(`${row.name} ditambahkan ke ${kind === "customer" ? "pelanggan" : "pemasok"}.`);
+      toast.success(`${row.name} ditambahkan ke ${kind === "customer" ? "pelanggan" : "supplier"}.`);
     } catch (e) {
       notifyError(e);
     }
@@ -355,8 +355,8 @@ function BukuAlamatPage() {
             )}
           </div>
           <p className="mt-2 max-w-md text-[12.5px] leading-relaxed text-muted-foreground">
-            Kelola pelanggan &amp; pemasok Anda: impor dari HP, tautkan otomatis ke akun MCM, dan
-            promosikan menjadi pelanggan atau pemasok.
+            Kelola pelanggan &amp; supplier Anda: impor dari HP, tautkan otomatis ke akun MCM, dan
+            promosikan menjadi pelanggan atau supplier.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-ms-2 sm:grid-cols-4">
             <StatCard label="Total Kontak" value={rows.length} icon={ContactRound} tone="primary" />
@@ -571,10 +571,10 @@ function BukuAlamatPage() {
                           variant="outline"
                           className="h-8 rounded-lg"
                           onClick={() => void handlePromote(r, "supplier")}
-                          title="Tambahkan sebagai pemasok"
-                          aria-label={`Jadikan ${r.name} pemasok`}
+                          title="Tambahkan sebagai supplier"
+                          aria-label={`Jadikan ${r.name} supplier`}
                         >
-                          <Truck className="mr-1 h-3.5 w-3.5" /> Pemasok
+                          <Truck className="mr-1 h-3.5 w-3.5" /> Supplier
                         </Button>
                         <div className="ml-auto flex items-center gap-ms-1">
                           <Button
