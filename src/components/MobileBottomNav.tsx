@@ -26,6 +26,20 @@ export function MobileBottomNav() {
   const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
   const { toggleSidebar } = useSidebar();
 
+  // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
+  // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
+  // Sembunyikan bottom nav global agar tidak menutupi sub-tab tersebut.
+  const hideOnChatFamily =
+    path === "/chat" ||
+    path.startsWith("/chat/") ||
+    path === "/panggilan" ||
+    path.startsWith("/panggilan/") ||
+    path === "/pembaruan" ||
+    path.startsWith("/pembaruan/") ||
+    path === "/fitur" ||
+    path.startsWith("/fitur/");
+  if (hideOnChatFamily) return null;
+
   const items: Item[] = [
     { to: "/", label: "Beranda", Icon: Home },
     { to: "/gudang", label: "Gudang", Icon: Warehouse },
