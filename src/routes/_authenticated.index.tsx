@@ -510,6 +510,18 @@ function Index() {
   // H11: skip the first save after hydration so mounting the page
   // doesn't upsert identical data back to user_storage.
   const skipNextSaveRef = useRef(false);
+  /**
+   * Guard konkurensi reorder ↔ realtime/refresh:
+   * - `reorderInFlightRef`: true selama batch UPDATE posisi berjalan.
+   *   Realtime/refresh yang datang di window ini di-drop supaya urutan
+   *   optimistic lokal (yang lebih baru) tidak tertimpa snapshot lama.
+   * - `reorderSeqRef`: nomor urut monotonik per reorder. Setelah reorder
+   *   selesai, hanya reorder ter-baru yang boleh memicu reconcile —
+   *   kalau user cepat drag berkali-kali, reorder yang lebih tua
+   *   berhenti diam-diam tanpa mengembalikan urutan lama.
+   */
+  const reorderInFlightRef = useRef(false);
+  const reorderSeqRef = useRef(0);
   // Perf: hero (bagian inti) dianggap "visible" saat data ter-hydrate
   // dan branch landing (tanpa activeCat) selesai render pertama kali.
   // Effect memastikan browser sudah commit DOM-nya sebelum mengukur.
