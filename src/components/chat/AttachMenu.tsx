@@ -105,9 +105,16 @@ type Props = {
   conversationId: string;
   disabled?: boolean;
   onSent?: () => void;
+  /**
+   * Opsional. Bila diisi, foto/video/dokumen yang dipilih dari tile
+   * (doc/gallery/camera/video) TIDAK masuk ke pratinjau internal AttachMenu,
+   * tetapi diserahkan ke parent untuk di-stage bersama produk di atas tombol
+   * Kirim. Berkas yang tidak valid tetap ditolak dengan toast di sini.
+   */
+  onStageFiles?: (files: File[]) => void;
 };
 
-export function AttachMenu({ conversationId, disabled, onSent }: Props) {
+export function AttachMenu({ conversationId, disabled, onSent, onStageFiles }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [openSheet, setOpenSheet] = useState(false);
   const [openLoc, setOpenLoc] = useState(false);
