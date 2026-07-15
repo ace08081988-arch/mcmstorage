@@ -99,12 +99,14 @@ function SortableCategoryRow({
   tag,
   onOpen,
   onDelete,
+  onRename,
 }: {
   name: string;
   count: number;
   tag: string;
   onOpen: () => void;
   onDelete: () => void;
+  onRename: () => void;
 }) {
   const {
     attributes,
@@ -171,10 +173,20 @@ function SortableCategoryRow({
         </span>
       </button>
       <button
+        onClick={onRename}
+        className="shrink-0 rounded-md border border-primary/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-primary transition-colors hover:bg-primary/10"
+        title={`Ubah nama kategori ${name}`}
+        aria-label={`Ubah nama kategori ${name}`}
+        data-testid={`rename-cat-${name}`}
+      >
+        Ubah
+      </button>
+      <button
         onClick={onDelete}
         className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
         title={`Hapus kategori ${name}`}
         aria-label={`Hapus kategori ${name}`}
+        data-testid={`delete-cat-${name}`}
       >
         Hapus
       </button>
@@ -806,6 +818,67 @@ function Index() {
   };
 
   /**
+   * Rename kategori atomik lewat RPC `rename_warehouse_category`:
+   * server-side validasi collision case-insensitive + kaskade
+   * `warehouse_items.category` di dalam satu transaksi supaya tidak
+   * ada window di mana kategori sudah berpindah nama tapi produk
+   * masih menempel di nama lama. `renameTarget` menahan nama lama
+   * dan input baru untuk dialog inline; loading state dipakai supaya
+   * tombol Simpan tidak bisa di-double-tap saat request berjalan.
+   */
+  const [renameTarget, setRenameTarget] = useState<{ old: string; input: string } | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const submitRename = async () => {
+    if (!renameTarget) return;
+    const oldName = renameTarget.old;
+    const rawNew = renameTarget.input;
+    const newName = rawNew.trim().replace(/\s+/g, " ");
+    if (!newName) {
+      toast.error("Nama kategori tidak boleh kosong");
+      return;
+    }
+    if (newName === oldName) {
+      setRenameTarget(null);
+      return;
+    }
+    if (
+      newName.toLowerCase() !== oldName.toLowerCase() &&
+      categories.some((c) => c.toLowerCase() === newName.toLowerCase())
+    ) {
+      toast.error(`Kategori "${newName}" sudah ada`);
+      return;
+    }
+    setRenaming(true);
+    const { data, error } = await supabase.rpc("rename_warehouse_category", {
+      _old_name: oldName,
+      _new_name: newName,
+    });
+    setRenaming(false);
+    if (error) {
+      if ((error as { code?: string }).code === "23505") {
+        toast.error(`Kategori "${newName}" sudah ada`);
+      } else {
+        notifyError(error, { prefix: "Gagal mengubah nama kategori: " });
+      }
+      return;
+    }
+    const renamedItems = Number(data ?? 0);
+    setCategories((c) => c.map((x) => (x === oldName ? newName : x)));
+    setItems((arr) =>
+      arr.map((i) =>
+        i.kategori.toLowerCase() === oldName.toLowerCase() ? { ...i, kategori: newName } : i,
+      ),
+    );
+    if (activeCat === oldName) setActiveCat(newName);
+    setRenameTarget(null);
+    toast.success(
+      renamedItems > 0
+        ? `Kategori diubah ke "${newName}" (${renamedItems} produk ikut diperbarui)`
+        : `Kategori diubah ke "${newName}"`,
+    );
+  };
+
+  /**
    * Drag-and-drop reorder kategori.
    * - Optimistic: susun ulang UI dulu supaya feel-nya instan di HP.
    * - Persist: kirim `position` baru per kategori ke `warehouse_categories`
@@ -1141,11 +1214,65 @@ function Index() {
                         count={items.filter((i) => i.kategori === c).length}
                         onOpen={() => setActiveCat(c)}
                         onDelete={() => deleteCategory(c)}
+                        onRename={() => setRenameTarget({ old: c, input: c })}
                       />
                     ))}
                   </ul>
                 </SortableContext>
               </DndContext>
+            )}
+            {renameTarget && (
+              <div
+                role="dialog"
+                aria-label="Ubah nama kategori"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-ms-4"
+                onClick={() => (!renaming ? setRenameTarget(null) : undefined)}
+              >
+                <div
+                  className="w-full max-w-sm rounded-xl border border-primary/30 bg-card p-ms-4 shadow-xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                    Ubah nama kategori
+                  </div>
+                  <div className="mb-3 text-[0.78125rem] text-foreground/80">
+                    Kategori lama: <span className="font-medium">{renameTarget.old}</span>
+                  </div>
+                  <input
+                    autoFocus
+                    value={renameTarget.input}
+                    onChange={(e) =>
+                      setRenameTarget((t) => (t ? { ...t, input: e.target.value } : t))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !renaming) void submitRename();
+                      if (e.key === "Escape" && !renaming) setRenameTarget(null);
+                    }}
+                    data-testid="rename-cat-input"
+                    className="h-10 w-full rounded-lg border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                    placeholder="Nama baru…"
+                  />
+                  <div className="mt-3 flex justify-end gap-ms-2">
+                    <button
+                      type="button"
+                      disabled={renaming}
+                      onClick={() => setRenameTarget(null)}
+                      className="h-9 rounded-lg border border-primary/20 bg-background px-ms-3 text-[0.78125rem] text-foreground/80 hover:bg-primary/5 disabled:opacity-60"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      disabled={renaming}
+                      onClick={() => void submitRename()}
+                      data-testid="rename-cat-submit"
+                      className="h-9 rounded-lg bg-primary px-ms-4 text-[0.78125rem] font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                    >
+                      {renaming ? "Menyimpan…" : "Simpan"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </section>
 
