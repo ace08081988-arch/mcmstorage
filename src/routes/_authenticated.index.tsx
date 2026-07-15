@@ -26,6 +26,24 @@ import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 // Bagian "Lainnya" hanya dipakai setelah user membuka <details>.
 // Dipecah jadi chunk terpisah lewat React.lazy agar landing inti (hero
 // stepper + form kategori) tidak menyeret JS ini di initial bundle.
@@ -67,6 +85,101 @@ function LainnyaMountSentinel() {
     );
   }, []);
   return null;
+}
+
+/**
+ * Baris kategori yang bisa di-drag-reorder. Handle drag (grip) dipisah
+ * dari tombol pilih kategori supaya tap-untuk-buka tetap responsif —
+ * di HP, drag hanya aktif kalau user menekan area handle. `useSortable`
+ * memberi transform untuk animasi geser saat item lain menyusul.
+ */
+function SortableCategoryRow({
+  name,
+  count,
+  tag,
+  onOpen,
+  onDelete,
+}: {
+  name: string;
+  count: number;
+  tag: string;
+  onOpen: () => void;
+  onDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: name });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-ms-2 rounded-xl border border-primary/15 bg-card px-ms-2 py-ms-3 transition-colors hover:border-primary/40 ${
+        isDragging ? "shadow-lg border-primary/60" : ""
+      }`}
+    >
+      <button
+        type="button"
+        aria-label={`Geser untuk ubah urutan kategori ${name}`}
+        title="Tahan lalu geser untuk ubah urutan"
+        className="shrink-0 touch-none cursor-grab rounded-md p-1.5 text-muted-foreground/70 hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        {/* GripVertical (inline SVG — hindari import lucide baru) */}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="9" cy="5" r="1" />
+          <circle cx="9" cy="12" r="1" />
+          <circle cx="9" cy="19" r="1" />
+          <circle cx="15" cy="5" r="1" />
+          <circle cx="15" cy="12" r="1" />
+          <circle cx="15" cy="19" r="1" />
+        </svg>
+      </button>
+      <button
+        onClick={onOpen}
+        className="flex min-w-0 flex-1 items-center gap-ms-3 text-left"
+      >
+        <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.08em] text-primary">
+          {tag}
+        </span>
+        <span className="truncate text-[0.84375rem] font-medium tracking-tight text-foreground">
+          {name}
+        </span>
+        <span className="ml-auto shrink-0 text-[0.65625rem] text-muted-foreground">
+          {count} pesanan
+        </span>
+      </button>
+      <button
+        onClick={onDelete}
+        className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
+        title={`Hapus kategori ${name}`}
+        aria-label={`Hapus kategori ${name}`}
+      >
+        Hapus
+      </button>
+    </li>
+  );
 }
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -402,6 +515,18 @@ function Index() {
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [categories, setCategories] = useState<string[]>([]);
+  // Sensor DnD:
+  // - PointerSensor dengan distance 6px → tap di area handle tetap
+   //   terasa seperti klik biasa; drag baru aktif setelah geser sedikit.
+  // - TouchSensor delay 180ms → di HP, tap cepat tidak memicu drag
+  //   supaya tombol Hapus / pilih kategori tetap responsif.
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   // M19: SATU sumber kebenaran untuk kategori aktif. Sebelumnya ada dua
   // key localStorage (`mcm_active_cat` dan `ACTIVE_CAT_KEY`) yang keduanya
   // ditulis pada setiap perubahan → 2× I/O per klik chip kategori dan
@@ -680,6 +805,52 @@ function Index() {
     toast.success(`Kategori "${name}" dihapus`);
   };
 
+  /**
+   * Drag-and-drop reorder kategori.
+   * - Optimistic: susun ulang UI dulu supaya feel-nya instan di HP.
+   * - Persist: kirim `position` baru per kategori ke `warehouse_categories`
+   *   (RLS `auth.uid() = user_id` sudah mengunci scope per pemilik).
+   * - Rollback: kalau salah satu UPDATE gagal, kembalikan urutan lama +
+   *   toast error supaya state UI dan DB tidak divergen.
+   */
+  const reorderCategories = async (fromName: string, toName: string) => {
+    if (fromName === toName) return;
+    const prev = categories;
+    const fromIdx = prev.indexOf(fromName);
+    const toIdx = prev.indexOf(toName);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = arrayMove(prev, fromIdx, toIdx);
+    setCategories(next);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const uid = user?.id;
+    if (!uid) {
+      setCategories(prev);
+      toast.error("Sesi berakhir. Silakan masuk ulang.");
+      return;
+    }
+
+    // Batch update posisi. `warehouse_categories` punya unique
+    // `(user_id, lower(btrim(name)))` — position bebas diubah tanpa
+    // menabrak constraint. Kirim parallel supaya cepat.
+    const results = await Promise.all(
+      next.map((name, idx) =>
+        supabase
+          .from("warehouse_categories")
+          .update({ position: idx })
+          .eq("user_id", uid)
+          .eq("name", name),
+      ),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      setCategories(prev);
+      notifyError(failed.error, { prefix: "Gagal menyimpan urutan kategori: " });
+    }
+  };
+
   const addProduk = () => {
     if (!activeCat) return;
     const nextId = items.reduce((m, i) => Math.max(m, i.id), 0) + 1;
@@ -951,40 +1122,30 @@ function Index() {
             </form>
 
             {categories.length > 0 && (
-              <ul className="grid gap-ms-2">
-                {categories.map((c) => {
-                  const count = items.filter((i) => i.kategori === c).length;
-                  return (
-                    <li
-                      key={c}
-                      className="flex items-center gap-ms-2 rounded-xl border border-primary/15 bg-card px-ms-3 py-ms-3 transition-colors hover:border-primary/40"
-                    >
-                      <button
-                        onClick={() => setActiveCat(c)}
-                        className="flex min-w-0 flex-1 items-center gap-ms-3 text-left"
-                      >
-                        <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.08em] text-primary">
-                          {tagFor(c)}
-                        </span>
-                        <span className="truncate text-[0.84375rem] font-medium tracking-tight text-foreground">
-                          {c}
-                        </span>
-                        <span className="ml-auto shrink-0 text-[0.65625rem] text-muted-foreground">
-                          {count} pesanan
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => deleteCategory(c)}
-                        className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
-                        title={`Hapus kategori ${c}`}
-                        aria-label={`Hapus kategori ${c}`}
-                      >
-                        Hapus
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e: DragEndEvent) => {
+                  const { active, over } = e;
+                  if (!over || active.id === over.id) return;
+                  void reorderCategories(String(active.id), String(over.id));
+                }}
+              >
+                <SortableContext items={categories} strategy={verticalListSortingStrategy}>
+                  <ul className="grid gap-ms-2">
+                    {categories.map((c) => (
+                      <SortableCategoryRow
+                        key={c}
+                        name={c}
+                        tag={tagFor(c)}
+                        count={items.filter((i) => i.kategori === c).length}
+                        onOpen={() => setActiveCat(c)}
+                        onDelete={() => deleteCategory(c)}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
             )}
           </section>
 
