@@ -165,14 +165,15 @@ export function AddContactFab() {
         aria-label="Tambah kontak PIN MCM"
         // Ukuran 44px di layar kecil (memenuhi tap-target minimum tanpa
         // menutupi label "Pembaruan"/"Panggilan" pada 360-390px), 48px
-        // mulai 400px. Posisi bottom dihitung dari safe-area + tinggi nav
-        // (`--chat-nav-h`, fallback 4rem bila nav tidak dirender) + gap
-        // konstan 0.75rem — jadi FAB selalu duduk rapi di atas nav, tidak
-        // menabrak ikon/label, tanpa bergantung pada angka hardcoded.
+        // mulai 400px. Posisi bottom = tinggi nav (`--chat-nav-h`, sudah
+        // termasuk safe-area-inset-bottom) + gap konstan 0.75rem — jadi
+        // FAB selalu duduk rapi di atas nav tanpa menghitung safe-area
+        // dua kali. Fallback menambahkan safe-area agar tetap aman bila
+        // container tidak menyetel variabelnya.
         className="fixed right-3 z-30 grid h-11 w-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95 min-[400px]:right-4 min-[400px]:h-12 min-[400px]:w-12"
         style={{
           bottom:
-            "calc(env(safe-area-inset-bottom, 0px) + var(--chat-nav-h, 4rem) + 0.75rem)",
+            "calc(var(--chat-nav-h, calc(4rem + env(safe-area-inset-bottom, 0px))) + 0.75rem)",
         }}
       >
         <Plus className="h-5 w-5" />

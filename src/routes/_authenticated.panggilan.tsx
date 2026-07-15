@@ -115,7 +115,7 @@ function PanggilanPage() {
 
   const rows = calls.data ?? [];
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
+    <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]">
       <header
         className="wa-header sticky top-0 z-10 flex items-center gap-ms-2 border-b px-ms-3 py-ms-3"
         style={{ paddingTop: "max(env(safe-area-inset-top), 0.75rem)" }}
@@ -132,7 +132,7 @@ function PanggilanPage() {
         <h1 className="text-ms-lg font-semibold">Panggilan</h1>
       </header>
 
-      <div className="flex-1">
+      <div className="flex-1 pb-[var(--chat-nav-h)]">
         {calls.isLoading ? (
           <div className="px-ms-4 py-ms-6 text-center text-ms-xs text-muted-foreground">Memuat riwayat…</div>
         ) : rows.length === 0 ? (

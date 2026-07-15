@@ -303,7 +303,7 @@ function PembaruanPage() {
     () => haptic(intensity);
 
   return (
-    <div className="mx-auto flex h-dvh max-w-2xl flex-col overflow-hidden bg-background">
+    <div className="mx-auto flex h-dvh max-w-2xl flex-col overflow-hidden bg-background [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]">
       {/*
        * Skip-to-content: tersembunyi secara visual, muncul saat menerima
        * fokus keyboard (Tab pertama). Melompatkan fokus ke <main> di bawah
@@ -416,7 +416,7 @@ function PembaruanPage() {
         id="pembaruan-main"
         ref={mainRef}
         tabIndex={-1}
-        className="flex-1 overflow-y-auto pb-4 outline-none"
+        className="flex-1 overflow-y-auto pb-[var(--chat-nav-h)] outline-none"
       >
       {/* Status */}
       <section id="pembaruan-sec-status" className="scroll-mt-4 px-ms-4" aria-labelledby="pembaruan-status-h">
