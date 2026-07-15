@@ -633,6 +633,31 @@ function Index() {
   };
 
   const deleteCategory = async (name: string) => {
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    if (!uid) {
+      toast.error("Harus login untuk menghapus kategori");
+      return;
+    }
+    // Guard: jangan hapus kategori yang masih dipakai di Gudang.
+    // Filter case-insensitive supaya cocok dengan aturan unik di DB
+    // (`unique (user_id, lower(btrim(name)))`).
+    const { count, error: countErr } = await supabase
+      .from("warehouse_items")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", uid)
+      .ilike("category", name);
+    if (countErr) {
+      notifyError(countErr, { prefix: "Gagal memeriksa pemakaian kategori: " });
+      return;
+    }
+    if ((count ?? 0) > 0) {
+      toast.error(
+        `Kategori "${name}" masih dipakai ${count} produk di Gudang. Pindahkan atau hapus produknya dulu di halaman Gudang, baru kategori bisa dihapus.`,
+        { duration: 6000 },
+      );
+      return;
+    }
     const ok = await confirm({
       title: `Hapus kategori "${name}"?`,
       description:
@@ -641,12 +666,6 @@ function Index() {
       destructive: true,
     });
     if (!ok) return;
-    const { data: userRes } = await supabase.auth.getUser();
-    const uid = userRes.user?.id;
-    if (!uid) {
-      toast.error("Harus login untuk menghapus kategori");
-      return;
-    }
     const { error } = await supabase
       .from("warehouse_categories")
       .delete()
