@@ -71,6 +71,25 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
+  // Simpan detail error terakhir ke sessionStorage supaya bisa dibaca
+  // setelah auto-retry berhasil menyembunyikan pesan. Bisa diambil lewat
+  // DevTools: sessionStorage.getItem("mcm:last-crash").
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const payload = {
+        at: new Date().toISOString(),
+        route: window.location.pathname + window.location.search,
+        name: error?.name ?? "Error",
+        message: msg,
+        stack: error?.stack ? String(error.stack).split("\n").slice(0, 16).join("\n") : "",
+      };
+      window.sessionStorage.setItem("mcm:last-crash", JSON.stringify(payload));
+    } catch {
+      // ignore quota / privacy mode
+    }
+  }, [error, msg]);
+
   useEffect(() => {
     if (!isChunkLoadError) return;
     if (typeof window === "undefined") return;
