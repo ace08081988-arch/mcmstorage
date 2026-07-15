@@ -1594,10 +1594,21 @@ function Index() {
 
         <div className="flex-1" />
 
-        <AppearanceSettings
-          compact
-          triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none transition-colors hover:bg-accent"
-        />
+        <Suspense
+          fallback={
+            <span
+              aria-hidden
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none text-muted-foreground/40"
+            >
+              ⚙
+            </span>
+          }
+        >
+          <AppearanceSettings
+            compact
+            triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none transition-colors hover:bg-accent"
+          />
+        </Suspense>
         <button
           onClick={() => {
             try {
