@@ -50,6 +50,7 @@ import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-activ
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
+import { debounce } from "@/lib/realtime-debounce";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
