@@ -12,7 +12,7 @@ import { useEffect, useState, Suspense, lazy, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
-import { AppearanceInit } from "@/components/appearance-settings";
+import { AppearanceInit } from "@/components/appearance-init";
 import { applyCompactMode } from "@/components/CompactModeToggle";
 import { applyReduceMotion } from "@/components/ReduceMotionToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
