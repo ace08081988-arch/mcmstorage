@@ -21,7 +21,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "16rem";
-const SIDEBAR_WIDTH_MOBILE = "18rem";
+// Mobile drawer scales with the viewport so it never crowds narrow phones
+// (≤360px) and never leaves an awkward gutter on 411px APK devices.
+const SIDEBAR_WIDTH_MOBILE = "min(19.5rem, calc(100vw - 2.5rem))";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
