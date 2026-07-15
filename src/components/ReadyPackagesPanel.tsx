@@ -941,6 +941,7 @@ function PackageForm({
           </button>
         </footer>
       </div>
+      {photoFlow.element}
     </div>
   );
 }
