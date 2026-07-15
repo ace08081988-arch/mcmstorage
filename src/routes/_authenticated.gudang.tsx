@@ -149,13 +149,16 @@ async function uploadItemPhoto(file: File, uid: string): Promise<string | null> 
 
 function PhotoPicker({ value, onChange, uid }: { value: string | null; onChange: (p: string | null) => void; uid: string | null }) {
   const [busy, setBusy] = useState(false);
+  const photoFlow = usePhotoEditorFlow();
   async function pick(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; if (!f || !uid) return;
-    setBusy(true);
-    const p = await uploadItemPhoto(f, uid);
-    setBusy(false);
-    if (p) onChange(p);
-    e.target.value = "";
+    const f = e.target.files?.[0]; e.target.value = "";
+    if (!f || !uid) return;
+    await photoFlow.open([f], async ({ file }) => {
+      setBusy(true);
+      const p = await uploadItemPhoto(file, uid);
+      setBusy(false);
+      if (p) onChange(p);
+    });
   }
   return (
     <div className="space-y-1">
@@ -174,6 +177,7 @@ function PhotoPicker({ value, onChange, uid }: { value: string | null; onChange:
           <button type="button" onClick={() => onChange(null)} className="rounded-md border px-ms-2 py-1.5 text-ms-xs text-destructive hover:bg-destructive/10">Hapus</button>
         )}
       </div>
+      {photoFlow.element}
     </div>
   );
 }
