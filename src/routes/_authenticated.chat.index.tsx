@@ -885,19 +885,17 @@ function ConvList({
 }) {
   if (isLoading) {
     return (
-      <div className="rounded-lg border">
-        <div className="flex items-center justify-center p-8 text-ms-sm text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
-        </div>
+      <div className="flex items-center justify-center p-8 text-ms-sm text-[var(--wa-text-muted)]">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
       </div>
     );
   }
   if (list.length === 0) {
-    return <div className="rounded-lg border">{empty}</div>;
+    return <div className="rounded-lg border border-[var(--wa-border)] p-6">{empty}</div>;
   }
   return (
-    <div className="-mx-3 border-y border-[var(--wa-border)]">
-      <ul className="divide-y divide-[var(--wa-border)]">
+    <div className="-mx-3">
+      <ul className="divide-y divide-[var(--wa-border)]/60">
         {list.map((c) => {
           const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
           const isMuted = mutedUntil && mutedUntil.getTime() > Date.now();
