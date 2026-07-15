@@ -1203,7 +1203,7 @@ function ChatRoomPage() {
           <div className="text-ms-sm leading-snug text-muted-foreground">
             Tautan ini mungkin sudah kedaluwarsa atau kamu tidak punya akses ke percakapan ini.
           </div>
-          <Button variant="secondary" onClick={() => navigate({ to: "/chat" })}>
+          <Button variant="secondary" onClick={() => goBackOr(router, { to: "/chat" })}>
             Kembali ke daftar chat
           </Button>
         </div>
@@ -1288,7 +1288,7 @@ function ChatRoomPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate({ to: "/chat" })}
+          onClick={() => goBackOr(router, { to: "/chat" })}
           aria-label="Kembali"
           className="h-10 w-10 shrink-0"
         >
