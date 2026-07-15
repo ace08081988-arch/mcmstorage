@@ -1,6 +1,5 @@
 {
   "$schema": "./supabase-lint-allowlist.schema.json",
-  "schemaVersion": 1,
   "_comment": "Intentional Supabase linter findings. Multiple entries per rule are supported so we can group functions by architectural role with an explicit justification for each bucket. Add a NEW entry (not a new function to an existing bucket) whenever you accept a finding for a new architectural reason. See docs/supabase-lint-allowlist.md for the taxonomy.",
   "allow": [
     {
@@ -88,7 +87,6 @@
       ],
       "reason": "User RPCs that grant EXECUTE to PUBLIC (so anon inherits) but internally do `IF auth.uid() IS NULL THEN RAISE EXCEPTION 'unauthenticated'` and then scope every read/write to auth.uid() via is_conversation_member / has_role / owner_id checks. Kept on PUBLIC grant historically because these predate the split anon/authenticated grant convention; tightening to `TO authenticated` is tracked as a cleanup but does not change security posture. Covered by supabase/tests/security_definer_authz.sql."
     },
-
     {
       "name": "authenticated_security_definer_function_executable",
       "level": "WARN",
