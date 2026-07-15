@@ -26,7 +26,7 @@ import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, PackagePlus, Trash2,
   Loader2, ChevronLeft, Package, FlaskConical, Copy, ExternalLink,
   AlertTriangle, RotateCw, Send, MessageCircle, Download, FileText, History,
-  CheckCircle2, Wallet, HandCoins,
+  CheckCircle2, Wallet, HandCoins, Sparkles,
 } from "lucide-react";
 import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
@@ -319,14 +319,39 @@ function RequestPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
-      <div className="flex items-center gap-ms-2">
-        <PackagePlus className="h-5 w-5 text-primary" />
-        <h1 className="text-ms-lg font-semibold">Penyiapan Request</h1>
-      </div>
-      <p className="text-ms-xs leading-relaxed text-muted-foreground">
-        Buat <b>Judul Request</b> berisi beberapa produk sekaligus (mis. <i>Paket Bu Ani</i>: Kristal 1g + Madu 250g).
-        Tiap kotak penyiapan = 1 paket dengan satu foto + lokasi. Stok semua produk otomatis berkurang.
-      </p>
+      {/* Hero header — konsisten dengan halaman Penyiapan Ecer */}
+      <section
+        aria-labelledby="request-heading"
+        className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-ms-4 shadow-sm sm:p-ms-5"
+      >
+        <div className="flex items-start justify-between gap-ms-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 inline-flex items-center gap-ms-1.5 rounded-full border bg-background/70 px-ms-2.5 py-0.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+              <Sparkles className="h-3 w-3 text-primary" /> Modul Penyiapan
+            </div>
+            <h1
+              id="request-heading"
+              className="flex items-center gap-ms-2 text-ms-lg font-bold tracking-tight sm:text-ms-xl"
+            >
+              <PackagePlus className="h-5 w-5 text-primary" /> Penyiapan Request
+            </h1>
+            <p className="mt-1 max-w-xl text-ms-2xs leading-snug text-muted-foreground sm:text-ms-xs">
+              Buat <b>Judul Request</b> berisi beberapa produk sekaligus (mis. <i>Paket Bu Ani</i>:
+              Kristal 1g + Madu 250g). Tiap kotak penyiapan = 1 paket dengan satu foto + lokasi.
+              Stok semua produk otomatis berkurang.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setCreatingTitle(true)}
+            className="shrink-0 gap-ms-1"
+            aria-label="Buat judul request baru"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Judul baru</span>
+          </Button>
+        </div>
+      </section>
 
       <div className="flex flex-wrap justify-end gap-ms-2">
         <Button size="sm" variant="outline" onClick={() => setTestOpen(true)}>
@@ -334,9 +359,6 @@ function RequestPage() {
         </Button>
         <Button size="sm" variant="outline" onClick={() => setHistoryTitle("all")}>
           <History className="mr-1 h-4 w-4" /> Riwayat kirim link
-        </Button>
-        <Button size="sm" onClick={() => setCreatingTitle(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Judul Request Baru
         </Button>
       </div>
 
