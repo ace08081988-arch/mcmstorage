@@ -688,7 +688,7 @@ function PosKasirPage() {
                   <div className="text-left min-w-0">
                     <div className="font-medium truncate max-w-[80px]">{p.nama}</div>
                     <div className={`font-mono ${level === "aman" ? "text-slate-400" : meta.text}`}>
-                      {p.stokKg.toLocaleString("id-ID")} kg
+                      {p.stokKg.toLocaleString("id-ID")} {unitOf(p)}
                     </div>
                   </div>
                   {level !== "aman" && (
@@ -706,12 +706,12 @@ function PosKasirPage() {
           <div className={`mt-2 flex flex-col gap-ms-1 ${modeRingkas ? "hidden" : ""}`}>
             {produkKritis.length > 0 && (
               <div className="text-ms-2xs text-rose-300">
-                🚨 Stok kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                🚨 Stok kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg} ${unitOf(p)})`).join(", ")}
               </div>
             )}
             {produkMenipis.length > 0 && (
               <div className="text-ms-2xs text-warning">
-                ⚠ Stok menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                ⚠ Stok menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg} ${unitOf(p)})`).join(", ")}
               </div>
             )}
             {produkHabis.length > 0 && (
@@ -766,12 +766,12 @@ function PosKasirPage() {
                 <div className="mb-3 flex flex-col gap-ms-1 text-ms-xs">
                   {produkKritis.length > 0 && (
                     <div className="text-rose-300">
-                      🚨 Kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                      🚨 Kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg} ${unitOf(p)})`).join(", ")}
                     </div>
                   )}
                   {produkMenipis.length > 0 && (
                     <div className="text-warning">
-                      ⚠ Menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                      ⚠ Menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg} ${unitOf(p)})`).join(", ")}
                     </div>
                   )}
                   {produkHabis.length > 0 && (
@@ -800,9 +800,9 @@ function PosKasirPage() {
                     >
                       <div className="text-ms-3xl mb-2">{p.emoji}</div>
                       <div className="font-semibold text-ms-sm">{p.nama}</div>
-                      <div className="text-ms-xs text-slate-400 mt-1">{rupiah(p.hargaPerKg)}/kg</div>
+                      <div className="text-ms-xs text-slate-400 mt-1">{rupiah(p.hargaPerKg)}/{unitOf(p)}</div>
                       <div className={`text-ms-xs mt-2 ${meta.text}`}>
-                        Stok: {p.stokKg.toLocaleString("id-ID")} kg
+                        Stok: {p.stokKg.toLocaleString("id-ID")} {unitOf(p)}
                       </div>
                       {level !== "aman" && (
                         <span
