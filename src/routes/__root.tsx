@@ -21,6 +21,7 @@ import { WhatsAppTargetHost } from "@/lib/wa-target";
 import { WaPreviewHost } from "@/lib/wa-preview";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
+import { BuildVersionBadge } from "@/components/BuildVersionBadge";
 
 function NotFoundComponent() {
   return (
@@ -398,6 +399,7 @@ function RootComponent() {
       <ConfirmHost />
       <WhatsAppTargetHost />
       <WaPreviewHost />
+      <BuildVersionBadge />
     </QueryClientProvider>
   );
 }
