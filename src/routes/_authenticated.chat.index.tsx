@@ -558,39 +558,38 @@ function ChatListPage() {
         </div>
       ) : (
         <Tabs defaultValue="all">
-          {/* Horizontal-scroll pill row — hindari grid-cols-5 yang memotong label di 390/411px */}
+          {/* Tab kategori ringkas — garis bawah aktif, tanpa latar/border berat. */}
           <TabsList
             className={
-              "-mx-1 flex h-auto w-auto items-center justify-start gap-ms-1.5 " +
-              "overflow-x-auto rounded-none bg-transparent p-1 " +
+              "-mx-3 flex h-auto w-auto items-center justify-start gap-ms-4 " +
+              "overflow-x-auto border-b border-[var(--wa-border)] bg-transparent px-3 pb-0 " +
               "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             }
           >
             {(
               [
-                { value: "all", label: "Semua", count: active.length },
-                { value: "customer", label: CHAT_CATEGORY_LABEL_ID.customer, count: byCategory.customer.length },
-                { value: "employee", label: CHAT_CATEGORY_LABEL_ID.employee, count: byCategory.employee.length },
-                { value: "internal", label: CHAT_CATEGORY_LABEL_ID.internal, count: byCategory.internal.length },
-                { value: "archived", label: "Arsip", count: byCategory.archived.length },
+                { value: "all", label: "Semua" },
+                { value: "customer", label: CHAT_CATEGORY_LABEL_ID.customer },
+                { value: "employee", label: CHAT_CATEGORY_LABEL_ID.employee },
+                { value: "internal", label: CHAT_CATEGORY_LABEL_ID.internal },
+                { value: "archived", label: "Arsip" },
               ] as const
             ).map((t) => (
               <TabsTrigger
                 key={t.value}
                 value={t.value}
                 className={
-                  "shrink-0 whitespace-nowrap rounded-full border border-transparent " +
-                  "px-ms-3 py-1 text-ms-xs font-medium text-muted-foreground shadow-none " +
-                  "hover:bg-accent/40 hover:text-foreground " +
-                  "data-[state=active]:border-[color:color-mix(in_oklab,var(--wa-green)_55%,transparent)] " +
-                  "data-[state=active]:bg-[color:color-mix(in_oklab,var(--wa-green)_22%,var(--wa-surface-2))] " +
-                  "data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                  "relative shrink-0 whitespace-nowrap rounded-none border-0 bg-transparent px-0 py-2 " +
+                  "text-ms-xs font-medium text-[var(--wa-text-muted)] shadow-none " +
+                  "hover:text-[var(--wa-text)] " +
+                  "data-[state=active]:text-[var(--wa-text)] data-[state=active]:shadow-none"
                 }
               >
                 {t.label}
-                {t.count ? (
-                  <span className="ml-1 opacity-70">({t.count})</span>
-                ) : null}
+                <span
+                  aria-hidden
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[var(--wa-green)] opacity-0 transition-opacity data-[state=active]:opacity-100"
+                />
               </TabsTrigger>
             ))}
           </TabsList>
