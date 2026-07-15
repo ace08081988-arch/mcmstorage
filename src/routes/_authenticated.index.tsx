@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { isChatOnly } from "@/lib/app-mode";
-import { useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
@@ -510,6 +510,18 @@ function Index() {
   // H11: skip the first save after hydration so mounting the page
   // doesn't upsert identical data back to user_storage.
   const skipNextSaveRef = useRef(false);
+  /**
+   * Guard konkurensi reorder ↔ realtime/refresh:
+   * - `reorderInFlightRef`: true selama batch UPDATE posisi berjalan.
+   *   Realtime/refresh yang datang di window ini di-drop supaya urutan
+   *   optimistic lokal (yang lebih baru) tidak tertimpa snapshot lama.
+   * - `reorderSeqRef`: nomor urut monotonik per reorder. Setelah reorder
+   *   selesai, hanya reorder ter-baru yang boleh memicu reconcile —
+   *   kalau user cepat drag berkali-kali, reorder yang lebih tua
+   *   berhenti diam-diam tanpa mengembalikan urutan lama.
+   */
+  const reorderInFlightRef = useRef(false);
+  const reorderSeqRef = useRef(0);
   // Perf: hero (bagian inti) dianggap "visible" saat data ter-hydrate
   // dan branch landing (tanpa activeCat) selesai render pertama kali.
   // Effect memastikan browser sudah commit DOM-nya sebelum mengukur.
@@ -659,6 +671,84 @@ function Index() {
   useEffect(() => {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
   }, [viewMode, hydrated]);
+
+  /**
+   * Ambil ulang urutan kategori dari server (SSOT `warehouse_categories`).
+   * Dipakai oleh realtime channel, listener focus/visibilitychange, dan
+   * reconcile pasca-reorder. Guard: bila reorder sedang jalan, drop
+   * snapshot supaya urutan optimistic lokal tidak dilibas snapshot
+   * server yang lebih lama. Kalau hasil fetch identik dengan state
+   * sekarang, tidak re-render.
+   */
+  const refreshCategories = useCallback(async () => {
+    if (reorderInFlightRef.current) return;
+    const { data, error } = await supabase
+      .from("warehouse_categories")
+      .select("name, position")
+      .order("position", { ascending: true })
+      .order("name", { ascending: true });
+    if (error || !data) return;
+    if (reorderInFlightRef.current) return;
+    const next = data.map((r) => r.name);
+    setCategories((prev) =>
+      prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next,
+    );
+  }, []);
+
+  /**
+   * Sinkron realtime `warehouse_categories`:
+   * - subscribe INSERT/UPDATE/DELETE untuk uid saat ini,
+   * - juga refresh saat tab kembali fokus / visibility berubah,
+   *   supaya user yang balik dari tab lain langsung lihat urutan
+   *   terkini.
+   * Guard reorder ada di dalam `refreshCategories` supaya event yang
+   * datang tepat di tengah drag tidak menimpa urutan optimistic.
+   */
+  useEffect(() => {
+    if (!hydrated) return;
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (!uid || cancelled) return;
+      channel = supabase
+        .channel(`warehouse_categories:${uid}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "warehouse_categories",
+            filter: `user_id=eq.${uid}`,
+          },
+          () => {
+            void refreshCategories();
+          },
+        )
+        .subscribe();
+    })();
+    const onFocus = () => {
+      void refreshCategories();
+    };
+    const onVisibility = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void refreshCategories();
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", onFocus);
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
+    };
+  }, [hydrated, refreshCategories]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -885,6 +975,12 @@ function Index() {
    *   (RLS `auth.uid() = user_id` sudah mengunci scope per pemilik).
    * - Rollback: kalau salah satu UPDATE gagal, kembalikan urutan lama +
    *   toast error supaya state UI dan DB tidak divergen.
+   * - Konkurensi: `reorderInFlightRef` mem-block realtime/refresh selama
+   *   batch UPDATE berjalan supaya urutan optimistic lokal tidak dilibas
+   *   snapshot lama dari server. Setelah selesai, `reorderSeqRef` memakai
+   *   token monotonik supaya hanya reorder ter-baru yang memicu
+   *   `refreshCategories` — mencegah reconcile urutan lama menimpa
+   *   urutan yang lebih baru dari user atau tab lain.
    */
   const reorderCategories = async (fromName: string, toName: string) => {
     if (fromName === toName) return;
@@ -893,6 +989,8 @@ function Index() {
     const toIdx = prev.indexOf(toName);
     if (fromIdx < 0 || toIdx < 0) return;
     const next = arrayMove(prev, fromIdx, toIdx);
+    const mySeq = ++reorderSeqRef.current;
+    reorderInFlightRef.current = true;
     setCategories(next);
 
     const {
@@ -901,6 +999,7 @@ function Index() {
     const uid = user?.id;
     if (!uid) {
       setCategories(prev);
+      reorderInFlightRef.current = false;
       toast.error("Sesi berakhir. Silakan masuk ulang.");
       return;
     }
@@ -920,7 +1019,15 @@ function Index() {
     const failed = results.find((r) => r.error);
     if (failed?.error) {
       setCategories(prev);
+      reorderInFlightRef.current = false;
       notifyError(failed.error, { prefix: "Gagal menyimpan urutan kategori: " });
+      return;
+    }
+    reorderInFlightRef.current = false;
+    // Hanya reorder ter-baru yang boleh reconcile — reorder lain yang
+    // sudah keburu selesai duluan tidak boleh menimpa urutan yang baru.
+    if (mySeq === reorderSeqRef.current) {
+      void refreshCategories();
     }
   };
 
