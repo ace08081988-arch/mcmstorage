@@ -216,13 +216,21 @@ if (allowlist.schemaVersion !== SUPPORTED_ALLOWLIST_SCHEMA_VERSION) {
     allowlist.schemaVersion === undefined
       ? "missing (legacy pre-v1 file)"
       : JSON.stringify(allowlist.schemaVersion);
+  const versionMsg =
+    `Allowlist schemaVersion mismatch: expected ${SUPPORTED_ALLOWLIST_SCHEMA_VERSION}, got ${got}.`;
   console.error(
-    `\n❌ Allowlist schemaVersion mismatch: expected ${SUPPORTED_ALLOWLIST_SCHEMA_VERSION}, got ${got}.\n` +
+    `\n❌ ${versionMsg}\n` +
       `   File: .github/supabase-lint-allowlist.json\n` +
       `   Either update the file to the current schema and set "schemaVersion": ${SUPPORTED_ALLOWLIST_SCHEMA_VERSION},\n` +
       `   or update SUPPORTED_ALLOWLIST_SCHEMA_VERSION in scripts/check-supabase-lints.mjs\n` +
       `   together with the JSON Schema's schemaVersion.const. See docs/supabase-lint-allowlist.md.`,
   );
+  emitAnnotation({
+    file: ALLOWLIST_REL_PATH,
+    line: resolveLine({ rootKey: "schemaVersion" }),
+    title: "Allowlist schemaVersion mismatch",
+    message: versionMsg,
+  });
   const summaryPathVer = process.env.GITHUB_STEP_SUMMARY;
   if (summaryPathVer) {
     appendFileSync(
