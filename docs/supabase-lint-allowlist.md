@@ -41,6 +41,8 @@ RPCs whose first statement is `IF NOT has_role(auth.uid(), 'admin') THEN RAISE E
 - `reason` must be **≥ 40 characters** — a substantive architectural justification, not a placeholder.
 - `category` must be **unique per rule** — merge additions into the existing bucket instead of creating a duplicate.
 - Every function must be **schema-qualified** (`schema.name`), non-empty, and appear **at most once per rule** — a function belongs to exactly one bucket.
+- `functions[]` must be **alphabetically sorted** — enforced by the checker so diffs stay reviewable and additions land in a predictable place.
+- `schemaVersion` must match `SUPPORTED_ALLOWLIST_SCHEMA_VERSION` in the checker; unknown top-level keys are rejected (`additionalProperties: false`).
 
 Run locally with `VALIDATE_ONLY=1 node scripts/check-supabase-lints.mjs`.
 

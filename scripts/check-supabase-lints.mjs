@@ -164,11 +164,26 @@ if (!Array.isArray(allowlist.allow)) {
       }
     }
     seenFunctionPerRule.set(entry.name, perRule);
+
+    // Ordering: `functions` must stay alphabetically sorted so diffs stay
+    // reviewable and additions land in a predictable place. The docs already
+    // require this; the checker enforces it here to prevent drift.
+    const sorted = [...entry.functions].sort((a, b) => a.localeCompare(b));
+    for (let i = 0; i < entry.functions.length; i++) {
+      if (entry.functions[i] !== sorted[i]) {
+        schemaValidationErrors.push(
+          `${loc}: 'functions' must be alphabetically sorted. Expected '${sorted[i]}' at index ${i}, got '${entry.functions[i]}'.`,
+        );
+        break;
+      }
+    }
   }
 });
 
 if (schemaValidationErrors.length) {
-  console.error("\n❌ Allowlist schema validation failed:");
+  console.error(
+    `\n❌ Allowlist schema validation failed (${schemaValidationErrors.length} error${schemaValidationErrors.length === 1 ? "" : "s"}):`,
+  );
   for (const err of schemaValidationErrors) console.error(`  - ${err}`);
   console.error(
     `\nFix .github/supabase-lint-allowlist.json — every entry needs a unique category, a substantive reason (>= ${MIN_REASON_LEN} chars), and no duplicate function suppressions.`,
