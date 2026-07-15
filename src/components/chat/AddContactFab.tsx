@@ -163,8 +163,17 @@ export function AddContactFab() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Tambah kontak PIN MCM"
-        className="fixed right-4 z-30 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95"
-        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.75rem)" }}
+        // Ukuran 44px di layar kecil (memenuhi tap-target minimum tanpa
+        // menutupi label "Pembaruan"/"Panggilan" pada 360-390px), 48px
+        // mulai 400px. Posisi bottom dihitung dari safe-area + tinggi nav
+        // (`--chat-nav-h`, fallback 4rem bila nav tidak dirender) + gap
+        // konstan 0.75rem — jadi FAB selalu duduk rapi di atas nav, tidak
+        // menabrak ikon/label, tanpa bergantung pada angka hardcoded.
+        className="fixed right-3 z-30 grid h-11 w-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95 min-[400px]:right-4 min-[400px]:h-12 min-[400px]:w-12"
+        style={{
+          bottom:
+            "calc(env(safe-area-inset-bottom, 0px) + var(--chat-nav-h, 4rem) + 0.75rem)",
+        }}
       >
         <Plus className="h-5 w-5" />
       </button>
