@@ -27,6 +27,18 @@ export function useVisualViewportKeyboardInset(): number {
     }
 
     let raf = 0;
+    // Timer untuk menyelesaikan race pada `orientationchange`: banyak
+    // Android WebView / Chrome mem-fire event ini SEBELUM
+    // `visualViewport.height` & `window.innerHeight` selesai settle,
+    // sehingga sampel pertama masih memakai tinggi lama. Kita sampling
+    // ulang beberapa kali sampai 500ms untuk menangkap nilai final tanpa
+    // menunggu keyboard menutup.
+    const timers: number[] = [];
+    const clearTimers = () => {
+      while (timers.length) {
+        window.clearTimeout(timers.shift()!);
+      }
+    };
     const update = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
@@ -38,21 +50,40 @@ export function useVisualViewportKeyboardInset(): number {
         setInset((prev) => (Math.abs(prev - kb) < 1 ? prev : Math.round(kb)));
       });
     };
+    const scheduleResample = () => {
+      clearTimers();
+      // 60/160/320/500ms — cukup untuk menangkap settle
+      // visualViewport pasca-rotasi di WebView, Chrome, dan Samsung
+      // Internet tanpa banjir setState (guarded oleh ambang 1px + rAF).
+      for (const delay of [60, 160, 320, 500]) {
+        timers.push(window.setTimeout(update, delay));
+      }
+    };
+    const onOrientationOrResize = () => {
+      update();
+      scheduleResample();
+    };
 
     update();
     vv.addEventListener("resize", update);
     vv.addEventListener("scroll", update);
-    window.addEventListener("orientationchange", update);
+    window.addEventListener("orientationchange", onOrientationOrResize);
     // `resize` window juga mem-fire pada rotasi + saat toolbar browser
-    // Android muncul/hilang.
-    window.addEventListener("resize", update);
+    // Android muncul/hilang. Kita sampling ulang untuk kasus rotasi.
+    window.addEventListener("resize", onOrientationOrResize);
+    // `screen.orientation.change` — API modern yang lebih reliabel di
+    // Chrome/Android dibanding `orientationchange` yang deprecated.
+    const so = typeof screen !== "undefined" ? screen.orientation : undefined;
+    so?.addEventListener?.("change", onOrientationOrResize);
 
     return () => {
       cancelAnimationFrame(raf);
+      clearTimers();
       vv.removeEventListener("resize", update);
       vv.removeEventListener("scroll", update);
-      window.removeEventListener("orientationchange", update);
-      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", onOrientationOrResize);
+      window.removeEventListener("resize", onOrientationOrResize);
+      so?.removeEventListener?.("change", onOrientationOrResize);
     };
   }, []);
 
