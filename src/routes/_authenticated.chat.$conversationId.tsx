@@ -107,6 +107,7 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { sendMessage } from "@/lib/chat.functions";
+import { uploadChatFile } from "@/lib/chat-attachments";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
 import { EditContactNameDialog } from "@/components/chat/EditContactNameDialog";
@@ -784,6 +785,68 @@ function ChatRoomPage() {
   // di atas textarea; baru terkirim saat user menekan tombol Kirim.
   const [pendingProducts, setPendingProducts] = useState<PickedProductRow[]>([]);
 
+  // Antrian lampiran (foto/video/dokumen) yang di-stage dari AttachMenu.
+  // Tidak dipersist — cukup sesi aktif; baru diunggah + terkirim saat user
+  // menekan tombol Kirim. Textarea otomatis menjadi caption pada lampiran
+  // pertama (mirip WhatsApp).
+  type PendingAttachment = { id: string; file: File; previewUrl: string | null };
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [attachmentSendStatuses, setAttachmentSendStatuses] = useState<
+    Record<string, "pending" | "sending" | "failed">
+  >({});
+  const nextAttachmentId = useCallback(() => {
+    try {
+      const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+      if (c?.randomUUID) return c.randomUUID();
+    } catch { /* ignore */ }
+    return `a_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }, []);
+  const stageAttachments = useCallback((files: File[]) => {
+    setPendingAttachments((prev) => {
+      const add: PendingAttachment[] = files.map((f) => ({
+        id: nextAttachmentId(),
+        file: f,
+        previewUrl:
+          f.type.startsWith("image/") || f.type.startsWith("video/")
+            ? URL.createObjectURL(f)
+            : null,
+      }));
+      return [...prev, ...add];
+    });
+  }, [nextAttachmentId]);
+  const removeAttachment = useCallback((id: string) => {
+    setPendingAttachments((prev) => {
+      const found = prev.find((p) => p.id === id);
+      if (found?.previewUrl) { try { URL.revokeObjectURL(found.previewUrl); } catch { /* ignore */ } }
+      return prev.filter((p) => p.id !== id);
+    });
+    setAttachmentSendStatuses((prev) => {
+      if (!prev[id]) return prev;
+      const { [id]: _drop, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+  const clearAttachments = useCallback(() => {
+    setPendingAttachments((prev) => {
+      prev.forEach((p) => {
+        if (p.previewUrl) { try { URL.revokeObjectURL(p.previewUrl); } catch { /* ignore */ } }
+      });
+      return [];
+    });
+    setAttachmentSendStatuses({});
+  }, []);
+  // Bersihkan object URL saat unmount.
+  useEffect(() => {
+    return () => {
+      setPendingAttachments((prev) => {
+        prev.forEach((p) => {
+          if (p.previewUrl) { try { URL.revokeObjectURL(p.previewUrl); } catch { /* ignore */ } }
+        });
+        return prev;
+      });
+    };
+  }, []);
+
   // Persist chip pratinjau produk per-percakapan supaya tetap ada setelah
   // refresh atau navigasi keluar-masuk chat. Baru dibersihkan setelah user
   // menekan Kirim (atau menghapus chip manual).
@@ -1027,7 +1090,7 @@ function ChatRoomPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
-    if (!t && pendingProducts.length === 0) return;
+    if (!t && pendingProducts.length === 0 && pendingAttachments.length === 0) return;
     if (sendingLockRef.current) return;
     sendingLockRef.current = true;
     setIsSending(true);
@@ -1053,8 +1116,10 @@ function ChatRoomPage() {
       return;
     }
     const replyId = replyTo?.id ?? null;
-    // Kirim teks (kalau ada) via jalur outbox biasa.
-    if (t) {
+    const hasAttachments = pendingAttachments.length > 0;
+    // Kirim teks (kalau ada) via jalur outbox biasa — kecuali ada lampiran,
+    // maka teks akan dipakai sebagai caption pada lampiran pertama.
+    if (t && !hasAttachments) {
       const item: OutboxItem = {
         tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         body: t,
@@ -1063,6 +1128,65 @@ function ChatRoomPage() {
       };
       setOutbox((prev) => [...prev, item]);
       void doSendWith(item, replyId);
+    }
+    // Unggah + kirim lampiran (foto/video/dokumen) yang di-stage dari
+    // AttachMenu. Caption dari textarea otomatis menempel pada lampiran
+    // pertama saja (perilaku ala WhatsApp).
+    if (hasAttachments) {
+      const queue = pendingAttachments.slice();
+      const captionForFirst = t;
+      setAttachmentSendStatuses(() => {
+        const next: Record<string, "pending" | "sending" | "failed"> = {};
+        for (const a of queue) next[a.id] = "pending";
+        return next;
+      });
+      const progressToast = toast.loading(`Mengirim 0 dari ${queue.length} lampiran…`);
+      void (async () => {
+        let done = 0;
+        let failed = 0;
+        for (let i = 0; i < queue.length; i++) {
+          const a = queue[i];
+          setAttachmentSendStatuses((prev) => ({ ...prev, [a.id]: "sending" }));
+          toast.loading(`Mengirim ${i + 1}/${queue.length}: ${a.file.name}…`, { id: progressToast });
+          try {
+            const up = await uploadChatFile({ conversationId, file: a.file });
+            await sendMessage({
+              data: {
+                conversationId,
+                attachmentPath: up.path,
+                attachmentMime: up.mime,
+                attachmentName: up.name,
+                attachmentSize: up.size,
+                ...(i === 0 && captionForFirst ? { body: captionForFirst } : {}),
+              },
+            });
+            done++;
+            // Buang dari pratinjau segera setelah sukses.
+            setPendingAttachments((prev) => {
+              const found = prev.find((p) => p.id === a.id);
+              if (found?.previewUrl) { try { URL.revokeObjectURL(found.previewUrl); } catch { /* ignore */ } }
+              return prev.filter((p) => p.id !== a.id);
+            });
+            setAttachmentSendStatuses((prev) => {
+              const { [a.id]: _drop, ...rest } = prev;
+              return rest;
+            });
+          } catch (err) {
+            failed++;
+            setAttachmentSendStatuses((prev) => ({ ...prev, [a.id]: "failed" }));
+            toast.error((err as Error)?.message || `Gagal mengirim: ${a.file.name}`);
+          }
+        }
+        toast.dismiss(progressToast);
+        if (failed === 0) {
+          toast.success(queue.length > 1 ? `${done} lampiran terkirim` : `Lampiran terkirim`);
+        } else if (done === 0) {
+          toast.error(`Semua ${queue.length} lampiran gagal — tekan Kirim untuk coba lagi`);
+        } else {
+          toast.warning(`${done} terkirim, ${failed} gagal — item gagal masih di composer`);
+        }
+        void othersRead.refetch();
+      })();
     }
     // Kirim produk-produk yang di-queue secara berurutan supaya urutan
     // pesan konsisten dan status/riwayat paket ter-update satu-satu.
@@ -2118,6 +2242,78 @@ function ChatRoomPage() {
             </Button>
           </div>
         ) : null}
+        {pendingAttachments.length > 0 ? (
+          <div className="mb-2 rounded-md border border-primary/30 bg-primary/5 px-ms-2 py-1.5">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-ms-xs font-semibold text-primary">
+                Lampiran siap dikirim ({pendingAttachments.length})
+              </span>
+              <button
+                type="button"
+                className="text-ms-2xs text-muted-foreground underline-offset-2 hover:underline"
+                onClick={clearAttachments}
+              >
+                Bersihkan
+              </button>
+            </div>
+            <ul className="flex gap-ms-1.5 overflow-x-auto pb-0.5">
+              {pendingAttachments.map((a) => {
+                const isImage = a.file.type.startsWith("image/");
+                const isVideo = a.file.type.startsWith("video/");
+                const status = attachmentSendStatuses[a.id];
+                const kb = a.file.size < 1024
+                  ? `${a.file.size} B`
+                  : a.file.size < 1024 * 1024
+                    ? `${(a.file.size / 1024).toFixed(0)} KB`
+                    : `${(a.file.size / (1024 * 1024)).toFixed(1)} MB`;
+                return (
+                  <li
+                    key={a.id}
+                    className="relative flex h-16 w-16 shrink-0 flex-col items-center justify-center overflow-hidden rounded-md border bg-background"
+                    title={`${a.file.name} · ${kb}`}
+                  >
+                    {isImage && a.previewUrl ? (
+                      <img src={a.previewUrl} alt={a.file.name} className="h-full w-full object-cover" />
+                    ) : isVideo && a.previewUrl ? (
+                      <video src={a.previewUrl} className="h-full w-full object-cover" muted />
+                    ) : (
+                      <>
+                        <Package className="h-5 w-5 text-muted-foreground" aria-hidden />
+                        <span className="mt-0.5 max-w-full truncate px-1 text-[9px] leading-tight text-muted-foreground">
+                          {a.file.name}
+                        </span>
+                      </>
+                    )}
+                    {status === "sending" ? (
+                      <span className="absolute inset-0 flex items-center justify-center bg-background/70">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      </span>
+                    ) : null}
+                    {status === "failed" ? (
+                      <span className="absolute inset-x-0 bottom-0 bg-destructive/90 text-center text-[9px] font-semibold uppercase text-destructive-foreground">
+                        gagal
+                      </span>
+                    ) : null}
+                    <button
+                      type="button"
+                      aria-label={`Hapus lampiran ${a.file.name}`}
+                      onClick={() => removeAttachment(a.id)}
+                      disabled={status === "sending"}
+                      className="absolute right-0.5 top-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-foreground shadow ring-1 ring-border hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {body.trim() ? (
+              <p className="mt-1 text-ms-2xs text-muted-foreground">
+                Teks di atas akan menjadi caption pada lampiran pertama.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {pendingProducts.length > 0 ? (
           <div className="mb-2 space-y-1 rounded-md border border-primary/30 bg-primary/5 px-ms-2 py-1.5 text-ms-xs">
             <div className="flex items-center justify-between">
@@ -2194,8 +2390,19 @@ function ChatRoomPage() {
                 return (
                   <li
                     key={`${p.source}:${p.id}:${idx}`}
-                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-2 rounded-md border bg-background p-ms-1.5"
+                    className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-2 rounded-md border bg-background p-ms-1.5"
                   >
+                    <button
+                      type="button"
+                      aria-label={`Hapus ${p.productName} dari daftar kirim`}
+                      disabled={sendStatus === "sending"}
+                      onClick={() =>
+                        updatePendingProducts((prev) => prev.filter((_, i) => i !== idx))
+                      }
+                      className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-background text-muted-foreground shadow ring-1 ring-border hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                     <PendingProductThumb path={p.photoPath} bucket={p.bucket} />
                     <div className="min-w-0">
                       <div className="flex min-w-0 items-center gap-ms-1.5">
@@ -2372,7 +2579,7 @@ function ChatRoomPage() {
             <Button
               type="submit"
               size="icon"
-              disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending || !!productSendProgress}
+              disabled={(!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0) || chatBlocked || isSending || !!productSendProgress}
               aria-label="Kirim"
               aria-busy={isSending || !!productSendProgress}
               className="h-10 w-10 shrink-0"
@@ -2382,7 +2589,12 @@ function ChatRoomPage() {
           </div>
           {/* Baris bawah: strip alat sekunder */}
           <div className="flex items-center gap-ms-1">
-            <AttachMenu conversationId={conversationId} disabled={chatBlocked} onSent={() => { void othersRead.refetch(); }} />
+            <AttachMenu
+              conversationId={conversationId}
+              disabled={chatBlocked}
+              onSent={() => { void othersRead.refetch(); }}
+              onStageFiles={stageAttachments}
+            />
             <EmojiPickerPopover
               disabled={chatBlocked}
               onPick={(ch) => {
@@ -2403,7 +2615,7 @@ function ChatRoomPage() {
               onSent={() => { void othersRead.refetch(); }}
             />
             <div className="ml-auto">
-              {!body.trim() && pendingProducts.length === 0 ? (
+              {!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0 ? (
                 <VoiceRecorderButton
                   conversationId={conversationId}
                   disabled={chatBlocked}
