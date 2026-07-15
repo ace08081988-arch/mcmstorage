@@ -640,9 +640,9 @@ export function AppSidebar() {
                 ? `Tidak ada koneksi — badge mungkin tertinggal. ${lastSyncTitle}`
                 : lastSyncTitle
           }
-          className="flex items-center justify-between gap-ms-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-ms-2.5 py-1.5 text-ms-2xs font-medium backdrop-blur-sm"
+          className="flex min-w-0 items-center justify-between gap-ms-2 rounded-xl border border-sidebar-border/50 bg-sidebar-accent/20 px-ms-2.5 py-1.5 text-ms-2xs font-medium backdrop-blur-sm"
         >
-          <span className="flex items-center gap-ms-2">
+          <span className="flex min-w-0 items-center gap-ms-2">
             <span className="relative inline-flex h-2 w-2 shrink-0">
               <span
                 className={
@@ -660,18 +660,18 @@ export function AppSidebar() {
             </span>
             <span
               className={
-                syncState === "online"
+                (syncState === "online"
                   ? "text-primary"
                   : syncState === "syncing"
                     ? "text-primary/85"
-                    : "text-destructive"
+                    : "text-destructive") + " truncate"
               }
             >
               {syncMeta.label}
             </span>
           </span>
-          <span className="flex items-center gap-ms-1.5">
-            <span className="text-muted-foreground">
+          <span className="flex shrink-0 items-center gap-ms-1.5">
+            <span className="truncate text-muted-foreground">
               {syncState === "syncing" ? "…" : lastSyncLabel}
             </span>
             <button
