@@ -746,7 +746,7 @@ function PosKasirPage() {
                 }}
                 className="w-16 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-0.5 text-ms-xs text-slate-100 focus:outline-none focus:border-success"
               />
-              kg
+              unit
             </label>
           </div>
         </section>
@@ -773,7 +773,7 @@ function PosKasirPage() {
                     }}
                     className="w-20 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-1 text-ms-xs text-slate-100 focus:outline-none focus:border-success"
                   />
-                  kg
+                  unit
                 </label>
               </div>
               {(produkKritis.length > 0 || produkMenipis.length > 0 || produkHabis.length > 0) && (
