@@ -1408,11 +1408,16 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     let totalLines = 0, validLines = 0, partialLines = 0, invalidLines = 0;
     let totalWeight = 0;
     let readyLines = 0, readyWeight = 0;
+    // Pisah total berdasarkan base_unit — item `g` diakumulasi sebagai berat,
+    // item `pcs` sebagai jumlah. Ringkasan menampilkan keduanya bila hadir.
+    let totalWeightG = 0, readyWeightG = 0;
+    let totalCountPcs = 0, readyCountPcs = 0;
     let linesWithoutPhoto = 0;
     const itemsWithoutPhoto: string[] = [];
     for (const entry of Object.values(picked)) {
       const hasPhoto = !!entry.item.image_path;
       if (!hasPhoto) itemsWithoutPhoto.push(entry.item.name);
+      const isPcs = (entry.item.base_unit ?? "pcs") === "pcs";
       for (const l of entry.lines) {
         totalLines++;
         if (!hasPhoto) linesWithoutPhoto++;
@@ -1422,9 +1427,13 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         if (ev.status === "valid") {
           validLines++;
           totalWeight += ev.total;
+          if (isPcs) totalCountPcs += ev.total;
+          else totalWeightG += ev.total;
           // Foto referensi opsional → baris valid selalu dihitung siap kirim.
           readyLines++;
           readyWeight += ev.total;
+          if (isPcs) readyCountPcs += ev.total;
+          else readyWeightG += ev.total;
         } else if (ev.status === "partial") partialLines++;
         else invalidLines++;
       }
@@ -1435,6 +1444,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       totalWeight: roundTo(totalWeight, 2),
       readyLines,
       readyWeight: roundTo(readyWeight, 2),
+      totalWeightG: roundTo(totalWeightG, 2),
+      totalCountPcs: roundTo(totalCountPcs, 0),
+      readyWeightG: roundTo(readyWeightG, 2),
+      readyCountPcs: roundTo(readyCountPcs, 0),
       linesWithoutPhoto,
       itemsWithoutPhoto,
     };
@@ -1631,7 +1644,25 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
               className="ml-auto tabular-nums"
               title={`Hanya baris valid yang sudah punya foto (${summary.readyLines} dari ${summary.validLines} baris valid).`}
             >
-              Siap dikirim: <b>{fmtNum(summary.readyWeight, 2)}</b>{" "}
+              Siap dikirim:{" "}
+              {summary.readyWeightG > 0 && (
+                <>
+                  <b>{fmtNum(summary.readyWeightG, 2)}</b>
+                  <span className="text-muted-foreground"> g</span>
+                </>
+              )}
+              {summary.readyWeightG > 0 && summary.readyCountPcs > 0 && (
+                <span className="text-muted-foreground"> · </span>
+              )}
+              {summary.readyCountPcs > 0 && (
+                <>
+                  <b>{fmtNum(summary.readyCountPcs, 0)}</b>
+                  <span className="text-muted-foreground"> pcs</span>
+                </>
+              )}
+              {summary.readyWeightG === 0 && summary.readyCountPcs === 0 && (
+                <b>0</b>
+              )}{" "}
               <span className="text-muted-foreground">({summary.readyLines} baris)</span>
             </span>
           </div>
