@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { messagePreviewText } from "@/lib/chat-deleted";
+import { debounce } from "@/lib/realtime-debounce";
 
 export type ConversationRow = {
   id: string;
