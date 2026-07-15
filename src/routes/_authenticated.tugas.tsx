@@ -1133,13 +1133,13 @@ function evaluateLine(line: Line, variants: Variant[], opts?: { isPcs?: boolean 
   } else if (isPcs && !Number.isInteger(weight)) {
     // Item pcs: isi per unit juga bilangan bulat (mis. 12 botol/karton).
     status = "invalid";
-    reason = "Jumlah / unit harus bilangan bulat untuk item pcs";
+    reason = "Jumlah / isi (pcs) harus bilangan bulat";
   } else if (isPcs && weight > MAX_PER_UNIT_PCS) {
     status = "invalid";
-    reason = `Jumlah / unit melebihi batas (${MAX_PER_UNIT_PCS})`;
+    reason = `Jumlah / isi (pcs) melebihi batas (${MAX_PER_UNIT_PCS})`;
   } else if (!isPcs && weight > MAX_PER_UNIT_G) {
     status = "invalid";
-    reason = `Berat / unit melebihi batas (${MAX_PER_UNIT_G} g)`;
+    reason = `Berat / unit (g) melebihi batas (${MAX_PER_UNIT_G} g)`;
   }
   const total = status === "valid" ? weight * count : 0;
   return { status, weight: wOk ? weight : 0, count: cOk ? count : 0, total, reason };
