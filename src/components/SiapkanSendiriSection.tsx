@@ -100,6 +100,8 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Editor mandatory step untuk semua foto produk sebelum masuk draft.
+  const photoFlow = usePhotoEditorFlow();
   const [gpsBusy, setGpsBusy] = useState(false);
   const [chatPickTarget, setChatPickTarget] = useState<Row | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
