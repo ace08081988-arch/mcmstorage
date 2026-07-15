@@ -395,7 +395,7 @@ DECLARE
     'admin_set_admin_role',
     'prep_share_token_exists',
     'prep_submission_verify',
-    'prep_pin_reset',
+    'prep_pin_reset',              -- covered by the special-case block above
     'run_internal_security_scan',
     'security_findings_acknowledge'
   ];
