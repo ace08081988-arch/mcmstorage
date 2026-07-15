@@ -515,6 +515,18 @@ function Index() {
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [categories, setCategories] = useState<string[]>([]);
+  // Sensor DnD:
+  // - PointerSensor dengan distance 6px → tap di area handle tetap
+   //   terasa seperti klik biasa; drag baru aktif setelah geser sedikit.
+  // - TouchSensor delay 180ms → di HP, tap cepat tidak memicu drag
+  //   supaya tombol Hapus / pilih kategori tetap responsif.
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   // M19: SATU sumber kebenaran untuk kategori aktif. Sebelumnya ada dua
   // key localStorage (`mcm_active_cat` dan `ACTIVE_CAT_KEY`) yang keduanya
   // ditulis pada setiap perubahan → 2× I/O per klik chip kategori dan
