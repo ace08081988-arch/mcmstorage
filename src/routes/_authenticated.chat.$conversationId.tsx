@@ -272,6 +272,7 @@ import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inse
 import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import { isCardBody } from "@/lib/chat-cards";
+import { goBackOr } from "@/lib/back-nav";
 import {
   DELETED_PLACEHOLDER,
   MessagePreview,
