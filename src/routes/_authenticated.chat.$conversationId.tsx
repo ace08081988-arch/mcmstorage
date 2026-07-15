@@ -2329,7 +2329,7 @@ function ChatRoomPage() {
             </div>
           </div>
         ) : null}
-        <div className="relative flex items-end gap-ms-2">
+        <div className="relative flex flex-col gap-ms-1.5">
           {qrQuery !== null ? (
             <QuickReplyPopover
               query={qrQuery}
@@ -2345,70 +2345,75 @@ function ChatRoomPage() {
               }}
             />
           ) : null}
-          <AttachMenu conversationId={conversationId} disabled={chatBlocked} onSent={() => { void othersRead.refetch(); }} />
-          <EmojiPickerPopover
-            disabled={chatBlocked}
-            onPick={(ch) => {
-              setBody((prev) => prev + ch);
-              emitTyping();
-            }}
-          />
-          <div className="flex-1 min-w-0">
-            <Textarea
-              value={body}
-              onChange={(e) => {
-                const v = e.target.value;
-                setBody(v);
-                if (v.length > 0) emitTyping();
-                const m = /\/(\w*)$/.exec(v);
-                setQrQuery(m ? m[1] : null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  onSubmit(e as unknown as React.FormEvent);
-                }
-              }}
-              placeholder="Tulis pesan…"
-              rows={1}
-              className="max-h-32 min-h-10 w-full resize-none"
-              disabled={chatBlocked}
-            />
+          {/* Baris atas: textarea + tombol Kirim, lebar penuh */}
+          <div className="flex items-end gap-ms-2">
+            <div className="flex-1 min-w-0">
+              <Textarea
+                value={body}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setBody(v);
+                  if (v.length > 0) emitTyping();
+                  const m = /\/(\w*)$/.exec(v);
+                  setQrQuery(m ? m[1] : null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    onSubmit(e as unknown as React.FormEvent);
+                  }
+                }}
+                placeholder="Tulis pesan…"
+                rows={1}
+                className="max-h-32 min-h-10 w-full resize-none"
+                disabled={chatBlocked}
+              />
+            </div>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending || !!productSendProgress}
+              aria-label="Kirim"
+              aria-busy={isSending || !!productSendProgress}
+              className="h-10 w-10 shrink-0"
+            >
+              {isSending || !!productSendProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
           </div>
-          <Button
-            type="submit"
-            size="icon"
-            disabled={(!body.trim() && pendingProducts.length === 0) || chatBlocked || isSending || !!productSendProgress}
-            aria-label="Kirim"
-            aria-busy={isSending || !!productSendProgress}
-            className="h-10 w-10 shrink-0"
-          >
-            {isSending || !!productSendProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
-          <ProductSharePopover
-            conversationId={conversationId}
-            disabled={chatBlocked}
-            peerName={displayedPeerName}
-            onSent={() => { void othersRead.refetch(); }}
-            onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
-          />
-          <CartComposer
-            conversationId={conversationId}
-            disabled={chatBlocked}
-            onSent={() => { void othersRead.refetch(); }}
-          />
-          {!body.trim() && pendingProducts.length === 0 ? (
-            <VoiceRecorderButton
+          {/* Baris bawah: strip alat sekunder */}
+          <div className="flex items-center gap-ms-1">
+            <AttachMenu conversationId={conversationId} disabled={chatBlocked} onSent={() => { void othersRead.refetch(); }} />
+            <EmojiPickerPopover
+              disabled={chatBlocked}
+              onPick={(ch) => {
+                setBody((prev) => prev + ch);
+                emitTyping();
+              }}
+            />
+            <ProductSharePopover
+              conversationId={conversationId}
+              disabled={chatBlocked}
+              peerName={displayedPeerName}
+              onSent={() => { void othersRead.refetch(); }}
+              onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
+            />
+            <CartComposer
               conversationId={conversationId}
               disabled={chatBlocked}
               onSent={() => { void othersRead.refetch(); }}
             />
-          ) : (
-            // Placeholder menahan lebar slot voice agar row composer tidak
-            // reflow saat user mulai/berhenti mengetik. Ukuran cocok dengan
-            // Button size="icon" (h-9 w-9) di VoiceRecorderButton idle state.
-            <div aria-hidden className="h-9 w-9 shrink-0" />
-          )}
+            <div className="ml-auto">
+              {!body.trim() && pendingProducts.length === 0 ? (
+                <VoiceRecorderButton
+                  conversationId={conversationId}
+                  disabled={chatBlocked}
+                  onSent={() => { void othersRead.refetch(); }}
+                />
+              ) : (
+                <div aria-hidden className="h-9 w-9" />
+              )}
+            </div>
+          </div>
         </div>
         <p className="mt-1 hidden px-1 text-ms-2xs text-muted-foreground sm:block">
           Enter untuk kirim · Shift+Enter untuk baris baru
