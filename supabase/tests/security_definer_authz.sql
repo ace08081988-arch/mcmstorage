@@ -295,7 +295,6 @@ DECLARE
     ARRAY['admin_set_admin_role(uuid,boolean)',                     $q$SELECT public.admin_set_admin_role(gen_random_uuid(), true)$q$,                                  'raise'],
     ARRAY['prep_share_token_exists(text)',                          $q$SELECT public.prep_share_token_exists('does-not-matter-xxxxxxxx')$q$,                            'raise'],
     ARRAY['prep_submission_verify(uuid,text,text)',                 $q$SELECT public.prep_submission_verify(gen_random_uuid(), 'approved', NULL)$q$,                    'raise'],
-    ARRAY['prep_pin_reset(text)',                                   $q$SELECT public.prep_pin_reset('nonexistent-token-authz')$q$,                                      'jsonb'],
     ARRAY['run_internal_security_scan()',                           $q$SELECT public.run_internal_security_scan()$q$,                                                   'raise'],
     ARRAY['security_findings_acknowledge(uuid[])',                  $q$SELECT public.security_findings_acknowledge(ARRAY[gen_random_uuid()]::uuid[])$q$,                'raise']
   ];
@@ -353,6 +352,30 @@ BEGIN
 
     RAISE NOTICE 'PASS has_role gate rejects non-admin for %', v_sig;
   END LOOP;
+END $$;
+
+-- Special case: prep_pin_reset returns 'not_found' before checking role,
+-- so we need a real prep_tasks row owned by user B and then call as A.
+DO $$
+DECLARE
+  v_a uuid := current_setting('test.user_a')::uuid;
+  v_b uuid := current_setting('test.user_b')::uuid;
+  v_tok text := 'tok_authz_pin_reset_' || replace(gen_random_uuid()::text,'-','');
+  v_res jsonb;
+BEGIN
+  IF public.has_role(v_a, 'admin') THEN
+    RAISE EXCEPTION 'FAIL cannot run prep_pin_reset gate: user A already admin';
+  END IF;
+
+  PERFORM pg_temp.as_user(v_b);
+  PERFORM public.prep_create_task('pin-reset-authz', NULL, '1234', v_tok, '[]'::jsonb, NULL::timestamptz, NULL::int);
+
+  PERFORM pg_temp.as_user(v_a);
+  v_res := public.prep_pin_reset(v_tok);
+  IF (v_res->>'ok') IS DISTINCT FROM 'false' OR (v_res->>'error') <> 'forbidden' THEN
+    RAISE EXCEPTION 'FAIL prep_pin_reset returned % under non-admin non-owner caller (expected forbidden)', v_res;
+  END IF;
+  RAISE NOTICE 'PASS has_role/owner gate rejects non-admin non-owner for prep_pin_reset(text)';
 END $$;
 
 -- =====================================================================
