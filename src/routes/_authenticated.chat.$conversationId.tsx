@@ -107,6 +107,7 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { sendMessage } from "@/lib/chat.functions";
+import { uploadChatFile } from "@/lib/chat-attachments";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
 import { EditContactNameDialog } from "@/components/chat/EditContactNameDialog";
