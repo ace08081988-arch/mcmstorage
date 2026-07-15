@@ -978,23 +978,23 @@ function PosKasirPage() {
                   }`}
                   placeholder="0.000"
                 />
-                {berat > selected.stokKg && (
-                  <div className="mt-3 flex items-start gap-ms-2 rounded-lg bg-red-500/15 border border-red-500/40 p-ms-3 text-ms-sm text-red-200">
-                    <span className="shrink-0 text-red-400">⚠</span>
-                    <div>
-                      <p className="font-semibold">Berat melebihi stok</p>
-                      <p className="text-ms-xs text-red-300/80 mt-0.5">
-                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} {unit}.
-                      </p>
-                      <p className="text-ms-xs text-red-300/80 mt-0.5">
-                        Kurangi berat agar tidak melebihi stok yang ada.
-                      </p>
-                    </div>
-                  </div>
-                )}
+                 {berat > selected.stokKg && (
+                   <div className="mt-3 flex items-start gap-ms-2 rounded-lg bg-red-500/15 border border-red-500/40 p-ms-3 text-ms-sm text-red-200">
+                     <span className="shrink-0 text-red-400">⚠</span>
+                     <div>
+                       <p className="font-semibold">Jumlah melebihi stok</p>
+                       <p className="text-ms-xs text-red-300/80 mt-0.5">
+                         Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} {unit}.
+                       </p>
+                       <p className="text-ms-xs text-red-300/80 mt-0.5">
+                         Kurangi jumlah agar tidak melebihi stok yang ada.
+                       </p>
+                     </div>
+                   </div>
+                 )}
 
-                <div className="mt-3 grid grid-cols-4 gap-ms-2">
-                  {[0.25, 0.5, 1, 2].map((v) => {
+                 <div className="mt-3 grid grid-cols-4 gap-ms-2">
+                   {quickAdds.slice(0, 4).map((v) => {
                     const wouldExceed = berat + v > selected.stokKg;
                     return (
                       <button
