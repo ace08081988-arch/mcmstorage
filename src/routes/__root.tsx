@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, Suspense, lazy, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -21,7 +21,17 @@ import { WhatsAppTargetHost } from "@/lib/wa-target";
 import { WaPreviewHost } from "@/lib/wa-preview";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
-import { BuildVersionBadge } from "@/components/BuildVersionBadge";
+// Komponen non-kritis di-lazy-load supaya tidak masuk critical bundle
+// dan tidak mengeksekusi efek/polling sebelum halaman utama siap.
+const BuildVersionBadge = lazy(() =>
+  import("@/components/BuildVersionBadge").then((m) => ({ default: m.BuildVersionBadge })),
+);
+const WhatsAppTargetHostLazy = lazy(() =>
+  import("@/lib/wa-target").then((m) => ({ default: m.WhatsAppTargetHost })),
+);
+const WaPreviewHostLazy = lazy(() =>
+  import("@/lib/wa-preview").then((m) => ({ default: m.WaPreviewHost })),
+);
 
 function NotFoundComponent() {
   return (
