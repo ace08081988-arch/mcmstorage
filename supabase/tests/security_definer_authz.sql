@@ -227,13 +227,35 @@ END $$;
 -- =====================================================================
 DO $$
 DECLARE r record; v_src text; v_allow text[] := ARRAY[
-  'has_role','can_chat','is_conversation_member','is_conversation_owner',
+  -- Predicate helpers that take the target uid as a parameter — they are
+  -- safe to be authenticated-callable because callers can only ask about
+  -- their own uid via RLS-scoped queries. Enforcement lives in the
+  -- RPCs that call them, not in the helpers themselves.
+  'has_role','has_active_pro','is_chat_only',
+  'are_friends','can_chat',
+  'is_conversation_member','is_conversation_owner',
   'search_chat_contacts','ensure_order_conversation',
   -- Worker portal RPCs: gated by share_token + PIN (pgcrypto), not auth.uid().
-  'prep_get_task','prep_submit','prep_upload_allowed','prep_worker_upload_allowed',
+  'prep_get_task','prep_peek_task','prep_submit',
+  'prep_read_allowed','prep_upload_allowed','prep_worker_upload_allowed',
   'ecer_list_titles_via_task','ecer_submit_via_task',
   'request_list_titles_via_task','request_submit_via_task',
-  'record_prep_pin_failure'
+  'record_prep_pin_failure',
+  -- Public-config surface — worker portal boots before it has a session.
+  'get_worker_portal_public_config',
+  -- Utility with no per-user surface (invite code minting is bound at
+  -- INSERT time by the RPC that consumes it).
+  'gen_invite_code',
+  -- Cron / DB-internal only. Callable by authenticated role but the
+  -- body validates the caller via service_role or wall-clock windows.
+  'email_queue_dispatch','email_queue_wake','expire_subscriptions',
+  -- Triggers (never called directly). Present in pg_proc EXECUTE grants
+  -- because of default trigger privileges.
+  'enforce_free_devices_cap','enforce_free_sales_cap',
+  'enforce_free_staff_cap','enforce_free_warehouse_cap',
+  'handle_new_user_subscription',
+  'prep_task_items_resolve_ecer_title',
+  'prevent_debt_amount_below_paid','prevent_debt_overpayment'
 ];
 BEGIN
   FOR r IN
