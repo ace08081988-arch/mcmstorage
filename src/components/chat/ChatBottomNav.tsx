@@ -50,7 +50,9 @@ export function ChatBottomNav() {
       // Fixed di viewport bawah supaya tidak "goyang" ikut scroll pada
       // Android WebView dengan dynamic viewport (URL-bar auto-hide).
       // `--chat-nav-h` tetap diekspos untuk FAB & spacer content.
-      className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem)]"
+      // `--chat-nav-h` mengikutkan `safe-area-inset-bottom` supaya spacer
+      // konten & FAB otomatis menyisakan ruang untuk notch/home indicator iOS.
+      className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)" }}
     >
       {/* Indikator aktif — pill halus yang meluncur di bawah ikon aktif. */}
