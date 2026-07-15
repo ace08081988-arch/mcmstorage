@@ -15,6 +15,7 @@ import { TaskQrCode } from "@/components/TaskQrCode";
 import { deriveTaskShortStatus, type TaskShortStatus } from "@/lib/prep-status";
 import { fetchAddressBook, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { rememberPin, recallPin, forgetPin } from "@/lib/prep-pin-memo";
+import { debounce } from "@/lib/realtime-debounce";
 
 /**
  * Badge kecil di kartu tugas yang menampilkan PIN dari pengingat lokal
