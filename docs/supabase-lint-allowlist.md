@@ -33,8 +33,6 @@ First-party user RPCs whose grant is `TO PUBLIC` (so both anon and authenticated
 ### `admin-role-gated` (authenticated)
 RPCs whose first statement is `IF NOT has_role(auth.uid(), 'admin') THEN RAISE EXCEPTION 'forbidden'`. `SECURITY DEFINER` is required to bypass RLS on `auth.users`, `subscriptions`, `security_findings`. Non-admin rejection is asserted by `supabase/tests/security_definer_authz.sql`.
 
-## Adding a function
-
 ## Schema rules (enforced by CI)
 
 `scripts/check-supabase-lints.mjs` validates the JSON before it queries Supabase, and the workflow's `validate-allowlist` job runs it with `VALIDATE_ONLY=1` on every PR (no secrets needed). It fails the build when any of the following is violated:
