@@ -467,16 +467,27 @@ function Index() {
       }
       const { data, error } = await supabase
         .from("user_storage")
-        .select("items, categories")
+        .select("items")
         .eq("user_id", uid)
         .maybeSingle();
       if (error) {
         notifyError(error, { prefix: "Gagal memuat data: " });
       } else {
         const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
-        const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
         skipNextSaveRef.current = true;
         setItems(loadedItems);
+      }
+      // Slice 2: kategori sekarang dibaca dari master `warehouse_categories`
+      // (SSOT dengan Gudang), bukan dari kolom JSON `user_storage.categories`.
+      const { data: catRows, error: catErr } = await supabase
+        .from("warehouse_categories")
+        .select("name, position")
+        .order("position", { ascending: true })
+        .order("name", { ascending: true });
+      if (catErr) {
+        notifyError(catErr, { prefix: "Gagal memuat kategori: " });
+      } else {
+        const loadedCats = (catRows ?? []).map((r) => r.name);
         setCategories(loadedCats);
         try {
           const saved = localStorage.getItem(ACTIVE_CAT_KEY);
@@ -500,14 +511,14 @@ function Index() {
       if (!uid || cancelled) return;
       const { error } = await supabase
         .from("user_storage")
-        .upsert({ user_id: uid, items: items as any, categories: categories as any });
+        .upsert({ user_id: uid, items: items as any });
       if (error && !cancelled) notifyError(error, { prefix: "Gagal menyimpan: " });
     }, 600);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [items, categories, hydrated]);
+  }, [items, hydrated]);
 
   useEffect(() => {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
