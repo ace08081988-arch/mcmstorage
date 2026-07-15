@@ -13,15 +13,8 @@ import { readFileSync, appendFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
-const REF = process.env.SUPABASE_PROJECT_REF;
 const FAIL_ON_LEVEL = (process.env.FAIL_ON_LEVEL || "WARN").toUpperCase();
 const LEVEL_RANK = { INFO: 0, WARN: 1, ERROR: 2 };
-
-if (!TOKEN || !REF) {
-  console.error("Missing SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF env vars.");
-  process.exit(2);
-}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const allowlistPath = resolve(here, "..", ".github", "supabase-lint-allowlist.json");
@@ -138,6 +131,18 @@ if (schemaValidationErrors.length) {
 }
 
 /** Build a quick lookup: name -> { level, functions:Set<string> } */
+const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
+const REF = process.env.SUPABASE_PROJECT_REF;
+if (!TOKEN || !REF) {
+  // Allow VALIDATE_ONLY mode: schema validation above already ran & passed.
+  if (process.env.VALIDATE_ONLY === "1") {
+    console.log("✅ Allowlist schema validation passed (VALIDATE_ONLY).");
+    process.exit(0);
+  }
+  console.error("Missing SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF env vars.");
+  process.exit(2);
+}
+
 const allowIndex = new Map();
 for (const entry of allowlist.allow || []) {
   const level = (entry.level || "WARN").toUpperCase();
