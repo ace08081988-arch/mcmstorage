@@ -50,6 +50,7 @@ function fmt(iso: string) {
 
 function AuditPage() {
   const { c } = Route.useSearch();
+  const router = useRouter();
 
   const audit = useQuery({
     queryKey: ["chat-delete-audit", c ?? "all"],
@@ -91,16 +92,21 @@ function AuditPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-ms-4 p-ms-4">
       <div className="flex items-center gap-ms-2">
-        <Button asChild variant="ghost" size="icon" aria-label="Kembali">
-          {c ? (
-            <Link to="/chat/$conversationId" params={{ conversationId: c }}>
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          ) : (
-            <Link to="/chat">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Kembali"
+          onClick={() =>
+            goBackOr(
+              router,
+              c
+                ? { to: "/chat/$conversationId", params: { conversationId: c } }
+                : { to: "/chat" },
+            )
+          }
+        >
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex flex-1 items-center gap-ms-2">
           <History className="h-5 w-5 text-primary" />
