@@ -915,35 +915,32 @@ function ConvList({
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-base font-medium">
-                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 wa-muted" /> : null}
+                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-sm font-medium text-[var(--wa-text)]">
+                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                       <span className="truncate">{c.display_title}</span>
-                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 wa-muted" /> : null}
-                      {c.workflow_category === "archived" || c.workflow_archived_at ? (
-                        <StatusBadge lifecycle="archived" className="shrink-0" />
-                      ) : null}
+                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                     </span>
-                    <span className={`shrink-0 text-ms-2xs ${c.unread > 0 ? "text-[var(--wa-green)] font-medium" : "wa-muted"}`}>{timeShort(c.last_at)}</span>
+                    <span className={`shrink-0 text-ms-2xs ${c.unread > 0 ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)]"}`}>{timeShort(c.last_at)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-sm wa-muted">
+                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-xs text-[var(--wa-text-muted)]">
                       {c.last_body ? (
                         <>
                           {c.last_delivered ? (
                             c.last_read ? (
-                              <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-check" aria-label="Dibaca" />
+                              <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-check)]" aria-label="Dibaca" />
                             ) : (
-                              <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-muted opacity-70" aria-label="Terkirim" />
+                              <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" aria-label="Terkirim" />
                             )
                           ) : null}
                           <span className="truncate">{previewText(c.last_body) ?? ""}</span>
                         </>
                       ) : (
-                        <em className="text-muted-foreground/70">Belum ada pesan</em>
+                        <em className="text-[var(--wa-text-muted)]/70">Belum ada pesan</em>
                       )}
                     </span>
                     {c.unread > 0 ? (
-                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full wa-badge px-1.5 text-ms-2xs font-semibold">
+                      <span className="ml-2 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--wa-green)] px-1 text-ms-2xs font-semibold text-[var(--wa-surface)]">
                         {c.unread > 99 ? "99+" : c.unread}
                       </span>
                     ) : null}
