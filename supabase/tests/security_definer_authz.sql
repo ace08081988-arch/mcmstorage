@@ -197,8 +197,17 @@ BEGIN
 
   PERFORM pg_temp.as_anon();
   SELECT count(*) INTO v_before FROM public.prep_submissions;
-  v_res := public.prep_submit(v_tok, 'WRONG', (SELECT id FROM public.prep_task_items WHERE task_id=v_task LIMIT 1),
-    'p.jpg', NULL, NULL, NULL, NULL, 1);
+  v_res := public.prep_submit(
+    v_tok,
+    'WRONG'::text,
+    (SELECT id FROM public.prep_task_items WHERE task_id=v_task LIMIT 1),
+    'p.jpg'::text,
+    NULL::text,
+    NULL::double precision,
+    NULL::double precision,
+    NULL::text,
+    1::numeric
+  );
   IF (v_res->>'error') IS DISTINCT FROM 'bad_pin' THEN
     RAISE EXCEPTION 'FAIL prep_submit accepted bad PIN: %', v_res;
   END IF;
