@@ -1100,21 +1100,49 @@ function lineWeight(line: Line, variants: Variant[]): number {
 // baik oleh ringkasan maupun badge per-baris, sehingga keduanya
 // tidak pernah berbeda. Murni dihitung dari state baris (tanpa
 // `lineStatus` yang diperbarui asinkron oleh NumberInput).
-function evaluateLine(line: Line, variants: Variant[]): {
+// Batas atas wajar per baris. Cegah salah ketik (mis. tambah 1 nol) tanpa
+// mengekang skenario nyata: 100.000 pcs / 100.000 g per baris sudah jauh di
+// atas kebutuhan operasional harian.
+const MAX_COUNT_UNITS = 100_000;
+const MAX_PER_UNIT_PCS = 100_000;
+const MAX_PER_UNIT_G = 100_000; // gram
+
+function evaluateLine(line: Line, variants: Variant[], opts?: { isPcs?: boolean }): {
   status: "valid" | "partial" | "invalid";
   weight: number;
   count: number;
   total: number;
+  reason?: string;
 } {
+  const isPcs = !!opts?.isPcs;
   const weight = lineWeight(line, variants);
   const count = Number(line.count);
   const cOk = Number.isFinite(count) && count > 0;
   const wOk = Number.isFinite(weight) && weight > 0;
-  let status: "valid" | "partial" | "invalid";
-  if (!cOk || !wOk) status = "invalid";
-  else status = "valid";
+  let status: "valid" | "partial" | "invalid" = "valid";
+  let reason: string | undefined;
+  if (!cOk || !wOk) {
+    status = "invalid";
+  } else if (!Number.isInteger(count)) {
+    // Jumlah unit selalu bilangan bulat (tidak ada "1,5 karton").
+    status = "invalid";
+    reason = "Jumlah unit harus bilangan bulat";
+  } else if (count > MAX_COUNT_UNITS) {
+    status = "invalid";
+    reason = `Jumlah unit melebihi batas (${MAX_COUNT_UNITS})`;
+  } else if (isPcs && !Number.isInteger(weight)) {
+    // Item pcs: isi per unit juga bilangan bulat (mis. 12 botol/karton).
+    status = "invalid";
+    reason = "Jumlah / unit harus bilangan bulat untuk item pcs";
+  } else if (isPcs && weight > MAX_PER_UNIT_PCS) {
+    status = "invalid";
+    reason = `Jumlah / unit melebihi batas (${MAX_PER_UNIT_PCS})`;
+  } else if (!isPcs && weight > MAX_PER_UNIT_G) {
+    status = "invalid";
+    reason = `Berat / unit melebihi batas (${MAX_PER_UNIT_G} g)`;
+  }
   const total = status === "valid" ? weight * count : 0;
-  return { status, weight: wOk ? weight : 0, count: cOk ? count : 0, total };
+  return { status, weight: wOk ? weight : 0, count: cOk ? count : 0, total, reason };
 }
 // Parser angka yang menerima koma desimal (format Indonesia) maupun titik.
 function parseNum(input: string): number | null {
@@ -1168,6 +1196,9 @@ function NumberInput({
   emptyAs = 0,
   onStatusChange,
   placeholder,
+  min,
+  max,
+  integerOnly,
 }: {
   value: number;
   onChange: (n: number) => void;
@@ -1179,6 +1210,11 @@ function NumberInput({
   // Dipanggil tiap kali status validasi input berubah.
   onStatusChange?: (status: "valid" | "partial" | "invalid") => void;
   placeholder?: string;
+  // Batas nilai. Nilai di luar range → status invalid (cincin merah).
+  min?: number;
+  max?: number;
+  // Wajib bilangan bulat (dipakai untuk item pcs).
+  integerOnly?: boolean;
 }) {
   const [text, setText] = useState(() => fmtNum(value, maxFrac));
   const focused = useRef(false);
@@ -1193,7 +1229,11 @@ function NumberInput({
     if (/^[-+]?[.,]$/.test(raw)) return "partial";
     if (/[.,]$/.test(raw)) return "partial";
     const n = parseNum(raw);
-    return n != null && Number.isFinite(n) ? "valid" : "invalid";
+    if (n == null || !Number.isFinite(n)) return "invalid";
+    if (integerOnly && !Number.isInteger(n)) return "invalid";
+    if (min != null && n < min) return "invalid";
+    if (max != null && n > max) return "invalid";
+    return "valid";
   })();
   const lastStatus = useRef(status);
   useEffect(() => {
@@ -1423,7 +1463,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         if (!hasPhoto) linesWithoutPhoto++;
         // Satu selector tunggal — ringkasan & badge per-baris memakai
         // hasil yang sama, tidak ada lagi ketergantungan ke lineStatus.
-        const ev = evaluateLine(l, variants);
+        const ev = evaluateLine(l, variants, { isPcs });
         if (ev.status === "valid") {
           validLines++;
           totalWeight += ev.total;
@@ -1837,7 +1877,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                   {p && (
                     <div className="mt-2 space-y-1.5 pl-6">
                       {p.lines.map((l) => {
-                        const ev = evaluateLine(l, variants);
+                        const isPcs = (it.base_unit ?? "pcs") === "pcs";
+                        const ev = evaluateLine(l, variants, { isPcs });
                         const w = ev.weight;
                         const total = ev.total;
                         const isManual = !l.variantId;
@@ -1847,7 +1888,6 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         // unit (mis. 1 karton berisi 10 botol), bukan berat. Label
                         // & placeholder mengikuti supaya pegawai tidak bingung
                         // (screenshot: GS · stok botol seharusnya bukan "Berat").
-                        const isPcs = (it.base_unit ?? "pcs") === "pcs";
                         const perUnitLabel = isPcs ? "Jumlah / unit" : "Berat / unit";
                         const manualHint = isPcs
                           ? "Manual — isi jumlah di kolom kanan"
@@ -1875,7 +1915,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <div className="mb-0.5 text-ms-2xs text-muted-foreground">Jumlah unit</div>
                                 <NumberInput
                                   value={l.count}
-                                  maxFrac={3}
+                                  maxFrac={0}
+                                  integerOnly
+                                  min={1}
+                                  max={MAX_COUNT_UNITS}
                                   emptyAs={0}
                                   onChange={(n) => updateLine(it.id, l.key, { count: n })}
                                   onStatusChange={(s) => setFieldStatus(l.key, "count", s)}
@@ -1890,7 +1933,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <NumberInput
                                   key={`${l.key}-${l.variantId ?? "m"}`}
                                   value={isManual ? (l.weightOverride ?? 0) : w}
-                                  maxFrac={3}
+                                  maxFrac={isPcs ? 0 : 3}
+                                  integerOnly={isPcs}
+                                  min={isManual ? (isPcs ? 1 : 0.001) : undefined}
+                                  max={isManual ? (isPcs ? MAX_PER_UNIT_PCS : MAX_PER_UNIT_G) : undefined}
                                   disabled={!isManual}
                                   emptyAs={isManual ? 0 : null}
                                   placeholder={isManual ? "isi manual" : undefined}
@@ -1913,14 +1959,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 }
                                 title={
                                   rs === "invalid"
-                                    ? "Input tidak valid"
+                                    ? (ev.reason ?? "Input tidak valid")
                                     : rs === "partial"
                                     ? "Input belum lengkap"
                                     : "Input valid"
                                 }
                               >
                                 {rs === "invalid" ? (
-                                  <><AlertTriangle className="h-3 w-3" /> Tidak valid</>
+                                  <><AlertTriangle className="h-3 w-3" /> {ev.reason ? "Tidak valid" : "Tidak valid"}</>
                                 ) : rs === "partial" ? (
                                   <><AlertTriangle className="h-3 w-3" /> Belum lengkap</>
                                 ) : (
