@@ -219,6 +219,12 @@ function GudangPage() {
   const [beliDefaultPayment, setBeliDefaultPayment] = useState<"kas" | "hutang">("kas");
   const [beliPresetKey, setBeliPresetKey] = useState(0);
   const [items, setItems] = useState<WItem[]>([]);
+  // Urutan kategori dari `warehouse_categories` (SSOT dengan Beranda).
+  // Map key = lower(btrim(name)) supaya cocok dengan unique index DB
+  // dan tidak sensitif terhadap kapitalisasi label item.
+  const [categoryOrder, setCategoryOrder] = useState<Map<string, number>>(
+    () => new Map(),
+  );
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -239,7 +245,7 @@ function GudangPage() {
   const reloadPendingRef = useRef(false);
 
   async function reloadAllNow() {
-    const [s, w, p, sa, py, c, cp, or] = await Promise.all([
+    const [s, w, p, sa, py, c, cp, or, wc] = await Promise.all([
       supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("*").order("name"),
       supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
@@ -248,6 +254,10 @@ function GudangPage() {
       supabase.from("customers").select("*").order("created_at", { ascending: false }),
       supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase
+        .from("warehouse_categories")
+        .select("name, position")
+        .order("position", { ascending: true }),
     ]);
     if (s.data) setSuppliers(s.data as Supplier[]);
     if (w.data) setItems(w.data as WItem[]);
@@ -257,6 +267,14 @@ function GudangPage() {
     if (c.data) setCustomers(c.data as Customer[]);
     if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
     if (or.data) setOrders(or.data as OrderRequest[]);
+    if (wc.data) {
+      const m = new Map<string, number>();
+      (wc.data as { name: string; position: number }[]).forEach((r, i) => {
+        // fallback ke urutan array kalau position null / duplikat.
+        m.set(r.name.trim().toLowerCase(), r.position ?? i);
+      });
+      setCategoryOrder(m);
+    }
     setLoading(false);
   }
 
