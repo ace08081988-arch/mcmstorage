@@ -186,7 +186,7 @@ function NavLinkItem({
     <Link
       to={item.url}
       preload="intent"
-      className="flex items-center gap-ms-2.5"
+      className="flex min-w-0 items-center gap-ms-2.5"
       onPointerDown={(e) => {
         if (!isMobile) return;
         if (e.pointerType === "mouse") return;
