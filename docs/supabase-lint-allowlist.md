@@ -33,7 +33,18 @@ First-party user RPCs whose grant is `TO PUBLIC` (so both anon and authenticated
 ### `admin-role-gated` (authenticated)
 RPCs whose first statement is `IF NOT has_role(auth.uid(), 'admin') THEN RAISE EXCEPTION 'forbidden'`. `SECURITY DEFINER` is required to bypass RLS on `auth.users`, `subscriptions`, `security_findings`. Non-admin rejection is asserted by `supabase/tests/security_definer_authz.sql`.
 
-## Adding a function
+## Schema rules (enforced by CI)
+
+`scripts/check-supabase-lints.mjs` validates the JSON before it queries Supabase, and the workflow's `validate-allowlist` job runs it with `VALIDATE_ONLY=1` on every PR (no secrets needed). It fails the build when any of the following is violated:
+
+- `name`, `level` (`INFO|WARN|ERROR`), `category`, `reason`, and `functions` are all required.
+- `reason` must be **≥ 40 characters** — a substantive architectural justification, not a placeholder.
+- `category` must be **unique per rule** — merge additions into the existing bucket instead of creating a duplicate.
+- Every function must be **schema-qualified** (`schema.name`), non-empty, and appear **at most once per rule** — a function belongs to exactly one bucket.
+
+Run locally with `VALIDATE_ONLY=1 node scripts/check-supabase-lints.mjs`.
+
+## Adding a function (procedure)
 
 1. Identify which bucket the new function belongs to. If none fits, propose a new bucket in this file first with an architectural justification, then add it to the JSON.
 2. Append the fully qualified name (`public.<fn>`) to the appropriate `functions` array. Keep the array alphabetised.
