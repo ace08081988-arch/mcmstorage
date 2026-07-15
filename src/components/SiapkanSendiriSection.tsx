@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { usePhotoEditorFlow, type EditedPhoto } from "@/components/photo-editor/use-photo-editor-flow";
 
 const BUCKET = "self-prep-photos";
 
