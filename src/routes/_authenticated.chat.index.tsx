@@ -948,10 +948,15 @@ function ConvList({
                 </div>
               </ConvRow>
               {selecting ? null : (
-              <div className="absolute right-1 top-1.5">
+              <div className="absolute right-0 top-1/2 -translate-y-1/2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Opsi">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]"
+                      aria-label="Opsi"
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
