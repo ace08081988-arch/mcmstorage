@@ -341,7 +341,7 @@ function GudangPage() {
     // Label 1 kata konsisten Bahasa Indonesia, urut sesuai alur kerja:
     // barang → mitra → transaksi masuk/keluar → utang-piutang → arsip.
     { k: "stok", label: "Stok", icon: Boxes },
-    { k: "supplier", label: "Pemasok", icon: Truck },
+    { k: "supplier", label: "Supplier", icon: Truck },
     { k: "beli", label: "Beli", icon: ShoppingCart },
     { k: "jual", label: "Jual", icon: Banknote },
     { k: "pesanan", label: "Pesanan", icon: ClipboardList },

@@ -798,12 +798,12 @@ export function DebtQuickActions({
           className="inline-flex h-8 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs font-semibold hover:bg-accent disabled:opacity-50"
           title={
             kind === "piutang"
-              ? "Catat jual tunai — langsung lunas, tidak menambah piutang"
-              : "Catat beli tunai — langsung lunas, tidak menambah hutang"
+              ? "Catat jual kas — langsung lunas, tidak menambah piutang"
+              : "Catat beli kas — langsung lunas, tidak menambah hutang"
           }
         >
           {busy === "cash" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Banknote className="h-3 w-3" />}
-          Tunai
+          Kas
         </button>
         <button
           type="button"
@@ -827,7 +827,7 @@ export function DebtQuickActions({
         </button>
       </div>
       <p className="mt-1.5 text-ms-2xs leading-snug text-muted-foreground">
-        Tersinkron ke Hutang & Piutang MCM Storage. <b>Harga Jual</b> = tambah piutang, <b>Tunai</b> = jual langsung lunas, <b>Bayar/Lunas</b> = pelunasan piutang yang ada (dialokasi ke tagihan paling lama).
+        Tersinkron ke Hutang & Piutang MCM Storage. <b>Harga Jual</b> = tambah piutang, <b>Kas</b> = jual langsung lunas, <b>Bayar/Lunas</b> = pelunasan piutang yang ada (dialokasi ke tagihan paling lama).
       </p>
       {lastTx && (
         <div className="mt-2 flex flex-wrap items-center gap-ms-1.5 rounded-md border border-dashed bg-background/60 px-ms-2 py-1.5 text-ms-2xs">
@@ -876,7 +876,7 @@ export function DebtQuickActions({
           <div className="border-t">
             {log.length === 0 ? (
               <div className="px-ms-2 py-ms-2 text-ms-2xs text-muted-foreground">
-                Belum ada aksi tercatat. Setiap tekanan Harga Jual / Beli / Tunai / Bayar / Lunas akan muncul di sini.
+                Belum ada aksi tercatat. Setiap tekanan Harga Jual / Beli / Kas / Bayar / Lunas akan muncul di sini.
               </div>
             ) : (
               <>

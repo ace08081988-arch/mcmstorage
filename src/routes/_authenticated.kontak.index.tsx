@@ -27,7 +27,7 @@ import {
 export const Route = createFileRoute("/_authenticated/kontak/")({
   head: () => ({
     meta: [
-      { title: "Pelanggan & Pemasok · MCM Storage" },
+      { title: "Pelanggan & Supplier · MCM Storage" },
       {
         name: "description",
         content:
@@ -217,7 +217,7 @@ function KontakPage() {
             ←
           </Link>
           <h1 className="flex-1 truncate text-ms-base font-semibold">
-            Pelanggan &amp; Pemasok
+            Pelanggan &amp; Supplier
           </h1>
           <Button
             size="sm"
@@ -239,7 +239,7 @@ function KontakPage() {
         <Tabs value={tab} onValueChange={(v) => setTab(v as Kind)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="customer">Pelanggan</TabsTrigger>
-            <TabsTrigger value="supplier">Pemasok</TabsTrigger>
+            <TabsTrigger value="supplier">Supplier</TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-3">

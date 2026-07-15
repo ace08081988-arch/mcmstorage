@@ -279,7 +279,7 @@ export function OrderSummaryCard({
           <QuickLink
             to="/kontak"
             icon={<UserSquare className="h-3.5 w-3.5" aria-hidden />}
-            label="Customer"
+            label="Pelanggan"
           />
         ) : null}
         {links.linked_request_prep_id || derived.scope === "request" ? (
