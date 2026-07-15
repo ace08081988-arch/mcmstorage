@@ -65,6 +65,7 @@ function ChatListPage() {
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
   const navigate = useNavigate();
+  const router = useRouter();
   const routeSearch = Route.useSearch();
   const pin = usePinConversation();
   const archive = useArchiveConversation();
@@ -298,14 +299,15 @@ function ChatListPage() {
       <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-ms-2 border-b px-ms-3 py-ms-2">
         <div className="flex min-w-0 items-center gap-ms-2">
           <Button
-            asChild
+            type="button"
             variant="ghost"
             size="icon"
             className="h-9 w-9 shrink-0 rounded-full"
             aria-label="Kembali ke Beranda"
             title="Beranda"
+            onClick={() => goBackOr(router, { to: "/" })}
           >
-            <Link to="/"><ArrowLeft className="h-5 w-5" /></Link>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="truncate text-ms-lg font-semibold tracking-tight">MCM Chat</h1>
         </div>
