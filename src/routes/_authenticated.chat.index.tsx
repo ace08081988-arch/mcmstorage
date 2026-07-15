@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
-  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus,
+  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
   Trash2, CheckSquare, Square,
 } from "lucide-react";
