@@ -1463,7 +1463,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         if (!hasPhoto) linesWithoutPhoto++;
         // Satu selector tunggal — ringkasan & badge per-baris memakai
         // hasil yang sama, tidak ada lagi ketergantungan ke lineStatus.
-        const ev = evaluateLine(l, variants);
+        const ev = evaluateLine(l, variants, { isPcs });
         if (ev.status === "valid") {
           validLines++;
           totalWeight += ev.total;
