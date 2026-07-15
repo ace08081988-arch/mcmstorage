@@ -262,10 +262,10 @@ function OrgHeader() {
         </span>
       )}
       <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-        <div className="truncate text-ms-sm font-semibold leading-tight tracking-tight">
+        <div className="font-display truncate text-ms-base font-semibold leading-tight tracking-tight text-foreground">
           {full}
         </div>
-        <div className="truncate text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        <div className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/80">
           Manajemen Operasional
         </div>
       </div>
