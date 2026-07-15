@@ -900,8 +900,8 @@ function ToolPill(props: { active: boolean; onClick: () => void; label: string; 
       className={cn(
         "flex min-h-[52px] min-w-[52px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-ms-2 text-ms-2xs transition-all",
         active
-          ? "bg-white text-neutral-900 shadow-lg shadow-white/10"
-          : "text-white/80 hover:bg-white/10 active:bg-white/15",
+          ? "bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_6px_16px_-6px_rgba(201,168,76,0.55)] ring-1 ring-[#c9a84c]/60"
+          : "text-[#f5f0e0]/85 hover:bg-[#c9a84c]/10 hover:text-[#f0d78c] active:bg-[#c9a84c]/15",
       )}
     >
       <Icon className="h-5 w-5" />
@@ -932,9 +932,9 @@ function IconPill(props: {
       aria-pressed={active}
       disabled={disabled}
       className={cn(
-        "grid h-10 w-10 place-items-center rounded-full text-white/85 transition-all",
-        !disabled && "hover:bg-white/10 active:scale-95",
-        active && "bg-white text-neutral-900",
+        "grid h-10 w-10 place-items-center rounded-full text-[#f5f0e0]/90 transition-all",
+        !disabled && "hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95",
+        active && "bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_4px_12px_-4px_rgba(201,168,76,0.55)]",
         tone === "danger" && "text-destructive-foreground hover:bg-destructive/30",
         disabled && "opacity-40",
       )}
@@ -946,6 +946,7 @@ function IconPill(props: {
 
 function stickerGlyph(k: string): string {
   switch (k) {
+    case "arrow": return "→";
     case "check": return "✓";
     case "x": return "✕";
     case "warning": return "!";
