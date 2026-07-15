@@ -39,7 +39,9 @@ export const Route = createFileRoute("/_authenticated/chat/")({
   // belum dibaca. Nilai lain diabaikan (fallback ke "all").
   validateSearch: (search: Record<string, unknown>) => {
     const raw = typeof search.filter === "string" ? search.filter : undefined;
-    return { filter: raw === "unread" ? ("unread" as const) : undefined };
+    const out: { filter?: "unread" } = {};
+    if (raw === "unread") out.filter = "unread";
+    return out;
   },
   component: ChatListPage,
 });
