@@ -29,7 +29,6 @@ import {
 import { toast } from "sonner";
 import { useChatLists, useAllChatListMembers } from "@/lib/chat-lists";
 import { ChatListIcon } from "@/lib/chat-list-icons";
-import { StatusBadge } from "@/components/StatusBadge";
 import { CHAT_CATEGORY_LABEL_ID, type ChatCategory } from "@/lib/chat-category";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
