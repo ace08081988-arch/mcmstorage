@@ -506,23 +506,15 @@ function ChatListPage() {
       {pendingRequests > 0 ? (
         <Link
           to={"/kontak/permintaan" as never}
-          className="mt-2 flex items-center gap-ms-3 rounded-2xl border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-sm hover:bg-primary/10"
+          className="flex items-center gap-ms-2 rounded-lg border border-[var(--wa-border)] bg-[var(--wa-surface-2)]/50 px-ms-3 py-ms-2 text-ms-sm hover:bg-[var(--wa-surface-2)]"
           aria-label="Buka permintaan pertemanan"
         >
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-            <UserPlus className="h-4 w-4" />
+          <UserPlus className="h-4 w-4 shrink-0 text-[var(--wa-text-muted)]" />
+          <div className="min-w-0 flex-1 truncate">
+            <span className="font-medium">{pendingRequests} permintaan pertemanan</span>
+            <span className="text-[var(--wa-text-muted)]"> — terima supaya bisa chat</span>
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-medium">
-              {pendingRequests} permintaan pertemanan baru
-            </div>
-            <div className="truncate text-ms-xs text-muted-foreground">
-              Terima dulu supaya bisa chat & panggilan.
-            </div>
-          </div>
-          <span className="inline-flex items-center rounded-full bg-primary px-ms-2 py-0.5 text-ms-xs font-semibold text-primary-foreground">
-            {pendingRequests}
-          </span>
+          <span className="text-ms-xs text-[var(--wa-text-muted)]">›</span>
         </Link>
       ) : null}
 
