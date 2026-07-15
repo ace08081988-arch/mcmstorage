@@ -698,6 +698,52 @@ function Index() {
     toast.success(`Kategori "${name}" dihapus`);
   };
 
+  /**
+   * Drag-and-drop reorder kategori.
+   * - Optimistic: susun ulang UI dulu supaya feel-nya instan di HP.
+   * - Persist: kirim `position` baru per kategori ke `warehouse_categories`
+   *   (RLS `auth.uid() = user_id` sudah mengunci scope per pemilik).
+   * - Rollback: kalau salah satu UPDATE gagal, kembalikan urutan lama +
+   *   toast error supaya state UI dan DB tidak divergen.
+   */
+  const reorderCategories = async (fromName: string, toName: string) => {
+    if (fromName === toName) return;
+    const prev = categories;
+    const fromIdx = prev.indexOf(fromName);
+    const toIdx = prev.indexOf(toName);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = arrayMove(prev, fromIdx, toIdx);
+    setCategories(next);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const uid = user?.id;
+    if (!uid) {
+      setCategories(prev);
+      toast.error("Sesi berakhir. Silakan masuk ulang.");
+      return;
+    }
+
+    // Batch update posisi. `warehouse_categories` punya unique
+    // `(user_id, lower(btrim(name)))` — position bebas diubah tanpa
+    // menabrak constraint. Kirim parallel supaya cepat.
+    const results = await Promise.all(
+      next.map((name, idx) =>
+        supabase
+          .from("warehouse_categories")
+          .update({ position: idx })
+          .eq("user_id", uid)
+          .eq("name", name),
+      ),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      setCategories(prev);
+      notifyError(failed.error, { prefix: "Gagal menyimpan urutan kategori: " });
+    }
+  };
+
   const addProduk = () => {
     if (!activeCat) return;
     const nextId = items.reduce((m, i) => Math.max(m, i.id), 0) + 1;
