@@ -564,25 +564,41 @@ function ChatListPage() {
         </div>
       ) : (
         <Tabs defaultValue="all">
-          <TabsList className="grid w-full grid-cols-5 bg-transparent">
-            <TabsTrigger value="all" className="text-ms-2xs sm:text-ms-xs">
-              Semua{active.length ? ` (${active.length})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="customer" className="text-ms-2xs sm:text-ms-xs">
-              {CHAT_CATEGORY_LABEL_ID.customer}
-              {byCategory.customer.length ? ` (${byCategory.customer.length})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="employee" className="text-ms-2xs sm:text-ms-xs">
-              {CHAT_CATEGORY_LABEL_ID.employee}
-              {byCategory.employee.length ? ` (${byCategory.employee.length})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="internal" className="text-ms-2xs sm:text-ms-xs">
-              {CHAT_CATEGORY_LABEL_ID.internal}
-              {byCategory.internal.length ? ` (${byCategory.internal.length})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="archived" className="text-ms-2xs sm:text-ms-xs">
-              Arsip{byCategory.archived.length ? ` (${byCategory.archived.length})` : ""}
-            </TabsTrigger>
+          {/* Horizontal-scroll pill row — hindari grid-cols-5 yang memotong label di 390/411px */}
+          <TabsList
+            className={
+              "-mx-1 flex h-auto w-auto items-center justify-start gap-ms-1.5 " +
+              "overflow-x-auto rounded-none bg-transparent p-1 " +
+              "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            }
+          >
+            {(
+              [
+                { value: "all", label: "Semua", count: active.length },
+                { value: "customer", label: CHAT_CATEGORY_LABEL_ID.customer, count: byCategory.customer.length },
+                { value: "employee", label: CHAT_CATEGORY_LABEL_ID.employee, count: byCategory.employee.length },
+                { value: "internal", label: CHAT_CATEGORY_LABEL_ID.internal, count: byCategory.internal.length },
+                { value: "archived", label: "Arsip", count: byCategory.archived.length },
+              ] as const
+            ).map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                className={
+                  "shrink-0 whitespace-nowrap rounded-full border border-transparent " +
+                  "px-ms-3 py-1 text-ms-xs font-medium text-muted-foreground shadow-none " +
+                  "hover:bg-accent/40 hover:text-foreground " +
+                  "data-[state=active]:border-[color:color-mix(in_oklab,var(--wa-green)_55%,transparent)] " +
+                  "data-[state=active]:bg-[color:color-mix(in_oklab,var(--wa-green)_22%,var(--wa-surface-2))] " +
+                  "data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                }
+              >
+                {t.label}
+                {t.count ? (
+                  <span className="ml-1 opacity-70">({t.count})</span>
+                ) : null}
+              </TabsTrigger>
+            ))}
           </TabsList>
           {!isLoading && active.length === 0 && archived.length === 0 ? (
             <div className="mt-3">
