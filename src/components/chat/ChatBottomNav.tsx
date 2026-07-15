@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { MessageCircle, Phone, Bell, LayoutGrid } from "lucide-react";
+import { useMemo } from "react";
 import { useUnreadStatus } from "@/lib/chat";
 import { cn } from "@/lib/utils";
 
