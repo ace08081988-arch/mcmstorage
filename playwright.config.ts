@@ -1351,5 +1351,22 @@ export default defineConfig({
         viewport: { width: 411, height: 893 },
       },
     },
+    {
+      // Skenario : Operasi kategori (tambah / rename case-insensitive /
+      //            hapus / reorder) di Beranda tetap konsisten dengan
+      //            Gudang. Butuh sesi login (storageState) — auto-skip
+      //            saat storageState kosong. Viewport 411×915 (device
+      //            Ace).
+      // Harness  : / (Beranda) + /gudang, tabel warehouse_categories +
+      //            warehouse_items. Data seed & cleanup via SERVICE_ROLE.
+      name: "warehouse-categories-consistency-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /warehouse-categories-consistency\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 915 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
