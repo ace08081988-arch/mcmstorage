@@ -2326,6 +2326,7 @@ function Index() {
           />
         </Suspense>
       )}
+      {photoFlow.element}
     </div>
   );
 }
