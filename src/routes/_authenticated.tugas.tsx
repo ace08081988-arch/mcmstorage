@@ -1644,7 +1644,25 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
               className="ml-auto tabular-nums"
               title={`Hanya baris valid yang sudah punya foto (${summary.readyLines} dari ${summary.validLines} baris valid).`}
             >
-              Siap dikirim: <b>{fmtNum(summary.readyWeight, 2)}</b>{" "}
+              Siap dikirim:{" "}
+              {summary.readyWeightG > 0 && (
+                <>
+                  <b>{fmtNum(summary.readyWeightG, 2)}</b>
+                  <span className="text-muted-foreground"> g</span>
+                </>
+              )}
+              {summary.readyWeightG > 0 && summary.readyCountPcs > 0 && (
+                <span className="text-muted-foreground"> · </span>
+              )}
+              {summary.readyCountPcs > 0 && (
+                <>
+                  <b>{fmtNum(summary.readyCountPcs, 0)}</b>
+                  <span className="text-muted-foreground"> pcs</span>
+                </>
+              )}
+              {summary.readyWeightG === 0 && summary.readyCountPcs === 0 && (
+                <b>0</b>
+              )}{" "}
               <span className="text-muted-foreground">({summary.readyLines} baris)</span>
             </span>
           </div>
