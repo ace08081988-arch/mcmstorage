@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/re
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
-  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
+  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
   Trash2, CheckSquare, Square,
 } from "lucide-react";
 
@@ -29,7 +29,6 @@ import {
 import { toast } from "sonner";
 import { useChatLists, useAllChatListMembers } from "@/lib/chat-lists";
 import { ChatListIcon } from "@/lib/chat-list-icons";
-import { StatusBadge } from "@/components/StatusBadge";
 import { CHAT_CATEGORY_LABEL_ID, type ChatCategory } from "@/lib/chat-category";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
@@ -40,7 +39,9 @@ export const Route = createFileRoute("/_authenticated/chat/")({
   // belum dibaca. Nilai lain diabaikan (fallback ke "all").
   validateSearch: (search: Record<string, unknown>) => {
     const raw = typeof search.filter === "string" ? search.filter : undefined;
-    return { filter: raw === "unread" ? ("unread" as const) : undefined };
+    const out: { filter?: "unread" } = {};
+    if (raw === "unread") out.filter = "unread";
+    return out;
   },
   component: ChatListPage,
 });
@@ -190,18 +191,6 @@ function ChatListPage() {
         return active;
     }
   }, [active, filter, allListMembers]);
-  const unreadCount = useMemo(
-    () => active.reduce((n, c) => n + ((c.unread ?? 0) > 0 ? 1 : 0), 0),
-    [active],
-  );
-  const groupCount = useMemo(
-    () => active.reduce((n, c) => n + (c.kind === "group" ? 1 : 0), 0),
-    [active],
-  );
-  const favCount = useMemo(
-    () => active.reduce((n, c) => n + (c.pinned_at ? 1 : 0), 0),
-    [active],
-  );
 
   const currentVisibleIds = useMemo(() => {
     // Untuk aksi "Pilih semua" — pilih dari gabungan aktif+arsip yang tampil.
@@ -317,19 +306,9 @@ function ChatListPage() {
           >
             <Link to="/"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
-          <span
-            aria-hidden
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-ms-sm font-bold text-white shadow-sm"
-            style={{ backgroundColor: "var(--mcm-brand)" }}
-          >
-            M
-          </span>
-          <h1 className="truncate text-ms-xl font-bold tracking-tight">MCM</h1>
+          <h1 className="truncate text-ms-lg font-semibold tracking-tight">MCM Chat</h1>
         </div>
         <div className="flex items-center gap-ms-1">
-          <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Siapkan kontak">
-            <Link to="/kontak"><Camera className="h-5 w-5" /></Link>
-          </Button>
           <NewDmDialog />
           <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
           <DropdownMenu>
@@ -337,12 +316,10 @@ function ChatListPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={
-                  "h-9 w-9 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
-                }
+                className="h-9 w-9 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
                 aria-label="Menu lainnya"
               >
-                <MoreVertical className="h-4 w-4" />
+                <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -351,22 +328,18 @@ function ChatListPage() {
                   | { label: string; to: string }
                   | { label: string; action: () => void };
                 const items: Item[] = [
-                  { label: "Pasang iklan", action: () => toast.info("Pasang iklan — segera hadir.") },
+                  { label: "Kontak", to: "/kontak" },
                   { label: "Grup baru", action: () => setGrupOpen(true) },
-                  { label: "Komunitas", action: () => toast.info("Komunitas — segera hadir.") },
                   { label: "Daftar", to: "/daftar" },
                   { label: "Perangkat tertaut", to: "/sesi" },
-                  { label: "Berbintang", action: () => toast.info("Berbintang — segera hadir.") },
                   { label: "Order", to: "/chat-audit" },
                 ];
                 const settings: Item = { label: "Pengaturan", to: "/profil-chat" };
                 const renderItem = (it: Item, key: string) => {
                   const active = "to" in it && isPathActive(it.to);
-                  const cls =
-                    "flex items-center justify-between gap-ms-2 " +
-                    (active
-                      ? "bg-primary/10 font-medium text-primary focus:bg-primary/15 focus:text-primary"
-                      : "");
+                  const cls = active
+                    ? "bg-primary/10 font-medium text-primary focus:bg-primary/15 focus:text-primary"
+                    : "";
                   const label = (
                     <>
                       <span className="truncate">{it.label}</span>
@@ -386,7 +359,7 @@ function ChatListPage() {
                     );
                   }
                   return (
-                    <DropdownMenuItem key={key} onSelect={it.action}>
+                    <DropdownMenuItem key={key} onSelect={it.action} className={cls}>
                       {it.label}
                     </DropdownMenuItem>
                   );
@@ -422,18 +395,18 @@ function ChatListPage() {
       ) : null}
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 wa-muted" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--wa-text-muted)]" />
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Cari…"
-          className="wa-search h-10 rounded-full border-0 pl-10 pr-9 shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/50"
+          placeholder="Cari percakapan…"
+          className="h-9 rounded-full border border-[var(--wa-border)] bg-transparent pl-9 pr-8 text-ms-sm shadow-none placeholder:text-[var(--wa-text-muted)] focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/40"
         />
         {q ? (
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2"
+            className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--wa-text-muted)]"
             onClick={() => setQ("")}
             aria-label="Bersihkan"
           >
@@ -445,14 +418,14 @@ function ChatListPage() {
       {q.trim().length < 2 ? (
         <div
           role="tablist"
-          aria-label="Filter percakapan"
-          className="-mx-1 flex items-center gap-ms-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Filter cepat"
+          className="-mx-1 flex items-center gap-ms-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {([
             { id: "all" as const, label: "Semua" },
-            { id: "unread" as const, label: "Belum dibaca", count: unreadCount, dot: "bg-[var(--wa-green)]" },
-            { id: "group" as const, label: "Grup", count: groupCount, dot: "bg-rose-500" },
-            { id: "favorite" as const, label: "Favorit", count: favCount },
+            { id: "unread" as const, label: "Belum dibaca" },
+            { id: "group" as const, label: "Grup" },
+            { id: "favorite" as const, label: "Favorit" },
           ]).map((chip) => {
             const isActive = filter === chip.id;
             return (
@@ -463,16 +436,18 @@ function ChatListPage() {
                 aria-selected={isActive}
                 onClick={() => setFilter(chip.id)}
                 className={
-                  "wa-chip whitespace-nowrap " +
-                  (isActive ? "wa-chip-active font-medium" : "")
+                  "relative whitespace-nowrap text-ms-xs transition-colors " +
+                  (isActive
+                    ? "font-medium text-[var(--wa-text)]"
+                    : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]")
                 }
               >
-                {chip.dot ? (
-                  <span className={`inline-block h-2 w-2 rounded-full ${chip.dot}`} />
-                ) : null}
                 {chip.label}
-                {"count" in chip && chip.count ? (
-                  <span className="ml-1 opacity-80">{chip.count}</span>
+                {isActive ? (
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[var(--wa-green)]"
+                  />
                 ) : null}
               </button>
             );
@@ -480,7 +455,6 @@ function ChatListPage() {
           {(chatLists ?? []).map((l) => {
             const chipId = `list:${l.id}`;
             const isActive = filter === chipId;
-            const count = (allListMembers?.[l.id] ?? []).length;
             return (
               <button
                 key={chipId}
@@ -489,24 +463,31 @@ function ChatListPage() {
                 aria-selected={isActive}
                 onClick={() => setFilter(chipId)}
                 className={
-                  "wa-chip whitespace-nowrap inline-flex items-center gap-ms-1.5 " +
-                  (isActive ? "wa-chip-active font-medium" : "")
+                  "relative inline-flex items-center gap-ms-1 whitespace-nowrap text-ms-xs transition-colors " +
+                  (isActive
+                    ? "font-medium text-[var(--wa-text)]"
+                    : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]")
                 }
                 title={l.name}
               >
-                <ChatListIcon name={l.icon} className="h-3.5 w-3.5" style={{ color: l.color }} />
+                <ChatListIcon name={l.icon} className="h-3 w-3" style={{ color: l.color }} />
                 {l.name}
-                {count ? <span className="ml-1 opacity-80">{count}</span> : null}
+                {isActive ? (
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[var(--wa-green)]"
+                  />
+                ) : null}
               </button>
             );
           })}
           <Link
             to="/daftar"
-            className="wa-chip whitespace-nowrap inline-flex items-center gap-ms-1"
+            className="text-ms-xs text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]"
             aria-label="Kelola daftar"
             title="Kelola daftar"
           >
-            <span className="text-ms-base leading-none">+</span> Daftar
+            + Daftar
           </Link>
         </div>
       ) : null}
@@ -514,23 +495,15 @@ function ChatListPage() {
       {pendingRequests > 0 ? (
         <Link
           to={"/kontak/permintaan" as never}
-          className="mt-2 flex items-center gap-ms-3 rounded-2xl border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-sm hover:bg-primary/10"
+          className="flex items-center gap-ms-2 rounded-lg border border-[var(--wa-border)] bg-[var(--wa-surface-2)]/50 px-ms-3 py-ms-2 text-ms-sm hover:bg-[var(--wa-surface-2)]"
           aria-label="Buka permintaan pertemanan"
         >
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-            <UserPlus className="h-4 w-4" />
+          <UserPlus className="h-4 w-4 shrink-0 text-[var(--wa-text-muted)]" />
+          <div className="min-w-0 flex-1 truncate">
+            <span className="font-medium">{pendingRequests} permintaan pertemanan</span>
+            <span className="text-[var(--wa-text-muted)]"> — terima supaya bisa chat</span>
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-medium">
-              {pendingRequests} permintaan pertemanan baru
-            </div>
-            <div className="truncate text-ms-xs text-muted-foreground">
-              Terima dulu supaya bisa chat & panggilan.
-            </div>
-          </div>
-          <span className="inline-flex items-center rounded-full bg-primary px-ms-2 py-0.5 text-ms-xs font-semibold text-primary-foreground">
-            {pendingRequests}
-          </span>
+          <span className="text-ms-xs text-[var(--wa-text-muted)]">›</span>
         </Link>
       ) : null}
 
@@ -574,39 +547,36 @@ function ChatListPage() {
         </div>
       ) : (
         <Tabs defaultValue="all">
-          {/* Horizontal-scroll pill row — hindari grid-cols-5 yang memotong label di 390/411px */}
+          {/* Tab kategori ringkas — garis bawah aktif, tanpa latar/border berat. */}
           <TabsList
             className={
-              "-mx-1 flex h-auto w-auto items-center justify-start gap-ms-1.5 " +
-              "overflow-x-auto rounded-none bg-transparent p-1 " +
+              "-mx-3 flex h-auto w-auto items-center justify-start gap-ms-4 " +
+              "overflow-x-auto border-b border-[var(--wa-border)] bg-transparent px-3 pb-0 " +
               "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             }
           >
             {(
               [
-                { value: "all", label: "Semua", count: active.length },
-                { value: "customer", label: CHAT_CATEGORY_LABEL_ID.customer, count: byCategory.customer.length },
-                { value: "employee", label: CHAT_CATEGORY_LABEL_ID.employee, count: byCategory.employee.length },
-                { value: "internal", label: CHAT_CATEGORY_LABEL_ID.internal, count: byCategory.internal.length },
-                { value: "archived", label: "Arsip", count: byCategory.archived.length },
+                { value: "all", label: "Semua" },
+                { value: "customer", label: CHAT_CATEGORY_LABEL_ID.customer },
+                { value: "employee", label: CHAT_CATEGORY_LABEL_ID.employee },
+                { value: "internal", label: CHAT_CATEGORY_LABEL_ID.internal },
+                { value: "archived", label: "Arsip" },
               ] as const
             ).map((t) => (
               <TabsTrigger
                 key={t.value}
                 value={t.value}
                 className={
-                  "shrink-0 whitespace-nowrap rounded-full border border-transparent " +
-                  "px-ms-3 py-1 text-ms-xs font-medium text-muted-foreground shadow-none " +
-                  "hover:bg-accent/40 hover:text-foreground " +
-                  "data-[state=active]:border-[color:color-mix(in_oklab,var(--wa-green)_55%,transparent)] " +
-                  "data-[state=active]:bg-[color:color-mix(in_oklab,var(--wa-green)_22%,var(--wa-surface-2))] " +
-                  "data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                  "relative shrink-0 whitespace-nowrap rounded-none border-0 bg-transparent px-0 py-2 " +
+                  "text-ms-xs font-medium text-[var(--wa-text-muted)] shadow-none transition-colors " +
+                  "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full " +
+                  "after:bg-[var(--wa-green)] after:opacity-0 after:transition-opacity " +
+                  "hover:text-[var(--wa-text)] " +
+                  "data-[state=active]:text-[var(--wa-text)] data-[state=active]:shadow-none data-[state=active]:after:opacity-100"
                 }
               >
                 {t.label}
-                {t.count ? (
-                  <span className="ml-1 opacity-70">({t.count})</span>
-                ) : null}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -904,19 +874,17 @@ function ConvList({
 }) {
   if (isLoading) {
     return (
-      <div className="rounded-lg border">
-        <div className="flex items-center justify-center p-8 text-ms-sm text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
-        </div>
+      <div className="flex items-center justify-center p-8 text-ms-sm text-[var(--wa-text-muted)]">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
       </div>
     );
   }
   if (list.length === 0) {
-    return <div className="rounded-lg border">{empty}</div>;
+    return <div className="rounded-lg border border-[var(--wa-border)] p-6">{empty}</div>;
   }
   return (
-    <div className="-mx-3 border-y border-[var(--wa-border)]">
-      <ul className="divide-y divide-[var(--wa-border)]">
+    <div className="-mx-3">
+      <ul className="divide-y divide-[var(--wa-border)]/60">
         {list.map((c) => {
           const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
           const isMuted = mutedUntil && mutedUntil.getTime() > Date.now();
@@ -936,35 +904,32 @@ function ConvList({
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-base font-medium">
-                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 wa-muted" /> : null}
+                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-sm font-medium text-[var(--wa-text)]">
+                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                       <span className="truncate">{c.display_title}</span>
-                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 wa-muted" /> : null}
-                      {c.workflow_category === "archived" || c.workflow_archived_at ? (
-                        <StatusBadge lifecycle="archived" className="shrink-0" />
-                      ) : null}
+                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                     </span>
-                    <span className={`shrink-0 text-ms-2xs ${c.unread > 0 ? "text-[var(--wa-green)] font-medium" : "wa-muted"}`}>{timeShort(c.last_at)}</span>
+                    <span className={`shrink-0 text-ms-2xs ${c.unread > 0 ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)]"}`}>{timeShort(c.last_at)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-sm wa-muted">
+                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-xs text-[var(--wa-text-muted)]">
                       {c.last_body ? (
                         <>
                           {c.last_delivered ? (
                             c.last_read ? (
-                              <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-check" aria-label="Dibaca" />
+                              <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-check)]" aria-label="Dibaca" />
                             ) : (
-                              <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-muted opacity-70" aria-label="Terkirim" />
+                              <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" aria-label="Terkirim" />
                             )
                           ) : null}
                           <span className="truncate">{previewText(c.last_body) ?? ""}</span>
                         </>
                       ) : (
-                        <em className="text-muted-foreground/70">Belum ada pesan</em>
+                        <em className="text-[var(--wa-text-muted)]/70">Belum ada pesan</em>
                       )}
                     </span>
                     {c.unread > 0 ? (
-                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full wa-badge px-1.5 text-ms-2xs font-semibold">
+                      <span className="ml-2 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--wa-green)] px-1 text-ms-2xs font-semibold text-[var(--wa-surface)]">
                         {c.unread > 99 ? "99+" : c.unread}
                       </span>
                     ) : null}
@@ -972,10 +937,15 @@ function ConvList({
                 </div>
               </ConvRow>
               {selecting ? null : (
-              <div className="absolute right-1 top-1.5">
+              <div className="absolute right-0 top-1/2 -translate-y-1/2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Opsi">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]"
+                      aria-label="Opsi"
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -1117,7 +1087,7 @@ function ConvRow({
   );
 
   const avatar = (
-    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-ms-sm font-semibold uppercase">
+    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-ms-xs font-semibold uppercase">
       {(conv.display_title ?? "?").trim().charAt(0) || "?"}
     </div>
   );
@@ -1131,7 +1101,7 @@ function ConvRow({
   );
 
   const rowClass =
-    "flex items-center gap-ms-3 px-ms-4 py-ms-2.5 pr-12 hover:bg-[var(--wa-surface-2)] " +
+    "flex items-center gap-ms-3 px-ms-3 py-ms-2 pr-10 hover:bg-[var(--wa-surface-2)]/50 " +
     (selecting ? "cursor-pointer select-none" : "");
 
   if (selecting) {

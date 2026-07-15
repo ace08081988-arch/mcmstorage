@@ -98,8 +98,14 @@ export function NewDmDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" size="sm" className="gap-ms-1.5">
-          <MessageSquarePlus className="h-4 w-4" /> Chat baru
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-full"
+          aria-label="Chat baru"
+          title="Chat baru"
+        >
+          <MessageSquarePlus className="h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
