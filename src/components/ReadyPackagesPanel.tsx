@@ -894,13 +894,13 @@ function PackageForm({
                   📷 {uploadingPhoto ? "Mengunggah…" : "Kamera"}
                   <input type="file" accept="image/*" capture="environment" className="hidden"
                     onClick={() => { import("@/lib/app-lock").then((m) => m.beginNativePicker()); }}
-                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
+                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; e.target.value = ""; if (f) void pickAndEditPhoto(f); }} />
                 </label>
                 <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border bg-background px-ms-2 text-ms-xs hover:bg-accent">
                   🖼️ Galeri
                   <input type="file" accept="image/*" className="hidden"
                     onClick={() => { import("@/lib/app-lock").then((m) => m.beginNativePicker()); }}
-                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
+                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; e.target.value = ""; if (f) void pickAndEditPhoto(f); }} />
                 </label>
               </div>
             </div>
