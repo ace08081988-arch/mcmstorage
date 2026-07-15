@@ -20,8 +20,186 @@ const LEVEL_RANK = { INFO: 0, WARN: 1, ERROR: 2 };
 const here = dirname(fileURLToPath(import.meta.url));
 const allowlistPath = resolve(here, "..", ".github", "supabase-lint-allowlist.json");
 const schemaPath = resolve(here, "..", ".github", "supabase-lint-allowlist.schema.json");
-const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
+const allowlistRaw = readFileSync(allowlistPath, "utf8");
+const allowlist = JSON.parse(allowlistRaw);
 const allowlistSchema = JSON.parse(readFileSync(schemaPath, "utf8"));
+
+// Relative path used in GitHub annotations. `::error file=<path>::` needs a
+// path relative to the repository root; the checker always runs from repo
+// root in CI, and locally the annotation is harmless.
+const ALLOWLIST_REL_PATH = ".github/supabase-lint-allowlist.json";
+const IS_GITHUB_ACTIONS = process.env.GITHUB_ACTIONS === "true";
+
+/**
+ * Scan the raw JSON text once and build a line map:
+ *   - rootKeyLines: Map<rootKey, line>  (e.g. "schemaVersion" -> 3)
+ *   - entries:      Array<{ startLine, keyLines: Map<entryKey, line> }>
+ *
+ * The scan is a small state machine that tracks quote/escape state, brace
+ * depth, and array depth. When we're at depth "allow[]" we record the line
+ * of every `{` (entry start) and every `"key":` inside that entry. This
+ * lets validation errors point at the exact offending field in CI
+ * annotations instead of dumping "allow[3]" into logs.
+ */
+function buildAllowlistLineMap(text) {
+  const rootKeyLines = new Map();
+  const entries = [];
+  // Precompute line-of-index so peeking never miscounts newlines.
+  let ln = 1;
+  const lineAt = new Int32Array(text.length + 1);
+  for (let i = 0; i < text.length; i++) {
+    lineAt[i] = ln;
+    if (text[i] === "\n") ln++;
+  }
+  lineAt[text.length] = ln;
+
+  // path stack: entries are { type: 'obj'|'arr', key?: string }
+  const stack = [];
+  let inStr = false;
+  let esc = false;
+  let strStart = -1;
+  let expectKey = false; // right after '{' or ',' inside an object
+
+  const inAllowArray = () =>
+    stack.length >= 2 &&
+    stack[0].type === "obj" &&
+    stack[1].type === "arr" &&
+    stack[1].key === "allow";
+  const inAllowEntry = () =>
+    stack.length >= 3 &&
+    stack[0].type === "obj" &&
+    stack[1].type === "arr" &&
+    stack[1].key === "allow" &&
+    stack[2].type === "obj";
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) {
+        esc = false;
+        continue;
+      }
+      if (ch === "\\") {
+        esc = true;
+        continue;
+      }
+      if (ch === '"') {
+        // String closed. Peek next non-whitespace char.
+        let j = i + 1;
+        while (j < text.length && /\s/.test(text[j])) j++;
+        const isKey = text[j] === ":";
+        if (isKey && expectKey) {
+          const rawKey = text.slice(strStart + 1, i);
+          const keyLine = lineAt[strStart];
+          if (stack.length === 1) {
+            rootKeyLines.set(rawKey, keyLine);
+          } else if (inAllowEntry()) {
+            const entry = entries[entries.length - 1];
+            if (entry) entry.keyLines.set(rawKey, keyLine);
+          }
+          expectKey = false;
+        }
+        inStr = false;
+        strStart = -1;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inStr = true;
+      strStart = i;
+      continue;
+    }
+    if (ch === "{") {
+      // Opening object. If we're inside `allow` array, this is a new entry.
+      if (inAllowArray()) {
+        entries.push({ startLine: lineAt[i], keyLines: new Map() });
+      }
+      stack.push({ type: "obj" });
+      expectKey = true;
+      continue;
+    }
+    if (ch === "[") {
+      // Opening array — inherit the last-seen key from parent object.
+      // We know we're opening `allow` when parent object saw "allow" key.
+      // Track that by remembering the last key on the parent frame.
+      const parent = stack[stack.length - 1];
+      const key = parent?.pendingArrayKey;
+      stack.push({ type: "arr", key });
+      continue;
+    }
+    if (ch === "}" || ch === "]") {
+      stack.pop();
+      expectKey = false;
+      continue;
+    }
+    if (ch === ":") {
+      // The most-recent string was a key; remember it on parent frame so
+      // that if the value is `[`, we can label the array with that key.
+      // (Cheap heuristic: only stash for the root-level `allow` key.)
+      const parent = stack[stack.length - 1];
+      if (parent && parent.type === "obj" && stack.length === 1) {
+        // Look back for the most recent key name we stored on this object.
+        // We know it because `expectKey` just flipped false when we closed
+        // the key string, but we didn't keep the name here. Re-scan the
+        // small window between the previous ',' or '{' and this ':'.
+        const start = Math.max(
+          text.lastIndexOf("{", i - 1),
+          text.lastIndexOf(",", i - 1),
+        );
+        const slice = text.slice(start + 1, i);
+        const m = slice.match(/"([^"\\]+)"\s*$/);
+        if (m) parent.pendingArrayKey = m[1];
+      }
+      continue;
+    }
+    if (ch === ",") {
+      const parent = stack[stack.length - 1];
+      if (parent?.type === "obj") expectKey = true;
+      continue;
+    }
+  }
+  return { rootKeyLines, entries };
+}
+
+const lineMap = buildAllowlistLineMap(allowlistRaw);
+
+/**
+ * Resolve the best line number for a validation error.
+ *   - entryIdx + key: line of that field inside the entry (fallback: entry start)
+ *   - entryIdx only:  line of the entry's opening `{`
+ *   - rootKey:        line of that root-level key
+ * Falls back to 1 so annotations never point at a bogus line.
+ */
+function resolveLine({ entryIdx, key, rootKey }) {
+  if (typeof entryIdx === "number") {
+    const entry = lineMap.entries[entryIdx];
+    if (entry) {
+      if (key && entry.keyLines.has(key)) return entry.keyLines.get(key);
+      return entry.startLine;
+    }
+  }
+  if (rootKey && lineMap.rootKeyLines.has(rootKey)) {
+    return lineMap.rootKeyLines.get(rootKey);
+  }
+  return 1;
+}
+
+/**
+ * Emit a GitHub Actions error annotation. Silently no-ops when not running
+ * under Actions so local invocations stay quiet.
+ * See https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions
+ */
+function emitAnnotation({ file, line, title, message }) {
+  if (!IS_GITHUB_ACTIONS) return;
+  const escProp = (s) =>
+    String(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/:/g, "%3A").replace(/,/g, "%2C");
+  const escData = (s) =>
+    String(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+  const params = [`file=${escProp(file)}`, `line=${line}`];
+  if (title) params.push(`title=${escProp(title)}`);
+  // eslint-disable-next-line no-console
+  console.log(`::error ${params.join(",")}::${escData(message)}`);
+}
 
 // ---------- Schema version compatibility ----------
 // The validator only accepts allowlist files whose `schemaVersion` matches
