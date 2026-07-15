@@ -1877,7 +1877,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                   {p && (
                     <div className="mt-2 space-y-1.5 pl-6">
                       {p.lines.map((l) => {
-                        const ev = evaluateLine(l, variants);
+                        const isPcs = (it.base_unit ?? "pcs") === "pcs";
+                        const ev = evaluateLine(l, variants, { isPcs });
                         const w = ev.weight;
                         const total = ev.total;
                         const isManual = !l.variantId;
@@ -1887,7 +1888,6 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         // unit (mis. 1 karton berisi 10 botol), bukan berat. Label
                         // & placeholder mengikuti supaya pegawai tidak bingung
                         // (screenshot: GS · stok botol seharusnya bukan "Berat").
-                        const isPcs = (it.base_unit ?? "pcs") === "pcs";
                         const perUnitLabel = isPcs ? "Jumlah / unit" : "Berat / unit";
                         const manualHint = isPcs
                           ? "Manual — isi jumlah di kolom kanan"
@@ -1915,7 +1915,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <div className="mb-0.5 text-ms-2xs text-muted-foreground">Jumlah unit</div>
                                 <NumberInput
                                   value={l.count}
-                                  maxFrac={3}
+                                  maxFrac={0}
+                                  integerOnly
+                                  min={1}
+                                  max={MAX_COUNT_UNITS}
                                   emptyAs={0}
                                   onChange={(n) => updateLine(it.id, l.key, { count: n })}
                                   onStatusChange={(s) => setFieldStatus(l.key, "count", s)}
@@ -1930,7 +1933,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <NumberInput
                                   key={`${l.key}-${l.variantId ?? "m"}`}
                                   value={isManual ? (l.weightOverride ?? 0) : w}
-                                  maxFrac={3}
+                                  maxFrac={isPcs ? 0 : 3}
+                                  integerOnly={isPcs}
+                                  min={isManual ? (isPcs ? 1 : 0.001) : undefined}
+                                  max={isManual ? (isPcs ? MAX_PER_UNIT_PCS : MAX_PER_UNIT_G) : undefined}
                                   disabled={!isManual}
                                   emptyAs={isManual ? 0 : null}
                                   placeholder={isManual ? "isi manual" : undefined}
@@ -1953,14 +1959,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 }
                                 title={
                                   rs === "invalid"
-                                    ? "Input tidak valid"
+                                    ? (ev.reason ?? "Input tidak valid")
                                     : rs === "partial"
                                     ? "Input belum lengkap"
                                     : "Input valid"
                                 }
                               >
                                 {rs === "invalid" ? (
-                                  <><AlertTriangle className="h-3 w-3" /> Tidak valid</>
+                                  <><AlertTriangle className="h-3 w-3" /> {ev.reason ? "Tidak valid" : "Tidak valid"}</>
                                 ) : rs === "partial" ? (
                                   <><AlertTriangle className="h-3 w-3" /> Belum lengkap</>
                                 ) : (
