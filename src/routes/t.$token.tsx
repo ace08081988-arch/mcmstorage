@@ -107,6 +107,7 @@ import {
 } from "@/lib/worker-portal-config";
 import { StatusBadge } from "@/components/StatusBadge";
 import { reportPortalError } from "@/lib/portal-error-report";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -115,7 +116,7 @@ export const Route = createFileRoute("/t/$token")({
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
-  component: PublicPrepPage,
+  component: PublicPrepPageWithBoundary,
 });
 
 type StagedPhoto = StagedPhotoT;
@@ -337,6 +338,78 @@ class WorkerSectionBoundary extends Component<
     if (this.state.error) return this.props.renderFallback(this.state.error);
     return this.props.children;
   }
+}
+
+// Top-level error boundary khusus untuk seluruh halaman portal pegawai.
+// Tujuan: kalau ada throw sinkron di render (mis. race saat WebView Android
+// baru saja di-recreate setelah kembali dari kamera / galeri), TANGKAP di
+// sini — jangan biarkan naik ke root ErrorComponent yang menampilkan
+// layar "Memuat ulang halaman… percobaan otomatis N dari 3" yang meresahkan
+// pegawai. Boundary ini me-remount PublicPrepPage secara diam-diam; sesi
+// PIN di sessionStorage sudah dirancang untuk bertahan lintas remount.
+class PortalTopBoundary extends Component<
+  { children: ReactNode; onError: (error: Error) => void; resetKey: number },
+  { error: Error | null; lastResetKey: number }
+> {
+  state: { error: Error | null; lastResetKey: number } = {
+    error: null,
+    lastResetKey: this.props.resetKey,
+  };
+  static getDerivedStateFromError(error: Error): { error: Error } {
+    return { error };
+  }
+  static getDerivedStateFromProps(
+    props: { resetKey: number },
+    state: { error: Error | null; lastResetKey: number },
+  ): { error: Error | null; lastResetKey: number } | null {
+    if (props.resetKey !== state.lastResetKey) {
+      return { error: null, lastResetKey: props.resetKey };
+    }
+    return null;
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // eslint-disable-next-line no-console
+    console.error("[t.$token] portal top-level render failed", error, info.componentStack);
+    this.props.onError(error);
+  }
+  render() {
+    if (this.state.error) {
+      // Fallback minimal: hanya spinner, tanpa teks alarming. Auto-retry
+      // dijadwalkan oleh parent lewat bump `resetKey`.
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background px-ms-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function PublicPrepPageWithBoundary() {
+  const [resetKey, setResetKey] = useState(0);
+  const attemptRef = useRef(0);
+  const onError = useCallback((error: Error) => {
+    try {
+      // Kirim ke pipeline error-reporting global (sama dgn root ErrorComponent)
+      // supaya kita masih punya jejak walau UI-nya dipulihkan diam-diam.
+      reportLovableError(error, { boundary: "portal_top_boundary" });
+    } catch {
+      /* noop */
+    }
+    // Auto-retry silent: remount PublicPrepPage. Backoff 300ms → 800ms → 1500ms,
+    // maksimum 3 percobaan. Setelah itu biarkan error naik ke root boundary.
+    const n = attemptRef.current;
+    if (n >= 3) return;
+    attemptRef.current = n + 1;
+    const delay = n === 0 ? 300 : n === 1 ? 800 : 1500;
+    window.setTimeout(() => setResetKey((k) => k + 1), delay);
+  }, []);
+  return (
+    <PortalTopBoundary onError={onError} resetKey={resetKey}>
+      <PublicPrepPage key={resetKey} />
+    </PortalTopBoundary>
+  );
 }
 
 function PublicPrepPage() {

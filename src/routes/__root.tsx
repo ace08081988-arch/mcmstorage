@@ -67,6 +67,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed/i.test(
       msg,
     );
+  // Portal pegawai (`/t/:token`) memiliki boundary + auto-remount sendiri,
+  // dan pegawai tidak boleh melihat teks alarming saat WebView baru saja
+  // dibuat ulang setelah kembali dari kamera / galeri. Kalau error tetap
+  // menembus ke sini, tampilkan hanya spinner minimal dan retry lebih cepat.
+  const isWorkerPortal =
+    typeof window !== "undefined" && /^\/t\//.test(window.location.pathname);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
@@ -116,7 +122,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       return;
     }
     let cancelled = false;
-    const delay = 500 * Math.pow(2, attempt); // 500ms, 1s, 2s
+    // Portal pegawai: retry lebih agresif (150ms → 400ms → 900ms) supaya
+    // pemulihan hampir tak terlihat. Rute lain tetap 500ms → 1s → 2s.
+    const delay = isWorkerPortal
+      ? 150 * Math.pow(2, attempt)
+      : 500 * Math.pow(2, attempt);
     const t = window.setTimeout(() => {
       if (cancelled) return;
       setAttempt((n: number) => n + 1);
@@ -131,9 +141,19 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [attempt, router, reset]);
+  }, [attempt, router, reset, isWorkerPortal]);
 
   if (autoRetrying && attempt < MAX_AUTO_RETRIES) {
+    if (isWorkerPortal) {
+      // UI diam-diam: spinner saja, tanpa "Memuat ulang halaman…" / "Percobaan
+      // otomatis N dari 3" — teks itu membuat pegawai mengira mereka
+      // dikeluarkan dari sesi PIN padahal sessionStorage-nya aman.
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background px-ms-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+        </div>
+      );
+    }
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-ms-4">
         <div className="max-w-md text-center">
