@@ -818,6 +818,67 @@ function Index() {
   };
 
   /**
+   * Rename kategori atomik lewat RPC `rename_warehouse_category`:
+   * server-side validasi collision case-insensitive + kaskade
+   * `warehouse_items.category` di dalam satu transaksi supaya tidak
+   * ada window di mana kategori sudah berpindah nama tapi produk
+   * masih menempel di nama lama. `renameTarget` menahan nama lama
+   * dan input baru untuk dialog inline; loading state dipakai supaya
+   * tombol Simpan tidak bisa di-double-tap saat request berjalan.
+   */
+  const [renameTarget, setRenameTarget] = useState<{ old: string; input: string } | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const submitRename = async () => {
+    if (!renameTarget) return;
+    const oldName = renameTarget.old;
+    const rawNew = renameTarget.input;
+    const newName = rawNew.trim().replace(/\s+/g, " ");
+    if (!newName) {
+      toast.error("Nama kategori tidak boleh kosong");
+      return;
+    }
+    if (newName === oldName) {
+      setRenameTarget(null);
+      return;
+    }
+    if (
+      newName.toLowerCase() !== oldName.toLowerCase() &&
+      categories.some((c) => c.toLowerCase() === newName.toLowerCase())
+    ) {
+      toast.error(`Kategori "${newName}" sudah ada`);
+      return;
+    }
+    setRenaming(true);
+    const { data, error } = await supabase.rpc("rename_warehouse_category", {
+      _old_name: oldName,
+      _new_name: newName,
+    });
+    setRenaming(false);
+    if (error) {
+      if ((error as { code?: string }).code === "23505") {
+        toast.error(`Kategori "${newName}" sudah ada`);
+      } else {
+        notifyError(error, { prefix: "Gagal mengubah nama kategori: " });
+      }
+      return;
+    }
+    const renamedItems = Number(data ?? 0);
+    setCategories((c) => c.map((x) => (x === oldName ? newName : x)));
+    setItems((arr) =>
+      arr.map((i) =>
+        i.kategori.toLowerCase() === oldName.toLowerCase() ? { ...i, kategori: newName } : i,
+      ),
+    );
+    if (activeCat === oldName) setActiveCat(newName);
+    setRenameTarget(null);
+    toast.success(
+      renamedItems > 0
+        ? `Kategori diubah ke "${newName}" (${renamedItems} produk ikut diperbarui)`
+        : `Kategori diubah ke "${newName}"`,
+    );
+  };
+
+  /**
    * Drag-and-drop reorder kategori.
    * - Optimistic: susun ulang UI dulu supaya feel-nya instan di HP.
    * - Persist: kirim `position` baru per kategori ke `warehouse_categories`
