@@ -9,7 +9,7 @@ import { optimisticDeleteMessages } from "@/lib/chat-optimistic-delete";
 import { Linkify, UrlPreviewList } from "@/lib/linkify";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
-  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
+  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin, Clock,
   History as HistoryIcon,
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
@@ -1768,9 +1768,9 @@ function ChatRoomPage() {
                               const sentMs = new Date(m.created_at).getTime();
                               const read = othersRead.data !== null && othersRead.data !== undefined && othersRead.data >= sentMs;
                               return read ? (
-                                <CheckCheck className="h-3.5 w-3.5 text-primary-foreground/90" aria-label="Dibaca" />
+                                <CheckCheck className="h-3.5 w-3.5 text-sky-300" aria-label="Dibaca" />
                               ) : (
-                                <CheckCheck className="h-3.5 w-3.5 opacity-80" aria-label="Terkirim" />
+                                <Check className="h-3.5 w-3.5 opacity-80" aria-label="Terkirim" />
                               );
                             })()
                           ) : null}
@@ -2015,7 +2015,7 @@ function ChatRoomPage() {
                     <div className="mt-0.5 flex items-center justify-end gap-ms-1 text-ms-2xs opacity-90">
                       <span>{fmtTime(o.createdAt)}</span>
                       {o.status === "sending" ? (
-                        <Check className="h-3.5 w-3.5 opacity-80" aria-label="Belum terkirim" />
+                        <Clock className="h-3 w-3 opacity-70" aria-label="Mengirim" />
                       ) : (
                         <span className="inline-flex items-center gap-ms-1 text-destructive">
                           <AlertCircle className="h-3.5 w-3.5" aria-label="Gagal" />
