@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
@@ -32,6 +32,7 @@ import { ChatListIcon } from "@/lib/chat-list-icons";
 import { CHAT_CATEGORY_LABEL_ID, type ChatCategory } from "@/lib/chat-category";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
+import { goBackOr } from "@/lib/back-nav";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   // Terima query `?filter=unread` sebagai deep-link dari tab Chat di bottom
@@ -64,6 +65,7 @@ function ChatListPage() {
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
   const navigate = useNavigate();
+  const router = useRouter();
   const routeSearch = Route.useSearch();
   const pin = usePinConversation();
   const archive = useArchiveConversation();
@@ -297,14 +299,15 @@ function ChatListPage() {
       <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-ms-2 border-b px-ms-3 py-ms-2">
         <div className="flex min-w-0 items-center gap-ms-2">
           <Button
-            asChild
+            type="button"
             variant="ghost"
             size="icon"
             className="h-9 w-9 shrink-0 rounded-full"
             aria-label="Kembali ke Beranda"
             title="Beranda"
+            onClick={() => goBackOr(router, { to: "/" })}
           >
-            <Link to="/"><ArrowLeft className="h-5 w-5" /></Link>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="truncate text-ms-lg font-semibold tracking-tight">MCM Chat</h1>
         </div>

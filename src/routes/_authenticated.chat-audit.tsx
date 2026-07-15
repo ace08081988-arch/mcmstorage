@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { ArrowLeft, History, Trash2, EyeOff, Users } from "lucide-react";
@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { goBackOr } from "@/lib/back-nav";
 
 const searchSchema = z.object({
   c: z.string().uuid().optional(),
@@ -49,6 +50,7 @@ function fmt(iso: string) {
 
 function AuditPage() {
   const { c } = Route.useSearch();
+  const router = useRouter();
 
   const audit = useQuery({
     queryKey: ["chat-delete-audit", c ?? "all"],
@@ -90,16 +92,21 @@ function AuditPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-ms-4 p-ms-4">
       <div className="flex items-center gap-ms-2">
-        <Button asChild variant="ghost" size="icon" aria-label="Kembali">
-          {c ? (
-            <Link to="/chat/$conversationId" params={{ conversationId: c }}>
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          ) : (
-            <Link to="/chat">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Kembali"
+          onClick={() =>
+            goBackOr(
+              router,
+              c
+                ? { to: "/chat/$conversationId", params: { conversationId: c } }
+                : { to: "/chat" },
+            )
+          }
+        >
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex flex-1 items-center gap-ms-2">
           <History className="h-5 w-5 text-primary" />

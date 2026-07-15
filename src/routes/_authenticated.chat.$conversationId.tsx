@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -272,6 +272,7 @@ import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inse
 import { StatusBadge } from "@/components/StatusBadge";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import { isCardBody } from "@/lib/chat-cards";
+import { goBackOr } from "@/lib/back-nav";
 import {
   DELETED_PLACEHOLDER,
   MessagePreview,
@@ -308,6 +309,7 @@ function ChatRoomPage() {
   useChatHeartbeat();
   const { conversationId } = Route.useParams();
   const navigate = useNavigate();
+  const router = useRouter();
   const qc = useQueryClient();
   const { data: myId } = useMyUserId();
   const { data: messages, isLoading } = useConversationMessages(conversationId);
@@ -1201,7 +1203,7 @@ function ChatRoomPage() {
           <div className="text-ms-sm leading-snug text-muted-foreground">
             Tautan ini mungkin sudah kedaluwarsa atau kamu tidak punya akses ke percakapan ini.
           </div>
-          <Button variant="secondary" onClick={() => navigate({ to: "/chat" })}>
+          <Button variant="secondary" onClick={() => goBackOr(router, { to: "/chat" })}>
             Kembali ke daftar chat
           </Button>
         </div>
@@ -1286,7 +1288,7 @@ function ChatRoomPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate({ to: "/chat" })}
+          onClick={() => goBackOr(router, { to: "/chat" })}
           aria-label="Kembali"
           className="h-10 w-10 shrink-0"
         >
