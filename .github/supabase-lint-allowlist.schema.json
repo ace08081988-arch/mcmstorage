@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mcmstorage.biz/schemas/supabase-lint-allowlist.schema.json",
+  "title": "Supabase Lint Allowlist",
+  "description": "Schema for .github/supabase-lint-allowlist.json. Every accepted Supabase linter finding must be grouped under an architectural category with a substantive justification. Mirrors the runtime checks in scripts/check-supabase-lints.mjs.",
+  "type": "object",
+  "required": ["allow"],
+  "additionalProperties": true,
+  "properties": {
+    "_comment": { "type": "string" },
+    "allow": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/allowEntry" }
+    }
+  },
+  "$defs": {
+    "allowEntry": {
+      "type": "object",
+      "required": ["name", "level", "category", "reason", "functions"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Supabase linter rule id (e.g. anon_security_definer_function_executable)."
+        },
+        "level": {
+          "type": "string",
+          "enum": ["INFO", "WARN", "ERROR"],
+          "description": "Severity level reported by the Supabase linter for this rule."
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Architectural bucket for this group of suppressions. Must be unique per rule. Use kebab-case."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 40,
+          "description": "Substantive justification (>= 40 chars) explaining why this bucket is safe. Should describe the authorisation model, guard clauses, or coverage tests that make the finding acceptable."
+        },
+        "functions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Schema-qualified function identifiers (e.g. public.my_fn). Each function may appear in exactly one bucket per rule.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*\\.[a-zA-Z_][a-zA-Z0-9_]*$"
+          }
+        }
+      }
+    }
+  }
+}
