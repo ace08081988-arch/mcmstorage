@@ -406,18 +406,18 @@ function ChatListPage() {
       ) : null}
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 wa-muted" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--wa-text-muted)]" />
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Cari…"
-          className="wa-search h-10 rounded-full border-0 pl-10 pr-9 shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/50"
+          placeholder="Cari percakapan…"
+          className="h-9 rounded-full border border-[var(--wa-border)] bg-transparent pl-9 pr-8 text-ms-sm shadow-none placeholder:text-[var(--wa-text-muted)] focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/40"
         />
         {q ? (
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2"
+            className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--wa-text-muted)]"
             onClick={() => setQ("")}
             aria-label="Bersihkan"
           >
@@ -429,14 +429,14 @@ function ChatListPage() {
       {q.trim().length < 2 ? (
         <div
           role="tablist"
-          aria-label="Filter percakapan"
-          className="-mx-1 flex items-center gap-ms-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Filter cepat"
+          className="-mx-1 flex items-center gap-ms-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {([
             { id: "all" as const, label: "Semua" },
-            { id: "unread" as const, label: "Belum dibaca", count: unreadCount, dot: "bg-[var(--wa-green)]" },
-            { id: "group" as const, label: "Grup", count: groupCount, dot: "bg-rose-500" },
-            { id: "favorite" as const, label: "Favorit", count: favCount },
+            { id: "unread" as const, label: "Belum dibaca" },
+            { id: "group" as const, label: "Grup" },
+            { id: "favorite" as const, label: "Favorit" },
           ]).map((chip) => {
             const isActive = filter === chip.id;
             return (
@@ -447,16 +447,18 @@ function ChatListPage() {
                 aria-selected={isActive}
                 onClick={() => setFilter(chip.id)}
                 className={
-                  "wa-chip whitespace-nowrap " +
-                  (isActive ? "wa-chip-active font-medium" : "")
+                  "relative whitespace-nowrap text-ms-xs transition-colors " +
+                  (isActive
+                    ? "font-medium text-[var(--wa-text)]"
+                    : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]")
                 }
               >
-                {chip.dot ? (
-                  <span className={`inline-block h-2 w-2 rounded-full ${chip.dot}`} />
-                ) : null}
                 {chip.label}
-                {"count" in chip && chip.count ? (
-                  <span className="ml-1 opacity-80">{chip.count}</span>
+                {isActive ? (
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[var(--wa-green)]"
+                  />
                 ) : null}
               </button>
             );
@@ -464,7 +466,6 @@ function ChatListPage() {
           {(chatLists ?? []).map((l) => {
             const chipId = `list:${l.id}`;
             const isActive = filter === chipId;
-            const count = (allListMembers?.[l.id] ?? []).length;
             return (
               <button
                 key={chipId}
@@ -473,24 +474,31 @@ function ChatListPage() {
                 aria-selected={isActive}
                 onClick={() => setFilter(chipId)}
                 className={
-                  "wa-chip whitespace-nowrap inline-flex items-center gap-ms-1.5 " +
-                  (isActive ? "wa-chip-active font-medium" : "")
+                  "relative inline-flex items-center gap-ms-1 whitespace-nowrap text-ms-xs transition-colors " +
+                  (isActive
+                    ? "font-medium text-[var(--wa-text)]"
+                    : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]")
                 }
                 title={l.name}
               >
-                <ChatListIcon name={l.icon} className="h-3.5 w-3.5" style={{ color: l.color }} />
+                <ChatListIcon name={l.icon} className="h-3 w-3" style={{ color: l.color }} />
                 {l.name}
-                {count ? <span className="ml-1 opacity-80">{count}</span> : null}
+                {isActive ? (
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[var(--wa-green)]"
+                  />
+                ) : null}
               </button>
             );
           })}
           <Link
             to="/daftar"
-            className="wa-chip whitespace-nowrap inline-flex items-center gap-ms-1"
+            className="text-ms-xs text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]"
             aria-label="Kelola daftar"
             title="Kelola daftar"
           >
-            <span className="text-ms-base leading-none">+</span> Daftar
+            + Daftar
           </Link>
         </div>
       ) : null}
