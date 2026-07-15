@@ -969,38 +969,6 @@ function Index() {
   };
 
   /**
-   * Ambil ulang urutan kategori dari server (SSOT `warehouse_categories`).
-   * Dipakai oleh:
-   *   - realtime channel (INSERT/UPDATE/DELETE dari tab/perangkat lain),
-   *   - listener `focus`/`visibilitychange` (kembali ke tab setelah idle),
-   *   - reconcile pasca-reorder (memastikan hasil merge dengan tab lain).
-   *
-   * Guard: bila reorder sedang jalan, drop snapshot ini — urutan
-   * optimistic lokal LEBIH BARU daripada snapshot server sampai batch
-   * UPDATE selesai. Tanpa guard, snapshot lama dari INSERT/UPDATE tab
-   * lain (atau echo realtime dari UPDATE kita sendiri) bisa "menari"
-   * urutan kembali ke posisi sebelum drag.
-   *
-   * `setCategories` merge-in-place: kalau urutan hasil fetch identik
-   * dengan state sekarang, jangan trigger re-render — supaya tidak
-   * memicu ripple efek useEffect yang bergantung pada `categories`.
-   */
-  const refreshCategories = useCallback(async () => {
-    if (reorderInFlightRef.current) return;
-    const { data, error } = await supabase
-      .from("warehouse_categories")
-      .select("name, position")
-      .order("position", { ascending: true })
-      .order("name", { ascending: true });
-    if (error || !data) return;
-    if (reorderInFlightRef.current) return; // reorder mulai selama fetch
-    const next = data.map((r) => r.name);
-    setCategories((prev) =>
-      prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next,
-    );
-  }, []);
-
-  /**
    * Drag-and-drop reorder kategori.
    * - Optimistic: susun ulang UI dulu supaya feel-nya instan di HP.
    * - Persist: kirim `position` baru per kategori ke `warehouse_categories`
