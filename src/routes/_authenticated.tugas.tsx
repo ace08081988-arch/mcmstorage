@@ -388,6 +388,8 @@ function TugasPage() {
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
   const [catVariants, setCatVariants] = useState<CatVariant[]>([]);
+  // Slice 2: master kategori dari `warehouse_categories` (SSOT dengan Beranda).
+  const [masterCategories, setMasterCategories] = useState<string[]>([]);
   const [openCreate, setOpenCreate] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -422,7 +424,7 @@ function TugasPage() {
 
   async function load() {
     if (!uid) return;
-    const [{ data: t }, { data: w }, { data: v }, { data: cv }, { data: ti }, { data: sb }] = await Promise.all([
+    const [{ data: t }, { data: w }, { data: v }, { data: cv }, { data: ti }, { data: sb }, { data: mc }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("id,name,category,image_path,stock_base,base_unit,package_type,package_size").order("name"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -431,11 +433,17 @@ function TugasPage() {
       (supabase.from as any)("warehouse_category_variants").select("*").order("position"),
       supabase.from("prep_task_items").select("id,task_id"),
       supabase.from("prep_submissions").select("task_id,task_item_id,verification_status"),
+      supabase
+        .from("warehouse_categories")
+        .select("name, position")
+        .order("position", { ascending: true })
+        .order("name", { ascending: true }),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
     setVariants((v ?? []) as Variant[]);
     setCatVariants((cv ?? []) as CatVariant[]);
+    setMasterCategories(((mc ?? []) as { name: string }[]).map((r) => r.name));
     const itemsByTask: Record<string, number> = {};
     for (const row of (ti ?? []) as { task_id: string }[]) {
       itemsByTask[row.task_id] = (itemsByTask[row.task_id] ?? 0) + 1;
