@@ -62,6 +62,7 @@ import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
+import { debounce } from "@/lib/realtime-debounce";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 
@@ -1610,11 +1611,13 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
 
   // realtime
   useEffect(() => {
+    // Debounce 300ms — batch UPDATE dari worker (mis. tandai N item)
+    // hanya perlu satu reload.
+    const reload = debounce(() => { void load(); }, 300);
     const ch = supabase.channel(`ecer_prep_${title.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "ecer_preparations", filter: `title_id=eq.${title.id}` },
-        () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "ecer_preparations", filter: `title_id=eq.${title.id}` }, reload)
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => { reload.cancel(); void supabase.removeChannel(ch); };
   }, [title.id]);
 
   const active = useMemo(() => filterActivePreps(preps), [preps]);
@@ -2379,10 +2382,11 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   useEffect(() => {
     setLoading(true);
     void load().finally(() => setLoading(false));
+    const reload = debounce(() => { void load(); }, 400);
     const ch = supabase.channel(`worker_subs_${title.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, reload)
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => { reload.cancel(); void supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title.id, title.warehouse_item_id, targetGrams, targetUnit]);
 

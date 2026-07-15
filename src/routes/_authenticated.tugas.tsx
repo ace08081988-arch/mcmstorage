@@ -15,6 +15,7 @@ import { TaskQrCode } from "@/components/TaskQrCode";
 import { deriveTaskShortStatus, type TaskShortStatus } from "@/lib/prep-status";
 import { fetchAddressBook, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { rememberPin, recallPin, forgetPin } from "@/lib/prep-pin-memo";
+import { debounce } from "@/lib/realtime-debounce";
 
 /**
  * Badge kecil di kartu tugas yang menampilkan PIN dari pengingat lokal
@@ -505,12 +506,15 @@ function TugasPage() {
   // atau ketika daftar item tugas berubah.
   useEffect(() => {
     if (!uid) return;
+    // Debounce 400ms untuk daftar prep — burst insert dari worker jangan
+    // memicu re-load per event.
+    const reload = debounce(() => { void load(); }, 400);
     const ch = supabase
       .channel("prep_progress-tugas")
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => { void load(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, () => { void load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, reload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, reload)
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => { reload.cancel(); void supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
@@ -2545,11 +2549,13 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   }
   useEffect(() => {
     void load();
+    // Detail task: burst update saat worker menandai banyak item sekaligus.
+    const reload = debounce(() => { void load(); }, 300);
     const ch = supabase.channel(`prep:${task.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions", filter: `task_id=eq.${task.id}` }, () => { void load(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items", filter: `task_id=eq.${task.id}` }, () => { void load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions", filter: `task_id=eq.${task.id}` }, reload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items", filter: `task_id=eq.${task.id}` }, reload)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { reload.cancel(); supabase.removeChannel(ch); };
   }, [task.id]);
 
   const [completeOpen, setCompleteOpen] = useState(false);

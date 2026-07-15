@@ -50,6 +50,7 @@ import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-activ
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
+import { debounce } from "@/lib/realtime-debounce";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -154,11 +155,14 @@ function RequestPage() {
 
   useEffect(() => { void loadUnrouted(); }, []);
   useEffect(() => {
+    // Debounce 400ms: satu wave insert/update di prep_submissions/task_items
+    // sering datang beruntun; kita hanya butuh SEKALI reload di akhir gelombang.
+    const reload = debounce(() => { void loadUnrouted(); }, 400);
     const ch = supabase.channel("request_unrouted")
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => void loadUnrouted())
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, () => void loadUnrouted())
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, reload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, reload)
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => { reload.cancel(); void supabase.removeChannel(ch); };
   }, []);
 
   function diagnose(code?: string, status?: number, msg?: string): string {

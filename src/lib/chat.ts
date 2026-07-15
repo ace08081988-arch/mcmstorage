@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { messagePreviewText } from "@/lib/chat-deleted";
+import { debounce } from "@/lib/realtime-debounce";
 
 export type ConversationRow = {
   id: string;
@@ -402,10 +403,14 @@ export function useConversations() {
   // Realtime: refresh on any message or membership change
   useEffect(() => {
     if (!myId) return;
-    const refreshChat = () => {
+    // Debounce 250ms — burst UPDATE pada messages (read receipts,
+    // reactions batch) tidak boleh memicu invalidate + refetch per event
+    // pada daftar percakapan. Delay 250ms cukup halus untuk mata tapi
+    // memotong 90%+ refetch berlebih saat gelombang event.
+    const refreshChat = debounce(() => {
       qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
       qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
-    };
+    }, 250);
     const topic = `chat-list:${myId}:${channelInstanceRef.current}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
     let ch: ReturnType<typeof supabase.channel> | null = null;
     try {
@@ -421,6 +426,7 @@ export function useConversations() {
       return;
     }
     return () => {
+      refreshChat.cancel();
       if (ch) void supabase.removeChannel(ch);
     };
   }, [myId, qc]);
