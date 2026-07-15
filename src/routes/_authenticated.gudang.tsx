@@ -439,7 +439,12 @@ function GudangPage() {
         {loading && <GudangLoadingSkeleton />}
 
         {tab === "stok" && (
-          <StokTab items={items} uid={uid} onChanged={reloadAll} />
+          <StokTab
+            items={items}
+            uid={uid}
+            categoryOrder={categoryOrder}
+            onChanged={reloadAll}
+          />
         )}
         {tab === "supplier" && (
           <SupplierTab suppliers={suppliers} uid={uid} onChanged={reloadAll} />
@@ -1502,7 +1507,41 @@ function ShareDebt({
 }
 
 /* ----------------- STOK ----------------- */
-function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null; onChanged: () => void }) {
+function StokTab({
+  items,
+  uid,
+  categoryOrder,
+  onChanged,
+}: {
+  items: WItem[];
+  uid: string | null;
+  /**
+   * Peta urutan kategori dari `warehouse_categories.position` (SSOT
+   * dengan Beranda). Key = `name.trim().toLowerCase()` supaya cocok
+   * dengan unique index DB dan tidak terganggu oleh perbedaan
+   * kapitalisasi antara label item vs master.
+   */
+  categoryOrder: Map<string, number>;
+  onChanged: () => void;
+}) {
+  /**
+   * Comparator konsisten Beranda-Gudang:
+   * - Kategori yang ada di master → urut posisi.
+   * - Kategori "orphan" (belum ada di master) → setelah semua master,
+   *   dan di antara mereka urut alfabetis.
+   * - "Tanpa Kategori" selalu terakhir.
+   */
+  const compareCats = (a: string, b: string) => {
+    if (a === b) return 0;
+    if (a === "Tanpa Kategori") return 1;
+    if (b === "Tanpa Kategori") return -1;
+    const pa = categoryOrder.get(a.trim().toLowerCase());
+    const pb = categoryOrder.get(b.trim().toLowerCase());
+    if (pa != null && pb != null) return pa - pb;
+    if (pa != null) return -1;
+    if (pb != null) return 1;
+    return a.localeCompare(b, "id");
+  };
   const [editing, setEditing] = useState<WItem | null>(null);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
