@@ -257,6 +257,9 @@ function PosKasirPage() {
   const bayarSiap = stokCukup && hargaCukup && !bayarBusy;
   const quickAdds = useMemo(() => quickAddsFor(selected.unitLabel), [selected.unitLabel]);
   const unit = selected.unitLabel;
+  const isPcs = isDiscreteUnit(selected.unitLabel);
+  const inputStep = isPcs ? "1" : "0.001";
+  const inputPlaceholder = isPcs ? "0" : "0.000";
 
   // Sinkronisasi produk dengan gudang saat user login.
   const refreshGudang = async (opts?: { silent?: boolean }) => {
