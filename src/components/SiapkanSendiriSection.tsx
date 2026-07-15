@@ -1025,6 +1025,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {photoFlow.element}
     </div>
   );
 }
