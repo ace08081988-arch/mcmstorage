@@ -1196,6 +1196,9 @@ function NumberInput({
   emptyAs = 0,
   onStatusChange,
   placeholder,
+  min,
+  max,
+  integerOnly,
 }: {
   value: number;
   onChange: (n: number) => void;
@@ -1207,6 +1210,11 @@ function NumberInput({
   // Dipanggil tiap kali status validasi input berubah.
   onStatusChange?: (status: "valid" | "partial" | "invalid") => void;
   placeholder?: string;
+  // Batas nilai. Nilai di luar range → status invalid (cincin merah).
+  min?: number;
+  max?: number;
+  // Wajib bilangan bulat (dipakai untuk item pcs).
+  integerOnly?: boolean;
 }) {
   const [text, setText] = useState(() => fmtNum(value, maxFrac));
   const focused = useRef(false);
@@ -1221,7 +1229,11 @@ function NumberInput({
     if (/^[-+]?[.,]$/.test(raw)) return "partial";
     if (/[.,]$/.test(raw)) return "partial";
     const n = parseNum(raw);
-    return n != null && Number.isFinite(n) ? "valid" : "invalid";
+    if (n == null || !Number.isFinite(n)) return "invalid";
+    if (integerOnly && !Number.isInteger(n)) return "invalid";
+    if (min != null && n < min) return "invalid";
+    if (max != null && n > max) return "invalid";
+    return "valid";
   })();
   const lastStatus = useRef(status);
   useEffect(() => {
