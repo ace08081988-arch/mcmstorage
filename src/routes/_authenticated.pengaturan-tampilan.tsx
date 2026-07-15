@@ -19,7 +19,7 @@ import {
   ACCENTS,
   BG_PRESETS,
   LS,
-} from "@/components/appearance-settings";
+} from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 import {
