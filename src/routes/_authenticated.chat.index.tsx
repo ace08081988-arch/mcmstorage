@@ -200,6 +200,20 @@ function ChatListPage() {
     return [...active, ...archived].map((c) => c.id);
   }, [active, archived]);
 
+  // Hitungan per-chip untuk ditampilkan sebagai badge angka di samping label.
+  const chipCounts = useMemo(() => {
+    const all = active.length;
+    const unread = active.reduce((n, c) => n + ((c.unread ?? 0) > 0 ? 1 : 0), 0);
+    const group = active.reduce((n, c) => n + (c.kind === "group" ? 1 : 0), 0);
+    const favorite = active.reduce((n, c) => n + (c.pinned_at ? 1 : 0), 0);
+    const perList: Record<string, number> = {};
+    for (const l of chatLists ?? []) {
+      const ids = new Set(allListMembers?.[l.id] ?? []);
+      perList[l.id] = active.reduce((n, c) => n + (ids.has(c.id) ? 1 : 0), 0);
+    }
+    return { all, unread, group, favorite, perList };
+  }, [active, chatLists, allListMembers]);
+
   const allSelected =
     currentVisibleIds.length > 0 &&
     currentVisibleIds.every((id) => selectedIds.has(id));
