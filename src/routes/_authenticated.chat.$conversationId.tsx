@@ -1187,7 +1187,11 @@ function ChatRoomPage() {
   const kbInset = useVisualViewportKeyboardInset();
   return (
     <div
-      className="mx-auto flex h-[100dvh] max-w-2xl flex-col overflow-x-hidden wa-surface"
+      // `transition-[height]` menghaluskan pergeseran viewport chat saat
+      // soft-keyboard muncul/tertutup — daftar pesan & composer bergerak
+      // ke posisi baru dengan easing 200ms, bukan snap. Dihormati
+      // preferensi reduce-motion pengguna.
+      className="mx-auto flex h-[100dvh] max-w-2xl flex-col overflow-x-hidden wa-surface transition-[height] duration-200 ease-out motion-reduce:transition-none"
       style={
         kbInset > 0
           ? { height: `calc(100dvh - ${kbInset}px)` }
