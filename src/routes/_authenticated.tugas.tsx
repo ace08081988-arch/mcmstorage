@@ -1100,21 +1100,49 @@ function lineWeight(line: Line, variants: Variant[]): number {
 // baik oleh ringkasan maupun badge per-baris, sehingga keduanya
 // tidak pernah berbeda. Murni dihitung dari state baris (tanpa
 // `lineStatus` yang diperbarui asinkron oleh NumberInput).
-function evaluateLine(line: Line, variants: Variant[]): {
+// Batas atas wajar per baris. Cegah salah ketik (mis. tambah 1 nol) tanpa
+// mengekang skenario nyata: 100.000 pcs / 100.000 g per baris sudah jauh di
+// atas kebutuhan operasional harian.
+const MAX_COUNT_UNITS = 100_000;
+const MAX_PER_UNIT_PCS = 100_000;
+const MAX_PER_UNIT_G = 100_000; // gram
+
+function evaluateLine(line: Line, variants: Variant[], opts?: { isPcs?: boolean }): {
   status: "valid" | "partial" | "invalid";
   weight: number;
   count: number;
   total: number;
+  reason?: string;
 } {
+  const isPcs = !!opts?.isPcs;
   const weight = lineWeight(line, variants);
   const count = Number(line.count);
   const cOk = Number.isFinite(count) && count > 0;
   const wOk = Number.isFinite(weight) && weight > 0;
-  let status: "valid" | "partial" | "invalid";
-  if (!cOk || !wOk) status = "invalid";
-  else status = "valid";
+  let status: "valid" | "partial" | "invalid" = "valid";
+  let reason: string | undefined;
+  if (!cOk || !wOk) {
+    status = "invalid";
+  } else if (!Number.isInteger(count)) {
+    // Jumlah unit selalu bilangan bulat (tidak ada "1,5 karton").
+    status = "invalid";
+    reason = "Jumlah unit harus bilangan bulat";
+  } else if (count > MAX_COUNT_UNITS) {
+    status = "invalid";
+    reason = `Jumlah unit melebihi batas (${MAX_COUNT_UNITS})`;
+  } else if (isPcs && !Number.isInteger(weight)) {
+    // Item pcs: isi per unit juga bilangan bulat (mis. 12 botol/karton).
+    status = "invalid";
+    reason = "Jumlah / unit harus bilangan bulat untuk item pcs";
+  } else if (isPcs && weight > MAX_PER_UNIT_PCS) {
+    status = "invalid";
+    reason = `Jumlah / unit melebihi batas (${MAX_PER_UNIT_PCS})`;
+  } else if (!isPcs && weight > MAX_PER_UNIT_G) {
+    status = "invalid";
+    reason = `Berat / unit melebihi batas (${MAX_PER_UNIT_G} g)`;
+  }
   const total = status === "valid" ? weight * count : 0;
-  return { status, weight: wOk ? weight : 0, count: cOk ? count : 0, total };
+  return { status, weight: wOk ? weight : 0, count: cOk ? count : 0, total, reason };
 }
 // Parser angka yang menerima koma desimal (format Indonesia) maupun titik.
 function parseNum(input: string): number | null {
