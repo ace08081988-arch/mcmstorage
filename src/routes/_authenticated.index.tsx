@@ -1110,40 +1110,30 @@ function Index() {
             </form>
 
             {categories.length > 0 && (
-              <ul className="grid gap-ms-2">
-                {categories.map((c) => {
-                  const count = items.filter((i) => i.kategori === c).length;
-                  return (
-                    <li
-                      key={c}
-                      className="flex items-center gap-ms-2 rounded-xl border border-primary/15 bg-card px-ms-3 py-ms-3 transition-colors hover:border-primary/40"
-                    >
-                      <button
-                        onClick={() => setActiveCat(c)}
-                        className="flex min-w-0 flex-1 items-center gap-ms-3 text-left"
-                      >
-                        <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.08em] text-primary">
-                          {tagFor(c)}
-                        </span>
-                        <span className="truncate text-[0.84375rem] font-medium tracking-tight text-foreground">
-                          {c}
-                        </span>
-                        <span className="ml-auto shrink-0 text-[0.65625rem] text-muted-foreground">
-                          {count} pesanan
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => deleteCategory(c)}
-                        className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
-                        title={`Hapus kategori ${c}`}
-                        aria-label={`Hapus kategori ${c}`}
-                      >
-                        Hapus
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e: DragEndEvent) => {
+                  const { active, over } = e;
+                  if (!over || active.id === over.id) return;
+                  void reorderCategories(String(active.id), String(over.id));
+                }}
+              >
+                <SortableContext items={categories} strategy={verticalListSortingStrategy}>
+                  <ul className="grid gap-ms-2">
+                    {categories.map((c) => (
+                      <SortableCategoryRow
+                        key={c}
+                        name={c}
+                        tag={tagFor(c)}
+                        count={items.filter((i) => i.kategori === c).length}
+                        onOpen={() => setActiveCat(c)}
+                        onDelete={() => deleteCategory(c)}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
             )}
           </section>
 
