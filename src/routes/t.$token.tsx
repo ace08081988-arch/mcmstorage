@@ -115,7 +115,7 @@ export const Route = createFileRoute("/t/$token")({
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
-  component: PublicPrepPage,
+  component: PublicPrepPageWithBoundary,
 });
 
 type StagedPhoto = StagedPhotoT;
