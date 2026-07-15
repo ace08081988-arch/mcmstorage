@@ -785,6 +785,68 @@ function ChatRoomPage() {
   // di atas textarea; baru terkirim saat user menekan tombol Kirim.
   const [pendingProducts, setPendingProducts] = useState<PickedProductRow[]>([]);
 
+  // Antrian lampiran (foto/video/dokumen) yang di-stage dari AttachMenu.
+  // Tidak dipersist — cukup sesi aktif; baru diunggah + terkirim saat user
+  // menekan tombol Kirim. Textarea otomatis menjadi caption pada lampiran
+  // pertama (mirip WhatsApp).
+  type PendingAttachment = { id: string; file: File; previewUrl: string | null };
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [attachmentSendStatuses, setAttachmentSendStatuses] = useState<
+    Record<string, "pending" | "sending" | "failed">
+  >({});
+  const nextAttachmentId = useCallback(() => {
+    try {
+      const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+      if (c?.randomUUID) return c.randomUUID();
+    } catch { /* ignore */ }
+    return `a_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }, []);
+  const stageAttachments = useCallback((files: File[]) => {
+    setPendingAttachments((prev) => {
+      const add: PendingAttachment[] = files.map((f) => ({
+        id: nextAttachmentId(),
+        file: f,
+        previewUrl:
+          f.type.startsWith("image/") || f.type.startsWith("video/")
+            ? URL.createObjectURL(f)
+            : null,
+      }));
+      return [...prev, ...add];
+    });
+  }, [nextAttachmentId]);
+  const removeAttachment = useCallback((id: string) => {
+    setPendingAttachments((prev) => {
+      const found = prev.find((p) => p.id === id);
+      if (found?.previewUrl) { try { URL.revokeObjectURL(found.previewUrl); } catch { /* ignore */ } }
+      return prev.filter((p) => p.id !== id);
+    });
+    setAttachmentSendStatuses((prev) => {
+      if (!prev[id]) return prev;
+      const { [id]: _drop, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+  const clearAttachments = useCallback(() => {
+    setPendingAttachments((prev) => {
+      prev.forEach((p) => {
+        if (p.previewUrl) { try { URL.revokeObjectURL(p.previewUrl); } catch { /* ignore */ } }
+      });
+      return [];
+    });
+    setAttachmentSendStatuses({});
+  }, []);
+  // Bersihkan object URL saat unmount.
+  useEffect(() => {
+    return () => {
+      setPendingAttachments((prev) => {
+        prev.forEach((p) => {
+          if (p.previewUrl) { try { URL.revokeObjectURL(p.previewUrl); } catch { /* ignore */ } }
+        });
+        return prev;
+      });
+    };
+  }, []);
+
   // Persist chip pratinjau produk per-percakapan supaya tetap ada setelah
   // refresh atau navigasi keluar-masuk chat. Baru dibersihkan setelah user
   // menekan Kirim (atau menghapus chip manual).
