@@ -849,24 +849,39 @@ function DashboardPage() {
             return (
               <Popover key={opt.key}>
                 <PopoverTrigger asChild>{btn}</PopoverTrigger>
-                <PopoverContent align="end" sideOffset={8} className="w-auto p-ms-3">
-                  <div className="flex items-center gap-ms-2">
-                    <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <input
-                      type="date"
-                      value={customStart}
-                      onChange={(e) => setCustomStart(e.target.value)}
-                      aria-label="Tanggal mulai"
-                      className="rounded border bg-background px-ms-2 py-1 text-ms-xs font-medium outline-none tabular-nums focus:ring-2 focus:ring-ring"
-                    />
-                    <span className="text-ms-xs text-muted-foreground">→</span>
-                    <input
-                      type="date"
-                      value={customEnd}
-                      onChange={(e) => setCustomEnd(e.target.value)}
-                      aria-label="Tanggal akhir"
-                      className="rounded border bg-background px-ms-2 py-1 text-ms-xs font-medium outline-none tabular-nums focus:ring-2 focus:ring-ring"
-                    />
+                <PopoverContent
+                  align="start"
+                  side="bottom"
+                  sideOffset={12}
+                  collisionPadding={12}
+                  avoidCollisions
+                  className="z-50 w-[min(20rem,calc(100vw-1.5rem))] p-ms-3 shadow-lg"
+                >
+                  <div className="mb-ms-2 flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <CalendarIcon className="h-3.5 w-3.5" /> Rentang custom
+                  </div>
+                  <div className="grid gap-ms-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                    <label className="grid gap-1">
+                      <span className="text-ms-2xs text-muted-foreground">Dari</span>
+                      <input
+                        type="date"
+                        value={customStart}
+                        onChange={(e) => setCustomStart(e.target.value)}
+                        aria-label="Tanggal mulai"
+                        className="w-full rounded border bg-background px-ms-2 py-1.5 text-ms-xs font-medium outline-none tabular-nums focus:ring-2 focus:ring-ring"
+                      />
+                    </label>
+                    <span aria-hidden className="hidden text-ms-xs text-muted-foreground sm:block">→</span>
+                    <label className="grid gap-1">
+                      <span className="text-ms-2xs text-muted-foreground">Sampai</span>
+                      <input
+                        type="date"
+                        value={customEnd}
+                        onChange={(e) => setCustomEnd(e.target.value)}
+                        aria-label="Tanggal akhir"
+                        className="w-full rounded border bg-background px-ms-2 py-1.5 text-ms-xs font-medium outline-none tabular-nums focus:ring-2 focus:ring-ring"
+                      />
+                    </label>
                   </div>
                 </PopoverContent>
               </Popover>
