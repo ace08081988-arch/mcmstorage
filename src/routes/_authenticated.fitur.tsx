@@ -106,7 +106,7 @@ function FiturPage() {
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className="flex min-h-dvh flex-col bg-background [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 px-ms-4 pt-3 pb-2 backdrop-blur">
         <h1 className="text-ms-2xl font-semibold">Fitur</h1>
         <div className="flex items-center gap-ms-1 text-muted-foreground">
@@ -136,7 +136,7 @@ function FiturPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-ms-4 pt-3 pb-6">
+      <main className="flex-1 overflow-y-auto px-ms-4 pt-3 pb-[var(--chat-nav-h)]">
         {/* Stat cards */}
         <div className="grid grid-cols-3 gap-ms-2">
           <StatCard
