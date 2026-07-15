@@ -37,6 +37,7 @@ const ProductEditDrawer = lazy(() =>
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
+import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
 import {
   DndContext,
   closestCenter,
@@ -781,38 +782,49 @@ function Index() {
   const update = (id: number, patch: Partial<Produk>) =>
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
 
+  // Editor mandatory step untuk semua upload foto Beranda (setFoto & addGaleri).
+  const photoFlow = usePhotoEditorFlow();
+
   const setFoto = async (id: number, files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const dataUrl = await compressImage(files[0]);
-    update(id, { foto: dataUrl });
-    setOpenId(id);
-    toast.success("Foto tersimpan");
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      const tId = toast.loading("Mengambil lokasi…");
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
-          update(id, { lokasi: link });
-          toast.success("Lokasi otomatis terisi", { id: tId });
+    await photoFlow.open(
+      [files[0]],
+      async ({ dataUrl }) => {
+        update(id, { foto: dataUrl });
+        setOpenId(id);
+        toast.success("Foto tersimpan");
+      },
+      {
+        onDone: () => {
+          if (typeof navigator !== "undefined" && navigator.geolocation) {
+            const tId = toast.loading("Mengambil lokasi…");
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const { latitude, longitude } = pos.coords;
+                const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                update(id, { lokasi: link });
+                toast.success("Lokasi otomatis terisi", { id: tId });
+              },
+              (err) => {
+                notifyError(err, { prefix: "Gagal ambil lokasi: " });
+              },
+              { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+            );
+          }
         },
-        (err) => {
-          notifyError(err, { prefix: "Gagal ambil lokasi: " });
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-      );
-    }
+      },
+    );
   };
 
   const addGaleri = async (id: number, files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const arr: string[] = [];
-    for (const f of Array.from(files)) arr.push(await compressImage(f));
-    setItems((items) =>
-      items.map((i) =>
-        i.id === id ? { ...i, galeri: [...(i.galeri ?? []), ...arr] } : i,
-      ),
-    );
+    await photoFlow.open(files, async ({ dataUrl }) => {
+      setItems((items) =>
+        items.map((i) =>
+          i.id === id ? { ...i, galeri: [...(i.galeri ?? []), dataUrl] } : i,
+        ),
+      );
+    });
   };
 
   const removeFoto = (id: number) => update(id, { foto: undefined });
@@ -2314,6 +2326,7 @@ function Index() {
           />
         </Suspense>
       )}
+      {photoFlow.element}
     </div>
   );
 }

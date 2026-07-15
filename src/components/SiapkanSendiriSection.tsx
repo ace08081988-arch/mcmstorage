@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { usePhotoEditorFlow, type EditedPhoto } from "@/components/photo-editor/use-photo-editor-flow";
 
 const BUCKET = "self-prep-photos";
 
@@ -99,6 +100,8 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Editor mandatory step untuk semua foto produk sebelum masuk draft.
+  const photoFlow = usePhotoEditorFlow();
   const [gpsBusy, setGpsBusy] = useState(false);
   const [chatPickTarget, setChatPickTarget] = useState<Row | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
@@ -591,7 +594,12 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
               onChange={(e) => {
                 const picked = Array.from(e.target.files ?? []);
                 import("@/lib/app-lock").then((m) => m.endNativePicker());
-                if (picked.length) setFiles((prev) => [...prev, ...picked]);
+                if (fileRef.current) fileRef.current.value = "";
+                if (picked.length) {
+                  void photoFlow.open(picked, async ({ file }: EditedPhoto) => {
+                    setFiles((prev) => [...prev, file]);
+                  });
+                }
               }}
               className="block w-full text-ms-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-ms-2 file:py-1.5 file:text-ms-xs"
             />
@@ -1017,6 +1025,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {photoFlow.element}
     </div>
   );
 }

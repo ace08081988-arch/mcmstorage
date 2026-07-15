@@ -8,6 +8,7 @@ import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { WaShareButton } from "@/components/share/SaleShareButtons";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 import { StatusBadge, type StatusVariant } from "@/components/StatusBadge";
+import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
 
 type Item = {
   id: string;
@@ -611,6 +612,14 @@ function PackageForm({
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  // Editor mandatory step untuk foto paket (kamera & galeri).
+  const photoFlow = usePhotoEditorFlow();
+
+  async function pickAndEditPhoto(file: File) {
+    await photoFlow.open([file], async ({ file: edited }) => {
+      await uploadPhoto(edited);
+    });
+  }
 
   // ── Judul Ecer + preset berat (localStorage per item) ──
   type Preset = { label: string; grams: number };
@@ -885,13 +894,13 @@ function PackageForm({
                   📷 {uploadingPhoto ? "Mengunggah…" : "Kamera"}
                   <input type="file" accept="image/*" capture="environment" className="hidden"
                     onClick={() => { import("@/lib/app-lock").then((m) => m.beginNativePicker()); }}
-                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
+                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; e.target.value = ""; if (f) void pickAndEditPhoto(f); }} />
                 </label>
                 <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border bg-background px-ms-2 text-ms-xs hover:bg-accent">
                   🖼️ Galeri
                   <input type="file" accept="image/*" className="hidden"
                     onClick={() => { import("@/lib/app-lock").then((m) => m.beginNativePicker()); }}
-                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
+                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; e.target.value = ""; if (f) void pickAndEditPhoto(f); }} />
                 </label>
               </div>
             </div>
@@ -932,6 +941,7 @@ function PackageForm({
           </button>
         </footer>
       </div>
+      {photoFlow.element}
     </div>
   );
 }
