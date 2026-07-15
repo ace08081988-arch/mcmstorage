@@ -12,7 +12,6 @@ import {
   APP_LOCK_EVENT,
   type LockConfig,
 } from "@/lib/app-lock";
-import { AppLockSetup } from "@/components/AppLockSetup";
 import { perfMark, perfMeasure } from "@/lib/perf-log";
 import {
   DropdownMenu,
@@ -21,8 +20,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AppearanceSettings } from "@/components/appearance-settings";
-import { ProductEditDrawer } from "@/components/ProductEditDrawer";
+// AppLockSetup / AppearanceSettings / ProductEditDrawer di-lazy-load agar
+// tidak masuk chunk initial Beranda. Ketiganya hanya benar-benar dibutuhkan
+// setelah user membuka dialog/drawer masing-masing. Sebelum optimisasi:
+// chunk _authenticated.index ≈ 508KB gzip 123KB karena ikut membawa
+// pengaturan tampilan, editor produk lengkap, dan setup PIN/pola.
+const AppLockSetup = lazy(() =>
+  import("@/components/AppLockSetup").then((m) => ({ default: m.AppLockSetup })),
+);
+const AppearanceSettings = lazy(() =>
+  import("@/components/appearance-settings").then((m) => ({ default: m.AppearanceSettings })),
+);
+const ProductEditDrawer = lazy(() =>
+  import("@/components/ProductEditDrawer").then((m) => ({ default: m.ProductEditDrawer })),
+);
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
