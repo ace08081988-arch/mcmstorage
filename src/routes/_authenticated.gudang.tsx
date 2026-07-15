@@ -154,7 +154,7 @@ function PhotoPicker({ value, onChange, uid }: { value: string | null; onChange:
   async function pick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f || !uid) return;
-    await photoFlow.open([f], async ({ file }) => {
+    await photoFlow.open([f], async ({ file }: { file: File }) => {
       setBusy(true);
       const p = await uploadItemPhoto(file, uid);
       setBusy(false);
