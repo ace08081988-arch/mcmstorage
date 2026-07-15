@@ -2737,16 +2737,43 @@ function CompleteTaskDialog({ busy, onClose, onConfirm }: { busy: boolean; onClo
 }
 
 // ---------- Variant manager ----------
-function VariantsHub({ warehouse, catVariants, onPickCategory, onClose }: { warehouse: WItem[]; catVariants: CatVariant[]; onPickCategory: (cat: string) => void; onClose: () => void }) {
+function VariantsHub({ warehouse, catVariants, masterCategories, uid, onCategoriesChanged, onPickCategory, onClose }: { warehouse: WItem[]; catVariants: CatVariant[]; masterCategories: string[]; uid: string | null; onCategoriesChanged: () => void | Promise<void>; onPickCategory: (cat: string) => void; onClose: () => void }) {
   const [q, setQ] = useState("");
   const [newCat, setNewCat] = useState("");
   const categories = useMemo(() => {
     const set = new Set<string>();
+    for (const c of masterCategories) { const v = c.trim(); if (v) set.add(v); }
     for (const w of warehouse) { const c = (w.category ?? "").trim(); if (c) set.add(c); }
     for (const v of catVariants) { const c = v.category.trim(); if (c) set.add(c); }
     const s = q.toLowerCase().trim();
     return Array.from(set).filter((c) => !s || c.toLowerCase().includes(s)).sort();
-  }, [warehouse, catVariants, q]);
+  }, [warehouse, catVariants, masterCategories, q]);
+
+  async function createCategory(name: string) {
+    const v = name.trim();
+    if (!v) return;
+    if (categories.some((c) => c.toLowerCase() === v.toLowerCase())) {
+      // Sudah ada — langsung buka pengelola varian.
+      setNewCat("");
+      onPickCategory(v);
+      return;
+    }
+    if (!uid) {
+      toast.error("Harus login untuk membuat kategori");
+      return;
+    }
+    const { error } = await supabase
+      .from("warehouse_categories")
+      .insert({ user_id: uid, name: v, position: masterCategories.length });
+    if (error && (error as { code?: string }).code !== "23505") {
+      toast.error(error.message);
+      return;
+    }
+    setNewCat("");
+    await onCategoriesChanged();
+    onPickCategory(v);
+  }
+
   return (
     <Modal title="Kelola Varian per Kategori" onClose={onClose}>
       <p className="mb-2 text-ms-2xs text-muted-foreground">
@@ -2778,7 +2805,7 @@ function VariantsHub({ warehouse, catVariants, onPickCategory, onClose }: { ware
           <input value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="KRISTAL" className="h-9 w-full rounded border bg-background px-ms-2 text-ms-sm" />
         </label>
         <button
-          onClick={() => { const c = newCat.trim(); if (!c) return; setNewCat(""); onPickCategory(c); }}
+          onClick={() => { void createCategory(newCat); }}
           className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground">
           <Plus className="h-3.5 w-3.5" /> Atur
         </button>
