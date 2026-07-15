@@ -25,6 +25,7 @@ import {
   MousePointer2, Crop, RotateCw, FlipHorizontal2, FlipVertical2, Layers, X, Check,
   AlertTriangle, MapPin, Package, DollarSign, Clock, BadgeCheck, Trash2, Copy, Eye, EyeOff, Lock, Unlock,
   Highlighter, Brush, Eraser, Triangle as TriangleIcon, ZoomIn, ZoomOut, RotateCcw, ChevronLeft,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -48,9 +49,27 @@ type Tool =
   | "teks" | "stiker" | "panah" | "line" | "kotak" | "lingkaran" | "oval" | "segitiga"
   | "crop";
 
-const MCM_PALETTE = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#111827", "#ffffff"];
+// Noir & Gold-first palette: emas & krem sebagai aksen brand, disusul warna
+// operasional yang tetap dibutuhkan (marker merah/hijau untuk anotasi cepat).
+const MCM_PALETTE = [
+  "#c9a84c", // gold — brand primary
+  "#f0d78c", // gold light
+  "#ffffff",
+  "#f5f0e0", // cream
+  "#ef4444", // merah — flag / hapus
+  "#f97316", // oranye
+  "#22c55e", // hijau — checklist
+  "#06b6d4", // cyan — info
+  "#8b5cf6", // ungu
+  "#0d0d0d", // noir
+];
+
+// Aksen brand — dipakai untuk transformer, ring aktif, save button, dsb.
+const GOLD = "#c9a84c";
+const GOLD_LIGHT = "#f0d78c";
 
 const STICKER_PRESETS: Record<string, { label: string; Icon: typeof Check; defaultColor: string }> = {
+  arrow: { label: "Panah", Icon: ArrowRight, defaultColor: "#c9a84c" },
   check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e" },
   x: { label: "Silang", Icon: X, defaultColor: "#ef4444" },
   warning: { label: "Warning", Icon: AlertTriangle, defaultColor: "#f59e0b" },
