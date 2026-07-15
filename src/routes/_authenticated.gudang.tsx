@@ -1577,11 +1577,7 @@ function StokTab({
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(it);
   }
-  const groupKeys = Array.from(groups.keys()).sort((a, b) => {
-    if (a === "Tanpa Kategori") return 1;
-    if (b === "Tanpa Kategori") return -1;
-    return a.localeCompare(b, "id");
-  });
+  const groupKeys = Array.from(groups.keys()).sort(compareCats);
   for (const k of groupKeys) {
     groups.get(k)!.sort((a, b) => a.name.localeCompare(b.name, "id"));
   }
@@ -1631,9 +1627,11 @@ function StokTab({
         cur.value += it.stock_base * it.avg_cost_per_base;
         catSummary.set(key, cur);
       }
+      // Urutan ringkasan per-kategori: ikuti master (SSOT Beranda),
+      // baru fallback ke nilai stok terbesar untuk kategori orphan.
       const rows = Array.from(catSummary.entries()).sort((a, b) => {
-        if (a[0] === "Tanpa Kategori") return 1;
-        if (b[0] === "Tanpa Kategori") return -1;
+        const c = compareCats(a[0], b[0]);
+        if (c !== 0) return c;
         return b[1].value - a[1].value;
       });
       if (rows.length === 0) return null;
