@@ -2092,25 +2092,25 @@ function Index() {
                     </div>
                     <label className="flex items-center gap-ms-2 rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm">
                       <span className="text-muted-foreground">Rp</span>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
+                      <NumericDraftInput
                         value={p.harga}
-                        aria-label="Harga produk"
+                        min={0}
+                        max={Number.MAX_SAFE_INTEGER}
+                        step={1}
+                        inputMode="numeric"
+                        emptyCommitsTo={0}
                         onFocus={() => setFlashId(p.id)}
                         onBlur={() =>
                           setFlashId((cur) => (cur === p.id ? null : cur))
                         }
-                        onChange={(e) =>
-                          {
-                            update(p.id, { harga: Math.max(0, Number(e.target.value) || 0) });
-                            setFlashId(p.id);
-                            window.setTimeout(() => {
-                              setFlashId((cur) => (cur === p.id ? null : cur));
-                            }, 900);
-                          }
-                        }
+                        onCommit={(n) => {
+                          update(p.id, { harga: n });
+                          setFlashId(p.id);
+                          window.setTimeout(() => {
+                            setFlashId((cur) => (cur === p.id ? null : cur));
+                          }, 900);
+                        }}
+                        ariaLabel="Harga produk"
                         className="w-full bg-transparent tabular-nums outline-none"
                         placeholder="Harga"
                       />
@@ -2143,21 +2143,16 @@ function Index() {
                         return (
                           <label className="flex w-full items-center gap-ms-2 rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm">
                             <span className="text-muted-foreground">Jumlah</span>
-                            <input
-                              type="number"
-                              inputMode="decimal"
+                            <NumericDraftInput
+                              value={p.jumlah ?? b.min}
                               min={b.min}
                               max={b.max}
                               step={b.step}
-                              value={p.jumlah ?? b.min}
-                              onChange={(e) => {
-                                const raw = Number(e.target.value);
-                                if (!Number.isFinite(raw)) return;
-                                const clamped = Math.min(b.max, Math.max(b.min, raw));
-                                update(p.id, { jumlah: clamped });
-                              }}
+                              inputMode="decimal"
+                              onCommit={(n) => update(p.id, { jumlah: n })}
                               className="w-full bg-transparent tabular-nums outline-none"
                               placeholder="Jumlah"
+                              ariaLabel="Jumlah"
                             />
                             <span className="shrink-0 text-ms-xs text-muted-foreground">
                               {formatJumlah(p.jumlah ?? b.min, s)}
