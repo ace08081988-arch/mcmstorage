@@ -498,6 +498,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     const light = shadeHex(base, 0.55); // highlight atas — lebih pucat
     const dark = shadeHex(base, -0.35); // rim bawah — lebih gelap
     const rim = shadeHex(base, -0.55); // outline dalam
+    // Faktor 0..1 dari slider global. 0 = fitur mati, 1 = intensitas penuh.
+    const shF = stickerShadow / 100;
+    const glF = stickerGloss / 100;
+    const rmF = stickerRim / 100;
     return (
       <Group
         key={o.id}
@@ -528,10 +532,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           x={cx}
           y={cy + r * 0.06}
           radius={r * 0.98}
-          fill="rgba(0,0,0,0.35)"
-          shadowColor="rgba(0,0,0,0.5)"
-          shadowBlur={r * 0.35}
-          shadowOffsetY={r * 0.12}
+          fill={`rgba(0,0,0,${0.35 * shF})`}
+          shadowColor={`rgba(0,0,0,${0.5 * shF})`}
+          shadowBlur={r * 0.35 * shF}
+          shadowOffsetY={r * 0.12 * shF}
           listening={false}
         />
         {/* 2. Body dengan radial gradient (light di kuadran atas-kiri → dark di rim). */}
@@ -545,15 +549,15 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           fillRadialGradientEndRadius={r}
           fillRadialGradientColorStops={[0, light, 0.55, base, 1, dark]}
           stroke={rim}
-          strokeWidth={Math.max(1, r * 0.04)}
+          strokeWidth={Math.max(0, r * 0.04 * rmF)}
         />
         {/* 3. Rim inner ring untuk memperkuat kesan tebal / bezel. */}
         <Circle
           x={cx}
           y={cy}
           radius={r * 0.92}
-          stroke="rgba(255,255,255,0.18)"
-          strokeWidth={Math.max(1, r * 0.03)}
+          stroke={`rgba(255,255,255,${0.18 * rmF})`}
+          strokeWidth={Math.max(0, r * 0.03 * rmF)}
           listening={false}
         />
         {/* 4. Glossy highlight — ellipse putih transparan di kuadran atas. */}
@@ -564,7 +568,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           radiusY={r * 0.28}
           fillLinearGradientStartPoint={{ x: 0, y: -r * 0.28 }}
           fillLinearGradientEndPoint={{ x: 0, y: r * 0.28 }}
-          fillLinearGradientColorStops={[0, "rgba(255,255,255,0.85)", 1, "rgba(255,255,255,0)"]}
+          fillLinearGradientColorStops={[0, `rgba(255,255,255,${0.85 * glF})`, 1, "rgba(255,255,255,0)"]}
           listening={false}
         />
         {/* 5. Glyph — putih dengan drop shadow tipis supaya "punch" di atas body. */}
