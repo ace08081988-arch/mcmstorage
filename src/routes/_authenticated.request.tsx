@@ -365,7 +365,7 @@ function RequestPage() {
       <PendingVerificationSection />
 
       {unrouted.length > 0 && (
-        <Card className="border-warning/40 bg-warning/40 dark:bg-warning/20">
+        <Card className="border-warning/40 bg-warning/10 dark:bg-warning/20">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between gap-ms-2 text-ms-base">
               <div className="flex items-center gap-ms-2 text-warning dark:text-warning">
