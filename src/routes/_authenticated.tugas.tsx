@@ -3026,7 +3026,7 @@ function CategoryVariantManager({ category, variants, onClose, onChanged }: { ca
         </label>
         <label className="w-24">
           <div className="text-ms-2xs text-muted-foreground">Berat/unit</div>
-          <input value={weight} onChange={(e) => setWeight(e.target.value)} type="number" step="0.01" placeholder="0.90" className="h-9 w-full rounded border bg-background px-ms-2 text-center text-ms-sm tabular-nums" />
+          <NumericTextField value={weight} onValueChange={setWeight} step={0.01} decimal={true} className="h-9 w-full rounded border bg-background px-ms-2 text-center text-ms-sm tabular-nums" placeholder="0.90" />
         </label>
         <label className="w-16">
           <div className="text-ms-2xs text-muted-foreground">Satuan</div>
@@ -3136,7 +3136,7 @@ function VariantManager({ item, variants, onClose, onChanged }: { item: WItem; v
         </label>
         <label className="w-24">
           <div className="text-ms-2xs text-muted-foreground">Berat/unit</div>
-          <input value={weight} onChange={(e) => setWeight(e.target.value)} type="number" step="0.01" placeholder="0.90" className="h-9 w-full rounded border bg-background px-ms-2 text-center text-ms-sm tabular-nums" />
+          <NumericTextField value={weight} onValueChange={setWeight} step={0.01} decimal={true} className="h-9 w-full rounded border bg-background px-ms-2 text-center text-ms-sm tabular-nums" placeholder="0.90" />
         </label>
         <label className="w-16">
           <div className="text-ms-2xs text-muted-foreground">Satuan</div>
