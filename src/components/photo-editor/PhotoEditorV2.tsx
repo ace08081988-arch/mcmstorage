@@ -464,9 +464,19 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const needsStyle = ["coret", "highlighter", "brush", "eraser", "panah", "line", "kotak", "lingkaran", "oval", "segitiga", "teks"].includes(tool);
 
   // Render sticker as Konva group (icon drawn as a filled circle badge with symbol).
-  // For minimalism iterasi 1: represent each sticker as a colored circle + icon path from Lucide.
+  // Iterasi 2 (Noir & Gold): render 3D — radial gradient body, glossy highlight
+  // spot di kuadran atas-kiri, shadow drop di bawah, dan ring dalam untuk depth.
+  // Warna dasar `o.color` di-shade otomatis (lebih terang untuk highlight,
+  // lebih gelap untuk rim) supaya konsisten di semua palet.
   const renderSticker = (o: StickerObj) => {
     if (o.visible === false) return null;
+    const r = o.width / 2;
+    const cx = o.width / 2;
+    const cy = o.height / 2;
+    const base = o.color;
+    const light = shadeHex(base, 0.55); // highlight atas — lebih pucat
+    const dark = shadeHex(base, -0.35); // rim bawah — lebih gelap
+    const rim = shadeHex(base, -0.55); // outline dalam
     return (
       <Group
         key={o.id}
@@ -491,14 +501,65 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           n.scaleX(1); n.scaleY(1);
         }}
       >
-        <Circle x={o.width / 2} y={o.height / 2} radius={o.width / 2} fill={o.color} />
+        {/* 1. Drop shadow (lapisan bawah): circle full berwarna hitam,
+               digeser sedikit ke bawah supaya sticker tampak "melayang". */}
+        <Circle
+          x={cx}
+          y={cy + r * 0.06}
+          radius={r * 0.98}
+          fill="rgba(0,0,0,0.35)"
+          shadowColor="rgba(0,0,0,0.5)"
+          shadowBlur={r * 0.35}
+          shadowOffsetY={r * 0.12}
+          listening={false}
+        />
+        {/* 2. Body dengan radial gradient (light di kuadran atas-kiri → dark di rim). */}
+        <Circle
+          x={cx}
+          y={cy}
+          radius={r}
+          fillRadialGradientStartPoint={{ x: -r * 0.35, y: -r * 0.35 }}
+          fillRadialGradientStartRadius={0}
+          fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+          fillRadialGradientEndRadius={r}
+          fillRadialGradientColorStops={[0, light, 0.55, base, 1, dark]}
+          stroke={rim}
+          strokeWidth={Math.max(1, r * 0.04)}
+        />
+        {/* 3. Rim inner ring untuk memperkuat kesan tebal / bezel. */}
+        <Circle
+          x={cx}
+          y={cy}
+          radius={r * 0.92}
+          stroke="rgba(255,255,255,0.18)"
+          strokeWidth={Math.max(1, r * 0.03)}
+          listening={false}
+        />
+        {/* 4. Glossy highlight — ellipse putih transparan di kuadran atas. */}
+        <Ellipse
+          x={cx - r * 0.22}
+          y={cy - r * 0.42}
+          radiusX={r * 0.55}
+          radiusY={r * 0.28}
+          fillLinearGradientStartPoint={{ x: 0, y: -r * 0.28 }}
+          fillLinearGradientEndPoint={{ x: 0, y: r * 0.28 }}
+          fillLinearGradientColorStops={[0, "rgba(255,255,255,0.85)", 1, "rgba(255,255,255,0)"]}
+          listening={false}
+        />
+        {/* 5. Glyph — putih dengan drop shadow tipis supaya "punch" di atas body. */}
         <KText
-          x={0} y={o.height / 2 - o.height * 0.28}
-          width={o.width} align="center"
+          x={0}
+          y={cy - r * 0.5}
+          width={o.width}
+          align="center"
           text={stickerGlyph(o.sticker)}
-          fontSize={o.width * 0.55}
+          fontSize={r}
           fontStyle="bold"
           fill="#ffffff"
+          shadowColor="rgba(0,0,0,0.45)"
+          shadowBlur={r * 0.12}
+          shadowOffsetY={r * 0.06}
+          listening={false}
         />
       </Group>
     );
