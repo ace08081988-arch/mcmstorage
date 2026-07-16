@@ -224,7 +224,16 @@ function requestGeolocation(
     (pos) => {
       try {
         onSuccess(pos);
-        toast.success("Lokasi terisi", { id });
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        const acc = pos.coords.accuracy
+          ? ` · akurasi ±${Math.round(pos.coords.accuracy)} m`
+          : "";
+        toast.success("Lokasi terisi", {
+          id,
+          description: `Link Maps otomatis terisi: ${lat}, ${lng}${acc}`,
+          duration: 5000,
+        });
       } catch (e) {
         toast.error("Gagal memproses lokasi", {
           id,
