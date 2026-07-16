@@ -1,93 +1,80 @@
+## Tujuan
 
-# Audit Noir & Gold — Dua Jalur, Enam Slice
+Semua input angka di aplikasi menampilkan dan menerima format id-ID:
+- Titik `.` sebagai pemisah ribuan
+- Koma `,` sebagai pemisah desimal
+- Format aktif **live saat mengetik** (bukan hanya saat blur)
+- Berlaku konsisten di **semua** field angka (harga, kuantitas, stok, durasi, umur, versi APK) — kecuali PIN/OTP/AppLock/device-verify/visual-test yang eksplisit dilarang.
 
-Berdasarkan aturan memori kamu ("two-track — full branding di publik/customer-facing, restrained utility-only polish di operasional supaya preset appearance user tetap utuh"), audit ini **tidak** akan blanket-repaint semua halaman jadi emas. Sidebar baru itu sendiri sebenarnya tetap pakai token `--primary` (ikut preset user) — yang berubah cuma tipografi (`font-display`), rhythm spacing (`px-ms-*`), dan pemetaan warna status ke token semantic (`primary` / `success` / `warning`). Itu contract yang akan direplika.
+Display di luar input (kartu, total, list) juga dirapikan pakai helper yang sama supaya tampilan seragam.
 
-## Contract "polish sidebar" yang jadi acuan
+## Pendekatan teknis
 
-Elemen ini yang akan ditegakkan konsisten:
+### 1. Satu komponen shared baru: `NumericInputID`
 
-1. **Heading** — judul halaman/section pakai `font-display` + `text-ms-*` (bukan ad-hoc `text-[Xpx]`).
-2. **Uppercase label** — group/section label pakai `text-ms-2xs uppercase tracking-[0.18em] text-muted-foreground/70` + dot 3px `primary/65%`.
-3. **Spacing** — semua padding/gap pakai skala `ms-*` (`gap-ms-2`, `px-ms-3`, `py-ms-2`). Tidak ada `p-3`, `gap-2.5` acak.
-4. **Warna status** — `success` (paid/online/selesai), `warning` (pending/menyinkron), `destructive` (offline/gagal), `primary` (aktif/highlight). Tidak boleh hardcode hex atau kembali ke `emerald-*` / `amber-*`.
-5. **Surface** — kartu utama pakai `surface-elevated` / `surface-elevated-lg` (utility yang sudah ada), bukan campuran ad-hoc `border bg-card shadow-sm`.
-6. **Interactive** — hover/active state pakai gradient tipis `from-primary/20 via-primary/8` + rail 3px kiri, seperti `SidebarMenuButton[data-active=true]`.
-7. **Preset user tidak dilanggar** — semua warna aksen tetap lewat token `--primary`, jadi kalau user pilih preset hijau/biru, seluruh app ikut, bukan dipaksa emas.
+Menggantikan `NumericDraftInput` sebagai SSOT. Perilaku:
 
-## Jalur A — Publik / customer-facing (branding penuh Noir & Gold)
+- `type="text"` + `inputMode="decimal"` (Android tetap dapat keypad numerik + tombol koma).
+- State internal string ter-format (`"1.500,50"`). Setiap keystroke:
+  1. Ambil `selectionStart` sebelum re-format.
+  2. Buang semua karakter selain digit dan satu koma pertama.
+  3. Format ulang bagian integer dengan `Intl.NumberFormat('id-ID')` (titik ribuan).
+  4. Hitung ulang posisi kursor: hitung jumlah digit sebelum kursor pada string lama, cari indeks setelah digit ke-N pada string baru, setSelectionRange di `requestAnimationFrame` supaya tidak lompat ke akhir.
+- Parsing → number: hapus semua `.`, ganti `,` jadi `.`, `parseFloat`. `onCommit(numberOrNull)` dipanggil hanya saat nilai valid dalam `[min,max]`.
+- Prop `decimal: boolean` — kalau `false`, koma diblokir total (untuk stok pcs/umur/versi).
+- Prop `maxDecimals` (default 2 untuk decimal, 0 untuk integer) — koma kedua diabaikan, digit desimal di-trim.
+- Sinkron dari `value` prop (parent) hanya saat input tidak fokus, mencegah refetch menimpa ketikan.
+- Empty state: `raw = ""` tampil kosong; saat blur, kalau kosong → commit `emptyCommitsTo` (biasanya `min` atau `0`, konfigurable) dan display ulang ter-format.
+- Leading zero: `"007"` → `"7"`; `",5"` diformat jadi `"0,5"`.
 
-Halaman yang dilihat tamu, calon user, atau customer via link — di sini preset user tidak berlaku; branding brand-level. Sudah teridentifikasi:
+### 2. Helper display seragam
 
-- `src/routes/auth.tsx`, `src/routes/auth-callback.tsx` (login/OAuth)
-- `src/routes/download.tsx`, `src/routes/download.$variant.tsx` (landing APK)
-- `src/routes/t.$token.tsx` (share link ke customer)
-- `src/routes/diagnostik.paket.tsx` (share link paket ke customer)
-- `src/routes/_authenticated.undang.tsx` (invite QR)
-- `src/components/PublicHeader.tsx`, `src/components/PublicFooter.tsx`
-- `src/routes/__root.tsx` (shell + `<head>`)
+`src/lib/formatNumberID.ts` — dua fungsi:
+- `formatIntegerID(n)` → `"1.500"`
+- `formatDecimalID(n, maxDecimals=2)` → `"1.500,50"` (trailing-zero trim opsional lewat argumen ketiga).
 
-Perlakuan: `--primary` dipin ke gold (`oklch(...)` dari preset "Noir & Gold" resmi), tipografi display serif untuk judul, latar deep-navy/charcoal, aksen emas terbatas — mengikuti palette memori kamu.
+Semua tempat yang saat ini pakai `toLocaleString('id-ID')` atau string interpolation manual dialihkan ke helper ini agar konsisten.
 
-## Jalur B — Operasional (utility polish, preset user tetap)
+### 3. Migrasi menyeluruh (single sweep)
 
-Semua di bawah `_authenticated.*` selain yang di Jalur A. Perlakuan:
-- Ganti sisa hex/ad-hoc utility ke token semantic (`primary`, `muted-foreground`, `success`, `warning`, `destructive`).
-- Normalisasi tipografi + spacing sesuai contract di atas.
-- **Preset warna user tidak diganti** — `--primary` tetap dari appearance preset yang dia pilih.
+Ganti setiap input angka di file-file berikut jadi `<NumericInputID>`. Wrapper `SmartWeightInput` di-refactor: pcs fallback pakai `NumericInputID`, tapi tombol berat (½, 1 kg, dll.) tetap. Parser existing di `parseFractionalGrams` tetap dipertahankan untuk input berat spesial (fraksi seperti `1/2`), tapi angka polos lewat `NumericInputID`.
 
-## Slice eksekusi (setiap slice minta approval on-device 411/390px sebelum lanjut)
+File yang disentuh (business + settings + tugas, sesuai scope yang sudah Anda setujui sebelumnya):
 
-```text
-Slice 1  Foundation & lint guard
-         ├── Perluas utility premium (heading, section-label, surface,
-         │   status-dot) di src/styles.css supaya jadi single source.
-         ├── ESLint rule tolak: emerald-/amber-/hex color literal di JSX,
-         │   text-[Xpx] di luar allowlist, font ad-hoc.
-         └── Codemod scripts/codemod-noir-gold.mjs (dry-run + apply mode).
+- `src/routes/_authenticated.index.tsx` (Beranda / Ecer — sudah pakai NumericDraftInput → ganti import + prop)
+- `src/routes/_authenticated.gudang.tsx` (Beli, Stok, hutang/piutang, pembayaran)
+- `src/routes/pos-kasir.index.tsx`
+- `src/routes/_authenticated.request.tsx`
+- `src/routes/_authenticated.hutang-piutang.tsx`
+- `src/routes/_authenticated.pengaturan-apk.tsx`, `pengaturan-kunci.tsx`, `link-pegawai.tsx`, `tugas-baru.tsx`
+- `src/components/SmartWeightInput.tsx`, `ChatHeaderDebtControls.tsx`, `SellSelfPrepDialog.tsx`, `ReadyPackagesPanel.tsx`, `SharePinDialog.tsx`, `label-preview*`, diagnostik.
 
-Slice 2  Shell global (dampak paling luas, paling aman)
-         ├── src/components/AppHeader.tsx, PageHeader, PageContainer,
-         │   MobileBottomNav, SummaryCard, PillsTabs.
-         └── Verifikasi visual di /dashboard, /gudang, /ecer, /chat.
+**Tidak disentuh (whitelist eksplisit)**: PIN, OTP, AppLock, device-verify, `lovable.visual.*` — sesuai scope sebelumnya.
 
-Slice 3  Jalur A — publik/customer surfaces
-         ├── auth, auth-callback, download*, t.$token, diagnostik.paket,
-         │   undang, PublicHeader/Footer, __root head + og.
-         └── Pin --primary = gold pada scope publik (via body class
-             `public-scope` di layout publik) — tidak menyentuh preset
-             user di operasional.
+### 4. Business logic invariants (dijaga)
 
-Slice 4  Jalur B — operasional inti (halaman terberat dulu)
-         ├── dashboard, index (Beranda), gudang*, ecer*, request*,
-         │   tugas*, pos-kasir*, hutang-piutang.
-         └── Fokus: tipografi + spacing + surface tokens. Warna hanya
-             normalisasi ke token; preset user tetap.
+- `packageSize: "1"` default saat `packageType === "botol"` di Gudang → tetap.
+- Perbandingan angka di logic (bukan display) selalu pakai hasil parse (`Number`), tidak pernah string ter-format.
+- RLS/DB write tetap kirim `number` murni.
 
-Slice 5  Jalur B — operasional sekunder
-         ├── chat family (sudah paling matang, sentuh minimal),
-         │   catatan, balas-cepat, buku-alamat, notifikasi, kontak*,
-         │   profil, pengaturan* (kecuali admin-only).
-         └── Sentuh chat dengan hati-hati — banyak snapshot test.
+### 5. Verifikasi
 
-Slice 6  Admin & diagnostic (paling tidak berisiko rusak)
-         └── audit, diagnostics, email-queue, admin*, sesi,
-             device-verify, pengaturan-scroll-guard, pengaturan-kunci,
-             lovable.visual.* (harness).
-```
+- `bunx tsgo --noEmit` bersih.
+- Playwright smoke di localhost:8080 untuk 3 skenario kritikal:
+  1. Beranda Ecer: input harga "12500", cek display "12.500", backspace 1 kali → "1.250" (bukan lompat cursor).
+  2. Gudang Beli: input berat "0,5", pcs isi 12 → total tersimpan `number` benar.
+  3. POS Kasir: total transaksi tampil "Rp 1.234.567,50" konsisten.
+- Screenshot 411px untuk Beranda, Gudang, POS.
 
-## Detail teknis
+## Risiko yang saya sadari
 
-- **Contract file** — `docs/noir-gold-audit.md` akan didokumentasi sebagai aturan yang lint jaga (mirror `docs/responsive-layout-rules.md`).
-- **Codemod** heuristik aman: replace `text-[<px>]` di allowlist token, replace `p-3/gap-2.5/px-4` menjadi `p-ms-*` **hanya** kalau ada di file yang kita audit slice itu; tidak pernah global blast.
-- **CI guard** tambahan (mirip `check-no-turnstile.mjs`): `check-noir-gold.mjs` menolak PR yang re-introduce `emerald-`/`amber-`/hex color literal/`text-[Xpx]` di luar allowlist.
-- **Preset user** dijaga: audit tidak mengubah `--primary` di `src/styles.css :root` / `.dark`. Gold hanya di-scope ke elemen ber-class `public-scope` (ditempel di layout publik) supaya operasional tetap ikut preset user.
-- **Snapshot tests** — chat family punya snapshot; slice 5 akan meregenerate satu kali di akhir slice, bukan per-file.
+- **Cursor jump saat live-format** adalah bug klasik. Mitigasi: hitung ulang posisi kursor berbasis "jumlah digit sebelum caret" dan set di `requestAnimationFrame` — bukan sekadar `setSelectionRange` sinkron.
+- **IME/composition Android**: `onCompositionStart/End` di-handle supaya reformat ditunda selama composing.
+- **Diff besar**: karena Anda pilih "semua sekaligus", saya akan tetap commit satu perubahan dan minta Anda cek di device sebelum publish. Kalau ada regresi per menu, kita revisi bertarget.
 
-## Yang perlu kamu putuskan sebelum mulai
+## Yang tidak berubah
 
-1. **Sanggup dua jalur?** Kalau kamu mau full-gold di operasional juga (mengunci preset user ke Noir & Gold), bilang saja — saya skip pin `public-scope` dan langsung pin `--primary` di `:root`.
-2. **Urutan slice** — mau saya mulai dari Slice 1 (foundation + lint guard), atau langsung Slice 3 (publik) karena visual impact-nya paling terasa dan tidak mengganggu operasional?
-3. **Gate approval** — konfirmasi rutin per-slice via device 411/390px kamu, seperti PhotoEditorV2. Setuju?
-
-Balas dengan pilihan (1) + (2) + (3), saya mulai slice pertama.
+- Backend, RLS, schema DB.
+- Business logic apapun.
+- Sensitive inputs (PIN/OTP/AppLock/device-verify/visual-test).
+- Tema Noir & Gold, layout, komponen shell.
