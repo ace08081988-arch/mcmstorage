@@ -2762,20 +2762,13 @@ function ItemCard({
   }
 
   function takeLocation() {
-    if (!navigator.geolocation) {
-      toast.error("GPS tidak tersedia");
-      return;
-    }
-    const id = toast.loading("Mengambil lokasi…");
-    navigator.geolocation.getCurrentPosition(
+    requestGeolocation(
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setGps({ lat: latitude, lng: longitude });
         setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
-        toast.success("Lokasi terisi", { id });
       },
-      (err) => toast.error("Gagal: " + err.message, { id }),
-      { enableHighAccuracy: true, timeout: 10000 },
+      { retry: () => takeLocation() },
     );
   }
 
@@ -4272,19 +4265,14 @@ function RequestForm({
   }
 
   function takeLocation() {
-    if (!navigator.geolocation) {
-      toast.error("GPS tidak tersedia");
-      return;
-    }
-    const id = toast.loading("Mengambil lokasi…");
-    navigator.geolocation.getCurrentPosition(
+    requestGeolocation(
       (pos) => {
         setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocUrl(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
-        toast.success("Lokasi terisi", { id });
+        setLocUrl(
+          `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
+        );
       },
-      (err) => toast.error("Gagal: " + err.message, { id }),
-      { enableHighAccuracy: true, timeout: 10000 },
+      { retry: () => takeLocation() },
     );
   }
 
