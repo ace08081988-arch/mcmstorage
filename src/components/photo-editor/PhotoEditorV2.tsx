@@ -26,7 +26,9 @@ import {
   AlertTriangle, MapPin, Package, DollarSign, Clock, BadgeCheck, Trash2, Copy, Eye, EyeOff, Lock, Unlock,
   Highlighter, Brush, Eraser, Triangle as TriangleIcon, ZoomIn, ZoomOut, RotateCcw, ChevronLeft,
   ArrowRight, ArrowLeft, ArrowUp, ArrowDown, ArrowUpRight, ArrowUpLeft,
-  ArrowLeftRight, CornerUpLeft, Zap, Heart, Star, ThumbsUp, Flame,
+  ArrowLeftRight, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight,
+  MoveRight, MoveLeft, MoveUp, MoveDown, RefreshCw,
+  Zap, Heart, Star, ThumbsUp, Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
