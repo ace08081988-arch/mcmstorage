@@ -3985,6 +3985,7 @@ function RequestForm({
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const fallbackPickerReleaseRef = useRef<null | (() => void)>(null);
@@ -4272,6 +4273,8 @@ function RequestForm({
   }
 
   function takeLocation() {
+    if (gpsLoading) return;
+    setGpsLoading(true);
     requestGeolocation(
       (pos) => {
         setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
@@ -4279,7 +4282,7 @@ function RequestForm({
           `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
         );
       },
-      { retry: () => takeLocation() },
+      { retry: () => takeLocation(), onSettled: () => setGpsLoading(false) },
     );
   }
 
