@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { Send, Trash2, Plus, Loader2, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
