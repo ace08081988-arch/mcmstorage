@@ -442,9 +442,7 @@ class WorkerSectionBoundary extends Component<
     // Bumping key via attempt memaksa React membuang subtree lama dan
     // memount ulang bersih — menghindari state internal komponen anak yang
     // ikut korup saat DOM race terjadi.
-    return (
-      <React.Fragment key={this.state.attempt}>{this.props.children}</React.Fragment>
-    );
+    return <Fragment key={this.state.attempt}>{this.props.children}</Fragment>;
   }
 }
 
