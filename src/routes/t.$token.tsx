@@ -2421,6 +2421,7 @@ function ItemCard({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [refSigned, setRefSigned] = useState<string | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const fallbackPickerReleaseRef = useRef<null | (() => void)>(null);
@@ -2766,13 +2767,15 @@ function ItemCard({
   }
 
   function takeLocation() {
+    if (gpsLoading) return;
+    setGpsLoading(true);
     requestGeolocation(
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setGps({ lat: latitude, lng: longitude });
         setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
       },
-      { retry: () => takeLocation() },
+      { retry: () => takeLocation(), onSettled: () => setGpsLoading(false) },
     );
   }
 
