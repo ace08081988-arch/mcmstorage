@@ -1047,6 +1047,13 @@ function IconPill(props: {
 function stickerGlyph(k: string): string {
   switch (k) {
     case "arrow": return "→";
+    case "arrow-left": return "←";
+    case "arrow-up": return "↑";
+    case "arrow-down": return "↓";
+    case "arrow-upright": return "↗";
+    case "arrow-upleft": return "↖";
+    case "arrow-both": return "↔";
+    case "arrow-curve": return "↩";
     case "check": return "✓";
     case "x": return "✕";
     case "warning": return "!";
@@ -1055,6 +1062,11 @@ function stickerGlyph(k: string): string {
     case "paid": return "$";
     case "pending": return "◐";
     case "verified": return "✓";
+    case "fire": return "🔥";
+    case "bolt": return "⚡";
+    case "heart": return "♥";
+    case "star": return "★";
+    case "thumb": return "👍";
     default: return "•";
   }
 }
