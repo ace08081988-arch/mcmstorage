@@ -287,7 +287,7 @@ export function NumericTextField({
 }: {
   value: string;
   onValueChange: (canonical: string) => void;
-  step?: number;
+  step?: number | string;
   decimal?: boolean;
   maxDecimals?: number;
   inputMode?: "decimal" | "numeric";
@@ -303,7 +303,8 @@ export function NumericTextField({
   onBlur?: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }) {
-  const effectiveStep = step ?? 0.01;
+  const effectiveStep: number =
+    typeof step === "string" ? Number(step) || 0.01 : step ?? 0.01;
   const decimal =
     decimalProp ?? !(Number.isInteger(effectiveStep) && effectiveStep >= 1);
   const maxDecimals = maxDecimalsProp ?? (() => {
