@@ -3157,19 +3157,19 @@ function ItemCard({
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-ms-2">
-          <div className="flex gap-ms-2">
-            <input
-              value={locUrl}
-              onChange={(e) => setLocUrl(e.target.value)}
-              placeholder="Link Google Maps (opsional)"
-              className="h-10 flex-1 rounded-lg border bg-background px-ms-3 text-ms-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
+          <input
+            value={locUrl}
+            onChange={(e) => setLocUrl(e.target.value)}
+            placeholder="Link Google Maps (opsional)"
+            className="h-10 w-full rounded-lg border bg-background px-ms-3 text-ms-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          <div className="grid grid-cols-2 gap-ms-2">
             <button
               type="button"
               onClick={takeLocation}
-              className="inline-flex h-10 items-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
+              className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
             >
-              <MapPin className="h-4 w-4" /> GPS
+              <MapPin className="h-4 w-4" /> GPS otomatis
             </button>
             <button
               type="button"
@@ -3192,7 +3192,7 @@ function ItemCard({
                   toast.error("Gagal membaca papan klip");
                 }
               }}
-              className="inline-flex h-10 items-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
+              className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
             >
               <ClipboardPaste className="h-4 w-4" /> Tempel
             </button>
