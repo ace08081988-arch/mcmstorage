@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Minus, Plus, Wallet, Loader2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -300,12 +301,12 @@ function KindRow({
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Minus className="h-3.5 w-3.5" />}
         </Button>
-        <Input
+        <NumericTextField
           value={raw}
-          onChange={(e) => setRaw(e.target.value.replace(/[^\d]/g, ""))}
-          inputMode="numeric"
+          onValueChange={setRaw}
+          decimal={false}
           placeholder="0"
-          className="h-8 flex-1 text-right font-mono text-ms-xs"
+          className="flex h-8 flex-1 rounded-md border border-input bg-background px-3 py-2 text-right font-mono text-ms-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={busy}
         />
         <Button

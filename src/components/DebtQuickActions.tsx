@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote, Undo2, Pencil, ScrollText, ChevronDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -764,10 +765,10 @@ export function DebtQuickActions({
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-ms-1.5">
-        <input
+        <NumericTextField
           value={amountRaw}
-          onChange={(e) => setAmountRaw(e.target.value.replace(/[^\d]/g, ""))}
-          inputMode="numeric"
+          onValueChange={setAmountRaw}
+          decimal={false}
           placeholder={kind === "piutang" ? "Harga jual (Rp)" : "Harga beli (Rp)"}
           className="h-8 min-w-0 flex-1 basis-full rounded-md border bg-background px-ms-2 text-right font-mono text-ms-xs sm:basis-auto"
           disabled={busy !== null}
@@ -985,10 +986,10 @@ export function DebtQuickActions({
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <input
+          <NumericTextField
             value={editAmountRaw}
-            onChange={(e) => setEditAmountRaw(e.target.value.replace(/[^\d]/g, ""))}
-            inputMode="numeric"
+            onValueChange={setEditAmountRaw}
+            decimal={false}
             placeholder="Nominal baru (Rp)"
             className="h-9 w-full rounded-md border bg-background px-ms-2 text-right font-mono text-ms-sm"
             disabled={reverting}

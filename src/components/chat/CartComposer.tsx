@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { ShoppingCart, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -201,39 +202,33 @@ export function CartComposer({
                 <div className="grid grid-cols-2 gap-ms-2">
                   <div>
                     <Label className="text-ms-2xs">Jumlah</Label>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      min={0}
-                      step="any"
+                    <NumericTextField
                       value={line.qty}
-                      onChange={(e) =>
+                      onValueChange={(v) =>
                         setLines((prev) =>
                           prev.map((l, idx) =>
-                            idx === i ? { ...l, qty: e.target.value } : l,
+                            idx === i ? { ...l, qty: v } : l,
                           ),
                         )
                       }
-                      className="h-8"
+                      step={0.01}
+                      className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
                   <div>
                     <Label className="text-ms-2xs">Harga satuan (opsional)</Label>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      min={0}
-                      step="any"
+                    <NumericTextField
                       value={line.price}
-                      onChange={(e) =>
+                      onValueChange={(v) =>
                         setLines((prev) =>
                           prev.map((l, idx) =>
-                            idx === i ? { ...l, price: e.target.value } : l,
+                            idx === i ? { ...l, price: v } : l,
                           ),
                         )
                       }
+                      decimal={false}
                       placeholder="Rp"
-                      className="h-8"
+                      className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     />
                   </div>
                 </div>

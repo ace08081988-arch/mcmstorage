@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -1501,11 +1502,12 @@ function AddDebtDialog({
 
           <div className="space-y-1">
             <Label className="text-ms-xs">Jumlah (Rp)</Label>
-            <Input
-              inputMode="numeric"
+            <NumericTextField
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onValueChange={setAmount}
+              decimal={false}
               placeholder="0"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
@@ -1606,10 +1608,11 @@ function PaymentDialog({
         <div className="space-ms-3">
           <div className="space-y-1">
             <Label className="text-ms-xs">Jumlah (Rp)</Label>
-            <Input
-              inputMode="numeric"
+            <NumericTextField
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onValueChange={setAmount}
+              decimal={false}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
           <div className="space-y-1">
@@ -1736,11 +1739,12 @@ function ReminderDialog({
         <div className="space-ms-3">
           <div className="space-y-1">
             <Label className="text-ms-xs">Jumlah bayar (Rp) — opsional</Label>
-            <Input
-              inputMode="numeric"
-              placeholder="Kosongkan bila hanya menagih"
+            <NumericTextField
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onValueChange={setAmount}
+              decimal={false}
+              placeholder="Kosongkan bila hanya menagih"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
             {hasAmt && amt > sisa && (
               <p className="text-ms-2xs text-warning">
@@ -1925,11 +1929,12 @@ function EditDebtDialog({
           </div>
           <div className="space-y-1">
             <Label className="text-ms-xs">Jumlah (Rp)</Label>
-            <Input
-              inputMode="numeric"
+            <NumericTextField
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onValueChange={setAmount}
+              decimal={false}
               placeholder="0"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
             {minAmount > 0 && (
               <p className="text-ms-2xs text-muted-foreground">
