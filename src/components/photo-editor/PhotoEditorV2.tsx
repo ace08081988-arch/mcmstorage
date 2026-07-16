@@ -25,7 +25,8 @@ import {
   MousePointer2, Crop, RotateCw, FlipHorizontal2, FlipVertical2, Layers, X, Check,
   AlertTriangle, MapPin, Package, DollarSign, Clock, BadgeCheck, Trash2, Copy, Eye, EyeOff, Lock, Unlock,
   Highlighter, Brush, Eraser, Triangle as TriangleIcon, ZoomIn, ZoomOut, RotateCcw, ChevronLeft,
-  ArrowRight,
+  ArrowRight, ArrowLeft, ArrowUp, ArrowDown, ArrowUpRight, ArrowUpLeft,
+  ArrowLeftRight, CornerUpLeft, Zap, Heart, Star, ThumbsUp, Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -67,17 +68,56 @@ const MCM_PALETTE = [
 // Aksen brand — dipakai untuk transformer, ring aktif, save button, dsb.
 const GOLD = "#c9a84c";
 
-const STICKER_PRESETS: Record<string, { label: string; Icon: typeof Check; defaultColor: string }> = {
-  arrow: { label: "Panah", Icon: ArrowRight, defaultColor: "#c9a84c" },
-  check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e" },
-  x: { label: "Silang", Icon: X, defaultColor: "#ef4444" },
-  warning: { label: "Warning", Icon: AlertTriangle, defaultColor: "#f59e0b" },
-  location: { label: "Lokasi", Icon: MapPin, defaultColor: "#3b82f6" },
-  package: { label: "Paket", Icon: Package, defaultColor: "#8b5cf6" },
-  paid: { label: "Paid", Icon: DollarSign, defaultColor: "#22c55e" },
-  pending: { label: "Pending", Icon: Clock, defaultColor: "#eab308" },
-  verified: { label: "Verified", Icon: BadgeCheck, defaultColor: "#06b6d4" },
+// Stiker 3D: setiap preset punya warna dasar (untuk radial gradient),
+// warna highlight (spot glossy atas), dan glyph unicode yang dirender di
+// Konva sebagai centerpiece. Warna dipilih supaya kontras di atas foto
+// gelap maupun terang, dengan aksen Noir & Gold untuk kelompok panah.
+const STICKER_PRESETS: Record<
+  string,
+  { label: string; Icon: typeof Check; defaultColor: string; group?: "panah" | "reaksi" | "status" }
+> = {
+  // ── Panah (arah lengkap) — aksen brand Noir & Gold
+  arrow: { label: "Kanan", Icon: ArrowRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-left": { label: "Kiri", Icon: ArrowLeft, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-up": { label: "Atas", Icon: ArrowUp, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-down": { label: "Bawah", Icon: ArrowDown, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-upright": { label: "Serong", Icon: ArrowUpRight, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-upleft": { label: "Balik", Icon: ArrowUpLeft, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-both": { label: "Dua Arah", Icon: ArrowLeftRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-curve": { label: "Belok", Icon: CornerUpLeft, defaultColor: "#f0d78c", group: "panah" },
+  // ── Status operasional
+  check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e", group: "status" },
+  x: { label: "Silang", Icon: X, defaultColor: "#ef4444", group: "status" },
+  warning: { label: "Warning", Icon: AlertTriangle, defaultColor: "#f59e0b", group: "status" },
+  location: { label: "Lokasi", Icon: MapPin, defaultColor: "#3b82f6", group: "status" },
+  package: { label: "Paket", Icon: Package, defaultColor: "#8b5cf6", group: "status" },
+  paid: { label: "Paid", Icon: DollarSign, defaultColor: "#22c55e", group: "status" },
+  pending: { label: "Pending", Icon: Clock, defaultColor: "#eab308", group: "status" },
+  verified: { label: "Verified", Icon: BadgeCheck, defaultColor: "#06b6d4", group: "status" },
+  // ── Reaksi
+  fire: { label: "Api", Icon: Flame, defaultColor: "#f97316", group: "reaksi" },
+  bolt: { label: "Kilat", Icon: Zap, defaultColor: "#eab308", group: "reaksi" },
+  heart: { label: "Suka", Icon: Heart, defaultColor: "#ef4444", group: "reaksi" },
+  star: { label: "Bintang", Icon: Star, defaultColor: "#f0d78c", group: "reaksi" },
+  thumb: { label: "Jempol", Icon: ThumbsUp, defaultColor: "#22c55e", group: "reaksi" },
 };
+
+// Naikkan/turunkan komponen warna (hex #RRGGBB) sebesar `amount` (-1..1)
+// untuk memproduksi highlight & shadow gradient yang konsisten per preset.
+function shadeHex(hex: string, amount: number): string {
+  const m = /^#?([a-f0-9]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  const adj = (c: number) =>
+    Math.max(0, Math.min(255, Math.round(c + (amount >= 0 ? 255 - c : c) * amount)));
+  const rr = adj(r).toString(16).padStart(2, "0");
+  const gg = adj(g).toString(16).padStart(2, "0");
+  const bb = adj(b).toString(16).padStart(2, "0");
+  return `#${rr}${gg}${bb}`;
+}
 
 export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosaveKey }: PhotoEditorV2Props) {
   // Jangan paksa crossOrigin untuk blob:/data: URL dari kamera/galeri lokal.
@@ -424,9 +464,19 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const needsStyle = ["coret", "highlighter", "brush", "eraser", "panah", "line", "kotak", "lingkaran", "oval", "segitiga", "teks"].includes(tool);
 
   // Render sticker as Konva group (icon drawn as a filled circle badge with symbol).
-  // For minimalism iterasi 1: represent each sticker as a colored circle + icon path from Lucide.
+  // Iterasi 2 (Noir & Gold): render 3D — radial gradient body, glossy highlight
+  // spot di kuadran atas-kiri, shadow drop di bawah, dan ring dalam untuk depth.
+  // Warna dasar `o.color` di-shade otomatis (lebih terang untuk highlight,
+  // lebih gelap untuk rim) supaya konsisten di semua palet.
   const renderSticker = (o: StickerObj) => {
     if (o.visible === false) return null;
+    const r = o.width / 2;
+    const cx = o.width / 2;
+    const cy = o.height / 2;
+    const base = o.color;
+    const light = shadeHex(base, 0.55); // highlight atas — lebih pucat
+    const dark = shadeHex(base, -0.35); // rim bawah — lebih gelap
+    const rim = shadeHex(base, -0.55); // outline dalam
     return (
       <Group
         key={o.id}
@@ -451,14 +501,65 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           n.scaleX(1); n.scaleY(1);
         }}
       >
-        <Circle x={o.width / 2} y={o.height / 2} radius={o.width / 2} fill={o.color} />
+        {/* 1. Drop shadow (lapisan bawah): circle full berwarna hitam,
+               digeser sedikit ke bawah supaya sticker tampak "melayang". */}
+        <Circle
+          x={cx}
+          y={cy + r * 0.06}
+          radius={r * 0.98}
+          fill="rgba(0,0,0,0.35)"
+          shadowColor="rgba(0,0,0,0.5)"
+          shadowBlur={r * 0.35}
+          shadowOffsetY={r * 0.12}
+          listening={false}
+        />
+        {/* 2. Body dengan radial gradient (light di kuadran atas-kiri → dark di rim). */}
+        <Circle
+          x={cx}
+          y={cy}
+          radius={r}
+          fillRadialGradientStartPoint={{ x: -r * 0.35, y: -r * 0.35 }}
+          fillRadialGradientStartRadius={0}
+          fillRadialGradientEndPoint={{ x: 0, y: 0 }}
+          fillRadialGradientEndRadius={r}
+          fillRadialGradientColorStops={[0, light, 0.55, base, 1, dark]}
+          stroke={rim}
+          strokeWidth={Math.max(1, r * 0.04)}
+        />
+        {/* 3. Rim inner ring untuk memperkuat kesan tebal / bezel. */}
+        <Circle
+          x={cx}
+          y={cy}
+          radius={r * 0.92}
+          stroke="rgba(255,255,255,0.18)"
+          strokeWidth={Math.max(1, r * 0.03)}
+          listening={false}
+        />
+        {/* 4. Glossy highlight — ellipse putih transparan di kuadran atas. */}
+        <Ellipse
+          x={cx - r * 0.22}
+          y={cy - r * 0.42}
+          radiusX={r * 0.55}
+          radiusY={r * 0.28}
+          fillLinearGradientStartPoint={{ x: 0, y: -r * 0.28 }}
+          fillLinearGradientEndPoint={{ x: 0, y: r * 0.28 }}
+          fillLinearGradientColorStops={[0, "rgba(255,255,255,0.85)", 1, "rgba(255,255,255,0)"]}
+          listening={false}
+        />
+        {/* 5. Glyph — putih dengan drop shadow tipis supaya "punch" di atas body. */}
         <KText
-          x={0} y={o.height / 2 - o.height * 0.28}
-          width={o.width} align="center"
+          x={0}
+          y={cy - r * 0.5}
+          width={o.width}
+          align="center"
           text={stickerGlyph(o.sticker)}
-          fontSize={o.width * 0.55}
+          fontSize={r}
           fontStyle="bold"
           fill="#ffffff"
+          shadowColor="rgba(0,0,0,0.45)"
+          shadowBlur={r * 0.12}
+          shadowOffsetY={r * 0.06}
+          listening={false}
         />
       </Group>
     );
@@ -790,32 +891,56 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
       {/* Sticker sheet */}
       {showStickers && (
-        <div className="absolute inset-x-0 bottom-20 z-30 rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right">
+        <div className="absolute inset-x-0 bottom-20 z-30 max-h-[55vh] overflow-y-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Stiker</div>
             <button onClick={() => setShowStickers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
           </div>
-          <div className="grid grid-cols-4 gap-ms-2">
-            {Object.entries(STICKER_PRESETS).map(([key, preset]) => {
-              const Ic = preset.Icon;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => addSticker(key)}
-                  className="flex flex-col items-center gap-ms-1 rounded-xl border border-[#c9a84c]/15 bg-white/[0.03] p-ms-3 text-white/90 transition hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10"
-                >
-                  <div
-                    className="grid h-10 w-10 place-items-center rounded-full text-[#0d0d0d] shadow-inner"
-                    style={{ backgroundColor: preset.defaultColor }}
-                  >
-                    <Ic className="h-5 w-5" />
-                  </div>
-                  <span className="text-ms-xs text-[#f0d78c]/90">{preset.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          {(["panah", "status", "reaksi"] as const).map((group) => {
+            const entries = Object.entries(STICKER_PRESETS).filter(([, p]) => p.group === group);
+            if (entries.length === 0) return null;
+            const label = group === "panah" ? "Panah" : group === "status" ? "Status" : "Reaksi";
+            return (
+              <div key={group} className="mb-3 last:mb-1">
+                <div className="mb-1.5 px-1 text-ms-2xs font-semibold uppercase tracking-[0.14em] text-[#f0d78c]/60">
+                  {label}
+                </div>
+                <div className="grid grid-cols-4 gap-ms-2">
+                  {entries.map(([key, preset]) => {
+                    const Ic = preset.Icon;
+                    const base = preset.defaultColor;
+                    const light = shadeHex(base, 0.55);
+                    const dark = shadeHex(base, -0.35);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => addSticker(key)}
+                        aria-label={`Tambah stiker ${preset.label}`}
+                        className="group flex flex-col items-center gap-ms-1 rounded-xl border border-[#c9a84c]/15 bg-white/[0.03] p-ms-2 text-white/90 transition hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10 active:scale-95"
+                      >
+                        {/* Preview 3D: radial-gradient + inner ring + glossy highlight */}
+                        <span
+                          className="relative grid h-11 w-11 place-items-center rounded-full text-white shadow-[0_6px_14px_-4px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-black/40"
+                          style={{
+                            background: `radial-gradient(circle at 32% 28%, ${light} 0%, ${base} 55%, ${dark} 100%)`,
+                          }}
+                        >
+                          <Ic className="h-[22px] w-[22px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]" />
+                          {/* glossy highlight */}
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-x-2 top-1 h-2 rounded-full bg-white/55 blur-[2px]"
+                          />
+                        </span>
+                        <span className="text-ms-2xs text-[#f0d78c]/90">{preset.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -946,6 +1071,13 @@ function IconPill(props: {
 function stickerGlyph(k: string): string {
   switch (k) {
     case "arrow": return "→";
+    case "arrow-left": return "←";
+    case "arrow-up": return "↑";
+    case "arrow-down": return "↓";
+    case "arrow-upright": return "↗";
+    case "arrow-upleft": return "↖";
+    case "arrow-both": return "↔";
+    case "arrow-curve": return "↩";
     case "check": return "✓";
     case "x": return "✕";
     case "warning": return "!";
@@ -954,6 +1086,11 @@ function stickerGlyph(k: string): string {
     case "paid": return "$";
     case "pending": return "◐";
     case "verified": return "✓";
+    case "fire": return "🔥";
+    case "bolt": return "⚡";
+    case "heart": return "♥";
+    case "star": return "★";
+    case "thumb": return "👍";
     default: return "•";
   }
 }
