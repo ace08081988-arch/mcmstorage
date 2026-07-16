@@ -1,21 +1,96 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { formatDecimalID, formatIntegerID } from "@/lib/formatNumberID";
 
 /**
- * Input angka yang MENGIZINKAN kondisi kosong sementara saat user sedang
- * mengetik / menghapus. Value parent tetap `number`, tapi tampilan input
- * dikendalikan oleh draft string lokal. Nilai baru hanya di-commit ke
- * parent bila hasil parse angka valid & di dalam [min,max]. Saat blur,
- * kalau draft kosong/invalid, kita fallback ke `value` sekarang (bukan
- * memaksa ke `min`) — jadi user tidak "terjebak" pada nilai default.
+ * Input angka SSOT: menampilkan & menerima format id-ID
+ * (titik ribuan + koma desimal) secara live saat user mengetik.
  *
- * Bug asal: `value={p.jumlah ?? b.min}` + `Math.max(b.min, Number(e.target.value)||0)`
- * membuat backspace/clear langsung nge-snap ke `min` (mis. 0,01) sehingga
- * angka bawaan tidak bisa dihapus/diedit dari nol.
+ * Value parent tetap `number` murni (tanpa separator). Draft string
+ * lokal boleh kosong sementara sehingga angka bawaan bisa dihapus tanpa
+ * "nge-snap" ke min. Commit hanya kalau parse valid & di dalam [min,max].
  *
- * Komponen ini adalah SSOT untuk semua input angka form data bisnis
- * (harga, jumlah, stok, berat, hutang/piutang, pengaturan numerik).
- * Jangan fork ulang di route/komponen lain — import dari sini.
+ * Format live dilakukan tiap keystroke dengan preservasi caret berbasis
+ * jumlah karakter signifikan (digit + koma) sebelum caret.
+ *
+ * Decimal mode ditentukan otomatis dari `step`: step ≥ 1 & bulat → integer.
+ * Boleh di-override lewat prop `decimal` & `maxDecimals`.
  */
+
+type FormatState = {
+  formatted: string;
+  num: number | null;
+  /** posisi caret ideal setelah re-format (dalam string formatted) */
+  caret: number;
+};
+
+function reformat(
+  input: string,
+  caret: number,
+  decimal: boolean,
+  maxDecimals: number,
+): FormatState {
+  // Hitung significant chars sebelum caret (digit + separator desimal)
+  let sigBefore = 0;
+  for (let i = 0; i < Math.min(caret, input.length); i++) {
+    const ch = input[i]!;
+    if ((ch >= "0" && ch <= "9") || ch === "," || ch === ".") sigBefore++;
+  }
+  // Ekstraksi digit + max 1 pemisah desimal (koma/titik, koma jadi kanonik)
+  let intD = "";
+  let decD = "";
+  let sawSep = false;
+  for (const ch of input) {
+    if (ch >= "0" && ch <= "9") {
+      if (sawSep) {
+        if (decD.length < maxDecimals) decD += ch;
+      } else intD += ch;
+    } else if (decimal && !sawSep && (ch === "," || ch === ".")) {
+      sawSep = true;
+    }
+  }
+  // Strip leading zeros pada integer (biarkan "0" tunggal)
+  const intClean = intD.replace(/^0+(?=\d)/, "");
+  const intForFmt = intClean === "" ? (sawSep ? "0" : "") : intClean;
+  const grouped =
+    intForFmt === "" ? "" : formatIntegerID(Number(intForFmt));
+  const formatted = sawSep ? grouped + "," + decD : grouped;
+  // Hitung caret baru: cari indeks setelah karakter signifikan ke-sigBefore
+  let newCaret = formatted.length;
+  let seen = 0;
+  if (sigBefore <= 0) {
+    newCaret = 0;
+  } else {
+    for (let i = 0; i < formatted.length; i++) {
+      const ch = formatted[i]!;
+      if ((ch >= "0" && ch <= "9") || ch === ",") {
+        seen++;
+        if (seen >= sigBefore) {
+          newCaret = i + 1;
+          break;
+        }
+      }
+    }
+  }
+  // Parse jadi number
+  let num: number | null = null;
+  if (formatted !== "") {
+    const numStr = (intForFmt || "0") + (sawSep ? "." + (decD || "0") : "");
+    const parsed = Number(numStr);
+    num = Number.isFinite(parsed) ? parsed : null;
+  }
+  return { formatted, num, caret: newCaret };
+}
+
+function displayFromValue(
+  value: number,
+  decimal: boolean,
+  maxDecimals: number,
+): string {
+  if (!Number.isFinite(value)) return "";
+  if (!decimal) return formatIntegerID(value);
+  return formatDecimalID(value, maxDecimals, true);
+}
+
 export function NumericDraftInput({
   value,
   min,
@@ -27,13 +102,15 @@ export function NumericDraftInput({
   className,
   placeholder,
   ariaLabel,
-  inputMode = "decimal",
+  inputMode,
   emptyCommitsTo,
   disabled,
   id,
   name,
   autoFocus,
   onKeyDown,
+  decimal: decimalProp,
+  maxDecimals: maxDecimalsProp,
 }: {
   value: number;
   min: number;
@@ -46,30 +123,67 @@ export function NumericDraftInput({
   placeholder?: string;
   ariaLabel?: string;
   inputMode?: "decimal" | "numeric";
-  /** Kalau di-set, blur dengan draft kosong akan commit angka ini alih-alih fallback ke `value`. */
   emptyCommitsTo?: number;
   disabled?: boolean;
   id?: string;
   name?: string;
   autoFocus?: boolean;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  /** Override auto-detect: true = boleh desimal (koma), false = integer only. */
+  decimal?: boolean;
+  /** Max digit desimal (default: dari step, atau 2). */
+  maxDecimals?: number;
 }) {
+  const decimal =
+    decimalProp ?? !(Number.isInteger(step) && step >= 1);
+  const maxDecimals = maxDecimalsProp ?? (() => {
+    if (!decimal) return 0;
+    const s = String(step);
+    const dot = s.indexOf(".");
+    if (dot < 0) return 2;
+    return Math.min(6, s.length - dot - 1) || 2;
+  })();
+  const resolvedInputMode = inputMode ?? (decimal ? "decimal" : "numeric");
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const composingRef = useRef(false);
   const [raw, setRaw] = useState<string>(() =>
-    Number.isFinite(value) ? String(value) : "",
+    displayFromValue(value, decimal, maxDecimals),
   );
   const [focused, setFocused] = useState(false);
+  const pendingCaret = useRef<number | null>(null);
+
+  // Sinkron dari parent value hanya saat tidak fokus (hindari menimpa ketikan).
   useEffect(() => {
     if (focused) return;
-    const asNum = Number(raw);
-    if (raw !== "" && Number.isFinite(asNum) && asNum === value) return;
-    setRaw(Number.isFinite(value) ? String(value) : "");
-  }, [value, focused, raw]);
+    setRaw(displayFromValue(value, decimal, maxDecimals));
+  }, [value, focused, decimal, maxDecimals]);
+
+  // Restore caret setelah render kalau ada pendingCaret.
+  useEffect(() => {
+    if (pendingCaret.current !== null && inputRef.current && focused) {
+      const pos = pendingCaret.current;
+      pendingCaret.current = null;
+      const el = inputRef.current;
+      // requestAnimationFrame supaya browser sudah men-commit nilai baru.
+      requestAnimationFrame(() => {
+        try {
+          el.setSelectionRange(pos, pos);
+        } catch {
+          /* ignore */
+        }
+      });
+    }
+  });
+
   return (
     <input
+      ref={inputRef}
       id={id}
       name={name}
       type="text"
-      inputMode={inputMode}
+      inputMode={resolvedInputMode}
+      autoComplete="off"
       value={raw}
       disabled={disabled}
       autoFocus={autoFocus}
@@ -78,15 +192,35 @@ export function NumericDraftInput({
         onFocus?.();
       }}
       onKeyDown={onKeyDown}
+      onCompositionStart={() => {
+        composingRef.current = true;
+      }}
+      onCompositionEnd={(e) => {
+        composingRef.current = false;
+        // Trigger reformat manual dengan nilai final IME
+        const target = e.currentTarget;
+        const caret = target.selectionStart ?? target.value.length;
+        const state = reformat(target.value, caret, decimal, maxDecimals);
+        setRaw(state.formatted);
+        pendingCaret.current = state.caret;
+        if (state.num !== null && state.num >= min && state.num <= max) {
+          onCommit(state.num);
+        }
+      }}
       onChange={(e) => {
         const next = e.target.value;
-        setRaw(next);
-        if (next.trim() === "") return;
-        const normalized = next.replace(",", ".");
-        const n = Number(normalized);
-        if (!Number.isFinite(n)) return;
-        if (n < min || n > max) return;
-        onCommit(n);
+        const caret = e.target.selectionStart ?? next.length;
+        if (composingRef.current) {
+          setRaw(next);
+          return;
+        }
+        const state = reformat(next, caret, decimal, maxDecimals);
+        setRaw(state.formatted);
+        pendingCaret.current = state.caret;
+        if (state.formatted === "") return;
+        if (state.num === null) return;
+        if (state.num < min || state.num > max) return;
+        onCommit(state.num);
       }}
       onBlur={() => {
         setFocused(false);
@@ -95,23 +229,22 @@ export function NumericDraftInput({
           if (typeof emptyCommitsTo === "number") {
             const c = Math.min(max, Math.max(min, emptyCommitsTo));
             onCommit(c);
-            setRaw(String(c));
+            setRaw(displayFromValue(c, decimal, maxDecimals));
           } else {
-            setRaw(Number.isFinite(value) ? String(value) : "");
+            setRaw(displayFromValue(value, decimal, maxDecimals));
           }
           onBlur?.();
           return;
         }
-        const normalized = trimmed.replace(",", ".");
-        const n = Number(normalized);
-        if (!Number.isFinite(n)) {
-          setRaw(String(value));
+        const state = reformat(trimmed, trimmed.length, decimal, maxDecimals);
+        if (state.num === null) {
+          setRaw(displayFromValue(value, decimal, maxDecimals));
           onBlur?.();
           return;
         }
-        const clamped = Math.min(max, Math.max(min, n));
+        const clamped = Math.min(max, Math.max(min, state.num));
         onCommit(clamped);
-        setRaw(String(clamped));
+        setRaw(displayFromValue(clamped, decimal, maxDecimals));
         onBlur?.();
       }}
       step={step}
