@@ -1245,7 +1245,7 @@ function DetailHero({
             type="button"
             onClick={onAdd}
             title="Tambah penyiapan untuk judul ini"
-            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-success p-ms-2 text-success transition-all active:scale-95 dark:bg-success/15 dark:text-success sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl border border-success/40 bg-success/10 p-ms-2 text-success transition-all active:scale-95 dark:bg-success/15 dark:text-success sm:hidden"
           >
             <Plus className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Penyiapan</span>
@@ -1775,7 +1775,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   {autoSendSummary && (
                     <div
                       data-testid="auto-send-summary"
-                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-success bg-success px-ms-3 py-ms-2 text-ms-xs text-success"
+                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-success/40 bg-success/10 px-ms-3 py-ms-2 text-ms-xs text-success"
                     >
                       <div className="min-w-0">
                         <div className="font-semibold">Auto-Kirim tercatat</div>
@@ -1792,7 +1792,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                         type="button"
                         aria-label="Tutup ringkasan"
                         onClick={() => setAutoSendSummary(null)}
-                        className="rounded p-ms-1 text-success/70 hover:bg-success"
+                        className="rounded p-ms-1 text-success/70 hover:bg-success/20"
                       >
                         ×
                       </button>
@@ -1801,7 +1801,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   {autoSendCancelSummary && (
                     <div
                       data-testid="auto-send-cancel-summary"
-                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-warning bg-warning px-ms-3 py-ms-2 text-ms-xs text-warning"
+                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-xs text-warning"
                     >
                       <div className="min-w-0">
                         <div className="font-semibold">Auto-Kirim dibatalkan</div>
@@ -1829,7 +1829,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                         type="button"
                         aria-label="Tutup ringkasan pembatalan"
                         onClick={() => setAutoSendCancelSummary(null)}
-                        className="rounded p-ms-1 text-warning/70 hover:bg-warning"
+                        className="rounded p-ms-1 text-warning/70 hover:bg-warning/20"
                       >
                         ×
                       </button>
