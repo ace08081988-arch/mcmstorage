@@ -891,32 +891,56 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
       {/* Sticker sheet */}
       {showStickers && (
-        <div className="absolute inset-x-0 bottom-20 z-30 rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right">
+        <div className="absolute inset-x-0 bottom-20 z-30 max-h-[55vh] overflow-y-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Stiker</div>
             <button onClick={() => setShowStickers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
           </div>
-          <div className="grid grid-cols-4 gap-ms-2">
-            {Object.entries(STICKER_PRESETS).map(([key, preset]) => {
-              const Ic = preset.Icon;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => addSticker(key)}
-                  className="flex flex-col items-center gap-ms-1 rounded-xl border border-[#c9a84c]/15 bg-white/[0.03] p-ms-3 text-white/90 transition hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10"
-                >
-                  <div
-                    className="grid h-10 w-10 place-items-center rounded-full text-[#0d0d0d] shadow-inner"
-                    style={{ backgroundColor: preset.defaultColor }}
-                  >
-                    <Ic className="h-5 w-5" />
-                  </div>
-                  <span className="text-ms-xs text-[#f0d78c]/90">{preset.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          {(["panah", "status", "reaksi"] as const).map((group) => {
+            const entries = Object.entries(STICKER_PRESETS).filter(([, p]) => p.group === group);
+            if (entries.length === 0) return null;
+            const label = group === "panah" ? "Panah" : group === "status" ? "Status" : "Reaksi";
+            return (
+              <div key={group} className="mb-3 last:mb-1">
+                <div className="mb-1.5 px-1 text-ms-2xs font-semibold uppercase tracking-[0.14em] text-[#f0d78c]/60">
+                  {label}
+                </div>
+                <div className="grid grid-cols-4 gap-ms-2">
+                  {entries.map(([key, preset]) => {
+                    const Ic = preset.Icon;
+                    const base = preset.defaultColor;
+                    const light = shadeHex(base, 0.55);
+                    const dark = shadeHex(base, -0.35);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => addSticker(key)}
+                        aria-label={`Tambah stiker ${preset.label}`}
+                        className="group flex flex-col items-center gap-ms-1 rounded-xl border border-[#c9a84c]/15 bg-white/[0.03] p-ms-2 text-white/90 transition hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10 active:scale-95"
+                      >
+                        {/* Preview 3D: radial-gradient + inner ring + glossy highlight */}
+                        <span
+                          className="relative grid h-11 w-11 place-items-center rounded-full text-white shadow-[0_6px_14px_-4px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-black/40"
+                          style={{
+                            background: `radial-gradient(circle at 32% 28%, ${light} 0%, ${base} 55%, ${dark} 100%)`,
+                          }}
+                        >
+                          <Ic className="h-[22px] w-[22px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]" />
+                          {/* glossy highlight */}
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-x-2 top-1 h-2 rounded-full bg-white/55 blur-[2px]"
+                          />
+                        </span>
+                        <span className="text-ms-2xs text-[#f0d78c]/90">{preset.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
