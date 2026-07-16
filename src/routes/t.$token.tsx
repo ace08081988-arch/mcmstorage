@@ -2426,7 +2426,7 @@ function ItemCard({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
   const [locUrl, setLocUrl] = useState("");
-  const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [gps, setGps] = useState<{ lat: number; lng: number; accuracy?: number | null } | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [refSigned, setRefSigned] = useState<string | null>(null);
@@ -2780,8 +2780,8 @@ function ItemCard({
     setGpsLoading(true);
     requestGeolocation(
       (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setGps({ lat: latitude, lng: longitude });
+        const { latitude, longitude, accuracy } = pos.coords;
+        setGps({ lat: latitude, lng: longitude, accuracy });
         setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
       },
       { retry: () => takeLocation(), onSettled: () => setGpsLoading(false) },
@@ -3279,6 +3279,12 @@ function ItemCard({
               <ClipboardPaste className="h-4 w-4" /> Tempel
             </button>
           </div>
+          {gps && (
+            <div className="text-ms-2xs text-muted-foreground tabular-nums">
+              {gps.lat.toFixed(6)}, {gps.lng.toFixed(6)}
+              {gps.accuracy ? ` · ±${Math.round(gps.accuracy)} m` : null}
+            </div>
+          )}
           <div>
             <button
               type="button"
@@ -4008,7 +4014,7 @@ function RequestForm({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
   const [locUrl, setLocUrl] = useState("");
-  const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [gps, setGps] = useState<{ lat: number; lng: number; accuracy?: number | null } | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -4303,7 +4309,7 @@ function RequestForm({
     setGpsLoading(true);
     requestGeolocation(
       (pos) => {
-        setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
         setLocUrl(
           `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
         );
@@ -4637,6 +4643,12 @@ function RequestForm({
                   <ClipboardPaste className="h-4 w-4" /> Tempel
                 </button>
               </div>
+              {gps && (
+                <div className="text-ms-2xs text-muted-foreground tabular-nums">
+                  {gps.lat.toFixed(6)}, {gps.lng.toFixed(6)}
+                  {gps.accuracy ? ` · ±${Math.round(gps.accuracy)} m` : null}
+                </div>
+              )}
             </div>
             {valid ? (
               <a
