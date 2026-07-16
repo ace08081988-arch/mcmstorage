@@ -3279,6 +3279,12 @@ function ItemCard({
               <ClipboardPaste className="h-4 w-4" /> Tempel
             </button>
           </div>
+          {gps && (
+            <div className="text-ms-2xs text-muted-foreground tabular-nums">
+              {gps.lat.toFixed(6)}, {gps.lng.toFixed(6)}
+              {gps.accuracy ? ` · ±${Math.round(gps.accuracy)} m` : null}
+            </div>
+          )}
           <div>
             <button
               type="button"
@@ -4637,6 +4643,12 @@ function RequestForm({
                   <ClipboardPaste className="h-4 w-4" /> Tempel
                 </button>
               </div>
+              {gps && (
+                <div className="text-ms-2xs text-muted-foreground tabular-nums">
+                  {gps.lat.toFixed(6)}, {gps.lng.toFixed(6)}
+                  {gps.accuracy ? ` · ±${Math.round(gps.accuracy)} m` : null}
+                </div>
+              )}
             </div>
             {valid ? (
               <a
