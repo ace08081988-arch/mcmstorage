@@ -76,6 +76,8 @@ import {
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
 import { formatQty } from "@/lib/unit-kinds";
+import { cn } from "@/lib/utils";
+
 
 /**
  * Label satuan ringkas untuk tampilan worker portal mobile.
@@ -455,7 +457,52 @@ class PortalTopBoundary extends Component<
   }
 }
 
+type MiniMapCoords = { lat: number; lng: number };
+
+function parseCoordsFromUrl(url: string): MiniMapCoords | null {
+  const m = url.match(/(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const lat = parseFloat(m[1]);
+  const lng = parseFloat(m[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
+type MiniMapPreviewProps = {
+  locUrl: string;
+  gps?: { lat: number; lng: number; accuracy?: number | null } | null;
+  className?: string;
+};
+
+function MiniMapPreview({ locUrl, gps, className }: MiniMapPreviewProps) {
+  const coords: MiniMapCoords | null = gps ? { lat: gps.lat, lng: gps.lng } : parseCoordsFromUrl(locUrl);
+  if (!coords) return null;
+  const { lat, lng } = coords;
+  return (
+    <a
+      href={`https://www.google.com/maps?q=${lat},${lng}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Buka lokasi di Google Maps"
+      className={cn("relative block w-full overflow-hidden rounded-lg border bg-muted", className)}
+    >
+      <iframe
+        title="Pratinjau lokasi"
+        src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+        className="pointer-events-none h-full w-full border-0"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+      />
+      <span className="absolute inset-x-0 bottom-0 truncate bg-background/80 px-2 py-1 text-center text-[11px] font-medium tabular-nums text-foreground backdrop-blur">
+        {lat.toFixed(4)}, {lng.toFixed(4)}
+      </span>
+    </a>
+  );
+}
+
 function PublicPrepPageWithBoundary() {
+
   const [resetKey, setResetKey] = useState(0);
   const attemptRef = useRef(0);
   const onError = useCallback((error: Error) => {
@@ -3285,7 +3332,9 @@ function ItemCard({
               {gps.accuracy ? ` · ±${Math.round(gps.accuracy)} m` : null}
             </div>
           )}
+          <MiniMapPreview locUrl={locUrl} gps={gps} className="h-40" />
           <div>
+
             <button
               type="button"
               onClick={() => setManualCoordOpen((v) => !v)}
