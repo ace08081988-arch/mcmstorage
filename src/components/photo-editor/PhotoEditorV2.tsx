@@ -86,7 +86,20 @@ const STICKER_PRESETS: Record<
   "arrow-upright": { label: "Serong", Icon: ArrowUpRight, defaultColor: "#f0d78c", group: "panah" },
   "arrow-upleft": { label: "Balik", Icon: ArrowUpLeft, defaultColor: "#f0d78c", group: "panah" },
   "arrow-both": { label: "Dua Arah", Icon: ArrowLeftRight, defaultColor: "#c9a84c", group: "panah" },
-  "arrow-curve": { label: "Belok", Icon: CornerUpLeft, defaultColor: "#f0d78c", group: "panah" },
+  // ── Panah melengkung (curved)
+  "arrow-curve": { label: "Belok Kiri", Icon: CornerUpLeft, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-curve-r": { label: "Belok Kanan", Icon: CornerUpRight, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-curve-dl": { label: "Turun Kiri", Icon: CornerDownLeft, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-curve-dr": { label: "Turun Kanan", Icon: CornerDownRight, defaultColor: "#f0d78c", group: "panah" },
+  // ── Panah tebal 3D (bold — stroke lebih tebal dari ArrowRight biasa)
+  "arrow-bold-r": { label: "Tebal Kanan", Icon: MoveRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-bold-l": { label: "Tebal Kiri", Icon: MoveLeft, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-bold-u": { label: "Tebal Atas", Icon: MoveUp, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-bold-d": { label: "Tebal Bawah", Icon: MoveDown, defaultColor: "#c9a84c", group: "panah" },
+  // ── Panah putar (rotate/refresh)
+  "arrow-rotate-cw": { label: "Putar Kanan", Icon: RotateCw, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-rotate-ccw": { label: "Putar Kiri", Icon: RotateCcw, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-refresh": { label: "Refresh", Icon: RefreshCw, defaultColor: "#c9a84c", group: "panah" },
   // ── Status operasional
   check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e", group: "status" },
   x: { label: "Silang", Icon: X, defaultColor: "#ef4444", group: "status" },
