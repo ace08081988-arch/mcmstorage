@@ -3223,9 +3223,26 @@ function ItemCard({
             <button
               type="button"
               onClick={takeLocation}
-              className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
+              disabled={gpsLoading}
+              aria-busy={gpsLoading}
+              aria-live="polite"
+              className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <MapPin className="h-4 w-4" /> GPS otomatis
+              {gpsLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  <span className="truncate">Mengambil lokasi…</span>
+                </>
+              ) : gps ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
+                  <span className="truncate">Lokasi terisi</span>
+                </>
+              ) : (
+                <>
+                  <MapPin className="h-4 w-4" aria-hidden /> GPS otomatis
+                </>
+              )}
             </button>
             <button
               type="button"
