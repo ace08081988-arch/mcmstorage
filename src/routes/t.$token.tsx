@@ -204,6 +204,62 @@ async function beginPortalNativePicker(): Promise<() => void> {
   return endNativePicker;
 }
 
+/**
+ * Ambil lokasi GPS dengan pesan error yang jelas + tombol "Coba lagi".
+ * Dipakai oleh takeLocation() di dua branch (prep task & request).
+ */
+function requestGeolocation(
+  onSuccess: (pos: GeolocationPosition) => void,
+  opts?: { retry?: () => void },
+) {
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    toast.error("GPS tidak tersedia di perangkat ini", {
+      description: "Coba isi koordinat manual atau tempel link Google Maps.",
+    });
+    return;
+  }
+  const id = toast.loading("Mengambil lokasi…");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      try {
+        onSuccess(pos);
+        toast.success("Lokasi terisi", { id });
+      } catch (e) {
+        toast.error("Gagal memproses lokasi", {
+          id,
+          description: e instanceof Error ? e.message : String(e),
+          action: opts?.retry ? { label: "Coba lagi", onClick: opts.retry } : undefined,
+        });
+      }
+    },
+    (err) => {
+      // GeolocationPositionError codes:
+      // 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+      let title = "Gagal mengambil lokasi";
+      let description = err.message || "Coba lagi beberapa saat.";
+      if (err.code === 1) {
+        title = "Izin lokasi ditolak";
+        description =
+          "Aktifkan izin lokasi untuk aplikasi/browser di Pengaturan HP, lalu coba lagi. Atau isi koordinat manual di bawah.";
+      } else if (err.code === 2) {
+        title = "Lokasi tidak tersedia";
+        description =
+          "Sinyal GPS lemah. Pindah ke area terbuka atau nyalakan Lokasi/Wi-Fi, lalu coba lagi.";
+      } else if (err.code === 3) {
+        title = "GPS timeout";
+        description = "Perangkat butuh waktu lebih lama. Coba lagi di area terbuka.";
+      }
+      toast.error(title, {
+        id,
+        description,
+        duration: 8000,
+        action: opts?.retry ? { label: "Coba lagi", onClick: opts.retry } : undefined,
+      });
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+  );
+}
+
 function pickedPhotoUrl(photo: NativePickedPhoto): string | null {
   return photo.webPath || photo.path || photo.uri || null;
 }
@@ -2706,20 +2762,13 @@ function ItemCard({
   }
 
   function takeLocation() {
-    if (!navigator.geolocation) {
-      toast.error("GPS tidak tersedia");
-      return;
-    }
-    const id = toast.loading("Mengambil lokasi…");
-    navigator.geolocation.getCurrentPosition(
+    requestGeolocation(
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setGps({ lat: latitude, lng: longitude });
         setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
-        toast.success("Lokasi terisi", { id });
       },
-      (err) => toast.error("Gagal: " + err.message, { id }),
-      { enableHighAccuracy: true, timeout: 10000 },
+      { retry: () => takeLocation() },
     );
   }
 
@@ -4216,19 +4265,14 @@ function RequestForm({
   }
 
   function takeLocation() {
-    if (!navigator.geolocation) {
-      toast.error("GPS tidak tersedia");
-      return;
-    }
-    const id = toast.loading("Mengambil lokasi…");
-    navigator.geolocation.getCurrentPosition(
+    requestGeolocation(
       (pos) => {
         setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocUrl(`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`);
-        toast.success("Lokasi terisi", { id });
+        setLocUrl(
+          `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
+        );
       },
-      (err) => toast.error("Gagal: " + err.message, { id }),
-      { enableHighAccuracy: true, timeout: 10000 },
+      { retry: () => takeLocation() },
     );
   }
 
