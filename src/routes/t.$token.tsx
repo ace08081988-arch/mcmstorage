@@ -393,9 +393,10 @@ class WorkerSectionBoundary extends Component<
     children: ReactNode;
     renderFallback: (error: Error) => ReactNode;
   },
-  { error: Error | null }
+  { error: Error | null; attempt: number }
 > {
-  state: { error: Error | null } = { error: null };
+  state: { error: Error | null; attempt: number } = { error: null, attempt: 0 };
+  private retryTimer: number | null = null;
   static getDerivedStateFromError(error: Error): { error: Error } {
     return { error };
   }
@@ -404,6 +405,25 @@ class WorkerSectionBoundary extends Component<
     // dan memantulkan user kembali ke layar PIN.
     // eslint-disable-next-line no-console
     console.error("[t.$token] worker section render failed", error, info.componentStack);
+    // Auto-heal untuk race DOM transien (mis. `removeChild` pada Android
+    // WebView setelah balik dari kamera/galeri, atau race unmount portal
+    // yang membuat React & DOM sesaat tidak sinkron). Kartu tetangga tidak
+    // terpengaruh, dan kalau error persistent, boundary akan menangkap
+    // lagi pada attempt berikutnya — batasi 2× coba supaya tidak looping
+    // menutupi bug betulan.
+    if (this.state.attempt < 2 && typeof window !== "undefined") {
+      if (this.retryTimer !== null) window.clearTimeout(this.retryTimer);
+      this.retryTimer = window.setTimeout(() => {
+        this.retryTimer = null;
+        this.setState((prev) => ({ error: null, attempt: prev.attempt + 1 }));
+      }, 350);
+    }
+  }
+  componentWillUnmount() {
+    if (this.retryTimer !== null && typeof window !== "undefined") {
+      window.clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
   }
   render() {
     if (this.state.error) return this.props.renderFallback(this.state.error);
