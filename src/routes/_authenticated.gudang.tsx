@@ -3481,7 +3481,8 @@ function PayForm({
     <div className="mt-2 space-y-1.5 rounded border border-dashed p-ms-2">
       <div className="flex gap-ms-1.5">
         <input
-          type="number"
+          type="text"
+          inputMode="numeric"
           step="1"
           min="0"
           max={remaining}
