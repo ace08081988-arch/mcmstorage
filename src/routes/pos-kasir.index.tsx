@@ -10,6 +10,7 @@ import {
 import { loadGudangProduk, recordSale, refundSale } from "@/lib/pos-kasir-gudang";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
+import { NumericTextField } from "@/components/NumericDraftInput";
 // jsPDF + autoTable dimuat lazy (dynamic import) di dalam exportPDF supaya
 // bundle awal halaman POS Kasir tidak membawa ~200KB kode PDF yang hanya
 // dipakai saat user mengekspor.
@@ -864,18 +865,16 @@ function PosKasirPage() {
 
               <div className={modeRingkas ? "mt-3" : "mt-4"}>
                 <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">Input Jumlah ({unit})</label>
-                <input
-                  type="number"
-                  step={inputStep}
-                  min="0"
-                  max={selected.stokKg}
+                <NumericTextField
                   value={beratStr}
-                  onChange={(e) => setBeratStr(e.target.value)}
+                  onValueChange={setBeratStr}
+                  step={inputStep}
+                  decimal={true}
                   className={`w-full bg-slate-900 border rounded-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
                     berat > selected.stokKg
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
                       : "border-slate-700 focus:border-success focus:ring-success/30"
-                  } ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
+                  }`}
                   placeholder={inputPlaceholder}
                 />
                 {berat > selected.stokKg && (
@@ -892,15 +891,13 @@ function PosKasirPage() {
                   <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Harga jual / {unit} (Rp)
                   </label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    step="1"
-                    min="0"
+                  <NumericTextField
                     value={hargaStr}
-                    onChange={(e) => setHargaStr(e.target.value)}
-                    placeholder="0"
+                    onValueChange={setHargaStr}
+                    step={1}
+                    decimal={false}
                     className={`w-full bg-slate-900 border border-slate-700 focus:border-success focus:ring-success/30 rounded-lg font-mono focus:outline-none focus:ring-2 ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
+                    placeholder="0"
                   />
                 </div>
               )}
@@ -983,13 +980,11 @@ function PosKasirPage() {
                 <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">
                   Input Jumlah ({unit})
                 </label>
-                <input
-                  type="number"
-                  step={inputStep}
-                  min="0"
-                  max={selected.stokKg}
+                <NumericTextField
                   value={beratStr}
-                  onChange={(e) => setBeratStr(e.target.value)}
+                  onValueChange={setBeratStr}
+                  step={inputStep}
+                  decimal={true}
                   className={`mt-2 w-full bg-slate-900 border rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
                     berat > selected.stokKg
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
@@ -1043,16 +1038,7 @@ function PosKasirPage() {
                   <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Harga jual / {unit} (Rp)
                   </label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    step="1"
-                    min="0"
-                    value={hargaStr}
-                    onChange={(e) => setHargaStr(e.target.value)}
-                    placeholder="0"
-                    className="mt-2 w-full bg-slate-900 border border-slate-700 focus:border-success focus:ring-success/30 rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2"
-                  />
+                  <NumericTextField value={hargaStr} onValueChange={setHargaStr} step={1} decimal={false} className="mt-2 w-full bg-slate-900 border border-slate-700 focus:border-success focus:ring-success/30 rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2" placeholder="0" />
                 </div>
               )}
             </div>

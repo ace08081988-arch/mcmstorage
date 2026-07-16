@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { parseWeightToGrams, formatGramsSmart } from "@/lib/weight-parse";
+import { NumericTextField } from "@/components/NumericDraftInput";
 
 type Props = {
   /** Nilai kanonik dalam gram (string agar sinkron dengan form controlled). */
@@ -55,20 +56,7 @@ export function SmartWeightInput({
     // backspace / snap ke nilai HTML5 min). Validasi min dilakukan di parent
     // saat submit, bukan lewat atribut HTML5.
     return (
-      <input
-        type="text"
-        inputMode="decimal"
-        step="0.01"
-        {...(typeof min === "number" ? { min } : {})}
-        className={className}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        disabled={disabled}
-        autoFocus={autoFocus}
-        aria-label={ariaLabel}
-      />
+      <NumericTextField value={value} onValueChange={onChange} step={0.01} decimal={true} className={className} placeholder={placeholder} ariaLabel={ariaLabel} disabled={disabled} autoFocus required />
     );
   }
 

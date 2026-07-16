@@ -9,6 +9,7 @@ import { WaShareButton } from "@/components/share/SaleShareButtons";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 import { StatusBadge, type StatusVariant } from "@/components/StatusBadge";
 import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
+import { NumericTextField } from "@/components/NumericDraftInput";
 
 type Item = {
   id: string;
@@ -846,16 +847,17 @@ function PackageForm({
                     placeholder="Label (1G)"
                     className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs"
                   />
-                  <input
-                    type="number" step="0.01" min="0"
+                  <NumericTextField
                     value={newGrams}
-                    onChange={(e) => setNewGrams(e.target.value)}
+                    onValueChange={setNewGrams}
+                    step={0.01}
+                    decimal={true}
+                    className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs tabular-nums"
                     placeholder={
                       item.base_unit === "pcs"
                         ? "Isi (pcs)"
                         : `Berat (${item.base_unit === "g" ? ecerUnit : item.base_unit})`
                     }
-                    className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs tabular-nums"
                   />
                   <button
                     type="button"
@@ -878,15 +880,7 @@ function PackageForm({
             <span className="text-ms-2xs text-muted-foreground">
               {item.base_unit === "pcs" ? "Jumlah / isi" : "Jumlah"} ({item.base_unit}) · stok: {fmtItemQty(item.stock_base, item)}
             </span>
-            <input
-              type="number"
-              step={item.base_unit === "g" ? "0.01" : "1"}
-              min="0"
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              placeholder={item.base_unit === "g" ? "mis. 0.5" : "mis. 1"}
-              className="mt-1 h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums"
-            />
+            <NumericTextField value={qty} onValueChange={setQty} step={item.base_unit === "g" ? "0.01" : "1"} decimal={true} className="mt-1 h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums" placeholder={item.base_unit === "g" ? "mis. 0.5" : "mis. 1"} />
           </label>
 
           <div>
