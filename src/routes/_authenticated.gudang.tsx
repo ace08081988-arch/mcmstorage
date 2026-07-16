@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
 import {
