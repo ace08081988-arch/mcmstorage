@@ -210,12 +210,13 @@ async function beginPortalNativePicker(): Promise<() => void> {
  */
 function requestGeolocation(
   onSuccess: (pos: GeolocationPosition) => void,
-  opts?: { retry?: () => void },
+  opts?: { retry?: () => void; onSettled?: () => void },
 ) {
   if (typeof navigator === "undefined" || !navigator.geolocation) {
     toast.error("GPS tidak tersedia di perangkat ini", {
       description: "Coba isi koordinat manual atau tempel link Google Maps.",
     });
+    opts?.onSettled?.();
     return;
   }
   const id = toast.loading("Mengambil lokasi…");
@@ -230,6 +231,8 @@ function requestGeolocation(
           description: e instanceof Error ? e.message : String(e),
           action: opts?.retry ? { label: "Coba lagi", onClick: opts.retry } : undefined,
         });
+      } finally {
+        opts?.onSettled?.();
       }
     },
     (err) => {
@@ -255,6 +258,7 @@ function requestGeolocation(
         duration: 8000,
         action: opts?.retry ? { label: "Coba lagi", onClick: opts.retry } : undefined,
       });
+      opts?.onSettled?.();
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
   );
