@@ -82,6 +82,7 @@ import { Route as LovableVisualReadyBadgesSelectorRouteImport } from './routes/l
 import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
 import { Route as LovableVisualPressScopeRouteImport } from './routes/lovable.visual.press-scope'
 import { Route as LovableVisualPressAuditRouteImport } from './routes/lovable.visual.press-audit'
+import { Route as LovableVisualPrepLocButtonsRouteImport } from './routes/lovable.visual.prep-loc-buttons'
 import { Route as LovableVisualPhotoEditorRouteImport } from './routes/lovable.visual.photo-editor'
 import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lovable.visual.min-supported-form'
 import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lovable.visual.message-hidden-rls'
@@ -519,6 +520,12 @@ const LovableVisualPressAuditRoute = LovableVisualPressAuditRouteImport.update({
   path: '/lovable/visual/press-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableVisualPrepLocButtonsRoute =
+  LovableVisualPrepLocButtonsRouteImport.update({
+    id: '/lovable/visual/prep-loc-buttons',
+    path: '/lovable/visual/prep-loc-buttons',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualPhotoEditorRoute =
   LovableVisualPhotoEditorRouteImport.update({
     id: '/lovable/visual/photo-editor',
@@ -900,6 +907,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/photo-editor': typeof LovableVisualPhotoEditorRoute
+  '/lovable/visual/prep-loc-buttons': typeof LovableVisualPrepLocButtonsRoute
   '/lovable/visual/press-audit': typeof LovableVisualPressAuditRoute
   '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
@@ -1019,6 +1027,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/photo-editor': typeof LovableVisualPhotoEditorRoute
+  '/lovable/visual/prep-loc-buttons': typeof LovableVisualPrepLocButtonsRoute
   '/lovable/visual/press-audit': typeof LovableVisualPressAuditRoute
   '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
@@ -1143,6 +1152,7 @@ export interface FileRoutesById {
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/photo-editor': typeof LovableVisualPhotoEditorRoute
+  '/lovable/visual/prep-loc-buttons': typeof LovableVisualPrepLocButtonsRoute
   '/lovable/visual/press-audit': typeof LovableVisualPressAuditRoute
   '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
@@ -1267,6 +1277,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/photo-editor'
+    | '/lovable/visual/prep-loc-buttons'
     | '/lovable/visual/press-audit'
     | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
@@ -1386,6 +1397,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/photo-editor'
+    | '/lovable/visual/prep-loc-buttons'
     | '/lovable/visual/press-audit'
     | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
@@ -1509,6 +1521,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/photo-editor'
+    | '/lovable/visual/prep-loc-buttons'
     | '/lovable/visual/press-audit'
     | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
@@ -1574,6 +1587,7 @@ export interface RootRouteChildren {
   LovableVisualMessageHiddenRlsRoute: typeof LovableVisualMessageHiddenRlsRoute
   LovableVisualMinSupportedFormRoute: typeof LovableVisualMinSupportedFormRoute
   LovableVisualPhotoEditorRoute: typeof LovableVisualPhotoEditorRoute
+  LovableVisualPrepLocButtonsRoute: typeof LovableVisualPrepLocButtonsRoute
   LovableVisualPressAuditRoute: typeof LovableVisualPressAuditRoute
   LovableVisualPressScopeRoute: typeof LovableVisualPressScopeRoute
   LovableVisualProdukListRoute: typeof LovableVisualProdukListRoute
@@ -2106,6 +2120,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/visual/press-audit'
       fullPath: '/lovable/visual/press-audit'
       preLoaderRoute: typeof LovableVisualPressAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/prep-loc-buttons': {
+      id: '/lovable/visual/prep-loc-buttons'
+      path: '/lovable/visual/prep-loc-buttons'
+      fullPath: '/lovable/visual/prep-loc-buttons'
+      preLoaderRoute: typeof LovableVisualPrepLocButtonsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/visual/photo-editor': {
@@ -2693,6 +2714,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualMessageHiddenRlsRoute: LovableVisualMessageHiddenRlsRoute,
   LovableVisualMinSupportedFormRoute: LovableVisualMinSupportedFormRoute,
   LovableVisualPhotoEditorRoute: LovableVisualPhotoEditorRoute,
+  LovableVisualPrepLocButtonsRoute: LovableVisualPrepLocButtonsRoute,
   LovableVisualPressAuditRoute: LovableVisualPressAuditRoute,
   LovableVisualPressScopeRoute: LovableVisualPressScopeRoute,
   LovableVisualProdukListRoute: LovableVisualProdukListRoute,
