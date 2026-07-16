@@ -1093,6 +1093,16 @@ function stickerGlyph(k: string): string {
     case "arrow-upleft": return "↖";
     case "arrow-both": return "↔";
     case "arrow-curve": return "↩";
+    case "arrow-curve-r": return "↪";
+    case "arrow-curve-dl": return "↲";
+    case "arrow-curve-dr": return "↳";
+    case "arrow-bold-r": return "➜";
+    case "arrow-bold-l": return "⬅";
+    case "arrow-bold-u": return "⬆";
+    case "arrow-bold-d": return "⬇";
+    case "arrow-rotate-cw": return "↻";
+    case "arrow-rotate-ccw": return "↺";
+    case "arrow-refresh": return "⟳";
     case "check": return "✓";
     case "x": return "✕";
     case "warning": return "!";
