@@ -147,6 +147,12 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const [showLayers, setShowLayers] = useState(false);
   const [showText, setShowText] = useState<null | { id: string }>(null);
   const [showStickers, setShowStickers] = useState(false);
+  // 3D sticker style controls — global (berlaku untuk semua stiker & preview
+  // sheet). Range 0-100 supaya intuitif di slider; default 100 = tampilan
+  // asli. Nilai dipetakan ke opacity/skala offset di renderSticker.
+  const [stickerShadow, setStickerShadow] = useState<number>(100);
+  const [stickerGloss, setStickerGloss] = useState<number>(100);
+  const [stickerRim, setStickerRim] = useState<number>(100);
   // Panel gaya (warna/tebal/opacity) muncul otomatis saat tool coret/bentuk/teks aktif.
   // Panel dapat ditutup manual lewat handle drag di atasnya — state ini menyimpan
   // pilihan pemilik agar tidak "muncul lagi" saat mengganti antar tool goresan.
