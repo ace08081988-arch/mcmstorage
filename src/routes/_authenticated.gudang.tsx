@@ -1017,9 +1017,7 @@ function EditableSaleRow({
         <div className="grid grid-cols-2 gap-ms-1.5">
           <label className="text-[0.625rem] text-muted-foreground">
             Nominal
-            <input type="text" inputMode="numeric" step="1" min="0" value={total}
-              onChange={(e) => setTotal(e.target.value)}
-              className="mt-0.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
+            <NumericTextField value={total} onValueChange={setTotal} step={1} decimal={false} className="mt-0.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
           </label>
           <label className="text-[0.625rem] text-muted-foreground">
             Tanggal
@@ -1144,9 +1142,7 @@ function EditablePaymentRow({
         <div className="grid grid-cols-2 gap-ms-1.5">
           <label className="text-[0.625rem] text-muted-foreground">
             Nominal
-            <input type="text" inputMode="numeric" step="1" min="0" value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="mt-0.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
+            <NumericTextField value={amount} onValueChange={setAmount} step={1} decimal={false} className="mt-0.5 w-full rounded border bg-background px-ms-2 py-1 text-ms-xs" />
           </label>
           <label className="text-[0.625rem] text-muted-foreground">
             Tanggal
@@ -1241,13 +1237,7 @@ function CustomerPayForm({
   return (
     <div className="space-y-1.5 rounded border border-dashed p-ms-2">
       <div className="flex gap-ms-1.5">
-        <input
-          type="text" inputMode="numeric" step="1" min="0"
-          placeholder="Nominal terima (Rp)"
-          className={`flex-1 rounded border bg-background px-ms-2 py-1 text-ms-xs ${errorMsg ? "border-destructive" : ""}`}
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
+        <NumericTextField value={amount} onValueChange={setAmount} step={1} decimal={false} className={`flex-1 rounded border bg-background px-ms-2 py-1 text-ms-xs ${errorMsg ? "border-destructive" : ""}`} placeholder="Nominal terima (Rp)" />
         <button type="button" disabled={payDisabled} onClick={() => pay(parsed)}
           className="rounded bg-primary px-ms-2 py-1 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50">
           Terima
@@ -1972,7 +1962,7 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
                   ariaLabel="Isi per kemasan (gram/kg/ons)"
                 />
               ) : (
-                <input type="text" inputMode="decimal" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+                <NumericTextField value={packageSize} onValueChange={setPackageSize} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" />
               )}
             </label>
           )}
@@ -1990,12 +1980,12 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
                 ariaLabel="Stok saat ini (gram/kg/ons)"
               />
             ) : (
-              <input type="text" inputMode="decimal" step="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={stockBase} onChange={(e) => setStockBase(e.target.value)} />
+              <NumericTextField value={stockBase} onValueChange={setStockBase} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" />
             )}
           </label>
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">HPP / {baseUnit} (Rp)</span>
-            <input type="text" inputMode="decimal" step="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={avgCost} onChange={(e) => setAvgCost(e.target.value)} />
+            <NumericTextField value={avgCost} onValueChange={setAvgCost} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" />
           </label>
         </div>
         <div className="text-[0.6875rem] text-warning">
@@ -2564,7 +2554,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
                     ariaLabel="Isi per kemasan (gram/kg/ons)"
                   />
                 ) : (
-                  <input type="text" inputMode="decimal" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} required />
+                  <NumericTextField value={packageSize} onValueChange={setPackageSize} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" required />
                 )}
               </label>
             )}
@@ -2606,19 +2596,19 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
                   ? displayPackageType
                   : displayHumanBase || "unit")}
           </span>
-          <input type="text" inputMode="decimal" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={packageQty} onChange={(e) => setPackageQty(e.target.value)} required />
+          <NumericTextField value={packageQty} onValueChange={setPackageQty} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" required />
         </label>
         {priceMode === "package" ? (
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">
               Harga beli / {kartonActive ? "karton" : displayPackageType} (Rp)
             </span>
-            <input type="text" inputMode="numeric" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
+            <NumericTextField value={pricePerPackage} onValueChange={setPricePerPackage} step={1} decimal={false} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" required />
           </label>
         ) : (
           <label className="block">
             <span className="text-[0.6875rem] text-muted-foreground">Harga beli / {displayHumanBase} (Rp)</span>
-            <input type="text" inputMode="decimal" step="0.01" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
+            <NumericTextField value={pricePerBase} onValueChange={setPricePerBase} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" required />
           </label>
         )}
       </div>
@@ -3027,20 +3017,20 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
                   ariaLabel="Jumlah jual (gram/kg/ons)"
                 />
               ) : (
-                <input type="text" inputMode="decimal" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                <NumericTextField value={qty} onValueChange={setQty} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" required />
               )}
             </label>
             {sellMode === "base" ? (
               <label className="block">
                 <span className="text-[0.6875rem] text-muted-foreground">Harga / {humU} (Rp)</span>
-                <input type="text" inputMode="numeric" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
+                <NumericTextField value={pricePerBase} onValueChange={setPricePerBase} step={1} decimal={false} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" required />
               </label>
             ) : (
               <label className="block">
                 <span className="text-[0.6875rem] text-muted-foreground">
                   Harga / {sellMode === "karton" ? "karton" : packageLabelForQty} (Rp)
                 </span>
-                <input type="text" inputMode="numeric" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
+                <NumericTextField value={pricePerPackage} onValueChange={setPricePerPackage} step={1} decimal={false} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" required />
               </label>
             )}
           </div>
@@ -3481,17 +3471,7 @@ function PayForm({
   return (
     <div className="mt-2 space-y-1.5 rounded border border-dashed p-ms-2">
       <div className="flex gap-ms-1.5">
-        <input
-          type="text"
-          inputMode="numeric"
-          step="1"
-          min="0"
-          max={remaining}
-          placeholder="Nominal bayar (Rp)"
-          className={`flex-1 rounded border bg-background px-ms-2 py-1 text-ms-xs ${errorMsg ? "border-destructive" : ""}`}
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
+        <NumericTextField value={amount} onValueChange={setAmount} step={1} decimal={false} className={`flex-1 rounded border bg-background px-ms-2 py-1 text-ms-xs ${errorMsg ? "border-destructive" : ""}`} placeholder="Nominal bayar (Rp)" />
         <button
           type="button"
           disabled={payDisabled}
@@ -3808,14 +3788,14 @@ function PesananTab({
                     ariaLabel="Jumlah pesanan (gram/kg/ons)"
                   />
                 ) : (
-                  <input type="text" inputMode="decimal" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                  <NumericTextField value={qty} onValueChange={setQty} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" required />
                 )}
               </label>
               <label className="block">
                 <span className="text-[0.6875rem] text-muted-foreground">
                   Harga / {qtyMode === "base" ? humanBaseUnit(item.package_type, item.base_unit) : qtyMode === "karton" ? "karton" : item.package_type} (opsional)
                 </span>
-                <input type="text" inputMode="numeric" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={price} onChange={(e) => setPrice(e.target.value)} />
+                <NumericTextField value={price} onValueChange={setPrice} step={1} decimal={false} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" />
               </label>
             </div>
 
