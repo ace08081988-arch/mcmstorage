@@ -34,6 +34,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle, Search, FileSpreadsheet, FileText, MapPin, ExternalLink } from "lucide-react";
 import type { EcerTitle, EcerPreparation } from "@/lib/ecer";
 import { rupiah } from "@/lib/stock-format";

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import {
   Drawer,
   DrawerContent,
@@ -193,10 +194,10 @@ export function ProductEditDrawer(props: Props) {
             <h3 className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Harga</h3>
             <label className="flex h-11 items-center gap-ms-2 rounded-md border bg-background px-ms-3 text-ms-sm">
               <span className="text-muted-foreground">Rp</span>
-              <input
-                type="number" inputMode="numeric" min={0}
-                value={draft.harga}
-                onChange={(e) => patch({ harga: Math.max(0, Number(e.target.value) || 0) })}
+              <NumericTextField
+                value={String(draft.harga ?? "")}
+                onValueChange={(v) => patch({ harga: Math.max(0, Number(v) || 0) })}
+                decimal={false}
                 className="w-full bg-transparent tabular-nums outline-none"
                 placeholder="0"
               />
@@ -225,15 +226,15 @@ export function ProductEditDrawer(props: Props) {
               </label>
               <label className="block">
                 <span className="text-ms-2xs text-muted-foreground">Jumlah</span>
-                <input
-                  type="number" inputMode="decimal"
-                  min={b.min} max={b.max} step={b.step}
-                  value={draft.jumlah ?? b.min}
-                  onChange={(e) => {
-                    const raw = Number(e.target.value);
+                <NumericTextField
+                  value={String(draft.jumlah ?? b.min)}
+                  onValueChange={(v) => {
+                    if (v === "") return;
+                    const raw = Number(v);
                     if (!Number.isFinite(raw)) return;
                     patch({ jumlah: Math.min(b.max, Math.max(b.min, raw)) });
                   }}
+                  step={b.step}
                   className="mt-1 h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>

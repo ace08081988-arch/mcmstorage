@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtItemQty } from "@/lib/stock-format";
+import { NumericTextField } from "@/components/NumericDraftInput";
 
 export const Route = createFileRoute("/_authenticated/gudang/pesanan/$id/edit")({
   component: PesananEditPage,
@@ -152,11 +153,11 @@ function PesananEditPage() {
             <div className="grid grid-cols-2 gap-ms-2">
               <div className="space-y-1">
                 <label className="text-ms-xs font-semibold">Jumlah ({unitLabel || "—"})</label>
-                <input type="number" step="any" min="0" value={qty} onChange={(e) => setQty(e.target.value)} className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm" required />
+                <NumericTextField value={qty} onValueChange={setQty} step={0.01} required className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm" />
               </div>
               <div className="space-y-1">
                 <label className="text-ms-xs font-semibold">Harga {modeLabel}</label>
-                <input type="number" step="any" min="0" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm" placeholder="Opsional" />
+                <NumericTextField value={price} onValueChange={setPrice} decimal={false} className="w-full rounded border bg-background px-ms-2 py-ms-2 text-ms-sm" placeholder="Opsional" />
               </div>
             </div>
 
