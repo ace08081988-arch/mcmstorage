@@ -846,10 +846,18 @@ function PackageForm({
                     placeholder="Label (1G)"
                     className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs"
                   />
-                  <NumericTextField value={newGrams} onValueChange={setNewGrams} step={0.01} decimal={true} className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs tabular-nums" placeholder={
+                  <NumericTextField
+                    value={newGrams}
+                    onValueChange={setNewGrams}
+                    step={0.01}
+                    decimal={true}
+                    className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs tabular-nums"
+                    placeholder={
                       item.base_unit === "pcs"
                         ? "Isi (pcs)"
-                        : `Berat (${item.base_unit === "g" ? ecerUnit : item.base_unit} />
+                        : `Berat (${item.base_unit === "g" ? ecerUnit : item.base_unit})`
+                    }
+                  />
                   <button
                     type="button"
                     onClick={addPreset}
