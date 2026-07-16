@@ -68,17 +68,56 @@ const MCM_PALETTE = [
 // Aksen brand — dipakai untuk transformer, ring aktif, save button, dsb.
 const GOLD = "#c9a84c";
 
-const STICKER_PRESETS: Record<string, { label: string; Icon: typeof Check; defaultColor: string }> = {
-  arrow: { label: "Panah", Icon: ArrowRight, defaultColor: "#c9a84c" },
-  check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e" },
-  x: { label: "Silang", Icon: X, defaultColor: "#ef4444" },
-  warning: { label: "Warning", Icon: AlertTriangle, defaultColor: "#f59e0b" },
-  location: { label: "Lokasi", Icon: MapPin, defaultColor: "#3b82f6" },
-  package: { label: "Paket", Icon: Package, defaultColor: "#8b5cf6" },
-  paid: { label: "Paid", Icon: DollarSign, defaultColor: "#22c55e" },
-  pending: { label: "Pending", Icon: Clock, defaultColor: "#eab308" },
-  verified: { label: "Verified", Icon: BadgeCheck, defaultColor: "#06b6d4" },
+// Stiker 3D: setiap preset punya warna dasar (untuk radial gradient),
+// warna highlight (spot glossy atas), dan glyph unicode yang dirender di
+// Konva sebagai centerpiece. Warna dipilih supaya kontras di atas foto
+// gelap maupun terang, dengan aksen Noir & Gold untuk kelompok panah.
+const STICKER_PRESETS: Record<
+  string,
+  { label: string; Icon: typeof Check; defaultColor: string; group?: "panah" | "reaksi" | "status" }
+> = {
+  // ── Panah (arah lengkap) — aksen brand Noir & Gold
+  arrow: { label: "Kanan", Icon: ArrowRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-left": { label: "Kiri", Icon: ArrowLeft, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-up": { label: "Atas", Icon: ArrowUp, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-down": { label: "Bawah", Icon: ArrowDown, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-upright": { label: "Serong", Icon: ArrowUpRight, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-upleft": { label: "Balik", Icon: ArrowUpLeft, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-both": { label: "Dua Arah", Icon: ArrowLeftRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-curve": { label: "Belok", Icon: CornerUpLeft, defaultColor: "#f0d78c", group: "panah" },
+  // ── Status operasional
+  check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e", group: "status" },
+  x: { label: "Silang", Icon: X, defaultColor: "#ef4444", group: "status" },
+  warning: { label: "Warning", Icon: AlertTriangle, defaultColor: "#f59e0b", group: "status" },
+  location: { label: "Lokasi", Icon: MapPin, defaultColor: "#3b82f6", group: "status" },
+  package: { label: "Paket", Icon: Package, defaultColor: "#8b5cf6", group: "status" },
+  paid: { label: "Paid", Icon: DollarSign, defaultColor: "#22c55e", group: "status" },
+  pending: { label: "Pending", Icon: Clock, defaultColor: "#eab308", group: "status" },
+  verified: { label: "Verified", Icon: BadgeCheck, defaultColor: "#06b6d4", group: "status" },
+  // ── Reaksi
+  fire: { label: "Api", Icon: Flame, defaultColor: "#f97316", group: "reaksi" },
+  bolt: { label: "Kilat", Icon: Zap, defaultColor: "#eab308", group: "reaksi" },
+  heart: { label: "Suka", Icon: Heart, defaultColor: "#ef4444", group: "reaksi" },
+  star: { label: "Bintang", Icon: Star, defaultColor: "#f0d78c", group: "reaksi" },
+  thumb: { label: "Jempol", Icon: ThumbsUp, defaultColor: "#22c55e", group: "reaksi" },
 };
+
+// Naikkan/turunkan komponen warna (hex #RRGGBB) sebesar `amount` (-1..1)
+// untuk memproduksi highlight & shadow gradient yang konsisten per preset.
+function shadeHex(hex: string, amount: number): string {
+  const m = /^#?([a-f0-9]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  const adj = (c: number) =>
+    Math.max(0, Math.min(255, Math.round(c + (amount >= 0 ? 255 - c : c) * amount)));
+  const rr = adj(r).toString(16).padStart(2, "0");
+  const gg = adj(g).toString(16).padStart(2, "0");
+  const bb = adj(b).toString(16).padStart(2, "0");
+  return `#${rr}${gg}${bb}`;
+}
 
 export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosaveKey }: PhotoEditorV2Props) {
   // Jangan paksa crossOrigin untuk blob:/data: URL dari kamera/galeri lokal.
