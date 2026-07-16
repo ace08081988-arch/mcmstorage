@@ -254,3 +254,172 @@ export function NumericDraftInput({
     />
   );
 }
+
+/**
+ * Varian string-native untuk form yang menyimpan state sebagai string mentah
+ * (mis. `useState("")` yang diedit lewat `e.target.value`). Menampilkan
+ * format id-ID live sama seperti NumericDraftInput, tetapi:
+ * - `value` masuk & keluar berupa string kanonik ("1500.5" atau "" saat kosong),
+ *   supaya kode existing yang lakukan `Number(value)` / kirim ke DB tidak berubah.
+ * - Tidak melakukan clamp — parent bertanggung jawab atas min/max saat submit.
+ *
+ * Pakai ini untuk swap mekanis field `<input type="text" inputMode="..."
+ * value={x} onChange={e => setX(e.target.value)}>`.
+ */
+export function NumericTextField({
+  value,
+  onValueChange,
+  step,
+  decimal: decimalProp,
+  maxDecimals: maxDecimalsProp,
+  inputMode,
+  className,
+  placeholder,
+  ariaLabel,
+  disabled,
+  id,
+  name,
+  required,
+  autoFocus,
+  onFocus,
+  onBlur,
+  onKeyDown,
+}: {
+  value: string;
+  onValueChange: (canonical: string) => void;
+  step?: number;
+  decimal?: boolean;
+  maxDecimals?: number;
+  inputMode?: "decimal" | "numeric";
+  className?: string;
+  placeholder?: string;
+  ariaLabel?: string;
+  disabled?: boolean;
+  id?: string;
+  name?: string;
+  required?: boolean;
+  autoFocus?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}) {
+  const effectiveStep = step ?? 0.01;
+  const decimal =
+    decimalProp ?? !(Number.isInteger(effectiveStep) && effectiveStep >= 1);
+  const maxDecimals = maxDecimalsProp ?? (() => {
+    if (!decimal) return 0;
+    const s = String(effectiveStep);
+    const dot = s.indexOf(".");
+    if (dot < 0) return 2;
+    return Math.min(6, s.length - dot - 1) || 2;
+  })();
+  const resolvedInputMode = inputMode ?? (decimal ? "decimal" : "numeric");
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const composingRef = useRef(false);
+  const [focused, setFocused] = useState(false);
+  const pendingCaret = useRef<number | null>(null);
+
+  // Konversi value (string kanonik "1500.5") jadi formatted display id-ID.
+  const displayFromCanonical = (v: string): string => {
+    if (v === "" || v === null || v === undefined) return "";
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "";
+    if (!decimal) return formatIntegerID(n);
+    return formatDecimalID(n, maxDecimals, true);
+  };
+
+  const [raw, setRaw] = useState<string>(() => displayFromCanonical(value));
+
+  useEffect(() => {
+    if (focused) return;
+    setRaw(displayFromCanonical(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, focused, decimal, maxDecimals]);
+
+  useEffect(() => {
+    if (pendingCaret.current !== null && inputRef.current && focused) {
+      const pos = pendingCaret.current;
+      pendingCaret.current = null;
+      const el = inputRef.current;
+      requestAnimationFrame(() => {
+        try {
+          el.setSelectionRange(pos, pos);
+        } catch {
+          /* ignore */
+        }
+      });
+    }
+  });
+
+  return (
+    <input
+      ref={inputRef}
+      id={id}
+      name={name}
+      type="text"
+      inputMode={resolvedInputMode}
+      autoComplete="off"
+      required={required}
+      value={raw}
+      disabled={disabled}
+      autoFocus={autoFocus}
+      onFocus={() => {
+        setFocused(true);
+        onFocus?.();
+      }}
+      onKeyDown={onKeyDown}
+      onCompositionStart={() => {
+        composingRef.current = true;
+      }}
+      onCompositionEnd={(e) => {
+        composingRef.current = false;
+        const target = e.currentTarget;
+        const caret = target.selectionStart ?? target.value.length;
+        const state = reformat(target.value, caret, decimal, maxDecimals);
+        setRaw(state.formatted);
+        pendingCaret.current = state.caret;
+        onValueChange(
+          state.formatted === "" || state.num === null ? "" : String(state.num),
+        );
+      }}
+      onChange={(e) => {
+        const next = e.target.value;
+        const caret = e.target.selectionStart ?? next.length;
+        if (composingRef.current) {
+          setRaw(next);
+          return;
+        }
+        const state = reformat(next, caret, decimal, maxDecimals);
+        setRaw(state.formatted);
+        pendingCaret.current = state.caret;
+        onValueChange(
+          state.formatted === "" || state.num === null ? "" : String(state.num),
+        );
+      }}
+      onBlur={() => {
+        setFocused(false);
+        const trimmed = raw.trim();
+        if (trimmed === "") {
+          onValueChange("");
+          setRaw("");
+          onBlur?.();
+          return;
+        }
+        const state = reformat(trimmed, trimmed.length, decimal, maxDecimals);
+        if (state.num === null) {
+          setRaw(displayFromCanonical(value));
+          onBlur?.();
+          return;
+        }
+        onValueChange(String(state.num));
+        setRaw(displayFromCanonical(String(state.num)));
+        onBlur?.();
+      }}
+      step={effectiveStep}
+      className={className}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+    />
+  );
+}
