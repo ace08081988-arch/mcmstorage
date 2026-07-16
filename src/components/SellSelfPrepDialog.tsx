@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { Send, Trash2, Plus, Loader2, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -410,24 +411,24 @@ export function SellSelfPrepDialog({
                         <Label className="text-ms-2xs text-muted-foreground">
                           {it ? (it.base_unit === "g" ? "Gram" : "Pcs") : "Qty"}
                         </Label>
-                        <Input
+                        <NumericTextField
                           value={l.gramsStr}
-                          onChange={(e) => updateLine(idx, { gramsStr: e.target.value })}
-                          inputMode="decimal"
+                          onValueChange={(v) => updateLine(idx, { gramsStr: v })}
+                          step={0.01}
                           placeholder="0"
-                          className={`h-8 text-ms-xs ${overStock ? "border-destructive" : ""}`}
+                          className={`flex h-8 w-full rounded-md border border-input bg-background px-3 py-2 text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${overStock ? "border-destructive" : ""}`}
                         />
                       </div>
                       <div>
                         <Label className="text-ms-2xs text-muted-foreground">
                           Harga/{it ? it.base_unit : "unit"}
                         </Label>
-                        <Input
+                        <NumericTextField
                           value={l.priceStr}
-                          onChange={(e) => updateLine(idx, { priceStr: e.target.value })}
-                          inputMode="decimal"
+                          onValueChange={(v) => updateLine(idx, { priceStr: v })}
+                          decimal={false}
                           placeholder="0"
-                          className="h-8 text-ms-xs"
+                          className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-2 text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         />
                       </div>
                     </div>
@@ -477,12 +478,12 @@ export function SellSelfPrepDialog({
             {payMethod === "partial" && (
               <div className="mt-2">
                 <Label className="text-ms-2xs text-muted-foreground">Jumlah dibayar</Label>
-                <Input
+                <NumericTextField
                   value={paidStr}
-                  onChange={(e) => setPaidStr(e.target.value)}
-                  inputMode="decimal"
+                  onValueChange={setPaidStr}
+                  decimal={false}
                   placeholder="0"
-                  className={`h-8 text-ms-xs ${!payment.partialValid ? "border-destructive" : ""}`}
+                  className={`flex h-8 w-full rounded-md border border-input bg-background px-3 py-2 text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${!payment.partialValid ? "border-destructive" : ""}`}
                 />
                 {!payment.partialValid && paidStr && (
                   <div className="mt-0.5 text-ms-2xs text-destructive">

@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -899,14 +900,12 @@ function TitleEditorDialog({
                       <option key={w.id} value={w.id}>{w.name}</option>
                     ))}
                   </select>
-                  <Input
-                    type="number"
-                    inputMode={isDecimalKind(r.unit_kind) ? "decimal" : "numeric"}
-                    step={isDecimalKind(r.unit_kind) ? "any" : "1"}
-                    min="0"
+                  <NumericTextField
                     value={r.target_grams}
-                    onChange={(e) => updateRow(idx, { target_grams: sanitizeQty(idx, e.target.value) })}
-                    className="col-span-5 sm:col-span-2 h-9 text-ms-xs"
+                    onValueChange={(v) => updateRow(idx, { target_grams: sanitizeQty(idx, v) })}
+                    decimal={isDecimalKind(r.unit_kind)}
+                    step={isDecimalKind(r.unit_kind) ? 0.01 : 1}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 col-span-5 sm:col-span-2"
                     placeholder={qtyPlaceholder(r.unit_kind)}
                   />
                   <select
@@ -2505,12 +2504,12 @@ function SendPrepToCustomerDialog({
             size="compact"
             hint={totalAmount > 0 ? `= ${rupiah(totalAmount)}` : undefined}
           >
-            <Input
+            <NumericTextField
               value={totalStr}
-              onChange={(e) => setTotalStr(e.target.value)}
+              onValueChange={setTotalStr}
+              decimal={false}
               placeholder="Contoh: 25000"
-              inputMode="numeric"
-              className="h-9 tabular-nums text-ms-xs"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 tabular-nums text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
           </Field>
 
@@ -2542,12 +2541,12 @@ function SendPrepToCustomerDialog({
             {payMethod === "partial" && (
               <div className="mt-2 space-y-1">
                 <label className="text-ms-2xs text-muted-foreground">Dibayar sekarang (Rp)</label>
-                <Input
+                <NumericTextField
                   value={paidStr}
-                  onChange={(e) => setPaidStr(e.target.value)}
+                  onValueChange={setPaidStr}
+                  decimal={false}
                   placeholder="Contoh: 10000"
-                  inputMode="numeric"
-                  className="h-9 tabular-nums text-ms-xs"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 tabular-nums text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <div className="text-ms-2xs text-muted-foreground">
                   {paidAmount > 0 && totalAmount > 0
@@ -2970,11 +2969,11 @@ function PrepEditorDialog({
                     <div className="col-span-12 sm:col-span-7 flex min-w-0 items-center rounded-md border bg-muted/30 px-ms-2 py-1.5 sm:py-0 text-ms-xs">
                       <span className="truncate">{w?.name ?? "?"}</span>
                     </div>
-                    <Input
-                      type="number" inputMode="decimal" step="any" min="0"
+                    <NumericTextField
                       value={r.actual_grams}
-                      onChange={(e) => setRows((rs) => rs.map((x, i) => i === idx ? { ...x, actual_grams: e.target.value } : x))}
-                      className="col-span-8 sm:col-span-3 h-9 text-ms-xs"
+                      onValueChange={(v) => setRows((rs) => rs.map((x, i) => i === idx ? { ...x, actual_grams: v } : x))}
+                      step={0.01}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 col-span-8 sm:col-span-3"
                     />
                     <div className="col-span-4 sm:col-span-2 flex min-w-0 items-center justify-center rounded-md border bg-muted/30 px-1 text-ms-2xs font-medium text-muted-foreground">
                       <span className="truncate">{unit}</span>
@@ -3029,14 +3028,14 @@ function PrepEditorDialog({
                     <li key={d.idx} className="flex items-center justify-between gap-ms-2">
                       <span className="truncate">{d.name}</span>
                       <div className="flex items-center gap-ms-1">
-                        <Input
-                          type="number" inputMode="decimal" step="any" min="0"
+                        <NumericTextField
                           value={rows[d.idx]?.actual_grams ?? ""}
-                          onChange={(e) => {
-                            const v = sanitizeActual(d.idx, e.target.value);
+                          onValueChange={(nv) => {
+                            const v = sanitizeActual(d.idx, nv);
                             setRows((rs) => rs.map((x, i) => i === d.idx ? { ...x, actual_grams: v } : x));
                           }}
-                          className="h-7 w-20 px-1.5 text-right text-ms-2xs font-mono tabular-nums"
+                          step={0.01}
+                          className="flex h-7 w-20 rounded-md border border-input bg-background px-1.5 text-right text-ms-2xs font-mono tabular-nums ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         />
                         <span className="w-10 text-left text-ms-2xs">{d.unit}</span>
                       </div>

@@ -34,6 +34,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle, Search, FileSpreadsheet, FileText, MapPin, ExternalLink } from "lucide-react";
 import type { EcerTitle, EcerPreparation } from "@/lib/ecer";
 import { rupiah } from "@/lib/stock-format";
@@ -602,15 +603,11 @@ export function AutoSendConfirmDialog({
                       </span>
                     {isEditing ? (
                       <div className="flex items-center gap-ms-1">
-                        <Input
-                          data-testid="auto-send-item-grams-input"
-                          type="number"
-                          inputMode="decimal"
+                        <NumericTextField
                           value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          className="h-7 w-20 text-ms-xs"
-                          min={1}
-                          step="0.01"
+                          onValueChange={setEditingValue}
+                          step={0.01}
+                          className="flex h-7 w-20 rounded-md border border-input bg-background px-2 py-1 text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           disabled={isSaving}
                           autoFocus
                         />

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useBlocker } from "@tanstack/react-router";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -1177,10 +1178,10 @@ function TugasBaruForm() {
                     placeholder="Nama barang"
                     className="col-span-12 rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm sm:col-span-6"
                   />
-                  <input
+                  <NumericTextField
                     value={r.qty}
-                    onChange={(e) => updateRow(r.key, { qty: e.target.value.replace(/[^\d.]/g, "") })}
-                    inputMode="decimal"
+                    onValueChange={(v) => updateRow(r.key, { qty: v })}
+                    step={0.01}
                     placeholder="Jumlah"
                     className="col-span-5 rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm sm:col-span-3"
                   />
