@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter, useNavigate, Link } from "@tanstack/react-router";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -888,7 +889,7 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
           <div className={pairClass}>
             <div>
               <Label className="text-ms-xs">Target berat</Label>
-              <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
+              <NumericTextField value={target} onValueChange={setTarget} step={0.01} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
             </div>
             <div>
               <Label className="text-ms-xs">Satuan</Label>
@@ -3518,7 +3519,7 @@ function PrepEditDialog({
             <Label className="text-ms-xs">
               Berat aktual ({displayUnit(itemName, title.unit_label)})
             </Label>
-            <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
+            <NumericTextField value={actual} onValueChange={setActual} step={0.01} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
             <div className="mt-1 text-ms-2xs text-muted-foreground">
               Selisih dengan nilai sebelumnya akan menyesuaikan stok gudang otomatis.
             </div>
@@ -3990,7 +3991,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
 
           <div>
             <Label className="text-ms-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>
-            <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
+            <NumericTextField value={actual} onValueChange={setActual} step={0.01} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
             <div className="mt-1 text-ms-2xs leading-snug text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
           </div>
 
@@ -4362,7 +4363,7 @@ function NewProductDialog({ onClose, onCreated }: {
             {showSizeField && (
               <div>
                 <Label className="text-ms-xs">Isi/kemasan ({sizeUnitLabel})</Label>
-                <Input inputMode="decimal" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+                <NumericTextField value={packageSize} onValueChange={setPackageSize} step={0.01} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
               </div>
             )}
           </div>
@@ -4697,13 +4698,12 @@ function SendEcerPrepsDialog({
           <>
           <div>
             <label className="mb-1 block text-ms-2xs font-medium">Total harga (Rp)</label>
-            <Input
+            <NumericTextField
               value={totalStr}
-              onChange={(e) => setTotalStr(e.target.value)}
+              onValueChange={setTotalStr}
+              decimal={false}
               placeholder="Contoh: 25000"
-              inputMode="numeric"
-              maxLength={15}
-              className="h-9 tabular-nums text-ms-xs"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 tabular-nums text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
             {totalAmount > 0 && <div className="mt-1 text-ms-2xs text-muted-foreground">= {rupiah(totalAmount)}</div>}
           </div>
@@ -4748,13 +4748,12 @@ function SendEcerPrepsDialog({
             {payMethod === "partial" && (
               <div className="mt-2 space-y-1">
                 <label className="text-ms-2xs text-muted-foreground">Dibayar sekarang (Rp)</label>
-                <Input
+                <NumericTextField
                   value={paidStr}
-                  onChange={(e) => setPaidStr(e.target.value)}
+                  onValueChange={setPaidStr}
+                  decimal={false}
                   placeholder="Contoh: 10000"
-                  inputMode="numeric"
-                  maxLength={15}
-                  className="h-9 tabular-nums text-ms-xs"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 tabular-nums text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
                 <div className="text-ms-2xs text-muted-foreground">
                   {paidAmount > 0 && totalAmount > 0
