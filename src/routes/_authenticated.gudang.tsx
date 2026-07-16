@@ -216,9 +216,60 @@ function GudangLoadingSkeleton() {
 }
 
 function GudangPage() {
-  const [tab, setTab] = useState<
-    "stok" | "supplier" | "beli" | "jual" | "pesanan" | "hutang" | "pelanggan" | "piutang" | "riwayat"
-  >("stok");
+  type GudangTab =
+    | "stok"
+    | "supplier"
+    | "beli"
+    | "jual"
+    | "pesanan"
+    | "hutang"
+    | "pelanggan"
+    | "piutang"
+    | "riwayat";
+  const GUDANG_TAB_KEY = "mcm:gudang:tab";
+  const isGudangTab = (v: unknown): v is GudangTab =>
+    v === "stok" || v === "supplier" || v === "beli" || v === "jual" ||
+    v === "pesanan" || v === "hutang" || v === "pelanggan" ||
+    v === "piutang" || v === "riwayat";
+  // Persist active tab so an auto-reload (mis. crash boundary) tidak
+  // melempar user kembali ke "Stok" saat sedang mengisi form Beli.
+  const [tab, setTab] = useState<GudangTab>(() => {
+    if (typeof window === "undefined") return "stok";
+    try {
+      const raw = window.sessionStorage.getItem(GUDANG_TAB_KEY);
+      return isGudangTab(raw) ? raw : "stok";
+    } catch {
+      return "stok";
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try { window.sessionStorage.setItem(GUDANG_TAB_KEY, tab); } catch { /* ignore */ }
+  }, [tab]);
+  // Kalau reload sebelumnya dipicu oleh crash saat input, munculkan
+  // notifikasi ringkas berisi pesan errornya (satu kali) supaya bisa
+  // dilacak — payload lengkap tetap di sessionStorage `mcm:last-crash`.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.sessionStorage.getItem("mcm:last-crash");
+      if (!raw) return;
+      const shown = window.sessionStorage.getItem("mcm:last-crash:shown");
+      if (shown === raw) return;
+      const p = JSON.parse(raw) as { at?: string; message?: string; route?: string };
+      const at = p.at ? new Date(p.at).getTime() : 0;
+      // hanya tampilkan kalau crash terjadi < 60 detik lalu dan di rute Gudang
+      if (!at || Date.now() - at > 60_000) return;
+      if (p.route && !p.route.startsWith("/gudang")) return;
+      window.sessionStorage.setItem("mcm:last-crash:shown", raw);
+      toast.error("Halaman sempat error dan dimuat ulang", {
+        description: (p.message || "").slice(0, 200) || "Tanpa pesan",
+        duration: 8000,
+      });
+    } catch {
+      // ignore
+    }
+  }, []);
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [beliDefaultPayment, setBeliDefaultPayment] = useState<"kas" | "hutang">("kas");
