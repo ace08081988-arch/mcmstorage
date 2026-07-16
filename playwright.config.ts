@@ -748,6 +748,19 @@ export default defineConfig({
       testMatch: /produk-list\.public\.spec\.ts/,
       use: { ...devices["Pixel 5"], viewport: { width: 480, height: 900 } },
     },
+    // ── Baris tombol lokasi worker (input Link Maps + GPS + Tempel).
+    //   Regresi clipping/overflow saat viewport sempit 390 (iPhone 12/13/14)
+    //   dan 411 (Pixel 6/7/8). Fixture: /lovable/visual/prep-loc-buttons.
+    {
+      name: "prep-loc-buttons-390",
+      testMatch: /prep-loc-buttons\.public\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 390, height: 844 } },
+    },
+    {
+      name: "prep-loc-buttons-411",
+      testMatch: /prep-loc-buttons\.public\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
     {
       // E2E: navigasi browser back/forward antar dua DM eksisting wajib
       // mempertahankan `PIN xxxx-xxxx` yang benar per konvo di header +
