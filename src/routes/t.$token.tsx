@@ -210,12 +210,13 @@ async function beginPortalNativePicker(): Promise<() => void> {
  */
 function requestGeolocation(
   onSuccess: (pos: GeolocationPosition) => void,
-  opts?: { retry?: () => void },
+  opts?: { retry?: () => void; onSettled?: () => void },
 ) {
   if (typeof navigator === "undefined" || !navigator.geolocation) {
     toast.error("GPS tidak tersedia di perangkat ini", {
       description: "Coba isi koordinat manual atau tempel link Google Maps.",
     });
+    opts?.onSettled?.();
     return;
   }
   const id = toast.loading("Mengambil lokasi…");
@@ -230,6 +231,8 @@ function requestGeolocation(
           description: e instanceof Error ? e.message : String(e),
           action: opts?.retry ? { label: "Coba lagi", onClick: opts.retry } : undefined,
         });
+      } finally {
+        opts?.onSettled?.();
       }
     },
     (err) => {
@@ -255,6 +258,7 @@ function requestGeolocation(
         duration: 8000,
         action: opts?.retry ? { label: "Coba lagi", onClick: opts.retry } : undefined,
       });
+      opts?.onSettled?.();
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
   );
@@ -2417,6 +2421,7 @@ function ItemCard({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [refSigned, setRefSigned] = useState<string | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const fallbackPickerReleaseRef = useRef<null | (() => void)>(null);
@@ -2762,13 +2767,15 @@ function ItemCard({
   }
 
   function takeLocation() {
+    if (gpsLoading) return;
+    setGpsLoading(true);
     requestGeolocation(
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setGps({ lat: latitude, lng: longitude });
         setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
       },
-      { retry: () => takeLocation() },
+      { retry: () => takeLocation(), onSettled: () => setGpsLoading(false) },
     );
   }
 
@@ -3216,9 +3223,26 @@ function ItemCard({
             <button
               type="button"
               onClick={takeLocation}
-              className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted"
+              disabled={gpsLoading}
+              aria-busy={gpsLoading}
+              aria-live="polite"
+              className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <MapPin className="h-4 w-4" /> GPS otomatis
+              {gpsLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  <span className="truncate">Mengambil lokasi…</span>
+                </>
+              ) : gps ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
+                  <span className="truncate">Lokasi terisi</span>
+                </>
+              ) : (
+                <>
+                  <MapPin className="h-4 w-4" aria-hidden /> GPS otomatis
+                </>
+              )}
             </button>
             <button
               type="button"
@@ -3978,6 +4002,7 @@ function RequestForm({
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const fallbackPickerReleaseRef = useRef<null | (() => void)>(null);
@@ -4265,6 +4290,8 @@ function RequestForm({
   }
 
   function takeLocation() {
+    if (gpsLoading) return;
+    setGpsLoading(true);
     requestGeolocation(
       (pos) => {
         setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude });
@@ -4272,7 +4299,7 @@ function RequestForm({
           `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
         );
       },
-      { retry: () => takeLocation() },
+      { retry: () => takeLocation(), onSettled: () => setGpsLoading(false) },
     );
   }
 
@@ -4554,9 +4581,26 @@ function RequestForm({
                 <button
                   onClick={takeLocation}
                   type="button"
-                  className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium hover:bg-muted"
+                  disabled={gpsLoading}
+                  aria-busy={gpsLoading}
+                  aria-live="polite"
+                  className="inline-flex h-10 w-full items-center justify-center gap-ms-1 rounded-lg border bg-background px-ms-3 text-ms-xs font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  <MapPin className="h-4 w-4" /> GPS
+                  {gpsLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      <span className="truncate">Mengambil…</span>
+                    </>
+                  ) : gps ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
+                      <span className="truncate">Terisi</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-4 w-4" aria-hidden /> GPS
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
