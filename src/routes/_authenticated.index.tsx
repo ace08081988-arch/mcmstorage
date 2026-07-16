@@ -285,6 +285,115 @@ export function formatJumlah(j: number, s: Satuan): string {
   return `${n.toLocaleString("id-ID")} ${s}`;
 }
 
+/**
+ * Input angka yang MENGIZINKAN kondisi kosong sementara saat user sedang
+ * mengetik / menghapus. Value parent tetap `number`, tapi tampilan input
+ * dikendalikan oleh draft string lokal. Nilai baru hanya di-commit ke
+ * parent bila hasil parse angka valid & di dalam [min,max]. Saat blur,
+ * kalau draft kosong/invalid, kita fallback ke `value` sekarang (bukan
+ * memaksa ke `min`) — jadi user tidak "terjebak" pada nilai default.
+ *
+ * Bug asal: `value={p.jumlah ?? b.min}` + `Math.max(b.min, Number(e.target.value)||0)`
+ * membuat backspace/clear langsung nge-snap ke `min` (mis. 0,01) sehingga
+ * angka bawaan tidak bisa dihapus/diedit dari nol.
+ */
+function NumericDraftInput({
+  value,
+  min,
+  max,
+  step,
+  onCommit,
+  onFocus,
+  onBlur,
+  className,
+  placeholder,
+  ariaLabel,
+  inputMode = "decimal",
+  emptyCommitsTo,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onCommit: (n: number) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  className?: string;
+  placeholder?: string;
+  ariaLabel?: string;
+  inputMode?: "decimal" | "numeric";
+  /** Kalau di-set, blur dengan draft kosong akan commit angka ini alih-alih fallback ke `value`. */
+  emptyCommitsTo?: number;
+}) {
+  const [raw, setRaw] = useState<string>(() =>
+    Number.isFinite(value) ? String(value) : "",
+  );
+  const [focused, setFocused] = useState(false);
+  // Sinkron ulang dari parent hanya saat tidak sedang diketik, supaya
+  // ketikan user tidak ditimpa refetch/update parent yang identik.
+  useEffect(() => {
+    if (focused) return;
+    const asNum = Number(raw);
+    if (raw !== "" && Number.isFinite(asNum) && asNum === value) return;
+    setRaw(Number.isFinite(value) ? String(value) : "");
+  }, [value, focused, raw]);
+  return (
+    <input
+      type="text"
+      inputMode={inputMode}
+      value={raw}
+      onFocus={() => {
+        setFocused(true);
+        onFocus?.();
+      }}
+      onChange={(e) => {
+        const next = e.target.value;
+        // Izinkan kosong dan bentuk parsial ("0.", "0,", ".", "-") tanpa
+        // langsung commit — parent tetap pegang nilai sebelumnya.
+        setRaw(next);
+        if (next.trim() === "") return;
+        // Terima koma sebagai pemisah desimal ala id-ID.
+        const normalized = next.replace(",", ".");
+        const n = Number(normalized);
+        if (!Number.isFinite(n)) return;
+        if (n < min || n > max) return;
+        onCommit(n);
+      }}
+      onBlur={() => {
+        setFocused(false);
+        const trimmed = raw.trim();
+        if (trimmed === "") {
+          if (typeof emptyCommitsTo === "number") {
+            const c = Math.min(max, Math.max(min, emptyCommitsTo));
+            onCommit(c);
+            setRaw(String(c));
+          } else {
+            // Kembalikan tampilan ke nilai parent saat ini.
+            setRaw(Number.isFinite(value) ? String(value) : "");
+          }
+          onBlur?.();
+          return;
+        }
+        const normalized = trimmed.replace(",", ".");
+        const n = Number(normalized);
+        if (!Number.isFinite(n)) {
+          setRaw(String(value));
+          onBlur?.();
+          return;
+        }
+        const clamped = Math.min(max, Math.max(min, n));
+        onCommit(clamped);
+        setRaw(String(clamped));
+        onBlur?.();
+      }}
+      step={step}
+      className={className}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+    />
+  );
+}
+
 export type Produk = {
   id: number;
   kategori: Kategori;
@@ -1983,25 +2092,25 @@ function Index() {
                     </div>
                     <label className="flex items-center gap-ms-2 rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm">
                       <span className="text-muted-foreground">Rp</span>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
+                      <NumericDraftInput
                         value={p.harga}
-                        aria-label="Harga produk"
+                        min={0}
+                        max={Number.MAX_SAFE_INTEGER}
+                        step={1}
+                        inputMode="numeric"
+                        emptyCommitsTo={0}
                         onFocus={() => setFlashId(p.id)}
                         onBlur={() =>
                           setFlashId((cur) => (cur === p.id ? null : cur))
                         }
-                        onChange={(e) =>
-                          {
-                            update(p.id, { harga: Math.max(0, Number(e.target.value) || 0) });
-                            setFlashId(p.id);
-                            window.setTimeout(() => {
-                              setFlashId((cur) => (cur === p.id ? null : cur));
-                            }, 900);
-                          }
-                        }
+                        onCommit={(n) => {
+                          update(p.id, { harga: n });
+                          setFlashId(p.id);
+                          window.setTimeout(() => {
+                            setFlashId((cur) => (cur === p.id ? null : cur));
+                          }, 900);
+                        }}
+                        ariaLabel="Harga produk"
                         className="w-full bg-transparent tabular-nums outline-none"
                         placeholder="Harga"
                       />
@@ -2034,21 +2143,16 @@ function Index() {
                         return (
                           <label className="flex w-full items-center gap-ms-2 rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm">
                             <span className="text-muted-foreground">Jumlah</span>
-                            <input
-                              type="number"
-                              inputMode="decimal"
+                            <NumericDraftInput
+                              value={p.jumlah ?? b.min}
                               min={b.min}
                               max={b.max}
                               step={b.step}
-                              value={p.jumlah ?? b.min}
-                              onChange={(e) => {
-                                const raw = Number(e.target.value);
-                                if (!Number.isFinite(raw)) return;
-                                const clamped = Math.min(b.max, Math.max(b.min, raw));
-                                update(p.id, { jumlah: clamped });
-                              }}
+                              inputMode="decimal"
+                              onCommit={(n) => update(p.id, { jumlah: n })}
                               className="w-full bg-transparent tabular-nums outline-none"
                               placeholder="Jumlah"
+                              ariaLabel="Jumlah"
                             />
                             <span className="shrink-0 text-ms-xs text-muted-foreground">
                               {formatJumlah(p.jumlah ?? b.min, s)}
