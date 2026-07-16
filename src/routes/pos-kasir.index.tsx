@@ -10,6 +10,7 @@ import {
 import { loadGudangProduk, recordSale, refundSale } from "@/lib/pos-kasir-gudang";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
+import { NumericTextField } from "@/components/NumericDraftInput";
 // jsPDF + autoTable dimuat lazy (dynamic import) di dalam exportPDF supaya
 // bundle awal halaman POS Kasir tidak membawa ~200KB kode PDF yang hanya
 // dipakai saat user mengekspor.

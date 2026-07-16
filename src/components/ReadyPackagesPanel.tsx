@@ -9,6 +9,7 @@ import { WaShareButton } from "@/components/share/SaleShareButtons";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 import { StatusBadge, type StatusVariant } from "@/components/StatusBadge";
 import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
+import { NumericTextField } from "@/components/NumericDraftInput";
 
 type Item = {
   id: string;

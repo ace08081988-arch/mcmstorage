@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { parseWeightToGrams, formatGramsSmart } from "@/lib/weight-parse";
+import { NumericTextField } from "@/components/NumericDraftInput";
 
 type Props = {
   /** Nilai kanonik dalam gram (string agar sinkron dengan form controlled). */
