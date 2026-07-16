@@ -921,6 +921,32 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Stiker</div>
             <button onClick={() => setShowStickers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
           </div>
+          {/* Kontrol gaya 3D global — mempengaruhi semua stiker di kanvas
+              maupun preview thumbnail di sheet ini. */}
+          <div className="mb-3 rounded-xl border border-[#c9a84c]/15 bg-white/[0.02] p-ms-2">
+            <div className="mb-1.5 px-1 text-ms-2xs font-semibold uppercase tracking-[0.14em] text-[#f0d78c]/60">
+              Gaya 3D
+            </div>
+            {([
+              { label: "Shadow", value: stickerShadow, set: setStickerShadow },
+              { label: "Glossy", value: stickerGloss, set: setStickerGloss },
+              { label: "Rim", value: stickerRim, set: setStickerRim },
+            ] as const).map((row) => (
+              <div key={row.label} className="flex items-center gap-ms-2 py-0.5">
+                <span className="w-14 shrink-0 text-ms-2xs text-[#f0d78c]/80">{row.label}</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={row.value}
+                  onChange={(e) => row.set(Number(e.target.value))}
+                  className="flex-1 accent-[#c9a84c]"
+                  aria-label={`Intensitas ${row.label}`}
+                />
+                <span className="w-9 shrink-0 text-right text-ms-2xs tabular-nums text-white/70">{row.value}</span>
+              </div>
+            ))}
+          </div>
           {(["panah", "status", "reaksi"] as const).map((group) => {
             const entries = Object.entries(STICKER_PRESETS).filter(([, p]) => p.group === group);
             if (entries.length === 0) return null;
@@ -946,16 +972,18 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                       >
                         {/* Preview 3D: radial-gradient + inner ring + glossy highlight */}
                         <span
-                          className="relative grid h-11 w-11 place-items-center rounded-full text-white shadow-[0_6px_14px_-4px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.35)] ring-1 ring-black/40"
+                          className="relative grid h-11 w-11 place-items-center rounded-full text-white ring-1 ring-black/40"
                           style={{
                             background: `radial-gradient(circle at 32% 28%, ${light} 0%, ${base} 55%, ${dark} 100%)`,
+                            boxShadow: `0 ${6 * (stickerShadow / 100)}px ${14 * (stickerShadow / 100)}px -4px rgba(0,0,0,${0.7 * (stickerShadow / 100)}), inset 0 1px 0 rgba(255,255,255,${0.35 * (stickerRim / 100)})`,
                           }}
                         >
                           <Ic className="h-[22px] w-[22px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]" />
                           {/* glossy highlight */}
                           <span
                             aria-hidden
-                            className="pointer-events-none absolute inset-x-2 top-1 h-2 rounded-full bg-white/55 blur-[2px]"
+                            className="pointer-events-none absolute inset-x-2 top-1 h-2 rounded-full blur-[2px]"
+                            style={{ background: `rgba(255,255,255,${0.55 * (stickerGloss / 100)})` }}
                           />
                         </span>
                         <span className="text-ms-2xs text-[#f0d78c]/90">{preset.label}</span>
