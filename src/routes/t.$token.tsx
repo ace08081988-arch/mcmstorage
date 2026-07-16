@@ -405,18 +405,30 @@ class WorkerSectionBoundary extends Component<
     // dan memantulkan user kembali ke layar PIN.
     // eslint-disable-next-line no-console
     console.error("[t.$token] worker section render failed", error, info.componentStack);
-    // Auto-heal untuk race DOM transien (mis. `removeChild` pada Android
-    // WebView setelah balik dari kamera/galeri, atau race unmount portal
-    // yang membuat React & DOM sesaat tidak sinkron). Kartu tetangga tidak
-    // terpengaruh, dan kalau error persistent, boundary akan menangkap
-    // lagi pada attempt berikutnya — batasi 2× coba supaya tidak looping
-    // menutupi bug betulan.
-    if (this.state.attempt < 2 && typeof window !== "undefined") {
+    // Auto-heal untuk race DOM transien (mis. `removeChild` / `insertBefore`
+    // pada Android WebView setelah balik dari kamera/galeri, atau race
+    // unmount portal yang membuat React & DOM sesaat tidak sinkron). Kartu
+    // tetangga tidak terpengaruh.
+    //
+    // Strategi retry:
+    //  - Untuk error DOM-race yang khas (NotFoundError / "removeChild" /
+    //    "insertBefore" / "The node to be removed") kita retry sampai 5×
+    //    dengan backoff, karena race ini hampir selalu hilang setelah 1
+    //    tick paint berikutnya.
+    //  - Untuk error lain kita retry 2× lalu tampilkan fallback supaya bug
+    //    betulan tetap terlihat.
+    const msg = (error?.message || "") + " " + (error?.name || "");
+    const isDomRace = /removeChild|insertBefore|NotFoundError|The node to be removed|Failed to execute/i.test(
+      msg,
+    );
+    const maxAttempts = isDomRace ? 5 : 2;
+    if (this.state.attempt < maxAttempts && typeof window !== "undefined") {
       if (this.retryTimer !== null) window.clearTimeout(this.retryTimer);
+      const delay = 200 + this.state.attempt * 250;
       this.retryTimer = window.setTimeout(() => {
         this.retryTimer = null;
         this.setState((prev) => ({ error: null, attempt: prev.attempt + 1 }));
-      }, 350);
+      }, delay);
     }
   }
   componentWillUnmount() {
@@ -427,7 +439,12 @@ class WorkerSectionBoundary extends Component<
   }
   render() {
     if (this.state.error) return this.props.renderFallback(this.state.error);
-    return this.props.children;
+    // Bumping key via attempt memaksa React membuang subtree lama dan
+    // memount ulang bersih — menghindari state internal komponen anak yang
+    // ikut korup saat DOM race terjadi.
+    return (
+      <React.Fragment key={this.state.attempt}>{this.props.children}</React.Fragment>
+    );
   }
 }
 
