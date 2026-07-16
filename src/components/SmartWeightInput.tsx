@@ -50,12 +50,16 @@ export function SmartWeightInput({
   }, [value]);
 
   if (baseUnit !== "g") {
-    // Fallback plain number untuk pcs — perilaku sama seperti input number.
+    // Fallback untuk pcs — pakai text+inputMode="decimal" supaya angka bawaan
+    // bisa dihapus bebas di Android WebView (type="number" kadang menahan
+    // backspace / snap ke nilai HTML5 min). Validasi min dilakukan di parent
+    // saat submit, bukan lewat atribut HTML5.
     return (
       <input
-        type="number"
+        type="text"
+        inputMode="decimal"
         step="0.01"
-        min={min ?? 0}
+        {...(typeof min === "number" ? { min } : {})}
         className={className}
         value={value}
         onChange={(e) => onChange(e.target.value)}
