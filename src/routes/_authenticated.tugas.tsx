@@ -488,7 +488,32 @@ function TugasPage() {
         (payload) => {
           if (payload.eventType === "UPDATE") {
             const next = payload.new as Task;
-            setTasks((prev) => prev.map((t) => (t.id === next.id ? { ...t, ...next } : t)));
+            setTasks((prev) => {
+              const before = prev.find((t) => t.id === next.id);
+              if (before && before.status !== next.status) {
+                try {
+                  const raw = localStorage.getItem("mcm.notif.prefs.v1");
+                  const prefs = raw ? JSON.parse(raw) : null;
+                  const kindOn = prefs?.enabledKinds?.tugas !== false;
+                  const toastOn = prefs?.channels?.tugas?.toast !== false;
+                  if (kindOn && toastOn) {
+                    const title = next.title || "Tugas";
+                    if (next.status === "done") {
+                      toast.success(`Tugas selesai: ${title}`, {
+                        description: next.completion_note || "Status berubah menjadi Selesai.",
+                      });
+                    } else if (next.status === "cancelled") {
+                      toast.error(`Tugas dibatalkan/gagal: ${title}`, {
+                        description: next.completion_note || "Status berubah menjadi Dicabut.",
+                      });
+                    } else if (before.status !== "active" && next.status === "active") {
+                      toast.info(`Tugas aktif kembali: ${title}`);
+                    }
+                  }
+                } catch { /* ignore */ }
+              }
+              return prev.map((t) => (t.id === next.id ? { ...t, ...next } : t));
+            });
           } else if (payload.eventType === "DELETE") {
             const oldId = (payload.old as { id?: string })?.id;
             if (!oldId) return;
