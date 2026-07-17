@@ -70,7 +70,7 @@ type RequestPrepTaskStatus = {
   has_pending: boolean;
 };
 
-function taskStatusLabel(row: RequestPrepTaskStatus): { label: string; tone: "success" | "warning" | "destructive" | "muted" } {
+function requestPrepTaskStatusLabel(row: RequestPrepTaskStatus): { label: string; tone: "success" | "warning" | "destructive" | "muted" } {
   const expired = row.status === "active" && new Date(row.expires_at).getTime() <= Date.now();
   if (row.has_rejected) return { label: "Gagal / ditolak", tone: "destructive" };
   if (row.status === "done" || row.submitted_count > 0) {
@@ -81,7 +81,7 @@ function taskStatusLabel(row: RequestPrepTaskStatus): { label: string; tone: "su
   return { label: "Link aktif", tone: "warning" };
 }
 
-function taskStatusToneClass(tone: ReturnType<typeof taskStatusLabel>["tone"]): string {
+function requestPrepTaskStatusToneClass(tone: ReturnType<typeof requestPrepTaskStatusLabel>["tone"]): string {
   if (tone === "success") return "border-success/40 bg-success/10 text-success";
   if (tone === "warning") return "border-warning/40 bg-warning/10 text-warning dark:text-warning";
   if (tone === "destructive") return "border-destructive/40 bg-destructive/10 text-destructive";
@@ -346,7 +346,7 @@ function RequestPage() {
   useEffect(() => { void loadAll(); }, []);
 
   useEffect(() => {
-    void router.navigate({ to: "/request", search: { title: selectedTitleId, highlight: undefined }, replace: true });
+    void router.navigate({ to: "/request", search: { title: selectedTitleId, highlight: undefined, send: undefined }, replace: true });
     // M11: hapus `router` dari deps — lihat catatan sejenis di `_authenticated.ecer.tsx`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTitleId]);
@@ -595,7 +595,7 @@ function RequestPage() {
             const activePrepCount = activePrepCountByTitle[t.id] ?? 0;
             const taskStatuses = prepTaskStatusByTitle[t.id] ?? [];
             const latestTaskStatus = taskStatuses[0] ?? null;
-            const statusInfo = latestTaskStatus ? taskStatusLabel(latestTaskStatus) : null;
+            const statusInfo = latestTaskStatus ? requestPrepTaskStatusLabel(latestTaskStatus) : null;
             const statusWhen = latestTaskStatus?.last_submitted_at ?? latestTaskStatus?.created_at ?? null;
             const canRequestReprep = activePrepCount > 0;
             const requestReprep = async () => {
@@ -644,7 +644,7 @@ function RequestPage() {
                   <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs">
                     <span className="font-semibold text-foreground">Penyiapan</span>
                     {statusInfo ? (
-                      <span className={`inline-flex shrink-0 items-center gap-ms-1 rounded-full border px-ms-2 py-0.5 font-medium ${taskStatusToneClass(statusInfo.tone)}`}>
+                      <span className={`inline-flex shrink-0 items-center gap-ms-1 rounded-full border px-ms-2 py-0.5 font-medium ${requestPrepTaskStatusToneClass(statusInfo.tone)}`}>
                         {statusInfo.tone === "success" ? <CheckCircle2 className="h-3 w-3" /> : null}
                         {statusInfo.tone === "destructive" ? <AlertTriangle className="h-3 w-3" /> : null}
                         {statusInfo.label}
@@ -1162,6 +1162,7 @@ function SendPrepLinkDialog({
         worker_name: nm,
         channel,
       });
+      onChanged();
     } catch {
       // best-effort; don't block the user action on log failures
     }
