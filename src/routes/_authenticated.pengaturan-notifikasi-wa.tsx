@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle2, Loader2, MessageSquare, RefreshCw, Save, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, MessageSquare, RefreshCw, RotateCw, Save, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,12 +29,13 @@ function NotifikasiWaPage() {
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   async function loadHistory() {
     setHistoryLoading(true);
     const { data, error } = await supabase
       .from("prep_task_wa_hook_log")
-      .select("id, task_id, title, prev_status, new_status, kind, wa_target, send_status, error, payload, created_at")
+      .select("id, task_id, title, prev_status, new_status, kind, wa_target, send_status, error, payload, created_at, retry_count, last_retry_at")
       .order("created_at", { ascending: false })
       .limit(50);
     setHistoryLoading(false);
@@ -43,6 +44,64 @@ function NotifikasiWaPage() {
       return;
     }
     setHistory((data ?? []) as HistoryRow[]);
+  }
+
+  async function retryRow(row: HistoryRow) {
+    const url = forwardUrl.trim();
+    if (!url) {
+      toast.error("Isi URL webhook dulu, lalu Simpan sebelum coba ulang");
+      return;
+    }
+    if (!row.payload) {
+      toast.error("Payload lama tidak tersedia, tidak bisa dikirim ulang");
+      return;
+    }
+    setRetryingId(row.id);
+    const nextRetry = (row.retry_count ?? 0) + 1;
+    let ok = false;
+    let errMsg: string | null = null;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...row.payload, retry: true, retry_count: nextRetry }),
+      });
+      if (!res.ok) {
+        errMsg = `HTTP ${res.status}`;
+      } else {
+        ok = true;
+      }
+    } catch (e) {
+      errMsg = (e as Error).message || "network error";
+    }
+    const { error: updErr } = await (supabase.from as any)("prep_task_wa_hook_log")
+      .update({
+        send_status: ok ? "sent" : "failed",
+        error: ok ? null : errMsg,
+        retry_count: nextRetry,
+        last_retry_at: new Date().toISOString(),
+      })
+      .eq("id", row.id);
+    setRetryingId(null);
+    if (updErr) {
+      toast.error("Gagal simpan hasil retry: " + updErr.message);
+      return;
+    }
+    setHistory((prev) =>
+      prev.map((r) =>
+        r.id === row.id
+          ? {
+              ...r,
+              send_status: ok ? "sent" : "failed",
+              error: ok ? null : errMsg,
+              retry_count: nextRetry,
+              last_retry_at: new Date().toISOString(),
+            }
+          : r,
+      ),
+    );
+    if (ok) toast.success("Terkirim ulang ke webhook");
+    else toast.error("Coba ulang gagal: " + (errMsg ?? "unknown"));
   }
 
   useEffect(() => {
@@ -377,6 +436,42 @@ function NotifikasiWaPage() {
                         {row.error ? (
                           <p className="mt-1 break-words text-ms-2xs text-destructive">{row.error}</p>
                         ) : null}
+                        {(row.retry_count ?? 0) > 0 ? (
+                          <p className="mt-0.5 text-ms-2xs text-muted-foreground">
+                            Sudah dicoba ulang {row.retry_count}×
+                            {row.last_retry_at
+                              ? " · terakhir " +
+                                new Date(row.last_retry_at).toLocaleString("id-ID", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </p>
+                        ) : null}
+                        {!ok ? (
+                          <div className="mt-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={retryingId === row.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void retryRow(row);
+                              }}
+                              className="h-7 gap-1.5 px-2 text-ms-2xs"
+                            >
+                              {retryingId === row.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <RotateCw className="h-3.5 w-3.5" />
+                              )}
+                              Coba ulang
+                            </Button>
+                          </div>
+                        ) : null}
                         {open && row.payload ? (
                           <pre className="mt-2 overflow-x-auto rounded bg-muted p-2 font-mono text-[10.5px] text-muted-foreground">
                             {JSON.stringify(row.payload, null, 2)}
@@ -407,4 +502,6 @@ type HistoryRow = {
   error: string | null;
   payload: Record<string, unknown> | null;
   created_at: string;
+  retry_count: number | null;
+  last_retry_at: string | null;
 };

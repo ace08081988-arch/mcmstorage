@@ -2041,10 +2041,12 @@ export type Database = {
           error: string | null
           id: string
           kind: string
+          last_retry_at: string | null
           new_status: string | null
           owner_user_id: string
           payload: Json | null
           prev_status: string | null
+          retry_count: number
           send_status: string
           task_id: string | null
           title: string | null
@@ -2055,10 +2057,12 @@ export type Database = {
           error?: string | null
           id?: string
           kind: string
+          last_retry_at?: string | null
           new_status?: string | null
           owner_user_id: string
           payload?: Json | null
           prev_status?: string | null
+          retry_count?: number
           send_status: string
           task_id?: string | null
           title?: string | null
@@ -2069,10 +2073,12 @@ export type Database = {
           error?: string | null
           id?: string
           kind?: string
+          last_retry_at?: string | null
           new_status?: string | null
           owner_user_id?: string
           payload?: Json | null
           prev_status?: string | null
+          retry_count?: number
           send_status?: string
           task_id?: string | null
           title?: string | null
