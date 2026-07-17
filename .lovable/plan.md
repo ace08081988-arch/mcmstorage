@@ -1,80 +1,79 @@
-## Tujuan
+# Scope Paket Request per link tugas
 
-Semua input angka di aplikasi menampilkan dan menerima format id-ID:
-- Titik `.` sebagai pemisah ribuan
-- Koma `,` sebagai pemisah desimal
-- Format aktif **live saat mengetik** (bukan hanya saat blur)
-- Berlaku konsisten di **semua** field angka (harga, kuantitas, stok, durasi, umur, versi APK) — kecuali PIN/OTP/AppLock/device-verify/visual-test yang eksplisit dilarang.
+## Masalah (root cause)
 
-Display di luar input (kartu, total, list) juga dirapikan pakai helper yang sama supaya tampilan seragam.
+Saat ini `prep_task_items` (ecer) sudah discope per-tugas — aman.
+Tapi bagian **Paket Request** di halaman pegawai (`RequestSection` di `t.$token.tsx`) memuat data lewat RPC `request_list_titles_via_task`, yang hanya memfilter global:
 
-## Pendekatan teknis
+- `request_titles.user_id = pemilik tugas`
+- `AND belum ada penyiapan pemilik pada siklus aktif (reprep_requested_at)`
 
-### 1. Satu komponen shared baru: `NumericInputID`
+Tidak ada relasi antara `prep_tasks` dan `request_titles`. Akibatnya: paket "Pencampuran" yang tadi Anda kirim ke pegawai A di link+PIN #1, otomatis ikut nongol lagi di link+PIN #2 untuk pegawai lain, meskipun link #1 belum diselesaikan. Ini melanggar aturan "1 link+PIN = 1 perintah penyiapan".
 
-Menggantikan `NumericDraftInput` sebagai SSOT. Perilaku:
+## Sasaran
 
-- `type="text"` + `inputMode="decimal"` (Android tetap dapat keypad numerik + tombol koma).
-- State internal string ter-format (`"1.500,50"`). Setiap keystroke:
-  1. Ambil `selectionStart` sebelum re-format.
-  2. Buang semua karakter selain digit dan satu koma pertama.
-  3. Format ulang bagian integer dengan `Intl.NumberFormat('id-ID')` (titik ribuan).
-  4. Hitung ulang posisi kursor: hitung jumlah digit sebelum kursor pada string lama, cari indeks setelah digit ke-N pada string baru, setSelectionRange di `requestAnimationFrame` supaya tidak lompat ke akhir.
-- Parsing → number: hapus semua `.`, ganti `,` jadi `.`, `parseFloat`. `onCommit(numberOrNull)` dipanggil hanya saat nilai valid dalam `[min,max]`.
-- Prop `decimal: boolean` — kalau `false`, koma diblokir total (untuk stok pcs/umur/versi).
-- Prop `maxDecimals` (default 2 untuk decimal, 0 untuk integer) — koma kedua diabaikan, digit desimal di-trim.
-- Sinkron dari `value` prop (parent) hanya saat input tidak fokus, mencegah refetch menimpa ketikan.
-- Empty state: `raw = ""` tampil kosong; saat blur, kalau kosong → commit `emptyCommitsTo` (biasanya `min` atau `0`, konfigurable) dan display ulang ter-format.
-- Leading zero: `"007"` → `"7"`; `",5"` diformat jadi `"0,5"`.
+- Setiap link+PIN membawa **hanya** paket yang dipilih pemilik saat membuat link itu.
+- Link lain (dengan PIN berbeda) yang dibuat setelahnya untuk paket yang sama TIDAK boleh melihat paket tersebut lagi, kecuali pemilik memang menyertakannya lagi.
+- Ecer (`prep_task_items`) tidak berubah — sudah per-tugas.
 
-### 2. Helper display seragam
+## Perubahan (technical detail)
 
-`src/lib/formatNumberID.ts` — dua fungsi:
-- `formatIntegerID(n)` → `"1.500"`
-- `formatDecimalID(n, maxDecimals=2)` → `"1.500,50"` (trailing-zero trim opsional lewat argumen ketiga).
+### 1. Schema baru (migration)
 
-Semua tempat yang saat ini pakai `toLocaleString('id-ID')` atau string interpolation manual dialihkan ke helper ini agar konsisten.
+Tabel penghubung `prep_task_request_titles`:
 
-### 3. Migrasi menyeluruh (single sweep)
+```text
+prep_task_request_titles
+- task_id  uuid  FK prep_tasks(id) ON DELETE CASCADE
+- title_id uuid  FK request_titles(id) ON DELETE CASCADE
+- PRIMARY KEY (task_id, title_id)
+- index (title_id, task_id)
+```
 
-Ganti setiap input angka di file-file berikut jadi `<NumericInputID>`. Wrapper `SmartWeightInput` di-refactor: pcs fallback pakai `NumericInputID`, tapi tombol berat (½, 1 kg, dll.) tetap. Parser existing di `parseFractionalGrams` tetap dipertahankan untuk input berat spesial (fraksi seperti `1/2`), tapi angka polos lewat `NumericInputID`.
+RLS + GRANTs standar (authenticated, service_role). Owner-only via join ke `prep_tasks.owner_user_id = auth.uid()`.
 
-File yang disentuh (business + settings + tugas, sesuai scope yang sudah Anda setujui sebelumnya):
+### 2. RPC `prep_create_task`
 
-- `src/routes/_authenticated.index.tsx` (Beranda / Ecer — sudah pakai NumericDraftInput → ganti import + prop)
-- `src/routes/_authenticated.gudang.tsx` (Beli, Stok, hutang/piutang, pembayaran)
-- `src/routes/pos-kasir.index.tsx`
-- `src/routes/_authenticated.request.tsx`
-- `src/routes/_authenticated.hutang-piutang.tsx`
-- `src/routes/_authenticated.pengaturan-apk.tsx`, `pengaturan-kunci.tsx`, `link-pegawai.tsx`, `tugas-baru.tsx`
-- `src/components/SmartWeightInput.tsx`, `ChatHeaderDebtControls.tsx`, `SellSelfPrepDialog.tsx`, `ReadyPackagesPanel.tsx`, `SharePinDialog.tsx`, `label-preview*`, diagnostik.
+Tambah parameter `_title_ids uuid[] DEFAULT '{}'::uuid[]`. Setelah insert task, insert baris `prep_task_request_titles(task_id, title_id)` untuk setiap `title_id` — divalidasi milik `v_uid` supaya tidak bisa "meminjam" paket akun lain.
 
-**Tidak disentuh (whitelist eksplisit)**: PIN, OTP, AppLock, device-verify, `lovable.visual.*` — sesuai scope sebelumnya.
+### 3. RPC `request_list_titles_via_task`
 
-### 4. Business logic invariants (dijaga)
+Ganti filter `t.user_id = v_task.owner_user_id` menjadi:
 
-- `packageSize: "1"` default saat `packageType === "botol"` di Gudang → tetap.
-- Perbandingan angka di logic (bukan display) selalu pakai hasil parse (`Number`), tidak pernah string ter-format.
-- RLS/DB write tetap kirim `number` murni.
+```text
+JOIN prep_task_request_titles ptrt ON ptrt.title_id = t.id
+WHERE ptrt.task_id = v_task.id
+```
 
-### 5. Verifikasi
+Filter "sudah ada penyiapan" tetap dipertahankan (jadi kalau ternyata pemilik sudah menyiapkan sendiri, tetap disembunyikan).
 
-- `bunx tsgo --noEmit` bersih.
-- Playwright smoke di localhost:8080 untuk 3 skenario kritikal:
-  1. Beranda Ecer: input harga "12500", cek display "12.500", backspace 1 kali → "1.250" (bukan lompat cursor).
-  2. Gudang Beli: input berat "0,5", pcs isi 12 → total tersimpan `number` benar.
-  3. POS Kasir: total transaksi tampil "Rp 1.234.567,50" konsisten.
-- Screenshot 411px untuk Beranda, Gudang, POS.
+### 4. UI `/tugas-baru`
 
-## Risiko yang saya sadari
+Tambahkan bagian "Sertakan Paket Request" (opsional, collapsible) yang menampilkan daftar paket aktif milik pemilik + checkbox. Yang dicentang dikirim sebagai `_title_ids`. Default: tidak ada paket tercentang (lebih aman — pemilik pilih eksplisit).
 
-- **Cursor jump saat live-format** adalah bug klasik. Mitigasi: hitung ulang posisi kursor berbasis "jumlah digit sebelum caret" dan set di `requestAnimationFrame` — bukan sekadar `setSelectionRange` sinkron.
-- **IME/composition Android**: `onCompositionStart/End` di-handle supaya reformat ditunda selama composing.
-- **Diff besar**: karena Anda pilih "semua sekaligus", saya akan tetap commit satu perubahan dan minta Anda cek di device sebelum publish. Kalau ada regresi per menu, kita revisi bertarget.
+Kalau tugas dibuka via deep-link dari halaman Paket Request (`/tugas-baru?title_id=<uuid>`), paket tersebut otomatis tercentang.
 
-## Yang tidak berubah
+### 5. Backfill tugas lama
 
-- Backend, RLS, schema DB.
-- Business logic apapun.
-- Sensitive inputs (PIN/OTP/AppLock/device-verify/visual-test).
-- Tema Noir & Gold, layout, komponen shell.
+Migration mengisi `prep_task_request_titles` untuk tugas yang **masih `active` dan belum expired**:
+
+- Untuk setiap `request_titles` milik pemilik yang belum punya penyiapan pada siklus aktif, tautkan ke tugas aktif terbaru pemilik itu (satu tugas saja — biar tidak ganda).
+
+Alasannya: kalau tidak di-backfill, link lama yang sudah dibagikan tiba-tiba kehilangan bagian Paket, membingungkan pegawai. Backfill ini konservatif — hanya link terbaru yang mewarisi paket lama.
+
+## Lingkup yang TIDAK berubah
+
+- Alur submit paket dari pegawai (`prep_submit`/`request_preparations`) — tidak disentuh.
+- Ecer / `prep_task_items` — tidak disentuh.
+- Halaman `/kios`, hutang-piutang, dsb — tidak disentuh.
+
+## Verifikasi setelah build
+
+- `tsgo` typecheck.
+- Uji manual di device:
+  1. Buat tugas A dengan paket X tercentang → link+PIN A tampil paket X.
+  2. Buat tugas B tanpa paket → link+PIN B tampil kosong (hanya ecer, kalau ada).
+  3. Buat tugas C dengan paket X tercentang lagi → link+PIN C tampil paket X, sementara link A tetap tampil X juga sampai salah satunya menyelesaikan.
+  4. Setelah salah satu link kirim paket X → filter "sudah ada penyiapan" menyembunyikannya di kedua link.
+
+Setujui untuk saya lanjutkan implementasi 5 langkah di atas?
