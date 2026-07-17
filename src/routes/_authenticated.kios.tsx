@@ -121,7 +121,7 @@ function KiosPage() {
       setRxNote("");
       await refreshItems();
     } catch (e) {
-      notifyError(e, "Gagal mencatat penerimaan");
+      notifyError(e, { fallback: "Gagal mencatat penerimaan" });
     } finally {
       setRxBusy(false);
     }
@@ -249,7 +249,7 @@ function KiosPage() {
 
       await Promise.all([refreshItems(), refreshCustomers()]);
     } catch (e) {
-      notifyError(e, "Gagal menyimpan penjualan");
+      notifyError(e, { fallback: "Gagal menyimpan penjualan" });
     } finally {
       setSxBusy(false);
     }
