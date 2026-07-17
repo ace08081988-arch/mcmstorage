@@ -2310,7 +2310,7 @@ function PublicPrepPage() {
                             {sortedEntries.map(({ it, idx }) => (
                               <WorkerSectionBoundary
                                 key={it.id}
-                                renderFallback={(error) => (
+                                renderFallback={(error, reset) => (
                                   <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-ms-4 text-ms-sm text-destructive">
                                     <div className="flex items-start gap-ms-2">
                                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -2319,6 +2319,24 @@ function PublicPrepPage() {
                                         <div className="mt-1 text-ms-xs leading-relaxed opacity-90">
                                           PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak
                                           valid. Item lain tetap bisa dibuka.
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-ms-2">
+                                          <button
+                                            type="button"
+                                            onClick={reset}
+                                            className="rounded-md border border-destructive/40 bg-background px-ms-3 py-1.5 text-ms-xs font-semibold text-destructive hover:bg-destructive/10"
+                                          >
+                                            🔄 Coba lagi
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (typeof window !== "undefined") window.location.reload();
+                                            }}
+                                            className="rounded-md border border-destructive/40 bg-background px-ms-3 py-1.5 text-ms-xs text-destructive hover:bg-destructive/10"
+                                          >
+                                            ↻ Muat ulang halaman
+                                          </button>
                                         </div>
                                         <details className="mt-2 text-ms-2xs">
                                           <summary className="cursor-pointer">Detail teknis</summary>
@@ -2467,7 +2485,7 @@ function PublicPrepPage() {
         )}
 
         <WorkerSectionBoundary
-          renderFallback={(error) => (
+          renderFallback={(error, reset) => (
             <div className="mt-6 rounded-xl border border-warning/40 bg-warning/5 p-ms-4 text-ms-sm text-warning dark:text-warning">
               <div className="flex items-start gap-ms-2">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -2476,6 +2494,24 @@ function PublicPrepPage() {
                   <div className="mt-1 text-ms-xs leading-relaxed opacity-90">
                     Daftar tugas utama tetap bisa dipakai. Detail error disiapkan agar masalah data
                     paket bisa diperbaiki.
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-ms-2">
+                    <button
+                      type="button"
+                      onClick={reset}
+                      className="rounded-md border border-warning/40 bg-background px-ms-3 py-1.5 text-ms-xs font-semibold text-warning hover:bg-warning/10"
+                    >
+                      🔄 Coba lagi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== "undefined") window.location.reload();
+                      }}
+                      className="rounded-md border border-warning/40 bg-background px-ms-3 py-1.5 text-ms-xs text-warning hover:bg-warning/10"
+                    >
+                      ↻ Muat ulang halaman
+                    </button>
                   </div>
                   <details className="mt-2 text-ms-2xs">
                     <summary className="cursor-pointer">Detail teknis</summary>
