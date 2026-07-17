@@ -391,7 +391,7 @@ function revokePhotoPreview(photo: StagedPhoto | null | undefined) {
 class WorkerSectionBoundary extends Component<
   {
     children: ReactNode;
-    renderFallback: (error: Error) => ReactNode;
+    renderFallback: (error: Error, reset: () => void) => ReactNode;
   },
   { error: Error | null; attempt: number; remountKey: number }
 > {
@@ -401,6 +401,20 @@ class WorkerSectionBoundary extends Component<
     remountKey: 0,
   };
   private retryTimer: number | null = null;
+  private handleManualReset = () => {
+    if (this.retryTimer !== null && typeof window !== "undefined") {
+      window.clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+    // Reset penuh: bersihkan error, nolkan hitungan retry otomatis, dan
+    // remount subtree bersih supaya state komponen anak yang mungkin korup
+    // ikut ter-reset. Dipicu manual oleh pengguna dari tombol fallback.
+    this.setState((prev) => ({
+      error: null,
+      attempt: 0,
+      remountKey: prev.remountKey + 1,
+    }));
+  };
   static getDerivedStateFromError(error: Error): { error: Error } {
     return { error };
   }
@@ -452,7 +466,7 @@ class WorkerSectionBoundary extends Component<
     }
   }
   render() {
-    if (this.state.error) return this.props.renderFallback(this.state.error);
+    if (this.state.error) return this.props.renderFallback(this.state.error, this.handleManualReset);
     // Key hanya di-bump untuk error non-DOM-race (bug betulan) supaya
     // subtree di-mount ulang bersih. Untuk DOM race transien, key tetap
     // sama sehingga draft foto & progress upload di ItemCard tidak hilang.
