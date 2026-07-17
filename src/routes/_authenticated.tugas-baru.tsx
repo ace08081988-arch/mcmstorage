@@ -586,6 +586,13 @@ function TugasBaruForm() {
         return !hasPrep;
       });
       setPaketOptions(activeCycle.map((t) => ({ id: t.id, name: t.name })));
+      // Default: centang SEMUA paket aktif supaya kolom Paket Request di
+      // halaman pegawai (/t/:token) langsung terisi seperti kolom ecer,
+      // tanpa admin harus buka dropdown & centang manual. Owner tetap
+      // bisa uncheck yang tidak diinginkan sebelum submit.
+      if (!paketTouchedRef.current) {
+        setSelectedPaketIds(activeCycle.map((t) => t.id));
+      }
     })();
     return () => {
       on = false;
