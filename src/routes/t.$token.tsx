@@ -3191,6 +3191,21 @@ function ItemCard({
         duration: 8000,
       });
       setSendStatus({ kind: "failed", error: msg });
+      // Laporkan ke webhook WA owner (fire-and-forget, best-effort)
+      try {
+        void fetch("/api/public/hooks/prep-submit-fail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            pin,
+            error: msg,
+            kind_hint: "ecer",
+            item_name: item.name ?? null,
+          }),
+          keepalive: true,
+        });
+      } catch { /* ignore */ }
     } finally {
       setBusy(false);
       onKeepAlive();
