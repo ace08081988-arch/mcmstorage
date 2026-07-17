@@ -3170,9 +3170,11 @@ function ItemCard({
                   : res?.error || "submit_failed";
         throw new Error(msg);
       }
-      toast.success(
-        `Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${formatQtyShort(res.deducted ?? item.qty_requested, item.unit_label, item.name)}`,
-      );
+      try { navigator.vibrate?.([40, 60, 40]); } catch { /* ignore */ }
+      toast.success("Penyiapan terkirim", {
+        description: `${uploaded.length} foto terkirim · Stok gudang −${formatQtyShort(res.deducted ?? item.qty_requested, item.unit_label, item.name)}`,
+        duration: 5000,
+      });
       setSendStatus({ kind: "success", at: Date.now(), count: uploaded.length });
       setPhotos([]);
       setLocUrl("");
@@ -3183,7 +3185,11 @@ function ItemCard({
       onSubmitted(item.id);
     } catch (e) {
       const msg = (e as Error).message || "Gagal kirim";
-      toast.error("Gagal kirim: " + msg);
+      try { navigator.vibrate?.([120, 80, 120]); } catch { /* ignore */ }
+      toast.error("Penyiapan gagal terkirim", {
+        description: msg + " · Foto & isian tetap tersimpan, coba kirim lagi.",
+        duration: 8000,
+      });
       setSendStatus({ kind: "failed", error: msg });
     } finally {
       setBusy(false);
