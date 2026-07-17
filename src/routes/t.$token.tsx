@@ -4763,14 +4763,22 @@ function RequestForm({
                           : code;
         throw new Error(msg);
       }
-      toast.success(`Paket terkirim (${uploaded.length} foto). Status berubah ke Selesai.`);
+      try { navigator.vibrate?.([40, 60, 40]); } catch { /* ignore */ }
+      toast.success("Paket request terkirim", {
+        description: `${uploaded.length} foto terkirim · Status berubah ke Selesai.`,
+        duration: 5000,
+      });
       setPhotos([]);
       setUploads([]);
       void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
       const raw = (e as Error)?.message ?? "unknown";
-      toast.error(`Paket belum terkirim: ${raw}. Foto & isian tetap tersimpan — coba kirim lagi.`);
+      try { navigator.vibrate?.([120, 80, 120]); } catch { /* ignore */ }
+      toast.error("Paket request gagal terkirim", {
+        description: `${raw} · Foto & isian tetap tersimpan, coba kirim lagi.`,
+        duration: 8000,
+      });
     } finally {
       setBusy(false);
       onKeepAlive();
