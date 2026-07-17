@@ -366,6 +366,15 @@ function TugasBaruForm() {
     }
   }, []);
   const [titles, setTitles] = useState<TitleOpt[]>([]);
+  // Paket Request yang bisa disertakan pada link tugas ini. Sengaja
+  // dipisah dari `titles` (ecer) karena sumber datanya berbeda dan
+  // aturannya juga berbeda: paket dipilih eksplisit per-link supaya
+  // link+PIN #2 tidak lagi membawa paket yang sudah dititipkan ke
+  // link+PIN #1 (aturan "1 link = 1 perintah").
+  type PaketOpt = { id: string; name: string };
+  const [paketOptions, setPaketOptions] = useState<PaketOpt[]>([]);
+  const [selectedPaketIds, setSelectedPaketIds] = useState<string[]>([]);
+  const [paketOpen, setPaketOpen] = useState(false);
   type VerifyState = {
     status: "idle" | "checking" | "ok" | "missing" | "error";
     productName?: string;
