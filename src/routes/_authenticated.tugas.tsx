@@ -418,6 +418,13 @@ function TugasPage() {
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
   const [qrFor, setQrFor] = useState<Task | null>(null);
   const [progress, setProgress] = useState<Record<string, { items: number; submitted: number; approved: number }>>({});
+  // Ringkasan notifikasi WA per tugas: berapa kali sukses/gagal terkirim
+  // dan kapan upaya terakhir. Diambil dari `prep_task_wa_hook_log` (RLS:
+  // owner_user_id = auth.uid()) supaya owner bisa lihat langsung di kartu
+  // tugas tanpa buka halaman pengaturan.
+  const [notifStats, setNotifStats] = useState<
+    Record<string, { sent: number; failed: number; lastAt: string | null; lastStatus: "sent" | "failed" | null }>
+  >({});
   const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
   const [taskSearch, setTaskSearch] = useState("");
   const [tasksLoaded, setTasksLoaded] = useState(false);
