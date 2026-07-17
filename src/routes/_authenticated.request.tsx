@@ -142,6 +142,7 @@ function RequestPage() {
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
+  const [repairing, setRepairing] = useState(false);
   const [sendLinkTitle, setSendLinkTitle] = useState<RequestTitle | null>(null);
   const [historyTitle, setHistoryTitle] = useState<RequestTitle | "all" | null>(null);
 
