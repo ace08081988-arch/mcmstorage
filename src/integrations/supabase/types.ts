@@ -3928,6 +3928,10 @@ export type Database = {
         Args: { _new_name: string; _old_name: string }
         Returns: number
       }
+      repair_missing_request_task_title_links: {
+        Args: { _owner_user_id?: string; _task_id?: string }
+        Returns: number
+      }
       request_list_titles_via_task: {
         Args: { _pin: string; _token: string }
         Returns: Json
