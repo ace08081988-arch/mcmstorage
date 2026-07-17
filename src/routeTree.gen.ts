@@ -127,6 +127,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
+import { Route as ApiPublicHooksPrepSubmitFailRouteImport } from './routes/api/public/hooks/prep-submit-fail'
 import { Route as ApiPublicHooksOrderEventNotifyRouteImport } from './routes/api/public/hooks/order-event-notify'
 import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
 import { Route as ApiPublicHooksFriendNotifyRouteImport } from './routes/api/public/hooks/friend-notify'
@@ -786,6 +787,12 @@ const ApiPublicHooksPrepTaskNotifyRoute =
     path: '/api/public/hooks/prep-task-notify',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPrepSubmitFailRoute =
+  ApiPublicHooksPrepSubmitFailRouteImport.update({
+    id: '/api/public/hooks/prep-submit-fail',
+    path: '/api/public/hooks/prep-submit-fail',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOrderEventNotifyRoute =
   ApiPublicHooksOrderEventNotifyRouteImport.update({
     id: '/api/public/hooks/order-event-notify',
@@ -944,6 +951,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-submit-fail': typeof ApiPublicHooksPrepSubmitFailRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
@@ -1067,6 +1075,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-submit-fail': typeof ApiPublicHooksPrepSubmitFailRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
@@ -1195,6 +1204,7 @@ export interface FileRoutesById {
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-submit-fail': typeof ApiPublicHooksPrepSubmitFailRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
@@ -1323,6 +1333,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-submit-fail'
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
@@ -1446,6 +1457,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-submit-fail'
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
@@ -1573,6 +1585,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-submit-fail'
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
@@ -1637,6 +1650,7 @@ export interface RootRouteChildren {
   ApiPublicHooksFriendNotifyRoute: typeof ApiPublicHooksFriendNotifyRoute
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
   ApiPublicHooksOrderEventNotifyRoute: typeof ApiPublicHooksOrderEventNotifyRoute
+  ApiPublicHooksPrepSubmitFailRoute: typeof ApiPublicHooksPrepSubmitFailRoute
   ApiPublicHooksPrepTaskNotifyRoute: typeof ApiPublicHooksPrepTaskNotifyRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   ApiPublicHooksShipmentStatusChangeRoute: typeof ApiPublicHooksShipmentStatusChangeRoute
@@ -2475,6 +2489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPrepTaskNotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/prep-submit-fail': {
+      id: '/api/public/hooks/prep-submit-fail'
+      path: '/api/public/hooks/prep-submit-fail'
+      fullPath: '/api/public/hooks/prep-submit-fail'
+      preLoaderRoute: typeof ApiPublicHooksPrepSubmitFailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/order-event-notify': {
       id: '/api/public/hooks/order-event-notify'
       path: '/api/public/hooks/order-event-notify'
@@ -2812,6 +2833,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksFriendNotifyRoute: ApiPublicHooksFriendNotifyRoute,
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,
   ApiPublicHooksOrderEventNotifyRoute: ApiPublicHooksOrderEventNotifyRoute,
+  ApiPublicHooksPrepSubmitFailRoute: ApiPublicHooksPrepSubmitFailRoute,
   ApiPublicHooksPrepTaskNotifyRoute: ApiPublicHooksPrepTaskNotifyRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   ApiPublicHooksShipmentStatusChangeRoute:
