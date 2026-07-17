@@ -414,7 +414,9 @@ function DomainSection({
                       </button>
                     <Link
                       to={domainPath}
-                      search={{ title: r.title_id, highlight: r.title_id }}
+                      search={domain === "request"
+                        ? { title: r.title_id, highlight: r.title_id, send: undefined }
+                        : { item: undefined, title: r.title_id, highlight: r.title_id, send: undefined }}
                       target="_blank"
                       rel="noopener"
                         data-testid={`debug-open-${domain}-${r.title_id}`}
