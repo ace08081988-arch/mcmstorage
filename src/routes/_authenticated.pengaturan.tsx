@@ -13,6 +13,7 @@ import {
   Languages,
   Lock,
   MessageCircle,
+  MessageSquare,
   MonitorSmartphone,
   Package,
   Palette,
