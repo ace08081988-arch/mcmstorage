@@ -212,9 +212,15 @@ function RequestPage() {
     return "Permintaan gagal — lihat detail di bawah.";
   }
 
-  async function loadAll() {
+  async function loadAll(opts?: { background?: boolean }) {
     setLoadError(null);
-    setLoading(true);
+    // Background refresh (mis. setelah dialog "Kirim link ke pegawai"
+    // membuat task) TIDAK mem-flip `loading` — kalau di-flip, tree utama
+    // di-unmount (lihat cek `if (loading)` di bawah) sehingga dialog
+    // yang sedang terbuka ikut hilang dan pengguna dibawa "balik" ke
+    // halaman list padahal task-nya sukses dibuat.
+    const background = opts?.background === true;
+    if (!background) setLoading(true);
     try {
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) {
@@ -340,7 +346,7 @@ function RequestPage() {
         diagnosis: diagnose(err.code, err.status, err.message),
       });
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   }
 
@@ -800,7 +806,7 @@ function RequestPage() {
         title={sendLinkTitle}
         titleItems={sendLinkTitle ? titleItems.filter((i) => i.title_id === sendLinkTitle.id) : []}
         warehouseItems={items}
-        onChanged={loadAll}
+        onChanged={() => void loadAll({ background: true })}
         onClose={() => setSendLinkTitle(null)}
       />
 
