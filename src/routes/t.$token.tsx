@@ -395,7 +395,11 @@ class WorkerSectionBoundary extends Component<
   },
   { error: Error | null; attempt: number }
 > {
-  state: { error: Error | null; attempt: number } = { error: null, attempt: 0 };
+  state: { error: Error | null; attempt: number; remountKey: number } = {
+    error: null,
+    attempt: 0,
+    remountKey: 0,
+  };
   private retryTimer: number | null = null;
   static getDerivedStateFromError(error: Error): { error: Error } {
     return { error };
@@ -427,7 +431,17 @@ class WorkerSectionBoundary extends Component<
       const delay = 200 + this.state.attempt * 250;
       this.retryTimer = window.setTimeout(() => {
         this.retryTimer = null;
-        this.setState((prev) => ({ error: null, attempt: prev.attempt + 1 }));
+        // Untuk DOM-race transien: JANGAN bump remountKey — kalau kita
+        // remount subtree, semua foto staged / upload yang sedang berjalan
+        // di dalam ItemCard hilang. Cukup clear error dan biarkan render
+        // berikutnya menyelesaikan diri.
+        // Untuk error lain (bug betulan): remount subtree bersih supaya
+        // state internal komponen anak yang mungkin korup ikut di-reset.
+        this.setState((prev) => ({
+          error: null,
+          attempt: prev.attempt + 1,
+          remountKey: isDomRace ? prev.remountKey : prev.remountKey + 1,
+        }));
       }, delay);
     }
   }
@@ -439,10 +453,10 @@ class WorkerSectionBoundary extends Component<
   }
   render() {
     if (this.state.error) return this.props.renderFallback(this.state.error);
-    // Bumping key via attempt memaksa React membuang subtree lama dan
-    // memount ulang bersih — menghindari state internal komponen anak yang
-    // ikut korup saat DOM race terjadi.
-    return <Fragment key={this.state.attempt}>{this.props.children}</Fragment>;
+    // Key hanya di-bump untuk error non-DOM-race (bug betulan) supaya
+    // subtree di-mount ulang bersih. Untuk DOM race transien, key tetap
+    // sama sehingga draft foto & progress upload di ItemCard tidak hilang.
+    return <Fragment key={this.state.remountKey}>{this.props.children}</Fragment>;
   }
 }
 
