@@ -2748,6 +2748,30 @@ function ItemCard({
     | { kind: "failed"; error: string }
   >({ kind: "idle" });
 
+  useEffect(() => {
+    if (!editorOpen) return;
+    onKeepAlive();
+    onActivityChange(true);
+    return () => onActivityChange(false);
+  }, [editorOpen, onActivityChange, onKeepAlive]);
+
+  async function withPhotoActivity<T>(fn: () => Promise<T>): Promise<T> {
+    onKeepAlive();
+    onActivityChange(true);
+    try {
+      return await fn();
+    } finally {
+      onKeepAlive();
+      onActivityChange(false);
+    }
+  }
+
+  useEffect(() => {
+    signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned);
+  }, [item.ref_photo_path]);
+
+  // Draft foto persisten: bertahan lintas refresh & pindah tab.
+  const draftKey = itemDraftKey(token, item.id);
   // Persist status kirim per-item ke sessionStorage supaya saat WebView di-
   // recreate (balik dari kamera/galeri/share/lock), user tetap lihat status
   // "gagal" atau "sukses" terakhir — tidak reset ke idle diam-diam.
@@ -2793,31 +2817,6 @@ function ItemCard({
       /* abaikan */
     }
   }, [sendStatus, sendStatusStorageKey]);
-
-  useEffect(() => {
-    if (!editorOpen) return;
-    onKeepAlive();
-    onActivityChange(true);
-    return () => onActivityChange(false);
-  }, [editorOpen, onActivityChange, onKeepAlive]);
-
-  async function withPhotoActivity<T>(fn: () => Promise<T>): Promise<T> {
-    onKeepAlive();
-    onActivityChange(true);
-    try {
-      return await fn();
-    } finally {
-      onKeepAlive();
-      onActivityChange(false);
-    }
-  }
-
-  useEffect(() => {
-    signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned);
-  }, [item.ref_photo_path]);
-
-  // Draft foto persisten: bertahan lintas refresh & pindah tab.
-  const draftKey = itemDraftKey(token, item.id);
   const draftLoadedRef = useRef(false);
   useEffect(() => {
     let cancelled = false;
