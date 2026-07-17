@@ -2950,6 +2950,13 @@ function PrepEditorDialog({
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
     const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
+    // Langsung set `photo` dari file mentah sebelum membuka editor.
+    // Alasan: jika PhotoEditorV2 gagal memanggil onSave (mis. engine paused,
+    // WebView Android me-recreate, atau user tap Batal), foto asli tetap
+    // terlampir sehingga tombol Simpan tidak lagi mengeluh
+    // "Wajib lampirkan foto". onSave editor akan overwrite dengan versi
+    // beranotasi bila user menyelesaikan editor.
+    setPhoto({ blob: f, dataUrl });
     setEditorSrc(dataUrl); setEditorOpen(true);
     if (!gps && !locUrl && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
