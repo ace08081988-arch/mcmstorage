@@ -200,7 +200,7 @@ function RiwayatKiosPage() {
         );
         setRows(merged);
       } catch (e) {
-        notifyError(e, "Gagal memuat riwayat kios");
+        notifyError(e, { fallback: "Gagal memuat riwayat kios" });
       } finally {
         if (on) setLoading(false);
       }
