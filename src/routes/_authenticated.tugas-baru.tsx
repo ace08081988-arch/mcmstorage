@@ -1359,6 +1359,7 @@ function TugasBaruForm() {
                                 type="checkbox"
                                 checked={checked}
                                 onChange={(e) => {
+                                  paketTouchedRef.current = true;
                                   setSelectedPaketIds((prev) =>
                                     e.target.checked
                                       ? Array.from(new Set([...prev, p.id]))
