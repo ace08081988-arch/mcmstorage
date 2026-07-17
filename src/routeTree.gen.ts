@@ -110,6 +110,7 @@ import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping
 import { Route as AuthenticatedStatusBaruRouteImport } from './routes/_authenticated.status.baru'
 import { Route as AuthenticatedStatusIdRouteImport } from './routes/_authenticated.status.$id'
 import { Route as AuthenticatedKontakPermintaanRouteImport } from './routes/_authenticated.kontak.permintaan'
+import { Route as AuthenticatedKiosRiwayatRouteImport } from './routes/_authenticated.kios.riwayat'
 import { Route as AuthenticatedDevPressAuditDemoRouteImport } from './routes/_authenticated.dev.press-audit-demo'
 import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_authenticated.dev.press-audit-codes'
 import { Route as AuthenticatedDebugSelectorRouteImport } from './routes/_authenticated.debug.selector'
@@ -684,6 +685,12 @@ const AuthenticatedKontakPermintaanRoute =
     path: '/permintaan',
     getParentRoute: () => AuthenticatedKontakRoute,
   } as any)
+const AuthenticatedKiosRiwayatRoute =
+  AuthenticatedKiosRiwayatRouteImport.update({
+    id: '/riwayat',
+    path: '/riwayat',
+    getParentRoute: () => AuthenticatedKiosRoute,
+  } as any)
 const AuthenticatedDevPressAuditDemoRoute =
   AuthenticatedDevPressAuditDemoRouteImport.update({
     id: '/dev/press-audit-demo',
@@ -843,7 +850,7 @@ export interface FileRoutesByFullPath {
   '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
-  '/kios': typeof AuthenticatedKiosRoute
+  '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
@@ -888,6 +895,7 @@ export interface FileRoutesByFullPath {
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
+  '/kios/riwayat': typeof AuthenticatedKiosRiwayatRoute
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/status/$id': typeof AuthenticatedStatusIdRoute
   '/status/baru': typeof AuthenticatedStatusBaruRoute
@@ -964,7 +972,7 @@ export interface FileRoutesByTo {
   '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
-  '/kios': typeof AuthenticatedKiosRoute
+  '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1009,6 +1017,7 @@ export interface FileRoutesByTo {
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
+  '/kios/riwayat': typeof AuthenticatedKiosRiwayatRoute
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/status/$id': typeof AuthenticatedStatusIdRoute
   '/status/baru': typeof AuthenticatedStatusBaruRoute
@@ -1089,7 +1098,7 @@ export interface FileRoutesById {
   '/_authenticated/fitur': typeof AuthenticatedFiturRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
-  '/_authenticated/kios': typeof AuthenticatedKiosRoute
+  '/_authenticated/kios': typeof AuthenticatedKiosRouteWithChildren
   '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
@@ -1135,6 +1144,7 @@ export interface FileRoutesById {
   '/_authenticated/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/_authenticated/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/_authenticated/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
+  '/_authenticated/kios/riwayat': typeof AuthenticatedKiosRiwayatRoute
   '/_authenticated/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/_authenticated/status/$id': typeof AuthenticatedStatusIdRoute
   '/_authenticated/status/baru': typeof AuthenticatedStatusBaruRoute
@@ -1261,6 +1271,7 @@ export interface FileRouteTypes {
     | '/debug/selector'
     | '/dev/press-audit-codes'
     | '/dev/press-audit-demo'
+    | '/kios/riwayat'
     | '/kontak/permintaan'
     | '/status/$id'
     | '/status/baru'
@@ -1382,6 +1393,7 @@ export interface FileRouteTypes {
     | '/debug/selector'
     | '/dev/press-audit-codes'
     | '/dev/press-audit-demo'
+    | '/kios/riwayat'
     | '/kontak/permintaan'
     | '/status/$id'
     | '/status/baru'
@@ -1507,6 +1519,7 @@ export interface FileRouteTypes {
     | '/_authenticated/debug/selector'
     | '/_authenticated/dev/press-audit-codes'
     | '/_authenticated/dev/press-audit-demo'
+    | '/_authenticated/kios/riwayat'
     | '/_authenticated/kontak/permintaan'
     | '/_authenticated/status/$id'
     | '/_authenticated/status/baru'
@@ -2330,6 +2343,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKontakPermintaanRouteImport
       parentRoute: typeof AuthenticatedKontakRoute
     }
+    '/_authenticated/kios/riwayat': {
+      id: '/_authenticated/kios/riwayat'
+      path: '/riwayat'
+      fullPath: '/kios/riwayat'
+      preLoaderRoute: typeof AuthenticatedKiosRiwayatRouteImport
+      parentRoute: typeof AuthenticatedKiosRoute
+    }
     '/_authenticated/dev/press-audit-demo': {
       id: '/_authenticated/dev/press-audit-demo'
       path: '/dev/press-audit-demo'
@@ -2527,6 +2547,17 @@ const AuthenticatedGudangRouteChildren: AuthenticatedGudangRouteChildren = {
 const AuthenticatedGudangRouteWithChildren =
   AuthenticatedGudangRoute._addFileChildren(AuthenticatedGudangRouteChildren)
 
+interface AuthenticatedKiosRouteChildren {
+  AuthenticatedKiosRiwayatRoute: typeof AuthenticatedKiosRiwayatRoute
+}
+
+const AuthenticatedKiosRouteChildren: AuthenticatedKiosRouteChildren = {
+  AuthenticatedKiosRiwayatRoute: AuthenticatedKiosRiwayatRoute,
+}
+
+const AuthenticatedKiosRouteWithChildren =
+  AuthenticatedKiosRoute._addFileChildren(AuthenticatedKiosRouteChildren)
+
 interface AuthenticatedKontakRouteChildren {
   AuthenticatedKontakPermintaanRoute: typeof AuthenticatedKontakPermintaanRoute
   AuthenticatedKontakIndexRoute: typeof AuthenticatedKontakIndexRoute
@@ -2557,7 +2588,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFiturRoute: typeof AuthenticatedFiturRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
-  AuthenticatedKiosRoute: typeof AuthenticatedKiosRoute
+  AuthenticatedKiosRoute: typeof AuthenticatedKiosRouteWithChildren
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
@@ -2615,7 +2646,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFiturRoute: AuthenticatedFiturRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
-  AuthenticatedKiosRoute: AuthenticatedKiosRoute,
+  AuthenticatedKiosRoute: AuthenticatedKiosRouteWithChildren,
   AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,

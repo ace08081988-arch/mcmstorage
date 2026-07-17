@@ -267,8 +267,14 @@ function KiosPage() {
           </Link>
           <h1 className="text-base font-bold">🏪 Kios Terpadu</h1>
           <Link
-            to="/hutang-piutang"
+            to="/kios/riwayat"
             className="ml-auto rounded-md border px-2 py-1 text-xs hover:bg-accent"
+          >
+            Riwayat
+          </Link>
+          <Link
+            to="/hutang-piutang"
+            className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
           >
             Piutang →
           </Link>
