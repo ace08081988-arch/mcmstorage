@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, MessageSquare, Save } from "lucide-react";
+import { CheckCircle2, Loader2, MessageSquare, RefreshCw, Save, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,28 @@ function NotifikasiWaPage() {
   const [enabled, setEnabled] = useState(false);
   const [forwardUrl, setForwardUrl] = useState("");
   const [waTarget, setWaTarget] = useState("");
+  const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  async function loadHistory() {
+    setHistoryLoading(true);
+    const { data, error } = await supabase
+      .from("prep_task_wa_hook_log")
+      .select("id, task_id, title, prev_status, new_status, kind, wa_target, send_status, error, payload, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setHistoryLoading(false);
+    if (error) {
+      toast.error("Gagal muat riwayat: " + error.message);
+      return;
+    }
+    setHistory((data ?? []) as HistoryRow[]);
+  }
+
+  useEffect(() => {
+    void loadHistory();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -281,6 +303,108 @@ function NotifikasiWaPage() {
 }`}</pre>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Riwayat Notifikasi Status Tugas</CardTitle>
+              <CardDescription>
+                50 upaya pengiriman WA terakhir untuk perubahan status tugas Anda. Ketuk baris untuk melihat isi
+                payload yang dikirim.
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={loadHistory} disabled={historyLoading} className="gap-1.5">
+              <RefreshCw className={`h-4 w-4 ${historyLoading ? "animate-spin" : ""}`} />
+              Muat ulang
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {historyLoading && history.length === 0 ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : history.length === 0 ? (
+            <p className="py-4 text-center text-ms-xs text-muted-foreground">
+              Belum ada notifikasi WA yang dikirim untuk perubahan status tugas.
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {history.map((row) => {
+                const ok = row.send_status === "sent";
+                const open = expandedId === row.id;
+                return (
+                  <li key={row.id} className="py-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(open ? null : row.id)}
+                      className="flex w-full items-start gap-2 text-left"
+                    >
+                      {ok ? (
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success dark:text-success" />
+                      ) : (
+                        <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="truncate text-ms-sm font-medium">{row.title ?? "(tanpa judul)"}</span>
+                          <span className="shrink-0 font-mono text-ms-2xs text-muted-foreground">
+                            {new Date(row.created_at).toLocaleString("id-ID", {
+                              day: "2-digit",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-ms-2xs text-muted-foreground">
+                          <span
+                            className={`rounded px-1.5 py-0.5 font-medium ${
+                              ok
+                                ? "bg-success/10 text-success dark:text-success"
+                                : "bg-destructive/10 text-destructive"
+                            }`}
+                          >
+                            {ok ? "Terkirim" : "Gagal"}
+                          </span>
+                          <span>
+                            {row.prev_status ?? "?"} → <strong>{row.new_status ?? "?"}</strong>
+                          </span>
+                          {row.wa_target ? <span>ke {row.wa_target}</span> : null}
+                          <span className="font-mono">{row.kind}</span>
+                        </div>
+                        {row.error ? (
+                          <p className="mt-1 break-words text-ms-2xs text-destructive">{row.error}</p>
+                        ) : null}
+                        {open && row.payload ? (
+                          <pre className="mt-2 overflow-x-auto rounded bg-muted p-2 font-mono text-[10.5px] text-muted-foreground">
+                            {JSON.stringify(row.payload, null, 2)}
+                          </pre>
+                        ) : null}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+type HistoryRow = {
+  id: string;
+  task_id: string | null;
+  title: string | null;
+  prev_status: string | null;
+  new_status: string | null;
+  kind: string;
+  wa_target: string | null;
+  send_status: string;
+  error: string | null;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+};
