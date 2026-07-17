@@ -375,6 +375,9 @@ function TugasBaruForm() {
   const [paketOptions, setPaketOptions] = useState<PaketOpt[]>([]);
   const [selectedPaketIds, setSelectedPaketIds] = useState<string[]>([]);
   const [paketOpen, setPaketOpen] = useState(false);
+  // Sekali user manual centang/lepas centang, jangan lagi ditimpa oleh
+  // default "pilih semua" saat daftar paket dimuat ulang.
+  const paketTouchedRef = useRef(false);
   type VerifyState = {
     status: "idle" | "checking" | "ok" | "missing" | "error";
     productName?: string;
@@ -583,6 +586,13 @@ function TugasBaruForm() {
         return !hasPrep;
       });
       setPaketOptions(activeCycle.map((t) => ({ id: t.id, name: t.name })));
+      // Default: centang SEMUA paket aktif supaya kolom Paket Request di
+      // halaman pegawai (/t/:token) langsung terisi seperti kolom ecer,
+      // tanpa admin harus buka dropdown & centang manual. Owner tetap
+      // bisa uncheck yang tidak diinginkan sebelum submit.
+      if (!paketTouchedRef.current) {
+        setSelectedPaketIds(activeCycle.map((t) => t.id));
+      }
     })();
     return () => {
       on = false;
@@ -1349,6 +1359,7 @@ function TugasBaruForm() {
                                 type="checkbox"
                                 checked={checked}
                                 onChange={(e) => {
+                                  paketTouchedRef.current = true;
                                   setSelectedPaketIds((prev) =>
                                     e.target.checked
                                       ? Array.from(new Set([...prev, p.id]))
