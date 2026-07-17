@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
 import { fmtItemQty } from "@/lib/stock-format";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown, RotateCcw, ListTodo, Clock, PlayCircle, Timer, Flame, CalendarClock, Users, QrCode } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown, RotateCcw, ListTodo, Clock, PlayCircle, Timer, Flame, CalendarClock, Users, QrCode, BellRing, BellOff } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
@@ -418,6 +418,13 @@ function TugasPage() {
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
   const [qrFor, setQrFor] = useState<Task | null>(null);
   const [progress, setProgress] = useState<Record<string, { items: number; submitted: number; approved: number }>>({});
+  // Ringkasan notifikasi WA per tugas: berapa kali sukses/gagal terkirim
+  // dan kapan upaya terakhir. Diambil dari `prep_task_wa_hook_log` (RLS:
+  // owner_user_id = auth.uid()) supaya owner bisa lihat langsung di kartu
+  // tugas tanpa buka halaman pengaturan.
+  const [notifStats, setNotifStats] = useState<
+    Record<string, { sent: number; failed: number; lastAt: string | null; lastStatus: "sent" | "failed" | null }>
+  >({});
   const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
   const [taskSearch, setTaskSearch] = useState("");
   const [tasksLoaded, setTasksLoaded] = useState(false);
@@ -472,6 +479,27 @@ function TugasPage() {
     }
     setProgress(prog);
     setTasksLoaded(true);
+
+    // Aggregasi log notifikasi WA per tugas. Ambil 500 baris terbaru —
+    // cukup untuk beberapa minggu terakhir, dan client-side aggregation
+    // tetap ringan.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: nl } = await (supabase.from as any)("prep_task_wa_hook_log")
+      .select("task_id,send_status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    const ns: Record<string, { sent: number; failed: number; lastAt: string | null; lastStatus: "sent" | "failed" | null }> = {};
+    for (const row of ((nl ?? []) as Array<{ task_id: string; send_status: string | null; created_at: string }>)) {
+      const bucket = ns[row.task_id] ?? { sent: 0, failed: 0, lastAt: null as string | null, lastStatus: null as "sent" | "failed" | null };
+      const st = row.send_status === "sent" ? "sent" : "failed";
+      if (st === "sent") bucket.sent += 1; else bucket.failed += 1;
+      if (!bucket.lastAt || new Date(row.created_at) > new Date(bucket.lastAt)) {
+        bucket.lastAt = row.created_at;
+        bucket.lastStatus = st;
+      }
+      ns[row.task_id] = bucket;
+    }
+    setNotifStats(ns);
   }
   useEffect(() => { void load(); }, [uid]);
 
@@ -539,6 +567,7 @@ function TugasPage() {
       .channel("prep_progress-tugas")
       .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, reload)
       .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, reload)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "prep_task_wa_hook_log" }, reload)
       .subscribe();
     return () => { reload.cancel(); void supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -942,6 +971,30 @@ function TugasPage() {
                   <span className="inline-flex items-center gap-ms-1 tabular-nums">
                     <CheckCircle2 className="h-3 w-3" /> {p.submitted}/{p.items} item
                   </span>
+                  {(() => {
+                    const n = notifStats[t.id];
+                    if (!n || (n.sent === 0 && n.failed === 0)) return null;
+                    const lastLabel = n.lastAt
+                      ? new Date(n.lastAt).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                      : "";
+                    const cls = n.failed > 0
+                      ? "border-destructive/40 bg-destructive/10 text-destructive"
+                      : "border-success/40 bg-success/10 text-success";
+                    const Icon = n.lastStatus === "failed" ? BellOff : BellRing;
+                    const title = `Notifikasi WA · ${n.sent} terkirim · ${n.failed} gagal${lastLabel ? ` · terakhir ${lastLabel}` : ""}`;
+                    return (
+                      <Link
+                        to="/pengaturan-notifikasi-wa"
+                        className={`inline-flex items-center gap-ms-1 rounded-full border px-1.5 py-0.5 tabular-nums font-semibold ${cls}`}
+                        title={title}
+                        aria-label={title}
+                      >
+                        <Icon className="h-3 w-3" />
+                        <span>{n.sent}✓{n.failed > 0 ? ` · ${n.failed}✕` : ""}</span>
+                        {lastLabel && <span className="hidden sm:inline text-muted-foreground font-normal">· {lastLabel}</span>}
+                      </Link>
+                    );
+                  })()}
                 </div>
                 <TaskPinMemo shareToken={t.share_token} />
               </div>
