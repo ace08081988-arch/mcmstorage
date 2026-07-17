@@ -4367,6 +4367,13 @@ function RequestForm({
     try {
       const nativePhoto = await captureNativeCameraPhoto();
       if (nativePhoto === "cancelled") return;
+      if (nativePhoto === "denied") {
+        toast.error(permissionToastMessage("camera", "denied"), {
+          action: { label: "Panduan", onClick: () => setHelpKind("camera") },
+        });
+        setHelpKind("camera");
+        return;
+      }
       if (nativePhoto !== "fallback") {
         await stageOne(nativePhoto, true);
         return;
@@ -4397,6 +4404,13 @@ function RequestForm({
     try {
       const nativePhotos = await pickNativeGalleryPhotos();
       if (nativePhotos === "cancelled") return;
+      if (nativePhotos === "denied") {
+        toast.error(permissionToastMessage("gallery", "denied"), {
+          action: { label: "Panduan", onClick: () => setHelpKind("gallery") },
+        });
+        setHelpKind("gallery");
+        return;
+      }
       if (nativePhotos !== "fallback") {
         await stageGalleryFiles(nativePhotos);
         return;
