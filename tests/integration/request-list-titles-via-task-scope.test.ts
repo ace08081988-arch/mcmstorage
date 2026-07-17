@@ -30,6 +30,22 @@ function latestFnBody(): string {
 
 const body = latestFnBody();
 
+function latestCreateTaskBody(): string {
+  const files = readdirSync(MIG_DIR).filter((f) => f.endsWith(".sql")).sort();
+  const re =
+    /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.prep_create_task[\s\S]*?AS\s+\$function\$([\s\S]*?)\$function\$/gi;
+  let last: string | null = null;
+  for (const f of files) {
+    const sql = readFileSync(join(MIG_DIR, f), "utf8");
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(sql)) !== null) last = m[1];
+  }
+  if (!last) throw new Error("RPC prep_create_task tidak ditemukan di migrasi");
+  return last;
+}
+
+const createTaskBody = latestCreateTaskBody();
+
 /** Ekstrak sub-query `submitted_count` (SELECT count(*) …). */
 function submittedCountSubquery(): string {
   const m = body.match(/'submitted_count',\s*\(([\s\S]*?)\)\s*,/);
@@ -75,5 +91,14 @@ describe("request_list_titles_via_task — scope per-task", () => {
   it("tidak memfilter judul berdasarkan nama (judul sama antar task tidak boleh bocor)", () => {
     // Regresi lama pernah dicoba memakai `t.name = …` untuk dedup — sekarang harus per-id.
     expect(body).not.toMatch(/t\.name\s*=\s*/i);
+  });
+
+  it("prep_create_task punya safety-net Request exact-match saat _title_ids kosong", () => {
+    // Jika client lama/preview belum mengirim _title_ids, link `Request: X`
+    // tetap harus menaut ke paket `X` saja — bukan fallback global semua paket aktif.
+    expect(createTaskBody).toMatch(/NOT\s+EXISTS\s*\([\s\S]*prep_task_request_titles[\s\S]*task_id\s*=\s*v_task_id[\s\S]*\)/i);
+    expect(createTaskBody).toMatch(/coalesce\(_title,\s*''\)\s*~\*\s*'\^Request/i);
+    expect(createTaskBody).toMatch(/lower\(trim\(rt\.name\)\)\s*=\s*lower\(trim\(regexp_replace\(coalesce\(_title,\s*''\),\s*'\^Request/i);
+    expect(createTaskBody).not.toMatch(/rt\.name\s+ILIKE/i);
   });
 });
