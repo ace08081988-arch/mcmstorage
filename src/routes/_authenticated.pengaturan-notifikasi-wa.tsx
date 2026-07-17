@@ -85,29 +85,59 @@ function NotifikasiWaPage() {
     toast.success("Pengaturan notifikasi WA tersimpan");
   }
 
-  async function handleTest() {
-    if (!forwardUrl.trim()) {
+  async function sendTest(variant: "success" | "fail" | "wa") {
+    const url = forwardUrl.trim();
+    const wa = waTarget.trim();
+    if (!url) {
       toast.error("Isi URL webhook dulu, lalu Simpan sebelum uji");
       return;
     }
-    toast.loading("Mengirim payload uji…", { id: "wa-test" });
+    if (variant === "wa" && !wa) {
+      toast.error("Isi Nomor WA Tujuan dulu untuk uji kirim WA");
+      return;
+    }
+    const kind =
+      variant === "success"
+        ? "prep_submit_success_ecer"
+        : variant === "fail"
+          ? "prep_submit_fail_ecer"
+          : "prep_submit_test_wa";
+    const label =
+      variant === "success"
+        ? "payload sukses"
+        : variant === "fail"
+          ? "payload gagal"
+          : `WA ke ${wa}`;
+    toast.loading(`Mengirim uji ${label}…`, { id: "wa-test" });
     try {
-      const res = await fetch(forwardUrl.trim(), {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          kind: "prep_submit_test",
-          wa_target: waTarget.trim() || null,
-          title: "Uji notifikasi",
-          item_name: null,
-          photo_count: 0,
+          kind,
+          wa_target: wa || null,
+          title: "Uji notifikasi MCM Storage",
+          item_name: variant === "success" ? "PSR 3 gr" : null,
+          photo_count: variant === "success" ? 2 : 0,
+          error: variant === "fail" ? "Uji: contoh pesan gagal" : undefined,
+          message:
+            variant === "wa"
+              ? "🔔 Uji notifikasi WA dari MCM Storage. Jika Anda menerima pesan ini, webhook & WA sudah berfungsi."
+              : undefined,
+          submission_id: "test-" + Date.now(),
           submitted_at: new Date().toISOString(),
+          test: true,
         }),
       });
       if (!res.ok) {
         toast.error(`Webhook menolak (HTTP ${res.status})`, { id: "wa-test" });
       } else {
-        toast.success("Payload terkirim ke webhook", { id: "wa-test" });
+        toast.success(
+          variant === "wa"
+            ? `Terkirim ke webhook. Cek WA ${wa} sebentar lagi.`
+            : "Payload terkirim ke webhook",
+          { id: "wa-test" },
+        );
       }
     } catch (e) {
       toast.error("Gagal kirim: " + ((e as Error).message || "unknown"), { id: "wa-test" });
@@ -193,10 +223,28 @@ function NotifikasiWaPage() {
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Simpan
             </Button>
-            <Button variant="outline" onClick={handleTest} disabled={saving}>
-              Uji Kirim Payload
+            <Button
+              variant="default"
+              onClick={() => sendTest("wa")}
+              disabled={saving}
+              className="gap-2"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Uji Kirim WA
+            </Button>
+            <Button variant="outline" onClick={() => sendTest("success")} disabled={saving}>
+              Uji Payload Sukses
+            </Button>
+            <Button variant="outline" onClick={() => sendTest("fail")} disabled={saving}>
+              Uji Payload Gagal
             </Button>
           </div>
+          <p className="text-ms-2xs text-muted-foreground">
+            <strong>Uji Kirim WA</strong> memakai <code>kind: "prep_submit_test_wa"</code> + field{" "}
+            <code>message</code>. Pastikan workflow n8n Anda meneruskan field <code>message</code> tsb ke{" "}
+            <code>wa_target</code> saat <code>test === true</code> supaya Anda benar-benar menerima pesan WA
+            percobaan.
+          </p>
         </CardContent>
       </Card>
 
