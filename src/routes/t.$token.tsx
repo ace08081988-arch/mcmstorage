@@ -4322,6 +4322,7 @@ function RequestSection({
           return renderedRow;
         })}
       </div>
+      )}
     </div>
   );
 }
