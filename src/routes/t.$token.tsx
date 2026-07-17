@@ -393,7 +393,7 @@ class WorkerSectionBoundary extends Component<
     children: ReactNode;
     renderFallback: (error: Error) => ReactNode;
   },
-  { error: Error | null; attempt: number }
+  { error: Error | null; attempt: number; remountKey: number }
 > {
   state: { error: Error | null; attempt: number; remountKey: number } = {
     error: null,
