@@ -1077,6 +1077,7 @@ function SendPrepLinkDialog({
         _share_token: token,
         _items: [],
         _max_submissions: 1,
+        _title_ids: [title.id],
       });
       if (rpcErr) throw rpcErr;
       setSession({ url: publicTaskUrl(token, pin), pin, token });
