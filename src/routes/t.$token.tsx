@@ -3315,16 +3315,62 @@ function ItemCard({
       {expanded && (
       <div className="border-t px-ms-3 pb-3 pt-3">
         {sendStatus.kind === "sending" && (
-          <div
-            role="status"
-            aria-live="polite"
-            className="mb-2 flex items-center gap-ms-2 rounded-lg border border-primary/40 bg-primary/5 px-ms-3 py-ms-2 text-ms-xs font-medium text-primary"
-          >
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            {sendStatus.phase === "upload"
-              ? "Mengunggah foto ke server…"
-              : "Mengirim ke gudang…"}
-          </div>
+          (() => {
+            const total = photos.length;
+            const doneCount = uploads.filter((u) => u.status === "done").length;
+            const failedCount = uploads.filter((u) => u.status === "error").length;
+            const isUploadPhase = sendStatus.phase === "upload";
+            const pct = isUploadPhase
+              ? total > 0
+                ? Math.min(100, Math.round((doneCount / total) * 100))
+                : 0
+              : 100;
+            return (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mb-2 rounded-lg border border-primary/40 bg-primary/5 px-ms-3 py-ms-2 text-primary"
+              >
+                <div className="flex items-center gap-ms-2 text-ms-xs font-medium">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  <span className="flex-1">
+                    {isUploadPhase
+                      ? total > 0
+                        ? `Mengunggah foto ${Math.min(doneCount + 1, total)} dari ${total}…`
+                        : "Mengunggah foto ke server…"
+                      : "Mengirim ke gudang…"}
+                  </span>
+                  <span className="tabular-nums text-ms-2xs font-semibold">
+                    {isUploadPhase ? `${doneCount}/${total}` : "Selesaikan…"}
+                  </span>
+                </div>
+                <div
+                  className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-primary/15"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={pct}
+                  aria-label={
+                    isUploadPhase
+                      ? `Progres unggah ${pct}%`
+                      : "Mengirim data ke server"
+                  }
+                >
+                  <div
+                    className={`h-full bg-primary transition-[width] duration-300 ease-out ${
+                      !isUploadPhase ? "animate-pulse" : ""
+                    }`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {isUploadPhase && failedCount > 0 && (
+                  <div className="mt-1 text-ms-2xs text-destructive">
+                    {failedCount} foto gagal — akan dilaporkan setelah semua selesai.
+                  </div>
+                )}
+              </div>
+            );
+          })()
         )}
         {sendStatus.kind === "failed" && !isDone && (
           <div
