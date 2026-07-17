@@ -799,6 +799,9 @@ function TugasBaruForm() {
       _share_token: tokenTrim,
       _items: payload,
       _scheduled_at: scheduledIso,
+      // Paket yang dicentang pemilik untuk link ini. Kalau kosong, link
+      // tidak membawa Paket Request sama sekali — hanya ecer.
+      _title_ids: selectedPaketIds,
     });
     setBusy(false);
     if (error) {
