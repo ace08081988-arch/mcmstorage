@@ -536,6 +536,59 @@ function TugasBaruForm() {
     };
   }, []);
 
+  // Muat daftar Paket Request milik owner yang masih "belum diselesaikan"
+  // (belum ada penyiapan pada siklus aktif). Data ini yang bisa dicentang
+  // untuk disertakan ke link tugas yang sedang dibuat. Filter dibiarkan
+  // di client — jumlahnya kecil dan tabel sudah di-RLS per owner.
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const titlesRes = await (supabase.from as any)("request_titles")
+        .select("id,name,reprep_requested_at")
+        .order("position")
+        .order("created_at");
+      if (!on) return;
+      if (titlesRes.error) {
+        // Tidak fatal — cukup toast pelan, form ecer tetap jalan.
+        toast.error("Gagal memuat daftar Paket: " + titlesRes.error.message);
+        return;
+      }
+      const rawTitles = (titlesRes.data ?? []) as Array<{
+        id: string;
+        name: string;
+        reprep_requested_at: string | null;
+      }>;
+      if (rawTitles.length === 0) {
+        setPaketOptions([]);
+        return;
+      }
+      // Filter yang belum ada penyiapan pada siklus aktif.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const prepRes = await (supabase.from as any)("request_preparations")
+        .select("title_id,created_at")
+        .in("title_id", rawTitles.map((t) => t.id));
+      if (!on) return;
+      const preps = (prepRes.data ?? []) as Array<{
+        title_id: string;
+        created_at: string;
+      }>;
+      const activeCycle = rawTitles.filter((t) => {
+        const cutoff = t.reprep_requested_at ? new Date(t.reprep_requested_at).getTime() : null;
+        const hasPrep = preps.some((p) => {
+          if (p.title_id !== t.id) return false;
+          if (cutoff == null) return true;
+          return new Date(p.created_at).getTime() > cutoff;
+        });
+        return !hasPrep;
+      });
+      setPaketOptions(activeCycle.map((t) => ({ id: t.id, name: t.name })));
+    })();
+    return () => {
+      on = false;
+    };
+  }, []);
+
   // Re-verify warehouse links for restored rows so the green/red status badges
   // re-appear after a remount without forcing the user to re-pick each product.
   useEffect(() => {
