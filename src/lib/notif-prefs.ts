@@ -173,6 +173,7 @@ export async function pullPrefsFromCloud(): Promise<NotifPrefs> {
       ...DEFAULT_PREFS,
       ...(remote || {}),
       enabledKinds: { ...DEFAULT_PREFS.enabledKinds, ...((remote && remote.enabledKinds) || {}) },
+      channels: mergeChannels((remote && remote.channels) as never),
       dnd: { ...DEFAULT_PREFS.dnd, ...((remote && remote.dnd) || {}) },
     };
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
@@ -217,6 +218,7 @@ export function subscribeRemotePrefs(onChange: (p: NotifPrefs) => void): () => v
               ...DEFAULT_PREFS,
               ...remote,
               enabledKinds: { ...DEFAULT_PREFS.enabledKinds, ...(remote.enabledKinds || {}) },
+              channels: mergeChannels(remote.channels as never),
               dnd: { ...DEFAULT_PREFS.dnd, ...(remote.dnd || {}) },
             };
             try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
