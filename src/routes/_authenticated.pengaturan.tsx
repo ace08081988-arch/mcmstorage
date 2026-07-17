@@ -215,6 +215,14 @@ const CATEGORIES: ReadonlyArray<SettingCategory> = [
         adminOnly: true,
         keywords: "google oauth sso login byok",
       },
+      {
+        title: "Notifikasi WA Penyiapan",
+        description: "Terima WA otomatis saat pegawai submit penyiapan (berhasil/gagal) lewat webhook n8n.",
+        to: "/pengaturan-notifikasi-wa",
+        icon: MessageSquare,
+        adminOnly: true,
+        keywords: "whatsapp wa webhook n8n notifikasi submit penyiapan request",
+      },
     ],
   },
   {
