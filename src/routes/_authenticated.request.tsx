@@ -806,7 +806,7 @@ function RequestPage() {
         title={sendLinkTitle}
         titleItems={sendLinkTitle ? titleItems.filter((i) => i.title_id === sendLinkTitle.id) : []}
         warehouseItems={items}
-        onChanged={loadAll}
+        onChanged={() => void loadAll({ background: true })}
         onClose={() => setSendLinkTitle(null)}
       />
 
