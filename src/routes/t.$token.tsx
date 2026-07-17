@@ -201,7 +201,45 @@ function normalizePrepTask(value: unknown): PrepTaskRow | null {
   };
 }
 
-type NativeCameraStatus = "fallback" | "cancelled";
+type NativeCameraStatus = "fallback" | "cancelled" | "denied";
+
+function isPermissionDeniedError(err: unknown): boolean {
+  const msg = ((err as Error | undefined)?.message ?? "").toLowerCase();
+  return (
+    msg.includes("denied") ||
+    msg.includes("not allowed") ||
+    msg.includes("permission") ||
+    msg.includes("izin") ||
+    msg.includes("ditolak") ||
+    msg.includes("no access")
+  );
+}
+
+// Cek + minta izin Kamera/Galeri di native (Capacitor). Kembalikan status
+// akhir agar caller bisa memutuskan menampilkan panduan atau tidak. Di web
+// murni, selalu "unsupported" — biar fallback web picker jalan seperti biasa.
+async function ensureNativeMediaPermission(
+  kind: "camera" | "photos",
+): Promise<"granted" | "denied" | "unsupported"> {
+  if (typeof window === "undefined") return "unsupported";
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (!Capacitor.isNativePlatform()) return "unsupported";
+    const { Camera } = await import("@capacitor/camera");
+    const current = await Camera.checkPermissions();
+    const state = kind === "camera" ? current.camera : current.photos;
+    if (state === "granted" || state === "limited") return "granted";
+    if (state === "denied") return "denied";
+    // "prompt" / "prompt-with-rationale" → minta izin sekarang.
+    const asked = await Camera.requestPermissions({ permissions: [kind] });
+    const nextState = kind === "camera" ? asked.camera : asked.photos;
+    if (nextState === "granted" || nextState === "limited") return "granted";
+    if (nextState === "denied") return "denied";
+    return "unsupported";
+  } catch {
+    return "unsupported";
+  }
+}
 
 type NativePickedPhoto = {
   webPath?: string;
