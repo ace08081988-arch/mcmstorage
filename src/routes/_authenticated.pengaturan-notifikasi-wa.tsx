@@ -496,8 +496,27 @@ function NotifikasiWaPage() {
                               ) : (
                                 <RotateCw className="h-3.5 w-3.5" />
                               )}
-                              Coba ulang
+                              {retryingId === row.id ? "Mengirim…" : "Coba ulang"}
                             </Button>
+                            {retryResult[row.id] ? (
+                              <span
+                                role="status"
+                                aria-live="polite"
+                                className={
+                                  "ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-ms-2xs " +
+                                  (retryResult[row.id].ok
+                                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-red-500/15 text-red-600 dark:text-red-400")
+                                }
+                              >
+                                {retryResult[row.id].ok ? (
+                                  <CheckCircle2 className="h-3 w-3" />
+                                ) : (
+                                  <XCircle className="h-3 w-3" />
+                                )}
+                                {retryResult[row.id].msg}
+                              </span>
+                            ) : null}
                           </div>
                         ) : null}
                         {open && row.payload ? (
