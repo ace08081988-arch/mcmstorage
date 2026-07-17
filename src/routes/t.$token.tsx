@@ -2748,6 +2748,52 @@ function ItemCard({
     | { kind: "failed"; error: string }
   >({ kind: "idle" });
 
+  // Persist status kirim per-item ke sessionStorage supaya saat WebView di-
+  // recreate (balik dari kamera/galeri/share/lock), user tetap lihat status
+  // "gagal" atau "sukses" terakhir — tidak reset ke idle diam-diam.
+  const sendStatusStorageKey = `mcm:sendStatus:${draftKey}`;
+  const sendStatusHydratedRef = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(sendStatusStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { kind?: string } & Record<string, unknown>;
+        if (parsed?.kind === "sending") {
+          // Proses upload sebelumnya pasti terputus saat WebView di-recreate.
+          // Turunkan ke "failed" biar user tahu harus kirim ulang.
+          setSendStatus({
+            kind: "failed",
+            error: "Halaman sempat tertutup saat mengirim. Coba kirim lagi.",
+          });
+        } else if (parsed?.kind === "failed" && typeof parsed.error === "string") {
+          setSendStatus({ kind: "failed", error: parsed.error });
+        } else if (
+          parsed?.kind === "success" &&
+          typeof parsed.at === "number" &&
+          typeof parsed.count === "number"
+        ) {
+          setSendStatus({ kind: "success", at: parsed.at, count: parsed.count });
+        }
+      }
+    } catch {
+      /* abaikan */
+    } finally {
+      sendStatusHydratedRef.current = true;
+    }
+  }, [sendStatusStorageKey]);
+  useEffect(() => {
+    if (!sendStatusHydratedRef.current) return;
+    try {
+      if (sendStatus.kind === "idle") {
+        sessionStorage.removeItem(sendStatusStorageKey);
+      } else {
+        sessionStorage.setItem(sendStatusStorageKey, JSON.stringify(sendStatus));
+      }
+    } catch {
+      /* abaikan */
+    }
+  }, [sendStatus, sendStatusStorageKey]);
+
   useEffect(() => {
     if (!editorOpen) return;
     onKeepAlive();
