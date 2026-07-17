@@ -357,6 +357,8 @@ async function captureNativeCameraPhoto(): Promise<File | NativeCameraStatus> {
   if (typeof window === "undefined") return "fallback";
   const { Capacitor } = await import("@capacitor/core");
   if (!Capacitor.isNativePlatform()) return "fallback";
+  const perm = await ensureNativeMediaPermission("camera");
+  if (perm === "denied") return "denied";
   try {
     const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
     const photo = await Camera.getPhoto({
@@ -375,6 +377,7 @@ async function captureNativeCameraPhoto(): Promise<File | NativeCameraStatus> {
     if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("batal")) {
       return "cancelled";
     }
+    if (isPermissionDeniedError(err)) return "denied";
     throw err;
   }
 }
@@ -383,6 +386,8 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
   if (typeof window === "undefined") return "fallback";
   const { Capacitor } = await import("@capacitor/core");
   if (!Capacitor.isNativePlatform()) return "fallback";
+  const perm = await ensureNativeMediaPermission("photos");
+  if (perm === "denied") return "denied";
   try {
     const { Camera, MediaTypeSelection } = await import("@capacitor/camera");
     const result = await Camera.chooseFromGallery({
@@ -404,6 +409,7 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
     if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("batal")) {
       return "cancelled";
     }
+    if (isPermissionDeniedError(err)) return "denied";
     throw err;
   }
 }
