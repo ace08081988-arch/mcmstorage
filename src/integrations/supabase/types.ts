@@ -2035,6 +2035,51 @@ export type Database = {
           },
         ]
       }
+      prep_task_wa_hook_log: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          new_status: string | null
+          owner_user_id: string
+          payload: Json | null
+          prev_status: string | null
+          send_status: string
+          task_id: string | null
+          title: string | null
+          wa_target: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind: string
+          new_status?: string | null
+          owner_user_id: string
+          payload?: Json | null
+          prev_status?: string | null
+          send_status: string
+          task_id?: string | null
+          title?: string | null
+          wa_target?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          new_status?: string | null
+          owner_user_id?: string
+          payload?: Json | null
+          prev_status?: string | null
+          send_status?: string
+          task_id?: string | null
+          title?: string | null
+          wa_target?: string | null
+        }
+        Relationships: []
+      }
       prep_tasks: {
         Row: {
           completed_at: string | null
