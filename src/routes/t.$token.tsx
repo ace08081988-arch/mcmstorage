@@ -4212,18 +4212,34 @@ function RequestSection({
     if (!stillOpenable) setOpenId(null);
   }, [titles, openId]);
 
-  if (!titles) return null;
-  if (titles.length === 0) return null;
+  const pendingCount = (titles ?? []).filter((t) => (t.submitted_count ?? 0) <= 0).length;
 
   return (
     <div className="mt-6">
       <div className="mb-2 flex items-center gap-ms-2">
         <Package className="h-4 w-4 text-primary" />
         <div className="text-ms-sm font-semibold">Paket Request</div>
-        <span className="rounded-full bg-primary/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-primary">
-          {titles.length}
-        </span>
+        {titles && titles.length > 0 && (
+          <span className="rounded-full bg-primary/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-primary">
+            {pendingCount > 0 ? `${pendingCount} belum` : `${titles.length}`}
+          </span>
+        )}
       </div>
+      {titles === null ? (
+        <div className="space-ms-2">
+          {[0, 1].map((i) => (
+            <div key={i} className="overflow-hidden rounded-xl border bg-card p-ms-3 shadow-sm">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="mt-2 h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
+      ) : titles.length === 0 ? (
+        <div className="flex items-center gap-ms-2 rounded-xl border border-dashed bg-muted/30 px-ms-3 py-ms-3 text-ms-2xs text-muted-foreground">
+          <Inbox className="h-3.5 w-3.5 shrink-0" />
+          <span>Belum ada paket request untuk tugas ini.</span>
+        </div>
+      ) : (
       <div className="space-ms-2">
         {titles.map((t, titleIndex) => {
           let renderedRow: ReactNode;
