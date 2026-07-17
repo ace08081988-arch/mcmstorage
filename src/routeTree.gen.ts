@@ -132,6 +132,7 @@ import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/p
 import { Route as ApiPublicHooksFriendNotifyRouteImport } from './routes/api/public/hooks/friend-notify'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
+import { Route as AuthenticatedKiosRiwayatKindIdRouteImport } from './routes/_authenticated.kios.riwayat.$kind.$id'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
 
 const TrustRoute = TrustRouteImport.update({
@@ -815,6 +816,12 @@ const AuthenticatedGudangPesananIdRoute =
     path: '/pesanan/$id',
     getParentRoute: () => AuthenticatedGudangRoute,
   } as any)
+const AuthenticatedKiosRiwayatKindIdRoute =
+  AuthenticatedKiosRiwayatKindIdRouteImport.update({
+    id: '/$kind/$id',
+    path: '/$kind/$id',
+    getParentRoute: () => AuthenticatedKiosRiwayatRoute,
+  } as any)
 const AuthenticatedGudangPesananIdEditRoute =
   AuthenticatedGudangPesananIdEditRouteImport.update({
     id: '/edit',
@@ -895,7 +902,7 @@ export interface FileRoutesByFullPath {
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
-  '/kios/riwayat': typeof AuthenticatedKiosRiwayatRoute
+  '/kios/riwayat': typeof AuthenticatedKiosRiwayatRouteWithChildren
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/status/$id': typeof AuthenticatedStatusIdRoute
   '/status/baru': typeof AuthenticatedStatusBaruRoute
@@ -946,6 +953,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
+  '/kios/riwayat/$kind/$id': typeof AuthenticatedKiosRiwayatKindIdRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -1017,7 +1025,7 @@ export interface FileRoutesByTo {
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
-  '/kios/riwayat': typeof AuthenticatedKiosRiwayatRoute
+  '/kios/riwayat': typeof AuthenticatedKiosRiwayatRouteWithChildren
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/status/$id': typeof AuthenticatedStatusIdRoute
   '/status/baru': typeof AuthenticatedStatusBaruRoute
@@ -1068,6 +1076,7 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
+  '/kios/riwayat/$kind/$id': typeof AuthenticatedKiosRiwayatKindIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1144,7 +1153,7 @@ export interface FileRoutesById {
   '/_authenticated/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/_authenticated/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/_authenticated/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
-  '/_authenticated/kios/riwayat': typeof AuthenticatedKiosRiwayatRoute
+  '/_authenticated/kios/riwayat': typeof AuthenticatedKiosRiwayatRouteWithChildren
   '/_authenticated/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/_authenticated/status/$id': typeof AuthenticatedStatusIdRoute
   '/_authenticated/status/baru': typeof AuthenticatedStatusBaruRoute
@@ -1195,6 +1204,7 @@ export interface FileRoutesById {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
+  '/_authenticated/kios/riwayat/$kind/$id': typeof AuthenticatedKiosRiwayatKindIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1322,6 +1332,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/gudang/pesanan/$id/edit'
+    | '/kios/riwayat/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -1444,6 +1455,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/gudang/pesanan/$id/edit'
+    | '/kios/riwayat/$kind/$id'
   id:
     | '__root__'
     | '/_authenticated'
@@ -1570,6 +1582,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
     | '/_authenticated/gudang/pesanan/$id/edit'
+    | '/_authenticated/kios/riwayat/$kind/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2497,6 +2510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGudangPesananIdRouteImport
       parentRoute: typeof AuthenticatedGudangRoute
     }
+    '/_authenticated/kios/riwayat/$kind/$id': {
+      id: '/_authenticated/kios/riwayat/$kind/$id'
+      path: '/$kind/$id'
+      fullPath: '/kios/riwayat/$kind/$id'
+      preLoaderRoute: typeof AuthenticatedKiosRiwayatKindIdRouteImport
+      parentRoute: typeof AuthenticatedKiosRiwayatRoute
+    }
     '/_authenticated/gudang/pesanan/$id/edit': {
       id: '/_authenticated/gudang/pesanan/$id/edit'
       path: '/edit'
@@ -2547,12 +2567,26 @@ const AuthenticatedGudangRouteChildren: AuthenticatedGudangRouteChildren = {
 const AuthenticatedGudangRouteWithChildren =
   AuthenticatedGudangRoute._addFileChildren(AuthenticatedGudangRouteChildren)
 
+interface AuthenticatedKiosRiwayatRouteChildren {
+  AuthenticatedKiosRiwayatKindIdRoute: typeof AuthenticatedKiosRiwayatKindIdRoute
+}
+
+const AuthenticatedKiosRiwayatRouteChildren: AuthenticatedKiosRiwayatRouteChildren =
+  {
+    AuthenticatedKiosRiwayatKindIdRoute: AuthenticatedKiosRiwayatKindIdRoute,
+  }
+
+const AuthenticatedKiosRiwayatRouteWithChildren =
+  AuthenticatedKiosRiwayatRoute._addFileChildren(
+    AuthenticatedKiosRiwayatRouteChildren,
+  )
+
 interface AuthenticatedKiosRouteChildren {
-  AuthenticatedKiosRiwayatRoute: typeof AuthenticatedKiosRiwayatRoute
+  AuthenticatedKiosRiwayatRoute: typeof AuthenticatedKiosRiwayatRouteWithChildren
 }
 
 const AuthenticatedKiosRouteChildren: AuthenticatedKiosRouteChildren = {
-  AuthenticatedKiosRiwayatRoute: AuthenticatedKiosRiwayatRoute,
+  AuthenticatedKiosRiwayatRoute: AuthenticatedKiosRiwayatRouteWithChildren,
 }
 
 const AuthenticatedKiosRouteWithChildren =
