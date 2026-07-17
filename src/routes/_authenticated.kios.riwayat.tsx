@@ -324,12 +324,18 @@ function RiwayatKiosPage() {
         ) : (
           <ul className="space-y-2">
             {filtered.map((r) => (
-              <li key={`${r.kind}:${r.id}`} className="rounded-lg border bg-card p-3">
-                {r.kind === "terima" ? (
-                  <TerimaRow r={r} />
-                ) : (
-                  <JualRow r={r} />
-                )}
+              <li key={`${r.kind}:${r.id}`}>
+                <Link
+                  to="/kios/riwayat/$kind/$id"
+                  params={{ kind: r.kind, id: r.id }}
+                  className="block rounded-lg border bg-card p-3 transition hover:bg-accent"
+                >
+                  {r.kind === "terima" ? (
+                    <TerimaRow r={r} />
+                  ) : (
+                    <JualRow r={r} />
+                  )}
+                </Link>
               </li>
             ))}
           </ul>
