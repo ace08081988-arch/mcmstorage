@@ -366,6 +366,15 @@ function TugasBaruForm() {
     }
   }, []);
   const [titles, setTitles] = useState<TitleOpt[]>([]);
+  // Paket Request yang bisa disertakan pada link tugas ini. Sengaja
+  // dipisah dari `titles` (ecer) karena sumber datanya berbeda dan
+  // aturannya juga berbeda: paket dipilih eksplisit per-link supaya
+  // link+PIN #2 tidak lagi membawa paket yang sudah dititipkan ke
+  // link+PIN #1 (aturan "1 link = 1 perintah").
+  type PaketOpt = { id: string; name: string };
+  const [paketOptions, setPaketOptions] = useState<PaketOpt[]>([]);
+  const [selectedPaketIds, setSelectedPaketIds] = useState<string[]>([]);
+  const [paketOpen, setPaketOpen] = useState(false);
   type VerifyState = {
     status: "idle" | "checking" | "ok" | "missing" | "error";
     productName?: string;
@@ -521,6 +530,59 @@ function TugasBaruForm() {
         return;
       }
       setTitles((data ?? []) as TitleOpt[]);
+    })();
+    return () => {
+      on = false;
+    };
+  }, []);
+
+  // Muat daftar Paket Request milik owner yang masih "belum diselesaikan"
+  // (belum ada penyiapan pada siklus aktif). Data ini yang bisa dicentang
+  // untuk disertakan ke link tugas yang sedang dibuat. Filter dibiarkan
+  // di client — jumlahnya kecil dan tabel sudah di-RLS per owner.
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const titlesRes = await (supabase.from as any)("request_titles")
+        .select("id,name,reprep_requested_at")
+        .order("position")
+        .order("created_at");
+      if (!on) return;
+      if (titlesRes.error) {
+        // Tidak fatal — cukup toast pelan, form ecer tetap jalan.
+        toast.error("Gagal memuat daftar Paket: " + titlesRes.error.message);
+        return;
+      }
+      const rawTitles = (titlesRes.data ?? []) as Array<{
+        id: string;
+        name: string;
+        reprep_requested_at: string | null;
+      }>;
+      if (rawTitles.length === 0) {
+        setPaketOptions([]);
+        return;
+      }
+      // Filter yang belum ada penyiapan pada siklus aktif.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const prepRes = await (supabase.from as any)("request_preparations")
+        .select("title_id,created_at")
+        .in("title_id", rawTitles.map((t) => t.id));
+      if (!on) return;
+      const preps = (prepRes.data ?? []) as Array<{
+        title_id: string;
+        created_at: string;
+      }>;
+      const activeCycle = rawTitles.filter((t) => {
+        const cutoff = t.reprep_requested_at ? new Date(t.reprep_requested_at).getTime() : null;
+        const hasPrep = preps.some((p) => {
+          if (p.title_id !== t.id) return false;
+          if (cutoff == null) return true;
+          return new Date(p.created_at).getTime() > cutoff;
+        });
+        return !hasPrep;
+      });
+      setPaketOptions(activeCycle.map((t) => ({ id: t.id, name: t.name })));
     })();
     return () => {
       on = false;
@@ -737,6 +799,9 @@ function TugasBaruForm() {
       _share_token: tokenTrim,
       _items: payload,
       _scheduled_at: scheduledIso,
+      // Paket yang dicentang pemilik untuk link ini. Kalau kosong, link
+      // tidak membawa Paket Request sama sekali — hanya ecer.
+      _title_ids: selectedPaketIds,
     });
     setBusy(false);
     if (error) {
@@ -1250,6 +1315,59 @@ function TugasBaruForm() {
           </div>
 
           <div className="flex flex-wrap justify-end gap-ms-2 pt-2">
+            {paketOptions.length > 0 && (
+              <div className="w-full rounded-lg border bg-card p-ms-3">
+                <button
+                  type="button"
+                  onClick={() => setPaketOpen((o) => !o)}
+                  className="flex w-full items-center justify-between gap-ms-2 text-left"
+                  aria-expanded={paketOpen}
+                >
+                  <div className="min-w-0">
+                    <div className="text-ms-sm font-semibold">Sertakan Paket Request</div>
+                    <div className="text-ms-2xs text-muted-foreground">
+                      {selectedPaketIds.length > 0
+                        ? `${selectedPaketIds.length} dari ${paketOptions.length} paket dicentang`
+                        : `Opsional · ${paketOptions.length} paket aktif tersedia`}
+                    </div>
+                  </div>
+                  <span className="text-ms-xs text-muted-foreground">{paketOpen ? "Tutup" : "Buka"}</span>
+                </button>
+                {paketOpen && (
+                  <div className="mt-ms-2 space-ms-1">
+                    <div className="text-ms-2xs text-muted-foreground">
+                      Hanya paket yang dicentang di bawah yang ikut ke link+PIN ini.
+                      Paket yang tidak dicentang tetap bisa disertakan ke link lain nanti.
+                    </div>
+                    <ul className="mt-ms-2 space-ms-1">
+                      {paketOptions.map((p) => {
+                        const checked = selectedPaketIds.includes(p.id);
+                        return (
+                          <li key={p.id}>
+                            <label className="flex cursor-pointer items-center gap-ms-2 rounded-md px-ms-2 py-ms-1 hover:bg-accent">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  setSelectedPaketIds((prev) =>
+                                    e.target.checked
+                                      ? Array.from(new Set([...prev, p.id]))
+                                      : prev.filter((id) => id !== p.id),
+                                  );
+                                }}
+                                className="h-4 w-4"
+                                disabled={busy}
+                              />
+                              <span className="text-ms-sm">{p.name}</span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               type="button"
               onClick={() => {
