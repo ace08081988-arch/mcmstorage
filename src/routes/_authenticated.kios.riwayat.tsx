@@ -355,12 +355,9 @@ function TerimaRow({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="text-xs text-muted-foreground">📥 Terima · {fmtWaktu(r.created_at)}</div>
-          <Link
-            to="/gudang"
-            className="mt-0.5 block truncate text-sm font-semibold hover:underline"
-          >
+          <div className="mt-0.5 block truncate text-sm font-semibold">
             {r.item_name}
-          </Link>
+          </div>
         </div>
         <div className="text-right">
           <div className="text-xs font-semibold text-success tabular-nums">
@@ -403,12 +400,9 @@ function JualRow({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="text-xs text-muted-foreground">💰 Jual · {fmtWaktu(r.created_at)}</div>
-          <Link
-            to="/gudang"
-            className="mt-0.5 block truncate text-sm font-semibold hover:underline"
-          >
+          <div className="mt-0.5 block truncate text-sm font-semibold">
             {r.item_name}
-          </Link>
+          </div>
         </div>
         <div className="text-right">
           <div className="text-xs font-semibold text-destructive tabular-nums">
@@ -419,12 +413,9 @@ function JualRow({
       </div>
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         {r.customer_name ? (
-          <Link
-            to="/buku-alamat"
-            className="rounded-full bg-muted px-2 py-0.5 hover:bg-accent"
-          >
+          <span className="rounded-full bg-muted px-2 py-0.5">
             Pelanggan: {r.customer_name}
-          </Link>
+          </span>
         ) : (
           <span className="rounded-full bg-muted px-2 py-0.5">
             Pelanggan: —
@@ -435,13 +426,10 @@ function JualRow({
             Lunas
           </span>
         ) : (
-          <Link
-            to="/hutang-piutang"
-            className="rounded-full bg-warning/15 px-2 py-0.5 text-warning hover:bg-warning/25"
-          >
+          <span className="rounded-full bg-warning/15 px-2 py-0.5 text-warning">
             Hutang {rupiah(sisa)}
             {r.paid_amount > 0 ? ` · dibayar ${rupiah(r.paid_amount)}` : ""}
-          </Link>
+          </span>
         )}
         {r.note ? (
           <span className="truncate text-[11px] italic">“{r.note}”</span>
