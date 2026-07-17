@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Bell, BellOff, Moon, Vibrate, MessageCircle, ClipboardList, PackagePlus, Settings2, BellRing, RefreshCw, Inbox } from "lucide-react";
+import { Bell, BellOff, Moon, Vibrate, MessageCircle, ClipboardList, PackagePlus, Settings2, BellRing, RefreshCw, Inbox, Mail, Smartphone, Radio, Send } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -35,6 +35,7 @@ import {
   getLastSyncedAt,
   type NotifKind,
   type NotifPrefs,
+  type NotifChannel,
 } from "@/lib/notif-prefs";
 import {
   enablePushNotifications,
@@ -369,6 +370,79 @@ function NotifikasiPage() {
               </label>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
+            <Radio className="size-4" /> Channel Pengingat
+          </CardTitle>
+          <CardDescription>
+            Pilih lewat mana Anda ingin menerima setiap jenis notifikasi. Toast tampil di dalam aplikasi, push muncul di layar HP,
+            email & WA dikirim lewat webhook yang sudah dikonfigurasi di Pengaturan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-ms-3">
+          {KINDS.map(({ key, label, Icon }, idx) => {
+            const ch = prefs.channels[key];
+            const disabled = !prefs.enabledKinds[key];
+            const setCh = (c: NotifChannel, v: boolean) => {
+              const nextChannels = {
+                ...prefs.channels,
+                [key]: { ...ch, [c]: v },
+              };
+              update({ channels: nextChannels });
+            };
+            const chip = (c: NotifChannel, ChIcon: typeof MessageCircle, name: string) => (
+              <label
+                key={c}
+                className={
+                  "flex items-center gap-ms-2 rounded-md border px-ms-2 py-1 text-ms-xs cursor-pointer transition-colors " +
+                  (ch[c] && !disabled
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/60 bg-background text-muted-foreground")
+                }
+              >
+                <ChIcon className="size-3.5" />
+                <span>{name}</span>
+                <Switch
+                  className="ml-1 scale-75"
+                  checked={!!ch[c]}
+                  disabled={disabled}
+                  onCheckedChange={(v) => setCh(c, v)}
+                  aria-label={`${name} untuk ${label}`}
+                />
+              </label>
+            );
+            return (
+              <div key={key}>
+                {idx > 0 && <Separator className="my-2" />}
+                <div className="flex items-center gap-ms-2">
+                  <span className="grid size-8 place-items-center rounded-md bg-muted">
+                    <Icon className="size-4" />
+                  </span>
+                  <div className="text-ms-sm font-medium">{label}</div>
+                  {disabled && (
+                    <span className="text-ms-2xs text-muted-foreground">(jenis dimatikan)</span>
+                  )}
+                </div>
+                <div className="mt-ms-2 flex flex-wrap gap-ms-2">
+                  {chip("toast", Bell, "Toast")}
+                  {chip("push", Smartphone, "Push")}
+                  {chip("email", Mail, "Email")}
+                  {chip("wa", Send, "WhatsApp")}
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-ms-2xs text-muted-foreground">
+            Butuh webhook email/WA?{" "}
+            <Link to="/pengaturan-notifikasi-wa" className="text-primary underline">
+              Atur di Notifikasi WA Penyiapan
+            </Link>
+            .
+          </p>
         </CardContent>
       </Card>
 
