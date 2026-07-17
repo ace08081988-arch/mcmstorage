@@ -971,6 +971,30 @@ function TugasPage() {
                   <span className="inline-flex items-center gap-ms-1 tabular-nums">
                     <CheckCircle2 className="h-3 w-3" /> {p.submitted}/{p.items} item
                   </span>
+                  {(() => {
+                    const n = notifStats[t.id];
+                    if (!n || (n.sent === 0 && n.failed === 0)) return null;
+                    const lastLabel = n.lastAt
+                      ? new Date(n.lastAt).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                      : "";
+                    const cls = n.failed > 0
+                      ? "border-destructive/40 bg-destructive/10 text-destructive"
+                      : "border-success/40 bg-success/10 text-success";
+                    const Icon = n.lastStatus === "failed" ? BellOff : BellRing;
+                    const title = `Notifikasi WA · ${n.sent} terkirim · ${n.failed} gagal${lastLabel ? ` · terakhir ${lastLabel}` : ""}`;
+                    return (
+                      <Link
+                        to="/pengaturan-notifikasi-wa"
+                        className={`inline-flex items-center gap-ms-1 rounded-full border px-1.5 py-0.5 tabular-nums font-semibold ${cls}`}
+                        title={title}
+                        aria-label={title}
+                      >
+                        <Icon className="h-3 w-3" />
+                        <span>{n.sent}✓{n.failed > 0 ? ` · ${n.failed}✕` : ""}</span>
+                        {lastLabel && <span className="hidden sm:inline text-muted-foreground font-normal">· {lastLabel}</span>}
+                      </Link>
+                    );
+                  })()}
                 </div>
                 <TaskPinMemo shareToken={t.share_token} />
               </div>
