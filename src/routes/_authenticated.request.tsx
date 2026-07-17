@@ -55,6 +55,39 @@ import { debounce } from "@/lib/realtime-debounce";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
+type RequestPrepTaskStatus = {
+  title_id: string;
+  task_id: string;
+  task_title: string;
+  status: "active" | "done" | "cancelled" | "expired" | string;
+  created_at: string;
+  expires_at: string;
+  completed_at: string | null;
+  worker_names: string[];
+  submitted_count: number;
+  last_submitted_at: string | null;
+  has_rejected: boolean;
+  has_pending: boolean;
+};
+
+function requestPrepTaskStatusLabel(row: RequestPrepTaskStatus): { label: string; tone: "success" | "warning" | "destructive" | "muted" } {
+  const expired = row.status === "active" && new Date(row.expires_at).getTime() <= Date.now();
+  if (row.has_rejected) return { label: "Gagal / ditolak", tone: "destructive" };
+  if (row.status === "done" || row.submitted_count > 0) {
+    return { label: row.has_pending ? "Menunggu verifikasi" : "Sudah diisi", tone: row.has_pending ? "warning" : "success" };
+  }
+  if (expired || row.status === "expired") return { label: "Kadaluarsa", tone: "muted" };
+  if (row.status === "cancelled") return { label: "Dibatalkan", tone: "destructive" };
+  return { label: "Link aktif", tone: "warning" };
+}
+
+function requestPrepTaskStatusToneClass(tone: ReturnType<typeof requestPrepTaskStatusLabel>["tone"]): string {
+  if (tone === "success") return "border-success/40 bg-success/10 text-success";
+  if (tone === "warning") return "border-warning/40 bg-warning/10 text-warning dark:text-warning";
+  if (tone === "destructive") return "border-destructive/40 bg-destructive/10 text-destructive";
+  return "border-muted bg-muted/50 text-muted-foreground";
+}
+
 export const Route = createFileRoute("/_authenticated/request")({
   head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
@@ -89,6 +122,7 @@ function RequestPage() {
   // apakah tombol "Minta penyiapan ulang" ditampilkan (siklus sudah punya prep
   // = sudah selesai, boleh direset).
   const [activePrepCountByTitle, setActivePrepCountByTitle] = useState<Record<string, number>>({});
+  const [prepTaskStatusByTitle, setPrepTaskStatusByTitle] = useState<Record<string, RequestPrepTaskStatus[]>>({});
   const [loading, setLoading] = useState(true);
   type LoadErr = {
     source: string; message: string; code?: string; status?: number;
@@ -216,14 +250,87 @@ function RequestPage() {
       );
       const { data: prepRows } = await sb
         .from("request_preparations")
-        .select("title_id,created_at");
+        .select("title_id,created_at,via_task_id,verification_status");
       const counts: Record<string, number> = {};
-      for (const row of (prepRows ?? []) as Array<{ title_id: string; created_at: string }>) {
+      const prepRowsList = (prepRows ?? []) as Array<{
+        title_id: string;
+        created_at: string;
+        via_task_id: string | null;
+        verification_status: string | null;
+      }>;
+      for (const row of prepRowsList) {
         const cutoff = reprepById.get(row.title_id) ?? null;
         if (cutoff && !(row.created_at > cutoff)) continue;
         counts[row.title_id] = (counts[row.title_id] ?? 0) + 1;
       }
       setActivePrepCountByTitle(counts);
+
+      const titleIds = titlesData.map((row) => row.id);
+      if (titleIds.length === 0) {
+        setPrepTaskStatusByTitle({});
+      } else {
+        const [linksRes, deliveriesRes] = await Promise.all([
+          sb
+            .from("prep_task_request_titles")
+            .select("title_id,task_id,created_at,task:prep_tasks(id,title,status,expires_at,created_at,completed_at)")
+            .in("title_id", titleIds)
+            .order("created_at", { ascending: false }),
+          sb
+            .from("prep_link_deliveries")
+            .select("title_id,task_id,worker_name,sent_at")
+            .in("title_id", titleIds)
+            .order("sent_at", { ascending: false }),
+        ]);
+        if (linksRes.error) throw linksRes.error;
+        if (deliveriesRes.error) throw deliveriesRes.error;
+
+        const workerByTask = new Map<string, string[]>();
+        for (const row of (deliveriesRes.data ?? []) as Array<{ task_id: string | null; worker_name: string | null }>) {
+          if (!row.task_id || !row.worker_name) continue;
+          const list = workerByTask.get(row.task_id) ?? [];
+          if (!list.includes(row.worker_name)) list.push(row.worker_name);
+          workerByTask.set(row.task_id, list);
+        }
+
+        const byTitle: Record<string, RequestPrepTaskStatus[]> = {};
+        for (const row of (linksRes.data ?? []) as Array<{
+          title_id: string;
+          task_id: string;
+          created_at: string;
+          task?: {
+            id: string;
+            title: string;
+            status: string;
+            expires_at: string;
+            created_at: string;
+            completed_at: string | null;
+          } | null;
+        }>) {
+          const task = row.task;
+          if (!task) continue;
+          const linkedPreps = prepRowsList.filter((prep) => prep.title_id === row.title_id && prep.via_task_id === row.task_id);
+          const lastSubmittedAt = linkedPreps.reduce<string | null>((last, prep) => {
+            if (!last) return prep.created_at;
+            return prep.created_at > last ? prep.created_at : last;
+          }, null);
+          const item: RequestPrepTaskStatus = {
+            title_id: row.title_id,
+            task_id: row.task_id,
+            task_title: task.title,
+            status: task.status,
+            created_at: task.created_at ?? row.created_at,
+            expires_at: task.expires_at,
+            completed_at: task.completed_at,
+            worker_names: workerByTask.get(row.task_id) ?? [],
+            submitted_count: linkedPreps.length,
+            last_submitted_at: lastSubmittedAt,
+            has_rejected: linkedPreps.some((prep) => prep.verification_status === "rejected"),
+            has_pending: linkedPreps.some((prep) => prep.verification_status === "pending"),
+          };
+          byTitle[row.title_id] = [...(byTitle[row.title_id] ?? []), item];
+        }
+        setPrepTaskStatusByTitle(byTitle);
+      }
     } catch (e) {
       const err = e as { message?: string; status?: number; code?: string };
       setLoadError({
@@ -239,7 +346,7 @@ function RequestPage() {
   useEffect(() => { void loadAll(); }, []);
 
   useEffect(() => {
-    void router.navigate({ to: "/request", search: { title: selectedTitleId, highlight: undefined }, replace: true });
+    void router.navigate({ to: "/request", search: { title: selectedTitleId, highlight: undefined, send: undefined }, replace: true });
     // M11: hapus `router` dari deps — lihat catatan sejenis di `_authenticated.ecer.tsx`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTitleId]);
@@ -486,6 +593,10 @@ function RequestPage() {
               }
             };
             const activePrepCount = activePrepCountByTitle[t.id] ?? 0;
+            const taskStatuses = prepTaskStatusByTitle[t.id] ?? [];
+            const latestTaskStatus = taskStatuses[0] ?? null;
+            const statusInfo = latestTaskStatus ? requestPrepTaskStatusLabel(latestTaskStatus) : null;
+            const statusWhen = latestTaskStatus?.last_submitted_at ?? latestTaskStatus?.created_at ?? null;
             const canRequestReprep = activePrepCount > 0;
             const requestReprep = async () => {
               if (!confirm(
@@ -528,6 +639,38 @@ function RequestPage() {
                         })
                         .join(" · ")
                     : "Belum ada produk"}
+                </div>
+                <div className="mt-1 rounded-lg border bg-muted/20 p-ms-2">
+                  <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs">
+                    <span className="font-semibold text-foreground">Penyiapan</span>
+                    {statusInfo ? (
+                      <span className={`inline-flex shrink-0 items-center gap-ms-1 rounded-full border px-ms-2 py-0.5 font-medium ${requestPrepTaskStatusToneClass(statusInfo.tone)}`}>
+                        {statusInfo.tone === "success" ? <CheckCircle2 className="h-3 w-3" /> : null}
+                        {statusInfo.tone === "destructive" ? <AlertTriangle className="h-3 w-3" /> : null}
+                        {statusInfo.label}
+                      </span>
+                    ) : (
+                      <span className="rounded-full border border-muted bg-muted/50 px-ms-2 py-0.5 font-medium text-muted-foreground">
+                        Belum ada link
+                      </span>
+                    )}
+                  </div>
+                  {latestTaskStatus ? (
+                    <div className="space-y-0.5 text-ms-2xs text-muted-foreground">
+                      <div className="truncate">
+                        Relasi paket: <b className="text-foreground">{taskStatuses.length}</b> task tertaut
+                        {latestTaskStatus.worker_names.length > 0 ? ` · Pegawai: ${latestTaskStatus.worker_names.join(", ")}` : ""}
+                      </div>
+                      <div>
+                        Terisi: <b className="text-foreground tabular-nums">{latestTaskStatus.submitted_count}</b>x
+                        {statusWhen ? ` · ${new Date(statusWhen).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-ms-2xs text-muted-foreground">
+                      Belum ditautkan ke tugas pegawai.
+                    </div>
+                  )}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-ms-1.5">
                   <div
@@ -621,6 +764,7 @@ function RequestPage() {
         title={sendLinkTitle}
         titleItems={sendLinkTitle ? titleItems.filter((i) => i.title_id === sendLinkTitle.id) : []}
         warehouseItems={items}
+        onChanged={loadAll}
         onClose={() => setSendLinkTitle(null)}
       />
 
@@ -979,11 +1123,12 @@ function TitleEditorDialog({
 // Kirim link ke pegawai (real task, bukan uji coba)
 // ------------------------------------------------------------------
 function SendPrepLinkDialog({
-  title, titleItems, warehouseItems, onClose,
+  title, titleItems, warehouseItems, onChanged, onClose,
 }: {
   title: RequestTitle | null;
   titleItems: RequestTitleItem[];
   warehouseItems: WarehouseItem[];
+  onChanged: () => void;
   onClose: () => void;
 }) {
   const open = !!title;
@@ -1017,6 +1162,7 @@ function SendPrepLinkDialog({
         worker_name: nm,
         channel,
       });
+      onChanged();
     } catch {
       // best-effort; don't block the user action on log failures
     }
@@ -1081,6 +1227,7 @@ function SendPrepLinkDialog({
       });
       if (rpcErr) throw rpcErr;
       setSession({ url: publicTaskUrl(token, pin), pin, token });
+      onChanged();
     } catch (e) {
       setError((e as Error).message || "Gagal membuat link tugas");
     } finally {
