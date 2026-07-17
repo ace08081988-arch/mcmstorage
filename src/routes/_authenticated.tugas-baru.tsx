@@ -375,6 +375,9 @@ function TugasBaruForm() {
   const [paketOptions, setPaketOptions] = useState<PaketOpt[]>([]);
   const [selectedPaketIds, setSelectedPaketIds] = useState<string[]>([]);
   const [paketOpen, setPaketOpen] = useState(false);
+  // Sekali user manual centang/lepas centang, jangan lagi ditimpa oleh
+  // default "pilih semua" saat daftar paket dimuat ulang.
+  const paketTouchedRef = useRef(false);
   type VerifyState = {
     status: "idle" | "checking" | "ok" | "missing" | "error";
     productName?: string;
