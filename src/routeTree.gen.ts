@@ -43,6 +43,7 @@ import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes
 import { Route as AuthenticatedPengaturanPrivasiRouteImport } from './routes/_authenticated.pengaturan-privasi'
 import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes/_authenticated.pengaturan-penyimpanan'
 import { Route as AuthenticatedPengaturanOauthGoogleRouteImport } from './routes/_authenticated.pengaturan-oauth-google'
+import { Route as AuthenticatedPengaturanNotifikasiWaRouteImport } from './routes/_authenticated.pengaturan-notifikasi-wa'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedPengaturanIntegrasiSosialRouteImport } from './routes/_authenticated.pengaturan-integrasi-sosial'
 import { Route as AuthenticatedPengaturanDomainRouteImport } from './routes/_authenticated.pengaturan-domain'
@@ -127,6 +128,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
+import { Route as ApiPublicHooksPrepSubmitFailRouteImport } from './routes/api/public/hooks/prep-submit-fail'
 import { Route as ApiPublicHooksOrderEventNotifyRouteImport } from './routes/api/public/hooks/order-event-notify'
 import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
 import { Route as ApiPublicHooksFriendNotifyRouteImport } from './routes/api/public/hooks/friend-notify'
@@ -309,6 +311,12 @@ const AuthenticatedPengaturanOauthGoogleRoute =
   AuthenticatedPengaturanOauthGoogleRouteImport.update({
     id: '/pengaturan-oauth-google',
     path: '/pengaturan-oauth-google',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanNotifikasiWaRoute =
+  AuthenticatedPengaturanNotifikasiWaRouteImport.update({
+    id: '/pengaturan-notifikasi-wa',
+    path: '/pengaturan-notifikasi-wa',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPengaturanKunciRoute =
@@ -786,6 +794,12 @@ const ApiPublicHooksPrepTaskNotifyRoute =
     path: '/api/public/hooks/prep-task-notify',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPrepSubmitFailRoute =
+  ApiPublicHooksPrepSubmitFailRouteImport.update({
+    id: '/api/public/hooks/prep-submit-fail',
+    path: '/api/public/hooks/prep-submit-fail',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOrderEventNotifyRoute =
   ApiPublicHooksOrderEventNotifyRouteImport.update({
     id: '/api/public/hooks/order-event-notify',
@@ -872,6 +886,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-domain': typeof AuthenticatedPengaturanDomainRoute
   '/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pengaturan-notifikasi-wa': typeof AuthenticatedPengaturanNotifikasiWaRoute
   '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
@@ -944,6 +959,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-submit-fail': typeof ApiPublicHooksPrepSubmitFailRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
@@ -994,6 +1010,7 @@ export interface FileRoutesByTo {
   '/pengaturan-domain': typeof AuthenticatedPengaturanDomainRoute
   '/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pengaturan-notifikasi-wa': typeof AuthenticatedPengaturanNotifikasiWaRoute
   '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
@@ -1067,6 +1084,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-submit-fail': typeof ApiPublicHooksPrepSubmitFailRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
@@ -1122,6 +1140,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-domain': typeof AuthenticatedPengaturanDomainRoute
   '/_authenticated/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/_authenticated/pengaturan-notifikasi-wa': typeof AuthenticatedPengaturanNotifikasiWaRoute
   '/_authenticated/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/_authenticated/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/_authenticated/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
@@ -1195,6 +1214,7 @@ export interface FileRoutesById {
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/order-event-notify': typeof ApiPublicHooksOrderEventNotifyRoute
+  '/api/public/hooks/prep-submit-fail': typeof ApiPublicHooksPrepSubmitFailRoute
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
@@ -1251,6 +1271,7 @@ export interface FileRouteTypes {
     | '/pengaturan-domain'
     | '/pengaturan-integrasi-sosial'
     | '/pengaturan-kunci'
+    | '/pengaturan-notifikasi-wa'
     | '/pengaturan-oauth-google'
     | '/pengaturan-penyimpanan'
     | '/pengaturan-privasi'
@@ -1323,6 +1344,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-submit-fail'
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
@@ -1373,6 +1395,7 @@ export interface FileRouteTypes {
     | '/pengaturan-domain'
     | '/pengaturan-integrasi-sosial'
     | '/pengaturan-kunci'
+    | '/pengaturan-notifikasi-wa'
     | '/pengaturan-oauth-google'
     | '/pengaturan-penyimpanan'
     | '/pengaturan-privasi'
@@ -1446,6 +1469,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-submit-fail'
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
@@ -1500,6 +1524,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-domain'
     | '/_authenticated/pengaturan-integrasi-sosial'
     | '/_authenticated/pengaturan-kunci'
+    | '/_authenticated/pengaturan-notifikasi-wa'
     | '/_authenticated/pengaturan-oauth-google'
     | '/_authenticated/pengaturan-penyimpanan'
     | '/_authenticated/pengaturan-privasi'
@@ -1573,6 +1598,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/friend-notify'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/order-event-notify'
+    | '/api/public/hooks/prep-submit-fail'
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
@@ -1637,6 +1663,7 @@ export interface RootRouteChildren {
   ApiPublicHooksFriendNotifyRoute: typeof ApiPublicHooksFriendNotifyRoute
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
   ApiPublicHooksOrderEventNotifyRoute: typeof ApiPublicHooksOrderEventNotifyRoute
+  ApiPublicHooksPrepSubmitFailRoute: typeof ApiPublicHooksPrepSubmitFailRoute
   ApiPublicHooksPrepTaskNotifyRoute: typeof ApiPublicHooksPrepTaskNotifyRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   ApiPublicHooksShipmentStatusChangeRoute: typeof ApiPublicHooksShipmentStatusChangeRoute
@@ -1885,6 +1912,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-oauth-google'
       fullPath: '/pengaturan-oauth-google'
       preLoaderRoute: typeof AuthenticatedPengaturanOauthGoogleRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-notifikasi-wa': {
+      id: '/_authenticated/pengaturan-notifikasi-wa'
+      path: '/pengaturan-notifikasi-wa'
+      fullPath: '/pengaturan-notifikasi-wa'
+      preLoaderRoute: typeof AuthenticatedPengaturanNotifikasiWaRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-kunci': {
@@ -2475,6 +2509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPrepTaskNotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/prep-submit-fail': {
+      id: '/api/public/hooks/prep-submit-fail'
+      path: '/api/public/hooks/prep-submit-fail'
+      fullPath: '/api/public/hooks/prep-submit-fail'
+      preLoaderRoute: typeof ApiPublicHooksPrepSubmitFailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/order-event-notify': {
       id: '/api/public/hooks/order-event-notify'
       path: '/api/public/hooks/order-event-notify'
@@ -2637,6 +2678,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanDomainRoute: typeof AuthenticatedPengaturanDomainRoute
   AuthenticatedPengaturanIntegrasiSosialRoute: typeof AuthenticatedPengaturanIntegrasiSosialRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
+  AuthenticatedPengaturanNotifikasiWaRoute: typeof AuthenticatedPengaturanNotifikasiWaRoute
   AuthenticatedPengaturanOauthGoogleRoute: typeof AuthenticatedPengaturanOauthGoogleRoute
   AuthenticatedPengaturanPenyimpananRoute: typeof AuthenticatedPengaturanPenyimpananRoute
   AuthenticatedPengaturanPrivasiRoute: typeof AuthenticatedPengaturanPrivasiRoute
@@ -2697,6 +2739,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPengaturanIntegrasiSosialRoute:
     AuthenticatedPengaturanIntegrasiSosialRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
+  AuthenticatedPengaturanNotifikasiWaRoute:
+    AuthenticatedPengaturanNotifikasiWaRoute,
   AuthenticatedPengaturanOauthGoogleRoute:
     AuthenticatedPengaturanOauthGoogleRoute,
   AuthenticatedPengaturanPenyimpananRoute:
@@ -2812,6 +2856,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksFriendNotifyRoute: ApiPublicHooksFriendNotifyRoute,
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,
   ApiPublicHooksOrderEventNotifyRoute: ApiPublicHooksOrderEventNotifyRoute,
+  ApiPublicHooksPrepSubmitFailRoute: ApiPublicHooksPrepSubmitFailRoute,
   ApiPublicHooksPrepTaskNotifyRoute: ApiPublicHooksPrepTaskNotifyRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   ApiPublicHooksShipmentStatusChangeRoute:

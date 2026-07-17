@@ -3191,6 +3191,21 @@ function ItemCard({
         duration: 8000,
       });
       setSendStatus({ kind: "failed", error: msg });
+      // Laporkan ke webhook WA owner (fire-and-forget, best-effort)
+      try {
+        void fetch("/api/public/hooks/prep-submit-fail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            pin,
+            error: msg,
+            kind_hint: "ecer",
+            item_name: item.name ?? null,
+          }),
+          keepalive: true,
+        });
+      } catch { /* ignore */ }
     } finally {
       setBusy(false);
       onKeepAlive();
@@ -4779,6 +4794,21 @@ function RequestForm({
         description: `${raw} · Foto & isian tetap tersimpan, coba kirim lagi.`,
         duration: 8000,
       });
+      // Laporkan ke webhook WA owner (fire-and-forget, best-effort)
+      try {
+        void fetch("/api/public/hooks/prep-submit-fail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            pin,
+            error: raw,
+            kind_hint: "paket",
+            item_name: title.name ?? null,
+          }),
+          keepalive: true,
+        });
+      } catch { /* ignore */ }
     } finally {
       setBusy(false);
       onKeepAlive();
