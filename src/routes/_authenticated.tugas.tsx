@@ -479,6 +479,27 @@ function TugasPage() {
     }
     setProgress(prog);
     setTasksLoaded(true);
+
+    // Aggregasi log notifikasi WA per tugas. Ambil 500 baris terbaru —
+    // cukup untuk beberapa minggu terakhir, dan client-side aggregation
+    // tetap ringan.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: nl } = await (supabase.from as any)("prep_task_wa_hook_log")
+      .select("task_id,send_status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    const ns: Record<string, { sent: number; failed: number; lastAt: string | null; lastStatus: "sent" | "failed" | null }> = {};
+    for (const row of ((nl ?? []) as Array<{ task_id: string; send_status: string | null; created_at: string }>)) {
+      const bucket = ns[row.task_id] ?? { sent: 0, failed: 0, lastAt: null as string | null, lastStatus: null as "sent" | "failed" | null };
+      const st = row.send_status === "sent" ? "sent" : "failed";
+      if (st === "sent") bucket.sent += 1; else bucket.failed += 1;
+      if (!bucket.lastAt || new Date(row.created_at) > new Date(bucket.lastAt)) {
+        bucket.lastAt = row.created_at;
+        bucket.lastStatus = st;
+      }
+      ns[row.task_id] = bucket;
+    }
+    setNotifStats(ns);
   }
   useEffect(() => { void load(); }, [uid]);
 
