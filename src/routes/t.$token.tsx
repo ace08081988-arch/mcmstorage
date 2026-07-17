@@ -1,6 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Component, Fragment, useCallback, useEffect, useRef, useState, type ErrorInfo, type ReactNode, type RefObject } from "react";
-import { useLayoutEffect } from "react";
+import React, {
+  Component,
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ErrorInfo,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { toast } from "sonner";
 import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/PhotoEditorV2";
 import {
