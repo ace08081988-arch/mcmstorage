@@ -30,6 +30,7 @@ function NotifikasiWaPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [retryResult, setRetryResult] = useState<Record<string, { ok: boolean; msg: string; at: number }>>({});
 
   async function loadHistory() {
     setHistoryLoading(true);
@@ -57,6 +58,11 @@ function NotifikasiWaPage() {
       return;
     }
     setRetryingId(row.id);
+    setRetryResult((prev) => {
+      const next = { ...prev };
+      delete next[row.id];
+      return next;
+    });
     const nextRetry = (row.retry_count ?? 0) + 1;
     let ok = false;
     let errMsg: string | null = null;
@@ -84,6 +90,10 @@ function NotifikasiWaPage() {
       .eq("id", row.id);
     setRetryingId(null);
     if (updErr) {
+      setRetryResult((prev) => ({
+        ...prev,
+        [row.id]: { ok: false, msg: "Gagal simpan: " + updErr.message, at: Date.now() },
+      }));
       toast.error("Gagal simpan hasil retry: " + updErr.message);
       return;
     }
@@ -100,6 +110,24 @@ function NotifikasiWaPage() {
           : r,
       ),
     );
+    setRetryResult((prev) => ({
+      ...prev,
+      [row.id]: {
+        ok,
+        msg: ok ? "Berhasil terkirim ulang" : "Gagal: " + (errMsg ?? "unknown"),
+        at: Date.now(),
+      },
+    }));
+    // auto-hide inline badge after 6s
+    setTimeout(() => {
+      setRetryResult((prev) => {
+        const cur = prev[row.id];
+        if (!cur) return prev;
+        const next = { ...prev };
+        delete next[row.id];
+        return next;
+      });
+    }, 6000);
     if (ok) toast.success("Terkirim ulang ke webhook");
     else toast.error("Coba ulang gagal: " + (errMsg ?? "unknown"));
   }
@@ -468,8 +496,27 @@ function NotifikasiWaPage() {
                               ) : (
                                 <RotateCw className="h-3.5 w-3.5" />
                               )}
-                              Coba ulang
+                              {retryingId === row.id ? "Mengirim…" : "Coba ulang"}
                             </Button>
+                            {retryResult[row.id] ? (
+                              <span
+                                role="status"
+                                aria-live="polite"
+                                className={
+                                  "ml-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-ms-2xs " +
+                                  (retryResult[row.id].ok
+                                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-red-500/15 text-red-600 dark:text-red-400")
+                                }
+                              >
+                                {retryResult[row.id].ok ? (
+                                  <CheckCircle2 className="h-3 w-3" />
+                                ) : (
+                                  <XCircle className="h-3 w-3" />
+                                )}
+                                {retryResult[row.id].msg}
+                              </span>
+                            ) : null}
                           </div>
                         ) : null}
                         {open && row.payload ? (
