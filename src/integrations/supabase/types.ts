@@ -1884,6 +1884,30 @@ export type Database = {
           },
         ]
       }
+      prep_submit_wa_hook: {
+        Row: {
+          enabled: boolean
+          forward_url: string | null
+          id: boolean
+          updated_at: string
+          wa_target: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          forward_url?: string | null
+          id?: boolean
+          updated_at?: string
+          wa_target?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          forward_url?: string | null
+          id?: boolean
+          updated_at?: string
+          wa_target?: string | null
+        }
+        Relationships: []
+      }
       prep_task_items: {
         Row: {
           category_snapshot: string | null
@@ -3831,6 +3855,10 @@ export type Database = {
             }
             Returns: Json
           }
+      prep_task_resolve: {
+        Args: { _pin: string; _token: string }
+        Returns: Json
+      }
       prep_upload_allowed: { Args: { _share_token: string }; Returns: boolean }
       prep_worker_upload_allowed: {
         Args: { _owner_user_id: string; _share_token: string }
