@@ -1096,7 +1096,7 @@ function TugasBaruForm() {
                   ? "Link tidak menyertakan judul ecer yang valid."
                   : "Judul ecer dari link tidak ditemukan (mungkin sudah dihapus)."}
                 {" "}Form dibuka manual — Anda tetap bisa membuat tugas, atau{" "}
-                <Link to="/ecer" className="underline underline-offset-2 font-medium">
+                <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }} className="underline underline-offset-2 font-medium">
                   kembali ke Ecer
                 </Link>{" "}
                 untuk memilih judul.
