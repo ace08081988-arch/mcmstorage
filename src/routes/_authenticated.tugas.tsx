@@ -567,6 +567,7 @@ function TugasPage() {
       .channel("prep_progress-tugas")
       .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, reload)
       .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, reload)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "prep_task_wa_hook_log" }, reload)
       .subscribe();
     return () => { reload.cancel(); void supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
