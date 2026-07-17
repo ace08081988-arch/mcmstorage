@@ -116,7 +116,7 @@ export function ReadyRequestSection() {
           <div className="hidden sm:inline-flex">
             <LayoutModeToggle mode={layout} onChange={setLayout} />
           </div>
-          <Link to="/request" search={{ title: undefined, highlight: undefined }} className="text-ms-2xs font-medium text-primary hover:underline">Kelola →</Link>
+          <Link to="/request" search={{ title: undefined, highlight: undefined, send: undefined }} className="text-ms-2xs font-medium text-primary hover:underline">Kelola →</Link>
         </div>
       </div>
 
@@ -153,7 +153,7 @@ export function ReadyRequestSection() {
       ) : rows.length === 0 ? (
         <Link
           to="/request"
-          search={{ title: undefined, highlight: undefined }}
+          search={{ title: undefined, highlight: undefined, send: undefined }}
           className="flex flex-col items-center gap-ms-1.5 rounded-md border border-dashed bg-card p-ms-5 text-center text-ms-xs text-muted-foreground hover:border-primary/40 hover:bg-accent"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
@@ -212,7 +212,7 @@ function RequestCard({
     >
       <Link
         to="/request"
-        search={{ title: undefined, highlight: r.id }}
+        search={{ title: undefined, highlight: r.id, send: undefined }}
         aria-label={`Buka detail ${r.name} di halaman Request`}
         className="flex flex-col gap-0.5 hover:opacity-90"
       >
