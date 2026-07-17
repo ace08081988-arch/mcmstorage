@@ -463,6 +463,41 @@ function RequestPage() {
       </section>
 
       <div className="flex flex-wrap justify-end gap-ms-2">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={repairing}
+          onClick={async () => {
+            setRepairing(true);
+            try {
+              const { data, error } = await supabase.rpc(
+                "repair_missing_request_task_title_links",
+                {},
+              );
+              if (error) throw error;
+              const fixed = typeof data === "number" ? data : Number(data ?? 0);
+              if (fixed > 0) {
+                toast.success(`Berhasil memperbaiki ${fixed} relasi paket`);
+              } else {
+                toast.info("Tidak ada relasi yang perlu diperbaiki");
+              }
+              await loadAll();
+            } catch (e) {
+              const err = e as { message?: string };
+              toast.error(`Gagal memperbaiki relasi: ${err.message ?? String(e)}`);
+            } finally {
+              setRepairing(false);
+            }
+          }}
+          aria-label="Perbaiki relasi task dan paket sekarang"
+        >
+          {repairing ? (
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          ) : (
+            <Wrench className="mr-1 h-4 w-4" />
+          )}
+          Perbaiki sekarang
+        </Button>
         <Button size="sm" variant="outline" onClick={() => setTestOpen(true)}>
           <FlaskConical className="mr-1 h-4 w-4" /> Uji Coba Alur Pegawai
         </Button>
