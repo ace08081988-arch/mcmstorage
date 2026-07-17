@@ -2894,7 +2894,7 @@ function ItemCard({
   function dismissPending(id: string) {
     setPending((p) => p.filter((x) => x.id !== id));
   }
-  async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onCameraFile(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
     try {
@@ -2904,7 +2904,7 @@ function ItemCard({
       fallbackPickerReleaseRef.current?.();
     }
   }
-  async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onGalleryFiles(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     try {
@@ -4428,7 +4428,7 @@ function RequestForm({
   function dismissPending(id: string) {
     setPending((p) => p.filter((x) => x.id !== id));
   }
-  async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onCameraFile(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
     try {
@@ -4438,7 +4438,7 @@ function RequestForm({
       fallbackPickerReleaseRef.current?.();
     }
   }
-  async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onGalleryFiles(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     try {
