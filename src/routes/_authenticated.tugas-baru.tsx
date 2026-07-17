@@ -1315,6 +1315,59 @@ function TugasBaruForm() {
           </div>
 
           <div className="flex flex-wrap justify-end gap-ms-2 pt-2">
+            {paketOptions.length > 0 && (
+              <div className="w-full rounded-lg border bg-card p-ms-3">
+                <button
+                  type="button"
+                  onClick={() => setPaketOpen((o) => !o)}
+                  className="flex w-full items-center justify-between gap-ms-2 text-left"
+                  aria-expanded={paketOpen}
+                >
+                  <div className="min-w-0">
+                    <div className="text-ms-sm font-semibold">Sertakan Paket Request</div>
+                    <div className="text-ms-2xs text-muted-foreground">
+                      {selectedPaketIds.length > 0
+                        ? `${selectedPaketIds.length} dari ${paketOptions.length} paket dicentang`
+                        : `Opsional · ${paketOptions.length} paket aktif tersedia`}
+                    </div>
+                  </div>
+                  <span className="text-ms-xs text-muted-foreground">{paketOpen ? "Tutup" : "Buka"}</span>
+                </button>
+                {paketOpen && (
+                  <div className="mt-ms-2 space-ms-1">
+                    <div className="text-ms-2xs text-muted-foreground">
+                      Hanya paket yang dicentang di bawah yang ikut ke link+PIN ini.
+                      Paket yang tidak dicentang tetap bisa disertakan ke link lain nanti.
+                    </div>
+                    <ul className="mt-ms-2 space-ms-1">
+                      {paketOptions.map((p) => {
+                        const checked = selectedPaketIds.includes(p.id);
+                        return (
+                          <li key={p.id}>
+                            <label className="flex cursor-pointer items-center gap-ms-2 rounded-md px-ms-2 py-ms-1 hover:bg-accent">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  setSelectedPaketIds((prev) =>
+                                    e.target.checked
+                                      ? Array.from(new Set([...prev, p.id]))
+                                      : prev.filter((id) => id !== p.id),
+                                  );
+                                }}
+                                className="h-4 w-4"
+                                disabled={busy}
+                              />
+                              <span className="text-ms-sm">{p.name}</span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               type="button"
               onClick={() => {
