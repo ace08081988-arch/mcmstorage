@@ -3352,6 +3352,17 @@ function HutangTab({
   // sehingga total di sini bisa lebih kecil dari halaman Hutang & Piutang.
   const [hutangSSOT, setHutangSSOT] = useState<HutangSummary | null>(null);
   const [hutangSSOTAt, setHutangSSOTAt] = useState<Date | null>(null);
+  const [hutangSSOTLoading, setHutangSSOTLoading] = useState(false);
+  const refreshHutangSSOT = useCallback(async () => {
+    setHutangSSOTLoading(true);
+    try {
+      const s = await fetchHutangSummary();
+      setHutangSSOT(s);
+      setHutangSSOTAt(new Date());
+    } finally {
+      setHutangSSOTLoading(false);
+    }
+  }, []);
   useEffect(() => {
     let cancelled = false;
     fetchHutangSummary().then((s) => {
