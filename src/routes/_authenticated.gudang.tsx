@@ -26,6 +26,7 @@ import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
+import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
 import {
   PageContainer,
   PageHeader,
@@ -728,6 +729,18 @@ function PiutangTab({
     return { owed, credit };
   }, [groups]);
 
+  // Sinkron dengan /hutang: total piutang harus ikut sertakan entri manual
+  // dari tabel debts (kind=piutang). Sebelumnya kartu ini hanya menghitung
+  // dari sales.payment_method='hutang' - customer_payments, sehingga total
+  // di sini bisa jauh lebih kecil dari halaman Hutang & Piutang.
+  const [piutangSSOT, setPiutangSSOT] = useState<PiutangSummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchPiutangSummary().then((s) => { if (!cancelled) setPiutangSSOT(s); });
+    return () => { cancelled = true; };
+  }, [sales, custPayments]);
+  const owedDisplay = piutangSSOT ? piutangSSOT.total_outstanding : totals.owed;
+
   if (groups.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
@@ -741,7 +754,8 @@ function PiutangTab({
       <div className="grid grid-cols-2 gap-ms-2 text-[0.6875rem]">
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
-          <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(totals.owed)}</div>
+          <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(owedDisplay)}</div>
+          <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Sinkron dengan halaman Hutang & Piutang</div>
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total kelebihan/deposit</div>
