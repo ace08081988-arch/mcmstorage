@@ -771,7 +771,19 @@ function PiutangTab({
     <div className="space-ms-3">
       <div className="grid grid-cols-2 gap-ms-2 text-[0.6875rem]">
         <div className="rounded-md border bg-card p-ms-2">
-          <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
+          <div className="flex items-start justify-between gap-1">
+            <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
+            <button
+              type="button"
+              onClick={refreshPiutangSSOT}
+              disabled={piutangSSOTLoading}
+              className="shrink-0 rounded border px-1.5 py-0.5 text-[0.625rem] hover:bg-muted disabled:opacity-50"
+              aria-label="Hitung ulang piutang"
+              title="Hitung ulang"
+            >
+              {piutangSSOTLoading ? "⏳" : "🔄"}
+            </button>
+          </div>
           <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(owedDisplay)}</div>
           <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
             SSOT: <code>piutang_summary_v1</code>
