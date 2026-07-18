@@ -2030,11 +2030,6 @@ function PrepSections({
     // itu sendiri sudah `sent` (selector-based).
     const isReadOnly = inSent || isSentPrep(p);
     const guardedDelete = () => {
-      if (isReadOnly) {
-        const t = buildReadOnlyToast("delete", p);
-        toast.error(t.title, { description: t.description });
-        return;
-      }
       onDelete(p);
     };
     const guardedSent = () => {
