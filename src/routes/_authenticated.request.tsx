@@ -1576,7 +1576,24 @@ function SendPrepLinkDialog({
             </div>
             <div className="space-y-1.5">
               <div>
-                <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Link</Label>
+                <div className="flex items-center justify-between gap-ms-2">
+                  <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Link</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 px-ms-2 text-ms-2xs"
+                    onClick={() => void copyLinkPin()}
+                    disabled={isPending && pending !== "copyLinkPin"}
+                    aria-busy={pending === "copyLinkPin"}
+                    aria-label="Salin link dan PIN sekali klik"
+                  >
+                    {pending === "copyLinkPin"
+                      ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                      : <Copy className="mr-1 h-3.5 w-3.5" />}
+                    Salin link
+                  </Button>
+                </div>
                 <div className="break-all rounded-md border bg-muted/30 px-ms-2 py-1.5 text-ms-2xs font-mono">
                   {session.url}
                 </div>
