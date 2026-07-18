@@ -735,9 +735,15 @@ function PiutangTab({
   // dari sales.payment_method='hutang' - customer_payments, sehingga total
   // di sini bisa jauh lebih kecil dari halaman Hutang & Piutang.
   const [piutangSSOT, setPiutangSSOT] = useState<PiutangSummary | null>(null);
+  const [piutangSSOTAt, setPiutangSSOTAt] = useState<Date | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetchPiutangSummary().then((s) => { if (!cancelled) setPiutangSSOT(s); });
+    fetchPiutangSummary().then((s) => {
+      if (!cancelled) {
+        setPiutangSSOT(s);
+        setPiutangSSOTAt(new Date());
+      }
+    });
     return () => { cancelled = true; };
   }, [sales, custPayments]);
   const owedDisplay = piutangSSOT ? piutangSSOT.total_outstanding : totals.owed;
