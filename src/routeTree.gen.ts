@@ -36,6 +36,7 @@ import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedStatusNotifikasiRouteImport } from './routes/_authenticated.status-notifikasi'
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
+import { Route as AuthenticatedRekonsiliasiPiutangRouteImport } from './routes/_authenticated.rekonsiliasi-piutang'
 import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanTampilanRouteImport } from './routes/_authenticated.pengaturan-tampilan'
@@ -273,6 +274,12 @@ const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
   path: '/request',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRekonsiliasiPiutangRoute =
+  AuthenticatedRekonsiliasiPiutangRouteImport.update({
+    id: '/rekonsiliasi-piutang',
+    path: '/rekonsiliasi-piutang',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProfilChatRoute = AuthenticatedProfilChatRouteImport.update({
   id: '/profil-chat',
   path: '/profil-chat',
@@ -894,6 +901,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
+  '/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
   '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
@@ -1018,6 +1026,7 @@ export interface FileRoutesByTo {
   '/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
+  '/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
   '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
@@ -1148,6 +1157,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/profil-chat': typeof AuthenticatedProfilChatRoute
+  '/_authenticated/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
   '/_authenticated/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
@@ -1279,6 +1289,7 @@ export interface FileRouteTypes {
     | '/pengaturan-tampilan'
     | '/profil'
     | '/profil-chat'
+    | '/rekonsiliasi-piutang'
     | '/request'
     | '/sesi'
     | '/status-notifikasi'
@@ -1403,6 +1414,7 @@ export interface FileRouteTypes {
     | '/pengaturan-tampilan'
     | '/profil'
     | '/profil-chat'
+    | '/rekonsiliasi-piutang'
     | '/request'
     | '/sesi'
     | '/status-notifikasi'
@@ -1532,6 +1544,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-tampilan'
     | '/_authenticated/profil'
     | '/_authenticated/profil-chat'
+    | '/_authenticated/rekonsiliasi-piutang'
     | '/_authenticated/request'
     | '/_authenticated/sesi'
     | '/_authenticated/status-notifikasi'
@@ -1863,6 +1876,13 @@ declare module '@tanstack/react-router' {
       path: '/request'
       fullPath: '/request'
       preLoaderRoute: typeof AuthenticatedRequestRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/rekonsiliasi-piutang': {
+      id: '/_authenticated/rekonsiliasi-piutang'
+      path: '/rekonsiliasi-piutang'
+      fullPath: '/rekonsiliasi-piutang'
+      preLoaderRoute: typeof AuthenticatedRekonsiliasiPiutangRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/profil-chat': {
@@ -2686,6 +2706,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanTampilanRoute: typeof AuthenticatedPengaturanTampilanRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedProfilChatRoute: typeof AuthenticatedProfilChatRoute
+  AuthenticatedRekonsiliasiPiutangRoute: typeof AuthenticatedRekonsiliasiPiutangRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
   AuthenticatedStatusNotifikasiRoute: typeof AuthenticatedStatusNotifikasiRoute
@@ -2751,6 +2772,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPengaturanTampilanRoute: AuthenticatedPengaturanTampilanRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedProfilChatRoute: AuthenticatedProfilChatRoute,
+  AuthenticatedRekonsiliasiPiutangRoute: AuthenticatedRekonsiliasiPiutangRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
   AuthenticatedStatusNotifikasiRoute: AuthenticatedStatusNotifikasiRoute,
