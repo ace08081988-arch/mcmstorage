@@ -27,6 +27,7 @@ import { NumericTextField } from "@/components/NumericDraftInput";
 import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
 import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
+import { fetchHutangSummary, type HutangSummary } from "@/lib/hutang";
 import {
   PageContainer,
   PageHeader,
