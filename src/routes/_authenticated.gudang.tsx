@@ -3392,7 +3392,19 @@ function HutangTab({
         </button>
         {hutangSSOT && remainingDisplay > 0 && (
           <div className="rounded-md border bg-card p-ms-2 text-[0.6875rem]">
-            <div className="text-muted-foreground">Total hutang (sinkron /hutang-piutang)</div>
+            <div className="flex items-start justify-between gap-1">
+              <div className="text-muted-foreground">Total hutang (sinkron /hutang-piutang)</div>
+              <button
+                type="button"
+                onClick={refreshHutangSSOT}
+                disabled={hutangSSOTLoading}
+                className="shrink-0 rounded border px-1.5 py-0.5 text-[0.625rem] hover:bg-muted disabled:opacity-50"
+                aria-label="Hitung ulang hutang"
+                title="Hitung ulang"
+              >
+                {hutangSSOTLoading ? "⏳" : "🔄"}
+              </button>
+            </div>
             <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(remainingDisplay)}</div>
             <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
               SSOT: <code>hutang_summary_v1</code>
