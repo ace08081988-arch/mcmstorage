@@ -3360,7 +3360,18 @@ function HutangTab({
           <div className="rounded-md border bg-card p-ms-2 text-[0.6875rem]">
             <div className="text-muted-foreground">Total hutang (sinkron /hutang-piutang)</div>
             <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(remainingDisplay)}</div>
-            <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Termasuk entri manual di halaman Hutang & Piutang.</div>
+            <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
+              SSOT: <code>hutang_summary_v1</code>
+              {hutangSSOTAt && <> · 🕒 {hutangSSOTAt.toLocaleTimeString("id-ID")}</>}
+            </div>
+            <details className="mt-0.5 text-[0.625rem] text-muted-foreground">
+              <summary className="cursor-pointer">Rincian sumber angka</summary>
+              <div className="mt-1 space-y-0.5 pl-2">
+                <div>Pembelian hutang: {rupiah(hutangSSOT.purchase_hutang_gross)} − dibayar {rupiah(hutangSSOT.purchase_hutang_paid)}</div>
+                <div>Manual (<code>debts.kind='hutang'</code>): {rupiah(hutangSSOT.manual_gross)} − dibayar {rupiah(hutangSSOT.manual_paid)}</div>
+                <div className="font-medium">= Outstanding: {rupiah(hutangSSOT.total_outstanding)}</div>
+              </div>
+            </details>
           </div>
         )}
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
