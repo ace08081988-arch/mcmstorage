@@ -736,6 +736,17 @@ function PiutangTab({
   // di sini bisa jauh lebih kecil dari halaman Hutang & Piutang.
   const [piutangSSOT, setPiutangSSOT] = useState<PiutangSummary | null>(null);
   const [piutangSSOTAt, setPiutangSSOTAt] = useState<Date | null>(null);
+  const [piutangSSOTLoading, setPiutangSSOTLoading] = useState(false);
+  const refreshPiutangSSOT = React.useCallback(async () => {
+    setPiutangSSOTLoading(true);
+    try {
+      const s = await fetchPiutangSummary();
+      setPiutangSSOT(s);
+      setPiutangSSOTAt(new Date());
+    } finally {
+      setPiutangSSOTLoading(false);
+    }
+  }, []);
   useEffect(() => {
     let cancelled = false;
     fetchPiutangSummary().then((s) => {
