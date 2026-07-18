@@ -27,6 +27,7 @@ import { NumericTextField } from "@/components/NumericDraftInput";
 import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
 import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
+import { fetchHutangSummary, type HutangSummary } from "@/lib/hutang";
 import {
   PageContainer,
   PageHeader,
@@ -3303,6 +3304,24 @@ function HutangTab({
     return { total, paid, remaining };
   }, [debts, paidByPurchase]);
 
+  // Sinkron dengan /hutang-piutang: total hutang harus ikut sertakan entri
+  // manual dari tabel debts (kind=hutang). Sebelumnya kartu ini hanya
+  // menghitung dari purchases.payment_method='hutang' - supplier_payments,
+  // sehingga total di sini bisa lebih kecil dari halaman Hutang & Piutang.
+  const [hutangSSOT, setHutangSSOT] = useState<HutangSummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchHutangSummary().then((s) => { if (!cancelled) setHutangSSOT(s); });
+    return () => { cancelled = true; };
+  }, [purchases, payments]);
+  const totalDisplay = hutangSSOT
+    ? hutangSSOT.purchase_hutang_gross + hutangSSOT.manual_gross
+    : totals.total;
+  const paidDisplay = hutangSSOT
+    ? hutangSSOT.purchase_hutang_paid + hutangSSOT.manual_paid
+    : totals.paid;
+  const remainingDisplay = hutangSSOT ? hutangSSOT.total_outstanding : totals.remaining;
+
   if (debts.length === 0) {
     return (
       <div className="space-ms-3">
@@ -3312,6 +3331,13 @@ function HutangTab({
         >
           ➕ Tambah hutang (catat pembelian)
         </button>
+        {hutangSSOT && remainingDisplay > 0 && (
+          <div className="rounded-md border bg-card p-ms-2 text-[0.6875rem]">
+            <div className="text-muted-foreground">Total hutang (sinkron /hutang-piutang)</div>
+            <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(remainingDisplay)}</div>
+            <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Termasuk entri manual di halaman Hutang & Piutang.</div>
+          </div>
+        )}
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
           Tidak ada hutang ke supplier. Pembelian dengan cara bayar <b>Hutang</b> akan muncul di sini.
         </div>
@@ -3330,15 +3356,16 @@ function HutangTab({
       <div className="grid grid-cols-3 gap-ms-2 text-[0.6875rem]">
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total hutang</div>
-          <div className="text-ms-sm font-semibold">{rupiah(totals.total)}</div>
+          <div className="text-ms-sm font-semibold">{rupiah(totalDisplay)}</div>
+          <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Sinkron dengan /hutang-piutang</div>
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sudah dibayar</div>
-          <div className="text-ms-sm font-semibold text-success dark:text-success">{rupiah(totals.paid)}</div>
+          <div className="text-ms-sm font-semibold text-success dark:text-success">{rupiah(paidDisplay)}</div>
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sisa</div>
-          <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(totals.remaining)}</div>
+          <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(remainingDisplay)}</div>
         </div>
       </div>
 

@@ -3777,6 +3777,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hutang_summary_v1: { Args: never; Returns: Json }
       is_chat_only: { Args: { _uid: string }; Returns: boolean }
       is_conversation_member: {
         Args: { _conv: string; _user: string }
