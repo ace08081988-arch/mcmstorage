@@ -735,9 +735,15 @@ function PiutangTab({
   // dari sales.payment_method='hutang' - customer_payments, sehingga total
   // di sini bisa jauh lebih kecil dari halaman Hutang & Piutang.
   const [piutangSSOT, setPiutangSSOT] = useState<PiutangSummary | null>(null);
+  const [piutangSSOTAt, setPiutangSSOTAt] = useState<Date | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetchPiutangSummary().then((s) => { if (!cancelled) setPiutangSSOT(s); });
+    fetchPiutangSummary().then((s) => {
+      if (!cancelled) {
+        setPiutangSSOT(s);
+        setPiutangSSOTAt(new Date());
+      }
+    });
     return () => { cancelled = true; };
   }, [sales, custPayments]);
   const owedDisplay = piutangSSOT ? piutangSSOT.total_outstanding : totals.owed;
@@ -756,7 +762,20 @@ function PiutangTab({
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
           <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(owedDisplay)}</div>
-          <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Sinkron dengan halaman Hutang & Piutang</div>
+          <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
+            SSOT: <code>piutang_summary_v1</code>
+            {piutangSSOTAt && <> · 🕒 {piutangSSOTAt.toLocaleTimeString("id-ID")}</>}
+          </div>
+          {piutangSSOT && (
+            <details className="mt-0.5 text-[0.625rem] text-muted-foreground">
+              <summary className="cursor-pointer">Rincian sumber angka</summary>
+              <div className="mt-1 space-y-0.5 pl-2">
+                <div>Sales hutang: {rupiah(piutangSSOT.sales_hutang_gross)} − dibayar {rupiah(piutangSSOT.sales_hutang_paid)}</div>
+                <div>Manual (<code>debts.kind='piutang'</code>): {rupiah(piutangSSOT.manual_gross)} − dibayar {rupiah(piutangSSOT.manual_paid)}</div>
+                <div className="font-medium">= Outstanding: {rupiah(piutangSSOT.total_outstanding)}</div>
+              </div>
+            </details>
+          )}
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total kelebihan/deposit</div>
@@ -3309,9 +3328,15 @@ function HutangTab({
   // menghitung dari purchases.payment_method='hutang' - supplier_payments,
   // sehingga total di sini bisa lebih kecil dari halaman Hutang & Piutang.
   const [hutangSSOT, setHutangSSOT] = useState<HutangSummary | null>(null);
+  const [hutangSSOTAt, setHutangSSOTAt] = useState<Date | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetchHutangSummary().then((s) => { if (!cancelled) setHutangSSOT(s); });
+    fetchHutangSummary().then((s) => {
+      if (!cancelled) {
+        setHutangSSOT(s);
+        setHutangSSOTAt(new Date());
+      }
+    });
     return () => { cancelled = true; };
   }, [purchases, payments]);
   const totalDisplay = hutangSSOT
@@ -3335,7 +3360,18 @@ function HutangTab({
           <div className="rounded-md border bg-card p-ms-2 text-[0.6875rem]">
             <div className="text-muted-foreground">Total hutang (sinkron /hutang-piutang)</div>
             <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(remainingDisplay)}</div>
-            <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Termasuk entri manual di halaman Hutang & Piutang.</div>
+            <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
+              SSOT: <code>hutang_summary_v1</code>
+              {hutangSSOTAt && <> · 🕒 {hutangSSOTAt.toLocaleTimeString("id-ID")}</>}
+            </div>
+            <details className="mt-0.5 text-[0.625rem] text-muted-foreground">
+              <summary className="cursor-pointer">Rincian sumber angka</summary>
+              <div className="mt-1 space-y-0.5 pl-2">
+                <div>Pembelian hutang: {rupiah(hutangSSOT.purchase_hutang_gross)} − dibayar {rupiah(hutangSSOT.purchase_hutang_paid)}</div>
+                <div>Manual (<code>debts.kind='hutang'</code>): {rupiah(hutangSSOT.manual_gross)} − dibayar {rupiah(hutangSSOT.manual_paid)}</div>
+                <div className="font-medium">= Outstanding: {rupiah(hutangSSOT.total_outstanding)}</div>
+              </div>
+            </details>
           </div>
         )}
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
@@ -3357,7 +3393,20 @@ function HutangTab({
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total hutang</div>
           <div className="text-ms-sm font-semibold">{rupiah(totalDisplay)}</div>
-          <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Sinkron dengan /hutang-piutang</div>
+          <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
+            SSOT: <code>hutang_summary_v1</code>
+            {hutangSSOTAt && <> · 🕒 {hutangSSOTAt.toLocaleTimeString("id-ID")}</>}
+          </div>
+          {hutangSSOT && (
+            <details className="mt-0.5 text-[0.625rem] text-muted-foreground">
+              <summary className="cursor-pointer">Rincian</summary>
+              <div className="mt-1 space-y-0.5 pl-2">
+                <div>Pembelian: {rupiah(hutangSSOT.purchase_hutang_gross)} − dibayar {rupiah(hutangSSOT.purchase_hutang_paid)}</div>
+                <div>Manual: {rupiah(hutangSSOT.manual_gross)} − dibayar {rupiah(hutangSSOT.manual_paid)}</div>
+                <div className="font-medium">= Sisa: {rupiah(hutangSSOT.total_outstanding)}</div>
+              </div>
+            </details>
+          )}
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sudah dibayar</div>
