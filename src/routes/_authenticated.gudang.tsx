@@ -3304,6 +3304,24 @@ function HutangTab({
     return { total, paid, remaining };
   }, [debts, paidByPurchase]);
 
+  // Sinkron dengan /hutang-piutang: total hutang harus ikut sertakan entri
+  // manual dari tabel debts (kind=hutang). Sebelumnya kartu ini hanya
+  // menghitung dari purchases.payment_method='hutang' - supplier_payments,
+  // sehingga total di sini bisa lebih kecil dari halaman Hutang & Piutang.
+  const [hutangSSOT, setHutangSSOT] = useState<HutangSummary | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchHutangSummary().then((s) => { if (!cancelled) setHutangSSOT(s); });
+    return () => { cancelled = true; };
+  }, [purchases, payments]);
+  const totalDisplay = hutangSSOT
+    ? hutangSSOT.purchase_hutang_gross + hutangSSOT.manual_gross
+    : totals.total;
+  const paidDisplay = hutangSSOT
+    ? hutangSSOT.purchase_hutang_paid + hutangSSOT.manual_paid
+    : totals.paid;
+  const remainingDisplay = hutangSSOT ? hutangSSOT.total_outstanding : totals.remaining;
+
   if (debts.length === 0) {
     return (
       <div className="space-ms-3">
