@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Boxes,
@@ -736,6 +736,17 @@ function PiutangTab({
   // di sini bisa jauh lebih kecil dari halaman Hutang & Piutang.
   const [piutangSSOT, setPiutangSSOT] = useState<PiutangSummary | null>(null);
   const [piutangSSOTAt, setPiutangSSOTAt] = useState<Date | null>(null);
+  const [piutangSSOTLoading, setPiutangSSOTLoading] = useState(false);
+  const refreshPiutangSSOT = useCallback(async () => {
+    setPiutangSSOTLoading(true);
+    try {
+      const s = await fetchPiutangSummary();
+      setPiutangSSOT(s);
+      setPiutangSSOTAt(new Date());
+    } finally {
+      setPiutangSSOTLoading(false);
+    }
+  }, []);
   useEffect(() => {
     let cancelled = false;
     fetchPiutangSummary().then((s) => {
@@ -760,7 +771,19 @@ function PiutangTab({
     <div className="space-ms-3">
       <div className="grid grid-cols-2 gap-ms-2 text-[0.6875rem]">
         <div className="rounded-md border bg-card p-ms-2">
-          <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
+          <div className="flex items-start justify-between gap-1">
+            <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
+            <button
+              type="button"
+              onClick={refreshPiutangSSOT}
+              disabled={piutangSSOTLoading}
+              className="shrink-0 rounded border px-1.5 py-0.5 text-[0.625rem] hover:bg-muted disabled:opacity-50"
+              aria-label="Hitung ulang piutang"
+              title="Hitung ulang"
+            >
+              {piutangSSOTLoading ? "⏳" : "🔄"}
+            </button>
+          </div>
           <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(owedDisplay)}</div>
           <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
             SSOT: <code>piutang_summary_v1</code>
@@ -3329,6 +3352,17 @@ function HutangTab({
   // sehingga total di sini bisa lebih kecil dari halaman Hutang & Piutang.
   const [hutangSSOT, setHutangSSOT] = useState<HutangSummary | null>(null);
   const [hutangSSOTAt, setHutangSSOTAt] = useState<Date | null>(null);
+  const [hutangSSOTLoading, setHutangSSOTLoading] = useState(false);
+  const refreshHutangSSOT = useCallback(async () => {
+    setHutangSSOTLoading(true);
+    try {
+      const s = await fetchHutangSummary();
+      setHutangSSOT(s);
+      setHutangSSOTAt(new Date());
+    } finally {
+      setHutangSSOTLoading(false);
+    }
+  }, []);
   useEffect(() => {
     let cancelled = false;
     fetchHutangSummary().then((s) => {
@@ -3358,7 +3392,19 @@ function HutangTab({
         </button>
         {hutangSSOT && remainingDisplay > 0 && (
           <div className="rounded-md border bg-card p-ms-2 text-[0.6875rem]">
-            <div className="text-muted-foreground">Total hutang (sinkron /hutang-piutang)</div>
+            <div className="flex items-start justify-between gap-1">
+              <div className="text-muted-foreground">Total hutang (sinkron /hutang-piutang)</div>
+              <button
+                type="button"
+                onClick={refreshHutangSSOT}
+                disabled={hutangSSOTLoading}
+                className="shrink-0 rounded border px-1.5 py-0.5 text-[0.625rem] hover:bg-muted disabled:opacity-50"
+                aria-label="Hitung ulang hutang"
+                title="Hitung ulang"
+              >
+                {hutangSSOTLoading ? "⏳" : "🔄"}
+              </button>
+            </div>
             <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(remainingDisplay)}</div>
             <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
               SSOT: <code>hutang_summary_v1</code>
@@ -3391,7 +3437,19 @@ function HutangTab({
       </button>
       <div className="grid grid-cols-3 gap-ms-2 text-[0.6875rem]">
         <div className="rounded-md border bg-card p-ms-2">
-          <div className="text-muted-foreground">Total hutang</div>
+          <div className="flex items-start justify-between gap-1">
+            <div className="text-muted-foreground">Total hutang</div>
+            <button
+              type="button"
+              onClick={refreshHutangSSOT}
+              disabled={hutangSSOTLoading}
+              className="shrink-0 rounded border px-1.5 py-0.5 text-[0.625rem] hover:bg-muted disabled:opacity-50"
+              aria-label="Hitung ulang hutang"
+              title="Hitung ulang"
+            >
+              {hutangSSOTLoading ? "⏳" : "🔄"}
+            </button>
+          </div>
           <div className="text-ms-sm font-semibold">{rupiah(totalDisplay)}</div>
           <div className="mt-0.5 text-[0.625rem] text-muted-foreground">
             SSOT: <code>hutang_summary_v1</code>
