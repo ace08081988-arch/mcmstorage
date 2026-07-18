@@ -1177,7 +1177,29 @@ function SendPrepLinkDialog({
   const [busy, setBusy] = useState(false);
   const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [workerName, setWorkerName] = useState("");
+  // Nama pegawai dipertahankan lintas refresh per-title supaya user tidak
+  // perlu mengetik ulang bila halaman tak sengaja reload atau WebView
+  // di-recreate. Scope per title.id agar tidak bocor antar-judul.
+  const workerNameStorageKey = title ? `mcm:sendPrepLink:workerName:${title.id}` : null;
+  const [workerName, setWorkerName] = useState<string>(() => {
+    if (typeof window === "undefined" || !workerNameStorageKey) return "";
+    try { return window.localStorage.getItem(workerNameStorageKey) ?? ""; } catch { return ""; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined" || !workerNameStorageKey) return;
+    try {
+      if (workerName) window.localStorage.setItem(workerNameStorageKey, workerName);
+      else window.localStorage.removeItem(workerNameStorageKey);
+    } catch { /* storage penuh / dinonaktifkan — abaikan */ }
+  }, [workerName, workerNameStorageKey]);
+  // Saat title berganti (dialog dibuka untuk judul lain), muat ulang draft.
+  useEffect(() => {
+    if (typeof window === "undefined" || !workerNameStorageKey) return;
+    try {
+      const saved = window.localStorage.getItem(workerNameStorageKey) ?? "";
+      setWorkerName(saved);
+    } catch { /* noop */ }
+  }, [workerNameStorageKey]);
   const [nameError, setNameError] = useState<string | null>(null);
   // Aksi mana yang sedang diproses. Dipakai untuk menampilkan spinner
   // in-place (tanpa mengubah lebar tombol) dan mencuri fokus double-tap
@@ -1223,7 +1245,9 @@ function SendPrepLinkDialog({
   useEffect(() => {
     if (!open) {
       setSession(null); setError(null); setBusy(false);
-      setWorkerName(""); setNameError(null); setPending(null);
+      setNameError(null); setPending(null);
+      // Sengaja TIDAK menghapus workerName — biar tetap ada bila user
+      // membuka dialog lagi atau halaman refresh tak sengaja.
     }
   }, [open]);
 
