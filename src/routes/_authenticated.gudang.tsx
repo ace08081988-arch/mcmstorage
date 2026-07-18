@@ -3356,15 +3356,16 @@ function HutangTab({
       <div className="grid grid-cols-3 gap-ms-2 text-[0.6875rem]">
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Total hutang</div>
-          <div className="text-ms-sm font-semibold">{rupiah(totals.total)}</div>
+          <div className="text-ms-sm font-semibold">{rupiah(totalDisplay)}</div>
+          <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Sinkron dengan /hutang-piutang</div>
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sudah dibayar</div>
-          <div className="text-ms-sm font-semibold text-success dark:text-success">{rupiah(totals.paid)}</div>
+          <div className="text-ms-sm font-semibold text-success dark:text-success">{rupiah(paidDisplay)}</div>
         </div>
         <div className="rounded-md border bg-card p-ms-2">
           <div className="text-muted-foreground">Sisa</div>
-          <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(totals.remaining)}</div>
+          <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(remainingDisplay)}</div>
         </div>
       </div>
 
