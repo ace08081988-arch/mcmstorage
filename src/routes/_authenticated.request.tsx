@@ -2030,11 +2030,6 @@ function PrepSections({
     // itu sendiri sudah `sent` (selector-based).
     const isReadOnly = inSent || isSentPrep(p);
     const guardedDelete = () => {
-      if (isReadOnly) {
-        const t = buildReadOnlyToast("delete", p);
-        toast.error(t.title, { description: t.description });
-        return;
-      }
       onDelete(p);
     };
     const guardedSent = () => {
@@ -2309,16 +2304,14 @@ function PrepCard({
               <CheckCircle2 className="h-3 w-3" /> Terkirim
             </span>
           )}
-          {!sold && (
-            <button
-              onClick={onDelete}
-              className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-1 text-destructive hover:bg-destructive/20"
-              aria-label="Hapus penyiapan"
-              title="Hapus penyiapan"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          )}
+          <button
+            onClick={onDelete}
+            className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-1 text-destructive hover:bg-destructive/20"
+            aria-label={sold ? "Hapus arsip penyiapan" : "Hapus penyiapan"}
+            title={sold ? "Hapus arsip · penjualan & piutang tetap tercatat" : "Hapus penyiapan"}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
       {photo ? (
