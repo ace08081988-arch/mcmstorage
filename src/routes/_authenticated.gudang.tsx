@@ -737,7 +737,7 @@ function PiutangTab({
   const [piutangSSOT, setPiutangSSOT] = useState<PiutangSummary | null>(null);
   const [piutangSSOTAt, setPiutangSSOTAt] = useState<Date | null>(null);
   const [piutangSSOTLoading, setPiutangSSOTLoading] = useState(false);
-  const refreshPiutangSSOT = React.useCallback(async () => {
+  const refreshPiutangSSOT = useCallback(async () => {
     setPiutangSSOTLoading(true);
     try {
       const s = await fetchPiutangSummary();
