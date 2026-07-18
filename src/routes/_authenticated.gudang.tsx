@@ -3331,6 +3331,13 @@ function HutangTab({
         >
           ➕ Tambah hutang (catat pembelian)
         </button>
+        {hutangSSOT && remainingDisplay > 0 && (
+          <div className="rounded-md border bg-card p-ms-2 text-[0.6875rem]">
+            <div className="text-muted-foreground">Total hutang (sinkron /hutang-piutang)</div>
+            <div className="text-ms-sm font-semibold text-warning dark:text-warning">{rupiah(remainingDisplay)}</div>
+            <div className="mt-0.5 text-[0.625rem] text-muted-foreground">Termasuk entri manual di halaman Hutang & Piutang.</div>
+          </div>
+        )}
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
           Tidak ada hutang ke supplier. Pembelian dengan cara bayar <b>Hutang</b> akan muncul di sini.
         </div>
