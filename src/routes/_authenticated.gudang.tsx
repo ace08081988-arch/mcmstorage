@@ -3328,9 +3328,15 @@ function HutangTab({
   // menghitung dari purchases.payment_method='hutang' - supplier_payments,
   // sehingga total di sini bisa lebih kecil dari halaman Hutang & Piutang.
   const [hutangSSOT, setHutangSSOT] = useState<HutangSummary | null>(null);
+  const [hutangSSOTAt, setHutangSSOTAt] = useState<Date | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetchHutangSummary().then((s) => { if (!cancelled) setHutangSSOT(s); });
+    fetchHutangSummary().then((s) => {
+      if (!cancelled) {
+        setHutangSSOT(s);
+        setHutangSSOTAt(new Date());
+      }
+    });
     return () => { cancelled = true; };
   }, [purchases, payments]);
   const totalDisplay = hutangSSOT
