@@ -929,6 +929,7 @@ export type Database = {
           location_url: string | null
           note: string | null
           photo_path: string | null
+          prep_submission_id: string | null
           prep_task_item_id: string | null
           ready_at: string | null
           rejection_reason: string | null
@@ -957,6 +958,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          prep_submission_id?: string | null
           prep_task_item_id?: string | null
           ready_at?: string | null
           rejection_reason?: string | null
@@ -985,6 +987,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          prep_submission_id?: string | null
           prep_task_item_id?: string | null
           ready_at?: string | null
           rejection_reason?: string | null
@@ -1003,6 +1006,20 @@ export type Database = {
           warehouse_item_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ecer_preparations_prep_submission_id_fkey"
+            columns: ["prep_submission_id"]
+            isOneToOne: false
+            referencedRelation: "prep_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecer_preparations_prep_submission_id_fkey"
+            columns: ["prep_submission_id"]
+            isOneToOne: false
+            referencedRelation: "prep_submissions_unrouted"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ecer_preparations_prep_task_item_id_fkey"
             columns: ["prep_task_item_id"]

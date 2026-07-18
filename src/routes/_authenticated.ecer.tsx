@@ -2155,6 +2155,7 @@ function describeLocationUrl(raw: string): { label: string | null; kind: string 
 }
 
 function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName: string }) {
+  const navigate = useNavigate();
   const [shots, setShots] = useState<WorkerShot[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -2638,6 +2639,18 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     return lines.join("\n");
   }
 
+  function openPaymentVerification() {
+    void navigate({
+      to: "/ecer",
+      search: {
+        item: title.warehouse_item_id ?? undefined,
+        title: title.id,
+        highlight: undefined,
+        send: "1",
+      },
+    });
+  }
+
   async function sendShotWA(s: WorkerShot) {
     if (waSendingId) return;
     const allPaths = shotPaths(s);
@@ -2829,12 +2842,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             </Button>
             <Button
               size="sm"
-              onClick={visibleShots.length === 0 ? undefined : sendWA}
+              onClick={visibleShots.length === 0 ? undefined : openPaymentVerification}
               disabled={visibleShots.length === 0 ? false : sending}
               aria-label={
                 visibleShots.length === 0
                   ? "Buka tugas pegawai untuk judul ini"
-                  : `Kirim ${visibleShots.length} kiriman pegawai via WhatsApp`
+                  : `Verifikasi pembayaran untuk ${visibleShots.length} kiriman pegawai`
               }
               className="bg-success hover:bg-success"
               asChild={visibleShots.length === 0}
@@ -2924,10 +2937,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 <div className="flex items-center gap-ms-1 border-t bg-card p-ms-1">
                   <button
                     type="button"
-                    onClick={() => void sendShotWA(s)}
+                    onClick={openPaymentVerification}
                     disabled={isWa || isChat}
-                    aria-label={`Kirim folder (${paths.length} foto) via WhatsApp`}
-                    title={`Kirim ${paths.length} foto + lokasi via WhatsApp`}
+                    aria-label={`Verifikasi pembayaran folder (${paths.length} foto) untuk WhatsApp`}
+                    title="Buka dialog penjualan dulu agar stok, lunas/hutang, dan WA tercatat"
                     className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-ms-1 rounded bg-[#25D366] px-1.5 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
                   >
                     {isWa ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
@@ -2935,10 +2948,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   </button>
                   <button
                     type="button"
-                    onClick={() => setChatPickShot(s)}
+                    onClick={openPaymentVerification}
                     disabled={isWa || isChat}
-                    aria-label={`Kirim folder (${paths.length} foto) via MCM Chat`}
-                    title={`Kirim ${paths.length} foto + lokasi via MCM Chat`}
+                    aria-label={`Verifikasi pembayaran folder (${paths.length} foto) untuk MCM Chat`}
+                    title="Buka dialog penjualan dulu agar stok, lunas/hutang, dan Chat tercatat"
                     className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-ms-1 rounded bg-primary px-1.5 text-ms-2xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
                   >
                     {isChat ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
