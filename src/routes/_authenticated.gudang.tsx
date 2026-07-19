@@ -304,37 +304,49 @@ function GudangPage() {
   const reloadPendingRef = useRef(false);
 
   async function reloadAllNow() {
-    const [s, w, p, sa, py, c, cp, or, wc] = await Promise.all([
-      supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
+  // Optimasi performa (2026-07-19): fetch dibagi dua gelombang supaya paint
+  // awal Gudang tidak menunggu 9 query paralel selesai. Gelombang 1 =
+  // data yang dipakai ringkasan (Stok/summary cards). Gelombang 2 =
+  // data tab lain (Beli/Jual/Pelanggan/Piutang/Pesanan) yang di-fetch
+  // di background segera setelah paint pertama, jadi UX tab-switch
+  // tetap instan tanpa memblokir tampilan awal.
+  async function reloadAllNow() {
+    const [w, s, sa, wc] = await Promise.all([
       supabase.from("warehouse_items").select("*").order("name"),
-      supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("sales").select("*").order("created_at", { ascending: false }).limit(200),
-      supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("customers").select("*").order("created_at", { ascending: false }),
-      supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200),
       supabase
         .from("warehouse_categories")
         .select("name, position")
         .order("position", { ascending: true }),
     ]);
-    if (s.data) setSuppliers(s.data as Supplier[]);
     if (w.data) setItems(w.data as WItem[]);
-    if (p.data) setPurchases(p.data as Purchase[]);
+    if (s.data) setSuppliers(s.data as Supplier[]);
     if (sa.data) setSales(sa.data as Sale[]);
-    if (py.data) setPayments(py.data as Payment[]);
-    if (c.data) setCustomers(c.data as Customer[]);
-    if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
-    if (or.data) setOrders(or.data as OrderRequest[]);
     if (wc.data) {
       const m = new Map<string, number>();
       (wc.data as { name: string; position: number }[]).forEach((r, i) => {
-        // fallback ke urutan array kalau position null / duplikat.
         m.set(r.name.trim().toLowerCase(), r.position ?? i);
       });
       setCategoryOrder(m);
     }
     setLoading(false);
+
+    // Gelombang 2 — non-blocking. Tetap `await` di dalam fungsi supaya
+    // caller yang menunggu reload penuh (mis. setelah mutasi) mendapat
+    // data terbaru sebelum resolve.
+    const [p, py, c, cp, or] = await Promise.all([
+      supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("customers").select("*").order("created_at", { ascending: false }),
+      supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200),
+    ]);
+    if (p.data) setPurchases(p.data as Purchase[]);
+    if (py.data) setPayments(py.data as Payment[]);
+    if (c.data) setCustomers(c.data as Customer[]);
+    if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
+    if (or.data) setOrders(or.data as OrderRequest[]);
   }
 
   async function reloadAll() {
