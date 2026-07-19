@@ -303,7 +303,6 @@ function GudangPage() {
   const reloadInFlightRef = useRef(false);
   const reloadPendingRef = useRef(false);
 
-  async function reloadAllNow() {
   // Optimasi performa (2026-07-19): fetch dibagi dua gelombang supaya paint
   // awal Gudang tidak menunggu 9 query paralel selesai. Gelombang 1 =
   // data yang dipakai ringkasan (Stok/summary cards). Gelombang 2 =
