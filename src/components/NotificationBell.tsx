@@ -165,9 +165,9 @@ export function NotificationBell() {
     // H15: only subscribe once the current user is known, and scope postgres_changes
     // filters to columns owned by the user so we don't process every insert globally.
     // RLS already gates row visibility; the filter cuts wire traffic + wakeups.
-    void supabase.auth.getUser().then(({ data }) => {
+    void import("@/lib/current-user").then(({ getCurrentUser }) => getCurrentUser()).then((user) => {
       if (cancelled) return;
-      const uid = data.user?.id;
+      const uid = user?.id;
       if (!uid) return;
       // Suffix unik per-mount agar StrictMode / remount cepat tidak
       // mengambil kembali channel lama yang sudah `.subscribe()` — kalau
