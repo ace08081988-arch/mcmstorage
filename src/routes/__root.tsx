@@ -19,6 +19,29 @@ import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
+// Global observability: capture errors from background async work (WA share,
+// fetch during backgrounded WebView, dsb.) yang tidak melewati React
+// boundary. Tersimpan di sessionStorage["mcm:last-unhandled"] agar bisa
+// diambil next-turn saat user melaporkan crash tanpa DevTools.
+if (typeof window !== "undefined" && !(window as unknown as { __mcmGlobalErrHooks?: boolean }).__mcmGlobalErrHooks) {
+  (window as unknown as { __mcmGlobalErrHooks?: boolean }).__mcmGlobalErrHooks = true;
+  const persist = (payload: Record<string, unknown>) => {
+    try {
+      window.sessionStorage.setItem("mcm:last-unhandled", JSON.stringify({ at: new Date().toISOString(), route: window.location.pathname + window.location.search, ...payload }));
+    } catch { /* ignore */ }
+  };
+  window.addEventListener("error", (e) => {
+    console.error("[mcm:window-error]", e.message, e.error?.stack ?? "");
+    persist({ kind: "error", message: String(e.message ?? ""), stack: String(e.error?.stack ?? "").split("\n").slice(0, 12).join("\n") });
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    const reason = e.reason as { message?: string; stack?: string } | string | undefined;
+    const msg = typeof reason === "string" ? reason : (reason?.message ?? String(reason ?? ""));
+    const stack = typeof reason === "object" && reason ? String(reason.stack ?? "") : "";
+    console.error("[mcm:unhandled-rejection]", msg, stack);
+    persist({ kind: "unhandledrejection", message: msg, stack: stack.split("\n").slice(0, 12).join("\n") });
+  });
+}
 // Komponen non-kritis di-lazy-load supaya tidak masuk critical bundle
 // dan tidak mengeksekusi efek/polling sebelum halaman utama siap.
 const BuildVersionBadge = lazy(() =>
