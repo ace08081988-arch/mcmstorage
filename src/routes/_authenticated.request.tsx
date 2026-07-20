@@ -1181,8 +1181,16 @@ function SendPrepLinkDialog({
   const [error, setError] = useState<string | null>(null);
   // Nama pegawai dipertahankan lintas refresh per-title supaya user tidak
   // perlu mengetik ulang bila halaman tak sengaja reload atau WebView
-  // di-recreate. Scope per title.id agar tidak bocor antar-judul.
-  const workerNameStorageKey = title ? `mcm:sendPrepLink:workerName:${title.id}` : null;
+  // di-recreate. Scope: `u:<userId>:<title.id>` — dengan begitu draft milik
+  // user berbeda tidak pernah tercampur meski device dipakai bergantian.
+  const { userId: currentUserId } = useCurrentUserId();
+  // Peek sinkron saat mount awal supaya `useState` initializer di bawah
+  // langsung mendapat key yang benar (menghindari flicker "kosong → terisi"
+  // di title yang sama).
+  const uidForKey = currentUserId ?? peekUserIdSync();
+  const workerNameStorageKey = title
+    ? scopedKey("mcm:sendPrepLink:workerName", uidForKey, title.id)
+    : null;
   const [workerName, setWorkerName] = useState<string>(() => {
     if (typeof window === "undefined" || !workerNameStorageKey) return "";
     try { return window.localStorage.getItem(workerNameStorageKey) ?? ""; } catch { return ""; }
