@@ -1736,29 +1736,52 @@ function StokTab({
       </div>
     );
 
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? items.filter(
-        (i) =>
-          i.name.toLowerCase().includes(q) ||
-          (i.category ?? "").toLowerCase().includes(q),
-      )
-    : items;
+  // Pre-computed lowercase index — dihitung sekali per perubahan `items`,
+  // sehingga filter pencarian tidak melakukan `.toLowerCase()` per keystroke.
+  const searchIndex = useMemo(
+    () =>
+      items.map((i) => ({
+        item: i,
+        hay: `${i.name}\u0000${i.category ?? ""}`.toLowerCase(),
+        catKey: (i.category ?? "").trim() || "Tanpa Kategori",
+      })),
+    [items],
+  );
 
-  const groups = new Map<string, WItem[]>();
-  for (const it of filtered) {
-    const key = (it.category ?? "").trim() || "Tanpa Kategori";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(it);
-  }
-  const groupKeys = Array.from(groups.keys()).sort(compareCats);
-  for (const k of groupKeys) {
-    groups.get(k)!.sort((a, b) => a.name.localeCompare(b.name, "id"));
-  }
+  // Defer query supaya input tetap responsif saat daftar besar.
+  const deferredQuery = useDeferredValue(query);
+  const q = deferredQuery.trim().toLowerCase();
 
-  const totalItems = items.length;
-  const totalValue = items.reduce((s, i) => s + i.stock_base * i.avg_cost_per_base, 0);
-  const totalCategories = new Set(items.map((i) => (i.category ?? "").trim() || "Tanpa Kategori")).size;
+  const filtered = useMemo(
+    () => (q ? searchIndex.filter((r) => r.hay.includes(q)).map((r) => r.item) : items),
+    [q, searchIndex, items],
+  );
+
+  const { groups, groupKeys } = useMemo(() => {
+    const g = new Map<string, WItem[]>();
+    for (const it of filtered) {
+      const key = (it.category ?? "").trim() || "Tanpa Kategori";
+      let arr = g.get(key);
+      if (!arr) {
+        arr = [];
+        g.set(key, arr);
+      }
+      arr.push(it);
+    }
+    const keys = Array.from(g.keys()).sort(compareCats);
+    for (const k of keys) g.get(k)!.sort((a, b) => a.name.localeCompare(b.name, "id"));
+    return { groups: g, groupKeys: keys };
+  }, [filtered, categoryOrder]);
+
+  const { totalItems, totalValue, totalCategories } = useMemo(() => {
+    let value = 0;
+    const cats = new Set<string>();
+    for (const i of items) {
+      value += i.stock_base * i.avg_cost_per_base;
+      cats.add((i.category ?? "").trim() || "Tanpa Kategori");
+    }
+    return { totalItems: items.length, totalValue: value, totalCategories: cats.size };
+  }, [items]);
 
   return (
     <>
