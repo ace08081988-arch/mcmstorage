@@ -4577,11 +4577,34 @@ function SendEcerPrepsDialog({
             ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
             : "Terkirim — penjualan tercatat",
       );
-      // Segarkan UI (badge + pindah ke Riwayat Terkirim) segera setelah RPC sukses,
-      // tanpa menunggu proses share WA yang bisa lama pada Web Share API.
-      onSent();
-
+      // Urutan penting: DULU siapkan file + buka WA (memindahkan app ke
+      // background), BARU panggil onSent() saat visibility kembali "visible".
+      // Alasan: kalau onSent() dipanggil duluan, parent memicu refetch tepat
+      // saat WebView Android dipause karena app pindah ke WhatsApp. Fetch
+      // yang menggantung sering ter-resume dengan payload rusak dan memicu
+      // render-throw → error boundary global ("Memuat ulang halaman…").
       // Kirim WA di latar; hasil dilaporkan lewat toast dari notifyShareResult.
+      let sentCalled = false;
+      const callSentOnce = () => {
+        if (sentCalled) return;
+        sentCalled = true;
+        try { onSent(); } catch (err) { console.error("[ecer:onSent]", err); }
+      };
+      // Fallback: kalau share tidak pernah membuka WA (mis. cancel awal),
+      // tetap refresh setelah 4 detik supaya UI tidak stuck.
+      const fallbackTimer = window.setTimeout(callSentOnce, 4000);
+      // Trigger refresh saat user kembali dari WhatsApp — momen paling aman
+      // untuk refetch karena WebView sudah active kembali.
+      const onVis = () => {
+        if (document.visibilityState === "visible") {
+          document.removeEventListener("visibilitychange", onVis);
+          window.clearTimeout(fallbackTimer);
+          // Beri 1 tick supaya WebView benar-benar siap menerima fetch baru.
+          window.setTimeout(callSentOnce, 250);
+        }
+      };
+      document.addEventListener("visibilitychange", onVis);
+
       void (async () => {
         try {
           const files: File[] = [];
@@ -4595,6 +4618,9 @@ function SendEcerPrepsDialog({
           notifyShareResult(res);
         } catch (e) {
           toast.error("Gagal kirim WA: " + ((e as { message?: string })?.message ?? String(e)));
+          // Kalau share error sebelum sempat memicu visibility hidden,
+          // pastikan UI tetap ter-refresh.
+          callSentOnce();
         }
       })();
     } catch (e) {
