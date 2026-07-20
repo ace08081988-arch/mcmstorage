@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
   Boxes,
   Truck,
@@ -1855,77 +1856,11 @@ function StokTab({
               </div>
             </header>
             {!isCollapsed && (
-              <ul className="divide-y">
-                {list.map((i) => (
-                  <li key={i.id} className="p-ms-3 transition-colors hover:bg-muted/30">
-                    <div className="flex items-start justify-between gap-ms-2">
-                      <div className="flex min-w-0 flex-1 gap-ms-2">
-                        {i.image_path ? (
-                          <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
-                        ) : (
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[0.6875rem] text-muted-foreground">📷</div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="line-clamp-2 break-words text-ms-sm font-semibold leading-snug [overflow-wrap:anywhere]">{i.name}</div>
-                          <div className="mt-0.5 text-[0.6875rem] leading-snug text-muted-foreground">
-                            per {i.package_type}
-                            {i.package_type !== "pcs" && ` (${i.package_size} ${humanBaseUnit(i.package_type, i.base_unit)}/kemasan)`}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 gap-ms-1">
-                        <button
-                          onClick={() => setEditing(i)}
-                          className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => remove(i.id, i.name)}
-                          className="rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    </div>
-                    <div className="mt-2 grid grid-cols-3 gap-ms-2 text-[0.6875rem] leading-snug">
-                      <div className="min-w-0 rounded bg-muted/50 p-ms-2">
-                        <div className="truncate text-muted-foreground">Stok</div>
-                        {i.package_type === "botol" ? (
-                          <KartonRumusPopover
-                            botol={i.base_unit === "pcs" ? i.stock_base : i.stock_base / (Number(i.package_size) || 1)}
-                            packageSize={i.package_size}
-                            testId="stok-label-trigger"
-                          >
-                            <span className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</span>
-                          </KartonRumusPopover>
-                        ) : (
-                          <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</div>
-                        )}
-                      </div>
-                      <div className="min-w-0 rounded bg-muted/50 p-ms-2">
-                        <div className="truncate text-muted-foreground">HPP / {humanBaseUnit(i.package_type, i.base_unit)}</div>
-                        <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.avg_cost_per_base)}</div>
-                      </div>
-                      <div className="min-w-0 rounded bg-muted/50 p-ms-2">
-                        <div className="truncate text-muted-foreground">Nilai</div>
-                        <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
-                      </div>
-                    </div>
-                    {i.package_type === "botol" && (
-                      <div className="mt-1.5 text-[0.625rem] text-muted-foreground">
-                        <KartonRumusPopover
-                          botol={i.base_unit === "pcs" ? i.stock_base : i.stock_base / (Number(i.package_size) || 1)}
-                          packageSize={i.package_size}
-                          testId="stok-konversi-trigger"
-                        >
-                          ℹ️ Konversi: 1 karton = {BOTOL_PER_KARTON} botol
-                        </KartonRumusPopover>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <VirtualStokList
+                items={list}
+                onEdit={setEditing}
+                onRemove={(it) => remove(it.id, it.name)}
+              />
             )}
           </section>
         );
@@ -1941,6 +1876,203 @@ function StokTab({
       />
     )}
     </>
+  );
+}
+
+/**
+ * Virtualisasi daftar barang per-kategori.
+ *
+ * Halaman Gudang scroll pada window; kita pakai `useWindowVirtualizer`
+ * dengan `scrollMargin` = offsetTop container agar posisi rendering
+ * mengikuti scroll global. Tinggi tiap kartu bervariasi (nama panjang,
+ * baris konversi karton) sehingga diukur dinamis via `measureElement`.
+ *
+ * Optimasi:
+ * - `overscan` 6 baris supaya smooth di Android WebView.
+ * - Fallback non-virtual untuk daftar pendek (`<= 20`) — overhead
+ *   virtualizer tidak sepadan pada list kecil dan menjaga kompatibilitas
+ *   dengan pengukuran halaman.
+ */
+function VirtualStokList({
+  items,
+  onEdit,
+  onRemove,
+}: {
+  items: WItem[];
+  onEdit: (it: WItem) => void;
+  onRemove: (it: WItem) => void;
+}) {
+  const parentRef = useRef<HTMLDivElement | null>(null);
+
+  if (items.length <= 20) {
+    return (
+      <ul className="divide-y">
+        {items.map((i) => (
+          <StokItemRow key={i.id} item={i} onEdit={onEdit} onRemove={onRemove} />
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <VirtualStokListInner
+      items={items}
+      onEdit={onEdit}
+      onRemove={onRemove}
+      parentRef={parentRef}
+    />
+  );
+}
+
+function VirtualStokListInner({
+  items,
+  onEdit,
+  onRemove,
+  parentRef,
+}: {
+  items: WItem[];
+  onEdit: (it: WItem) => void;
+  onRemove: (it: WItem) => void;
+  parentRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const [scrollMargin, setScrollMargin] = useState(0);
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!el) return;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      setScrollMargin(rect.top + window.scrollY);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [parentRef]);
+
+  const virt = useWindowVirtualizer({
+    count: items.length,
+    estimateSize: () => 168,
+    overscan: 6,
+    scrollMargin,
+  });
+
+  const virtualItems = virt.getVirtualItems();
+  const totalSize = virt.getTotalSize();
+
+  return (
+    <div ref={parentRef} className="relative" style={{ height: totalSize }}>
+      <ul
+        className="divide-y"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          transform: `translateY(${(virtualItems[0]?.start ?? 0) - scrollMargin}px)`,
+        }}
+      >
+        {virtualItems.map((v) => {
+          const it = items[v.index]!;
+          return (
+            <StokItemRow
+              key={it.id}
+              item={it}
+              onEdit={onEdit}
+              onRemove={onRemove}
+              measureRef={virt.measureElement}
+              dataIndex={v.index}
+            />
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function StokItemRow({
+  item: i,
+  onEdit,
+  onRemove,
+  measureRef,
+  dataIndex,
+}: {
+  item: WItem;
+  onEdit: (it: WItem) => void;
+  onRemove: (it: WItem) => void;
+  measureRef?: (node: Element | null) => void;
+  dataIndex?: number;
+}) {
+  return (
+    <li
+      ref={measureRef}
+      data-index={dataIndex}
+      className="p-ms-3 transition-colors hover:bg-muted/30"
+    >
+      <div className="flex items-start justify-between gap-ms-2">
+        <div className="flex min-w-0 flex-1 gap-ms-2">
+          {i.image_path ? (
+            <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
+          ) : (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[0.6875rem] text-muted-foreground">📷</div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="line-clamp-2 break-words text-ms-sm font-semibold leading-snug [overflow-wrap:anywhere]">{i.name}</div>
+            <div className="mt-0.5 text-[0.6875rem] leading-snug text-muted-foreground">
+              per {i.package_type}
+              {i.package_type !== "pcs" && ` (${i.package_size} ${humanBaseUnit(i.package_type, i.base_unit)}/kemasan)`}
+            </div>
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-ms-1">
+          <button
+            onClick={() => onEdit(i)}
+            className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => onRemove(i)}
+            className="rounded border px-ms-2 py-1 text-[0.6875rem] text-destructive hover:bg-destructive/10"
+          >
+            Hapus
+          </button>
+        </div>
+      </div>
+      <div className="mt-2 grid grid-cols-3 gap-ms-2 text-[0.6875rem] leading-snug">
+        <div className="min-w-0 rounded bg-muted/50 p-ms-2">
+          <div className="truncate text-muted-foreground">Stok</div>
+          {i.package_type === "botol" ? (
+            <KartonRumusPopover
+              botol={i.base_unit === "pcs" ? i.stock_base : i.stock_base / (Number(i.package_size) || 1)}
+              packageSize={i.package_size}
+              testId="stok-label-trigger"
+            >
+              <span className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</span>
+            </KartonRumusPopover>
+          ) : (
+            <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</div>
+          )}
+        </div>
+        <div className="min-w-0 rounded bg-muted/50 p-ms-2">
+          <div className="truncate text-muted-foreground">HPP / {humanBaseUnit(i.package_type, i.base_unit)}</div>
+          <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.avg_cost_per_base)}</div>
+        </div>
+        <div className="min-w-0 rounded bg-muted/50 p-ms-2">
+          <div className="truncate text-muted-foreground">Nilai</div>
+          <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
+        </div>
+      </div>
+      {i.package_type === "botol" && (
+        <div className="mt-1.5 text-[0.625rem] text-muted-foreground">
+          <KartonRumusPopover
+            botol={i.base_unit === "pcs" ? i.stock_base : i.stock_base / (Number(i.package_size) || 1)}
+            packageSize={i.package_size}
+            testId="stok-konversi-trigger"
+          >
+            ℹ️ Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+          </KartonRumusPopover>
+        </div>
+      )}
+    </li>
   );
 }
 
