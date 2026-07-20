@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/lib/current-user";
 
 /**
  * Cek ringan apakah user saat ini memiliki peran `admin` via RPC `has_role`.
@@ -20,9 +21,9 @@ export function useAdminStatus() {
 
   useEffect(() => {
     let cancelled = false;
-    void supabase.auth.getUser().then(({ data }) => {
+    void getCurrentUser().then((user) => {
       if (cancelled) return;
-      const uid = data.user?.id ?? null;
+      const uid = user?.id ?? null;
       setUserId(uid);
       if (uid) setSignedOut(false);
       setReady(true);
