@@ -343,6 +343,15 @@ function RootComponent() {
     bootstrapNativePermissions().catch((e) =>
       console.warn("[perm-bootstrap]", e),
     );
+    // Bersihkan draft nama pegawai `mcm:sendPrepLink:workerName:*` yang
+    // tertinggal dari sesi sebelumnya (mis. app di-force-stop sebelum
+    // dialog sempat unmount). Hanya dijalankan sekali per boot.
+    import("@/lib/cleanup-send-prep-link-drafts").then(
+      ({ cleanupSendPrepLinkDrafts }) => {
+        const n = cleanupSendPrepLinkDrafts();
+        if (n > 0) console.info(`[mcm:cleanup] removed ${n} stale workerName draft(s)`);
+      },
+    ).catch(() => {});
     // Aktifkan notifikasi native (FCM) — hanya di APK/native, no-op di web
     import("@/lib/native-push").then(({ startNativePush }) => {
       startNativePush({
