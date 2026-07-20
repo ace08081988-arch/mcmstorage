@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
   Boxes,
   Truck,
