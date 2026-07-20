@@ -1214,6 +1214,33 @@ function SendPrepLinkDialog({
     loadedKeyRef.current = workerNameStorageKey;
   }, [workerNameStorageKey]);
   const [nameError, setNameError] = useState<string | null>(null);
+  // Tear-down saat dialog ditutup: hapus SEMUA state internal + draft nama
+  // pegawai di localStorage. Ini menutup celah "nilai bocor antar-title" —
+  // draft hanya boleh hidup selama dialog terbuka untuk satu title.
+  // Kalau user tidak jadi kirim, saat dibuka lagi field kembali kosong.
+  const prevOpenRef = useRef(open);
+  useEffect(() => {
+    const wasOpen = prevOpenRef.current;
+    prevOpenRef.current = open;
+    if (!wasOpen || open) return;
+    // Transisi terbuka → tertutup: reset state + bersihkan draft.
+    setSession(null);
+    setError(null);
+    setBusy(false);
+    setNameError(null);
+    setPending(null);
+    setWorkerName("");
+    if (typeof window !== "undefined") {
+      try {
+        // Hapus draft untuk key yang barusan aktif (workerNameStorageKey
+        // sudah null saat title=null; pakai loadedKeyRef yang menyimpan
+        // key terakhir yang dihidrasi).
+        const lastKey = loadedKeyRef.current;
+        if (lastKey) window.localStorage.removeItem(lastKey);
+      } catch { /* noop */ }
+    }
+    loadedKeyRef.current = null;
+  }, [open]);
   // Aksi mana yang sedang diproses. Dipakai untuk menampilkan spinner
   // in-place (tanpa mengubah lebar tombol) dan mencuri fokus double-tap
   // — semua tombol aksi lain di-disable selama satu aksi berjalan supaya
