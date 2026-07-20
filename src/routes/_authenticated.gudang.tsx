@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -1736,29 +1736,69 @@ function StokTab({
       </div>
     );
 
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? items.filter(
-        (i) =>
-          i.name.toLowerCase().includes(q) ||
-          (i.category ?? "").toLowerCase().includes(q),
-      )
-    : items;
+  // Pre-computed lowercase index — dihitung sekali per perubahan `items`,
+  // sehingga filter pencarian tidak melakukan `.toLowerCase()` per keystroke.
+  const searchIndex = useMemo(
+    () =>
+      items.map((i) => ({
+        item: i,
+        hay: `${i.name}\u0000${i.category ?? ""}`.toLowerCase(),
+        catKey: (i.category ?? "").trim() || "Tanpa Kategori",
+      })),
+    [items],
+  );
 
-  const groups = new Map<string, WItem[]>();
-  for (const it of filtered) {
-    const key = (it.category ?? "").trim() || "Tanpa Kategori";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(it);
-  }
-  const groupKeys = Array.from(groups.keys()).sort(compareCats);
-  for (const k of groupKeys) {
-    groups.get(k)!.sort((a, b) => a.name.localeCompare(b.name, "id"));
-  }
+  // Defer query supaya input tetap responsif saat daftar besar.
+  const deferredQuery = useDeferredValue(query);
+  const q = deferredQuery.trim().toLowerCase();
 
-  const totalItems = items.length;
-  const totalValue = items.reduce((s, i) => s + i.stock_base * i.avg_cost_per_base, 0);
-  const totalCategories = new Set(items.map((i) => (i.category ?? "").trim() || "Tanpa Kategori")).size;
+  const filtered = useMemo(
+    () => (q ? searchIndex.filter((r) => r.hay.includes(q)).map((r) => r.item) : items),
+    [q, searchIndex, items],
+  );
+
+  const { groups, groupKeys } = useMemo(() => {
+    const g = new Map<string, WItem[]>();
+    for (const it of filtered) {
+      const key = (it.category ?? "").trim() || "Tanpa Kategori";
+      let arr = g.get(key);
+      if (!arr) {
+        arr = [];
+        g.set(key, arr);
+      }
+      arr.push(it);
+    }
+    const keys = Array.from(g.keys()).sort(compareCats);
+    for (const k of keys) g.get(k)!.sort((a, b) => a.name.localeCompare(b.name, "id"));
+    return { groups: g, groupKeys: keys };
+  }, [filtered, categoryOrder]);
+
+  const { totalItems, totalValue, totalCategories } = useMemo(() => {
+    let value = 0;
+    const cats = new Set<string>();
+    for (const i of items) {
+      value += i.stock_base * i.avg_cost_per_base;
+      cats.add((i.category ?? "").trim() || "Tanpa Kategori");
+    }
+    return { totalItems: items.length, totalValue: value, totalCategories: cats.size };
+  }, [items]);
+
+  // Ringkasan per-kategori (memoized) — sebelumnya IIFE per-render/keystroke.
+  const catSummaryRows = useMemo(() => {
+    const m = new Map<string, { count: number; value: number }>();
+    for (const it of items) {
+      const key = (it.category ?? "").trim() || "Tanpa Kategori";
+      const cur = m.get(key) ?? { count: 0, value: 0 };
+      cur.count += 1;
+      cur.value += it.stock_base * it.avg_cost_per_base;
+      m.set(key, cur);
+    }
+    return Array.from(m.entries()).sort((a, b) => {
+      const c = compareCats(a[0], b[0]);
+      if (c !== 0) return c;
+      return b[1].value - a[1].value;
+    });
+  }, [items, categoryOrder]);
 
   return (
     <>
@@ -1793,21 +1833,7 @@ function StokTab({
 
     {/* Ringkasan per kategori (berdasarkan seluruh stok, bukan hasil filter) */}
     {(() => {
-      const catSummary = new Map<string, { count: number; value: number }>();
-      for (const it of items) {
-        const key = (it.category ?? "").trim() || "Tanpa Kategori";
-        const cur = catSummary.get(key) ?? { count: 0, value: 0 };
-        cur.count += 1;
-        cur.value += it.stock_base * it.avg_cost_per_base;
-        catSummary.set(key, cur);
-      }
-      // Urutan ringkasan per-kategori: ikuti master (SSOT Beranda),
-      // baru fallback ke nilai stok terbesar untuk kategori orphan.
-      const rows = Array.from(catSummary.entries()).sort((a, b) => {
-        const c = compareCats(a[0], b[0]);
-        if (c !== 0) return c;
-        return b[1].value - a[1].value;
-      });
+      const rows = catSummaryRows;
       if (rows.length === 0) return null;
       return (
         <section className="mt-3 overflow-hidden rounded-xl border bg-card shadow-sm">
