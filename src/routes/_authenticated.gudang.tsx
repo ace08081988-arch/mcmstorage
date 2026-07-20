@@ -1935,8 +1935,8 @@ function StokTab({
             {!isCollapsed && (
               <VirtualStokList
                 items={list}
-                onEdit={setEditing}
-                onRemove={(it) => remove(it.id, it.name)}
+                onEdit={handleEdit}
+                onRemove={handleRemove}
               />
             )}
           </section>
