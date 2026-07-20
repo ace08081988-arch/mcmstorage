@@ -47,6 +47,8 @@ import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScr
 import { DialogSaveStatus, useSaveStatus, useSaveStatusToast, confirmDiscardIfDirty } from "@/components/DialogSaveStatus";
 import { Field } from "@/components/DialogField";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
+import { peekUserIdSync, scopedKey } from "@/lib/user-scoped-storage";
+import { useCurrentUserId } from "@/lib/current-user";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 import { emitDebtTx } from "@/lib/debt-tx-event";
