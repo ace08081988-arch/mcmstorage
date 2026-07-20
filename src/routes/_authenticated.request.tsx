@@ -1185,8 +1185,20 @@ function SendPrepLinkDialog({
     if (typeof window === "undefined" || !workerNameStorageKey) return "";
     try { return window.localStorage.getItem(workerNameStorageKey) ?? ""; } catch { return ""; }
   });
+  // Ref: kunci mana yang sudah dihidrasi ke `workerName`. Effect save
+  // WAJIB menolak menulis kalau `workerNameStorageKey` berubah tetapi
+  // load-effect belum sempat mengganti `workerName` dengan nilai key
+  // baru — jika tidak, nilai title lama akan menimpa draft title baru
+  // (regresi lintas-title yang dilaporkan QA).
+  const loadedKeyRef = useRef<string | null>(
+    typeof window !== "undefined" && workerNameStorageKey ? workerNameStorageKey : null,
+  );
   useEffect(() => {
     if (typeof window === "undefined" || !workerNameStorageKey) return;
+    // Guard: hanya persist untuk key yang sudah dihidrasi. Saat title
+    // berganti, effect load di bawah yang akan menandai key baru dan
+    // memicu re-run effect ini dengan `workerName` yang benar.
+    if (loadedKeyRef.current !== workerNameStorageKey) return;
     try {
       if (workerName) window.localStorage.setItem(workerNameStorageKey, workerName);
       else window.localStorage.removeItem(workerNameStorageKey);
@@ -1199,6 +1211,7 @@ function SendPrepLinkDialog({
       const saved = window.localStorage.getItem(workerNameStorageKey) ?? "";
       setWorkerName(saved);
     } catch { /* noop */ }
+    loadedKeyRef.current = workerNameStorageKey;
   }, [workerNameStorageKey]);
   const [nameError, setNameError] = useState<string | null>(null);
   // Aksi mana yang sedang diproses. Dipakai untuk menampilkan spinner
