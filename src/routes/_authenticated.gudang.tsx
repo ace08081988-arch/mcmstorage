@@ -1783,6 +1783,23 @@ function StokTab({
     return { totalItems: items.length, totalValue: value, totalCategories: cats.size };
   }, [items]);
 
+  // Ringkasan per-kategori (memoized) — sebelumnya IIFE per-render/keystroke.
+  const catSummaryRows = useMemo(() => {
+    const m = new Map<string, { count: number; value: number }>();
+    for (const it of items) {
+      const key = (it.category ?? "").trim() || "Tanpa Kategori";
+      const cur = m.get(key) ?? { count: 0, value: 0 };
+      cur.count += 1;
+      cur.value += it.stock_base * it.avg_cost_per_base;
+      m.set(key, cur);
+    }
+    return Array.from(m.entries()).sort((a, b) => {
+      const c = compareCats(a[0], b[0]);
+      if (c !== 0) return c;
+      return b[1].value - a[1].value;
+    });
+  }, [items, categoryOrder]);
+
   return (
     <>
     {/* Ringkasan profesional */}
