@@ -1719,16 +1719,22 @@ function StokTab({
   const [editing, setEditing] = useState<WItem | null>(null);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  async function remove(id: string, name: string) {
-    if (!(await confirm({
-      title: "Hapus barang?",
-      description: `Barang "${name}" beserta seluruh pembelian dan penjualan terkait akan dihapus permanen.`,
-      confirmText: "Hapus",
-    }))) return;
-    const { error } = await supabase.from("warehouse_items").delete().eq("id", id);
-    if (error) notifyError(error);
-    else { toast.success("Barang dihapus"); onChanged(); }
-  }
+  // Callback stabil supaya `StokItemRow` yang di-memoize tidak re-render
+  // hanya karena identitas fungsi berubah tiap render.
+  const handleEdit = useCallback((it: WItem) => setEditing(it), []);
+  const handleRemove = useCallback(
+    async (it: WItem) => {
+      if (!(await confirm({
+        title: "Hapus barang?",
+        description: `Barang "${it.name}" beserta seluruh pembelian dan penjualan terkait akan dihapus permanen.`,
+        confirmText: "Hapus",
+      }))) return;
+      const { error } = await supabase.from("warehouse_items").delete().eq("id", it.id);
+      if (error) notifyError(error);
+      else { toast.success("Barang dihapus"); onChanged(); }
+    },
+    [onChanged],
+  );
   if (items.length === 0)
     return (
       <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
