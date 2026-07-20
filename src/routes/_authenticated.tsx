@@ -32,7 +32,7 @@ function AuthLock() {
   const uidRef = useRef<string | null>(null);
   useEffect(() => { uidRef.current = uid; }, [uid]);
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
+    void import("@/lib/current-user").then(({ getCurrentUser }) => getCurrentUser()).then((u) => setUid(u?.id ?? null));
   }, []);
   // Hydrate persisted lock config from Capacitor Preferences into localStorage
   // so settings survive app kill on native devices.
