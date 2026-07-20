@@ -80,6 +80,7 @@ import { Route as AuthenticatedKontakIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lovable.visual.worker-shot-marksent'
 import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
+import { Route as LovableVisualTwoUserDraftsRouteImport } from './routes/lovable.visual.two-user-drafts'
 import { Route as LovableVisualTapTargetsRouteImport } from './routes/lovable.visual.tap-targets'
 import { Route as LovableVisualReadyBadgesSelectorRouteImport } from './routes/lovable.visual.ready-badges-selector'
 import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
@@ -516,6 +517,12 @@ const LovableVisualVoiceNotePlayerRoute =
   LovableVisualVoiceNotePlayerRouteImport.update({
     id: '/lovable/visual/voice-note-player',
     path: '/lovable/visual/voice-note-player',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualTwoUserDraftsRoute =
+  LovableVisualTwoUserDraftsRouteImport.update({
+    id: '/lovable/visual/two-user-drafts',
+    path: '/lovable/visual/two-user-drafts',
     getParentRoute: () => rootRouteImport,
   } as any)
 const LovableVisualTapTargetsRoute = LovableVisualTapTargetsRouteImport.update({
@@ -966,6 +973,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
+  '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
@@ -1093,6 +1101,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
+  '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat': typeof AuthenticatedChatIndexRoute
@@ -1225,6 +1234,7 @@ export interface FileRoutesById {
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
+  '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
@@ -1357,6 +1367,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/produk-list'
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
+    | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
     | '/lovable/visual/worker-shot-marksent'
     | '/chat/'
@@ -1484,6 +1495,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/produk-list'
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
+    | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
     | '/lovable/visual/worker-shot-marksent'
     | '/chat'
@@ -1615,6 +1627,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/produk-list'
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
+    | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
     | '/lovable/visual/worker-shot-marksent'
     | '/_authenticated/chat/'
@@ -1684,6 +1697,7 @@ export interface RootRouteChildren {
   LovableVisualProdukListRoute: typeof LovableVisualProdukListRoute
   LovableVisualReadyBadgesSelectorRoute: typeof LovableVisualReadyBadgesSelectorRoute
   LovableVisualTapTargetsRoute: typeof LovableVisualTapTargetsRoute
+  LovableVisualTwoUserDraftsRoute: typeof LovableVisualTwoUserDraftsRoute
   LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
   LovableVisualWorkerShotMarksentRoute: typeof LovableVisualWorkerShotMarksentRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -2198,6 +2212,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/visual/voice-note-player'
       fullPath: '/lovable/visual/voice-note-player'
       preLoaderRoute: typeof LovableVisualVoiceNotePlayerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/two-user-drafts': {
+      id: '/lovable/visual/two-user-drafts'
+      path: '/lovable/visual/two-user-drafts'
+      fullPath: '/lovable/visual/two-user-drafts'
+      preLoaderRoute: typeof LovableVisualTwoUserDraftsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/visual/tap-targets': {
@@ -2894,6 +2915,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualProdukListRoute: LovableVisualProdukListRoute,
   LovableVisualReadyBadgesSelectorRoute: LovableVisualReadyBadgesSelectorRoute,
   LovableVisualTapTargetsRoute: LovableVisualTapTargetsRoute,
+  LovableVisualTwoUserDraftsRoute: LovableVisualTwoUserDraftsRoute,
   LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
   LovableVisualWorkerShotMarksentRoute: LovableVisualWorkerShotMarksentRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
