@@ -2065,7 +2065,7 @@ function VirtualStokListInner({
   );
 }
 
-function StokItemRow({
+const StokItemRow = memo(function StokItemRow({
   item: i,
   onEdit,
   onRemove,
@@ -2151,9 +2151,9 @@ function StokItemRow({
       )}
     </li>
   );
-}
+});
 
-function Stat({ label, value }: { label: string; value: string }) {
+const Stat = memo(function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col justify-center px-ms-3 py-ms-2 sm:px-ms-4">
       <div className="text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -2162,7 +2162,7 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="text-ms-sm font-semibold tabular-nums">{value}</div>
     </div>
   );
-}
+});
 
 function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item: WItem; uid: string | null; onClose: () => void; onSaved: () => void; onSilentRefresh?: () => void }) {
   const [name, setName] = useState(item.name);
