@@ -213,12 +213,61 @@ function SignedImg({ path, className, alt }: { path: string; className?: string;
 
 function GudangLoadingSkeleton() {
   return (
-    <div className="space-ms-3">
+    <div className="space-ms-3" aria-busy="true" aria-live="polite">
       <div className="h-10 w-full animate-pulse rounded-lg bg-muted/60" />
       <div className="space-ms-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-16 w-full animate-pulse rounded-lg bg-muted/50" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/30 p-3"
+          >
+            <div className="h-10 w-10 shrink-0 animate-pulse rounded-md bg-muted/60" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-2/3 animate-pulse rounded bg-muted/60" />
+              <div className="h-3 w-1/3 animate-pulse rounded bg-muted/50" />
+            </div>
+            <div className="h-6 w-16 animate-pulse rounded bg-muted/50" />
+          </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function GudangLoadProgress({
+  wave1Done,
+  wave2Done,
+}: {
+  wave1Done: boolean;
+  wave2Done: boolean;
+}) {
+  if (wave1Done && wave2Done) return null;
+  const step = wave1Done ? 2 : 1;
+  const pct = wave1Done ? 66 : 25;
+  const label = wave1Done
+    ? "Gel-2 · memuat pembelian, piutang, pesanan…"
+    : "Gel-1 · memuat stok & supplier…";
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs"
+    >
+      <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/50" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+      </span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate font-medium text-foreground/80">{label}</span>
+          <span className="tabular-nums text-muted-foreground">{step}/2</span>
+        </div>
+        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted/60">
+          <div
+            className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -559,6 +608,8 @@ function GudangPage() {
             loading={loading}
           />
         </section>
+
+        <GudangLoadProgress wave1Done={!loading} wave2Done={!secondaryLoading} />
 
         {loading && <GudangLoadingSkeleton />}
         {!loading && secondaryLoading &&
