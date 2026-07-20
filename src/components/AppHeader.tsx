@@ -126,11 +126,12 @@ function useMe() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (cancelled || !data.user) return;
-      const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+      const { getCurrentUser } = await import("@/lib/current-user");
+      const user = await getCurrentUser();
+      if (cancelled || !user) return;
+      const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
       setMe({
-        email: data.user.email ?? null,
+        email: user.email ?? null,
         avatar: (meta.avatar_url as string) || (meta.picture as string) || null,
         name: (meta.full_name as string) || (meta.name as string) || null,
       });
