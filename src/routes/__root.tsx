@@ -54,7 +54,7 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  console.error("[mcm:root-boundary]", error?.name, error?.message, error?.stack);
   const router = useRouter();
   const [attempt, setAttempt] = useState(0);
   const [autoRetrying, setAutoRetrying] = useState(true);
