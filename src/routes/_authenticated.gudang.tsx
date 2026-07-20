@@ -30,6 +30,11 @@ import { normalizeWaNumber } from "@/lib/phone";
 import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
 import { fetchHutangSummary, type HutangSummary } from "@/lib/hutang";
 import {
+  readGudangCache,
+  writeGudangCache,
+  clearGudangCache,
+} from "@/lib/gudang-cache";
+import {
   PageContainer,
   PageHeader,
   PillsTabs,
@@ -325,16 +330,18 @@ function GudangPage() {
         .select("name, position")
         .order("position", { ascending: true }),
     ]);
-    if (w.data) setItems(w.data as WItem[]);
-    if (s.data) setSuppliers(s.data as Supplier[]);
-    if (sa.data) setSales(sa.data as Sale[]);
-    if (wc.data) {
-      const m = new Map<string, number>();
-      (wc.data as { name: string; position: number }[]).forEach((r, i) => {
-        m.set(r.name.trim().toLowerCase(), r.position ?? i);
-      });
-      setCategoryOrder(m);
-    }
+    const nextItems = (w.data as WItem[] | null) ?? [];
+    const nextSuppliers = (s.data as Supplier[] | null) ?? [];
+    const nextSales = (sa.data as Sale[] | null) ?? [];
+    const wcRows = (wc.data as { name: string; position: number }[] | null) ?? [];
+    const nextCatOrder: [string, number][] = wcRows.map((r, i) => [
+      r.name.trim().toLowerCase(),
+      r.position ?? i,
+    ]);
+    if (w.data) setItems(nextItems);
+    if (s.data) setSuppliers(nextSuppliers);
+    if (sa.data) setSales(nextSales);
+    if (wc.data) setCategoryOrder(new Map(nextCatOrder));
     setLoading(false);
 
     // Gelombang 2 — non-blocking. Tetap `await` di dalam fungsi supaya
@@ -347,12 +354,34 @@ function GudangPage() {
       supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
-    if (p.data) setPurchases(p.data as Purchase[]);
-    if (py.data) setPayments(py.data as Payment[]);
-    if (c.data) setCustomers(c.data as Customer[]);
-    if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
-    if (or.data) setOrders(or.data as OrderRequest[]);
+    const nextPurchases = (p.data as Purchase[] | null) ?? [];
+    const nextPayments = (py.data as Payment[] | null) ?? [];
+    const nextCustomers = (c.data as Customer[] | null) ?? [];
+    const nextCustPayments = (cp.data as CustomerPayment[] | null) ?? [];
+    const nextOrders = (or.data as OrderRequest[] | null) ?? [];
+    if (p.data) setPurchases(nextPurchases);
+    if (py.data) setPayments(nextPayments);
+    if (c.data) setCustomers(nextCustomers);
+    if (cp.data) setCustPayments(nextCustPayments);
+    if (or.data) setOrders(nextOrders);
     setSecondaryLoading(false);
+
+    // Simpan snapshot ke sessionStorage supaya masuk halaman Gudang
+    // berikutnya dalam sesi ini bisa langsung memakai data ini
+    // (SWR: paint instan, revalidasi di background).
+    if (uid) {
+      writeGudangCache(uid, {
+        items: nextItems,
+        suppliers: nextSuppliers,
+        sales: nextSales,
+        categoryOrder: nextCatOrder,
+        purchases: nextPurchases,
+        payments: nextPayments,
+        customers: nextCustomers,
+        custPayments: nextCustPayments,
+        orders: nextOrders,
+      });
+    }
   }
 
   async function reloadAll() {
@@ -378,6 +407,22 @@ function GudangPage() {
 
   useEffect(() => {
     if (!uid) return;
+    // Hidrasi sinkron dari cache sesi bila ada — paint instan.
+    // `reloadAllNow` kemudian tetap dijalankan sebagai revalidasi (SWR).
+    const cached = readGudangCache(uid);
+    if (cached) {
+      setItems(cached.items as WItem[]);
+      setSuppliers(cached.suppliers as Supplier[]);
+      setSales(cached.sales as Sale[]);
+      setCategoryOrder(new Map(cached.categoryOrder));
+      setPurchases(cached.purchases as Purchase[]);
+      setPayments(cached.payments as Payment[]);
+      setCustomers(cached.customers as Customer[]);
+      setCustPayments(cached.custPayments as CustomerPayment[]);
+      setOrders(cached.orders as OrderRequest[]);
+      setLoading(false);
+      setSecondaryLoading(false);
+    }
     reloadAllNow();
   }, [uid]);
 
