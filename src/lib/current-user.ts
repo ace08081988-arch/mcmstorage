@@ -32,7 +32,7 @@ function installListeners() {
   if (listenersInstalled) return;
   listenersInstalled = true;
   supabase.auth.onAuthStateChange((event, session) => {
-    if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+    if (event === "SIGNED_OUT") {
       cached = null;
       inflight = null;
       subscribers.forEach((fn) => fn(null));
@@ -57,9 +57,10 @@ export async function getCurrentUser(): Promise<CachedUser> {
   inflight = supabase.auth
     .getUser()
     .then(({ data }) => {
-      cached = data.user ?? null;
-      subscribers.forEach((fn) => fn(cached));
-      return cached;
+      const next: CachedUser = data.user ?? null;
+      cached = next;
+      subscribers.forEach((fn) => fn(next));
+      return next;
     })
     .catch(() => {
       inflight = null;
