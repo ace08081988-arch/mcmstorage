@@ -609,6 +609,8 @@ function GudangPage() {
           />
         </section>
 
+        <GudangLoadProgress wave1Done={!loading} wave2Done={!secondaryLoading} />
+
         {loading && <GudangLoadingSkeleton />}
         {!loading && secondaryLoading &&
           (tab === "jual" || tab === "pesanan" || tab === "hutang" ||
