@@ -1833,21 +1833,7 @@ function StokTab({
 
     {/* Ringkasan per kategori (berdasarkan seluruh stok, bukan hasil filter) */}
     {(() => {
-      const catSummary = new Map<string, { count: number; value: number }>();
-      for (const it of items) {
-        const key = (it.category ?? "").trim() || "Tanpa Kategori";
-        const cur = catSummary.get(key) ?? { count: 0, value: 0 };
-        cur.count += 1;
-        cur.value += it.stock_base * it.avg_cost_per_base;
-        catSummary.set(key, cur);
-      }
-      // Urutan ringkasan per-kategori: ikuti master (SSOT Beranda),
-      // baru fallback ke nilai stok terbesar untuk kategori orphan.
-      const rows = Array.from(catSummary.entries()).sort((a, b) => {
-        const c = compareCats(a[0], b[0]);
-        if (c !== 0) return c;
-        return b[1].value - a[1].value;
-      });
+      const rows = catSummaryRows;
       if (rows.length === 0) return null;
       return (
         <section className="mt-3 overflow-hidden rounded-xl border bg-card shadow-sm">
