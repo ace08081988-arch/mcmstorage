@@ -373,8 +373,9 @@ export function AppSidebar() {
     let cancelled = false;
     (async () => {
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        const uid = userData.user?.id;
+        const { getCurrentUser } = await import("@/lib/current-user");
+        const user = await getCurrentUser();
+        const uid = user?.id;
         if (!uid) return;
         const { data } = await supabase
           .from("profiles")
