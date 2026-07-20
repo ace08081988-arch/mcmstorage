@@ -515,6 +515,11 @@ function GudangPage() {
         </section>
 
         {loading && <GudangLoadingSkeleton />}
+        {!loading && secondaryLoading &&
+          (tab === "jual" || tab === "pesanan" || tab === "hutang" ||
+            tab === "pelanggan" || tab === "piutang" || tab === "riwayat") && (
+          <GudangLoadingSkeleton />
+        )}
 
         {tab === "stok" && (
           <StokTab
@@ -531,12 +536,12 @@ function GudangPage() {
           <BeliTab key={beliPresetKey} suppliers={suppliers} items={items} uid={uid} onChanged={reloadAll} defaultPayment={beliDefaultPayment} />
         )}
         {tab === "jual" && (
-          <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
+          !secondaryLoading && <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "pesanan" && (
-          <PesananTab orders={orders} items={items} customers={customers} uid={uid} onChanged={reloadAll} />
+          !secondaryLoading && <PesananTab orders={orders} items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
-        {tab === "hutang" && (
+        {tab === "hutang" && !secondaryLoading && (
           <HutangTab
             purchases={purchases}
             payments={payments}
@@ -557,9 +562,9 @@ function GudangPage() {
           />
         )}
         {tab === "pelanggan" && (
-          <CustomerTab customers={customers} uid={uid} onChanged={reloadAll} />
+          !secondaryLoading && <CustomerTab customers={customers} uid={uid} onChanged={reloadAll} />
         )}
-        {tab === "piutang" && (
+        {tab === "piutang" && !secondaryLoading && (
           <PiutangTab
             customers={customers}
             sales={sales}
@@ -583,7 +588,7 @@ function GudangPage() {
             }
           />
         )}
-        {tab === "riwayat" && (
+        {tab === "riwayat" && !secondaryLoading && (
           <RiwayatTab
             purchases={purchases}
             sales={sales}
