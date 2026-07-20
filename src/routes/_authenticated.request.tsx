@@ -1241,6 +1241,20 @@ function SendPrepLinkDialog({
     }
     loadedKeyRef.current = null;
   }, [open]);
+  // Unmount cleanup: jika dialog di-unmount karena user navigasi ke
+  // rute lain saat masih terbuka (transisi open→close tidak pernah
+  // terjadi), tetap hapus draft key aktif supaya tidak bocor ke title
+  // berikutnya saat kembali.
+  useEffect(() => {
+    return () => {
+      if (typeof window === "undefined") return;
+      try {
+        const lastKey = loadedKeyRef.current;
+        if (lastKey) window.localStorage.removeItem(lastKey);
+      } catch { /* noop */ }
+      loadedKeyRef.current = null;
+    };
+  }, []);
   // Aksi mana yang sedang diproses. Dipakai untuk menampilkan spinner
   // in-place (tanpa mengubah lebar tombol) dan mencuri fokus double-tap
   // — semua tombol aksi lain di-disable selama satu aksi berjalan supaya
