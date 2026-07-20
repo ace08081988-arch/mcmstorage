@@ -52,8 +52,8 @@ export function CallHost() {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (mounted) setMeId(data.user?.id ?? null);
+    void import("@/lib/current-user").then(({ getCurrentUser }) => getCurrentUser()).then((u) => {
+      if (mounted) setMeId(u?.id ?? null);
     });
     return () => { mounted = false; };
   }, []);

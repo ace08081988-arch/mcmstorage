@@ -63,8 +63,8 @@ export function DebtQuickActions({
 
   useEffect(() => {
     let alive = true;
-    void supabase.auth.getUser().then(({ data }) => {
-      if (alive) setUid(data.user?.id ?? null);
+    void import("@/lib/current-user").then(({ getCurrentUser }) => getCurrentUser()).then((u) => {
+      if (alive) setUid(u?.id ?? null);
     });
     return () => {
       alive = false;

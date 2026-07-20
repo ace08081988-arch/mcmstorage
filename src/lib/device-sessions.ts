@@ -13,6 +13,7 @@
  */
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/lib/current-user";
 
 const DEVICE_ID_KEY = "device-session:device-id:v1";
 // M20: satu-satunya interval untuk sesi perangkat. `heartbeatOnce` sudah
@@ -141,9 +142,9 @@ export function useDeviceSessionGuard() {
 
     // Inisialisasi: user mungkin sudah login saat hook mount.
     void (async () => {
-      const { data } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (cancelled) return;
-      if (data.user) void start(data.user.id);
+      if (user) void start(user.id);
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
