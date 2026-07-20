@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -1719,16 +1719,22 @@ function StokTab({
   const [editing, setEditing] = useState<WItem | null>(null);
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  async function remove(id: string, name: string) {
-    if (!(await confirm({
-      title: "Hapus barang?",
-      description: `Barang "${name}" beserta seluruh pembelian dan penjualan terkait akan dihapus permanen.`,
-      confirmText: "Hapus",
-    }))) return;
-    const { error } = await supabase.from("warehouse_items").delete().eq("id", id);
-    if (error) notifyError(error);
-    else { toast.success("Barang dihapus"); onChanged(); }
-  }
+  // Callback stabil supaya `StokItemRow` yang di-memoize tidak re-render
+  // hanya karena identitas fungsi berubah tiap render.
+  const handleEdit = useCallback((it: WItem) => setEditing(it), []);
+  const handleRemove = useCallback(
+    async (it: WItem) => {
+      if (!(await confirm({
+        title: "Hapus barang?",
+        description: `Barang "${it.name}" beserta seluruh pembelian dan penjualan terkait akan dihapus permanen.`,
+        confirmText: "Hapus",
+      }))) return;
+      const { error } = await supabase.from("warehouse_items").delete().eq("id", it.id);
+      if (error) notifyError(error);
+      else { toast.success("Barang dihapus"); onChanged(); }
+    },
+    [onChanged],
+  );
   if (items.length === 0)
     return (
       <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
@@ -1929,8 +1935,8 @@ function StokTab({
             {!isCollapsed && (
               <VirtualStokList
                 items={list}
-                onEdit={setEditing}
-                onRemove={(it) => remove(it.id, it.name)}
+                onEdit={handleEdit}
+                onRemove={handleRemove}
               />
             )}
           </section>
@@ -2059,7 +2065,7 @@ function VirtualStokListInner({
   );
 }
 
-function StokItemRow({
+const StokItemRow = memo(function StokItemRow({
   item: i,
   onEdit,
   onRemove,
@@ -2145,9 +2151,9 @@ function StokItemRow({
       )}
     </li>
   );
-}
+});
 
-function Stat({ label, value }: { label: string; value: string }) {
+const Stat = memo(function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col justify-center px-ms-3 py-ms-2 sm:px-ms-4">
       <div className="text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -2156,7 +2162,7 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="text-ms-sm font-semibold tabular-nums">{value}</div>
     </div>
   );
-}
+});
 
 function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item: WItem; uid: string | null; onClose: () => void; onSaved: () => void; onSilentRefresh?: () => void }) {
   const [name, setName] = useState(item.name);
