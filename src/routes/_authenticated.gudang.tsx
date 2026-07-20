@@ -30,6 +30,11 @@ import { normalizeWaNumber } from "@/lib/phone";
 import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
 import { fetchHutangSummary, type HutangSummary } from "@/lib/hutang";
 import {
+  readGudangCache,
+  writeGudangCache,
+  clearGudangCache,
+} from "@/lib/gudang-cache";
+import {
   PageContainer,
   PageHeader,
   PillsTabs,
