@@ -291,6 +291,11 @@ function GudangPage() {
   const [custPayments, setCustPayments] = useState<CustomerPayment[]>([]);
   const [orders, setOrders] = useState<OrderRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  // Wave-2 dependent tabs (Hutang/Jual/Pesanan/Pelanggan/Piutang/Riwayat)
+  // baca `purchases/payments/customers/custPayments/orders` yang diambil
+  // di gelombang 2. Sebelum gelombang 2 selesai kita tampilkan skeleton di
+  // tab tersebut supaya user tidak menyimpulkan datanya kosong.
+  const [secondaryLoading, setSecondaryLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
@@ -346,6 +351,7 @@ function GudangPage() {
     if (c.data) setCustomers(c.data as Customer[]);
     if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
     if (or.data) setOrders(or.data as OrderRequest[]);
+    setSecondaryLoading(false);
   }
 
   async function reloadAll() {
