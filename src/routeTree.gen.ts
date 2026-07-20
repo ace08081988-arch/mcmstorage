@@ -94,6 +94,7 @@ import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovabl
 import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.visual.kemasan-badge'
 import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
 import { Route as LovableVisualGudangShellRouteImport } from './routes/lovable.visual.gudang-shell'
+import { Route as LovableVisualEcerReturnFromWaRouteImport } from './routes/lovable.visual.ecer-return-from-wa'
 import { Route as LovableVisualDesignTokensRouteImport } from './routes/lovable.visual.design-tokens'
 import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
 import { Route as LovableVisualChatQueueNetworkDropRouteImport } from './routes/lovable.visual.chat-queue-network-drop'
@@ -597,6 +598,12 @@ const LovableVisualGudangShellRoute =
     path: '/lovable/visual/gudang-shell',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualEcerReturnFromWaRoute =
+  LovableVisualEcerReturnFromWaRouteImport.update({
+    id: '/lovable/visual/ecer-return-from-wa',
+    path: '/lovable/visual/ecer-return-from-wa',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualDesignTokensRoute =
   LovableVisualDesignTokensRouteImport.update({
     id: '/lovable/visual/design-tokens',
@@ -944,6 +951,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
+  '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
@@ -1070,6 +1078,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
+  '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
@@ -1201,6 +1210,7 @@ export interface FileRoutesById {
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
+  '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
@@ -1332,6 +1342,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
+    | '/lovable/visual/ecer-return-from-wa'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
@@ -1458,6 +1469,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
+    | '/lovable/visual/ecer-return-from-wa'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
@@ -1588,6 +1600,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/chat-queue-network-drop'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
+    | '/lovable/visual/ecer-return-from-wa'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
@@ -1656,6 +1669,7 @@ export interface RootRouteChildren {
   LovableVisualChatQueueNetworkDropRoute: typeof LovableVisualChatQueueNetworkDropRoute
   LovableVisualDeliveryHistoryRoute: typeof LovableVisualDeliveryHistoryRoute
   LovableVisualDesignTokensRoute: typeof LovableVisualDesignTokensRoute
+  LovableVisualEcerReturnFromWaRoute: typeof LovableVisualEcerReturnFromWaRoute
   LovableVisualGudangShellRoute: typeof LovableVisualGudangShellRoute
   LovableVisualKartonKonversiRoute: typeof LovableVisualKartonKonversiRoute
   LovableVisualKemasanBadgeRoute: typeof LovableVisualKemasanBadgeRoute
@@ -2284,6 +2298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualGudangShellRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/ecer-return-from-wa': {
+      id: '/lovable/visual/ecer-return-from-wa'
+      path: '/lovable/visual/ecer-return-from-wa'
+      fullPath: '/lovable/visual/ecer-return-from-wa'
+      preLoaderRoute: typeof LovableVisualEcerReturnFromWaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/design-tokens': {
       id: '/lovable/visual/design-tokens'
       path: '/lovable/visual/design-tokens'
@@ -2857,6 +2878,7 @@ const rootRouteChildren: RootRouteChildren = {
     LovableVisualChatQueueNetworkDropRoute,
   LovableVisualDeliveryHistoryRoute: LovableVisualDeliveryHistoryRoute,
   LovableVisualDesignTokensRoute: LovableVisualDesignTokensRoute,
+  LovableVisualEcerReturnFromWaRoute: LovableVisualEcerReturnFromWaRoute,
   LovableVisualGudangShellRoute: LovableVisualGudangShellRoute,
   LovableVisualKartonKonversiRoute: LovableVisualKartonKonversiRoute,
   LovableVisualKemasanBadgeRoute: LovableVisualKemasanBadgeRoute,
