@@ -25,6 +25,7 @@ DECLARE
   v_count_a_all    int;
   v_leaked         int;
   v_plan           text;
+  v_row            record;
 BEGIN
   -- Pinjam dua profile berbeda sebagai user_a / user_b tanpa membuat auth.users.
   SELECT id INTO v_user_a FROM public.profiles ORDER BY created_at LIMIT 1;
