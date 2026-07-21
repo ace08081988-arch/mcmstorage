@@ -19,7 +19,8 @@ DECLARE
   v_user_b uuid;
   v_title_a uuid := gen_random_uuid();
   v_title_b uuid := gen_random_uuid();
-  v_item    uuid := gen_random_uuid();
+  v_item_a  uuid := gen_random_uuid();
+  v_item_b  uuid := gen_random_uuid();
   v_count_a_active int;
   v_count_a_all    int;
   v_leaked         int;
@@ -33,20 +34,28 @@ BEGIN
     RAISE EXCEPTION 'butuh minimal 2 profil di public.profiles untuk menjalankan test ini';
   END IF;
 
+  -- Buat parent rows sesuai FK (warehouse_items -> ecer_titles -> ecer_preparations).
+  INSERT INTO public.warehouse_items (id, user_id, name, package_type, package_size, base_unit)
+  VALUES (v_item_a, v_user_a, 'test-item-a', 'gram', 1, 'g'),
+         (v_item_b, v_user_b, 'test-item-b', 'gram', 1, 'g');
+  INSERT INTO public.ecer_titles (id, user_id, warehouse_item_id, name)
+  VALUES (v_title_a, v_user_a, v_item_a, 'test-title-a'),
+         (v_title_b, v_user_b, v_item_b, 'test-title-b');
+
   -- Seed: 5 aktif + 3 terjual untuk user A, 4 aktif untuk user B.
   INSERT INTO public.ecer_preparations
     (user_id, title_id, warehouse_item_id, actual_grams, created_by, sold_at, created_at)
-  SELECT v_user_a, v_title_a, v_item, 100, 'test', NULL,
+  SELECT v_user_a, v_title_a, v_item_a, 100, 'test', NULL,
          now() - (g || ' min')::interval
   FROM generate_series(1,5) g;
   INSERT INTO public.ecer_preparations
     (user_id, title_id, warehouse_item_id, actual_grams, created_by, sold_at, created_at)
-  SELECT v_user_a, v_title_a, v_item, 100, 'test', now(),
+  SELECT v_user_a, v_title_a, v_item_a, 100, 'test', now(),
          now() - (g || ' min')::interval
   FROM generate_series(6,8) g;
   INSERT INTO public.ecer_preparations
     (user_id, title_id, warehouse_item_id, actual_grams, created_by, sold_at, created_at)
-  SELECT v_user_b, v_title_b, v_item, 100, 'test', NULL,
+  SELECT v_user_b, v_title_b, v_item_b, 100, 'test', NULL,
          now() - (g || ' min')::interval
   FROM generate_series(1,4) g;
 
