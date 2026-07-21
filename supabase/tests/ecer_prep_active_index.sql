@@ -19,6 +19,7 @@ DECLARE
   v_user_b uuid;
   v_title_a uuid := gen_random_uuid();
   v_title_b uuid := gen_random_uuid();
+  v_item    uuid := gen_random_uuid();
   v_count_a_active int;
   v_count_a_all    int;
   v_leaked         int;
@@ -33,14 +34,20 @@ BEGIN
   END IF;
 
   -- Seed: 5 aktif + 3 terjual untuk user A, 4 aktif untuk user B.
-  INSERT INTO public.ecer_preparations (user_id, title_id, sold_at, created_at)
-  SELECT v_user_a, v_title_a, NULL, now() - (g || ' min')::interval
+  INSERT INTO public.ecer_preparations
+    (user_id, title_id, warehouse_item_id, actual_grams, created_by, sold_at, created_at)
+  SELECT v_user_a, v_title_a, v_item, 100, 'test', NULL,
+         now() - (g || ' min')::interval
   FROM generate_series(1,5) g;
-  INSERT INTO public.ecer_preparations (user_id, title_id, sold_at, created_at)
-  SELECT v_user_a, v_title_a, now(), now() - (g || ' min')::interval
+  INSERT INTO public.ecer_preparations
+    (user_id, title_id, warehouse_item_id, actual_grams, created_by, sold_at, created_at)
+  SELECT v_user_a, v_title_a, v_item, 100, 'test', now(),
+         now() - (g || ' min')::interval
   FROM generate_series(6,8) g;
-  INSERT INTO public.ecer_preparations (user_id, title_id, sold_at, created_at)
-  SELECT v_user_b, v_title_b, NULL, now() - (g || ' min')::interval
+  INSERT INTO public.ecer_preparations
+    (user_id, title_id, warehouse_item_id, actual_grams, created_by, sold_at, created_at)
+  SELECT v_user_b, v_title_b, v_item, 100, 'test', NULL,
+         now() - (g || ' min')::interval
   FROM generate_series(1,4) g;
 
   -- Refresh statistik agar planner melihat data segar dari transaksi ini.
