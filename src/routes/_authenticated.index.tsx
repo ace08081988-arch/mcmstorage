@@ -237,9 +237,9 @@ export const Route = createFileRoute("/_authenticated/")({
       { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim via MCM" },
       { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via MCM dalam satu halaman." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.lovable.app/" },
+      { property: "og:url", content: "https://mcmstorage.biz/" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/" }],
   }),
   component: Index,
 });
