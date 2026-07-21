@@ -56,6 +56,7 @@ import { Route as AuthenticatedPengaturanRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPembaruanRouteImport } from './routes/_authenticated.pembaruan'
 import { Route as AuthenticatedPanggilanRouteImport } from './routes/_authenticated.panggilan'
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
+import { Route as AuthenticatedMetrikQueryRouteImport } from './routes/_authenticated.metrik-query'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
@@ -390,6 +391,12 @@ const AuthenticatedNotifikasiRoute = AuthenticatedNotifikasiRouteImport.update({
   path: '/notifikasi',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMetrikQueryRoute =
+  AuthenticatedMetrikQueryRouteImport.update({
+    id: '/metrik-query',
+    path: '/metrik-query',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedLinkPegawaiRoute =
   AuthenticatedLinkPegawaiRouteImport.update({
     id: '/link-pegawai',
@@ -896,6 +903,7 @@ export interface FileRoutesByFullPath {
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/panggilan': typeof AuthenticatedPanggilanRoute
   '/pembaruan': typeof AuthenticatedPembaruanRoute
@@ -1023,6 +1031,7 @@ export interface FileRoutesByTo {
   '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/panggilan': typeof AuthenticatedPanggilanRoute
   '/pembaruan': typeof AuthenticatedPembaruanRoute
@@ -1156,6 +1165,7 @@ export interface FileRoutesById {
   '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/_authenticated/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/_authenticated/panggilan': typeof AuthenticatedPanggilanRoute
   '/_authenticated/pembaruan': typeof AuthenticatedPembaruanRoute
@@ -1290,6 +1300,7 @@ export interface FileRouteTypes {
     | '/kontak'
     | '/label-preview'
     | '/link-pegawai'
+    | '/metrik-query'
     | '/notifikasi'
     | '/panggilan'
     | '/pembaruan'
@@ -1417,6 +1428,7 @@ export interface FileRouteTypes {
     | '/kios'
     | '/label-preview'
     | '/link-pegawai'
+    | '/metrik-query'
     | '/notifikasi'
     | '/panggilan'
     | '/pembaruan'
@@ -1549,6 +1561,7 @@ export interface FileRouteTypes {
     | '/_authenticated/kontak'
     | '/_authenticated/label-preview'
     | '/_authenticated/link-pegawai'
+    | '/_authenticated/metrik-query'
     | '/_authenticated/notifikasi'
     | '/_authenticated/panggilan'
     | '/_authenticated/pembaruan'
@@ -2044,6 +2057,13 @@ declare module '@tanstack/react-router' {
       path: '/notifikasi'
       fullPath: '/notifikasi'
       preLoaderRoute: typeof AuthenticatedNotifikasiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/metrik-query': {
+      id: '/_authenticated/metrik-query'
+      path: '/metrik-query'
+      fullPath: '/metrik-query'
+      preLoaderRoute: typeof AuthenticatedMetrikQueryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/link-pegawai': {
@@ -2729,6 +2749,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
+  AuthenticatedMetrikQueryRoute: typeof AuthenticatedMetrikQueryRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
   AuthenticatedPanggilanRoute: typeof AuthenticatedPanggilanRoute
   AuthenticatedPembaruanRoute: typeof AuthenticatedPembaruanRoute
@@ -2789,6 +2810,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
+  AuthenticatedMetrikQueryRoute: AuthenticatedMetrikQueryRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
   AuthenticatedPanggilanRoute: AuthenticatedPanggilanRoute,
   AuthenticatedPembaruanRoute: AuthenticatedPembaruanRoute,
