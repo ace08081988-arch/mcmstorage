@@ -101,30 +101,28 @@ BEGIN
   SET LOCAL enable_seqscan = off;
 
   -- Hot path A: daftar aktif per user, urut created_at DESC (paginate/LIMIT).
-  SELECT string_agg(line, E'\n') INTO v_plan FROM (
-    SELECT line FROM (
-      SELECT unnest(xpath('//text()',
-        query_to_xml(format(
-          'EXPLAIN (FORMAT XML) SELECT id FROM public.ecer_preparations '
-          'WHERE user_id = %L AND sold_at IS NULL '
-          'ORDER BY created_at DESC LIMIT 20', v_user_a),
-        false, false, ''))::text AS line
-    ) t
-  ) s;
+  v_plan := '';
+  FOR v_row IN EXECUTE format(
+    'EXPLAIN SELECT id FROM public.ecer_preparations '
+    'WHERE user_id = %L AND sold_at IS NULL '
+    'ORDER BY created_at DESC LIMIT 20', v_user_a)
+  LOOP
+    v_plan := v_plan || v_row."QUERY PLAN" || E'\n';
+  END LOOP;
   IF position('idx_ecer_prep_active_per_user' IN v_plan) = 0 THEN
     RAISE EXCEPTION E'FAIL plan per_user: partial index tidak dipakai.\nPlan:\n%', v_plan;
   END IF;
   RAISE NOTICE 'PASS plan pakai idx_ecer_prep_active_per_user';
 
   -- Hot path B: daftar aktif per title (ReadyEcerSection).
-  SELECT string_agg(line, E'\n') INTO v_plan FROM (
-    SELECT unnest(xpath('//text()',
-      query_to_xml(format(
-        'EXPLAIN (FORMAT XML) SELECT id FROM public.ecer_preparations '
-        'WHERE title_id = %L AND sold_at IS NULL '
-        'ORDER BY created_at DESC LIMIT 20', v_title_a),
-      false, false, ''))::text AS line
-  ) t;
+  v_plan := '';
+  FOR v_row IN EXECUTE format(
+    'EXPLAIN SELECT id FROM public.ecer_preparations '
+    'WHERE title_id = %L AND sold_at IS NULL '
+    'ORDER BY created_at DESC LIMIT 20', v_title_a)
+  LOOP
+    v_plan := v_plan || v_row."QUERY PLAN" || E'\n';
+  END LOOP;
   IF position('idx_ecer_prep_active_per_title' IN v_plan) = 0 THEN
     RAISE EXCEPTION E'FAIL plan per_title: partial index tidak dipakai.\nPlan:\n%', v_plan;
   END IF;
