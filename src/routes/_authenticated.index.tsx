@@ -237,9 +237,9 @@ export const Route = createFileRoute("/_authenticated/")({
       { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim via MCM" },
       { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via MCM dalam satu halaman." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.lovable.app/" },
+      { property: "og:url", content: "https://mcmstorage.biz/" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/" }],
   }),
   component: Index,
 });
@@ -1249,6 +1249,7 @@ function Index() {
           <section
             className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-background p-ms-5 shadow-[0_20px_60px_-30px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:p-ms-6"
           >
+            <h2 className="sr-only">Alur Kerja</h2>
             <div className="flex items-center gap-ms-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
               <span className="h-px w-6 bg-primary/60" />
               Alur Kerja
@@ -1299,6 +1300,7 @@ function Index() {
 
           {/* CTA inti: kategori */}
           <section className="space-ms-3">
+            <h2 className="sr-only">Kategori</h2>
             <div className="flex items-center gap-ms-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
               <span className="h-px w-6 bg-primary/50" />
               {categories.length === 0 ? "Mulai" : "Kategori"}

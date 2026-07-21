@@ -18,7 +18,7 @@ export const Route = createFileRoute("/terms")({
           "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/terms" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/terms" }],
   }),
   component: TermsPage,
 });
