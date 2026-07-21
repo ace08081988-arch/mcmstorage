@@ -35,9 +35,10 @@ BEGIN
   END IF;
 
   -- Buat parent rows sesuai FK (warehouse_items -> ecer_titles -> ecer_preparations).
-  INSERT INTO public.warehouse_items (id, user_id, name, package_type, package_size, base_unit)
-  VALUES (v_item_a, v_user_a, 'test-item-a', 'gram', 1, 'g'),
-         (v_item_b, v_user_b, 'test-item-b', 'gram', 1, 'g');
+  INSERT INTO public.warehouse_items
+    (id, user_id, name, package_type, package_size, base_unit, stock_base, avg_cost_per_base)
+  VALUES (v_item_a, v_user_a, 'test-item-a', 'gram', 1, 'g', 100000, 0),
+         (v_item_b, v_user_b, 'test-item-b', 'gram', 1, 'g', 100000, 0);
   INSERT INTO public.ecer_titles (id, user_id, warehouse_item_id, name)
   VALUES (v_title_a, v_user_a, v_item_a, 'test-title-a'),
          (v_title_b, v_user_b, v_item_b, 'test-title-b');
