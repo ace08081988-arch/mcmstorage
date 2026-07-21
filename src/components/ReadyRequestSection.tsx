@@ -18,6 +18,7 @@ import { displayUnit } from "@/lib/unit-label";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
+import { measureQuery, QueryMetricNames } from "@/lib/query-metrics";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
@@ -61,8 +62,10 @@ export function ReadyRequestSection() {
       // Badge "N paket" hanya menghitung prep AKTIF (belum Riwayat Terkirim).
       // Filter dilakukan server-side lewat helper `withActivePrepsFilter`
       // supaya logikanya identik dengan permukaan badge lain.
-      withActivePrepsFilter(
-        sb.from("request_preparations").select("id,title_id,sold_at"),
+      measureQuery(QueryMetricNames.requestPrepAktifBadge, () =>
+        withActivePrepsFilter(
+          sb.from("request_preparations").select("id,title_id,sold_at"),
+        ),
       ),
     ]);
     const titles = (tRes.data ?? []) as Array<{ id: string; name: string }>;

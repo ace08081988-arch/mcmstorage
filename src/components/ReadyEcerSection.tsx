@@ -34,6 +34,7 @@ import { ExternalLink, History, Undo2, ChevronDown } from "lucide-react";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
+import { measureQuery, QueryMetricNames } from "@/lib/query-metrics";
 import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, hydrateSentFromDb, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { consumeSentTabFlag, SHOW_SENT_EVENT } from "@/lib/ready-ecer-sent-nav";
@@ -201,14 +202,17 @@ export function ReadyEcerSection() {
         // "sold_at IS NULL" ke satu tempat (@/lib/prep-active-selector).
         // Kalau definisi "aktif" bergeser di masa depan, satu edit di
         // helper langsung merambat ke semua badge.
-        withActivePrepsFilter(
-          sb.from("ecer_preparations")
-            .select("id,title_id,sold_at,photo_path,location_url,created_at")
-            .in("title_id", titleIds)
-        )
-          .gte("created_at", sinceIso)
-          .order("created_at", { ascending: false })
-          .limit(200),
+        measureQuery(QueryMetricNames.ecerPrepAktif, () =>
+          withActivePrepsFilter(
+            sb.from("ecer_preparations")
+              .select("id,title_id,sold_at,photo_path,location_url,created_at")
+              .in("title_id", titleIds)
+          )
+            .gte("created_at", sinceIso)
+            .order("created_at", { ascending: false })
+            .limit(200),
+          { titles: titleIds.length },
+        ),
         sb
           .from("prep_submissions")
           .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id,sent_at,sent_channel,sent_maps_url")

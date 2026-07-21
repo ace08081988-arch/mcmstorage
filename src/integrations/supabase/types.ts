@@ -2325,6 +2325,36 @@ export type Database = {
         }
         Relationships: []
       }
+      query_metrics: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          id: number
+          meta: Json | null
+          query_name: string
+          row_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms: number
+          id?: number
+          meta?: Json | null
+          query_name: string
+          row_count?: number | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          id?: number
+          meta?: Json | null
+          query_name?: string
+          row_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ready_packages: {
         Row: {
           created_at: string
@@ -3624,6 +3654,20 @@ export type Database = {
           },
         ]
       }
+      query_metrics_daily_v1: {
+        Row: {
+          avg_ms: number | null
+          avg_rows: number | null
+          day: string | null
+          max_ms: number | null
+          p50_ms: number | null
+          p95_ms: number | null
+          query_name: string | null
+          samples: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_contact_by_invite_code: {
@@ -3933,6 +3977,7 @@ export type Database = {
         Args: { _owner_user_id: string; _share_token: string }
         Returns: boolean
       }
+      query_metrics_prune: { Args: never; Returns: undefined }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
