@@ -4443,6 +4443,185 @@ function NewProductDialog({ onClose, onCreated }: {
   );
 }
 
+// ---- Histori pengiriman WA/Chat per judul ecer ----
+type EcerSendEvent = {
+  id: string;
+  created_at: string;
+  party_name: string | null;
+  party_contact: string | null;
+  channel: string;
+  outcome: string;
+  total_amount: number | null;
+  paid_amount: number | null;
+  payment_method: string | null;
+  note: string | null;
+  caption_preview: string | null;
+  photo_count: number;
+  prep_count: number;
+  error_message: string | null;
+};
+
+function EcerSendHistorySection({ titleId }: { titleId: string }) {
+  const [rows, setRows] = useState<EcerSendEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from as any)("ecer_send_events")
+      .select("id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message")
+      .eq("title_id", titleId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (!error) setRows((data ?? []) as EcerSendEvent[]);
+    setLoading(false);
+  }, [titleId]);
+
+  useEffect(() => {
+    if (open && rows.length === 0) void load();
+  }, [open, rows.length, load]);
+
+  useEffect(() => {
+    // Refresh saat window fokus lagi supaya kiriman baru muncul tanpa
+    // reload manual.
+    if (!open) return;
+    const onVis = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [open, load]);
+
+  const channelLabel = (c: string) =>
+    c === "wa" ? "WA" : c === "chat" ? "Chat" : c === "copy" ? "Salin" : c;
+  const outcomeStyle = (o: string) =>
+    o === "sent" ? "bg-success/10 text-success border-success/30"
+    : o === "failed" ? "bg-destructive/10 text-destructive border-destructive/30"
+    : o === "cancelled" ? "bg-warning/10 text-warning border-warning/30"
+    : "bg-muted text-muted-foreground border-border";
+  const outcomeLabel = (o: string) =>
+    o === "sent" ? "Terkirim" : o === "failed" ? "Gagal" : o === "cancelled" ? "Dibatalkan" : o === "copied" ? "Disalin" : o;
+
+  const toggleExpand = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  return (
+    <div className="mt-5 border-t pt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+        aria-expanded={open}
+      >
+        <ChevronRight className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
+        Histori Verifikasi & Pengiriman
+        {rows.length > 0 && (
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium normal-case text-muted-foreground">
+            {rows.length}
+          </span>
+        )}
+        <span className="ml-auto flex items-center gap-ms-1 normal-case">
+          {open && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); void load(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void load(); } }}
+              className="rounded p-ms-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Refresh histori"
+            >
+              🔄
+            </span>
+          )}
+        </span>
+      </button>
+      {open && (
+        <div className="mt-ms-2 space-y-ms-1.5">
+          {loading && rows.length === 0 ? (
+            <div className="text-ms-2xs text-muted-foreground">Memuat histori…</div>
+          ) : rows.length === 0 ? (
+            <div className="rounded-md border border-dashed bg-muted/20 px-ms-3 py-ms-3 text-center text-ms-2xs text-muted-foreground">
+              Belum ada histori pengiriman untuk paket ini.
+            </div>
+          ) : (
+            rows.map((r) => {
+              const isOpen = expanded.has(r.id);
+              const dt = new Date(r.created_at);
+              return (
+                <div key={r.id} className="rounded-md border bg-card px-ms-2 py-ms-1.5 text-ms-2xs">
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(r.id)}
+                    className="flex w-full items-start gap-ms-2 text-left"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-ms-1">
+                        <span className={`rounded border px-1 py-0.5 text-[10px] font-medium ${outcomeStyle(r.outcome)}`}>
+                          {outcomeLabel(r.outcome)}
+                        </span>
+                        <span className="rounded border border-border bg-muted/40 px-1 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {channelLabel(r.channel)}
+                        </span>
+                        <span className="font-medium">{r.party_name || "Tanpa nama"}</span>
+                        {r.party_contact && <span className="text-muted-foreground">· {r.party_contact}</span>}
+                      </div>
+                      <div className="mt-0.5 text-muted-foreground">
+                        {dt.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        {" · "}{r.prep_count} kotak · {r.photo_count} foto
+                        {r.total_amount != null && <> · <span className="tabular-nums">{rupiah(Number(r.total_amount))}</span></>}
+                        {r.payment_method === "hutang" && <> · Hutang</>}
+                        {r.payment_method === "partial" && <> · Bayar sebagian</>}
+                        {r.payment_method === "kas" && <> · Lunas</>}
+                      </div>
+                    </div>
+                    <ChevronRight className={`mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="mt-ms-2 border-t pt-ms-1.5 space-y-ms-1">
+                      {r.note && (
+                        <div>
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Catatan</div>
+                          <div className="whitespace-pre-wrap break-words">{r.note}</div>
+                        </div>
+                      )}
+                      {r.error_message && (
+                        <div>
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-destructive">Error</div>
+                          <div className="text-destructive whitespace-pre-wrap break-words">{r.error_message}</div>
+                        </div>
+                      )}
+                      {r.caption_preview && (
+                        <div>
+                          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Pesan terkirim</div>
+                          <pre className="mt-0.5 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded bg-muted/40 p-ms-1.5 font-sans text-[11px] leading-relaxed">
+{r.caption_preview}
+                          </pre>
+                          <button
+                            type="button"
+                            onClick={() => { void copyText(r.caption_preview ?? ""); toast.success("Pesan disalin"); }}
+                            className="mt-0.5 text-[10px] text-primary hover:underline"
+                          >
+                            Salin pesan
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- Send ecer preps batch to customer ----
 function SendEcerPrepsDialog({
   open, onClose, preps, title, itemName, customers, onSent,
@@ -4455,7 +4634,6 @@ function SendEcerPrepsDialog({
   customers: Array<{ id: string; name: string; contact: string | null }>;
   onSent: () => void;
 }) {
-  void 0;
   const [mode, setMode] = useState<"link" | "manual">(customers.length > 0 ? "link" : "manual");
   const [customerId, setCustomerId] = useState<string>(customers[0]?.id ?? "");
   const [manualName, setManualName] = useState("");
