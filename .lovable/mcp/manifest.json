@@ -122,6 +122,90 @@
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "outputSchema": null
+      },
+      {
+        "name": "preview_pesan_kirim",
+        "title": "Preview pesan WA/Chat",
+        "description": "Menghasilkan preview teks WhatsApp/Chat yang akan dikirim ke pembeli untuk suatu transaksi paket ecer. Formatnya identik dengan yang dipakai tombol 'Verifikasi bayar → Kirim ke pembeli' di aplikasi (judul paket, rincian kotak, total, metode bayar, catatan, lokasi ambil). Gunakan sebelum benar-benar mengirim untuk memastikan copy pesan sesuai.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nama/judul paket, contoh: 'Kacang tanah 500g'."
+            },
+            "unit_label": {
+              "type": "string",
+              "description": "Satuan tampilan per kotak (misal 'g', 'ml', 'pcs'). Default 'g'."
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "grams": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Isi kotak dalam satuan unit_label."
+                  }
+                },
+                "required": [
+                  "grams"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "description": "Daftar kotak/paket yang dikirim (urut sesuai tampilan #1, #2, ...)."
+            },
+            "total_amount": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Total harga (Rupiah)."
+            },
+            "payment_method": {
+              "type": "string",
+              "enum": [
+                "kas",
+                "hutang",
+                "partial"
+              ],
+              "description": "Metode bayar: 'kas' = Lunas, 'hutang' = Piutang penuh, 'partial' = Bayar sebagian."
+            },
+            "paid_amount": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Nominal yang sudah dibayar; wajib > 0 dan < total_amount saat payment_method='partial'."
+            },
+            "customer_name": {
+              "type": "string",
+              "description": "Nama pembeli. Kalau kosong baris 'Untuk:' dihilangkan."
+            },
+            "note": {
+              "type": "string",
+              "description": "Catatan tambahan untuk pembeli."
+            },
+            "location_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "URL Google Maps titik ambil. Kalau kosong blok 'Lokasi ambil' dihilangkan."
+            }
+          },
+          "required": [
+            "title",
+            "items",
+            "total_amount",
+            "payment_method"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
       }
     ]
   }

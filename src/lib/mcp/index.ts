@@ -3,6 +3,7 @@ import whoamiTool from "./tools/whoami";
 import listProdukTool from "./tools/list-produk";
 import ringkasanPiutangTool from "./tools/ringkasan-piutang";
 import detailPiutangTool from "./tools/detail-piutang";
+import previewPesanKirimTool from "./tools/preview-pesan-kirim";
 
 // Issuer OAuth HARUS host Supabase langsung, bukan proxy .lovable.cloud —
 // jika tidak, mcp-js menolak token (RFC 8414 issuer mismatch). Project ref
@@ -20,5 +21,5 @@ export default defineMcp({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
-  tools: [whoamiTool, listProdukTool, ringkasanPiutangTool, detailPiutangTool],
+  tools: [whoamiTool, listProdukTool, ringkasanPiutangTool, detailPiutangTool, previewPesanKirimTool],
 });
