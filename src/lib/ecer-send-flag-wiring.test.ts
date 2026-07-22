@@ -12,9 +12,9 @@ import { resolve } from "node:path";
 const readSrc = (rel: string) =>
   readFileSync(resolve(process.cwd(), rel), "utf8");
 
-/** Ambil blok source tombol "Kirim ke pembeli" — dari `<button` sampai `</button>` terdekat yg mengandung teksnya. */
-function extractKirimButtonBlock(src: string): string | null {
-  const idx = src.indexOf("Kirim ke pembeli");
+/** Ambil blok source tombol "Verifikasi bayar" — dari `<button` sampai `</button>` terdekat yg mengandung teksnya. */
+function extractVerifikasiButtonBlock(src: string): string | null {
+  const idx = src.indexOf("Verifikasi bayar");
   if (idx < 0) return null;
   // Backtrack ke `<button` sebelum idx (abaikan tombol lain yg mungkin ada).
   const start = src.lastIndexOf("<button", idx);
