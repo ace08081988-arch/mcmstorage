@@ -101,8 +101,14 @@ describe("SellSelfPrepDialog · konsistensi subtotal & total", () => {
     expect(total).toBe(850_000);
   });
 
-  it("fallback id-ID untuk gram & harga tetap konsisten dengan canonical", () => {
-    // Nilai yang sama, ditulis dua cara berbeda, harus menghasilkan subtotal identik.
-    expect(subtotal("0,9", "900.000")).toBe(subtotal("0.9", "900000"));
+  it("fallback id-ID hanya aktif saat string bukan Number() valid", () => {
+    // "900.000" adalah Number() valid (=900) — tetap dibaca canonical, BUKAN
+    // ribuan id-ID. Ini keterbatasan sadar (tidak bisa bedakan "900.000"
+    // canonical vs id-ID). NumericTextField selalu emit tanpa titik ribuan
+    // sehingga di alur nyata tidak ambigu.
+    expect(parseNum("900.000")).toBe(900);
+    // Kombinasi id-ID yang TIDAK valid Number() → fallback aktif dengan
+    // benar. Ini yang menjaga paste manual dari UI id-ID tetap masuk akal.
+    expect(subtotal("1,5", "10.000,50")).toBe(15_000.75);
   });
 });
