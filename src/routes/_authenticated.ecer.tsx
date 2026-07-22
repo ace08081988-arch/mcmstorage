@@ -4724,6 +4724,19 @@ function SendEcerPrepsDialog({
           </span>
         </div>
 
+        {/* Ringkasan alur & pilihan channel — memperjelas bahwa WA/Chat baru
+            dipakai setelah pembayaran terverifikasi. */}
+        <div className="mb-3 rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-2xs text-foreground">
+          <div className="mb-1 flex items-center gap-ms-1 font-semibold text-primary">
+            <MessageCircle className="h-3.5 w-3.5" /> Alur kirim ke pembeli
+          </div>
+          <ol className="ml-4 list-decimal space-y-0.5">
+            <li>Pilih pelanggan (dari kontak atau isi manual).</li>
+            <li>Verifikasi pembayaran: <b>Lunas</b>, <b>Hutang</b>, atau <b>Bayar sebagian</b>.</li>
+            <li>Setelah terverifikasi, pesan & foto dikirim ke pembeli via <b>WA/Chat</b>.</li>
+          </ol>
+        </div>
+
         <div className="space-ms-3 text-ms-xs">
           <div className="rounded-md border bg-muted/30 p-ms-2">
             <div className="mb-1 font-semibold">{preps.length} kotak dipilih</div>
