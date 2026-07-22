@@ -77,6 +77,14 @@ function newLine(defaultItemId = ""): Line {
 }
 
 function parseNum(s: string): number {
+  // NumericTextField sudah mengeluarkan canonical string ("0.9", "900000")
+  // dengan titik sebagai pemisah desimal. Jangan pakai parser display id-ID
+  // (yang membuang titik sebagai ribuan) — akan membaca "0.9" jadi 9 dan
+  // menggandakan subtotal 10× lipat.
+  if (s === "" || s == null) return 0;
+  const n = Number(s);
+  if (Number.isFinite(n)) return n;
+  // Fallback: string dari sumber lama masih boleh display id-ID.
   return parsePaymentAmountInput(s);
 }
 
