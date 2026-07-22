@@ -90,6 +90,14 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(block!).toMatch(/onClick=\{\s*\(e\)\s*=>\s*\{[\s\S]*?e\.stopPropagation\(\);[\s\S]*?\}\s*\}/);
   });
 
+  it("ReadyEcerSection: tombol 'Verifikasi bayar' punya badge info alur", () => {
+    const src = readSrc("src/components/ReadyEcerSection.tsx");
+    // Badge ⓘ harus berada di dekat tombol Verifikasi bayar dan berisi
+    // penjelasan alur: verifikasi pembayaran dulu, baru kirim ke pembeli.
+    expect(src).toMatch(/aria-label=["']Info alur verifikasi bayar["']/);
+    expect(src).toMatch(/title=["']Alur: verifikasi pembayaran \(lunas\/hutang\/bayar sebagian\) dulu, baru kirim ke pembeli via WA\/Chat\.["']/);
+  });
+
   it("/ecer: validateSearch mengenali `send` sebagai string opsional", () => {
     const src = readSrc("src/routes/_authenticated.ecer.tsx");
     expect(src).toMatch(
