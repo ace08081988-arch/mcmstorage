@@ -19,6 +19,10 @@ import { formatDecimalID, formatIntegerID } from "@/lib/formatNumberID";
 type FormatState = {
   formatted: string;
   num: number | null;
+  /** Canonical string yang mempertahankan digit desimal LITERAL yang diketik
+   *  (mis. "0.10" bukan "0.1"). Ini yang di-emit ke parent lewat
+   *  onValueChange supaya display ↔ canonical selalu round-trip identik. */
+  canonical: string;
   /** posisi caret ideal setelah re-format (dalam string formatted) */
   caret: number;
 };
@@ -73,12 +77,21 @@ function reformat(
   }
   // Parse jadi number
   let num: number | null = null;
+  let canonical = "";
   if (formatted !== "") {
     const numStr = (intForFmt || "0") + (sawSep ? "." + (decD || "0") : "");
     const parsed = Number(numStr);
     num = Number.isFinite(parsed) ? parsed : null;
+    // Canonical mempertahankan digit desimal apa adanya (termasuk trailing
+    // zeros). Ini yang membedakan dari String(num) — mis. "0,10" → num=0.1
+    // tapi canonical="0.10", sehingga `displayFromCanonical(canonical)`
+    // menghasilkan "0,10" lagi (bukan "0,1"). Menjaga display ↔ canonical
+    // selalu setara.
+    if (num !== null) {
+      canonical = (intForFmt || "0") + (sawSep ? "." + decD : "");
+    }
   }
-  return { formatted, num, caret: newCaret };
+  return { formatted, num, canonical, caret: newCaret };
 }
 
 function displayFromValue(
@@ -89,6 +102,34 @@ function displayFromValue(
   if (!Number.isFinite(value)) return "";
   if (!decimal) return formatIntegerID(value);
   return formatDecimalID(value, maxDecimals, true);
+}
+
+/**
+ * Format canonical string ("1500.5" atau "0.10") jadi display id-ID
+ * dengan JUMLAH DIGIT DESIMAL yang sama persis dengan canonical.
+ *
+ * Beda dari `displayFromValue` yang cuma menerima `number` (di mana
+ * "0.10" sudah kolaps jadi 0.1): fungsi ini melihat string mentah,
+ * hitung berapa digit setelah titik desimal, lalu set
+ * `minimumFractionDigits = maximumFractionDigits = jumlah itu`. Efeknya
+ * display ↔ canonical adalah round-trip identik.
+ */
+export function displayFromCanonicalString(
+  v: string,
+  decimal: boolean,
+  maxDecimals: number,
+): string {
+  if (v === "" || v === null || v === undefined) return "";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "";
+  if (!decimal) return formatIntegerID(n);
+  const dot = v.indexOf(".");
+  const decLen = dot < 0 ? 0 : Math.min(maxDecimals, v.length - dot - 1);
+  const nf = new Intl.NumberFormat("id-ID", {
+    minimumFractionDigits: decLen,
+    maximumFractionDigits: decLen,
+  });
+  return nf.format(n);
 }
 
 export function NumericDraftInput({
@@ -321,14 +362,11 @@ export function NumericTextField({
   const [focused, setFocused] = useState(false);
   const pendingCaret = useRef<number | null>(null);
 
-  // Konversi value (string kanonik "1500.5") jadi formatted display id-ID.
-  const displayFromCanonical = (v: string): string => {
-    if (v === "" || v === null || v === undefined) return "";
-    const n = Number(v);
-    if (!Number.isFinite(n)) return "";
-    if (!decimal) return formatIntegerID(n);
-    return formatDecimalID(n, maxDecimals, true);
-  };
+  // Konversi value canonical ("1500.5" atau "0.10") jadi display id-ID.
+  // Mempertahankan jumlah digit desimal apa adanya supaya display selalu
+  // round-trip identik dengan canonical (0.10 → "0,10", 0.1 → "0,1").
+  const displayFromCanonical = (v: string): string =>
+    displayFromCanonicalString(v, decimal, maxDecimals);
 
   const [raw, setRaw] = useState<string>(() => displayFromCanonical(value));
 
@@ -381,7 +419,7 @@ export function NumericTextField({
         setRaw(state.formatted);
         pendingCaret.current = state.caret;
         onValueChange(
-          state.formatted === "" || state.num === null ? "" : String(state.num),
+          state.formatted === "" || state.num === null ? "" : state.canonical,
         );
       }}
       onChange={(e) => {
@@ -395,7 +433,7 @@ export function NumericTextField({
         setRaw(state.formatted);
         pendingCaret.current = state.caret;
         onValueChange(
-          state.formatted === "" || state.num === null ? "" : String(state.num),
+          state.formatted === "" || state.num === null ? "" : state.canonical,
         );
       }}
       onBlur={() => {
@@ -413,8 +451,11 @@ export function NumericTextField({
           onBlur?.();
           return;
         }
-        onValueChange(String(state.num));
-        setRaw(displayFromCanonical(String(state.num)));
+        // Emit canonical yang mempertahankan digit desimal literal, dan
+        // re-render display dari canonical yang sama → dijamin identik
+        // dengan yang barusan diketik.
+        onValueChange(state.canonical);
+        setRaw(displayFromCanonical(state.canonical));
         onBlur?.();
       }}
       step={effectiveStep}
