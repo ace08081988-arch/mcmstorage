@@ -2815,31 +2815,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   {visibleShots.length}
                 </span>
               )}
+              <span
+                className="inline-flex h-5 shrink-0 cursor-help items-center gap-0.5 whitespace-nowrap rounded-full border bg-background px-1.5 text-ms-2xs font-medium leading-none text-muted-foreground"
+                title={`Cocok via warehouse_item_id + ${title.target_grams}${displayUnitStr} (fallback ukuran/unit).`}
+                aria-label="Info sinkronisasi kiriman pegawai"
+              >
+                ⓘ Sinkron
+              </span>
             </CardTitle>
-            <div className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground">
-              Cocok via warehouse_item_id + {title.target_grams}{displayUnitStr} (fallback ukuran/unit).
-            </div>
           </div>
           <div className="flex items-center gap-ms-1.5">
-            <Button size="sm" variant="outline" onClick={refresh} disabled={refreshing || loading}>
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Segarkan
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                if (!linkedTask?.share_token) {
-                  toast.warning("Belum ada tugas pegawai terhubung ke judul ini. Buat tugas dulu di halaman Tugas.");
-                  return;
-                }
-                setQrOpen(true);
-              }}
-              aria-label="Tampilkan QR link pegawai"
-              title={linkedTask?.share_token ? "Tampilkan QR link pegawai" : "Belum ada tugas terhubung"}
-              className="text-sky-600 hover:text-sky-700"
-            >
-              <QrCode className="h-3.5 w-3.5" /> QR
-            </Button>
             <Button
               size="sm"
               onClick={visibleShots.length === 0 ? undefined : openPaymentVerification}
@@ -2939,28 +2924,42 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                     type="button"
                     onClick={openPaymentVerification}
                     disabled={isWa || isChat}
-                    aria-label={`Verifikasi pembayaran folder (${paths.length} foto) untuk WhatsApp`}
-                    title="Buka dialog penjualan dulu agar stok, lunas/hutang, dan WA tercatat"
-                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-ms-1 rounded bg-[#25D366] px-1.5 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
+                    aria-label={`Kirim ke pembeli — verifikasi pembayaran folder (${paths.length} foto)`}
+                    title="Buka dialog penjualan (WA / MCM Chat dipilih di dialog) supaya stok & lunas/hutang tercatat"
+                    className="inline-flex h-7 w-full items-center justify-center gap-ms-1 rounded bg-success px-1.5 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-success/90 disabled:opacity-50"
                   >
-                    {isWa ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
-                    WA
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openPaymentVerification}
-                    disabled={isWa || isChat}
-                    aria-label={`Verifikasi pembayaran folder (${paths.length} foto) untuk MCM Chat`}
-                    title="Buka dialog penjualan dulu agar stok, lunas/hutang, dan Chat tercatat"
-                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-ms-1 rounded bg-primary px-1.5 text-ms-2xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {isChat ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                    Chat
+                    {(isWa || isChat) ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
+                    Kirim ke pembeli
                   </button>
                 </div>
               </div>
               );
             })}
+          </div>
+        )}
+        {/* Footer aksi jarang-pakai: Segarkan + QR pegawai. Dipindah ke bawah
+            supaya header ramping dan CTA utama tetap dominan. */}
+        {title.warehouse_item_id && (
+          <div className="mt-ms-2 flex items-center justify-end gap-ms-1.5 border-t pt-ms-2">
+            <Button size="sm" variant="ghost" onClick={refresh} disabled={refreshing || loading} className="h-7 text-ms-2xs">
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Segarkan
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                if (!linkedTask?.share_token) {
+                  toast.warning("Belum ada tugas pegawai terhubung ke judul ini. Buat tugas dulu di halaman Tugas.");
+                  return;
+                }
+                setQrOpen(true);
+              }}
+              aria-label="Tampilkan QR link pegawai"
+              title={linkedTask?.share_token ? "Tampilkan QR link pegawai" : "Belum ada tugas terhubung"}
+              className="h-7 text-ms-2xs text-sky-600 hover:text-sky-700"
+            >
+              <QrCode className="h-3.5 w-3.5" /> QR pegawai
+            </Button>
           </div>
         )}
       </CardContent>
@@ -3376,14 +3375,24 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         <div className="text-ms-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
         {prep.note && <div className="line-clamp-2 text-ms-2xs leading-snug text-muted-foreground">{prep.note}</div>}
         {sold && (
-          <div className="rounded-md border border-success/40 bg-success/10 px-1.5 py-1 text-ms-2xs leading-snug text-success dark:text-success">
-            {formatSoldPaymentSummary(
-              prep.sold_payment_method,
-              Number(prep.sold_total ?? 0),
-              Number(prep.sold_paid_amount ?? 0),
+          <details className="group rounded-md border border-success/40 bg-success/10 text-ms-2xs leading-snug text-success dark:text-success">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-1 px-1.5 py-1 font-medium">
+              <span className="truncate">
+                {formatSoldPaymentSummary(
+                  prep.sold_payment_method,
+                  Number(prep.sold_total ?? 0),
+                  Number(prep.sold_paid_amount ?? 0),
+                )}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0 transition-transform group-open:rotate-180" />
+            </summary>
+            {prep.sold_at && (
+              <div className="px-1.5 pb-1 text-ms-2xs opacity-90">
+                {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
+                {prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
+              </div>
             )}
-            {prep.sold_at && <> · {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</>}
-          </div>
+          </details>
         )}
         <div className="flex items-center justify-between gap-ms-1 pt-1">
           {prep.location_url ? (
