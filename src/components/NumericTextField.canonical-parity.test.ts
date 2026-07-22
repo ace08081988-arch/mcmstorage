@@ -42,8 +42,9 @@ describe("NumericTextField · display ↔ canonical parity", () => {
   it("mode integer (decimal=false): titik ribuan, tidak ada koma", () => {
     expect(I("900000")).toBe("900.000");
     expect(I("0")).toBe("0");
-    // Nilai desimal dipotong secara sengaja di mode integer.
-    expect(I("1500.9")).toBe("1.501");
+    // Nilai desimal dipotong (truncate, bukan round) di mode integer —
+    // konsisten dengan `formatIntegerID` (Math.trunc).
+    expect(I("1500.9")).toBe("1.500");
   });
 
   it("kosong / null / non-numerik → string kosong (bukan NaN atau '0')", () => {
