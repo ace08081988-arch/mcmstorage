@@ -749,7 +749,7 @@ export function ReadyEcerSection() {
             // dengan `send=1` supaya SendEcerPrepsDialog terbuka dan owner
             // mengisi metode bayar sebelum WA benar-benar terkirim.
             if (selectedIds.size > 1) {
-              toast.info("Kirim ke pembeli hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
+              toast.info("Verifikasi bayar hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
               return;
             }
             const id = [...selectedIds][0];
