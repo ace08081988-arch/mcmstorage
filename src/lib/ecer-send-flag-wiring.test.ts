@@ -12,11 +12,14 @@ import { resolve } from "node:path";
 const readSrc = (rel: string) =>
   readFileSync(resolve(process.cwd(), rel), "utf8");
 
-/** Ambil blok source tombol "Verifikasi bayar" — tag `<button...>` yang langsung mengandung teksnya. */
+/** Ambil blok source tombol "Verifikasi bayar" — tag `<button...>` yang teks kontennya mengandung teks tersebut (bukan di atribut/onClick). */
 function extractVerifikasiButtonBlock(src: string): string | null {
-  // Cari tag <button yang langsung mengandung teks "Verifikasi bayar" di dalamnya.
-  const m = src.match(/<button[\s\S]*?>\s*[\s\S]*?Verifikasi bayar[\s\S]*?<\/button>/);
-  return m ? m[0] : null;
+  const buttons = src.match(/<button[\s\S]*?<\/button>/g) ?? [];
+  return buttons.find((b) => {
+    // Hapus tag pembuka & atribut supaya hanya teks konten yang dicek.
+    const content = b.replace(/<button[^>]*>/, "").replace(/<\/button>/, "");
+    return content.includes("Verifikasi bayar");
+  }) ?? null;
 }
 
 describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
