@@ -3426,7 +3426,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           <div className="flex gap-0.5">
             {!readOnly && (
               <>
-                <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Kirim ke pembeli via WA" title="Kirim ke pembeli via WA" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3 w-3" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3 w-3" /></Button>
                 <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
                 <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
               </>
