@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter, useNavigate, Link } from "@tanstack/react-router";
 import { NumericTextField } from "@/components/NumericDraftInput";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensure-session";
