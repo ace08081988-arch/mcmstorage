@@ -4459,7 +4459,7 @@ function SendEcerPrepsDialog({
   const [manualName, setManualName] = useState("");
   const [totalStr, setTotalStr] = useState("");
   // Metode bayar WAJIB dipilih eksplisit oleh owner sebelum tombol
-  // "Kirim WA" aktif. Default `null` (belum dipilih) — bukan "kas" —
+  // "Kirim ke pembeli" aktif. Default `null` (belum dipilih) — bukan "kas" —
   // supaya tidak ada jalur tembus dimana owner main tekan Kirim tanpa
   // sadar mencatat penjualan sebagai Lunas.
   const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial" | null>(null);
@@ -4467,9 +4467,9 @@ function SendEcerPrepsDialog({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   // Wizard 3 langkah: 1) Pelanggan  2) Verifikasi bayar  3) Konfirmasi & Kirim.
-  // Tombol WhatsApp hanya muncul di langkah 3, dan hanya aktif setelah
-  // langkah 2 lulus validasi (metode + nominal). Ini mencegah owner
-  // main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
+  // Tombol kirim ke pembeli (WA/Chat) hanya muncul di langkah 3, dan hanya
+  // aktif setelah langkah 2 lulus validasi (metode + nominal). Ini mencegah
+  // owner main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
 
@@ -4587,12 +4587,12 @@ function SendEcerPrepsDialog({
       `Metode: ${methodLabel}`,
       note.trim() ? `Catatan: ${note.trim()}` : null,
       "",
-      "Setelah dikirim, stok, penjualan, dan piutang otomatis tercatat. Foto & caption akan dibagikan ke WhatsApp.",
+      "Setelah dikirim, stok, penjualan, dan piutang otomatis tercatat. Foto & caption akan dibagikan ke pembeli via WA/Chat.",
     ].filter(Boolean).join("\n");
     const ok = await confirm({
       title: "Konfirmasi pembayaran",
       description: summary,
-      confirmText: "Kirim WA",
+      confirmText: "Kirim ke pembeli",
       cancelText: "Periksa lagi",
     });
     if (!ok) return;
@@ -4696,7 +4696,7 @@ function SendEcerPrepsDialog({
             </span>
           </DialogTitle>
           <DialogDescription>
-            {preps.length} kotak dari <b>{title.name}</b> · total {totalQty} {displayUnit(itemName, title.unit_label)}. Stok & piutang otomatis diperbarui.
+            {preps.length} kotak <b>{title.name}</b> · {totalQty} {displayUnit(itemName, title.unit_label)}. Verifikasi pembayaran dulu, lalu kirim pesan + foto ke pembeli via <b>WA/Chat</b>. Stok & piutang tercatat otomatis.
           </DialogDescription>
         </DialogHeader>
 
@@ -4720,8 +4720,21 @@ function SendEcerPrepsDialog({
             2. Verifikasi bayar
           </span>
           <span className={step === 3 ? "text-primary" : "text-muted-foreground"}>
-            3. Kirim WA
+            3. Kirim ke pembeli
           </span>
+        </div>
+
+        {/* Ringkasan alur & pilihan channel — memperjelas bahwa WA/Chat baru
+            dipakai setelah pembayaran terverifikasi. */}
+        <div className="mb-3 rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-2xs text-foreground">
+          <div className="mb-1 flex items-center gap-ms-1 font-semibold text-primary">
+            <MessageCircle className="h-3.5 w-3.5" /> Alur kirim ke pembeli
+          </div>
+          <ol className="ml-4 list-decimal space-y-0.5">
+            <li>Pilih pelanggan (dari kontak atau isi manual).</li>
+            <li>Verifikasi pembayaran: <b>Lunas</b>, <b>Hutang</b>, atau <b>Bayar sebagian</b>.</li>
+            <li>Setelah terverifikasi, pesan & foto dikirim ke pembeli via <b>WA/Chat</b>.</li>
+          </ol>
         </div>
 
         <div className="space-ms-3 text-ms-xs">
@@ -4834,7 +4847,7 @@ function SendEcerPrepsDialog({
             </div>
             {payMethod === null && (
               <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-1.5 text-ms-2xs text-destructive">
-                Pilih Lunas / Hutang / Bayar sebagian dulu — pesan WA baru bisa dikirim setelah metode bayar dicatat.
+                Pilih Lunas / Hutang / Bayar sebagian dulu — pesan ke pembeli (WA/Chat) baru bisa dikirim setelah pembayaran dicatat.
               </div>
             )}
             {payMethod === "partial" && (
@@ -4878,7 +4891,7 @@ function SendEcerPrepsDialog({
           {step === 3 && (
           <>
           {/* Ringkasan hasil verifikasi — read-only. Owner memastikan
-              sekali lagi sebelum WhatsApp dibuka. */}
+              sekali lagi sebelum pesan & foto dikirim ke pembeli via WA/Chat. */}
           <div className="rounded-md border bg-card p-ms-2 text-ms-2xs">
             <div className="mb-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               Ringkasan verifikasi
@@ -4956,10 +4969,10 @@ function SendEcerPrepsDialog({
               <Button size="sm" onClick={handleSend} disabled={!canSend}>
                 {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
                 {payment.method === "hutang"
-                  ? "Kirim WA & catat piutang"
+                  ? "Kirim ke pembeli & catat piutang"
                   : payment.method === "partial"
-                    ? "Kirim WA & catat sebagian"
-                    : "Kirim WA & catat lunas"}
+                    ? "Kirim ke pembeli & catat sebagian"
+                    : "Kirim ke pembeli & catat lunas"}
               </Button>
             )}
           </div>
