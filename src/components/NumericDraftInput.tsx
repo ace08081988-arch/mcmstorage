@@ -362,14 +362,11 @@ export function NumericTextField({
   const [focused, setFocused] = useState(false);
   const pendingCaret = useRef<number | null>(null);
 
-  // Konversi value (string kanonik "1500.5") jadi formatted display id-ID.
-  const displayFromCanonical = (v: string): string => {
-    if (v === "" || v === null || v === undefined) return "";
-    const n = Number(v);
-    if (!Number.isFinite(n)) return "";
-    if (!decimal) return formatIntegerID(n);
-    return formatDecimalID(n, maxDecimals, true);
-  };
+  // Konversi value canonical ("1500.5" atau "0.10") jadi display id-ID.
+  // Mempertahankan jumlah digit desimal apa adanya supaya display selalu
+  // round-trip identik dengan canonical (0.10 → "0,10", 0.1 → "0,1").
+  const displayFromCanonical = (v: string): string =>
+    displayFromCanonicalString(v, decimal, maxDecimals);
 
   const [raw, setRaw] = useState<string>(() => displayFromCanonical(value));
 
@@ -422,7 +419,7 @@ export function NumericTextField({
         setRaw(state.formatted);
         pendingCaret.current = state.caret;
         onValueChange(
-          state.formatted === "" || state.num === null ? "" : String(state.num),
+          state.formatted === "" || state.num === null ? "" : state.canonical,
         );
       }}
       onChange={(e) => {
@@ -436,7 +433,7 @@ export function NumericTextField({
         setRaw(state.formatted);
         pendingCaret.current = state.caret;
         onValueChange(
-          state.formatted === "" || state.num === null ? "" : String(state.num),
+          state.formatted === "" || state.num === null ? "" : state.canonical,
         );
       }}
       onBlur={() => {
@@ -454,8 +451,11 @@ export function NumericTextField({
           onBlur?.();
           return;
         }
-        onValueChange(String(state.num));
-        setRaw(displayFromCanonical(String(state.num)));
+        // Emit canonical yang mempertahankan digit desimal literal, dan
+        // re-render display dari canonical yang sama → dijamin identik
+        // dengan yang barusan diketik.
+        onValueChange(state.canonical);
+        setRaw(displayFromCanonical(state.canonical));
         onBlur?.();
       }}
       step={effectiveStep}
