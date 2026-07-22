@@ -4704,13 +4704,15 @@ function SendEcerPrepsDialog({
           const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
           notifyShareResult(res);
           if (sendEventId) {
+            const failed = res.status === "failed";
+            const cancelled = res.status === "cancelled";
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (supabase as any)
               .from("ecer_send_events")
               .update({
                 photo_count: files.length,
-                outcome: res?.ok === false ? "failed" : "sent",
-                error_message: res?.ok === false ? (res?.reason ?? null) : null,
+                outcome: failed ? "failed" : cancelled ? "cancelled" : "sent",
+                error_message: failed ? (res as { error?: string }).error ?? null : null,
               })
               .eq("id", sendEventId);
           }
