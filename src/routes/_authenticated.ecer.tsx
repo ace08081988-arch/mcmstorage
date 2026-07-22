@@ -4674,7 +4674,7 @@ function SendEcerPrepsDialog({
       <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
-            <Send className="h-4 w-4 text-primary" /> Kirim ke pembeli
+            <Send className="h-4 w-4 text-primary" /> Verifikasi pembayaran
             <span className="ml-auto text-ms-2xs font-normal text-muted-foreground">
               Langkah {step} / 3
             </span>
