@@ -4926,6 +4926,19 @@ function SendEcerPrepsDialog({
               maxLength={500}
             />
           </div>
+          {/* Preview teks WA/Chat — owner bisa periksa isi pesan sebelum
+              menekan konfirmasi. Otomatis update saat catatan/metode diubah. */}
+          <details className="rounded-md border bg-muted/30 p-ms-2 text-ms-2xs" open>
+            <summary className="cursor-pointer select-none font-semibold uppercase tracking-wide text-muted-foreground">
+              Preview pesan WA/Chat
+            </summary>
+            <pre className="mt-ms-1.5 max-h-56 overflow-auto whitespace-pre-wrap break-words rounded bg-background p-ms-1.5 font-sans text-ms-2xs leading-relaxed">
+{buildCaption()}
+            </pre>
+            <div className="mt-ms-1 text-[10px] text-muted-foreground">
+              Foto paket ikut terkirim bersama pesan ini.
+            </div>
+          </details>
           </>
           )}
         </div>
