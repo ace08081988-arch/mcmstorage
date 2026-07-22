@@ -4513,6 +4513,12 @@ function SendEcerPrepsDialog({
     lines.push(...buildPaymentMessageLines(payment));
     if (party.name) lines.push(`Untuk: ${party.name}`);
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
+    const firstLoc = preps.find((p) => (p.location_url ?? "").trim())?.location_url?.trim() ?? null;
+    if (firstLoc) {
+      lines.push("");
+      lines.push("📍 Lokasi ambil:");
+      lines.push(firstLoc);
+    }
     lines.push("");
     lines.push("Terima kasih 🙏");
     return lines.join("\n");
