@@ -4630,6 +4630,40 @@ function SendEcerPrepsDialog({
             ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
             : "Terkirim — penjualan tercatat",
       );
+      // Log histori verifikasi & pengiriman (WA/Chat) per transaksi.
+      // Baris awal ditulis segera setelah RPC sukses supaya jejak tidak
+      // hilang kalau WebView pause saat pindah ke WhatsApp. Outcome +
+      // photo_count di-update setelah share benar-benar berjalan.
+      const captionPreview = (() => {
+        try { return buildCaption(); } catch { return null; }
+      })();
+      let sendEventId: string | null = null;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: evt } = await (supabase as any)
+          .from("ecer_send_events")
+          .insert({
+            title_id: title.id,
+            prep_ids: preps.map((p) => p.id),
+            prep_count: preps.length,
+            customer_id: party.id ?? null,
+            party_name: party.name || null,
+            party_contact: party.contact || null,
+            channel: "wa",
+            outcome: "sent",
+            total_amount: payment.total,
+            paid_amount: payment.method === "partial" ? payment.paid : (payment.method === "kas" ? payment.total : 0),
+            payment_method: payment.method,
+            note: note.trim() || null,
+            caption_preview: captionPreview,
+            photo_count: 0,
+          })
+          .select("id")
+          .single();
+        sendEventId = (evt as { id?: string } | null)?.id ?? null;
+      } catch (logErr) {
+        console.warn("[ecer:send-history] gagal catat awal", logErr);
+      }
       // Urutan penting: DULU siapkan file + buka WA (memindahkan app ke
       // background), BARU panggil onSent() saat visibility kembali "visible".
       // Alasan: kalau onSent() dipanggil duluan, parent memicu refetch tepat
@@ -4669,8 +4703,29 @@ function SendEcerPrepsDialog({
           }
           const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
           notifyShareResult(res);
+          if (sendEventId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+              .from("ecer_send_events")
+              .update({
+                photo_count: files.length,
+                outcome: res?.ok === false ? "failed" : "sent",
+                error_message: res?.ok === false ? (res?.reason ?? null) : null,
+              })
+              .eq("id", sendEventId);
+          }
         } catch (e) {
           toast.error("Gagal kirim WA: " + ((e as { message?: string })?.message ?? String(e)));
+          if (sendEventId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+              .from("ecer_send_events")
+              .update({
+                outcome: "failed",
+                error_message: (e as { message?: string })?.message ?? String(e),
+              })
+              .eq("id", sendEventId);
+          }
           // Kalau share error sebelum sempat memicu visibility hidden,
           // pastikan UI tetap ter-refresh.
           callSentOnce();
