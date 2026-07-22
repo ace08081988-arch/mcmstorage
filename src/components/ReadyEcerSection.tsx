@@ -2622,32 +2622,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Buka modal konfirmasi dulu, lalu redirect otomatis ke /ecer
-                    // dengan flag send=1 supaya dialog pembayaran langsung terbuka.
-                    const withLoc = r.worker_shots.filter((s) => s.location_url).length;
-                    void (async () => {
-                      const ok = await confirmDialog({
-                        title: "Konfirmasi verifikasi bayar",
-                        description:
-                          `Paket: ${r.name}\n` +
-                          `Produk: ${r.product_name} · ${r.target_grams} ${r.unit_label}\n` +
-                          `Jumlah kotak siap: ${r.prep_count}\n` +
-                          `Lokasi terlampir: ${withLoc}/${r.worker_shots.length} kotak\n\n` +
-                          `Setelah ini Anda akan diarahkan otomatis ke halaman /ecer untuk verifikasi pembayaran.\n\n` +
-                          `Langkah di halaman verifikasi:\n` +
-                          `1. Pilih metode pembayaran (Lunas / Hutang / Bayar sebagian)\n` +
-                          `2. Periksa lokasi & isi pesan WhatsApp\n` +
-                          `3. Kirim ke pembeli\n\n` +
-                          `Pesan WA baru terkirim setelah pembayaran dicatat.`,
-                        confirmText: "Lanjut ke verifikasi bayar",
-                        cancelText: "Batal",
-                      });
-                      if (!ok) return;
-                      navigate({
-                        to: "/ecer",
-                        search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" },
-                      });
-                    })();
+                    // Pangkas gate: langsung buka halaman detail dengan
+                    // flag send=1. Modal pembayaran akan langsung terbuka
+                    // di /ecer tanpa dialog perantara.
+                    navigate({
+                      to: "/ecer",
+                      search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" },
+                    });
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
                   aria-label={`Verifikasi bayar untuk ${r.prep_count} kotak ${r.name}`}
