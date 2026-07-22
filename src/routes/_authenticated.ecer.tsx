@@ -1572,11 +1572,11 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     autoSendFiredRef.current = true;
     setSelectionMode(true);
     setSelected(new Set(activeNow.map((p) => p.id)));
-    // Buka modal konfirmasi auto-send yang menampilkan ringkasan
-    // (item, judul, jumlah, total gram) + daftar kotak yang bisa
-    // diperluas. Owner harus menekan Lanjut agar dialog pembayaran
-    // benar-benar terbuka.
-    setAutoSendConfirm({ preps: activeNow });
+    // Pangkas gate: langsung buka dialog pembayaran (SendEcerPrepsDialog).
+    // Ringkasan kotak & edit per-berat sudah tersedia di dalam wizard,
+    // jadi modal konfirmasi perantara AutoSendConfirmDialog di-skip agar
+    // alur "Verifikasi bayar" cukup 1 tap → 1 modal → 1 Kirim.
+    setSendOpen(true);
     autoSendPrepsRef.current = activeNow;
     // Ambil harga jual terakhir sebagai estimasi. Query di-scope ke item
     // ini; kalau gagal atau kosong, estimasi cukup disembunyikan.
