@@ -32,5 +32,9 @@ Disallow: /request
 Disallow: /tugas
 Disallow: /diagnostik/
 Disallow: /pos-kasir
+Disallow: /mcp
+Disallow: /.mcp/
+Disallow: /.well-known/
+Disallow: /.lovable/
 
 Sitemap: https://mcmstorage.biz/sitemap.xml
