@@ -3375,14 +3375,24 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         <div className="text-ms-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
         {prep.note && <div className="line-clamp-2 text-ms-2xs leading-snug text-muted-foreground">{prep.note}</div>}
         {sold && (
-          <div className="rounded-md border border-success/40 bg-success/10 px-1.5 py-1 text-ms-2xs leading-snug text-success dark:text-success">
-            {formatSoldPaymentSummary(
-              prep.sold_payment_method,
-              Number(prep.sold_total ?? 0),
-              Number(prep.sold_paid_amount ?? 0),
+          <details className="group rounded-md border border-success/40 bg-success/10 text-ms-2xs leading-snug text-success dark:text-success">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-1 px-1.5 py-1 font-medium">
+              <span className="truncate">
+                {formatSoldPaymentSummary(
+                  prep.sold_payment_method,
+                  Number(prep.sold_total ?? 0),
+                  Number(prep.sold_paid_amount ?? 0),
+                )}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0 transition-transform group-open:rotate-180" />
+            </summary>
+            {prep.sold_at && (
+              <div className="px-1.5 pb-1 text-ms-2xs opacity-90">
+                {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
+                {prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
+              </div>
             )}
-            {prep.sold_at && <> · {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</>}
-          </div>
+          </details>
         )}
         <div className="flex items-center justify-between gap-ms-1 pt-1">
           {prep.location_url ? (
