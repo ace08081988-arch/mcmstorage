@@ -105,6 +105,18 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     );
   });
 
+  it("/ecer: tombol kiriman pegawai punya tooltip/info alur & label konsisten", () => {
+    const src = readSrc("src/routes/_authenticated.ecer.tsx");
+    // Label tombol utama di detail judul harus konsisten: Verifikasi bayar
+    // (bukan Kirim WA mentah), dan harus ada penjelasan alur via title.
+    expect(src).toMatch(/<MessageCircle[^>]*>\s*Verifikasi bayar\s*<\/MessageCircle>/);
+    expect(src).not.toMatch(/<MessageCircle[^>]*>\s*Kirim WA\s*<\/MessageCircle>/);
+    expect(src).toMatch(/aria-label=["']Info alur tombol kiriman pegawai["']/);
+    expect(src).toMatch(
+      /title=["']Verifikasi pembayaran \(lunas\/hutang\/bayar sebagian\) dulu, baru pesan & foto dikirim ke pembeli via WA\/Chat\. Stok & pembayaran tercatat otomatis\.["']/,
+    );
+  });
+
   it("/ecer: send=1 dikonsumsi jadi pendingAutoSend → diteruskan ke TitleDetailView", () => {
     const src = readSrc("src/routes/_authenticated.ecer.tsx");
     expect(src).toMatch(
