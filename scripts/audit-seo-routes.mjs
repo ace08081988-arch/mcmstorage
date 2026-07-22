@@ -17,22 +17,73 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const ROUTES_DIR = join(ROOT, "src/routes");
 const SITEMAP_FILE = join(ROUTES_DIR, "sitemap[.]xml.ts");
 const ROBOTS_FILE = join(ROOT, "public/robots.txt");
+const MCP_MANIFEST_FILE = join(ROOT, ".lovable/mcp/manifest.json");
 
 // Rute yang sengaja tidak diindeks dan tidak perlu di-sitemap.
-// Tambahkan di sini bila ada rute internal/utility baru.
-const ALLOWLIST_NO_SITEMAP = new Set([
+// Tambahkan di sini bila ada rute internal/utility baru. Rute infra MCP/OAuth
+// TIDAK ditambahkan di sini secara manual — mereka diturunkan otomatis dari
+// .lovable/mcp/manifest.json via `getMcpInfraRoutes()`.
+const ALLOWLIST_NO_SITEMAP_STATIC = new Set([
   "/sitemap.xml",
   "/robots.txt",
   "/lovable",
   "/lovable/*",
   "/email/unsubscribe",
-  // MCP server (@lovable.dev/mcp-js) — endpoint infra, bukan halaman publik.
-  "/mcp",
-  "/.mcp/list-tools",
-  "/.well-known/oauth-protected-resource",
-  // Halaman consent OAuth — hanya dipanggil via authorization_id, tidak indexable.
-  "/.lovable/oauth/consent",
 ]);
+
+/**
+ * Turunkan daftar rute infra MCP/OAuth dari manifest server MCP. Nilainya
+ * dipakai untuk (a) memperluas allowlist audit dan (b) memastikan robots.txt
+ * mem-Disallow prefix yang benar — tanpa perlu diedit manual saat mount
+ * path MCP berubah.
+ *
+ * Mengembalikan { allowlist: string[], robotsPrefixes: string[] }.
+ * Aman dipanggil sebelum manifest ada (mis. dev pertama): mengembalikan
+ * default konvensi @lovable.dev/mcp-js (/mcp + companion routes).
+ */
+export function getMcpInfraRoutes(manifestSrc) {
+  let base = "/mcp";
+  let metadata = "/.well-known/oauth-protected-resource";
+  let consent = "/.lovable/oauth/consent";
+  if (manifestSrc) {
+    try {
+      const m = JSON.parse(manifestSrc);
+      if (typeof m.path === "string" && m.path.startsWith("/")) base = m.path;
+      if (typeof m.metadata_path === "string" && m.metadata_path.startsWith("/")) {
+        metadata = m.metadata_path;
+      }
+      if (typeof m.consent_path === "string" && m.consent_path.startsWith("/")) {
+        consent = m.consent_path;
+      }
+    } catch {
+      // Manifest korup / partial — pakai default konvensi.
+    }
+  }
+  // Companion routes yang di-emit mcpPlugin() di sebelah base:
+  //   <base>              → handler utama
+  //   /.<base>/list-tools → katalog tool
+  //   /.<base>/invoke-tool/$tool → invoker (dinamis, dilewati audit)
+  const baseName = base.replace(/^\//, "");
+  const listTools = `/.${baseName}/list-tools`;
+  const invokeToolPrefix = `/.${baseName}/invoke-tool/`;
+  return {
+    allowlist: [base, listTools, metadata, consent],
+    // Prefix yang harus di-Disallow di robots.txt supaya seluruh companion
+    // route (termasuk invoke-tool dinamis) ikut tertutup.
+    robotsPrefixes: [base, `/.${baseName}/`, "/.well-known/", "/.lovable/"],
+    invokeToolPrefix,
+  };
+}
+
+function readMcpInfraRoutes() {
+  let src = null;
+  try {
+    src = readFileSync(MCP_MANIFEST_FILE, "utf8");
+  } catch {
+    // Manifest belum ada — pakai default.
+  }
+  return getMcpInfraRoutes(src);
+}
 
 /** Cari semua file rute *.tsx / *.ts di src/routes (rekursif). */
 function listRouteFiles(dir) {
@@ -415,11 +466,23 @@ function main() {
   const sitemapPaths = readSitemapPaths();
   const robotsSrc = readFileSync(ROBOTS_FILE, "utf8");
   const robotsRules = extractRobotsDisallows(robotsSrc);
+  const mcpInfra = readMcpInfraRoutes();
+  const ALLOWLIST_NO_SITEMAP = new Set([
+    ...ALLOWLIST_NO_SITEMAP_STATIC,
+    ...mcpInfra.allowlist,
+  ]);
   const files = listRouteFiles(ROUTES_DIR);
   const rows = [];
   const errors = [];
   const fixAdd = new Set();
   const fixRemove = new Set();
+
+  // Pastikan prefix infra MCP/OAuth selalu ada di robots.txt. Kalau salah
+  // satunya hilang (mis. mount path MCP berubah), tambahkan otomatis lewat
+  // jalur autofix yang sama seperti temuan MISSING-ROBOTS.
+  for (const prefix of mcpInfra.robotsPrefixes) {
+    if (!robotsMatches(prefix, robotsRules)) fixAdd.add(prefix);
+  }
 
   for (const file of files) {
     const src = readFileSync(file, "utf8");
