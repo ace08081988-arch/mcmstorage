@@ -4455,6 +4455,7 @@ function SendEcerPrepsDialog({
   customers: Array<{ id: string; name: string; contact: string | null }>;
   onSent: () => void;
 }) {
+  void 0;
   const [mode, setMode] = useState<"link" | "manual">(customers.length > 0 ? "link" : "manual");
   const [customerId, setCustomerId] = useState<string>(customers[0]?.id ?? "");
   const [manualName, setManualName] = useState("");
