@@ -15,6 +15,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundRouteImport } from './routes/refund'
 import { Route as PosKasirRouteImport } from './routes/pos-kasir'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
@@ -77,6 +78,8 @@ import { Route as AuthenticatedBukuAlamatRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedKontakIndexRouteImport } from './routes/_authenticated.kontak.index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lovable.visual.worker-shot-marksent'
@@ -124,6 +127,8 @@ import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
 import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
 import { Route as AuthenticatedAdminEmailStatusRouteImport } from './routes/_authenticated.admin.email-status'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -169,6 +174,11 @@ const RefundRoute = RefundRouteImport.update({
 const PosKasirRoute = PosKasirRouteImport.update({
   id: '/pos-kasir',
   path: '/pos-kasir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -503,6 +513,18 @@ const AuthenticatedAdminDenialLogRoute =
     path: '/admin-denial-log',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedKontakIndexRoute =
   AuthenticatedKontakIndexRouteImport.update({
     id: '/',
@@ -776,6 +798,17 @@ const AuthenticatedAdminEmailStatusRoute =
     path: '/admin/email-status',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -877,12 +910,15 @@ export interface FileRoutesByFullPath {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/mcp': typeof McpRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
@@ -939,6 +975,8 @@ export interface FileRoutesByFullPath {
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/pos-kasir/': typeof PosKasirIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
@@ -1008,11 +1046,14 @@ export interface FileRoutesByTo {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/mcp': typeof McpRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
@@ -1068,6 +1109,8 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/pos-kasir': typeof PosKasirIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
@@ -1139,12 +1182,15 @@ export interface FileRoutesById {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/mcp': typeof McpRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/balas-cepat': typeof AuthenticatedBalasCepatRoute
@@ -1202,6 +1248,8 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/pos-kasir/': typeof PosKasirIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/_authenticated/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
@@ -1274,12 +1322,15 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
+    | '/mcp'
     | '/pos-kasir'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
     | '/trust'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin-denial-log'
     | '/audit'
     | '/balas-cepat'
@@ -1336,6 +1387,8 @@ export interface FileRouteTypes {
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/pos-kasir/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
@@ -1405,11 +1458,14 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
+    | '/mcp'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
     | '/trust'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin-denial-log'
     | '/audit'
     | '/balas-cepat'
@@ -1465,6 +1521,8 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/'
     | '/pos-kasir'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
@@ -1535,12 +1593,15 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
+    | '/mcp'
     | '/pos-kasir'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
     | '/trust'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/admin-denial-log'
     | '/_authenticated/audit'
     | '/_authenticated/balas-cepat'
@@ -1598,6 +1659,8 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/_authenticated/'
     | '/pos-kasir/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/email-status'
     | '/_authenticated/admin/portal-error-log'
     | '/_authenticated/admin/signup-attempts'
@@ -1669,17 +1732,22 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
+  McpRoute: typeof McpRoute
   PosKasirRoute: typeof PosKasirRouteWithChildren
   RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrustRoute: typeof TrustRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiVersionRoute: typeof ApiVersionRoute
   DiagnostikPaketRoute: typeof DiagnostikPaketRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ICodeRoute: typeof ICodeRoute
   TTokenRoute: typeof TTokenRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
@@ -1770,6 +1838,13 @@ declare module '@tanstack/react-router' {
       path: '/pos-kasir'
       fullPath: '/pos-kasir'
       preLoaderRoute: typeof PosKasirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -2206,6 +2281,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminDenialLogRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/kontak/': {
       id: '/_authenticated/kontak/'
       path: '/'
@@ -2534,6 +2623,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/email-status'
       preLoaderRoute: typeof AuthenticatedAdminEmailStatusRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
@@ -2892,17 +2995,23 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
+  McpRoute: McpRoute,
   PosKasirRoute: PosKasirRouteWithChildren,
   RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrustRoute: TrustRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiVersionRoute: ApiVersionRoute,
   DiagnostikPaketRoute: DiagnostikPaketRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ICodeRoute: ICodeRoute,
   TTokenRoute: TTokenRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
