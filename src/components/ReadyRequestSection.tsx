@@ -6,7 +6,6 @@ import {
   Boxes,
   Inbox,
   Loader2,
-  MessageCircle,
   PackagePlus,
   RefreshCw,
   Search,
@@ -180,7 +179,6 @@ export function ReadyRequestSection() {
               refreshing={refreshing}
               onRefresh={handleRefresh}
               onSendWa={() => openSendFlow(r, "wa")}
-              onSendChat={() => openSendFlow(r, "chat")}
             />
           ))}
         </div>
@@ -195,14 +193,12 @@ function RequestCard({
   refreshing,
   onRefresh,
   onSendWa,
-  onSendChat,
 }: {
   row: Row;
   compact: boolean;
   refreshing: boolean;
   onRefresh: () => void;
   onSendWa: () => void;
-  onSendChat: () => void;
 }) {
   const hasPrep = r.prep_count > 0;
   return (
@@ -248,100 +244,53 @@ function RequestCard({
             {r.items_summary || `${r.product_count} produk`}
           </span>
         )}
-        {!compact && (
-          <div className="mt-0.5 flex flex-wrap items-center gap-ms-1">
-            <span className="inline-flex items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium leading-none text-muted-foreground">
-              <span className="h-1 w-1 rounded-full bg-muted-foreground/60" />
-              {hasPrep ? "Ada data" : "Belum ada data"}
-            </span>
-            <span className="inline-flex items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium leading-none text-muted-foreground">
-              <span className="h-1 w-1 rounded-full bg-muted-foreground/60" />
-              Belum dikirim
-            </span>
-            <span
-              className="inline-flex items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium leading-none text-muted-foreground"
-              title={`Cocok: ${r.product_count} produk paket`}
-            >
-              <span className="h-1 w-1 rounded-full bg-primary" />
-              <span className="truncate">Cocok: {r.product_count} produk paket</span>
-            </span>
-          </div>
-        )}
-        {!compact && (
-          <span className="mt-0.5 text-ms-2xs leading-snug">
-            <span
-              className={
-                hasPrep
-                  ? "font-semibold text-success dark:text-success"
-                  : "text-muted-foreground"
-              }
-            >
-              {r.prep_count} paket siap
-            </span>
+        {!compact && hasPrep && (
+          <span className="mt-0.5 text-ms-2xs font-semibold leading-snug text-success dark:text-success">
+            {r.prep_count} paket siap dikirim
           </span>
         )}
       </Link>
 
-      {/* Tombol Kirim WA/Chat — WAJIB lewat dialog verifikasi penjualan
-          (mirror SiapkanSendiri/ecer): keduanya membuka
-          `SendPrepToCustomerDialog` di `/request` via deep-link `send=1`. */}
-      <div className="flex items-center gap-ms-1.5">
+      {/* Satu aksi utama.
+          - Ada paket → "Kirim ke pembeli" (lewat verifikasi bayar di /request?send=wa)
+          - Belum ada → "Buka tugas" + link kecil "Segarkan" (tidak lagi panel besar)
+          Alur verifikasi & tes `send=wa` tetap sama; hanya dua tombol WA/Chat
+          yang digabung. Pilihan Chat tetap tersedia di dialog /request. */}
+      {hasPrep ? (
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSendWa(); }}
-          disabled={!hasPrep}
-          aria-label={`Kirim WA untuk ${r.name}`}
-          title={
-            hasPrep
-              ? "Verifikasi penjualan dulu → lampirkan foto & kirim ke WhatsApp"
-              : "Belum ada paket aktif — buka Request untuk membuat penyiapan"
-          }
-          className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#7ee2a8]"
+          aria-label={`Kirim ${r.prep_count} paket ke pembeli untuk ${r.name}`}
+          title="Verifikasi bayar dulu → kirim ke pembeli"
+          className="inline-flex h-8 w-full items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
         >
-          <Send className="h-3 w-3" /> WA
+          <Send className="h-3 w-3" /> Kirim ke pembeli
         </button>
-        <button
-          type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSendChat(); }}
-          disabled={!hasPrep}
-          aria-label={`Kirim Chat untuk ${r.name}`}
-          title={
-            hasPrep
-              ? "Verifikasi penjualan dulu → lampirkan foto & kirim ke MCM Chat"
-              : "Belum ada paket aktif — buka Request untuk membuat penyiapan"
-          }
-          className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded-md border border-primary/40 bg-primary/10 px-ms-2 text-ms-2xs font-semibold text-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <MessageCircle className="h-3 w-3" /> Chat
-        </button>
-      </div>
-
-      {!compact && !hasPrep && (
-        <div className="flex flex-col items-center gap-ms-1 rounded-md border border-dashed bg-muted/40 px-ms-2 py-ms-2.5 text-center">
-          {refreshing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-          ) : (
-            <Inbox className="h-3.5 w-3.5 text-muted-foreground" />
-          )}
-          <span className="text-ms-2xs font-medium leading-snug text-muted-foreground">
-            {refreshing ? "Memuat kiriman…" : "Belum ada kiriman pegawai"}
-          </span>
-          <span className="text-ms-2xs leading-snug text-muted-foreground">
-            Menunggu foto pegawai — akan muncul otomatis.
-          </span>
+      ) : (
+        <div className="flex items-center gap-ms-1.5">
+          <Link
+            to="/request"
+            search={{ title: r.id, highlight: undefined, send: undefined }}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Buka tugas pegawai untuk ${r.name}`}
+            className="inline-flex h-8 flex-1 items-center justify-center gap-ms-1 rounded-md border border-dashed border-primary/50 bg-primary/5 px-ms-2 text-ms-2xs font-semibold text-primary hover:bg-primary/10"
+          >
+            {refreshing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Inbox className="h-3 w-3" />
+            )}
+            {refreshing ? "Memuat…" : "Menunggu foto pegawai"}
+          </Link>
           <button
             type="button"
             aria-label={`Segarkan kiriman pegawai untuk ${r.name}`}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onRefresh();
-            }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
             disabled={refreshing}
-            className="mt-0.5 inline-flex h-6 items-center gap-ms-1 rounded bg-primary/10 px-ms-2 text-ms-2xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
+            title="Segarkan"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground hover:bg-accent disabled:opacity-50"
           >
-            <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Menyegarkan…" : "Segarkan"}
+            <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
       )}
