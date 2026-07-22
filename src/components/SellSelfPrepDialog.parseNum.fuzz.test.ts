@@ -57,8 +57,8 @@ describe("parseNum · property: output selalu finite number", () => {
 
   it("tidak pernah melempar untuk unicode / karakter aneh", () => {
     fc.assert(
-      fc.property(fc.fullUnicodeString({ maxLength: 40 }), (s) => {
-        const v = parseNum(s);
+      fc.property(fc.string({ unit: "grapheme", maxLength: 40 }), (s: string) => {
+        const v = parseNum(s as string);
         return Number.isFinite(v);
       }),
       { numRuns: 300 },
