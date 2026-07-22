@@ -1050,6 +1050,69 @@ export type Database = {
           },
         ]
       }
+      ecer_send_events: {
+        Row: {
+          caption_preview: string | null
+          channel: string
+          created_at: string
+          customer_id: string | null
+          error_message: string | null
+          id: string
+          note: string | null
+          outcome: string
+          paid_amount: number | null
+          party_contact: string | null
+          party_name: string | null
+          payment_method: string | null
+          photo_count: number
+          prep_count: number
+          prep_ids: string[]
+          title_id: string | null
+          total_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          caption_preview?: string | null
+          channel?: string
+          created_at?: string
+          customer_id?: string | null
+          error_message?: string | null
+          id?: string
+          note?: string | null
+          outcome?: string
+          paid_amount?: number | null
+          party_contact?: string | null
+          party_name?: string | null
+          payment_method?: string | null
+          photo_count?: number
+          prep_count?: number
+          prep_ids?: string[]
+          title_id?: string | null
+          total_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          caption_preview?: string | null
+          channel?: string
+          created_at?: string
+          customer_id?: string | null
+          error_message?: string | null
+          id?: string
+          note?: string | null
+          outcome?: string
+          paid_amount?: number | null
+          party_contact?: string | null
+          party_name?: string | null
+          payment_method?: string | null
+          photo_count?: number
+          prep_count?: number
+          prep_ids?: string[]
+          title_id?: string | null
+          total_amount?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ecer_titles: {
         Row: {
           created_at: string
