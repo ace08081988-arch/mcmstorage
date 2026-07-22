@@ -4467,7 +4467,7 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const load = React.useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from as any)("ecer_send_events")
