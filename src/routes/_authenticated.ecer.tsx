@@ -4696,7 +4696,7 @@ function SendEcerPrepsDialog({
             </span>
           </DialogTitle>
           <DialogDescription>
-            {preps.length} kotak dari <b>{title.name}</b> · total {totalQty} {displayUnit(itemName, title.unit_label)}. Stok & piutang otomatis diperbarui.
+            {preps.length} kotak <b>{title.name}</b> · {totalQty} {displayUnit(itemName, title.unit_label)}. Verifikasi pembayaran dulu, lalu kirim pesan + foto ke pembeli via <b>WA/Chat</b>. Stok & piutang tercatat otomatis.
           </DialogDescription>
         </DialogHeader>
 
@@ -4720,7 +4720,7 @@ function SendEcerPrepsDialog({
             2. Verifikasi bayar
           </span>
           <span className={step === 3 ? "text-primary" : "text-muted-foreground"}>
-            3. Kirim WA
+            3. Kirim ke pembeli
           </span>
         </div>
 
