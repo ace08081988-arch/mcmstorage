@@ -2626,7 +2626,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                   const withLoc = r.worker_shots.filter((s) => s.location_url).length;
                   void (async () => {
                     const ok = await confirmDialog({
-                      title: "Konfirmasi kirim ke pembeli",
+                      title: "Konfirmasi verifikasi bayar",
                       description:
                         `Paket: ${r.name}\n` +
                         `Produk: ${r.product_name} · ${r.target_grams} ${r.unit_label}\n` +
