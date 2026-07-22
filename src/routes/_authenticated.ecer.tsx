@@ -2856,6 +2856,11 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   ? "Buka tugas pegawai untuk judul ini"
                   : `Verifikasi pembayaran untuk ${visibleShots.length} kiriman pegawai`
               }
+              title={
+                visibleShots.length === 0
+                  ? "Belum ada kiriman pegawai. Buka halaman Tugas untuk membuat & bagikan link tugas ke pegawai."
+                  : "Verifikasi pembayaran (lunas/hutang/bayar sebagian) dulu, baru pesan & foto dikirim ke pembeli via WA/Chat. Stok & pembayaran tercatat otomatis."
+              }
               className="bg-success hover:bg-success"
               asChild={visibleShots.length === 0}
             >
@@ -2882,10 +2887,21 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               ) : (
                 <>
                   <MessageCircle className="h-3.5 w-3.5" />
-                  Kirim WA
+                  Verifikasi bayar
                 </>
               )}
             </Button>
+            <span
+              className="inline-flex h-6 w-6 shrink-0 cursor-help items-center justify-center rounded-full border bg-background text-ms-2xs font-medium text-muted-foreground"
+              title={
+                visibleShots.length === 0
+                  ? "Belum ada kiriman pegawai. Tombol ini membuka halaman Tugas untuk membuat & bagikan link tugas ke pegawai."
+                  : "Tombol ini membuka verifikasi pembayaran (lunas/hutang/bayar sebagian). Setelah pembayaran tercatat, pesan & foto dikirim ke pembeli via WA/Chat."
+              }
+              aria-label="Info alur tombol kiriman pegawai"
+            >
+              ⓘ
+            </span>
           </div>
         </div>
       </CardHeader>
