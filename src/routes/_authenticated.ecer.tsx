@@ -1891,6 +1891,18 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           }}
           onSent={() => {
             setSendOpen(false);
+            // Optimistic move ke Riwayat Terkirim: tandai sold_at lokal
+            // untuk semua prep yang dikirim supaya `filterSentPreps`
+            // langsung memindahkan kartu tanpa menunggu refetch/realtime.
+            // Konsisten dengan /request (awaitingSentId) — kartu tidak
+            // pernah tertahan di grid Aktif setelah RPC sukses.
+            const nowIso = new Date().toISOString();
+            const sentIds = new Set(selectedPreps.map((p) => p.id));
+            if (sentIds.size > 0) {
+              setPreps((prev) => prev.map((p) => (
+                sentIds.has(p.id) && !p.sold_at ? { ...p, sold_at: nowIso } : p
+              )));
+            }
             exitSelection();
             void load();
             onTitleUpdated();
@@ -1920,6 +1932,16 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           customers={customers}
           onClose={() => setQuickSendPrep(null)}
           onSent={() => {
+            // Optimistic move ke Riwayat Terkirim untuk quick-send
+            // (satu kartu) — samakan aturan dengan flow seleksi jamak
+            // di atas, supaya konsisten di semua permukaan.
+            if (quickSendPrep) {
+              const nowIso = new Date().toISOString();
+              const id = quickSendPrep.id;
+              setPreps((prev) => prev.map((p) => (
+                p.id === id && !p.sold_at ? { ...p, sold_at: nowIso } : p
+              )));
+            }
             setQuickSendPrep(null);
             void load();
             onTitleUpdated();
