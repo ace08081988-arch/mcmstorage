@@ -2536,52 +2536,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                   }
             }
           />
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                aria-label={`Lihat aturan pencocokan foto untuk ${r.name}`}
-                aria-haspopup="dialog"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                className="flex w-fit min-w-0 max-w-full items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium leading-none text-muted-foreground hover:bg-accent"
-                title={`Cocok: produk + ${r.target_grams}${unit}`}
-              >
-                <span className="h-1 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
-                <span className="min-w-0 flex-1 truncate whitespace-nowrap">
-                  Cocok: produk + {r.target_grams}{unit}
-                </span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="w-64 space-ms-2 p-ms-2.5 text-ms-2xs"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="font-semibold text-foreground">Aturan cocok foto</div>
-              <dl className="space-y-1 text-muted-foreground">
-                <div className="flex gap-ms-1">
-                  <dt className="shrink-0">warehouse_item_id:</dt>
-                  <dd className="break-all font-mono text-foreground/90">{r.warehouse_item_id}</dd>
-                </div>
-                <div className="flex gap-ms-1"><dt>ukuran:</dt><dd className="text-foreground/90">{r.target_grams}</dd></div>
-                <div className="flex gap-ms-1"><dt>unit:</dt><dd className="text-foreground/90">{unit}</dd></div>
-                <div className="flex gap-ms-1">
-                  <dt className="shrink-0">title_id:</dt>
-                  <dd className="break-all font-mono text-foreground/90">{r.id}</dd>
-                </div>
-              </dl>
-              <p className="text-muted-foreground">
-                Fallback: warehouse_item_id + ukuran (unit apa pun), lalu warehouse_item_id saja.
-              </p>
-              <Link
-                to="/ecer"
-                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
-                className="inline-flex items-center gap-ms-1 rounded bg-primary/10 px-ms-2 py-1 text-ms-2xs font-semibold text-primary hover:bg-primary/20"
-              >
-                <ExternalLink className="h-2.5 w-2.5" /> Buka detail item di Ecer
-              </Link>
-            </PopoverContent>
-          </Popover>
+          {/* Popover "Cocok: produk + Xg" dihapus dari kartu Beranda — info
+              sama sudah tampil di baris produk di atas. Aturan pencocokan +
+              ID mentah tetap tersedia di halaman detail /ecer bila diperlukan
+              untuk audit. Ini bagian dari simplifikasi "1 kartu = 1 aksi". */}
           <span className="text-ms-2xs leading-snug">
             <span
               data-testid={`ready-ecer-badge-${r.id}`}
@@ -2606,33 +2564,30 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         )}
 
         {shots.length === 0 ? (
-          <div className="flex flex-col items-center gap-ms-1 rounded-md border border-dashed bg-muted/40 px-ms-2 py-ms-2.5 text-center">
-          {syncing || refreshing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-          ) : (
-            <Inbox className="h-3.5 w-3.5 text-muted-foreground" />
-          )}
-          <span className="text-ms-2xs font-medium leading-snug text-muted-foreground">
-            {syncing || refreshing ? "Memuat kiriman…" : "Belum ada kiriman pegawai"}
-          </span>
-          <span className="text-ms-2xs leading-snug text-muted-foreground">
-            {realtimeStatus === "live"
-              ? "Menunggu foto pegawai — akan muncul otomatis."
-              : realtimeStatus === "offline"
-              ? "Realtime terputus. Tap Segarkan untuk memuat ulang."
-              : "Menyambung ke realtime…"}
-          </span>
-          <button
-            type="button"
-            aria-label={`Segarkan kiriman pegawai untuk ${r.name}`}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
-            disabled={refreshing}
-            className="mt-0.5 inline-flex h-6 items-center gap-ms-1 rounded bg-primary/10 px-ms-2 text-ms-2xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Menyegarkan…" : "Segarkan"}
-          </button>
-        </div>
+          <div className="flex items-center gap-ms-1.5 rounded-md border border-dashed bg-muted/30 px-ms-2 py-1.5">
+            {syncing || refreshing ? (
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-primary" />
+            ) : (
+              <Inbox className="h-3 w-3 shrink-0 text-muted-foreground" />
+            )}
+            <span className="min-w-0 flex-1 truncate text-ms-2xs text-muted-foreground">
+              {syncing || refreshing
+                ? "Memuat kiriman…"
+                : realtimeStatus === "offline"
+                ? "Realtime terputus"
+                : "Menunggu foto pegawai"}
+            </span>
+            <button
+              type="button"
+              aria-label={`Segarkan kiriman pegawai untuk ${r.name}`}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
+              disabled={refreshing}
+              title="Segarkan"
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         ) : (
           <>
           <div className="flex flex-wrap items-center gap-ms-1.5">
