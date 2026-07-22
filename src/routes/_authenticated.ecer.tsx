@@ -4459,7 +4459,7 @@ function SendEcerPrepsDialog({
   const [manualName, setManualName] = useState("");
   const [totalStr, setTotalStr] = useState("");
   // Metode bayar WAJIB dipilih eksplisit oleh owner sebelum tombol
-  // "Kirim WA" aktif. Default `null` (belum dipilih) — bukan "kas" —
+  // "Kirim ke pembeli" aktif. Default `null` (belum dipilih) — bukan "kas" —
   // supaya tidak ada jalur tembus dimana owner main tekan Kirim tanpa
   // sadar mencatat penjualan sebagai Lunas.
   const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial" | null>(null);
@@ -4467,9 +4467,9 @@ function SendEcerPrepsDialog({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   // Wizard 3 langkah: 1) Pelanggan  2) Verifikasi bayar  3) Konfirmasi & Kirim.
-  // Tombol WhatsApp hanya muncul di langkah 3, dan hanya aktif setelah
-  // langkah 2 lulus validasi (metode + nominal). Ini mencegah owner
-  // main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
+  // Tombol kirim ke pembeli (WA/Chat) hanya muncul di langkah 3, dan hanya
+  // aktif setelah langkah 2 lulus validasi (metode + nominal). Ini mencegah
+  // owner main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
 
