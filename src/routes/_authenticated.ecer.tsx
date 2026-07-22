@@ -2946,12 +2946,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                     type="button"
                     onClick={openPaymentVerification}
                     disabled={isWa || isChat}
-                    aria-label={`Kirim ke pembeli — verifikasi pembayaran folder (${paths.length} foto)`}
-                    title="Buka dialog penjualan (WA / MCM Chat dipilih di dialog) supaya stok & lunas/hutang tercatat"
+                    aria-label={`Verifikasi bayar — folder (${paths.length} foto)`}
+                    title="Buka dialog verifikasi pembayaran (WA / MCM Chat dipilih di dialog) supaya stok & lunas/hutang tercatat"
                     className="inline-flex h-7 w-full items-center justify-center gap-ms-1 rounded bg-success px-1.5 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-success/90 disabled:opacity-50"
                   >
                     {(isWa || isChat) ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
-                    Kirim ke pembeli
+                    Verifikasi bayar
                   </button>
                 </div>
               </div>
