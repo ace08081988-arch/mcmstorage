@@ -4847,7 +4847,7 @@ function SendEcerPrepsDialog({
             </div>
             {payMethod === null && (
               <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-1.5 text-ms-2xs text-destructive">
-                Pilih Lunas / Hutang / Bayar sebagian dulu — pesan WA baru bisa dikirim setelah metode bayar dicatat.
+                Pilih Lunas / Hutang / Bayar sebagian dulu — pesan ke pembeli (WA/Chat) baru bisa dikirim setelah pembayaran dicatat.
               </div>
             )}
             {payMethod === "partial" && (
