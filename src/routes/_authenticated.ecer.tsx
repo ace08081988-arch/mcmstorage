@@ -1676,7 +1676,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                 <div className="flex items-center gap-ms-1">
                   <Button size="sm" variant="outline" onClick={exitSelection}>Batal</Button>
                   <Button size="sm" onClick={() => setSendOpen(true)} disabled={selectedPreps.length === 0}>
-                    <Send className="mr-1 h-3.5 w-3.5" /> Kirim ke pembeli ({selectedPreps.length})
+                    <Send className="mr-1 h-3.5 w-3.5" /> Verifikasi bayar ({selectedPreps.length})
                   </Button>
                 </div>
               ) : (
@@ -2946,12 +2946,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                     type="button"
                     onClick={openPaymentVerification}
                     disabled={isWa || isChat}
-                    aria-label={`Kirim ke pembeli — verifikasi pembayaran folder (${paths.length} foto)`}
-                    title="Buka dialog penjualan (WA / MCM Chat dipilih di dialog) supaya stok & lunas/hutang tercatat"
+                    aria-label={`Verifikasi bayar — folder (${paths.length} foto)`}
+                    title="Buka dialog verifikasi pembayaran (WA / MCM Chat dipilih di dialog) supaya stok & lunas/hutang tercatat"
                     className="inline-flex h-7 w-full items-center justify-center gap-ms-1 rounded bg-success px-1.5 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-success/90 disabled:opacity-50"
                   >
                     {(isWa || isChat) ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
-                    Kirim ke pembeli
+                    Verifikasi bayar
                   </button>
                 </div>
               </div>
@@ -3426,7 +3426,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           <div className="flex gap-0.5">
             {!readOnly && (
               <>
-                <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Kirim ke pembeli via WA" title="Kirim ke pembeli via WA" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3 w-3" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3 w-3" /></Button>
                 <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
                 <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
               </>
@@ -4674,7 +4674,7 @@ function SendEcerPrepsDialog({
       <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
-            <Send className="h-4 w-4 text-primary" /> Kirim ke pembeli
+            <Send className="h-4 w-4 text-primary" /> Verifikasi pembayaran
             <span className="ml-auto text-ms-2xs font-normal text-muted-foreground">
               Langkah {step} / 3
             </span>

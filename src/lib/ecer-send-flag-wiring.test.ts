@@ -12,15 +12,14 @@ import { resolve } from "node:path";
 const readSrc = (rel: string) =>
   readFileSync(resolve(process.cwd(), rel), "utf8");
 
-/** Ambil blok source tombol "Kirim ke pembeli" — dari `<button` sampai `</button>` terdekat yg mengandung teksnya. */
-function extractKirimButtonBlock(src: string): string | null {
-  const idx = src.indexOf("Kirim ke pembeli");
-  if (idx < 0) return null;
-  // Backtrack ke `<button` sebelum idx (abaikan tombol lain yg mungkin ada).
-  const start = src.lastIndexOf("<button", idx);
-  const end = src.indexOf("</button>", idx);
-  if (start < 0 || end < 0) return null;
-  return src.slice(start, end + "</button>".length);
+/** Ambil blok source tombol "Verifikasi bayar" — tag `<button...>` yang teks kontennya mengandung teks tersebut (bukan di atribut/onClick). */
+function extractVerifikasiButtonBlock(src: string): string | null {
+  const buttons = src.match(/<button[\s\S]*?<\/button>/g) ?? [];
+  return buttons.find((b) => {
+    // Hapus tag pembuka & atribut supaya hanya teks konten yang dicek.
+    const content = b.replace(/<button[^>]*>/, "").replace(/<\/button>/, "");
+    return content.includes("Verifikasi bayar");
+  }) ?? null;
 }
 
 describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
@@ -69,22 +68,22 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(src).toMatch(/tidak_dijelaskan/);
   });
 
-  it("ReadyEcerSection: tombol 'Kirim ke pembeli' → navigate('/ecer', { send:'1' }) untuk verifikasi bayar", () => {
+  it("ReadyEcerSection: tombol 'Verifikasi bayar' → navigate('/ecer', { send:'1' }) untuk verifikasi bayar", () => {
     const src = readSrc("src/components/ReadyEcerSection.tsx");
-    const block = extractKirimButtonBlock(src);
-    expect(block, "Tombol 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
+    const block = extractVerifikasiButtonBlock(src);
+    expect(block, "Tombol 'Verifikasi bayar' tidak ditemukan").not.toBeNull();
     // Tombol memanggil confirmDialog dulu, baru navigate ke /ecer dengan send=1.
     expect(block!).toMatch(/confirmDialog\(/);
     expect(block!).toMatch(/navigate\(\s*\{[\s\S]*?to:\s*["']\/ecer["'][\s\S]*?\}\s*\)/);
     expect(block!).toMatch(/send:\s*["']1["']/);
     // Tidak ada tombol WA cepat yang menerobos verifikasi di dashboard row.
-    expect(src).not.toMatch(/Kirim ke pembeli via WA/);
+    expect(src).not.toMatch(/Verifikasi bayar via WA/);
   });
 
   it("ReadyEcerSection: tombol memutus gestur long-press & onClickCapture kartu induk", () => {
     const src = readSrc("src/components/ReadyEcerSection.tsx");
-    const block = extractKirimButtonBlock(src);
-    expect(block, "Tombol 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
+    const block = extractVerifikasiButtonBlock(src);
+    expect(block, "Tombol 'Verifikasi bayar' tidak ditemukan").not.toBeNull();
     // Butuh keduanya: onClick + onPointerDown stopPropagation supaya
     // long-press card & onClickCapture card tidak membatalkan navigasi.
     expect(block!).toMatch(/onPointerDown=\{\s*\(e\)\s*=>\s*e\.stopPropagation\(\)\s*\}/);

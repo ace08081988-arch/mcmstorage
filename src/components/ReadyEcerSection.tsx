@@ -749,7 +749,7 @@ export function ReadyEcerSection() {
             // dengan `send=1` supaya SendEcerPrepsDialog terbuka dan owner
             // mengisi metode bayar sebelum WA benar-benar terkirim.
             if (selectedIds.size > 1) {
-              toast.info("Kirim ke pembeli hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
+              toast.info("Verifikasi bayar hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
               return;
             }
             const id = [...selectedIds][0];
@@ -765,7 +765,7 @@ export function ReadyEcerSection() {
           onBulkChatPick={() => {
             if (selectedIds.size === 0) return;
             if (selectedIds.size > 1) {
-              toast.info("Kirim ke pembeli hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
+              toast.info("Verifikasi bayar hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
               return;
             }
             const id = [...selectedIds][0];
@@ -2626,7 +2626,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                   const withLoc = r.worker_shots.filter((s) => s.location_url).length;
                   void (async () => {
                     const ok = await confirmDialog({
-                      title: "Konfirmasi kirim ke pembeli",
+                      title: "Konfirmasi verifikasi bayar",
                       description:
                         `Paket: ${r.name}\n` +
                         `Produk: ${r.product_name} · ${r.target_grams} ${r.unit_label}\n` +
@@ -2649,11 +2649,11 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                   })();
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
-                aria-label={`Kirim ${r.prep_count} kotak ke pembeli (verifikasi bayar dulu)`}
-                title="Verifikasi lokasi dan pesan WA dulu, lalu kirim ke WhatsApp"
+                aria-label={`Verifikasi bayar untuk ${r.prep_count} kotak ${r.name}`}
+                title="Buka dialog verifikasi pembayaran — stok & lunas/hutang dicatat sebelum kirim ke pembeli"
                 className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
               >
-                <Send className="h-3 w-3" /> Kirim ke pembeli
+                <Send className="h-3 w-3" /> Verifikasi bayar
               </button>
             ) : (
               <Link
