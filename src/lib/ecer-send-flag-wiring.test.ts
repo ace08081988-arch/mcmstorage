@@ -90,10 +90,29 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(block!).toMatch(/onClick=\{\s*\(e\)\s*=>\s*\{[\s\S]*?e\.stopPropagation\(\);[\s\S]*?\}\s*\}/);
   });
 
+  it("ReadyEcerSection: tombol 'Verifikasi bayar' punya badge info alur", () => {
+    const src = readSrc("src/components/ReadyEcerSection.tsx");
+    // Badge ⓘ harus berada di dekat tombol Verifikasi bayar dan berisi
+    // penjelasan alur: verifikasi pembayaran dulu, baru kirim ke pembeli.
+    expect(src).toMatch(/aria-label=["']Info alur verifikasi bayar["']/);
+    expect(src).toMatch(/title=["']Alur: verifikasi pembayaran \(lunas\/hutang\/bayar sebagian\) dulu, baru kirim ke pembeli via WA\/Chat\.["']/);
+  });
+
   it("/ecer: validateSearch mengenali `send` sebagai string opsional", () => {
     const src = readSrc("src/routes/_authenticated.ecer.tsx");
     expect(src).toMatch(
       /send:\s*typeof\s+s\.send\s*===\s*["']string["']\s*\?\s*s\.send\s*:\s*undefined/,
+    );
+  });
+
+  it("/ecer: tombol kiriman pegawai punya tooltip/info alur & label konsisten", () => {
+    const src = readSrc("src/routes/_authenticated.ecer.tsx");
+    // Label tombol utama di detail judul harus konsisten: Verifikasi bayar
+    // (bukan Kirim WA mentah), dan harus ada penjelasan alur via title.
+    expect(src).toMatch(/<MessageCircle[^>]*\/>\s*Verifikasi bayar/);
+    expect(src).toMatch(/aria-label=["']Info alur tombol kiriman pegawai["']/);
+    expect(src).toMatch(
+      /title=\{\s*[\s\S]*?"Verifikasi pembayaran \(lunas\/hutang\/bayar sebagian\) dulu, baru pesan & foto dikirim ke pembeli via WA\/Chat\. Stok & pembayaran tercatat otomatis\."\s*[\s\S]*?\}/,
     );
   });
 

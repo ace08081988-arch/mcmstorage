@@ -2617,44 +2617,53 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               dari detail judul kalau memang perlu koordinasi internal.
             */}
             {view === "sent" ? null : r.prep_count > 0 ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Buka modal konfirmasi dulu, lalu redirect otomatis ke /ecer
-                  // dengan flag send=1 supaya dialog pembayaran langsung terbuka.
-                  const withLoc = r.worker_shots.filter((s) => s.location_url).length;
-                  void (async () => {
-                    const ok = await confirmDialog({
-                      title: "Konfirmasi verifikasi bayar",
-                      description:
-                        `Paket: ${r.name}\n` +
-                        `Produk: ${r.product_name} · ${r.target_grams} ${r.unit_label}\n` +
-                        `Jumlah kotak siap: ${r.prep_count}\n` +
-                        `Lokasi terlampir: ${withLoc}/${r.worker_shots.length} kotak\n\n` +
-                        `Setelah ini Anda akan diarahkan otomatis ke halaman /ecer untuk verifikasi pembayaran.\n\n` +
-                        `Langkah di halaman verifikasi:\n` +
-                        `1. Pilih metode pembayaran (Lunas / Hutang / Bayar sebagian)\n` +
-                        `2. Periksa lokasi & isi pesan WhatsApp\n` +
-                        `3. Kirim ke pembeli\n\n` +
-                        `Pesan WA baru terkirim setelah pembayaran dicatat.`,
-                      confirmText: "Lanjut ke verifikasi bayar",
-                      cancelText: "Batal",
-                    });
-                    if (!ok) return;
-                    navigate({
-                      to: "/ecer",
-                      search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" },
-                    });
-                  })();
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label={`Verifikasi bayar untuk ${r.prep_count} kotak ${r.name}`}
-                title="Buka dialog verifikasi pembayaran — stok & lunas/hutang dicatat sebelum kirim ke pembeli"
-                className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
-              >
-                <Send className="h-3 w-3" /> Verifikasi bayar
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Buka modal konfirmasi dulu, lalu redirect otomatis ke /ecer
+                    // dengan flag send=1 supaya dialog pembayaran langsung terbuka.
+                    const withLoc = r.worker_shots.filter((s) => s.location_url).length;
+                    void (async () => {
+                      const ok = await confirmDialog({
+                        title: "Konfirmasi verifikasi bayar",
+                        description:
+                          `Paket: ${r.name}\n` +
+                          `Produk: ${r.product_name} · ${r.target_grams} ${r.unit_label}\n` +
+                          `Jumlah kotak siap: ${r.prep_count}\n` +
+                          `Lokasi terlampir: ${withLoc}/${r.worker_shots.length} kotak\n\n` +
+                          `Setelah ini Anda akan diarahkan otomatis ke halaman /ecer untuk verifikasi pembayaran.\n\n` +
+                          `Langkah di halaman verifikasi:\n` +
+                          `1. Pilih metode pembayaran (Lunas / Hutang / Bayar sebagian)\n` +
+                          `2. Periksa lokasi & isi pesan WhatsApp\n` +
+                          `3. Kirim ke pembeli\n\n` +
+                          `Pesan WA baru terkirim setelah pembayaran dicatat.`,
+                        confirmText: "Lanjut ke verifikasi bayar",
+                        cancelText: "Batal",
+                      });
+                      if (!ok) return;
+                      navigate({
+                        to: "/ecer",
+                        search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" },
+                      });
+                    })();
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  aria-label={`Verifikasi bayar untuk ${r.prep_count} kotak ${r.name}`}
+                  title="Buka dialog verifikasi pembayaran — stok & lunas/hutang dicatat sebelum kirim ke pembeli"
+                  className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
+                >
+                  <Send className="h-3 w-3" /> Verifikasi bayar
+                </button>
+                <span
+                  className="inline-flex h-6 w-6 shrink-0 cursor-help items-center justify-center rounded-full border bg-background text-ms-2xs font-medium text-muted-foreground"
+                  title="Alur: verifikasi pembayaran (lunas/hutang/bayar sebagian) dulu, baru kirim ke pembeli via WA/Chat."
+                  aria-label="Info alur verifikasi bayar"
+                >
+                  ⓘ
+                </span>
+              </>
             ) : (
               <Link
                 to="/ecer"
