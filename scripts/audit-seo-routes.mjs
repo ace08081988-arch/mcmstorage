@@ -26,6 +26,12 @@ const ALLOWLIST_NO_SITEMAP = new Set([
   "/lovable",
   "/lovable/*",
   "/email/unsubscribe",
+  // MCP server (@lovable.dev/mcp-js) — endpoint infra, bukan halaman publik.
+  "/mcp",
+  "/.mcp/list-tools",
+  "/.well-known/oauth-protected-resource",
+  // Halaman consent OAuth — hanya dipanggil via authorization_id, tidak indexable.
+  "/.lovable/oauth/consent",
 ]);
 
 /** Cari semua file rute *.tsx / *.ts di src/routes (rekursif). */
