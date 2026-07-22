@@ -4891,7 +4891,7 @@ function SendEcerPrepsDialog({
           {step === 3 && (
           <>
           {/* Ringkasan hasil verifikasi — read-only. Owner memastikan
-              sekali lagi sebelum WhatsApp dibuka. */}
+              sekali lagi sebelum pesan & foto dikirim ke pembeli via WA/Chat. */}
           <div className="rounded-md border bg-card p-ms-2 text-ms-2xs">
             <div className="mb-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
               Ringkasan verifikasi
