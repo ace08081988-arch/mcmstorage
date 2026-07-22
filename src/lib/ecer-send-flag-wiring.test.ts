@@ -112,7 +112,7 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(src).toMatch(/<MessageCircle[^>]*\/>\s*Verifikasi bayar/);
     expect(src).toMatch(/aria-label=["']Info alur tombol kiriman pegawai["']/);
     expect(src).toMatch(
-      /title=["']Verifikasi pembayaran \(lunas\/hutang\/bayar sebagian\) dulu, baru pesan & foto dikirim ke pembeli via WA\/Chat\. Stok & pembayaran tercatat otomatis\.["']/,
+      /title=\{\s*[\s\S]*?"Verifikasi pembayaran \(lunas\/hutang\/bayar sebagian\) dulu, baru pesan & foto dikirim ke pembeli via WA\/Chat\. Stok & pembayaran tercatat otomatis\."\s*[\s\S]*?\}/,
     );
   });
 
