@@ -765,7 +765,7 @@ export function ReadyEcerSection() {
           onBulkChatPick={() => {
             if (selectedIds.size === 0) return;
             if (selectedIds.size > 1) {
-              toast.info("Kirim ke pembeli hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
+              toast.info("Verifikasi bayar hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
               return;
             }
             const id = [...selectedIds][0];
