@@ -4587,12 +4587,12 @@ function SendEcerPrepsDialog({
       `Metode: ${methodLabel}`,
       note.trim() ? `Catatan: ${note.trim()}` : null,
       "",
-      "Setelah dikirim, stok, penjualan, dan piutang otomatis tercatat. Foto & caption akan dibagikan ke WhatsApp.",
+      "Setelah dikirim, stok, penjualan, dan piutang otomatis tercatat. Foto & caption akan dibagikan ke pembeli via WA/Chat.",
     ].filter(Boolean).join("\n");
     const ok = await confirm({
       title: "Konfirmasi pembayaran",
       description: summary,
-      confirmText: "Kirim WA",
+      confirmText: "Kirim ke pembeli",
       cancelText: "Periksa lagi",
     });
     if (!ok) return;
