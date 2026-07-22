@@ -1676,7 +1676,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                 <div className="flex items-center gap-ms-1">
                   <Button size="sm" variant="outline" onClick={exitSelection}>Batal</Button>
                   <Button size="sm" onClick={() => setSendOpen(true)} disabled={selectedPreps.length === 0}>
-                    <Send className="mr-1 h-3.5 w-3.5" /> Kirim ke pembeli ({selectedPreps.length})
+                    <Send className="mr-1 h-3.5 w-3.5" /> Verifikasi bayar ({selectedPreps.length})
                   </Button>
                 </div>
               ) : (
