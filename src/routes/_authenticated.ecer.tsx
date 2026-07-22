@@ -4969,10 +4969,10 @@ function SendEcerPrepsDialog({
               <Button size="sm" onClick={handleSend} disabled={!canSend}>
                 {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
                 {payment.method === "hutang"
-                  ? "Kirim WA & catat piutang"
+                  ? "Kirim ke pembeli & catat piutang"
                   : payment.method === "partial"
-                    ? "Kirim WA & catat sebagian"
-                    : "Kirim WA & catat lunas"}
+                    ? "Kirim ke pembeli & catat sebagian"
+                    : "Kirim ke pembeli & catat lunas"}
               </Button>
             )}
           </div>
