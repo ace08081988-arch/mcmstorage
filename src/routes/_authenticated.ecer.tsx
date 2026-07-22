@@ -1851,6 +1851,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   </div>
                 </div>
               )}
+              <EcerSendHistorySection titleId={title.id} />
             </>
           )}
         </CardContent>
