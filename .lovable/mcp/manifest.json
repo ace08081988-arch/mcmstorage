@@ -76,6 +76,52 @@
           "properties": {}
         },
         "outputSchema": null
+      },
+      {
+        "name": "detail_piutang",
+        "title": "Detail piutang",
+        "description": "Daftar piutang per pelanggan (bukan ringkasan) untuk user MCM Storage yang sedang terhubung. Menggabungkan sales (payment_method='hutang') dan debts (kind='piutang'), dikurangi pembayaran masing-masing. Mendukung filter rentang tanggal (from/to, ISO YYYY-MM-DD), status ('outstanding'|'paid'|'all'), pencarian nama pelanggan, dan limit hasil.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Tanggal mulai (inklusif), format YYYY-MM-DD."
+            },
+            "to": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Tanggal akhir (inklusif), format YYYY-MM-DD."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "outstanding",
+                "paid",
+                "all"
+              ],
+              "description": "Filter status; default 'outstanding'."
+            },
+            "customer_search": {
+              "type": "string",
+              "description": "Cari nama pelanggan (case-insensitive substring)."
+            },
+            "limit": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "Maksimum baris pelanggan; default 50, maksimum 200."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
       }
     ]
   }
