@@ -1913,6 +1913,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           itemName={item.name}
           customers={customers}
+          onLocationSaved={() => { void load(); }}
           onClose={() => {
             setSendOpen(false);
             // Owner menutup dialog pembayaran tanpa mengirim — kalau ini
