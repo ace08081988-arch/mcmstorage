@@ -87,21 +87,20 @@ function installWebNavigator(opts: {
     if (!data || !("files" in data)) return true;
     return opts.canShareFiles;
   });
-  (globalThis as unknown as { navigator: Navigator }).navigator = {
+  vi.stubGlobal("navigator", {
     userAgent: opts.ua,
     share,
     canShare,
     clipboard: { writeText: clipboardWriteText },
-  } as unknown as Navigator;
-  // window shim untuk fallback wa.me
-  (globalThis as unknown as { window: Window }).window = {
-    open: vi.fn(() => ({}) as unknown as Window),
+  });
+  vi.stubGlobal("window", {
+    open: vi.fn(() => ({})),
     location: { href: "" },
-  } as unknown as Window;
-  (globalThis as unknown as { document: Document }).document = {
-    createElement: () => ({ click: vi.fn(), remove: vi.fn(), setAttribute: vi.fn(), style: {} }) as unknown as HTMLElement,
+  });
+  vi.stubGlobal("document", {
+    createElement: () => ({ click: vi.fn(), remove: vi.fn(), setAttribute: vi.fn(), style: {} }),
     body: { appendChild: vi.fn() },
-  } as unknown as Document;
+  });
   return { share, canShare, clipboardWriteText };
 }
 
@@ -113,6 +112,7 @@ beforeEach(() => {
 
 afterEach(() => {
   nativeFlag = false;
+  vi.unstubAllGlobals();
 });
 
 describe("shareToWhatsApp — lintas platform", () => {
