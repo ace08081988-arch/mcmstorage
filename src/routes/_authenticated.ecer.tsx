@@ -4490,18 +4490,29 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
     setLoading(false);
   }, [titleId]);
 
-  useEffect(() => {
-    if (open && rows.length === 0) void load();
-  }, [open, rows.length, load]);
+  // Muat sekali saat mount supaya badge jumlah histori langsung terlihat
+  // tanpa harus membuka panel dulu.
+  useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
-    // Refresh saat window fokus lagi supaya kiriman baru muncul tanpa
-    // reload manual.
-    if (!open) return;
+    // Refresh saat window fokus lagi + saat SendEcerPrepsDialog memancarkan
+    // event "ecer-send-history:changed" agar histori terisi otomatis sesaat
+    // setelah tombol Kirim WA/Chat dijalankan (tidak perlu tap refresh).
     const onVis = () => { if (document.visibilityState === "visible") void load(); };
+    const onChanged = (e: Event) => {
+      const detail = (e as CustomEvent<{ titleId?: string }>).detail;
+      if (!detail?.titleId || detail.titleId === titleId) {
+        void load();
+        setOpen(true);
+      }
+    };
     document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [open, load]);
+    window.addEventListener("ecer-send-history:changed", onChanged as EventListener);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("ecer-send-history:changed", onChanged as EventListener);
+    };
+  }, [load, titleId]);
 
   const channelLabel = (c: string) =>
     c === "wa" ? "WA" : c === "chat" ? "Chat" : c === "copy" ? "Salin" : c;
