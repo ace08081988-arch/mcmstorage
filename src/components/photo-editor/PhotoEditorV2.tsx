@@ -545,15 +545,32 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         draggable: tool === "pilih" && !o.locked,
         onClick: () => setSelectedId(o.id),
         onTap: () => setSelectedId(o.id),
-        onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => updateObject(o.id, { x: e.target.x(), y: e.target.y() }),
+        dragBoundFunc: snapEnabled
+          ? (pos: { x: number; y: number }) => ({ x: snapToGrid(pos.x), y: snapToGrid(pos.y) })
+          : undefined,
+        onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
+          const nx = snapEnabled ? snapToGrid(e.target.x()) : e.target.x();
+          const ny = snapEnabled ? snapToGrid(e.target.y()) : e.target.y();
+          updateObject(o.id, { x: nx, y: ny });
+        },
+        onTransform: (e: Konva.KonvaEventObject<Event>) => {
+          // Snap sudut live saat memutar via handle rotator.
+          if (!snapEnabled) return;
+          const n = e.target as unknown as Konva.Node;
+          const snapped = snapToAngle(n.rotation());
+          if (n.rotation() !== snapped) n.rotation(snapped);
+        },
         onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
           const n = e.target as unknown as Konva.Node;
           const sx = n.scaleX(), sy = n.scaleY();
+          const rot = snapEnabled ? snapToAngle(n.rotation()) : n.rotation();
+          const nx = snapEnabled ? snapToGrid(n.x()) : n.x();
+          const ny = snapEnabled ? snapToGrid(n.y()) : n.y();
           updateObject(o.id, {
-            x: n.x(), y: n.y(),
+            x: nx, y: ny,
             width: Math.max(24, o.width * sx),
             height: Math.max(24, o.height * sy),
-            rotation: n.rotation(),
+            rotation: rot,
           });
           n.scaleX(1); n.scaleY(1);
         },
