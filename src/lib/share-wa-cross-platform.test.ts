@@ -122,7 +122,7 @@ describe("shareToWhatsApp — lintas platform", () => {
     const res = await shareToWhatsApp({ text: CAPTION, files: [makeFile()] });
     expect(res.status).toBe("shared");
     expect(shareMock).toHaveBeenCalledTimes(1);
-    const payload = shareMock.mock.calls[0][0] as { text: string; files?: string[] };
+    const payload = shareMock.mock.calls[0][0] as unknown as { text: string; files?: string[] };
     expect(payload.text).toContain("📍 Lokasi ambil:");
     expect(payload.text).toContain("https://maps.app.goo.gl/xyz");
     expect(payload.text).toContain("Sisa hutang: Rp10.000");
@@ -136,7 +136,7 @@ describe("shareToWhatsApp — lintas platform", () => {
     installWebNavigator({ ua: "iPhone", canShareFiles: true });
     const res = await shareToWhatsApp({ text: CAPTION, files: [makeFile("foto.jpg")] });
     expect(res.status).toBe("shared");
-    const payload = shareMock.mock.calls[0][0] as { text: string };
+    const payload = shareMock.mock.calls[0][0] as unknown as { text: string };
     expect(payload.text).toContain("📍 Lokasi ambil:");
     expect(payload.text).toContain("https://maps.app.goo.gl/xyz");
     expect(clipboardWriteMock).toHaveBeenCalled();
@@ -151,7 +151,7 @@ describe("shareToWhatsApp — lintas platform", () => {
     const res = await shareToWhatsApp({ text: CAPTION, files: [makeFile()] });
     expect(res.status).toBe("shared");
     expect(nav.share).toHaveBeenCalledTimes(1);
-    const arg = nav.share.mock.calls[0][0] as { text: string; files?: File[] };
+    const arg = nav.share.mock.calls[0][0] as unknown as { text: string; files?: File[] };
     expect(arg.text).toContain("📍 Lokasi ambil:");
     expect(arg.text).toContain("https://maps.app.goo.gl/xyz");
     expect(arg.files?.length).toBe(1);
@@ -171,7 +171,7 @@ describe("shareToWhatsApp — lintas platform", () => {
     const res = await shareToWhatsApp({ text: CAPTION });
     expect(res.status).toBe("shared");
     expect(nav.share).toHaveBeenCalled();
-    const arg = nav.share.mock.calls[0][0] as { text: string };
+    const arg = nav.share.mock.calls[0][0] as unknown as { text: string };
     expect(arg.text).toContain("📍 Lokasi ambil:");
     expect(arg.text).toContain("https://maps.app.goo.gl/xyz");
   });
