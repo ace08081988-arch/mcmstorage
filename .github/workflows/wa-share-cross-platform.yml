@@ -1,0 +1,80 @@
+name: wa-share-cross-platform
+
+# Guard regresi share WhatsApp lintas platform + preview caption.
+# Menjalankan seluruh unit/UI test yang mengunci:
+#   - Build caption (buildPaymentMessageLines: label, urutan, sisa hutang, 📍)
+#   - Encoding URL wa.me / intent WhatsApp Business
+#   - Normalisasi nomor per kode negara (buildWhatsAppUrl + phone.ts)
+#   - Skenario lintas platform (Android APK / iOS APK / Chrome Android /
+#     iOS Safari / Desktop WA Web) — memastikan caption + 📍 selalu
+#     terkirim atau tersedia di clipboard/wa.me
+#   - Render preview CaptionPreviewDialog (📍, banner lokasi kosong,
+#     tombol Kirim disabled saat caption kosong)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/lib/share-wa.ts"
+      - "src/lib/share-wa-*.test.ts"
+      - "src/lib/wa-*.test.ts"
+      - "src/lib/wa-template.ts"
+      - "src/lib/payment-summary.ts"
+      - "src/lib/payment-summary.test.ts"
+      - "src/lib/phone.ts"
+      - "src/lib/countries.ts"
+      - "src/components/CaptionPreviewDialog.tsx"
+      - "src/components/CaptionPreviewDialog.ui.test.tsx"
+      - "package.json"
+      - "bun.lockb"
+      - "vitest.config.ts"
+      - ".github/workflows/wa-share-cross-platform.yml"
+  pull_request:
+    paths:
+      - "src/lib/share-wa.ts"
+      - "src/lib/share-wa-*.test.ts"
+      - "src/lib/wa-*.test.ts"
+      - "src/lib/wa-template.ts"
+      - "src/lib/payment-summary.ts"
+      - "src/lib/payment-summary.test.ts"
+      - "src/lib/phone.ts"
+      - "src/lib/countries.ts"
+      - "src/components/CaptionPreviewDialog.tsx"
+      - "src/components/CaptionPreviewDialog.ui.test.tsx"
+      - "package.json"
+      - "bun.lockb"
+      - "vitest.config.ts"
+      - ".github/workflows/wa-share-cross-platform.yml"
+  workflow_dispatch:
+
+jobs:
+  wa-share-cross-platform:
+    name: WA share + caption preview (fail on any regression)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Payment summary (label, urutan baris, sisa hutang, placeholder 📍)
+        run: bunx vitest run src/lib/payment-summary.test.ts
+
+      - name: WA URL encoding (karakter khusus, emoji, intent hijacking guard)
+        run: bunx vitest run src/lib/share-wa-url-encoding.test.ts
+
+      - name: WA phone format (normalisasi per kode negara, trunk-0, "00")
+        run: bunx vitest run src/lib/wa-phone-format.test.ts
+
+      - name: Cross-platform share (Android APK / iOS APK / Chrome / Safari / Desktop WA Web)
+        run: bunx vitest run src/lib/share-wa-cross-platform.test.ts
+
+      - name: Caption preview UI (📍, banner lokasi, disabled saat kosong)
+        run: bunx vitest run src/components/CaptionPreviewDialog.ui.test.tsx
+
+      - name: Rollup summary
+        if: always()
+        run: echo "WA share cross-platform + caption preview guard OK"
