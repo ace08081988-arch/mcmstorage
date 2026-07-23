@@ -1481,6 +1481,13 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     source: AutoSendCancelState["source"];
   } | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
+  // Dialog + progress untuk hapus massal penyiapan yang ditandai.
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteBusy, setBulkDeleteBusy] = useState(false);
+  const [bulkDeleteStep, setBulkDeleteStep] = useState<"idle" | "photo" | "record" | "refresh" | "done">("idle");
+  const [bulkDeleteIndex, setBulkDeleteIndex] = useState(0);
+  const [bulkDeleteTotal, setBulkDeleteTotal] = useState(0);
+
 
   useEffect(() => {
     void supabase.from("customers").select("id,name,contact").order("name").then(({ data }) => {
@@ -1671,7 +1678,57 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     setSelected(new Set());
   }
 
+  async function deleteSelectedPreps() {
+    const targets = active.filter((p) => selected.has(p.id));
+    if (targets.length === 0) return;
+    setBulkDeleteOpen(true);
+    setBulkDeleteBusy(true);
+    setBulkDeleteStep("photo");
+    setBulkDeleteTotal(targets.length);
+    setBulkDeleteIndex(0);
+    try {
+      // Hapus serial agar trigger pengembalian stok tidak berlomba.
+      for (let i = 0; i < targets.length; i++) {
+        const p = targets[i];
+        setBulkDeleteIndex(i + 1);
+        setBulkDeleteStep("photo");
+        if (p.photo_path) {
+          await deleteEcerPhoto(p.photo_path);
+        }
+        setBulkDeleteStep("record");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", p.id);
+        if (error) throw new Error(`#${p.id}: ${error.message}`);
+      }
+      setBulkDeleteStep("refresh");
+      try {
+        await Promise.all([load(), onTitleUpdated()]);
+      } catch (refreshErr) {
+        toast.error("Gagal memuat ulang daftar: " + ((refreshErr as Error)?.message ?? String(refreshErr)), {
+          description: "Tarik ke bawah atau tekan tombol refresh untuk memperbarui tampilan.",
+        });
+      }
+      setBulkDeleteStep("done");
+      toast.success(
+        `${targets.length} penyiapan dihapus · stok dikembalikan`,
+        { duration: 4000 }
+      );
+      setSelected(new Set());
+      setSelectionMode(false);
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      setBulkDeleteOpen(false);
+    } catch (e) {
+      toast.error("Gagal hapus massal: " + ((e as Error)?.message ?? String(e)));
+    } finally {
+      setBulkDeleteBusy(false);
+      setBulkDeleteStep("idle");
+      setBulkDeleteIndex(0);
+      setBulkDeleteTotal(0);
+    }
+  }
+
   return (
+
     <div className="ecer-detail mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
       <div className="flex items-center gap-ms-2">
         <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4" /> Kembali</Button>
@@ -1710,13 +1767,23 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
             </CardTitle>
             {active.length > 0 && (
               selectionMode ? (
-                <div className="flex items-center gap-ms-1">
+                <div className="flex flex-wrap items-center justify-end gap-ms-1">
                   <Button size="sm" variant="outline" onClick={exitSelection}>Batal</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={selectedPreps.length === 0 || bulkDeleteBusy}
+                    onClick={() => setBulkDeleteOpen(true)}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus ({selectedPreps.length})
+                  </Button>
                   <Button size="sm" onClick={() => setSendOpen(true)} disabled={selectedPreps.length === 0}>
                     <Send className="mr-1 h-3.5 w-3.5" /> Verifikasi bayar ({selectedPreps.length})
                   </Button>
                 </div>
               ) : (
+
                 <Button size="sm" variant="outline" onClick={() => setSelectionMode(true)}>
                   <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pilih
                 </Button>
@@ -2134,9 +2201,81 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         }}
       />
 
+      <AlertDialog
+        open={bulkDeleteOpen}
+        onOpenChange={(o) => {
+          if (bulkDeleteBusy) return;
+          setBulkDeleteOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedPreps.length} penyiapan yang ditandai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Semua penyiapan yang dipilih akan dihapus, foto di penyimpanan ikut dihapus,
+              dan stok <span className="font-semibold">{item.name ?? title.name}</span> dikembalikan.
+              Tindakan ini tidak bisa dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {bulkDeleteBusy && (
+            <div className="rounded-lg border border-border/60 bg-muted/40 p-ms-2 text-ms-2xs leading-snug">
+              <div className="mb-2 flex items-center justify-between gap-2 font-medium">
+                <div className="flex items-center gap-2">
+                  {bulkDeleteStep === "done" ? (
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                  ) : (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  )}
+                  <span>
+                    {bulkDeleteStep === "photo" && `Menghapus foto… ${bulkDeleteIndex}/${bulkDeleteTotal}`}
+                    {bulkDeleteStep === "record" && `Menghapus data & stok… ${bulkDeleteIndex}/${bulkDeleteTotal}`}
+                    {bulkDeleteStep === "refresh" && "Menyegarkan daftar…"}
+                    {bulkDeleteStep === "done" && "Selesai"}
+                  </span>
+                </div>
+                <span className="text-muted-foreground">
+                  {bulkDeleteStep === "photo" && "1/3"}
+                  {bulkDeleteStep === "record" && "2/3"}
+                  {bulkDeleteStep === "refresh" && "3/3"}
+                  {bulkDeleteStep === "done" && "3/3"}
+                </span>
+              </div>
+              <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width: `${Math.min(100, Math.round((bulkDeleteIndex / Math.max(1, bulkDeleteTotal)) * 100))}%`,
+                  }}
+                />
+              </div>
+              <div className="text-muted-foreground">
+                {bulkDeleteStep === "photo" && "Mohon tunggu, foto sedang dihapus dari penyimpanan."}
+                {bulkDeleteStep === "record" && "Record penyiapan dihapus dan stok dikembalikan."}
+                {bulkDeleteStep === "refresh" && "Memperbarui tampilan daftar…"}
+                {bulkDeleteStep === "done" && "Semua penyiapan terpilih berhasil dihapus."}
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteBusy} onClick={() => setBulkDeleteOpen(false)}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleteBusy || selectedPreps.length === 0}
+              onClick={() => void deleteSelectedPreps()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleteBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
+              Hapus {selectedPreps.length} penyiapan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
+
 
 
 function normUnitStr(u: string | null | undefined) {
