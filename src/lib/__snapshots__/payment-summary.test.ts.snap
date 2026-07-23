@@ -1,0 +1,61 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'hutang — lokasi kosong' 1`] = `
+"Pembayaran: Hutang
+Sisa hutang: Rp42
+📍 Lokasi belum diisi (owner akan menyusul link)"
+`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'hutang — lokasi valid' 1`] = `
+"Pembayaran: Hutang
+Sisa hutang: Rp7.500.000
+
+📍 Lokasi ambil:
+https://maps.app.goo.gl/bbb"
+`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'hutang — tanpa opsi lokasi' 1`] = `
+"Pembayaran: Hutang
+Sisa hutang: Rp250.000"
+`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'kas — lokasi kosong (null)' 1`] = `
+"Pembayaran: Lunas
+📍 Lokasi belum diisi (owner akan menyusul link)"
+`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'kas — lokasi kosong (string kosong)' 1`] = `
+"Pembayaran: Lunas
+📍 Lokasi belum diisi (owner akan menyusul link)"
+`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'kas — lokasi valid' 1`] = `
+"Pembayaran: Lunas
+
+📍 Lokasi ambil:
+https://maps.app.goo.gl/aaa"
+`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'kas — tanpa opsi lokasi' 1`] = `"Pembayaran: Lunas"`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'partial — lokasi kosong' 1`] = `
+"Pembayaran: Bayar sebagian
+Dibayar: Rp8.888
+Sisa hutang: Rp80.000
+📍 Lokasi belum diisi (owner akan menyusul link)"
+`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'partial — lokasi valid' 1`] = `
+"Pembayaran: Bayar sebagian
+Dibayar: Rp500.000
+Sisa hutang: Rp734.567
+
+📍 Lokasi ambil:
+https://maps.app.goo.gl/ccc"
+`;
+
+exports[`buildPaymentMessageLines — snapshot urutan & separator (CHAR(10)) > 'partial — tanpa opsi lokasi' 1`] = `
+"Pembayaran: Bayar sebagian
+Dibayar: Rp30.000
+Sisa hutang: Rp70.000"
+`;
