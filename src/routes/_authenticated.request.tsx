@@ -2444,6 +2444,7 @@ function PrepCard({
           photoPaths={photoPaths}
           unitFor={unitFor}
           onSent={() => { setSendOpen(false); onSent(); }}
+          onLocationSaved={onLocationSaved}
         />
       )}
     </div>
