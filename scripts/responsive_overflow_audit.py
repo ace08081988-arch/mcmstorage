@@ -154,16 +154,7 @@ async def main():
     report = []
     failed = 0
     async with async_playwright() as pw:
-        # Sandbox pre-installs full chromium (not headless_shell);
-        # `channel="chromium"` memilih binary yang benar. Di CI GitHub
-        # runner biasa, channel diabaikan dan bundled browser dipakai.
-        launch_kwargs = {"headless": True}
-        if os.environ.get("PLAYWRIGHT_USE_CHROMIUM_CHANNEL", "1") != "0":
-            launch_kwargs["channel"] = "chromium"
-        try:
-            browser = await pw.chromium.launch(**launch_kwargs)
-        except Exception:
-            browser = await pw.chromium.launch(headless=True)
+        browser = await pw.chromium.launch(headless=True)
         try:
             for target in TARGETS:
                 for w in WIDTHS:
