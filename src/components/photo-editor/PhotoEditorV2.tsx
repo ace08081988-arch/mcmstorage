@@ -780,8 +780,18 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     const node = st.findOne("#" + selectedId);
     if (node) tr.nodes([node as Konva.Node]);
     else tr.nodes([]);
+    // Stiker & teks lebih nyaman kalau proporsional (keepRatio) supaya
+    // saat drag sudut ukuran tidak melar. Sisanya bebas.
+    const sel = scene.objects.find((o) => o.id === selectedId);
+    const lockRatio = sel?.kind === "sticker" || sel?.kind === "text";
+    tr.keepRatio(lockRatio);
+    tr.enabledAnchors(
+      lockRatio
+        ? ["top-left", "top-right", "bottom-left", "bottom-right"]
+        : ["top-left","top-center","top-right","middle-right","bottom-right","bottom-center","bottom-left","middle-left"],
+    );
     tr.getLayer()?.batchDraw();
-  }, [selectedId, scene.objects.length]);
+  }, [selectedId, scene.objects]);
 
   const selectedObj = scene.objects.find((o) => o.id === selectedId) ?? null;
 
