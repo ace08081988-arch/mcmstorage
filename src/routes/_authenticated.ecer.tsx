@@ -4201,6 +4201,8 @@ function SendEcerPrepsDialog({
       channel="wa"
       photoCount={preps.length}
       busy={busy}
+      locationMissing={!preps.some((p) => (p.location_url ?? "").trim())}
+      locationHint="Buka kartu penyiapan Ecer (Ready) → isi kolom Lokasi ambil (link Google Maps), lalu ulangi Verifikasi bayar."
       confirmLabel={
         payment.method === "hutang"
           ? "Kirim WA & catat piutang"
