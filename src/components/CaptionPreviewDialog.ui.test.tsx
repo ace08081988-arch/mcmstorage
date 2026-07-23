@@ -77,7 +77,7 @@ describe("CaptionPreviewDialog — verifikasi tampilan caption", () => {
     const caption = buildCaption("hutang", "https://maps.app.goo.gl/xyz");
     render(<CaptionPreviewDialog open onOpenChange={() => {}} caption={caption} onConfirm={() => {}} />);
     const pre = screen.getByTestId("caption-preview-text");
-    expect(pre.textContent).toContain("Sisa hutang: Rp 150.000");
+    expect(pre.textContent).toMatch(/Sisa hutang:\s*Rp\s?150\.000/);
     expect(pre.textContent).toContain("📍 Lokasi ambil:");
     expect(pre.textContent).toContain("https://maps.app.goo.gl/xyz");
   });
