@@ -70,6 +70,9 @@ function composeCaption(opts: {
   lines.push(...buildPaymentMessageLines(p));
   if (opts.locationUrl) {
     lines.push("", "📍 Lokasi ambil:", opts.locationUrl);
+  } else {
+    // Placeholder eksplisit — cermin logika di route Ecer/Request/ReadyPackagesPanel.
+    lines.push("📍 Lokasi belum diisi (owner akan menyusul link)");
   }
   return lines.join("\n");
 }
@@ -135,7 +138,50 @@ describe("caption WA regression — Sisa hutang & 📍 wajib muncul", () => {
 
   it("Tanpa location_url: caption tidak memuat blok 📍 (tidak ada baris kosong palsu)", () => {
     const cap = composeCaption({ title: "X", method: "hutang", total: 5_000 });
-    expect(cap.includes("📍")).toBe(false);
+    // Placeholder WAJIB muncul — bukan blok "Lokasi ambil:" + URL,
+    // tapi satu baris peringatan supaya pengirim sadar 📍 belum lengkap.
+    expect(cap).toContain("📍 Lokasi belum diisi (owner akan menyusul link)");
+    expect(cap).not.toContain("Lokasi ambil:");
     expect(cap).toContain("Sisa hutang: Rp5.000");
+  });
+});
+
+/**
+ * Placeholder 📍 saat location_url kosong WAJIB muncul dengan format identik
+ * di semua metode pembayaran yang relevan (Lunas/Hutang/Bayar sebagian).
+ * Kalau format ini bergeser, pengirim tidak sadar lokasi kosong dan pembeli
+ * kehilangan titik ambil — jadi kunci teks persisnya di sini.
+ */
+const LOCATION_PLACEHOLDER = "📍 Lokasi belum diisi (owner akan menyusul link)";
+
+describe("caption WA — placeholder 📍 saat location_url kosong", () => {
+  const METHODS: Array<{ method: "kas" | "hutang" | "partial"; paid?: number }> = [
+    { method: "kas" },
+    { method: "hutang" },
+    { method: "partial", paid: 4_000 },
+  ];
+
+  it.each(METHODS)("method=$method tanpa lokasi → placeholder muncul persis", ({ method, paid }) => {
+    const cap = composeCaption({ title: "Barang", method, total: 10_000, paid, locationUrl: null });
+    expect(cap).toContain(LOCATION_PLACEHOLDER);
+    expect(cap).not.toContain("Lokasi ambil:");
+  });
+
+  it.each(METHODS)("method=$method dengan lokasi → placeholder TIDAK muncul, URL ikut", ({ method, paid }) => {
+    const url = "https://maps.app.goo.gl/abc";
+    const cap = composeCaption({ title: "Barang", method, total: 10_000, paid, locationUrl: url });
+    expect(cap).not.toContain(LOCATION_PLACEHOLDER);
+    expect(cap).toContain("📍 Lokasi ambil:");
+    expect(cap).toContain(url);
+  });
+
+  it("placeholder muncul SETELAH baris pembayaran (bukan sebelum)", () => {
+    const cap = composeCaption({ title: "X", method: "hutang", total: 5_000, locationUrl: null });
+    expect(cap.indexOf(LOCATION_PLACEHOLDER)).toBeGreaterThan(cap.indexOf("Sisa hutang:"));
+  });
+
+  it("format placeholder identik dengan yang dipakai route Ecer/Request/ReadyPackagesPanel", () => {
+    // Snapshot literal — kalau berubah, semua call-site harus ikut diubah.
+    expect(LOCATION_PLACEHOLDER).toBe("📍 Lokasi belum diisi (owner akan menyusul link)");
   });
 });
