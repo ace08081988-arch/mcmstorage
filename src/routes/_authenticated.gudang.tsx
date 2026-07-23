@@ -306,29 +306,51 @@ function GudangPage() {
     try { window.sessionStorage.setItem(GUDANG_TAB_KEY, tab); } catch { /* ignore */ }
   }, [tab]);
   // Kalau reload sebelumnya dipicu oleh crash saat input, munculkan
-  // notifikasi ringkas berisi pesan errornya (satu kali) supaya bisa
-  // dilacak — payload lengkap tetap di sessionStorage `mcm:last-crash`.
+  // notifikasi berisi pesan errornya. Toast pernah dipakai tapi menghilang
+  // terlalu cepat di HP dan tidak bisa di-screenshot; sekarang disimpan ke
+  // state supaya bisa dirender sebagai banner persisten di atas halaman
+  // (lihat render di bawah). Payload lengkap tetap di
+  // sessionStorage["mcm:last-crash"].
+  const [lastCrash, setLastCrash] = useState<
+    { at: string; name: string; message: string; stack: string; route: string } | null
+  >(null);
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const raw = window.sessionStorage.getItem("mcm:last-crash");
       if (!raw) return;
-      const shown = window.sessionStorage.getItem("mcm:last-crash:shown");
-      if (shown === raw) return;
-      const p = JSON.parse(raw) as { at?: string; message?: string; route?: string };
+      const p = JSON.parse(raw) as {
+        at?: string; name?: string; message?: string; stack?: string; route?: string;
+      };
       const at = p.at ? new Date(p.at).getTime() : 0;
-      // hanya tampilkan kalau crash terjadi < 60 detik lalu dan di rute Gudang
-      if (!at || Date.now() - at > 60_000) return;
+      // hanya tampilkan kalau crash terjadi < 10 menit lalu dan di rute Gudang
+      if (!at || Date.now() - at > 10 * 60_000) return;
       if (p.route && !p.route.startsWith("/gudang")) return;
-      window.sessionStorage.setItem("mcm:last-crash:shown", raw);
-      toast.error("Halaman sempat error dan dimuat ulang", {
-        description: (p.message || "").slice(0, 200) || "Tanpa pesan",
-        duration: 8000,
+      setLastCrash({
+        at: p.at || "",
+        name: p.name || "Error",
+        message: p.message || "(tanpa pesan)",
+        stack: p.stack || "",
+        route: p.route || "",
       });
     } catch {
       // ignore
     }
   }, []);
+  const dismissLastCrash = () => {
+    try {
+      window.sessionStorage.removeItem("mcm:last-crash");
+      window.sessionStorage.removeItem("mcm:last-crash:shown");
+    } catch { /* ignore */ }
+    setLastCrash(null);
+  };
+  const copyLastCrash = () => {
+    if (!lastCrash) return;
+    const text =
+      `[${lastCrash.at}] ${lastCrash.route}\n${lastCrash.name}: ${lastCrash.message}\n\n${lastCrash.stack}`;
+    try { void navigator.clipboard?.writeText(text); toast.success("Detail crash disalin"); }
+    catch { /* ignore */ }
+  };
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [beliDefaultPayment, setBeliDefaultPayment] = useState<"kas" | "hutang">("kas");
@@ -646,6 +668,53 @@ function GudangPage() {
         </section>
 
         <GudangLoadProgress wave1Done={!loading} wave2Done={!secondaryLoading} />
+
+        {lastCrash && (
+          <div
+            role="alert"
+            className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold">
+                  🐛 Halaman sempat error dan dimuat ulang otomatis
+                </div>
+                <div className="mt-1 text-[11px] opacity-80">
+                  {lastCrash.at} · {lastCrash.route}
+                </div>
+                <div className="mt-1 break-words font-mono text-[11px]">
+                  {lastCrash.name}: {lastCrash.message}
+                </div>
+                {lastCrash.stack && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer select-none text-[11px] underline">
+                      Stack trace
+                    </summary>
+                    <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-tight">
+{lastCrash.stack}
+                    </pre>
+                  </details>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={copyLastCrash}
+                  className="rounded border border-destructive/40 px-2 py-1 text-[10px] font-medium hover:bg-destructive/20"
+                >
+                  Salin
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissLastCrash}
+                  className="rounded border border-destructive/40 px-2 py-1 text-[10px] font-medium hover:bg-destructive/20"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading && <GudangLoadingSkeleton />}
         {!loading && secondaryLoading &&
