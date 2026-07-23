@@ -2214,6 +2214,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   const sold = isSentPrep(prep);
   const readOnly = sold;
   const [url, setUrl] = useState<string | null>(null);
+  const [photoMissing, setPhotoMissing] = useState(false);
   type ShareDiag = {
     when: string;
     online: boolean;
@@ -2236,7 +2237,18 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
     if (a) return a;
     return await secondary(path, expiresIn as number);
   };
-  useEffect(() => { void resolvePhotoUrl(prep.photo_path).then(setUrl); }, [prep.photo_path, prep.created_by]);
+  useEffect(() => {
+    let cancelled = false;
+    setPhotoMissing(false);
+    setUrl(null);
+    if (!prep.photo_path) return;
+    void resolvePhotoUrl(prep.photo_path).then((u) => {
+      if (cancelled) return;
+      setUrl(u);
+      setPhotoMissing(!u);
+    });
+    return () => { cancelled = true; };
+  }, [prep.photo_path, prep.created_by]);
 
   async function onShare() {
     const text =
@@ -2326,8 +2338,24 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
       className={`overflow-hidden rounded-lg border bg-card ${selectionMode && !readOnly ? "cursor-pointer" : ""} ${selected ? "ring-2 ring-primary" : ""} ${readOnly ? "opacity-90" : ""}`}
     >
       <div className="relative aspect-square w-full bg-muted">
-        {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : (
-          <div className="flex h-full w-full items-center justify-center text-ms-2xs leading-snug text-muted-foreground">No foto</div>
+        {url ? (
+          <img src={url} alt="" className="h-full w-full object-cover" />
+        ) : photoMissing ? (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-2 text-center text-ms-2xs leading-snug text-destructive">
+            <span className="font-semibold">Foto hilang</span>
+            <span className="text-muted-foreground">File sudah dihapus dari penyimpanan</span>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); void onDelete(); }}
+                className="mt-1 rounded border border-destructive/60 bg-destructive/10 px-2 py-0.5 text-ms-2xs font-medium text-destructive hover:bg-destructive/20"
+              >
+                Hapus penyiapan
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-ms-2xs leading-snug text-muted-foreground">Belum ada foto</div>
         )}
         <div className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">#{index}</div>
         {prep.created_by === "worker" && (
