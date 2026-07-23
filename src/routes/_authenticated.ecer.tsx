@@ -2367,22 +2367,24 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             )}
           </details>
         )}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-1 pt-1">
-          {prep.location_url ? (
-            <a href={prep.location_url} target="_blank" rel="noreferrer"
-              className="inline-flex min-w-0 items-center gap-0.5 text-ms-2xs leading-snug text-primary hover:underline">
-              <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">Lokasi</span>
-              <ExternalLink className="h-2.5 w-2.5 shrink-0" />
-            </a>
-          ) : <span className="min-w-0" />}
-          {!readOnly && (
-            <div className="flex shrink-0 items-center gap-0.5 justify-self-end">
-              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3 w-3" /></Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
-            </div>
-          )}
+        <div className="@container/prepactions pt-1">
+          <div className="flex flex-col gap-ms-1 @[200px]/prepactions:grid @[200px]/prepactions:grid-cols-[minmax(0,1fr)_auto] @[200px]/prepactions:items-center">
+            {prep.location_url ? (
+              <a href={prep.location_url} target="_blank" rel="noreferrer"
+                className="inline-flex min-w-0 items-center gap-0.5 text-ms-2xs leading-snug text-primary hover:underline">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">Lokasi</span>
+                <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+              </a>
+            ) : <span className="min-w-0" />}
+            {!readOnly && (
+              <div className="flex shrink-0 items-center justify-end gap-0.5 @[200px]/prepactions:justify-self-end">
+                <Button size="icon" variant="ghost" className="h-8 w-8 @[200px]/prepactions:h-7 @[200px]/prepactions:w-7" aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3.5 w-3.5 @[200px]/prepactions:h-3 @[200px]/prepactions:w-3" /></Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 @[200px]/prepactions:h-7 @[200px]/prepactions:w-7" aria-label="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3.5 w-3.5 @[200px]/prepactions:h-3 @[200px]/prepactions:w-3" /></Button>
+                <Button size="icon" variant="ghost" className="h-8 w-8 @[200px]/prepactions:h-7 @[200px]/prepactions:w-7" aria-label="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3.5 w-3.5 text-destructive @[200px]/prepactions:h-3 @[200px]/prepactions:w-3" /></Button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="text-ms-2xs leading-snug text-muted-foreground">
           {new Date(prep.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
