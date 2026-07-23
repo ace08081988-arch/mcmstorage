@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Loader2, MessageSquare, RotateCcw, Save } from "lucide-react";
+import { Copy, Loader2, MessageSquare, Phone, RotateCcw, Save } from "lucide-react";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,10 @@ import {
   loadWaTemplate,
   saveWaTemplate,
 } from "@/lib/wa-template-store";
+import { COUNTRIES } from "@/lib/countries";
+import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
+import { buildWhatsAppUrl } from "@/lib/share-wa";
+import { useMyProfile, useUpdateMyProfile } from "@/lib/profile";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-pesan-wa")({
   head: () => ({
