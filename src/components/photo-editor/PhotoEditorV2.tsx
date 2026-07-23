@@ -28,6 +28,7 @@ import {
   ArrowRight, ArrowLeft, ArrowUp, ArrowDown, ArrowUpRight, ArrowUpLeft,
   ArrowLeftRight, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight,
   MoveRight, MoveLeft, MoveUp, MoveDown, RefreshCw,
+  ArrowBigRight, ArrowBigLeft, ChevronsRight, ChevronsLeft, ChevronRight,
   Zap, Heart, Star, ThumbsUp, Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
