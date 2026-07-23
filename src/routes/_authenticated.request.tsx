@@ -2459,7 +2459,7 @@ function PrepCard({
 // -----------------------------------------------------------------------
 function SendPrepToCustomerDialog({
   open, onClose, channel = "whatsapp", prep, items, warehouseItems, titleItems, titleName,
-  customers, photoPaths, unitFor, onSent,
+  customers, photoPaths, unitFor, onSent, onLocationSaved,
 }: {
   open: boolean;
   onClose: () => void;
@@ -2473,6 +2473,10 @@ function SendPrepToCustomerDialog({
   photoPaths: string[];
   unitFor: (wid: string) => string;
   onSent: () => void;
+  /** Dipanggil setelah owner menyimpan `location_url` dari banner peringatan
+   * di modal preview WA/Chat. Parent WAJIB memicu refetch preps supaya
+   * caption terbaru langsung tampil di modal. */
+  onLocationSaved?: () => void | Promise<void>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const sections: ScrollSection[] = [
