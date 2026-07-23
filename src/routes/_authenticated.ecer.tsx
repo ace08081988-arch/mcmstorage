@@ -1678,7 +1678,57 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     setSelected(new Set());
   }
 
+  async function deleteSelectedPreps() {
+    const targets = active.filter((p) => selected.has(p.id));
+    if (targets.length === 0) return;
+    setBulkDeleteOpen(true);
+    setBulkDeleteBusy(true);
+    setBulkDeleteStep("photo");
+    setBulkDeleteTotal(targets.length);
+    setBulkDeleteIndex(0);
+    try {
+      // Hapus serial agar trigger pengembalian stok tidak berlomba.
+      for (let i = 0; i < targets.length; i++) {
+        const p = targets[i];
+        setBulkDeleteIndex(i + 1);
+        setBulkDeleteStep("photo");
+        if (p.photo_path) {
+          await deleteEcerPhoto(p.photo_path);
+        }
+        setBulkDeleteStep("record");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", p.id);
+        if (error) throw new Error(`#${p.id}: ${error.message}`);
+      }
+      setBulkDeleteStep("refresh");
+      try {
+        await Promise.all([load(), onTitleUpdated()]);
+      } catch (refreshErr) {
+        toast.error("Gagal memuat ulang daftar: " + ((refreshErr as Error)?.message ?? String(refreshErr)), {
+          description: "Tarik ke bawah atau tekan tombol refresh untuk memperbarui tampilan.",
+        });
+      }
+      setBulkDeleteStep("done");
+      toast.success(
+        `${targets.length} penyiapan dihapus · stok dikembalikan`,
+        { duration: 4000 }
+      );
+      setSelected(new Set());
+      setSelectionMode(false);
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      setBulkDeleteOpen(false);
+    } catch (e) {
+      toast.error("Gagal hapus massal: " + ((e as Error)?.message ?? String(e)));
+    } finally {
+      setBulkDeleteBusy(false);
+      setBulkDeleteStep("idle");
+      setBulkDeleteIndex(0);
+      setBulkDeleteTotal(0);
+    }
+  }
+
   return (
+
     <div className="ecer-detail mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
       <div className="flex items-center gap-ms-2">
         <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4" /> Kembali</Button>
