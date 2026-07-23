@@ -4866,6 +4866,11 @@ function SendEcerPrepsDialog({
           .select("id")
           .single();
         sendEventId = (evt as { id?: string } | null)?.id ?? null;
+        if (sendEventId) {
+          try {
+            window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
+          } catch { /* ignore */ }
+        }
       } catch (logErr) {
         console.warn("[ecer:send-history] gagal catat awal", logErr);
       }
@@ -4920,6 +4925,9 @@ function SendEcerPrepsDialog({
                 error_message: failed ? (res as { error?: string }).error ?? null : null,
               })
               .eq("id", sendEventId);
+            try {
+              window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
+            } catch { /* ignore */ }
           }
         } catch (e) {
           toast.error("Gagal kirim WA: " + ((e as { message?: string })?.message ?? String(e)));
@@ -4932,6 +4940,9 @@ function SendEcerPrepsDialog({
                 error_message: (e as { message?: string })?.message ?? String(e),
               })
               .eq("id", sendEventId);
+            try {
+              window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
+            } catch { /* ignore */ }
           }
           // Kalau share error sebelum sempat memicu visibility hidden,
           // pastikan UI tetap ter-refresh.
