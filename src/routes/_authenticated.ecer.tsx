@@ -2387,7 +2387,8 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             {!readOnly && (
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); void onDelete(); }}
+                ref={(el) => { deleteReturnElRef.current = el; }}
+                onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}
                 className="mt-1 rounded border border-destructive/60 bg-destructive/10 px-2 py-0.5 text-ms-2xs font-medium text-destructive hover:bg-destructive/20"
               >
                 Hapus penyiapan
