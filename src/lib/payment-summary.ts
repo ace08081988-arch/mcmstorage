@@ -41,7 +41,28 @@ export function formatPaymentRupiah(amount: number): string {
   return rupiah(amount).replace(/\s+/g, "");
 }
 
-export function buildPaymentMessageLines(payment: PaymentBreakdown): string[] {
+/**
+ * Placeholder eksplisit yang WAJIB muncul di caption WA kalau `location_url`
+ * kosong. Diekspor supaya call-site (route Ecer/Request/ReadyPackagesPanel)
+ * dan test regresi pakai literal yang sama persis.
+ */
+export const LOCATION_MISSING_PLACEHOLDER =
+  "📍 Lokasi belum diisi (owner akan menyusul link)";
+
+export type BuildPaymentMessageOptions = {
+  /**
+   * `undefined` → jangan sentuh blok lokasi (tetap kompatibel dengan
+   * call-site lama yang merakit lokasi sendiri).
+   * `null` atau string kosong → cantumkan placeholder.
+   * string non-kosong → cantumkan blok "📍 Lokasi ambil:" + URL.
+   */
+  locationUrl?: string | null;
+};
+
+export function buildPaymentMessageLines(
+  payment: PaymentBreakdown,
+  options: BuildPaymentMessageOptions = {},
+): string[] {
   const lines = [`Pembayaran: ${payment.label}`];
   if (payment.method === "hutang") {
     // Cantumkan sisa piutang eksplisit di pesan WA agar pembeli tahu
@@ -50,6 +71,15 @@ export function buildPaymentMessageLines(payment: PaymentBreakdown): string[] {
   } else if (payment.method === "partial") {
     lines.push(`Dibayar: ${formatPaymentRupiah(payment.paid)}`);
     lines.push(`Sisa hutang: ${formatPaymentRupiah(payment.remaining)}`);
+  }
+  if ("locationUrl" in options) {
+    const raw = options.locationUrl;
+    const url = typeof raw === "string" ? raw.trim() : "";
+    if (url) {
+      lines.push("", "📍 Lokasi ambil:", url);
+    } else {
+      lines.push(LOCATION_MISSING_PLACEHOLDER);
+    }
   }
   return lines;
 }
