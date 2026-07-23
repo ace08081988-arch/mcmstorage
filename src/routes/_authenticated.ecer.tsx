@@ -66,6 +66,7 @@ import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-activ
 import { debounce } from "@/lib/realtime-debounce";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 import { emitDebtTx } from "@/lib/debt-tx-event";
+import { withPlainTimeout, withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -246,7 +247,11 @@ function EcerPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const { data: sess, error: sessErr } = await supabase.auth.getSession();
+      const { data: sess, error: sessErr } = await withPlainTimeout(
+        supabase.auth.getSession(),
+        "ecer-session",
+        3_000,
+      );
       if (sessErr) {
         setLoadError({ source: "auth.getSession", message: sessErr.message, diagnosis: "Gagal membaca sesi login dari browser." });
         setLoading(false); return;
@@ -260,9 +265,23 @@ function EcerPage() {
         setLoading(false); return;
       }
       const [wi, et] = await Promise.all([
-        supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").order("name"),
+        withSupabaseQueryTimeout(
+          (signal) => supabase
+            .from("warehouse_items")
+            .select("id,name,category,base_unit,stock_base,image_path,package_type,package_size")
+            .order("name")
+            .abortSignal(signal),
+          "ecer-warehouse_items",
+        ),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase.from as any)("ecer_titles").select("*").order("position").order("created_at"),
+        withSupabaseQueryTimeout<SupabaseQueryResult<EcerTitle[]>>(
+          (signal) => (supabase.from as any)("ecer_titles")
+            .select("*")
+            .order("position")
+            .order("created_at")
+            .abortSignal(signal),
+          "ecer_titles",
+        ),
       ]);
       if (wi.error) {
         const e = wi.error as { code?: string; message: string; hint?: string; details?: string };
@@ -288,13 +307,17 @@ function EcerPage() {
       // Non-blocking: gagal → biarkan kosong, tidak memengaruhi alur utama.
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pr = await (supabase.from as any)("ecer_preparations")
-          // L1: batas atas defensif — ringkasan per-title cukup dengan
-          // sampel besar tetapi bounded agar query tidak balloon untuk
-          // dataset lama.
-          .select("title_id, sold_at")
-          .order("created_at", { ascending: false })
-          .limit(5000);
+        const pr = await withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ title_id: string; sold_at: string | null }>>>(
+          (signal) => (supabase.from as any)("ecer_preparations")
+            // L1: batas atas defensif — ringkasan per-title cukup dengan
+            // sampel besar tetapi bounded agar query tidak balloon untuk
+            // dataset lama.
+            .select("title_id, sold_at")
+            .order("created_at", { ascending: false })
+            .limit(5000)
+            .abortSignal(signal),
+          "ecer_preparations_stats",
+        );
         if (!pr.error && Array.isArray(pr.data)) {
           const acc: Record<string, { total: number; sold: number }> = {};
           for (const row of pr.data as Array<{ title_id: string; sold_at: string | null }>) {
@@ -1471,14 +1494,26 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     setLoading(true);
     setLoadError(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from as any)("ecer_preparations")
-      .select("*")
-      .eq("title_id", title.id)
-      .order("created_at", { ascending: false })
-      // L1: batasi baris per judul (kotak ecer). 500 jauh di atas kebutuhan
-      // operator harian (biasanya <50) dan mencegah fetch balloon jika
-      // ada penyiapan lama yang tidak dibersihkan.
-      .limit(500);
+    let data: unknown[] | null = null;
+    let error: { message?: string; code?: string; hint?: string } | null = null;
+    try {
+      const res = await withSupabaseQueryTimeout<SupabaseQueryResult<EcerPreparation[]>>(
+        (signal) => (supabase.from as any)("ecer_preparations")
+          .select("*")
+          .eq("title_id", title.id)
+          .order("created_at", { ascending: false })
+          // L1: batasi baris per judul (kotak ecer). 500 jauh di atas kebutuhan
+          // operator harian (biasanya <50) dan mencegah fetch balloon jika
+          // ada penyiapan lama yang tidak dibersihkan.
+          .limit(500)
+          .abortSignal(signal),
+        "ecer_title_preparations",
+      );
+      data = (res.data ?? []) as unknown[];
+      error = res.error;
+    } catch (err) {
+      error = { message: err instanceof Error ? err.message : String(err) };
+    }
     if (error) {
       setLoadError({
         message: error.message ?? "Gagal memuat daftar penyiapan.",
@@ -3364,13 +3399,20 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from as any)("ecer_send_events")
-      .select("id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message")
-      .eq("title_id", titleId)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (!error) setRows((data ?? []) as EcerSendEvent[]);
-    setLoading(false);
+    try {
+      const { data, error } = await withSupabaseQueryTimeout<SupabaseQueryResult<EcerSendEvent[]>>(
+        (signal) => (supabase.from as any)("ecer_send_events")
+          .select("id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message")
+          .eq("title_id", titleId)
+          .order("created_at", { ascending: false })
+          .limit(50)
+          .abortSignal(signal),
+        "ecer_send_events",
+      );
+      if (!error) setRows((data ?? []) as EcerSendEvent[]);
+    } finally {
+      setLoading(false);
+    }
   }, [titleId]);
 
   // Muat sekali saat mount supaya badge jumlah histori langsung terlihat

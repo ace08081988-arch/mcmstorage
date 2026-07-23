@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { autoLockKey, isAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 import {
   getClientDeviceFingerprint,
+  isDeviceTrustedLocal,
+  markDeviceTrustedLocal,
 } from "@/lib/device-fingerprint";
 import { isDeviceTrusted } from "@/lib/device.functions";
 import {
@@ -21,6 +23,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CallHost } from "@/components/chat/CallHost";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { withPlainTimeout } from "@/lib/supabase-timeout";
 
 function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
@@ -98,13 +101,9 @@ function AuthLock() {
       const currentUid = uidRef.current;
       if (!currentUid) return;
       if (!isAutoLockEnabled(currentUid)) return;
-      try {
-        for (const k of Object.keys(localStorage)) {
-          if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
-            localStorage.removeItem(k);
-          }
-        }
-      } catch {}
+      if (!getLockConfig(currentUid)) return;
+      if (isLockSuppressed()) return;
+      setLocked(currentUid, true);
     };
     const onStorage = (e: StorageEvent) => {
       if (e.key === autoLockKey(uid)) {/* re-read on next event */}
@@ -151,7 +150,11 @@ export const Route = createFileRoute("/_authenticated")({
         return;
       }
     }
-    const { data } = await supabase.auth.getSession();
+    const { data } = await withPlainTimeout(
+      supabase.auth.getSession(),
+      "authenticated-session",
+      3_000,
+    );
     if (!data.session) {
       throw redirect({
         to: "/auth",
@@ -161,10 +164,16 @@ export const Route = createFileRoute("/_authenticated")({
     // Lewati pengecekan device pada halaman verifikasi itu sendiri
     if (location.pathname.startsWith("/device-verify")) return;
     const hash = await getClientDeviceFingerprint();
+    if (isDeviceTrustedLocal(data.session.user.id, hash)) return;
     let trusted = false;
     try {
-      const res = await isDeviceTrusted({ data: { deviceHash: hash } });
+      const res = await withPlainTimeout(
+        isDeviceTrusted({ data: { deviceHash: hash } }),
+        "device-trust-check",
+        6_000,
+      );
       trusted = !!res?.trusted;
+      if (trusted) markDeviceTrustedLocal(data.session.user.id, hash);
     } catch {
       trusted = false;
     }

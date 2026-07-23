@@ -469,7 +469,7 @@ function Index() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
-                {autoLock ? "✓ " : ""}Hapus sesi saat tutup tab
+                {autoLock ? "✓ " : ""}Kunci saat keluar aplikasi
               </DropdownMenuItem>
             </>
           ) : (
@@ -482,7 +482,7 @@ function Index() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
-                {autoLock ? "✓ " : ""}Hapus sesi saat tutup tab
+                {autoLock ? "✓ " : ""}Kunci saat keluar aplikasi
               </DropdownMenuItem>
             </>
           )}

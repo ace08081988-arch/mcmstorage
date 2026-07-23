@@ -84,7 +84,7 @@ export const Route = createFileRoute("/auth")({
     ],
     links: [
       { rel: "canonical", href: "https://mcmstorage.biz/auth" },
-      { rel: "preload", as: "image", href: "/icon-192.png", fetchpriority: "high" },
+      { rel: "preload", as: "image", href: "/icon-192.png", fetchPriority: "high" },
     ],
   }),
   component: AuthPage,

@@ -40,6 +40,7 @@ import { confirm as confirmDialog } from "@/lib/confirm";
 import { consumeSentTabFlag, SHOW_SENT_EVENT } from "@/lib/ready-ecer-sent-nav";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
+import { withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
@@ -184,41 +185,57 @@ export function ReadyEcerSection() {
   useOnDebtTx(useCallback(() => { void handleRefresh(); }, []));
 
   async function load() {
+    try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = supabase as any;
-      const { data: titles } = await sb
-        .from("ecer_titles")
-        .select("id,name,target_grams,unit_label,warehouse_item_id")
-        .order("created_at", { ascending: false })
-        .limit(20);
+      const { data: titles } = await withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; name: string; target_grams: number; unit_label: string; warehouse_item_id: string }>>>(
+        (signal) => sb
+          .from("ecer_titles")
+          .select("id,name,target_grams,unit_label,warehouse_item_id")
+          .order("created_at", { ascending: false })
+          .limit(20)
+          .abortSignal(signal),
+        "ready_ecer_titles",
+      );
       const list = (titles ?? []) as Array<{ id: string; name: string; target_grams: number; unit_label: string; warehouse_item_id: string }>;
       if (list.length === 0) { setRows([]); return; }
       const itemIds = Array.from(new Set(list.map((t) => t.warehouse_item_id)));
       const titleIds = list.map((t) => t.id);
       const sinceIso = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString();
       const [{ data: items }, { data: preps }, { data: subs }, { data: selfPreps }] = await Promise.all([
-        sb.from("warehouse_items").select("id,name").in("id", itemIds),
+        withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; name: string }>>>(
+          (signal) => sb.from("warehouse_items").select("id,name").in("id", itemIds).abortSignal(signal),
+          "ready_ecer_items",
+        ),
         // Filter server-side "aktif" WAJIB via helper — mengunci semantik
         // "sold_at IS NULL" ke satu tempat (@/lib/prep-active-selector).
         // Kalau definisi "aktif" bergeser di masa depan, satu edit di
         // helper langsung merambat ke semua badge.
-        measureQuery(QueryMetricNames.ecerPrepAktif, () =>
-          withActivePrepsFilter(
-            sb.from("ecer_preparations")
-              .select("id,title_id,sold_at,photo_path,location_url,created_at")
-              .in("title_id", titleIds)
-          )
-            .gte("created_at", sinceIso)
-            .order("created_at", { ascending: false })
-            .limit(200),
-          { titles: titleIds.length },
+        withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; title_id: string; sold_at: string | null; photo_path: string | null; location_url: string | null; created_at: string }>>>(
+          (signal) => measureQuery(QueryMetricNames.ecerPrepAktif, () =>
+            withActivePrepsFilter(
+              sb.from("ecer_preparations")
+                .select("id,title_id,sold_at,photo_path,location_url,created_at")
+                .in("title_id", titleIds)
+            )
+              .gte("created_at", sinceIso)
+              .order("created_at", { ascending: false })
+              .limit(200)
+              .abortSignal(signal),
+            { titles: titleIds.length },
+          ) as Promise<SupabaseQueryResult<Array<{ id: string; title_id: string; sold_at: string | null; photo_path: string | null; location_url: string | null; created_at: string }>>>,
+          "ready_ecer_preps",
         ),
-        sb
-          .from("prep_submissions")
-          .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id,sent_at,sent_channel,sent_maps_url")
-          .gte("submitted_at", sinceIso)
-          .order("submitted_at", { ascending: false })
-          .limit(200),
+        withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string; sent_at: string | null; sent_channel: string | null; sent_maps_url: string | null }>>>(
+          (signal) => sb
+            .from("prep_submissions")
+            .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id,sent_at,sent_channel,sent_maps_url")
+            .gte("submitted_at", sinceIso)
+            .order("submitted_at", { ascending: false })
+            .limit(200)
+            .abortSignal(signal),
+          "ready_ecer_prep_submissions",
+        ),
         Promise.resolve({ data: null }),
       ]);
       const itemMap = new Map<string, string>(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
@@ -246,10 +263,14 @@ export function ReadyEcerSection() {
       type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null };
       let metaByItemId = new Map<string, TaskItemMeta>();
       if (taskItemIds.length > 0) {
-        const { data: tItems } = await sb
-          .from("prep_task_items")
-          .select("id,name_snapshot,warehouse_item_id,qty_requested,unit_label,ecer_title_id")
-          .in("id", taskItemIds);
+        const { data: tItems } = await withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; name_snapshot: string | null; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null }>>>(
+          (signal) => sb
+            .from("prep_task_items")
+            .select("id,name_snapshot,warehouse_item_id,qty_requested,unit_label,ecer_title_id")
+            .in("id", taskItemIds)
+            .abortSignal(signal),
+          "ready_ecer_task_items",
+        );
         metaByItemId = new Map(
           ((tItems ?? []) as Array<{ id: string; name_snapshot: string | null; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null }>).map((i) => [
             i.id,
@@ -358,7 +379,10 @@ export function ReadyEcerSection() {
           );
         }
       }
-      await Promise.all(thumbJobs);
+      await Promise.race([
+        Promise.allSettled(thumbJobs),
+        new Promise<void>((resolve) => window.setTimeout(resolve, 5_000)),
+      ]);
 
       setRows(list.map((t) => {
         const shots = shotsByName.get(t.id) ?? [];
@@ -407,6 +431,11 @@ export function ReadyEcerSection() {
           },
         };
       }));
+    } catch (err) {
+      console.warn("[ready-ecer] gagal memuat, lepas skeleton", err);
+      setRows((prev) => prev ?? []);
+      setRealtimeStatus("offline");
+    }
   }
 
   useEffect(() => {
