@@ -164,6 +164,13 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const [stickerShadow, setStickerShadow] = useState<number>(100);
   const [stickerGloss, setStickerGloss] = useState<number>(100);
   const [stickerRim, setStickerRim] = useState<number>(100);
+  // Snap-to-grid (posisi) + snap sudut (rotasi) untuk stiker panah.
+  // Default ON supaya penempatan panah rapi sejajar sumbu foto.
+  const [snapEnabled, setSnapEnabled] = useState<boolean>(true);
+  const SNAP_GRID = 8;   // px logika canvas
+  const SNAP_ANGLE = 15; // derajat
+  const snapToGrid = (v: number) => Math.round(v / SNAP_GRID) * SNAP_GRID;
+  const snapToAngle = (deg: number) => Math.round(deg / SNAP_ANGLE) * SNAP_ANGLE;
   // Panel gaya (warna/tebal/opacity) muncul otomatis saat tool coret/bentuk/teks aktif.
   // Panel dapat ditutup manual lewat handle drag di atasnya — state ini menyimpan
   // pilihan pemilik agar tidak "muncul lagi" saat mengganti antar tool goresan.
