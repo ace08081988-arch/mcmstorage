@@ -3599,6 +3599,7 @@ function SendEcerPrepsDialog({
   // aktif setelah langkah 2 lulus validasi (metode + nominal). Ini mencegah
   // owner main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
 
   useEffect(() => {
@@ -3611,6 +3612,7 @@ function SendEcerPrepsDialog({
     setPaidStr("");
     setNote("");
     setStep(1);
+    setPreviewOpen(false);
   }, [open, customers, title.id, prepIdsKey]);
 
   const totalAmount = useMemo(() => {
