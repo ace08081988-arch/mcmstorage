@@ -2905,6 +2905,14 @@ function SendPrepToCustomerDialog({
       busy={busy}
       locationMissing={!(prep.location_url ?? "").trim()}
       locationHint="Buka kartu penyiapan Request → isi kolom Lokasi ambil (link Google Maps), lalu ulangi tombol Kirim."
+      onSaveLocation={async (url) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("request_preparations")
+          .update({ location_url: url })
+          .eq("id", prep.id);
+        if (error) throw error;
+        await Promise.resolve(onLocationSaved?.());
+      }}
       confirmLabel={
         (channel === "chat" ? "Kirim Chat & " : "Kirim WA & ") +
         (payMethod === "hutang"
