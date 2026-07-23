@@ -1054,26 +1054,26 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           </div>
         </div>
 
-        {/* Object action bar (when selected) — dipindah ke bawah header. */}
+        {/* Floating stack: object action bar + ukuran + rotasi.
+            Semua kontrol kontekstual sticker/objek berada di satu kolom flex
+            supaya jarak antar bar konsisten dan tidak saling tumpang tindih
+            walau ukuran/zoom berubah. */}
         {selectedObj && (
           <div
-            className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-1 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
+            className="pointer-events-none absolute left-1/2 right-2 z-30 flex max-w-[min(96vw,720px)] -translate-x-1/2 flex-col items-center gap-ms-2"
             style={{ top: "calc(env(safe-area-inset-top) + 68px)" }}
           >
-            <IconPill onClick={() => duplicateObject(selectedObj.id)} label="Duplikat"><Copy className="h-4 w-4" /></IconPill>
-            <IconPill onClick={() => bringForward(selectedObj.id)} label="Ke depan"><span className="text-ms-sm">↑</span></IconPill>
-            <IconPill onClick={() => sendBackward(selectedObj.id)} label="Ke belakang"><span className="text-ms-sm">↓</span></IconPill>
-            <IconPill onClick={() => updateObject(selectedObj.id, { locked: !selectedObj.locked })} label="Kunci" active={!!selectedObj.locked}>
-              {selectedObj.locked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-            </IconPill>
-            <IconPill onClick={() => deleteObject(selectedObj.id)} label="Hapus" tone="danger"><Trash2 className="h-4 w-4" /></IconPill>
-          </div>
-        )}
+            <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl">
+              <IconPill onClick={() => duplicateObject(selectedObj.id)} label="Duplikat"><Copy className="h-4 w-4" /></IconPill>
+              <IconPill onClick={() => bringForward(selectedObj.id)} label="Ke depan"><span className="text-ms-sm">↑</span></IconPill>
+              <IconPill onClick={() => sendBackward(selectedObj.id)} label="Ke belakang"><span className="text-ms-sm">↓</span></IconPill>
+              <IconPill onClick={() => updateObject(selectedObj.id, { locked: !selectedObj.locked })} label="Kunci" active={!!selectedObj.locked}>
+                {selectedObj.locked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+              </IconPill>
+              <IconPill onClick={() => deleteObject(selectedObj.id)} label="Hapus" tone="danger"><Trash2 className="h-4 w-4" /></IconPill>
+            </div>
 
-        {/* Ukuran cepat — muncul saat sticker terpilih. Slider proporsional +
-            tombol −/+ supaya membesarkan/mengecilkan stiker gampang di HP,
-            tanpa harus mengejar handle kecil. */}
-        {selectedObj && selectedObj.kind === "sticker" && (() => {
+        {selectedObj.kind === "sticker" && (() => {
           const s = selectedObj as StickerObj;
           const aspect = s.height > 0 ? s.width / s.height : 1;
           const resize = (w: number) => {
@@ -1101,15 +1101,12 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           const snap = (target: number) => setRot(target);
           return (
             <>
-            <div
-              className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-2 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-3 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
-              style={{ top: "calc(env(safe-area-inset-top) + 128px)" }}
-            >
+            <div className="pointer-events-auto flex w-full max-w-full items-center gap-ms-2 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-3 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl">
               <button
                 type="button"
                 onClick={() => resize(s.width * 0.8)}
                 aria-label="Kecilkan stiker"
-                className="grid h-9 w-9 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
               >
                 <span className="text-ms-lg font-bold">−</span>
               </button>
@@ -1125,22 +1122,21 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 onKeyUp={flushTransient}
                 onBlur={flushTransient}
                 aria-label="Ukuran stiker"
-                className="h-9 w-44 accent-[#c9a84c] sm:w-56"
+                className="h-9 min-w-0 flex-1 accent-[#c9a84c]"
               />
               <button
                 type="button"
                 onClick={() => resize(s.width * 1.25)}
                 aria-label="Perbesar stiker"
-                className="grid h-9 w-9 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
               >
                 <span className="text-ms-lg font-bold">+</span>
               </button>
-              <span className="w-10 text-center text-ms-2xs tabular-nums text-[#f0d78c]/80">{Math.round(s.width)}</span>
+              <span className="w-10 shrink-0 text-center text-ms-2xs tabular-nums text-[#f0d78c]/80">{Math.round(s.width)}</span>
             </div>
             {isArrow && (
               <div
-                className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-1 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-2 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
-                style={{ top: "calc(env(safe-area-inset-top) + 176px)" }}
+                className="pointer-events-auto flex w-full max-w-full flex-wrap items-center justify-center gap-x-ms-1 gap-y-ms-1 rounded-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-2 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
                 role="group"
                 aria-label="Rotasi stiker panah"
               >
@@ -1148,7 +1144,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   type="button"
                   onClick={() => nudge(-15)}
                   aria-label="Rotasi berlawanan 15°"
-                  className="grid h-8 w-8 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
                 >
                   <RotateCcw className="h-4 w-4" />
                 </button>
@@ -1156,7 +1152,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   type="button"
                   onClick={() => nudge(-1)}
                   aria-label="Rotasi −1°"
-                  className="grid h-8 min-w-8 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className="grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
                 >
                   −1°
                 </button>
@@ -1172,13 +1168,13 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   onKeyUp={flushTransient}
                   onBlur={flushTransient}
                   aria-label="Sudut rotasi"
-                  className="h-8 w-36 accent-[#c9a84c] sm:w-48"
+                  className="order-last h-8 w-full min-w-0 basis-full accent-[#c9a84c] sm:order-none sm:basis-auto sm:flex-1"
                 />
                 <button
                   type="button"
                   onClick={() => nudge(1)}
                   aria-label="Rotasi +1°"
-                  className="grid h-8 min-w-8 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className="grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
                 >
                   +1°
                 </button>
@@ -1186,7 +1182,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   type="button"
                   onClick={() => nudge(15)}
                   aria-label="Rotasi searah 15°"
-                  className="grid h-8 w-8 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
                 >
                   <RotateCw className="h-4 w-4" />
                 </button>
@@ -1203,14 +1199,14 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   onBlur={flushTransient}
                   onKeyUp={(e) => { if (e.key === "Enter") flushTransient(); }}
                   aria-label="Sudut presisi"
-                  className="h-8 w-14 rounded-md border border-[#c9a84c]/25 bg-white/[0.04] px-1 text-center text-ms-2xs tabular-nums text-[#f0d78c] focus:border-[#c9a84c]/60 focus:outline-none"
+                  className="h-8 w-14 shrink-0 rounded-md border border-[#c9a84c]/25 bg-white/[0.04] px-1 text-center text-ms-2xs tabular-nums text-[#f0d78c] focus:border-[#c9a84c]/60 focus:outline-none"
                 />
-                <span className="pr-1 text-ms-2xs text-[#f0d78c]/60">°</span>
+                <span className="pr-1 shrink-0 text-ms-2xs text-[#f0d78c]/60">°</span>
                 <button
                   type="button"
                   onClick={() => snap(0)}
                   aria-label="Reset rotasi ke 0°"
-                  className="ml-0.5 grid h-8 min-w-8 place-items-center rounded-full border border-[#c9a84c]/30 px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className="grid h-8 min-w-8 shrink-0 place-items-center rounded-full border border-[#c9a84c]/30 px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
                 >
                   0°
                 </button>
@@ -1221,7 +1217,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   aria-pressed={snapEnabled}
                   title={snapEnabled ? `Snap ON · grid ${SNAP_GRID}px · sudut ${SNAP_ANGLE}°` : "Snap OFF"}
                   className={cn(
-                    "ml-0.5 grid h-8 min-w-8 place-items-center rounded-full border px-1.5 text-ms-2xs font-semibold transition active:scale-95",
+                    "grid h-8 min-w-8 shrink-0 place-items-center rounded-full border px-1.5 text-ms-2xs font-semibold transition active:scale-95",
                     snapEnabled
                       ? "border-[#c9a84c] bg-[#c9a84c]/20 text-[#f0d78c]"
                       : "border-white/15 text-white/60 hover:bg-white/5",
@@ -1234,6 +1230,8 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             </>
           );
         })()}
+          </div>
+        )}
       </div>
 
       {/* Panel gaya kontekstual — muncul di atas toolbar HANYA saat tool
