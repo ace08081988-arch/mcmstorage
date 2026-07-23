@@ -171,6 +171,13 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const SNAP_ANGLE = 15; // derajat
   const snapToGrid = (v: number) => Math.round(v / SNAP_GRID) * SNAP_GRID;
   const snapToAngle = (deg: number) => Math.round(deg / SNAP_ANGLE) * SNAP_ANGLE;
+  // Kelas fokus konsisten — memastikan kontrol pada panel Ukuran & Rotasi
+  // (yang bisa wrap/stack di layar sempit) tetap terlihat saat dijangkau via
+  // Tab keyboard. Ring emas cukup kontras di latar hitam panel.
+  const focusRing =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f0d78c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]";
+  const panelFocusWithin =
+    "focus-within:border-[#c9a84c]/70 focus-within:ring-1 focus-within:ring-[#c9a84c]/40";
   // Panel gaya (warna/tebal/opacity) muncul otomatis saat tool coret/bentuk/teks aktif.
   // Panel dapat ditutup manual lewat handle drag di atasnya — state ini menyimpan
   // pilihan pemilik agar tidak "muncul lagi" saat mengganti antar tool goresan.
@@ -441,10 +448,41 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         deleteObject(selectedId);
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); if (e.shiftKey) doRedo(); else doUndo(); }
+      // Shortcut kontrol Ukuran & Rotasi supaya panel yang wrap/stack di
+      // layar sempit tetap bisa dioperasikan tanpa harus meraih tombol kecil.
+      // Aktif hanya saat ada sticker terpilih dan fokus BUKAN di input teks.
+      if (
+        selectedId &&
+        !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+      ) {
+        const obj = scene.objects.find((o) => o.id === selectedId);
+        if (obj?.kind === "sticker") {
+          const s = obj as StickerObj;
+          const aspect = s.height > 0 ? s.width / s.height : 1;
+          const resize = (w: number) => {
+            const nw = Math.max(40, Math.min(720, Math.round(w)));
+            const nh = Math.max(40, Math.round(nw / (aspect || 1)));
+            updateObject(s.id, { width: nw, height: nh });
+          };
+          const setRot = (deg: number) => {
+            let d = deg % 360;
+            if (d > 180) d -= 360;
+            if (d <= -180) d += 360;
+            updateObject(s.id, { rotation: d });
+          };
+          if (e.key === "[") { e.preventDefault(); resize(s.width * 0.9); return; }
+          if (e.key === "]") { e.preventDefault(); resize(s.width * 1.1); return; }
+          if (e.key === ",") { e.preventDefault(); setRot((s.rotation ?? 0) - 1); return; }
+          if (e.key === ".") { e.preventDefault(); setRot((s.rotation ?? 0) + 1); return; }
+          if (e.key === "<") { e.preventDefault(); setRot((s.rotation ?? 0) - 15); return; }
+          if (e.key === ">") { e.preventDefault(); setRot((s.rotation ?? 0) + 15); return; }
+          if (e.key === "0" && !e.ctrlKey && !e.metaKey) { e.preventDefault(); setRot(0); return; }
+        }
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [selectedId, deleteObject, doUndo, doRedo]);
+  }, [selectedId, deleteObject, doUndo, doRedo, scene.objects, updateObject]);
 
   // Pinch zoom + wheel zoom on Stage
   const onWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
@@ -1101,12 +1139,22 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           const snap = (target: number) => setRot(target);
           return (
             <>
-            <div className="pointer-events-auto flex w-full max-w-full items-center gap-ms-2 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-3 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl">
+            <div
+              className={cn(
+                "pointer-events-auto flex w-full max-w-full items-center gap-ms-2 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-3 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl transition",
+                panelFocusWithin,
+              )}
+              role="group"
+              aria-label="Ukuran stiker"
+            >
               <button
                 type="button"
                 onClick={() => resize(s.width * 0.8)}
                 aria-label="Kecilkan stiker"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                className={cn(
+                  "grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95",
+                  focusRing,
+                )}
               >
                 <span className="text-ms-lg font-bold">−</span>
               </button>
@@ -1122,13 +1170,16 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 onKeyUp={flushTransient}
                 onBlur={flushTransient}
                 aria-label="Ukuran stiker"
-                className="h-9 min-w-0 flex-1 accent-[#c9a84c]"
+                className={cn("h-9 min-w-0 flex-1 accent-[#c9a84c] rounded-full", focusRing)}
               />
               <button
                 type="button"
                 onClick={() => resize(s.width * 1.25)}
                 aria-label="Perbesar stiker"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                className={cn(
+                  "grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95",
+                  focusRing,
+                )}
               >
                 <span className="text-ms-lg font-bold">+</span>
               </button>
@@ -1136,7 +1187,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             </div>
             {isArrow && (
               <div
-                className="pointer-events-auto flex w-full max-w-full flex-wrap items-center justify-center gap-x-ms-1 gap-y-ms-1 rounded-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-2 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
+                className={cn(
+                  "pointer-events-auto flex w-full max-w-full flex-wrap items-center justify-center gap-x-ms-1 gap-y-ms-1 rounded-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-2 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl transition",
+                  panelFocusWithin,
+                )}
                 role="group"
                 aria-label="Rotasi stiker panah"
               >
@@ -1144,7 +1198,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   type="button"
                   onClick={() => nudge(-15)}
                   aria-label="Rotasi berlawanan 15°"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className={cn(
+                    "grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95",
+                    focusRing,
+                  )}
                 >
                   <RotateCcw className="h-4 w-4" />
                 </button>
@@ -1152,7 +1209,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   type="button"
                   onClick={() => nudge(-1)}
                   aria-label="Rotasi −1°"
-                  className="grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className={cn(
+                    "grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95",
+                    focusRing,
+                  )}
                 >
                   −1°
                 </button>
@@ -1168,13 +1228,19 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   onKeyUp={flushTransient}
                   onBlur={flushTransient}
                   aria-label="Sudut rotasi"
-                  className="order-last h-8 w-full min-w-0 basis-full accent-[#c9a84c] sm:order-none sm:basis-auto sm:flex-1"
+                  className={cn(
+                    "order-last h-8 w-full min-w-0 basis-full accent-[#c9a84c] rounded-full sm:order-none sm:basis-auto sm:flex-1",
+                    focusRing,
+                  )}
                 />
                 <button
                   type="button"
                   onClick={() => nudge(1)}
                   aria-label="Rotasi +1°"
-                  className="grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className={cn(
+                    "grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95",
+                    focusRing,
+                  )}
                 >
                   +1°
                 </button>
@@ -1182,7 +1248,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   type="button"
                   onClick={() => nudge(15)}
                   aria-label="Rotasi searah 15°"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className={cn(
+                    "grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95",
+                    focusRing,
+                  )}
                 >
                   <RotateCw className="h-4 w-4" />
                 </button>
@@ -1199,14 +1268,20 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   onBlur={flushTransient}
                   onKeyUp={(e) => { if (e.key === "Enter") flushTransient(); }}
                   aria-label="Sudut presisi"
-                  className="h-8 w-14 shrink-0 rounded-md border border-[#c9a84c]/25 bg-white/[0.04] px-1 text-center text-ms-2xs tabular-nums text-[#f0d78c] focus:border-[#c9a84c]/60 focus:outline-none"
+                  className={cn(
+                    "h-8 w-14 shrink-0 rounded-md border border-[#c9a84c]/25 bg-white/[0.04] px-1 text-center text-ms-2xs tabular-nums text-[#f0d78c] focus:border-[#c9a84c]/60 focus:outline-none",
+                    focusRing,
+                  )}
                 />
                 <span className="pr-1 shrink-0 text-ms-2xs text-[#f0d78c]/60">°</span>
                 <button
                   type="button"
                   onClick={() => snap(0)}
                   aria-label="Reset rotasi ke 0°"
-                  className="grid h-8 min-w-8 shrink-0 place-items-center rounded-full border border-[#c9a84c]/30 px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                  className={cn(
+                    "grid h-8 min-w-8 shrink-0 place-items-center rounded-full border border-[#c9a84c]/30 px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95",
+                    focusRing,
+                  )}
                 >
                   0°
                 </button>
@@ -1221,6 +1296,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                     snapEnabled
                       ? "border-[#c9a84c] bg-[#c9a84c]/20 text-[#f0d78c]"
                       : "border-white/15 text-white/60 hover:bg-white/5",
+                    focusRing,
                   )}
                 >
                   Snap
