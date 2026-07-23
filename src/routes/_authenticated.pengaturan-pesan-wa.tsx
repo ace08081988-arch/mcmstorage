@@ -118,7 +118,7 @@ function PesanWaPage() {
     <div className="mx-auto w-full max-w-5xl space-y-ms-3 p-ms-3">
       <SettingsHeader
         title="Template Pesan WA"
-        description="Atur sendiri format caption WhatsApp yang dikirim ke pembeli (judul, harga, status pembayaran, lokasi, catatan, penutup)."
+        subtitle="Atur sendiri format caption WhatsApp yang dikirim ke pembeli (judul, harga, status pembayaran, lokasi, catatan, penutup)."
       />
 
       <SettingsSection
