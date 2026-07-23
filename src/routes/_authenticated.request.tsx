@@ -2899,6 +2899,8 @@ function SendPrepToCustomerDialog({
       channel={channel === "chat" ? "chat" : "wa"}
       photoCount={photoPaths.length}
       busy={busy}
+      locationMissing={!(prep.location_url ?? "").trim()}
+      locationHint="Buka kartu penyiapan Request → isi kolom Lokasi ambil (link Google Maps), lalu ulangi tombol Kirim."
       confirmLabel={
         (channel === "chat" ? "Kirim Chat & " : "Kirim WA & ") +
         (payMethod === "hutang"
