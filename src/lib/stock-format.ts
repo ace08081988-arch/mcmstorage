@@ -11,6 +11,15 @@ export function rupiah(n: number) {
   }).format(n || 0);
 }
 
+/** Format berat/gram tanpa artifact floating point (mis. 3.1999999999999997 → 3,2). */
+export function fmtWeight(n: number, unit?: string) {
+  const v = Number(n) || 0;
+  // Hilangkan noise floating point dengan presisi 6 digit.
+  const cleaned = Math.round(v * 1_000_000) / 1_000_000;
+  const formatted = cleaned.toLocaleString("id-ID", { maximumFractionDigits: 6 });
+  return `${formatted}${unit ? ` ${unit}` : ""}`;
+}
+
 export function fmtBase(n: number, u: "g" | "pcs") {
   const v = Number(n) || 0;
   if (u === "g") {
