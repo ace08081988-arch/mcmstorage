@@ -4819,10 +4819,13 @@ function SendEcerPrepsDialog({
       })();
       let sendEventId: string | null = null;
       try {
+        const { data: uData } = await supabase.auth.getUser();
+        const uid = uData.user?.id ?? null;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: evt } = await (supabase as any)
           .from("ecer_send_events")
           .insert({
+            user_id: uid,
             title_id: title.id,
             prep_ids: preps.map((p) => p.id),
             prep_count: preps.length,
