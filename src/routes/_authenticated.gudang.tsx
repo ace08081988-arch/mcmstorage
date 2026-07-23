@@ -306,29 +306,51 @@ function GudangPage() {
     try { window.sessionStorage.setItem(GUDANG_TAB_KEY, tab); } catch { /* ignore */ }
   }, [tab]);
   // Kalau reload sebelumnya dipicu oleh crash saat input, munculkan
-  // notifikasi ringkas berisi pesan errornya (satu kali) supaya bisa
-  // dilacak — payload lengkap tetap di sessionStorage `mcm:last-crash`.
+  // notifikasi berisi pesan errornya. Toast pernah dipakai tapi menghilang
+  // terlalu cepat di HP dan tidak bisa di-screenshot; sekarang disimpan ke
+  // state supaya bisa dirender sebagai banner persisten di atas halaman
+  // (lihat render di bawah). Payload lengkap tetap di
+  // sessionStorage["mcm:last-crash"].
+  const [lastCrash, setLastCrash] = useState<
+    { at: string; name: string; message: string; stack: string; route: string } | null
+  >(null);
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const raw = window.sessionStorage.getItem("mcm:last-crash");
       if (!raw) return;
-      const shown = window.sessionStorage.getItem("mcm:last-crash:shown");
-      if (shown === raw) return;
-      const p = JSON.parse(raw) as { at?: string; message?: string; route?: string };
+      const p = JSON.parse(raw) as {
+        at?: string; name?: string; message?: string; stack?: string; route?: string;
+      };
       const at = p.at ? new Date(p.at).getTime() : 0;
-      // hanya tampilkan kalau crash terjadi < 60 detik lalu dan di rute Gudang
-      if (!at || Date.now() - at > 60_000) return;
+      // hanya tampilkan kalau crash terjadi < 10 menit lalu dan di rute Gudang
+      if (!at || Date.now() - at > 10 * 60_000) return;
       if (p.route && !p.route.startsWith("/gudang")) return;
-      window.sessionStorage.setItem("mcm:last-crash:shown", raw);
-      toast.error("Halaman sempat error dan dimuat ulang", {
-        description: (p.message || "").slice(0, 200) || "Tanpa pesan",
-        duration: 8000,
+      setLastCrash({
+        at: p.at || "",
+        name: p.name || "Error",
+        message: p.message || "(tanpa pesan)",
+        stack: p.stack || "",
+        route: p.route || "",
       });
     } catch {
       // ignore
     }
   }, []);
+  const dismissLastCrash = () => {
+    try {
+      window.sessionStorage.removeItem("mcm:last-crash");
+      window.sessionStorage.removeItem("mcm:last-crash:shown");
+    } catch { /* ignore */ }
+    setLastCrash(null);
+  };
+  const copyLastCrash = () => {
+    if (!lastCrash) return;
+    const text =
+      `[${lastCrash.at}] ${lastCrash.route}\n${lastCrash.name}: ${lastCrash.message}\n\n${lastCrash.stack}`;
+    try { void navigator.clipboard?.writeText(text); toast.success("Detail crash disalin"); }
+    catch { /* ignore */ }
+  };
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [beliDefaultPayment, setBeliDefaultPayment] = useState<"kas" | "hutang">("kas");
