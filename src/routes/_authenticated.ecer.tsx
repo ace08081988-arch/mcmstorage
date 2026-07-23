@@ -4180,7 +4180,7 @@ function SendEcerPrepsDialog({
               </Button>
             )}
             {step === 3 && (
-              <Button size="sm" onClick={handleSend} disabled={!canSend}>
+              <Button size="sm" onClick={() => setPreviewOpen(true)} disabled={!canSend}>
                 {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
                 {payment.method === "hutang"
                   ? "Kirim ke pembeli & catat piutang"
@@ -4193,5 +4193,22 @@ function SendEcerPrepsDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <CaptionPreviewDialog
+      open={previewOpen}
+      onOpenChange={setPreviewOpen}
+      caption={(() => { try { return buildCaption(); } catch { return ""; } })()}
+      channel="wa"
+      photoCount={preps.length}
+      busy={busy}
+      confirmLabel={
+        payment.method === "hutang"
+          ? "Kirim WA & catat piutang"
+          : payment.method === "partial"
+            ? "Kirim WA & catat sebagian"
+            : "Kirim WA & catat lunas"
+      }
+      onConfirm={() => { setPreviewOpen(false); void handleSend(); }}
+    />
+    </>
   );
 }
