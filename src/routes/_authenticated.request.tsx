@@ -52,6 +52,8 @@ import { peekUserIdSync, scopedKey } from "@/lib/user-scoped-storage";
 import { useCurrentUserId } from "@/lib/current-user";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
+import { renderWaCaption } from "@/lib/wa-template";
+import { useWaTemplate } from "@/lib/wa-template-store";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
 import { debounce } from "@/lib/realtime-debounce";
