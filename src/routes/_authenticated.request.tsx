@@ -2553,6 +2553,7 @@ function SendPrepToCustomerDialog({
 
   const totalQty = useMemo(() => items.reduce((s, it) => s + Number(it.actual_grams || 0), 0), [items]);
   const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy && partialValid;
+  const waTpl = useWaTemplate();
   const sendStatus = useSaveStatus({ mode, customerId, manualName, totalStr, payMethod, paidStr, note }, initialSnap, busy);
   useSaveStatusToast(sendStatus, {
     successMessage: "Terkirim",
