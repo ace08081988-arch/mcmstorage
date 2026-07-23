@@ -251,21 +251,27 @@ function OrgHeader() {
           src={logo}
           alt=""
           aria-hidden
-          className="h-8 w-8 shrink-0 rounded-md object-cover ring-1 ring-border shadow-sm"
+          className="h-10 w-10 shrink-0 rounded-xl object-cover ring-1 ring-primary/25 shadow-[0_0_20px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
         />
       ) : (
         <span
           aria-hidden
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-ms-xs font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-ms-sm font-bold tracking-tight text-primary-foreground shadow-[0_0_20px_-6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/30"
         >
           {short}
         </span>
       )}
       <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-        <div className="font-display truncate text-ms-base font-semibold leading-tight tracking-tight text-foreground">
+        <div
+          className="truncate text-[22px] leading-tight tracking-tight text-foreground"
+          style={{ fontFamily: "'DM Serif Display', serif" }}
+        >
           {full}
         </div>
-        <div className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/80">
+        <div
+          className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.24em] text-primary/70"
+          style={{ fontFamily: "'Fira Sans', sans-serif" }}
+        >
           Manajemen Operasional
         </div>
       </div>
