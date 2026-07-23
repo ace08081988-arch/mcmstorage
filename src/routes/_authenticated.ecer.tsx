@@ -2364,7 +2364,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
       }
       setDeleteStep("done");
       toast.success(
-        `Penyiapan #${index} (${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}) dihapus · stok dikembalikan`,
+        `Penyiapan #${index} (${fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}) dihapus · stok dikembalikan`,
         { duration: 4000 }
       );
       // Biarkan user melihat status "Selesai" sebentar sebelum dialog tertutup.
