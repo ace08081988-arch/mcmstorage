@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { pingLovableAi } from "@/lib/ai-ping.functions";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
   Boxes,
@@ -51,6 +53,82 @@ export const Route = createFileRoute("/_authenticated/gudang")({
   }),
   component: GudangPage,
 });
+
+function AiPingButton() {
+  const ping = useServerFn(pingLovableAi);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<
+    | null
+    | {
+        ok: boolean;
+        status: number;
+        elapsedMs: number;
+        reply: string | null;
+        runId: string | null;
+        error: string | null;
+      }
+  >(null);
+
+  const run = useCallback(async () => {
+    setBusy(true);
+    setResult(null);
+    try {
+      const r = await ping({ data: undefined as never });
+      setResult(r);
+      if (r.ok) {
+        toast.success(`AI OK · ${r.elapsedMs}ms${r.runId ? ` · ${r.runId.slice(0, 8)}` : ""}`);
+      } else {
+        toast.error(`AI gagal (${r.status || "network"}): ${r.error ?? "unknown"}`);
+      }
+    } catch (e) {
+      const msg = (e as Error).message;
+      setResult({ ok: false, status: 0, elapsedMs: 0, reply: null, runId: null, error: msg });
+      toast.error(`Uji AI gagal: ${msg}`);
+    } finally {
+      setBusy(false);
+    }
+  }, [ping]);
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+      <button
+        type="button"
+        onClick={run}
+        disabled={busy}
+        className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 font-medium hover:bg-muted disabled:opacity-60"
+        aria-label="Uji koneksi AI"
+      >
+        {busy ? "Menguji AI…" : "🤖 Uji AI"}
+      </button>
+      {result && (
+        <span
+          role="status"
+          className={
+            "inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md border px-2 py-1 " +
+            (result.ok
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              : "border-destructive/40 bg-destructive/10 text-destructive")
+          }
+        >
+          <span className="font-semibold">{result.ok ? "OK" : "ERROR"}</span>
+          <span>HTTP {result.status || "—"}</span>
+          <span>{result.elapsedMs}ms</span>
+          {result.runId && (
+            <span className="font-mono">run {result.runId.slice(0, 12)}</span>
+          )}
+          {!result.ok && result.error && (
+            <span className="max-w-[24ch] truncate" title={result.error}>
+              {result.error}
+            </span>
+          )}
+          {result.ok && result.reply && (
+            <span className="opacity-70">balasan: {result.reply}</span>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
 
 type PackageType = "gram" | "pcs" | "botol" | "sachet";
 
@@ -632,6 +710,7 @@ function GudangPage() {
             onChange={setTab}
             ariaLabel="Bagian Gudang"
           />
+          <AiPingButton />
         </PageHeader>
 
         <PageContainer>
