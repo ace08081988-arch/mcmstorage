@@ -2302,7 +2302,7 @@ function PrepSections({
 
 function PrepCard({
   index, prep, items, warehouseItems, titleItems, titleName, customers, onDelete, onSent,
-  autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend,
+  autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend, onLocationSaved,
 }: {
   index: number;
   prep: RequestPreparation;
@@ -2316,6 +2316,7 @@ function PrepCard({
   autoOpenSend?: boolean;
   autoOpenSendChannel?: "whatsapp" | "chat";
   onConsumeAutoOpenSend?: () => void;
+  onLocationSaved?: () => void | Promise<void>;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
