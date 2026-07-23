@@ -2359,15 +2359,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         setDeleteStep("idle");
         return;
       }
-      setDeleteStep("done");
-      // Tutup dialog dan beri toast dulu supaya user dapat umpan balik langsung,
-      // lalu refresh daftar penyiapan/judul di background agar hasilnya
-      // langsung terlihat begitu dialog tertutup.
-      setDeleteOpen(false);
-      toast.success(
-        `Penyiapan #${index} (${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}) dihapus · stok dikembalikan`,
-        { duration: 4000 }
-      );
+      setDeleteStep("refresh");
       try {
         await Promise.all([onChanged(), onTitleUpdated()]);
       } catch (refreshErr) {
@@ -2375,6 +2367,14 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           description: "Tarik ke bawah atau tekan tombol refresh untuk memperbarui tampilan.",
         });
       }
+      setDeleteStep("done");
+      toast.success(
+        `Penyiapan #${index} (${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}) dihapus · stok dikembalikan`,
+        { duration: 4000 }
+      );
+      // Biarkan user melihat status "Selesai" sebentar sebelum dialog tertutup.
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      setDeleteOpen(false);
     } catch (e) {
       toast.error("Gagal: " + ((e as Error)?.message ?? String(e)));
     } finally {
