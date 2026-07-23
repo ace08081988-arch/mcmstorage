@@ -818,7 +818,7 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, st
           <div className="text-ms-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
           <div className="mt-1 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
             <span className="inline-flex items-center gap-ms-1 rounded-md bg-muted px-1.5 py-0.5 font-medium tabular-nums text-foreground">
-              <Scale className="h-3 w-3" /> {title.target_grams} {displayUnit(itemName, title.unit_label)}
+              <Scale className="h-3 w-3" /> {fmtWeight(Number(title.target_grams), displayUnit(itemName, title.unit_label))}
             </span>
             <span className="inline-flex items-center gap-ms-1 tabular-nums">
               <Hash className="h-3 w-3" />
