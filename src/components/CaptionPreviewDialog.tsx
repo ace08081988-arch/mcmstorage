@@ -7,7 +7,7 @@
  * disalin. Owner harus menekan "Kirim sekarang" untuk melanjutkan; tombol
  * "Periksa lagi" menutup modal tanpa mengirim.
  */
-import { Copy, Loader2, MessageCircle, Send } from "lucide-react";
+import { AlertTriangle, Copy, Loader2, MapPin, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -30,6 +30,8 @@ export function CaptionPreviewDialog({
   busy,
   confirmLabel,
   onConfirm,
+  locationMissing,
+  locationHint,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -39,6 +41,11 @@ export function CaptionPreviewDialog({
   busy?: boolean;
   confirmLabel?: string;
   onConfirm: () => void;
+  /** True jika tidak ada `location_url` di kartu penyiapan → 📍 tidak akan
+   * ikut terkirim. UI menampilkan banner amber sebagai peringatan. */
+  locationMissing?: boolean;
+  /** Petunjuk singkat cara mengisi lokasi (mis. rute yang harus dibuka). */
+  locationHint?: string;
 }) {
   const Icon = channel === "chat" ? MessageCircle : Send;
   const channelLabel = channel === "chat" ? "MCM Chat" : "WhatsApp";
@@ -69,6 +76,28 @@ export function CaptionPreviewDialog({
         </DialogHeader>
 
         <div className="space-y-ms-2">
+          {locationMissing ? (
+            <div
+              role="alert"
+              data-testid="caption-preview-loc-warning"
+              className="flex items-start gap-ms-2 rounded-md border border-amber-400/60 bg-amber-50 p-ms-2 text-ms-2xs text-amber-900 dark:border-amber-500/50 dark:bg-amber-950/40 dark:text-amber-100"
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+              <div className="space-y-1">
+                <div className="font-semibold">
+                  Lokasi belum diisi — 📍 tidak akan ikut terkirim
+                </div>
+                <div className="opacity-90">
+                  {locationHint ??
+                    "Buka kartu penyiapan → isi kolom Lokasi ambil (link Google Maps), lalu buka ulang tombol Kirim."}
+                </div>
+                <div className="inline-flex items-center gap-1 opacity-80">
+                  <MapPin className="h-3 w-3" aria-hidden />
+                  Pesan tetap bisa dikirim tanpa lokasi.
+                </div>
+              </div>
+            </div>
+          ) : null}
           <pre
             data-testid="caption-preview-text"
             className="max-h-[55vh] overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-ms-2 font-sans text-ms-2xs leading-relaxed"
