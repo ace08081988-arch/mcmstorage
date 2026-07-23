@@ -1033,7 +1033,20 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             const nh = Math.max(40, Math.round(nw / (aspect || 1)));
             updateObject(s.id, { width: nw, height: nh });
           };
+          const preset = STICKER_PRESETS[s.sticker];
+          const isArrow = preset?.group === "panah";
+          // Normalisasi -180..180 supaya tampilan angka enak dibaca.
+          const normRot = (deg: number) => {
+            let d = deg % 360;
+            if (d > 180) d -= 360;
+            if (d <= -180) d += 360;
+            return d;
+          };
+          const setRot = (deg: number) => updateObject(s.id, { rotation: normRot(deg) });
+          const nudge = (delta: number) => setRot((s.rotation ?? 0) + delta);
+          const snap = (target: number) => setRot(target);
           return (
+            <>
             <div
               className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-2 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-3 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
               style={{ top: "calc(env(safe-area-inset-top) + 128px)" }}
@@ -1066,6 +1079,80 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
               </button>
               <span className="w-10 text-center text-ms-2xs tabular-nums text-[#f0d78c]/80">{Math.round(s.width)}</span>
             </div>
+            {isArrow && (
+              <div
+                className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-1 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-2 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
+                style={{ top: "calc(env(safe-area-inset-top) + 176px)" }}
+                role="group"
+                aria-label="Rotasi stiker panah"
+              >
+                <button
+                  type="button"
+                  onClick={() => nudge(-15)}
+                  aria-label="Rotasi berlawanan 15°"
+                  className="grid h-8 w-8 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => nudge(-1)}
+                  aria-label="Rotasi −1°"
+                  className="grid h-8 min-w-8 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                >
+                  −1°
+                </button>
+                <input
+                  type="range"
+                  min={-180}
+                  max={180}
+                  step={1}
+                  value={Math.round(normRot(s.rotation ?? 0))}
+                  onChange={(e) => setRot(Number(e.target.value))}
+                  aria-label="Sudut rotasi"
+                  className="h-8 w-36 accent-[#c9a84c] sm:w-48"
+                />
+                <button
+                  type="button"
+                  onClick={() => nudge(1)}
+                  aria-label="Rotasi +1°"
+                  className="grid h-8 min-w-8 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                >
+                  +1°
+                </button>
+                <button
+                  type="button"
+                  onClick={() => nudge(15)}
+                  aria-label="Rotasi searah 15°"
+                  className="grid h-8 w-8 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                >
+                  <RotateCw className="h-4 w-4" />
+                </button>
+                <input
+                  type="number"
+                  min={-180}
+                  max={180}
+                  step={1}
+                  value={Math.round(normRot(s.rotation ?? 0))}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    if (Number.isFinite(v)) setRot(v);
+                  }}
+                  aria-label="Sudut presisi"
+                  className="h-8 w-14 rounded-md border border-[#c9a84c]/25 bg-white/[0.04] px-1 text-center text-ms-2xs tabular-nums text-[#f0d78c] focus:border-[#c9a84c]/60 focus:outline-none"
+                />
+                <span className="pr-1 text-ms-2xs text-[#f0d78c]/60">°</span>
+                <button
+                  type="button"
+                  onClick={() => snap(0)}
+                  aria-label="Reset rotasi ke 0°"
+                  className="ml-0.5 grid h-8 min-w-8 place-items-center rounded-full border border-[#c9a84c]/30 px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+                >
+                  0°
+                </button>
+              </div>
+            )}
+            </>
           );
         })()}
       </div>
