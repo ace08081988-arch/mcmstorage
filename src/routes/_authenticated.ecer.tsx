@@ -2344,7 +2344,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           </div>
         )}
       </div>
-      <div className="space-y-1 p-ms-2">
+      <div className="flex flex-col gap-y-2 p-ms-2">
         <div className="text-ms-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
         {prep.note && <div className="line-clamp-2 text-ms-2xs leading-snug text-muted-foreground">{prep.note}</div>}
         {sold && (
@@ -2367,11 +2367,11 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             )}
           </details>
         )}
-        <div className="@container/prepactions pt-1">
-          <div className="flex flex-col gap-ms-1 @[200px]/prepactions:grid @[200px]/prepactions:grid-cols-[minmax(0,1fr)_auto] @[200px]/prepactions:items-center">
+        <div className="@container/prepactions">
+          <div className="flex min-h-8 flex-col gap-y-2 @[200px]/prepactions:grid @[200px]/prepactions:grid-cols-[minmax(0,1fr)_auto] @[200px]/prepactions:items-center @[200px]/prepactions:gap-x-2 @[200px]/prepactions:gap-y-0">
             {prep.location_url ? (
               <a href={prep.location_url} target="_blank" rel="noreferrer"
-                className="inline-flex min-w-0 items-center gap-0.5 text-ms-2xs leading-snug text-primary hover:underline">
+                className="inline-flex min-w-0 items-center gap-1 self-start text-ms-2xs leading-snug text-primary hover:underline @[200px]/prepactions:self-center">
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span className="truncate">Lokasi</span>
                 <ExternalLink className="h-2.5 w-2.5 shrink-0" />
@@ -2394,8 +2394,8 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           {new Date(prep.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
         </div>
         {shareDiag && (
-          <div className="mt-1 space-y-1 rounded border border-destructive/40 bg-destructive/5 p-ms-2 text-ms-2xs leading-snug">
-            <div className="flex items-center justify-between gap-ms-1">
+          <div className="mt-2 space-y-1.5 rounded border border-destructive/40 bg-destructive/5 p-ms-2 text-ms-2xs leading-snug">
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
               <span className="font-semibold text-destructive">Diagnostik kirim WA</span>
               <button type="button" onClick={() => setShareDiag(null)} className="text-muted-foreground hover:underline">Tutup</button>
             </div>
@@ -2411,7 +2411,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             <div className="break-all">wa.me: {shareDiag.waUrl}</div>
             <div className="break-all">Hasil: {JSON.stringify(shareDiag.result)}</div>
             {shareDiag.error && <div className="text-destructive">Error: {shareDiag.error}</div>}
-            <div className="flex gap-ms-1 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               <button type="button" onClick={copyDiag} className="rounded border px-ms-2 py-0.5 hover:bg-accent">Salin detail</button>
               <a href={shareDiag.waUrl} target="_blank" rel="noreferrer" className="rounded border px-ms-2 py-0.5 hover:bg-accent">Buka wa.me</a>
               <button type="button" onClick={onShare} className="rounded border px-ms-2 py-0.5 hover:bg-accent">Coba lagi</button>
