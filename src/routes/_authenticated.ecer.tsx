@@ -3609,6 +3609,7 @@ function SendEcerPrepsDialog({
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [previewOpen, setPreviewOpen] = useState(false);
   const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
+  const waTpl = useWaTemplate();
 
   useEffect(() => {
     if (!open) return;
