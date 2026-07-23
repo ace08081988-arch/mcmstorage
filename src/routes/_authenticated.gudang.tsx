@@ -34,6 +34,7 @@ import {
   writeGudangCache,
   clearGudangCache,
 } from "@/lib/gudang-cache";
+import { withPlainTimeout, withSupabaseQueryTimeout } from "@/lib/supabase-timeout";
 import {
   PageContainer,
   PageHeader,
@@ -353,7 +354,17 @@ function GudangPage() {
   const [secondaryLoading, setSecondaryLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
+    let alive = true;
+    withPlainTimeout(supabase.auth.getSession(), "gudang-session", 3_000)
+      .then(({ data }) => {
+        if (!alive) return;
+        setUid(data.session?.user?.id ?? null);
+      })
+      .catch((err) => {
+        console.warn("[gudang] session lookup timeout, load tanpa cache user", err);
+        if (alive) setUid(null);
+      });
+    return () => { alive = false; };
   }, []);
 
   // H10: coalesce burst reloads within a short window into a single fetch.
@@ -371,29 +382,21 @@ function GudangPage() {
   // tetap instan tanpa memblokir tampilan awal.
   async function reloadAllNow() {
     // Safety: query manapun yang menggantung (mis. WebView kehilangan
-    // konektivitas saat berpindah tab) TIDAK boleh membekukan skeleton
-    // "Gel-1 · memuat stok…" selamanya. Bungkus tiap query dengan
-    // timeout 12 dtk + fallback data lama; `setLoading(false)` dijamin
-    // jalan di `finally` supaya UI selalu sempat bernapas.
-    const withTimeout = <T,>(p: PromiseLike<T>, ms = 12_000): Promise<T> =>
-      new Promise((resolve, reject) => {
-        const t = setTimeout(() => reject(new Error("query-timeout")), ms);
-        Promise.resolve(p).then(
-          (v) => { clearTimeout(t); resolve(v); },
-          (e) => { clearTimeout(t); reject(e); },
-        );
-      });
+    // konektivitas saat berpindah tab) TIDAK boleh membekukan skeleton.
+    // Pakai `abortSignal` asli agar fetch diputus, bukan hanya Promise.race.
     let w, s, sa, wc;
     try {
       [w, s, sa, wc] = await Promise.all([
-        withTimeout(supabase.from("warehouse_items").select("*").order("name")),
-        withTimeout(supabase.from("suppliers").select("*").order("created_at", { ascending: false })),
-        withTimeout(supabase.from("sales").select("*").order("created_at", { ascending: false }).limit(200)),
-        withTimeout(
-          supabase
+        withSupabaseQueryTimeout((signal) => supabase.from("warehouse_items").select("*").order("name").abortSignal(signal), "warehouse_items"),
+        withSupabaseQueryTimeout((signal) => supabase.from("suppliers").select("*").order("created_at", { ascending: false }).abortSignal(signal), "suppliers"),
+        withSupabaseQueryTimeout((signal) => supabase.from("sales").select("*").order("created_at", { ascending: false }).limit(200).abortSignal(signal), "sales"),
+        withSupabaseQueryTimeout(
+          (signal) => supabase
             .from("warehouse_categories")
             .select("name, position")
-            .order("position", { ascending: true }),
+            .order("position", { ascending: true })
+            .abortSignal(signal),
+          "warehouse_categories",
         ),
       ]);
     } catch (err) {
@@ -424,11 +427,11 @@ function GudangPage() {
     let p, py, c, cp, or;
     try {
       [p, py, c, cp, or] = await Promise.all([
-        withTimeout(supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200)),
-        withTimeout(supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500)),
-        withTimeout(supabase.from("customers").select("*").order("created_at", { ascending: false })),
-        withTimeout(supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500)),
-        withTimeout(supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200)),
+        withSupabaseQueryTimeout((signal) => supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200).abortSignal(signal), "purchases"),
+        withSupabaseQueryTimeout((signal) => supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500).abortSignal(signal), "supplier_payments"),
+        withSupabaseQueryTimeout((signal) => supabase.from("customers").select("*").order("created_at", { ascending: false }).abortSignal(signal), "customers"),
+        withSupabaseQueryTimeout((signal) => supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500).abortSignal(signal), "customer_payments"),
+        withSupabaseQueryTimeout((signal) => supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200).abortSignal(signal), "order_requests"),
       ]);
     } catch (err) {
       console.warn("[gudang] wave-2 gagal, lepas skeleton", err);
@@ -487,22 +490,23 @@ function GudangPage() {
   }
 
   useEffect(() => {
-    if (!uid) return;
+    if (uid) {
     // Hidrasi sinkron dari cache sesi bila ada — paint instan.
     // `reloadAllNow` kemudian tetap dijalankan sebagai revalidasi (SWR).
-    const cached = readGudangCache(uid);
-    if (cached) {
-      setItems(cached.items as WItem[]);
-      setSuppliers(cached.suppliers as Supplier[]);
-      setSales(cached.sales as Sale[]);
-      setCategoryOrder(new Map(cached.categoryOrder));
-      setPurchases(cached.purchases as Purchase[]);
-      setPayments(cached.payments as Payment[]);
-      setCustomers(cached.customers as Customer[]);
-      setCustPayments(cached.custPayments as CustomerPayment[]);
-      setOrders(cached.orders as OrderRequest[]);
-      setLoading(false);
-      setSecondaryLoading(false);
+      const cached = readGudangCache(uid);
+      if (cached) {
+        setItems(cached.items as WItem[]);
+        setSuppliers(cached.suppliers as Supplier[]);
+        setSales(cached.sales as Sale[]);
+        setCategoryOrder(new Map(cached.categoryOrder));
+        setPurchases(cached.purchases as Purchase[]);
+        setPayments(cached.payments as Payment[]);
+        setCustomers(cached.customers as Customer[]);
+        setCustPayments(cached.custPayments as CustomerPayment[]);
+        setOrders(cached.orders as OrderRequest[]);
+        setLoading(false);
+        setSecondaryLoading(false);
+      }
     }
     reloadAllNow();
   }, [uid]);

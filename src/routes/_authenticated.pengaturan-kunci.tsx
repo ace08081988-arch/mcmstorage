@@ -888,9 +888,9 @@ function PengaturanKunci() {
 
         <div className="flex items-center justify-between gap-ms-3 border-t pt-3">
           <div>
-            <Label>Hapus sesi saat tutup tab</Label>
+            <Label>Kunci saat keluar aplikasi</Label>
             <p className="text-ms-2xs text-muted-foreground">
-              Logout otomatis saat tab/aplikasi ditutup
+              Aplikasi terkunci saat ditutup atau berpindah, tanpa menghapus sesi login
             </p>
           </div>
           <Switch
