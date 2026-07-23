@@ -2238,6 +2238,14 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   // Tangkap elemen pemicu hapus supaya fokus keyboard bisa kembali ke sana
   // setelah dialog dibatalkan atau proses selesai.
   const deleteReturnElRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (deleteOpen) return;
+    const el = deleteReturnElRef.current;
+    if (el && document.contains(el) && typeof el.focus === "function") {
+      queueMicrotask(() => el.focus());
+    }
+    deleteReturnElRef.current = null;
+  }, [deleteOpen]);
   const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
     if (!path) return null;
     // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
