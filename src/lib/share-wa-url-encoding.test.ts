@@ -72,7 +72,7 @@ describe("buildWhatsAppUrl — encodeURIComponent aman untuk karakter khusus", (
 
   it("angka HP di-strip non-digit sebelum masuk path", () => {
     const url = buildWhatsAppUrl("hi", "+62 812-3456-7890");
-    expect(url.startsWith("https://wa.me/628123456789?text=")).toBe(true);
+    expect(url.startsWith("https://wa.me/6281234567890?text=")).toBe(true);
   });
 
   it("nama produk dengan karakter khusus tidak bocor sebagai param baru", () => {
@@ -131,7 +131,9 @@ describe("buildWhatsAppBusinessIntentUrl — encoding aman untuk intent://", () 
 });
 
 describe("Fuzz ringan — encoding tetap round-trip untuk string acak", () => {
-  const CHARS = "ABCabc012 &=?#/+%\"'\\<>\n\t☕🇮🇩商店 المتجر";
+  // Split by codepoint so surrogate pairs (emoji) stay atomic —
+  // indexing per UTF-16 unit would break lone halves and blow up encodeURIComponent.
+  const CHARS = Array.from("ABCabc012 &=?#/+%\"'\\<>\n\t☕🇮🇩商店 المتجر");
   function randomText(len: number, seed: number): string {
     let s = "";
     let x = seed;
