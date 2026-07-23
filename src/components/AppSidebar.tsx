@@ -746,29 +746,39 @@ export function AppSidebar() {
         {!chatOnly && (
           <a
             href="/download#chat"
-            className="group/chat relative mt-1 flex min-w-0 items-center gap-ms-2.5 overflow-hidden rounded-xl px-ms-2.5 py-ms-2 text-ms-2xs font-medium text-foreground transition-all hover:translate-y-[-1px]"
+            className="group/chat relative mt-ms-1 flex min-w-0 items-center gap-ms-2.5 overflow-hidden rounded-2xl px-ms-3 py-ms-2.5 text-ms-2xs font-medium text-white transition-all hover:translate-y-[-1px] active:translate-y-0 active:scale-[0.985]"
             style={{
               background:
-                "linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, transparent), color-mix(in oklab, var(--primary) 6%, transparent))",
+                "linear-gradient(135deg, #10b981 0%, #059669 55%, #047857 100%)",
               boxShadow:
-                "inset 0 0 0 1px color-mix(in oklab, var(--primary) 35%, transparent), 0 4px 12px -6px color-mix(in oklab, var(--primary) 40%, transparent)",
+                "inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 24px -12px rgba(16,185,129,0.65), 0 0 0 1px rgba(16,185,129,0.35)",
             }}
             title="Unduh MCM Chat — APK khusus komunikasi, akun sama"
           >
             <span
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-primary-foreground shadow-sm ring-1 ring-primary/30"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 70%, black))",
-              }}
+              aria-hidden
+              className="pointer-events-none absolute -right-4 -bottom-6 h-24 w-24 rounded-full bg-white/15 blur-2xl transition-transform duration-500 group-hover/chat:scale-125"
+            />
+            <span
+              className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur-sm"
             >
-              <MessageCircle className="h-3.5 w-3.5" />
+              <MessageCircle className="h-4 w-4" />
             </span>
-            <span className="min-w-0 flex-1 leading-tight">
-              Coba <b className="tracking-tight">MCM Chat</b>
-              <span className="mt-0.5 block truncate text-ms-2xs font-normal text-muted-foreground">APK khusus chat · akun sama</span>
+            <span className="relative min-w-0 flex-1 leading-tight">
+              <span
+                className="block truncate text-[15px] tracking-tight text-white"
+                style={{ fontFamily: "'DM Serif Display', serif" }}
+              >
+                Coba MCM Chat
+              </span>
+              <span
+                className="mt-0.5 block truncate text-[10.5px] font-normal text-white/75"
+                style={{ fontFamily: "'Fira Sans', sans-serif" }}
+              >
+                APK khusus chat · akun sama
+              </span>
             </span>
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 -rotate-90 text-primary/70 transition-transform group-hover/chat:translate-x-0.5" />
+            <ChevronDown className="relative h-4 w-4 shrink-0 -rotate-90 text-white/85 transition-transform group-hover/chat:translate-x-0.5" />
           </a>
         )}
       </SidebarFooter>
