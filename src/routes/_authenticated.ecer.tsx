@@ -3572,7 +3572,7 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
 
 // ---- Send ecer preps batch to customer ----
 function SendEcerPrepsDialog({
-  open, onClose, preps, title, itemName, customers, onSent,
+  open, onClose, preps, title, itemName, customers, onSent, onLocationSaved,
 }: {
   open: boolean;
   onClose: () => void;
@@ -3581,6 +3581,10 @@ function SendEcerPrepsDialog({
   itemName?: string;
   customers: Array<{ id: string; name: string; contact: string | null }>;
   onSent: () => void;
+  /** Dipanggil setelah owner berhasil menyimpan `location_url` dari
+   * banner peringatan di modal preview WA/Chat. Parent WAJIB melakukan
+   * refetch preps supaya caption terbaru langsung tampil. */
+  onLocationSaved?: () => void | Promise<void>;
 }) {
   const [mode, setMode] = useState<"link" | "manual">(customers.length > 0 ? "link" : "manual");
   const [customerId, setCustomerId] = useState<string>(customers[0]?.id ?? "");
