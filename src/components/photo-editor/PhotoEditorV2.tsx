@@ -1182,6 +1182,21 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 >
                   0°
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setSnapEnabled((v) => !v)}
+                  aria-label={snapEnabled ? "Matikan snap grid & sudut" : "Aktifkan snap grid & sudut"}
+                  aria-pressed={snapEnabled}
+                  title={snapEnabled ? `Snap ON · grid ${SNAP_GRID}px · sudut ${SNAP_ANGLE}°` : "Snap OFF"}
+                  className={cn(
+                    "ml-0.5 grid h-8 min-w-8 place-items-center rounded-full border px-1.5 text-ms-2xs font-semibold transition active:scale-95",
+                    snapEnabled
+                      ? "border-[#c9a84c] bg-[#c9a84c]/20 text-[#f0d78c]"
+                      : "border-white/15 text-white/60 hover:bg-white/5",
+                  )}
+                >
+                  Snap
+                </button>
               </div>
             )}
             </>
