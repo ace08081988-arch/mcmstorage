@@ -185,3 +185,171 @@ describe("caption WA — placeholder 📍 saat location_url kosong", () => {
     expect(LOCATION_PLACEHOLDER).toBe("📍 Lokasi belum diisi (owner akan menyusul link)");
   });
 });
+
+/**
+ * Urutan baris caption WA HARUS stabil walaupun baris lain (harga item,
+ * catatan, sisa hutang, dsb) berubah. Kalau urutan pecah, pembeli membaca
+ * angka dalam konteks yang salah dan pengirim tidak sadar 📍 kosong.
+ *
+ * Kontrak urutan (top → bottom):
+ *   1. Judul (*bold*)
+ *   2. Baris item / harga  (variabel)
+ *   3. Total
+ *   4. Baris pembayaran (Pembayaran / Dibayar / Sisa hutang)
+ *   5. Catatan (opsional, variabel)
+ *   6. Blok 📍 (URL asli atau placeholder)
+ */
+function composeFullCaption(opts: {
+  title: string;
+  itemLines?: string[];
+  method: "kas" | "hutang" | "partial";
+  total: number;
+  paid?: number;
+  notes?: string[];
+  locationUrl?: string | null;
+}): string {
+  const p = getPaymentBreakdown(opts.method, opts.total, opts.paid ?? 0);
+  const lines: string[] = [`*${opts.title}*`, ""];
+  if (opts.itemLines?.length) lines.push(...opts.itemLines, "");
+  lines.push(`Total: Rp${p.total.toLocaleString("id-ID")}`);
+  lines.push(...buildPaymentMessageLines(p));
+  if (opts.notes?.length) lines.push("", ...opts.notes);
+  if (opts.locationUrl) {
+    lines.push("", "📍 Lokasi ambil:", opts.locationUrl);
+  } else {
+    lines.push("📍 Lokasi belum diisi (owner akan menyusul link)");
+  }
+  return lines.join("\n");
+}
+
+function idxAll(cap: string, needles: string[]): number[] {
+  return needles.map((n) => {
+    const i = cap.indexOf(n);
+    if (i < 0) throw new Error(`missing line: ${n}`);
+    return i;
+  });
+}
+
+function isStrictlyIncreasing(nums: number[]): boolean {
+  return nums.every((n, i) => i === 0 || nums[i - 1] < n);
+}
+
+describe("caption WA — urutan baris tetap stabil di semua variasi", () => {
+  it("Hutang: judul < Total < Pembayaran < Sisa hutang < 📍 (dengan URL)", () => {
+    const cap = composeFullCaption({
+      title: "Kacang 500g",
+      itemLines: ["1× Kacang tanah — Rp25.000"],
+      method: "hutang",
+      total: 25_000,
+      locationUrl: "https://maps.app.goo.gl/abc",
+    });
+    expect(
+      isStrictlyIncreasing(
+        idxAll(cap, [
+          "*Kacang 500g*",
+          "Total: Rp25.000",
+          "Pembayaran: Hutang",
+          "Sisa hutang: Rp25.000",
+          "📍 Lokasi ambil:",
+          "https://maps.app.goo.gl/abc",
+        ]),
+      ),
+    ).toBe(true);
+  });
+
+  it("Partial: Dibayar mendahului Sisa hutang; keduanya sebelum 📍 (placeholder)", () => {
+    const cap = composeFullCaption({
+      title: "Gula 1kg",
+      itemLines: ["1× Gula pasir — Rp15.000", "1× Kopi bubuk — Rp15.000"],
+      method: "partial",
+      total: 30_000,
+      paid: 10_000,
+      notes: ["Catatan: minta bungkus rangkap"],
+    });
+    expect(
+      isStrictlyIncreasing(
+        idxAll(cap, [
+          "*Gula 1kg*",
+          "1× Gula pasir",
+          "Total: Rp30.000",
+          "Pembayaran: Bayar sebagian",
+          "Dibayar: Rp10.000",
+          "Sisa hutang: Rp20.000",
+          "Catatan: minta bungkus rangkap",
+          "📍 Lokasi belum diisi (owner akan menyusul link)",
+        ]),
+      ).toBe(true);
+  });
+
+  it("Lunas: catatan tambahan tidak menggeser posisi 📍 di paling bawah", () => {
+    const cap = composeFullCaption({
+      title: "Beras 5kg",
+      method: "kas",
+      total: 60_000,
+      notes: ["Catatan A", "Catatan B", "Catatan C"],
+      locationUrl: "https://maps.google.com/?q=1,2",
+    });
+    const lines = cap.split("\n").filter((l) => l.length > 0);
+    // 📍 URL harus dua baris terakhir (label + url) dengan label mendahului url.
+    expect(lines[lines.length - 2]).toBe("📍 Lokasi ambil:");
+    expect(lines[lines.length - 1]).toBe("https://maps.google.com/?q=1,2");
+  });
+
+  it("Placeholder 📍 selalu jadi baris terakhir walau ada banyak catatan", () => {
+    const cap = composeFullCaption({
+      title: "Item",
+      method: "hutang",
+      total: 5_000,
+      notes: ["N1", "N2", "N3", "N4"],
+      locationUrl: null,
+    });
+    const lines = cap.split("\n").filter((l) => l.length > 0);
+    expect(lines[lines.length - 1]).toBe(
+      "📍 Lokasi belum diisi (owner akan menyusul link)",
+    );
+  });
+
+  it("Perubahan harga item TIDAK menggeser urutan relatif pembayaran ↔ 📍", () => {
+    const priceVariants = [1_000, 25_000, 999_999, 12_345_678];
+    for (const total of priceVariants) {
+      const cap = composeFullCaption({
+        title: "Var",
+        itemLines: [`1× X — Rp${total.toLocaleString("id-ID")}`],
+        method: "hutang",
+        total,
+        locationUrl: null,
+      });
+      expect(
+        isStrictlyIncreasing(
+          idxAll(cap, [
+            `Total: Rp${total.toLocaleString("id-ID")}`,
+            "Pembayaran: Hutang",
+            `Sisa hutang: Rp${total.toLocaleString("id-ID")}`,
+            "📍 Lokasi belum diisi (owner akan menyusul link)",
+          ]),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("Placeholder tidak pernah muncul BERSAMAAN dengan 'Lokasi ambil:'", () => {
+    const withUrl = composeFullCaption({
+      title: "A",
+      method: "partial",
+      total: 10_000,
+      paid: 3_000,
+      locationUrl: "https://x.test",
+    });
+    const withoutUrl = composeFullCaption({
+      title: "A",
+      method: "partial",
+      total: 10_000,
+      paid: 3_000,
+      locationUrl: null,
+    });
+    expect(withUrl.includes("Lokasi belum diisi")).toBe(false);
+    expect(withUrl.includes("Lokasi ambil:")).toBe(true);
+    expect(withoutUrl.includes("Lokasi belum diisi")).toBe(true);
+    expect(withoutUrl.includes("Lokasi ambil:")).toBe(false);
+  });
+});
