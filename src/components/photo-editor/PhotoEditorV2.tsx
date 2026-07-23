@@ -1119,7 +1119,11 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 max={720}
                 step={4}
                 value={Math.round(s.width)}
-                onChange={(e) => resize(Number(e.target.value))}
+                onChange={(e) => resizeTransient(Number(e.target.value))}
+                onPointerUp={flushTransient}
+                onPointerCancel={flushTransient}
+                onKeyUp={flushTransient}
+                onBlur={flushTransient}
                 aria-label="Ukuran stiker"
                 className="h-9 w-44 accent-[#c9a84c] sm:w-56"
               />
@@ -1162,7 +1166,11 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   max={180}
                   step={1}
                   value={Math.round(normRot(s.rotation ?? 0))}
-                  onChange={(e) => setRot(Number(e.target.value))}
+                  onChange={(e) => setRotTransient(Number(e.target.value))}
+                  onPointerUp={flushTransient}
+                  onPointerCancel={flushTransient}
+                  onKeyUp={flushTransient}
+                  onBlur={flushTransient}
                   aria-label="Sudut rotasi"
                   className="h-8 w-36 accent-[#c9a84c] sm:w-48"
                 />
@@ -1190,8 +1198,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   value={Math.round(normRot(s.rotation ?? 0))}
                   onChange={(e) => {
                     const v = Number(e.target.value);
-                    if (Number.isFinite(v)) setRot(v);
+                    if (Number.isFinite(v)) setRotTransient(v);
                   }}
+                  onBlur={flushTransient}
+                  onKeyUp={(e) => { if (e.key === "Enter") flushTransient(); }}
                   aria-label="Sudut presisi"
                   className="h-8 w-14 rounded-md border border-[#c9a84c]/25 bg-white/[0.04] px-1 text-center text-ms-2xs tabular-nums text-[#f0d78c] focus:border-[#c9a84c]/60 focus:outline-none"
                 />
