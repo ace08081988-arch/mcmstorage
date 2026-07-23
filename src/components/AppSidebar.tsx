@@ -342,6 +342,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Profil Akun", url: "/profil", icon: User },
       { title: "Pengaturan", url: "/pengaturan", icon: Settings },
       { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
+      { title: "Template Pesan WA", url: "/pengaturan-pesan-wa", icon: MessageCircle },
       { title: "Sesi & Perangkat", url: "/sesi", icon: MonitorSmartphone },
     ],
   },
