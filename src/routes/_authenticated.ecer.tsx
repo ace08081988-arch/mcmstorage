@@ -4110,7 +4110,7 @@ function SendEcerPrepsDialog({
             <div className="flex flex-wrap gap-ms-1">
               {preps.map((p, i) => (
                 <span key={p.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-medium text-primary">
-                  #{i + 1} · {p.actual_grams}{displayUnit(itemName, title.unit_label)}
+                  #{i + 1} · {fmtWeight(Number(p.actual_grams), displayUnit(itemName, title.unit_label))}
                 </span>
               ))}
             </div>
