@@ -31,7 +31,7 @@ describe("buildWhatsAppUrl — normalisasi nomor per kode negara", () => {
 
   it("ID: semua varian jatuh ke 62812... yang sama", () => {
     const targets = ID_VARIANTS.map((v) => extractPhone(buildWhatsAppUrl("halo", v, "ID")));
-    for (const t of targets) expect(t).toBe("62812345678900".slice(0, 13));
+    for (const t of targets) expect(t).toBe("6281234567890");
   });
 
   it("MY: '0123456789' → '60123456789' (buang trunk 0, pasang dial 60)", () => {
@@ -46,8 +46,9 @@ describe("buildWhatsAppUrl — normalisasi nomor per kode negara", () => {
     expect(extractPhone(buildWhatsAppUrl("halo", "(415) 555-2671", "US"))).toBe("14155552671");
   });
 
-  it("Nomor sudah E.164 tetap utuh apapun negaranya", () => {
-    expect(extractPhone(buildWhatsAppUrl("halo", "6281234567890", "MY"))).toBe("6281234567890");
+  it("Nomor sudah E.164 dengan dial yang cocok dibiarkan utuh", () => {
+    // ID number, countryCode ID → dial "62" sudah cocok, tidak double-prefix.
+    expect(extractPhone(buildWhatsAppUrl("halo", "6281234567890", "ID"))).toBe("6281234567890");
   });
 
   it("intent:// (WA Business) juga ikut normalisasi bila countryCode diberi", () => {
