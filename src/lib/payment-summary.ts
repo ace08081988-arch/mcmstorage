@@ -74,7 +74,12 @@ export function buildPaymentMessageLines(
   }
   if ("locationUrl" in options) {
     const raw = options.locationUrl;
-    const url = typeof raw === "string" ? raw.trim() : "";
+    // Bersihkan invisible chars (ZWSP U+200B, ZWNJ U+200C, ZWJ U+200D, BOM U+FEFF)
+    // di samping whitespace biasa — kalau tidak, link "https://…\u200B" mati diam.
+    const url =
+      typeof raw === "string"
+        ? raw.replace(/[\u200B-\u200D\uFEFF]/g, "").trim()
+        : "";
     if (url) {
       lines.push("", "📍 Lokasi ambil:", url);
     } else {
