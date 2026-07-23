@@ -1913,6 +1913,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           itemName={item.name}
           customers={customers}
+          onLocationSaved={() => { void load(); }}
           onClose={() => {
             setSendOpen(false);
             // Owner menutup dialog pembayaran tanpa mengirim — kalau ini
@@ -1971,6 +1972,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           itemName={item.name}
           customers={customers}
+          onLocationSaved={() => { void load(); }}
           onClose={() => setQuickSendPrep(null)}
           onSent={() => {
             // Optimistic move ke Riwayat Terkirim untuk quick-send
@@ -3572,7 +3574,7 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
 
 // ---- Send ecer preps batch to customer ----
 function SendEcerPrepsDialog({
-  open, onClose, preps, title, itemName, customers, onSent,
+  open, onClose, preps, title, itemName, customers, onSent, onLocationSaved,
 }: {
   open: boolean;
   onClose: () => void;
@@ -3581,6 +3583,10 @@ function SendEcerPrepsDialog({
   itemName?: string;
   customers: Array<{ id: string; name: string; contact: string | null }>;
   onSent: () => void;
+  /** Dipanggil setelah owner berhasil menyimpan `location_url` dari
+   * banner peringatan di modal preview WA/Chat. Parent WAJIB melakukan
+   * refetch preps supaya caption terbaru langsung tampil. */
+  onLocationSaved?: () => void | Promise<void>;
 }) {
   const [mode, setMode] = useState<"link" | "manual">(customers.length > 0 ? "link" : "manual");
   const [customerId, setCustomerId] = useState<string>(customers[0]?.id ?? "");
@@ -4203,6 +4209,18 @@ function SendEcerPrepsDialog({
       busy={busy}
       locationMissing={!preps.some((p) => (p.location_url ?? "").trim())}
       locationHint="Buka kartu penyiapan Ecer (Ready) → isi kolom Lokasi ambil (link Google Maps), lalu ulangi Verifikasi bayar."
+      onSaveLocation={async (url) => {
+        // Isi lokasi untuk semua kartu penyiapan dalam batch ini yang belum
+        // punya `location_url`. Kartu yang sudah punya lokasi tidak diubah.
+        const ids = preps.filter((p) => !(p.location_url ?? "").trim()).map((p) => p.id);
+        if (ids.length === 0) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("ecer_preparations")
+          .update({ location_url: url })
+          .in("id", ids);
+        if (error) throw error;
+        await Promise.resolve(onLocationSaved?.());
+      }}
       confirmLabel={
         payment.method === "hutang"
           ? "Kirim WA & catat piutang"

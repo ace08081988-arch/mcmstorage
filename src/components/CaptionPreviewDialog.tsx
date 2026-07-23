@@ -7,7 +7,8 @@
  * disalin. Owner harus menekan "Kirim sekarang" untuk melanjutkan; tombol
  * "Periksa lagi" menutup modal tanpa mengirim.
  */
-import { AlertTriangle, Copy, Loader2, MapPin, MessageCircle, Send } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertTriangle, Check, Copy, Loader2, MapPin, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -32,6 +33,7 @@ export function CaptionPreviewDialog({
   onConfirm,
   locationMissing,
   locationHint,
+  onSaveLocation,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -46,11 +48,48 @@ export function CaptionPreviewDialog({
   locationMissing?: boolean;
   /** Petunjuk singkat cara mengisi lokasi (mis. rute yang harus dibuka). */
   locationHint?: string;
+  /** Kalau disediakan, banner peringatan lokasi menampilkan input inline
+   * + tombol "Simpan lokasi" supaya owner bisa mengisi `location_url`
+   * tanpa keluar dari alur kirim. Callback wajib menyimpan ke DB dan
+   * memicu refetch preps di parent — modal akan otomatis re-render dengan
+   * caption baru + banner hilang begitu locationMissing=false. */
+  onSaveLocation?: (url: string) => Promise<void>;
 }) {
   const Icon = channel === "chat" ? MessageCircle : Send;
   const channelLabel = channel === "chat" ? "MCM Chat" : "WhatsApp";
   const defaultConfirm =
     channel === "chat" ? "Kirim Chat sekarang" : "Kirim WA sekarang";
+
+  const [locInput, setLocInput] = useState("");
+  const [savingLoc, setSavingLoc] = useState(false);
+
+  // Reset input tiap kali dialog dibuka ulang / status lokasi berubah, supaya
+  // draft URL sesi lalu tidak nyangkut.
+  useEffect(() => {
+    if (!open) { setLocInput(""); setSavingLoc(false); }
+  }, [open]);
+  useEffect(() => {
+    if (!locationMissing) setLocInput("");
+  }, [locationMissing]);
+
+  async function handleSaveLocation() {
+    const url = locInput.trim();
+    if (!url) { toast.error("Tempel link Google Maps dulu"); return; }
+    if (!/^https?:\/\//i.test(url)) {
+      toast.error("Link harus diawali http:// atau https://");
+      return;
+    }
+    if (!onSaveLocation) return;
+    setSavingLoc(true);
+    try {
+      await onSaveLocation(url);
+      toast.success("Lokasi tersimpan — caption otomatis diperbarui");
+    } catch (e) {
+      toast.error("Gagal simpan lokasi: " + (e as Error).message);
+    } finally {
+      setSavingLoc(false);
+    }
+  }
 
   async function handleCopy() {
     try {
@@ -91,10 +130,50 @@ export function CaptionPreviewDialog({
                   {locationHint ??
                     "Buka kartu penyiapan → isi kolom Lokasi ambil (link Google Maps), lalu buka ulang tombol Kirim."}
                 </div>
-                <div className="inline-flex items-center gap-1 opacity-80">
-                  <MapPin className="h-3 w-3" aria-hidden />
-                  Pesan tetap bisa dikirim tanpa lokasi.
-                </div>
+                {onSaveLocation ? (
+                  <div className="space-y-1 pt-1">
+                    <label className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide opacity-80">
+                      <MapPin className="h-3 w-3" aria-hidden />
+                      Isi sekarang (tempel link Google Maps)
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="url"
+                        inputMode="url"
+                        placeholder="https://maps.google.com/…"
+                        value={locInput}
+                        onChange={(e) => setLocInput(e.target.value)}
+                        disabled={savingLoc || busy}
+                        data-testid="caption-preview-loc-input"
+                        className="h-7 min-w-0 flex-1 rounded border border-amber-300 bg-white px-2 text-ms-2xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-amber-500 dark:bg-amber-950/70 dark:text-amber-50"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleSaveLocation}
+                        disabled={savingLoc || busy || !locInput.trim()}
+                        data-testid="caption-preview-loc-save"
+                        className="h-7 px-2 text-ms-2xs"
+                      >
+                        {savingLoc ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" aria-hidden />
+                        ) : (
+                          <Check className="mr-1 h-3 w-3" aria-hidden />
+                        )}
+                        Simpan
+                      </Button>
+                    </div>
+                    <div className="opacity-70">
+                      Pesan tetap bisa dikirim tanpa lokasi.
+                    </div>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1 opacity-80">
+                    <MapPin className="h-3 w-3" aria-hidden />
+                    Pesan tetap bisa dikirim tanpa lokasi.
+                  </div>
+                )}
               </div>
             </div>
           ) : null}

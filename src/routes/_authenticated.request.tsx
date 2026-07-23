@@ -2151,6 +2151,7 @@ function PrepSections({
       customers={customers}
       onDelete={guardedDelete}
       onSent={guardedSent}
+      onLocationSaved={() => { void onChanged(); }}
       autoOpenSend={!inSent && !!autoOpenSend && idx === 0}
       autoOpenSendChannel={autoOpenSendChannel}
       onConsumeAutoOpenSend={onConsumeAutoOpenSend}
@@ -2302,7 +2303,7 @@ function PrepSections({
 
 function PrepCard({
   index, prep, items, warehouseItems, titleItems, titleName, customers, onDelete, onSent,
-  autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend,
+  autoOpenSend, autoOpenSendChannel, onConsumeAutoOpenSend, onLocationSaved,
 }: {
   index: number;
   prep: RequestPreparation;
@@ -2316,6 +2317,7 @@ function PrepCard({
   autoOpenSend?: boolean;
   autoOpenSendChannel?: "whatsapp" | "chat";
   onConsumeAutoOpenSend?: () => void;
+  onLocationSaved?: () => void | Promise<void>;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
@@ -2443,6 +2445,7 @@ function PrepCard({
           photoPaths={photoPaths}
           unitFor={unitFor}
           onSent={() => { setSendOpen(false); onSent(); }}
+          onLocationSaved={onLocationSaved}
         />
       )}
     </div>
@@ -2459,7 +2462,7 @@ function PrepCard({
 // -----------------------------------------------------------------------
 function SendPrepToCustomerDialog({
   open, onClose, channel = "whatsapp", prep, items, warehouseItems, titleItems, titleName,
-  customers, photoPaths, unitFor, onSent,
+  customers, photoPaths, unitFor, onSent, onLocationSaved,
 }: {
   open: boolean;
   onClose: () => void;
@@ -2473,6 +2476,10 @@ function SendPrepToCustomerDialog({
   photoPaths: string[];
   unitFor: (wid: string) => string;
   onSent: () => void;
+  /** Dipanggil setelah owner menyimpan `location_url` dari banner peringatan
+   * di modal preview WA/Chat. Parent WAJIB memicu refetch preps supaya
+   * caption terbaru langsung tampil di modal. */
+  onLocationSaved?: () => void | Promise<void>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const sections: ScrollSection[] = [
@@ -2901,6 +2908,14 @@ function SendPrepToCustomerDialog({
       busy={busy}
       locationMissing={!(prep.location_url ?? "").trim()}
       locationHint="Buka kartu penyiapan Request → isi kolom Lokasi ambil (link Google Maps), lalu ulangi tombol Kirim."
+      onSaveLocation={async (url) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("request_preparations")
+          .update({ location_url: url })
+          .eq("id", prep.id);
+        if (error) throw error;
+        await Promise.resolve(onLocationSaved?.());
+      }}
       confirmLabel={
         (channel === "chat" ? "Kirim Chat & " : "Kirim WA & ") +
         (payMethod === "hutang"
