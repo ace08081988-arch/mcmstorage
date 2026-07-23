@@ -2431,7 +2431,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         )}
       </div>
       <div className="flex flex-col gap-y-2 p-ms-2">
-        <div className="text-ms-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
+        <div className="text-ms-xs font-semibold">{fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}</div>
         {prep.note && <div className="line-clamp-2 text-ms-2xs leading-snug text-muted-foreground">{prep.note}</div>}
         {sold && (
           <details className="group rounded-md border border-success/40 bg-success/10 text-ms-2xs leading-snug text-success dark:text-success">
