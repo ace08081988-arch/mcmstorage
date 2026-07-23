@@ -448,10 +448,41 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         deleteObject(selectedId);
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); if (e.shiftKey) doRedo(); else doUndo(); }
+      // Shortcut kontrol Ukuran & Rotasi supaya panel yang wrap/stack di
+      // layar sempit tetap bisa dioperasikan tanpa harus meraih tombol kecil.
+      // Aktif hanya saat ada sticker terpilih dan fokus BUKAN di input teks.
+      if (
+        selectedId &&
+        !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+      ) {
+        const obj = scene.objects.find((o) => o.id === selectedId);
+        if (obj?.kind === "sticker") {
+          const s = obj as StickerObj;
+          const aspect = s.height > 0 ? s.width / s.height : 1;
+          const resize = (w: number) => {
+            const nw = Math.max(40, Math.min(720, Math.round(w)));
+            const nh = Math.max(40, Math.round(nw / (aspect || 1)));
+            updateObject(s.id, { width: nw, height: nh });
+          };
+          const setRot = (deg: number) => {
+            let d = deg % 360;
+            if (d > 180) d -= 360;
+            if (d <= -180) d += 360;
+            updateObject(s.id, { rotation: d });
+          };
+          if (e.key === "[") { e.preventDefault(); resize(s.width * 0.9); return; }
+          if (e.key === "]") { e.preventDefault(); resize(s.width * 1.1); return; }
+          if (e.key === ",") { e.preventDefault(); setRot((s.rotation ?? 0) - 1); return; }
+          if (e.key === ".") { e.preventDefault(); setRot((s.rotation ?? 0) + 1); return; }
+          if (e.key === "<") { e.preventDefault(); setRot((s.rotation ?? 0) - 15); return; }
+          if (e.key === ">") { e.preventDefault(); setRot((s.rotation ?? 0) + 15); return; }
+          if (e.key === "0" && !e.ctrlKey && !e.metaKey) { e.preventDefault(); setRot(0); return; }
+        }
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [selectedId, deleteObject, doUndo, doRedo]);
+  }, [selectedId, deleteObject, doUndo, doRedo, scene.objects, updateObject]);
 
   // Pinch zoom + wheel zoom on Stage
   const onWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
