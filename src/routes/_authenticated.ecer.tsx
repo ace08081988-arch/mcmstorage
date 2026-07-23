@@ -2377,13 +2377,17 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
                 <ExternalLink className="h-2.5 w-2.5 shrink-0" />
               </a>
             ) : <span className="min-w-0" />}
-            {!readOnly && (
-              <div className="flex shrink-0 items-center justify-end gap-0.5 @[200px]/prepactions:justify-self-end">
-                <Button size="icon" variant="ghost" className="h-8 w-8 @[200px]/prepactions:h-7 @[200px]/prepactions:w-7" aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3.5 w-3.5 @[200px]/prepactions:h-3 @[200px]/prepactions:w-3" /></Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 @[200px]/prepactions:h-7 @[200px]/prepactions:w-7" aria-label="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3.5 w-3.5 @[200px]/prepactions:h-3 @[200px]/prepactions:w-3" /></Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 @[200px]/prepactions:h-7 @[200px]/prepactions:w-7" aria-label="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3.5 w-3.5 text-destructive @[200px]/prepactions:h-3 @[200px]/prepactions:w-3" /></Button>
-              </div>
-            )}
+            {!readOnly && (() => {
+              const btnCls = "inline-flex h-8 w-8 shrink-0 items-center justify-center p-0 leading-none @[200px]/prepactions:h-7 @[200px]/prepactions:w-7";
+              const iconCls = "h-3.5 w-3.5 shrink-0 @[200px]/prepactions:h-3 @[200px]/prepactions:w-3";
+              return (
+                <div className="flex shrink-0 items-center justify-end gap-0.5 @[200px]/prepactions:justify-self-end">
+                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className={iconCls} /></Button>
+                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Edit penyiapan" title="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}><Edit3 className={iconCls} /></Button>
+                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Hapus penyiapan" title="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
+                </div>
+              );
+            })()}
           </div>
         </div>
         <div className="text-ms-2xs leading-snug text-muted-foreground">
