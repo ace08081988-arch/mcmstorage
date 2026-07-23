@@ -2489,6 +2489,59 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           }}
         />
       )}
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(o) => {
+          if (deleteBusy) return; // jangan tutup saat proses jalan
+          setDeleteOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus penyiapan ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
+              dikembalikan sebanyak{" "}
+              <span className="font-semibold">
+                {prep.actual_grams} {displayUnit(itemName, title.unit_label)}
+              </span>
+              . Foto di penyimpanan juga ikut dihapus.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteBusy && (
+            <div className="rounded-md border border-border/60 bg-muted/40 p-ms-2 text-ms-2xs leading-snug">
+              <div className="mb-1 flex items-center gap-2 font-medium">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                Sedang menghapus… mohon tunggu
+              </div>
+              <ul className="space-y-0.5 pl-1">
+                <li className={deleteStep === "photo" ? "text-primary" : (deleteStep === "record" || deleteStep === "done") ? "text-success" : "text-muted-foreground"}>
+                  {prep.photo_path ? (deleteStep === "photo" ? "→ Menghapus foto dari penyimpanan…" : (deleteStep === "record" || deleteStep === "done") ? "✓ Foto dihapus" : "• Hapus foto") : "• (tanpa foto)"}
+                </li>
+                <li className={deleteStep === "record" ? "text-primary" : deleteStep === "done" ? "text-success" : "text-muted-foreground"}>
+                  {deleteStep === "record" ? "→ Menghapus data & mengembalikan stok…" : deleteStep === "done" ? "✓ Data dihapus" : "• Hapus data & kembalikan stok"}
+                </li>
+              </ul>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteBusy}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteBusy}
+              onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBusy ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menghapus…
+                </span>
+              ) : (
+                "Hapus penyiapan"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
