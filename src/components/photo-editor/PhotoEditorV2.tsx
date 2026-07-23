@@ -164,6 +164,13 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const [stickerShadow, setStickerShadow] = useState<number>(100);
   const [stickerGloss, setStickerGloss] = useState<number>(100);
   const [stickerRim, setStickerRim] = useState<number>(100);
+  // Snap-to-grid (posisi) + snap sudut (rotasi) untuk stiker panah.
+  // Default ON supaya penempatan panah rapi sejajar sumbu foto.
+  const [snapEnabled, setSnapEnabled] = useState<boolean>(true);
+  const SNAP_GRID = 8;   // px logika canvas
+  const SNAP_ANGLE = 15; // derajat
+  const snapToGrid = (v: number) => Math.round(v / SNAP_GRID) * SNAP_GRID;
+  const snapToAngle = (deg: number) => Math.round(deg / SNAP_ANGLE) * SNAP_ANGLE;
   // Panel gaya (warna/tebal/opacity) muncul otomatis saat tool coret/bentuk/teks aktif.
   // Panel dapat ditutup manual lewat handle drag di atasnya — state ini menyimpan
   // pilihan pemilik agar tidak "muncul lagi" saat mengganti antar tool goresan.
@@ -538,15 +545,32 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         draggable: tool === "pilih" && !o.locked,
         onClick: () => setSelectedId(o.id),
         onTap: () => setSelectedId(o.id),
-        onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => updateObject(o.id, { x: e.target.x(), y: e.target.y() }),
+        dragBoundFunc: snapEnabled
+          ? (pos: { x: number; y: number }) => ({ x: snapToGrid(pos.x), y: snapToGrid(pos.y) })
+          : undefined,
+        onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => {
+          const nx = snapEnabled ? snapToGrid(e.target.x()) : e.target.x();
+          const ny = snapEnabled ? snapToGrid(e.target.y()) : e.target.y();
+          updateObject(o.id, { x: nx, y: ny });
+        },
+        onTransform: (e: Konva.KonvaEventObject<Event>) => {
+          // Snap sudut live saat memutar via handle rotator.
+          if (!snapEnabled) return;
+          const n = e.target as unknown as Konva.Node;
+          const snapped = snapToAngle(n.rotation());
+          if (n.rotation() !== snapped) n.rotation(snapped);
+        },
         onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
           const n = e.target as unknown as Konva.Node;
           const sx = n.scaleX(), sy = n.scaleY();
+          const rot = snapEnabled ? snapToAngle(n.rotation()) : n.rotation();
+          const nx = snapEnabled ? snapToGrid(n.x()) : n.x();
+          const ny = snapEnabled ? snapToGrid(n.y()) : n.y();
           updateObject(o.id, {
-            x: n.x(), y: n.y(),
+            x: nx, y: ny,
             width: Math.max(24, o.width * sx),
             height: Math.max(24, o.height * sy),
-            rotation: n.rotation(),
+            rotation: rot,
           });
           n.scaleX(1); n.scaleY(1);
         },
@@ -946,6 +970,14 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
               borderStroke={GOLD}
               anchorStroke={GOLD}
               anchorFill="#0d0d0d"
+              rotationSnaps={
+                snapEnabled && selectedObj?.kind === "sticker" &&
+                STICKER_PRESETS[(selectedObj as StickerObj).sticker]?.group === "panah"
+                  ? [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180,
+                     -15, -30, -45, -60, -75, -90, -105, -120, -135, -150, -165]
+                  : []
+              }
+              rotationSnapTolerance={snapEnabled ? 8 : 0}
             />
           </Layer>
         </Stage>
@@ -1149,6 +1181,21 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   className="ml-0.5 grid h-8 min-w-8 place-items-center rounded-full border border-[#c9a84c]/30 px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
                 >
                   0°
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSnapEnabled((v) => !v)}
+                  aria-label={snapEnabled ? "Matikan snap grid & sudut" : "Aktifkan snap grid & sudut"}
+                  aria-pressed={snapEnabled}
+                  title={snapEnabled ? `Snap ON · grid ${SNAP_GRID}px · sudut ${SNAP_ANGLE}°` : "Snap OFF"}
+                  className={cn(
+                    "ml-0.5 grid h-8 min-w-8 place-items-center rounded-full border px-1.5 text-ms-2xs font-semibold transition active:scale-95",
+                    snapEnabled
+                      ? "border-[#c9a84c] bg-[#c9a84c]/20 text-[#f0d78c]"
+                      : "border-white/15 text-white/60 hover:bg-white/5",
+                  )}
+                >
+                  Snap
                 </button>
               </div>
             )}
