@@ -1140,7 +1140,7 @@ function DetailHero({
                 <span className="truncate">{item.name}</span>
               </span>
               <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/15 px-ms-2 leading-none backdrop-blur-sm">
-                Target <b className="ml-0.5">{title.target_grams} {unit}</b>
+                Target <b className="ml-0.5">{fmtWeight(Number(title.target_grams), unit)}</b>
               </span>
               <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/25 px-ms-2 font-semibold leading-none text-success ring-1 ring-success/50 backdrop-blur-sm">
                 <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
