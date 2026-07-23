@@ -2234,7 +2234,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   // berlangsung agar tidak ada race di WebView Android.
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
-  const [deleteStep, setDeleteStep] = useState<"idle" | "photo" | "record" | "done">("idle");
+  const [deleteStep, setDeleteStep] = useState<"idle" | "photo" | "record" | "refresh" | "done">("idle");
   // Tangkap elemen pemicu hapus supaya fokus keyboard bisa kembali ke sana
   // setelah dialog dibatalkan atau proses selesai.
   const deleteReturnElRef = useRef<HTMLElement | null>(null);
