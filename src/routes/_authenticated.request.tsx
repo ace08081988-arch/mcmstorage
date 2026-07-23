@@ -52,6 +52,8 @@ import { peekUserIdSync, scopedKey } from "@/lib/user-scoped-storage";
 import { useCurrentUserId } from "@/lib/current-user";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
+import { renderWaCaption } from "@/lib/wa-template";
+import { useWaTemplate } from "@/lib/wa-template-store";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
 import { debounce } from "@/lib/realtime-debounce";
@@ -2551,6 +2553,7 @@ function SendPrepToCustomerDialog({
 
   const totalQty = useMemo(() => items.reduce((s, it) => s + Number(it.actual_grams || 0), 0), [items]);
   const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy && partialValid;
+  const waTpl = useWaTemplate();
   const sendStatus = useSaveStatus({ mode, customerId, manualName, totalStr, payMethod, paidStr, note }, initialSnap, busy);
   useSaveStatusToast(sendStatus, {
     successMessage: "Terkirim",
@@ -2558,33 +2561,22 @@ function SendPrepToCustomerDialog({
   });
 
   function buildCaption(): string {
-    const lines: string[] = [];
-    lines.push(`*${titleName}*`);
-    lines.push("");
-    if (items.length > 0) {
-      lines.push("Isi paket:");
-      items.forEach((it) => {
+    // SSOT template diatur di /pengaturan-pesan-wa.
+    return renderWaCaption(waTpl.template, waTpl.options, {
+      title: titleName,
+      items: items.map((it) => {
         const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
-        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams}${unitFor(it.warehouse_item_id)}`);
-      });
-      lines.push("");
-    }
-    lines.push(`Total: *${formatPaymentRupiah(totalAmount)}*`);
-    lines.push(...buildPaymentMessageLines(payment));
-    if (resolvedParty.name) lines.push(`Untuk: ${resolvedParty.name}`);
-    if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
-    lines.push("");
-    if (prep.location_url) {
-      lines.push(`📍 Lokasi ambil:`);
-      lines.push(prep.location_url);
-    } else {
-      // Placeholder eksplisit supaya owner langsung sadar caption dikirim
-      // tanpa link Google Maps — bukan sekadar baris hilang senyap.
-      lines.push("📍 Lokasi belum diisi (owner akan menyusul link)");
-    }
-    lines.push("");
-    lines.push("Terima kasih 🙏");
-    return lines.join("\n");
+        return {
+          label: w?.name ?? "?",
+          qty: it.actual_grams,
+          unit: unitFor(it.warehouse_item_id),
+        };
+      }),
+      payment,
+      locationUrl: prep.location_url ?? "",
+      note: note.trim() || null,
+      customerName: resolvedParty.name || null,
+    });
   }
 
   async function fetchPhotoFiles(): Promise<File[]> {
