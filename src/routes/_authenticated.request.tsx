@@ -2560,33 +2560,22 @@ function SendPrepToCustomerDialog({
   });
 
   function buildCaption(): string {
-    const lines: string[] = [];
-    lines.push(`*${titleName}*`);
-    lines.push("");
-    if (items.length > 0) {
-      lines.push("Isi paket:");
-      items.forEach((it) => {
+    // SSOT template diatur di /pengaturan-pesan-wa.
+    return renderWaCaption(waTpl.template, waTpl.options, {
+      title: titleName,
+      items: items.map((it) => {
         const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
-        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams}${unitFor(it.warehouse_item_id)}`);
-      });
-      lines.push("");
-    }
-    lines.push(`Total: *${formatPaymentRupiah(totalAmount)}*`);
-    lines.push(...buildPaymentMessageLines(payment));
-    if (resolvedParty.name) lines.push(`Untuk: ${resolvedParty.name}`);
-    if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
-    lines.push("");
-    if (prep.location_url) {
-      lines.push(`📍 Lokasi ambil:`);
-      lines.push(prep.location_url);
-    } else {
-      // Placeholder eksplisit supaya owner langsung sadar caption dikirim
-      // tanpa link Google Maps — bukan sekadar baris hilang senyap.
-      lines.push("📍 Lokasi belum diisi (owner akan menyusul link)");
-    }
-    lines.push("");
-    lines.push("Terima kasih 🙏");
-    return lines.join("\n");
+        return {
+          label: w?.name ?? "?",
+          qty: it.actual_grams,
+          unit: unitFor(it.warehouse_item_id),
+        };
+      }),
+      payment,
+      locationUrl: prep.location_url ?? "",
+      note: note.trim() || null,
+      customerName: resolvedParty.name || null,
+    });
   }
 
   async function fetchPhotoFiles(): Promise<File[]> {
