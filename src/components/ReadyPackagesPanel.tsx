@@ -290,6 +290,11 @@ function PackageCard({
       lines.push(``);
       lines.push(`🗺️ Buka Maps:`);
       lines.push(pkg.location_url);
+    } else {
+      // Placeholder seragam dengan alur Ecer & Request supaya pembeli tahu
+      // link Maps akan menyusul, bukan hilang karena bug pengirim.
+      lines.push(``);
+      lines.push(`📍 Lokasi belum diisi (owner akan menyusul link)`);
     }
     lines.push(``);
     lines.push(`Silakan ambil produk di lokasi tersebut ya kak. Jika ada pertanyaan, balas pesan ini. Terima kasih! 🙏`);
