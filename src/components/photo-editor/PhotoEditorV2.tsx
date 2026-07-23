@@ -502,6 +502,94 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     const shF = stickerShadow / 100;
     const glF = stickerGloss / 100;
     const rmF = stickerRim / 100;
+    const preset = STICKER_PRESETS[o.sticker];
+    const isArrow = preset?.group === "panah";
+    // ── Arrow modern: tanpa latar bulat, murni vector (untuk arah lurus/serong/bold)
+    //    atau glyph berwarna tanpa badge (untuk lengkung/putar). Ini yang diminta
+    //    user — panah "clean" seperti stiker WA modern, bukan medali bulat.
+    if (isArrow) {
+      const vectorKeys = new Set([
+        "arrow","arrow-left","arrow-up","arrow-down",
+        "arrow-upright","arrow-upleft","arrow-both",
+        "arrow-bold-r","arrow-bold-l","arrow-bold-u","arrow-bold-d",
+      ]);
+      const commonWrap = {
+        key: o.id,
+        id: o.id,
+        x: o.x, y: o.y, rotation: o.rotation, opacity: o.opacity,
+        draggable: tool === "pilih" && !o.locked,
+        onClick: () => setSelectedId(o.id),
+        onTap: () => setSelectedId(o.id),
+        onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => updateObject(o.id, { x: e.target.x(), y: e.target.y() }),
+        onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
+          const n = e.target as unknown as Konva.Node;
+          const sx = n.scaleX(), sy = n.scaleY();
+          updateObject(o.id, {
+            x: n.x(), y: n.y(),
+            width: Math.max(24, o.width * sx),
+            height: Math.max(24, o.height * sy),
+            rotation: n.rotation(),
+          });
+          n.scaleX(1); n.scaleY(1);
+        },
+      } as const;
+      if (vectorKeys.has(o.sticker)) {
+        const w = o.width, h = o.height;
+        const bold = o.sticker.startsWith("arrow-bold-");
+        // titik pangkal → ujung (padding 8% supaya arrowhead tidak terpotong)
+        let points: number[];
+        switch (o.sticker) {
+          case "arrow": case "arrow-bold-r": points = [w * 0.08, h / 2, w * 0.92, h / 2]; break;
+          case "arrow-left": case "arrow-bold-l": points = [w * 0.92, h / 2, w * 0.08, h / 2]; break;
+          case "arrow-up": case "arrow-bold-u": points = [w / 2, h * 0.92, w / 2, h * 0.08]; break;
+          case "arrow-down": case "arrow-bold-d": points = [w / 2, h * 0.08, w / 2, h * 0.92]; break;
+          case "arrow-upright": points = [w * 0.08, h * 0.92, w * 0.92, h * 0.08]; break;
+          case "arrow-upleft": points = [w * 0.92, h * 0.92, w * 0.08, h * 0.08]; break;
+          case "arrow-both": points = [w * 0.12, h / 2, w * 0.88, h / 2]; break;
+          default: points = [w * 0.08, h / 2, w * 0.92, h / 2];
+        }
+        const sw = bold ? Math.max(8, r * 0.32) : Math.max(5, r * 0.18);
+        const ptr = bold ? Math.max(20, r * 0.7) : Math.max(16, r * 0.5);
+        return (
+          <Group {...commonWrap}>
+            <Arrow
+              points={points}
+              stroke={o.color}
+              fill={o.color}
+              strokeWidth={sw}
+              pointerLength={ptr}
+              pointerWidth={ptr}
+              pointerAtBeginning={o.sticker === "arrow-both"}
+              lineCap="round"
+              lineJoin="round"
+              shadowColor={`rgba(0,0,0,${0.55 * shF})`}
+              shadowBlur={r * 0.18 * shF}
+              shadowOffsetY={r * 0.08 * shF}
+              listening
+            />
+          </Group>
+        );
+      }
+      // Lengkung / putar / refresh → glyph unicode berwarna (tanpa badge)
+      return (
+        <Group {...commonWrap}>
+          <KText
+            x={0}
+            y={cy - r * 0.95}
+            width={o.width}
+            align="center"
+            text={stickerGlyph(o.sticker)}
+            fontSize={r * 1.8}
+            fontStyle="bold"
+            fill={o.color}
+            shadowColor={`rgba(0,0,0,${0.5 * shF})`}
+            shadowBlur={r * 0.18 * shF}
+            shadowOffsetY={r * 0.07 * shF}
+            listening
+          />
+        </Group>
+      );
+    }
     return (
       <Group
         key={o.id}
@@ -692,8 +780,18 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     const node = st.findOne("#" + selectedId);
     if (node) tr.nodes([node as Konva.Node]);
     else tr.nodes([]);
+    // Stiker & teks lebih nyaman kalau proporsional (keepRatio) supaya
+    // saat drag sudut ukuran tidak melar. Sisanya bebas.
+    const sel = scene.objects.find((o) => o.id === selectedId);
+    const lockRatio = sel?.kind === "sticker" || sel?.kind === "text";
+    tr.keepRatio(lockRatio);
+    tr.enabledAnchors(
+      lockRatio
+        ? ["top-left", "top-right", "bottom-left", "bottom-right"]
+        : ["top-left","top-center","top-right","middle-right","bottom-right","bottom-center","bottom-left","middle-left"],
+    );
     tr.getLayer()?.batchDraw();
-  }, [selectedId, scene.objects.length]);
+  }, [selectedId, scene.objects]);
 
   const selectedObj = scene.objects.find((o) => o.id === selectedId) ?? null;
 
@@ -740,7 +838,9 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             <Transformer
               ref={(n) => { transformerRef.current = n; }}
               rotateEnabled
-              anchorSize={12}
+              anchorSize={22}
+              anchorCornerRadius={11}
+              rotateAnchorOffset={28}
               borderStroke={GOLD}
               anchorStroke={GOLD}
               anchorFill="#0d0d0d"
@@ -819,6 +919,53 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             <IconPill onClick={() => deleteObject(selectedObj.id)} label="Hapus" tone="danger"><Trash2 className="h-4 w-4" /></IconPill>
           </div>
         )}
+
+        {/* Ukuran cepat — muncul saat sticker terpilih. Slider proporsional +
+            tombol −/+ supaya membesarkan/mengecilkan stiker gampang di HP,
+            tanpa harus mengejar handle kecil. */}
+        {selectedObj && selectedObj.kind === "sticker" && (() => {
+          const s = selectedObj as StickerObj;
+          const aspect = s.height > 0 ? s.width / s.height : 1;
+          const resize = (w: number) => {
+            const nw = Math.max(40, Math.min(720, Math.round(w)));
+            const nh = Math.max(40, Math.round(nw / (aspect || 1)));
+            updateObject(s.id, { width: nw, height: nh });
+          };
+          return (
+            <div
+              className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-2 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-3 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
+              style={{ top: "calc(env(safe-area-inset-top) + 128px)" }}
+            >
+              <button
+                type="button"
+                onClick={() => resize(s.width * 0.8)}
+                aria-label="Kecilkan stiker"
+                className="grid h-9 w-9 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+              >
+                <span className="text-ms-lg font-bold">−</span>
+              </button>
+              <input
+                type="range"
+                min={40}
+                max={720}
+                step={4}
+                value={Math.round(s.width)}
+                onChange={(e) => resize(Number(e.target.value))}
+                aria-label="Ukuran stiker"
+                className="h-9 w-44 accent-[#c9a84c] sm:w-56"
+              />
+              <button
+                type="button"
+                onClick={() => resize(s.width * 1.25)}
+                aria-label="Perbesar stiker"
+                className="grid h-9 w-9 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+              >
+                <span className="text-ms-lg font-bold">+</span>
+              </button>
+              <span className="w-10 text-center text-ms-2xs tabular-nums text-[#f0d78c]/80">{Math.round(s.width)}</span>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Panel gaya kontekstual — muncul di atas toolbar HANYA saat tool
@@ -962,6 +1109,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                     const base = preset.defaultColor;
                     const light = shadeHex(base, 0.55);
                     const dark = shadeHex(base, -0.35);
+                    const isArrow = preset.group === "panah";
                     return (
                       <button
                         key={key}
@@ -970,22 +1118,33 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                         aria-label={`Tambah stiker ${preset.label}`}
                         className="group flex flex-col items-center gap-ms-1 rounded-xl border border-[#c9a84c]/15 bg-white/[0.03] p-ms-2 text-white/90 transition hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10 active:scale-95"
                       >
-                        {/* Preview 3D: radial-gradient + inner ring + glossy highlight */}
-                        <span
-                          className="relative grid h-11 w-11 place-items-center rounded-full text-white ring-1 ring-black/40"
-                          style={{
-                            background: `radial-gradient(circle at 32% 28%, ${light} 0%, ${base} 55%, ${dark} 100%)`,
-                            boxShadow: `0 ${6 * (stickerShadow / 100)}px ${14 * (stickerShadow / 100)}px -4px rgba(0,0,0,${0.7 * (stickerShadow / 100)}), inset 0 1px 0 rgba(255,255,255,${0.35 * (stickerRim / 100)})`,
-                          }}
-                        >
-                          <Ic className="h-[22px] w-[22px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]" />
-                          {/* glossy highlight */}
+                        {isArrow ? (
+                          // Panah modern — flat, tanpa medali. Warna aksen brand.
                           <span
-                            aria-hidden
-                            className="pointer-events-none absolute inset-x-2 top-1 h-2 rounded-full blur-[2px]"
-                            style={{ background: `rgba(255,255,255,${0.55 * (stickerGloss / 100)})` }}
-                          />
-                        </span>
+                            className="grid h-11 w-11 place-items-center"
+                            style={{
+                              color: base,
+                              filter: `drop-shadow(0 2px 4px rgba(0,0,0,${0.5 * (stickerShadow / 100)}))`,
+                            }}
+                          >
+                            <Ic className="h-8 w-8" strokeWidth={2.75} />
+                          </span>
+                        ) : (
+                          <span
+                            className="relative grid h-11 w-11 place-items-center rounded-full text-white ring-1 ring-black/40"
+                            style={{
+                              background: `radial-gradient(circle at 32% 28%, ${light} 0%, ${base} 55%, ${dark} 100%)`,
+                              boxShadow: `0 ${6 * (stickerShadow / 100)}px ${14 * (stickerShadow / 100)}px -4px rgba(0,0,0,${0.7 * (stickerShadow / 100)}), inset 0 1px 0 rgba(255,255,255,${0.35 * (stickerRim / 100)})`,
+                            }}
+                          >
+                            <Ic className="h-[22px] w-[22px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]" />
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-x-2 top-1 h-2 rounded-full blur-[2px]"
+                              style={{ background: `rgba(255,255,255,${0.55 * (stickerGloss / 100)})` }}
+                            />
+                          </span>
+                        )}
                         <span className="text-ms-2xs text-[#f0d78c]/90">{preset.label}</span>
                       </button>
                     );
