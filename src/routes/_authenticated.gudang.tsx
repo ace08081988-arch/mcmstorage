@@ -1891,13 +1891,6 @@ function StokTab({
     },
     [onChanged],
   );
-  if (items.length === 0)
-    return (
-      <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
-        Belum ada barang. Tambahkan saat mencatat pembelian pertama di tab <b>Beli</b>.
-      </div>
-    );
-
   // Pre-computed lowercase index — dihitung sekali per perubahan `items`,
   // sehingga filter pencarian tidak melakukan `.toLowerCase()` per keystroke.
   const searchIndex = useMemo(
@@ -1961,6 +1954,16 @@ function StokTab({
       return b[1].value - a[1].value;
     });
   }, [items, categoryOrder]);
+
+  // Early-return SETELAH semua hook — memindahkan return sebelum hook di
+  // atas menyebabkan React error #310 (jumlah hook berubah antar render)
+  // saat data pertama kali masuk.
+  if (items.length === 0)
+    return (
+      <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
+        Belum ada barang. Tambahkan saat mencatat pembelian pertama di tab <b>Beli</b>.
+      </div>
+    );
 
   return (
     <>
