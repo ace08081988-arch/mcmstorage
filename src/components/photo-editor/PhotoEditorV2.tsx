@@ -970,6 +970,14 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
               borderStroke={GOLD}
               anchorStroke={GOLD}
               anchorFill="#0d0d0d"
+              rotationSnaps={
+                snapEnabled && selectedObj?.kind === "sticker" &&
+                STICKER_PRESETS[(selectedObj as StickerObj).sticker]?.group === "panah"
+                  ? [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180,
+                     -15, -30, -45, -60, -75, -90, -105, -120, -135, -150, -165]
+                  : []
+              }
+              rotationSnapTolerance={snapEnabled ? 8 : 0}
             />
           </Layer>
         </Stage>
