@@ -1352,7 +1352,10 @@ function SendPrepLinkDialog({
         _pin: pin,
         _share_token: token,
         _items: [],
-        _max_submissions: 1,
+        // Satu link = satu permintaan pegawai (bukan 1× unggah). Pegawai boleh
+        // mengunggah beberapa produk/foto di bawah PIN yang sama. Pemilik
+        // menutup tugas secara manual (tombol "Selesai/Arsipkan") kalau sudah cukup.
+        _max_submissions: 999,
         _title_ids: [title.id],
       });
       if (rpcErr) throw rpcErr;
