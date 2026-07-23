@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { pingLovableAi } from "@/lib/ai-ping.functions";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
   Boxes,
@@ -632,6 +634,7 @@ function GudangPage() {
             onChange={setTab}
             ariaLabel="Bagian Gudang"
           />
+          <AiPingButton />
         </PageHeader>
 
         <PageContainer>
