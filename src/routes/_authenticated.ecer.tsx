@@ -1972,6 +1972,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           itemName={item.name}
           customers={customers}
+          onLocationSaved={() => { void load(); }}
           onClose={() => setQuickSendPrep(null)}
           onSent={() => {
             // Optimistic move ke Riwayat Terkirim untuk quick-send
