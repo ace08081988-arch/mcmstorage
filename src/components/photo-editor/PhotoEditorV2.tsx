@@ -919,6 +919,53 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             <IconPill onClick={() => deleteObject(selectedObj.id)} label="Hapus" tone="danger"><Trash2 className="h-4 w-4" /></IconPill>
           </div>
         )}
+
+        {/* Ukuran cepat — muncul saat sticker terpilih. Slider proporsional +
+            tombol −/+ supaya membesarkan/mengecilkan stiker gampang di HP,
+            tanpa harus mengejar handle kecil. */}
+        {selectedObj && selectedObj.kind === "sticker" && (() => {
+          const s = selectedObj as StickerObj;
+          const aspect = s.height > 0 ? s.width / s.height : 1;
+          const resize = (w: number) => {
+            const nw = Math.max(40, Math.min(720, Math.round(w)));
+            const nh = Math.max(40, Math.round(nw / (aspect || 1)));
+            updateObject(s.id, { width: nw, height: nh });
+          };
+          return (
+            <div
+              className="pointer-events-auto absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-ms-2 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-3 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl"
+              style={{ top: "calc(env(safe-area-inset-top) + 128px)" }}
+            >
+              <button
+                type="button"
+                onClick={() => resize(s.width * 0.8)}
+                aria-label="Kecilkan stiker"
+                className="grid h-9 w-9 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+              >
+                <span className="text-ms-lg font-bold">−</span>
+              </button>
+              <input
+                type="range"
+                min={40}
+                max={720}
+                step={4}
+                value={Math.round(s.width)}
+                onChange={(e) => resize(Number(e.target.value))}
+                aria-label="Ukuran stiker"
+                className="h-9 w-44 accent-[#c9a84c] sm:w-56"
+              />
+              <button
+                type="button"
+                onClick={() => resize(s.width * 1.25)}
+                aria-label="Perbesar stiker"
+                className="grid h-9 w-9 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95"
+              >
+                <span className="text-ms-lg font-bold">+</span>
+              </button>
+              <span className="w-10 text-center text-ms-2xs tabular-nums text-[#f0d78c]/80">{Math.round(s.width)}</span>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Panel gaya kontekstual — muncul di atas toolbar HANYA saat tool
