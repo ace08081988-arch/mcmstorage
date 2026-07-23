@@ -2235,6 +2235,9 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteStep, setDeleteStep] = useState<"idle" | "photo" | "record" | "done">("idle");
+  // Tangkap elemen pemicu hapus supaya fokus keyboard bisa kembali ke sana
+  // setelah dialog dibatalkan atau proses selesai.
+  const deleteReturnElRef = useRef<HTMLElement | null>(null);
   const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
     if (!path) return null;
     // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
