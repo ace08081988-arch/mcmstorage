@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Loader2, MessageSquare, RotateCcw, Save } from "lucide-react";
+import { Copy, Loader2, MessageSquare, Phone, RotateCcw, Save } from "lucide-react";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,10 @@ import {
   loadWaTemplate,
   saveWaTemplate,
 } from "@/lib/wa-template-store";
+import { COUNTRIES } from "@/lib/countries";
+import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
+import { buildWhatsAppUrl } from "@/lib/share-wa";
+import { useMyProfile, useUpdateMyProfile } from "@/lib/profile";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-pesan-wa")({
   head: () => ({
@@ -234,7 +238,108 @@ function PesanWaPage() {
           {preview.length.toLocaleString("id-ID")} karakter
         </div>
       </SettingsSection>
+
+      <WaPhoneFormatSection />
     </div>
+  );
+}
+
+/**
+ * Pengaturan format nomor WhatsApp.
+ *
+ * Setiap owner menyimpan default kode negara di `profiles.country_code`
+ * (kolom yang sama dengan halaman Profil, jadi satu tempat = satu sumber).
+ * Section ini menampilkan preview normalisasi real-time: user mengetik nomor
+ * apa adanya ("0812…", "+62 812…", "00 62 812…") dan langsung melihat
+ * bagaimana link `wa.me/…` yang akan dipakai tombol Kirim WA.
+ */
+function WaPhoneFormatSection() {
+  const { data: profile, isLoading } = useMyProfile();
+  const update = useUpdateMyProfile();
+  const [country, setCountry] = useState<string>("ID");
+  const [sample, setSample] = useState<string>("");
+
+  useEffect(() => {
+    if (profile?.country_code) setCountry(profile.country_code);
+    if (profile?.phone) setSample(profile.phone);
+  }, [profile?.country_code, profile?.phone]);
+
+  const normalized = normalizeWaNumber(sample, country);
+  const display = formatWaDisplay(sample, country);
+  const waUrl = normalized ? buildWhatsAppUrl("Halo", sample, country) : "";
+
+  async function handleSave() {
+    try {
+      await update.mutateAsync({ country_code: country });
+      toast.success("Kode negara tersimpan — link wa.me kini otomatis benar.");
+    } catch (e) {
+      toast.error("Gagal simpan: " + (e as Error).message);
+    }
+  }
+
+  return (
+    <SettingsSection
+      title="Format nomor WhatsApp"
+      icon={Phone}
+      description="Kode negara default dipakai untuk membangun link wa.me dari nomor yang tersimpan (kontak pelanggan, supplier, staf). Nomor lokal ('0812…') otomatis diubah jadi '62812…' saat dikirim."
+      actions={
+        <Button size="sm" onClick={handleSave} disabled={isLoading || update.isPending || country === (profile?.country_code ?? "ID")}>
+          {update.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1 h-3.5 w-3.5" />}
+          Simpan
+        </Button>
+      }
+    >
+      <div className="grid gap-ms-3 sm:grid-cols-2">
+        <div>
+          <Label className="text-ms-xs">Kode negara default</Label>
+          <Select value={country} onValueChange={setCountry}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent className="max-h-72">
+              {COUNTRIES.map((c) => (
+                <SelectItem key={c.code} value={c.code}>
+                  {c.flag} {c.name} (+{c.dial})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-ms-xs">Coba nomor</Label>
+          <Input
+            className="mt-1"
+            value={sample}
+            onChange={(e) => setSample(e.target.value)}
+            placeholder="mis. 0812-3456-7890"
+            inputMode="tel"
+          />
+        </div>
+      </div>
+      <div className="mt-ms-2 space-y-1 rounded-md border bg-muted/40 p-ms-2 text-ms-2xs">
+        <div className="flex items-center justify-between gap-ms-2">
+          <span className="text-muted-foreground">Tampilan</span>
+          <span className="font-mono">{display || <em className="text-muted-foreground">—</em>}</span>
+        </div>
+        <div className="flex items-center justify-between gap-ms-2">
+          <span className="text-muted-foreground">Digit E.164</span>
+          <span className="font-mono">{normalized ?? <em className="text-destructive">tidak valid</em>}</span>
+        </div>
+        <div className="flex items-center justify-between gap-ms-2">
+          <span className="text-muted-foreground">Link wa.me</span>
+          {waUrl ? (
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="truncate font-mono text-primary underline underline-offset-2"
+            >
+              {waUrl.replace("?text=Halo", "")}
+            </a>
+          ) : (
+            <em className="text-destructive">tidak bisa dibangun</em>
+          )}
+        </div>
+      </div>
+    </SettingsSection>
   );
 }
 
