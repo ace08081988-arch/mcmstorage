@@ -330,6 +330,22 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     }));
   }, [commitScene]);
 
+  // Transient edit path: mutasi scene TANPA push history (untuk slider drag
+  // kontinu). Dipanggil setiap tik slider; ketika gesture selesai
+  // (pointerup / blur / keyup), panggil `flushTransient` untuk mendorong
+  // satu snapshot history — jadi undo satu tap = balik ke sebelum gesture,
+  // bukan mundur ratusan tik. Autosave IndexedDB tetap jalan karena
+  // useAutosaveScene mengawasi history.present + scene state teratas.
+  const updateObjectTransient = useCallback((id: string, patch: Partial<SceneObject>) => {
+    setScene((s) => ({
+      ...s,
+      objects: s.objects.map((o) => (o.id === id ? ({ ...o, ...patch } as SceneObject) : o)),
+    }));
+  }, []);
+  const flushTransient = useCallback(() => {
+    setScene((s) => { setHistory((h) => pushHistory(h, s)); return s; });
+  }, []);
+
   const deleteObject = useCallback((id: string) => {
     commitScene((s) => ({ ...s, objects: s.objects.filter((o) => o.id !== id) }));
     setSelectedId((cur) => (cur === id ? null : cur));
@@ -1065,6 +1081,11 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             const nh = Math.max(40, Math.round(nw / (aspect || 1)));
             updateObject(s.id, { width: nw, height: nh });
           };
+          const resizeTransient = (w: number) => {
+            const nw = Math.max(40, Math.min(720, Math.round(w)));
+            const nh = Math.max(40, Math.round(nw / (aspect || 1)));
+            updateObjectTransient(s.id, { width: nw, height: nh });
+          };
           const preset = STICKER_PRESETS[s.sticker];
           const isArrow = preset?.group === "panah";
           // Normalisasi -180..180 supaya tampilan angka enak dibaca.
@@ -1075,6 +1096,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             return d;
           };
           const setRot = (deg: number) => updateObject(s.id, { rotation: normRot(deg) });
+          const setRotTransient = (deg: number) => updateObjectTransient(s.id, { rotation: normRot(deg) });
           const nudge = (delta: number) => setRot((s.rotation ?? 0) + delta);
           const snap = (target: number) => setRot(target);
           return (
@@ -1097,7 +1119,11 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 max={720}
                 step={4}
                 value={Math.round(s.width)}
-                onChange={(e) => resize(Number(e.target.value))}
+                onChange={(e) => resizeTransient(Number(e.target.value))}
+                onPointerUp={flushTransient}
+                onPointerCancel={flushTransient}
+                onKeyUp={flushTransient}
+                onBlur={flushTransient}
                 aria-label="Ukuran stiker"
                 className="h-9 w-44 accent-[#c9a84c] sm:w-56"
               />
@@ -1140,7 +1166,11 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   max={180}
                   step={1}
                   value={Math.round(normRot(s.rotation ?? 0))}
-                  onChange={(e) => setRot(Number(e.target.value))}
+                  onChange={(e) => setRotTransient(Number(e.target.value))}
+                  onPointerUp={flushTransient}
+                  onPointerCancel={flushTransient}
+                  onKeyUp={flushTransient}
+                  onBlur={flushTransient}
                   aria-label="Sudut rotasi"
                   className="h-8 w-36 accent-[#c9a84c] sm:w-48"
                 />
@@ -1168,8 +1198,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   value={Math.round(normRot(s.rotation ?? 0))}
                   onChange={(e) => {
                     const v = Number(e.target.value);
-                    if (Number.isFinite(v)) setRot(v);
+                    if (Number.isFinite(v)) setRotTransient(v);
                   }}
+                  onBlur={flushTransient}
+                  onKeyUp={(e) => { if (e.key === "Enter") flushTransient(); }}
                   aria-label="Sudut presisi"
                   className="h-8 w-14 rounded-md border border-[#c9a84c]/25 bg-white/[0.04] px-1 text-center text-ms-2xs tabular-nums text-[#f0d78c] focus:border-[#c9a84c]/60 focus:outline-none"
                 />
