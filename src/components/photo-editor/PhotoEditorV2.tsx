@@ -28,6 +28,7 @@ import {
   ArrowRight, ArrowLeft, ArrowUp, ArrowDown, ArrowUpRight, ArrowUpLeft,
   ArrowLeftRight, CornerUpLeft, CornerUpRight, CornerDownLeft, CornerDownRight,
   MoveRight, MoveLeft, MoveUp, MoveDown, RefreshCw,
+  ArrowBigRight, ArrowBigLeft, ChevronsRight, ChevronsLeft, ChevronRight,
   Zap, Heart, Star, ThumbsUp, Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -100,6 +101,16 @@ const STICKER_PRESETS: Record<
   "arrow-rotate-cw": { label: "Putar Kanan", Icon: RotateCw, defaultColor: "#f0d78c", group: "panah" },
   "arrow-rotate-ccw": { label: "Putar Kiri", Icon: RotateCcw, defaultColor: "#f0d78c", group: "panah" },
   "arrow-refresh": { label: "Refresh", Icon: RefreshCw, defaultColor: "#c9a84c", group: "panah" },
+  // ── Panah modern (varian gaya) — semua render vektor tanpa latar
+  "arrow-thin-r": { label: "Tipis Kanan", Icon: ChevronRight, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-thin-l": { label: "Tipis Kiri", Icon: ChevronLeft, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-double-r": { label: "Ganda Kanan", Icon: ChevronsRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-double-l": { label: "Ganda Kiri", Icon: ChevronsLeft, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-block-r": { label: "Blok Kanan", Icon: ArrowBigRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-block-l": { label: "Blok Kiri", Icon: ArrowBigLeft, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-arc-r": { label: "Lengkung Kanan", Icon: Redo2, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-arc-l": { label: "Lengkung Kiri", Icon: Undo2, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-zigzag-r": { label: "Zigzag", Icon: Zap, defaultColor: "#c9a84c", group: "panah" },
   // ── Status operasional
   check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e", group: "status" },
   x: { label: "Silang", Icon: X, defaultColor: "#ef4444", group: "status" },
@@ -512,6 +523,13 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         "arrow","arrow-left","arrow-up","arrow-down",
         "arrow-upright","arrow-upleft","arrow-both",
         "arrow-bold-r","arrow-bold-l","arrow-bold-u","arrow-bold-d",
+        "arrow-thin-r","arrow-thin-l",
+      ]);
+      const modernKeys = new Set([
+        "arrow-double-r","arrow-double-l",
+        "arrow-block-r","arrow-block-l",
+        "arrow-arc-r","arrow-arc-l",
+        "arrow-zigzag-r",
       ]);
       const commonWrap = {
         key: o.id,
@@ -536,6 +554,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
       if (vectorKeys.has(o.sticker)) {
         const w = o.width, h = o.height;
         const bold = o.sticker.startsWith("arrow-bold-");
+        const thin = o.sticker.startsWith("arrow-thin-");
         // titik pangkal → ujung (padding 8% supaya arrowhead tidak terpotong)
         let points: number[];
         switch (o.sticker) {
@@ -546,10 +565,12 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           case "arrow-upright": points = [w * 0.08, h * 0.92, w * 0.92, h * 0.08]; break;
           case "arrow-upleft": points = [w * 0.92, h * 0.92, w * 0.08, h * 0.08]; break;
           case "arrow-both": points = [w * 0.12, h / 2, w * 0.88, h / 2]; break;
+          case "arrow-thin-r": points = [w * 0.08, h / 2, w * 0.92, h / 2]; break;
+          case "arrow-thin-l": points = [w * 0.92, h / 2, w * 0.08, h / 2]; break;
           default: points = [w * 0.08, h / 2, w * 0.92, h / 2];
         }
-        const sw = bold ? Math.max(8, r * 0.32) : Math.max(5, r * 0.18);
-        const ptr = bold ? Math.max(20, r * 0.7) : Math.max(16, r * 0.5);
+        const sw = bold ? Math.max(8, r * 0.32) : thin ? Math.max(2, r * 0.08) : Math.max(5, r * 0.18);
+        const ptr = bold ? Math.max(20, r * 0.7) : thin ? Math.max(10, r * 0.3) : Math.max(16, r * 0.5);
         return (
           <Group {...commonWrap}>
             <Arrow
@@ -569,6 +590,87 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             />
           </Group>
         );
+      }
+      if (modernKeys.has(o.sticker)) {
+        const w = o.width, h = o.height;
+        const sw = Math.max(5, r * 0.18);
+        const ptr = Math.max(16, r * 0.5);
+        const shadow = {
+          shadowColor: `rgba(0,0,0,${0.55 * shF})`,
+          shadowBlur: r * 0.18 * shF,
+          shadowOffsetY: r * 0.08 * shF,
+        } as const;
+        // Double-line arrow: dua batang paralel dengan satu arrowhead di ujung.
+        if (o.sticker === "arrow-double-r" || o.sticker === "arrow-double-l") {
+          const rev = o.sticker === "arrow-double-l";
+          const x0 = rev ? w * 0.92 : w * 0.08;
+          const x1 = rev ? w * 0.08 : w * 0.92;
+          const gap = Math.max(4, r * 0.18);
+          const sw2 = Math.max(3, r * 0.12);
+          return (
+            <Group {...commonWrap}>
+              <Arrow points={[x0, h / 2 - gap, x1, h / 2 - gap]} stroke={o.color} fill={o.color}
+                strokeWidth={sw2} pointerLength={ptr * 0.85} pointerWidth={ptr * 0.85}
+                lineCap="round" lineJoin="round" {...shadow} listening />
+              <Arrow points={[x0, h / 2 + gap, x1, h / 2 + gap]} stroke={o.color} fill={o.color}
+                strokeWidth={sw2} pointerLength={ptr * 0.85} pointerWidth={ptr * 0.85}
+                lineCap="round" lineJoin="round" {...shadow} listening />
+            </Group>
+          );
+        }
+        // Block arrow: poligon padat berbentuk anak panah tebal.
+        if (o.sticker === "arrow-block-r" || o.sticker === "arrow-block-l") {
+          const rev = o.sticker === "arrow-block-l";
+          const tailH = h * 0.28;
+          const headH = h * 0.72;
+          const headW = w * 0.42;
+          const y1 = (h - tailH) / 2;
+          const y2 = y1 + tailH;
+          const yh1 = (h - headH) / 2;
+          const yh2 = yh1 + headH;
+          const xTailStart = rev ? w * 0.95 : w * 0.05;
+          const xNeck = rev ? headW : w - headW;
+          const xTip = rev ? w * 0.05 : w * 0.95;
+          const pts = rev
+            ? [xTailStart, y1, xNeck, y1, xNeck, yh1, xTip, h / 2, xNeck, yh2, xNeck, y2, xTailStart, y2]
+            : [xTailStart, y1, xNeck, y1, xNeck, yh1, xTip, h / 2, xNeck, yh2, xNeck, y2, xTailStart, y2];
+          return (
+            <Group {...commonWrap}>
+              <Line points={pts} closed fill={o.color} stroke={o.color} strokeWidth={1}
+                lineJoin="round" {...shadow} listening />
+            </Group>
+          );
+        }
+        // Arc arrow: kurva quadratic dengan arrowhead (pakai tension Konva).
+        if (o.sticker === "arrow-arc-r" || o.sticker === "arrow-arc-l") {
+          const rev = o.sticker === "arrow-arc-l";
+          const p = rev
+            ? [w * 0.92, h * 0.85, w * 0.5, h * 0.15, w * 0.08, h * 0.85]
+            : [w * 0.08, h * 0.85, w * 0.5, h * 0.15, w * 0.92, h * 0.85];
+          return (
+            <Group {...commonWrap}>
+              <Arrow points={p} tension={0.5} stroke={o.color} fill={o.color}
+                strokeWidth={sw} pointerLength={ptr} pointerWidth={ptr}
+                lineCap="round" lineJoin="round" {...shadow} listening />
+            </Group>
+          );
+        }
+        // Zigzag arrow: polyline patah-patah + arrowhead di ujung kanan.
+        if (o.sticker === "arrow-zigzag-r") {
+          const p = [
+            w * 0.08, h * 0.5,
+            w * 0.32, h * 0.2,
+            w * 0.55, h * 0.78,
+            w * 0.92, h * 0.35,
+          ];
+          return (
+            <Group {...commonWrap}>
+              <Arrow points={p} stroke={o.color} fill={o.color}
+                strokeWidth={sw} pointerLength={ptr} pointerWidth={ptr}
+                lineCap="round" lineJoin="round" {...shadow} listening />
+            </Group>
+          );
+        }
       }
       // Lengkung / putar / refresh → glyph unicode berwarna (tanpa badge)
       return (
