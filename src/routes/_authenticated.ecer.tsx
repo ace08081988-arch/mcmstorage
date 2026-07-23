@@ -3697,10 +3697,14 @@ function SendEcerPrepsDialog({
     if (party.name) lines.push(`Untuk: ${party.name}`);
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
     const firstLoc = preps.find((p) => (p.location_url ?? "").trim())?.location_url?.trim() ?? null;
+    lines.push("");
     if (firstLoc) {
-      lines.push("");
       lines.push("📍 Lokasi ambil:");
       lines.push(firstLoc);
+    } else {
+      // Placeholder eksplisit supaya owner langsung sadar caption dikirim
+      // tanpa link Google Maps — bukan sekadar baris hilang senyap.
+      lines.push("📍 Lokasi belum diisi (owner akan menyusul link)");
     }
     lines.push("");
     lines.push("Terima kasih 🙏");
