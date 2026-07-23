@@ -2360,9 +2360,21 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         return;
       }
       setDeleteStep("done");
-      toast.success("Dihapus, stok dikembalikan");
+      // Tutup dialog dan beri toast dulu supaya user dapat umpan balik langsung,
+      // lalu refresh daftar penyiapan/judul di background agar hasilnya
+      // langsung terlihat begitu dialog tertutup.
       setDeleteOpen(false);
-      onChanged(); onTitleUpdated();
+      toast.success(
+        `Penyiapan #${index} (${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}) dihapus · stok dikembalikan`,
+        { duration: 4000 }
+      );
+      try {
+        await Promise.all([onChanged(), onTitleUpdated()]);
+      } catch (refreshErr) {
+        toast.error("Gagal memuat ulang daftar: " + ((refreshErr as Error)?.message ?? String(refreshErr)), {
+          description: "Tarik ke bawah atau tekan tombol refresh untuk memperbarui tampilan.",
+        });
+      }
     } catch (e) {
       toast.error("Gagal: " + ((e as Error)?.message ?? String(e)));
     } finally {
