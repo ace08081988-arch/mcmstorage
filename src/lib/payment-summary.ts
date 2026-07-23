@@ -43,9 +43,13 @@ export function formatPaymentRupiah(amount: number): string {
 
 export function buildPaymentMessageLines(payment: PaymentBreakdown): string[] {
   const lines = [`Pembayaran: ${payment.label}`];
-  if (payment.method === "partial") {
+  if (payment.method === "hutang") {
+    // Cantumkan sisa piutang eksplisit di pesan WA agar pembeli tahu
+    // nominal yang tercatat sebagai hutang (bukan hanya label "Hutang").
+    lines.push(`Sisa hutang: ${formatPaymentRupiah(payment.remaining)}`);
+  } else if (payment.method === "partial") {
     lines.push(`Dibayar: ${formatPaymentRupiah(payment.paid)}`);
-    lines.push(`Sisa: ${formatPaymentRupiah(payment.remaining)}`);
+    lines.push(`Sisa hutang: ${formatPaymentRupiah(payment.remaining)}`);
   }
   return lines;
 }
