@@ -68,7 +68,7 @@ describe("CaptionPreviewDialog — verifikasi tampilan caption", () => {
     expect(pre.textContent).toContain("📍 Lokasi ambil:");
     expect(pre.textContent).toContain("https://maps.google.com/?q=-6.2,106.8");
     // Tombol kirim aktif (caption non-kosong) → owner boleh lanjut.
-    expect(screen.getByTestId("caption-preview-confirm")).not.toBeDisabled();
+    expect((screen.getByTestId("caption-preview-confirm") as HTMLButtonElement).disabled).toBe(false);
     // Tidak ada banner peringatan lokasi.
     expect(screen.queryByTestId("caption-preview-loc-warning")).toBeNull();
   });
@@ -145,7 +145,7 @@ describe("CaptionPreviewDialog — verifikasi tampilan caption", () => {
 
   it("Caption kosong: tombol Kirim disabled — owner tidak bisa kirim pesan tanpa isi", () => {
     render(<CaptionPreviewDialog open onOpenChange={() => {}} caption="" onConfirm={() => {}} />);
-    expect(screen.getByTestId("caption-preview-confirm")).toBeDisabled();
+    expect((screen.getByTestId("caption-preview-confirm") as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByTestId("caption-preview-text").textContent).toContain("(caption kosong)");
   });
 });
