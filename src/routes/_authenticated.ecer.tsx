@@ -2267,7 +2267,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   async function onShare() {
     const text =
       `*${title.name}* #${index}\n` +
-      `Berat aktual: ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}\n` +
+      `Berat aktual: ${fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}\n` +
       (prep.location_url ? `Lokasi: ${prep.location_url}\n` : "") +
       (prep.note ? `Catatan: ${prep.note}\n` : "");
     const nav = typeof navigator !== "undefined" ? navigator : undefined;
