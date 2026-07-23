@@ -1481,6 +1481,13 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     source: AutoSendCancelState["source"];
   } | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
+  // Dialog + progress untuk hapus massal penyiapan yang ditandai.
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteBusy, setBulkDeleteBusy] = useState(false);
+  const [bulkDeleteStep, setBulkDeleteStep] = useState<"idle" | "photo" | "record" | "refresh" | "done">("idle");
+  const [bulkDeleteIndex, setBulkDeleteIndex] = useState(0);
+  const [bulkDeleteTotal, setBulkDeleteTotal] = useState(0);
+
 
   useEffect(() => {
     void supabase.from("customers").select("id,name,contact").order("name").then(({ data }) => {
