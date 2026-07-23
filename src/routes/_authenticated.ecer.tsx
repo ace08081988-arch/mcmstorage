@@ -3687,31 +3687,18 @@ function SendEcerPrepsDialog({
   }
 
   function buildCaption(): string {
-    const lines: string[] = [];
-    lines.push(`*${title.name}*`);
-    lines.push("");
-    lines.push(`Isi paket (${preps.length} kotak):`);
-    preps.forEach((p, i) => {
-      lines.push(`• #${i + 1} — ${p.actual_grams} ${displayUnit(itemName, title.unit_label)}`);
+    // Template & format diatur oleh owner di /pengaturan-pesan-wa.
+    // Blok pembayaran + placeholder lokasi tetap dari SSOT payment-summary.
+    const unit = displayUnit(itemName, title.unit_label);
+    const firstLoc = preps.find((p) => (p.location_url ?? "").trim())?.location_url?.trim() ?? "";
+    return renderWaCaption(waTpl.template, waTpl.options, {
+      title: title.name,
+      items: preps.map((p) => ({ label: "", qty: p.actual_grams, unit })),
+      payment,
+      locationUrl: firstLoc,
+      note: note.trim() || null,
+      customerName: party.name || null,
     });
-    lines.push("");
-    lines.push(`Total: *${formatPaymentRupiah(totalAmount)}*`);
-    lines.push(...buildPaymentMessageLines(payment));
-    if (party.name) lines.push(`Untuk: ${party.name}`);
-    if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
-    const firstLoc = preps.find((p) => (p.location_url ?? "").trim())?.location_url?.trim() ?? null;
-    lines.push("");
-    if (firstLoc) {
-      lines.push("📍 Lokasi ambil:");
-      lines.push(firstLoc);
-    } else {
-      // Placeholder eksplisit supaya owner langsung sadar caption dikirim
-      // tanpa link Google Maps — bukan sekadar baris hilang senyap.
-      lines.push("📍 Lokasi belum diisi (owner akan menyusul link)");
-    }
-    lines.push("");
-    lines.push("Terima kasih 🙏");
-    return lines.join("\n");
   }
 
   async function handleSend() {
