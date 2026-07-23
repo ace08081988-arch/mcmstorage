@@ -1406,12 +1406,12 @@ function DetailHero({
 
 function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-ms-2 py-ms-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
+    <div className="grid min-h-[40px] grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] items-center gap-ms-2 py-ms-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
       <EcerLabel className="flex min-w-0 items-center gap-ms-1.5 leading-snug" title={label}>
         <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground/70 [&_svg]:h-3.5 [&_svg]:w-3.5">
           {icon}
         </span>
-        <span className="truncate">{label}</span>
+        <span className="line-clamp-2 whitespace-normal">{label}</span>
       </EcerLabel>
       <div
         className="flex min-w-0 items-center justify-end gap-x-1.5 text-right text-ms-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
