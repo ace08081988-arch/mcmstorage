@@ -21,10 +21,13 @@ describe("payment-summary SSOT", () => {
     expect(formatSoldPaymentSummary("kas", 10_000, 0)).toBe("Lunas · Rp10.000");
   });
 
-  it("Hutang: paid=0, sisa=total, tanpa baris Dibayar/Sisa", () => {
+  it("Hutang: paid=0, sisa=total, baris WA cantumkan sisa hutang", () => {
     const p = getPaymentBreakdown("hutang", 10_000, 2_000);
     expect(p).toMatchObject({ label: "Hutang", paid: 0, remaining: 10_000, partialValid: true });
-    expect(buildPaymentMessageLines(p)).toEqual(["Pembayaran: Hutang"]);
+    expect(buildPaymentMessageLines(p)).toEqual([
+      "Pembayaran: Hutang",
+      "Sisa hutang: Rp10.000",
+    ]);
     expect(formatSoldPaymentSummary("hutang", 10_000, 0)).toBe("Piutang · Sisa Rp10.000");
   });
 
@@ -34,7 +37,7 @@ describe("payment-summary SSOT", () => {
     expect(buildPaymentMessageLines(p)).toEqual([
       "Pembayaran: Bayar sebagian",
       "Dibayar: Rp2.500",
-      "Sisa: Rp7.500",
+      "Sisa hutang: Rp7.500",
     ]);
     expect(formatSoldPaymentSummary("partial", 10_000, 2_500)).toBe(
       "Bayar sebagian · Dibayar Rp2.500 · Sisa Rp7.500",
