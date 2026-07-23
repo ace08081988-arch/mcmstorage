@@ -1651,7 +1651,11 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         onCreateTitle={onCreateTitle}
         onCreateProduct={onCreateProduct}
         onScrollToWorker={() => {
-          const el = document.getElementById(`worker-shots-${title.id}`);
+          // Kartu "Kiriman pegawai" sudah dilebur ke Daftar penyiapan
+          // (kiriman pegawai tampil sebagai kartu ber-badge "Pegawai").
+          // Shortcut lama diarahkan ke Daftar penyiapan supaya tetap
+          // memberi umpan balik yang benar.
+          const el = document.getElementById(`daftar-penyiapan-${title.id}`);
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "start" });
             el.classList.add("ring-2", "ring-primary");
@@ -1659,7 +1663,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           }
         }}
       />
-      <Card>
+      <Card id={`daftar-penyiapan-${title.id}`} className="scroll-mt-20 transition-shadow">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-ms-2">
             <CardTitle className="flex items-center gap-ms-1.5 text-ms-sm leading-snug">
@@ -2095,7 +2099,14 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         }}
       />
 
-      <WorkerSubmissionsCard title={title} itemName={item.name} />
+      {/*
+        Kartu "Kiriman pegawai" dilebur ke Daftar penyiapan di atas —
+        kiriman pegawai sudah tampil sebagai kartu ber-badge "Pegawai"
+        (prep.created_by === "worker") sehingga panel terpisah ini
+        cuma duplikasi yang bikin bingung. Komponen sengaja disimpan
+        dead-but-present agar mudah di-rollback bila perlu.
+      */}
+      {/* <WorkerSubmissionsCard title={title} itemName={item.name} /> */}
     </div>
   );
 }
