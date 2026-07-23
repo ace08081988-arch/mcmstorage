@@ -2494,9 +2494,10 @@ function SendPrepToCustomerDialog({
   // Hanya dipakai bila `channel === "chat"`.
   const [chatPickerOpen, setChatPickerOpen] = useState(false);
   const [chatConv, setChatConv] = useState<{ id: string; title: string } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   // Reset pilihan percakapan setiap kali dialog dibuka ulang / kanal berubah.
   useEffect(() => {
-    if (open) { setChatConv(null); setChatPickerOpen(false); }
+    if (open) { setChatConv(null); setChatPickerOpen(false); setPreviewOpen(false); }
   }, [open, channel]);
   const [initialSnap, setInitialSnap] = useState<{ mode: "link" | "manual"; customerId: string; manualName: string; totalStr: string; payMethod: "kas" | "hutang" | "partial"; paidStr: string; note: string }>({ mode: "link", customerId: "", manualName: "", totalStr: "", payMethod: "kas", paidStr: "", note: "" });
   // Dibaca `useSaveStatusToast` saat saving → dirty (gagal kirim).
