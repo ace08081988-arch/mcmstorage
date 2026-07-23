@@ -2235,6 +2235,17 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteStep, setDeleteStep] = useState<"idle" | "photo" | "record" | "done">("idle");
+  // Tangkap elemen pemicu hapus supaya fokus keyboard bisa kembali ke sana
+  // setelah dialog dibatalkan atau proses selesai.
+  const deleteReturnElRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (deleteOpen) return;
+    const el = deleteReturnElRef.current;
+    if (el && document.contains(el) && typeof el.focus === "function") {
+      queueMicrotask(() => el.focus());
+    }
+    deleteReturnElRef.current = null;
+  }, [deleteOpen]);
   const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
     if (!path) return null;
     // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
@@ -2376,7 +2387,8 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             {!readOnly && (
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); void onDelete(); }}
+                ref={(el) => { deleteReturnElRef.current = el; }}
+                onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}
                 className="mt-1 rounded border border-destructive/60 bg-destructive/10 px-2 py-0.5 text-ms-2xs font-medium text-destructive hover:bg-destructive/20"
               >
                 Hapus penyiapan
@@ -2441,7 +2453,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
                 <div className="flex shrink-0 items-center justify-end gap-0.5 @[200px]/prepactions:justify-self-end">
                   <Button size="icon" variant="ghost" className={btnCls} aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className={iconCls} /></Button>
                   <Button size="icon" variant="ghost" className={btnCls} aria-label="Edit penyiapan" title="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}><Edit3 className={iconCls} /></Button>
-                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Hapus penyiapan" title="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
+                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Hapus penyiapan" title="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
                 </div>
               );
             })()}
