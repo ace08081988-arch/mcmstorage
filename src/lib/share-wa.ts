@@ -183,12 +183,30 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
       }
       const { Share } = await import("@capacitor/share");
       const fullText = url ? `${text}\n${url}` : text;
+      // WhatsApp Android sering MEMBUANG EXTRA_TEXT saat share disertai
+      // files (khususnya ACTION_SEND_MULTIPLE / >=1 gambar). Akibatnya
+      // caption + link lokasi hilang meski foto sampai. Sebagai jaring
+      // pengaman: salin `fullText` ke clipboard SEBELUM share sheet
+      // dibuka, sehingga user tinggal tempel di WA jika caption drop.
+      let captionCopied = false;
+      if (hasFiles && fullText.trim()) {
+        try {
+          const { Clipboard } = await import("@capacitor/clipboard");
+          await Clipboard.write({ string: fullText });
+          captionCopied = true;
+        } catch {
+          try { await navigator.clipboard?.writeText(fullText); captionCopied = true; } catch { /* ignore */ }
+        }
+      }
       await Share.share({
         title,
         text: fullText,
         files: fileUris.length ? fileUris : undefined,
         dialogTitle: "Kirim ke WhatsApp",
       });
+      if (captionCopied) {
+        toast.message("Foto terkirim. Keterangan + lokasi sudah disalin — tempel di kolom pesan WhatsApp bila caption tidak muncul.", { duration: 9000 });
+      }
       return { status: "shared", withFiles: fileUris.length > 0 };
     } catch (err) {
       const name = (err as { message?: string })?.message ?? "";
@@ -209,15 +227,23 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let shareError = "";
   let filesPayload: File[] | undefined;
   if (hasFiles && nav && typeof nav.share === "function") {
-    const probe: ShareData = { files, text, title };
+    const fullText = url ? `${text}\n${url}` : text;
+    const probe: ShareData = { files, text: fullText, title };
     if (typeof nav.canShare === "function" && nav.canShare(probe)) {
       filesPayload = files;
     } else if (typeof nav.canShare === "function" && nav.canShare({ files })) {
       filesPayload = files;
     }
     if (filesPayload) {
+      // Backup caption ke clipboard karena WA Android/WebView Web Share
+      // kerap menjatuhkan `text` saat files ikut dilampirkan.
+      let captionCopied = false;
+      try { await navigator.clipboard?.writeText(fullText); captionCopied = true; } catch { /* ignore */ }
       try {
-        await nav.share({ files: filesPayload, text, title });
+        await nav.share({ files: filesPayload, text: fullText, title });
+        if (captionCopied) {
+          toast.message("Foto terkirim. Keterangan + lokasi sudah disalin — tempel di kolom pesan WhatsApp bila caption tidak muncul.", { duration: 9000 });
+        }
         return { status: "shared", withFiles: true };
       } catch (err) {
         const name = (err as DOMException)?.name;
