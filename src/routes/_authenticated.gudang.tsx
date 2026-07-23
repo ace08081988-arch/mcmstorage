@@ -669,6 +669,53 @@ function GudangPage() {
 
         <GudangLoadProgress wave1Done={!loading} wave2Done={!secondaryLoading} />
 
+        {lastCrash && (
+          <div
+            role="alert"
+            className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold">
+                  🐛 Halaman sempat error dan dimuat ulang otomatis
+                </div>
+                <div className="mt-1 text-[11px] opacity-80">
+                  {lastCrash.at} · {lastCrash.route}
+                </div>
+                <div className="mt-1 break-words font-mono text-[11px]">
+                  {lastCrash.name}: {lastCrash.message}
+                </div>
+                {lastCrash.stack && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer select-none text-[11px] underline">
+                      Stack trace
+                    </summary>
+                    <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-tight">
+{lastCrash.stack}
+                    </pre>
+                  </details>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={copyLastCrash}
+                  className="rounded border border-destructive/40 px-2 py-1 text-[10px] font-medium hover:bg-destructive/20"
+                >
+                  Salin
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissLastCrash}
+                  className="rounded border border-destructive/40 px-2 py-1 text-[10px] font-medium hover:bg-destructive/20"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {loading && <GudangLoadingSkeleton />}
         {!loading && secondaryLoading &&
           (tab === "jual" || tab === "pesanan" || tab === "hutang" ||
