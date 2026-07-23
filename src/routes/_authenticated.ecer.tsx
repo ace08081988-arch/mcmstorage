@@ -2201,9 +2201,81 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         }}
       />
 
+      <AlertDialog
+        open={bulkDeleteOpen}
+        onOpenChange={(o) => {
+          if (bulkDeleteBusy) return;
+          setBulkDeleteOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedPreps.length} penyiapan yang ditandai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Semua penyiapan yang dipilih akan dihapus, foto di penyimpanan ikut dihapus,
+              dan stok <span className="font-semibold">{item.name ?? title.name}</span> dikembalikan.
+              Tindakan ini tidak bisa dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {bulkDeleteBusy && (
+            <div className="rounded-lg border border-border/60 bg-muted/40 p-ms-2 text-ms-2xs leading-snug">
+              <div className="mb-2 flex items-center justify-between gap-2 font-medium">
+                <div className="flex items-center gap-2">
+                  {bulkDeleteStep === "done" ? (
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                  ) : (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  )}
+                  <span>
+                    {bulkDeleteStep === "photo" && `Menghapus foto… ${bulkDeleteIndex}/${bulkDeleteTotal}`}
+                    {bulkDeleteStep === "record" && `Menghapus data & stok… ${bulkDeleteIndex}/${bulkDeleteTotal}`}
+                    {bulkDeleteStep === "refresh" && "Menyegarkan daftar…"}
+                    {bulkDeleteStep === "done" && "Selesai"}
+                  </span>
+                </div>
+                <span className="text-muted-foreground">
+                  {bulkDeleteStep === "photo" && "1/3"}
+                  {bulkDeleteStep === "record" && "2/3"}
+                  {bulkDeleteStep === "refresh" && "3/3"}
+                  {bulkDeleteStep === "done" && "3/3"}
+                </span>
+              </div>
+              <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width: `${Math.min(100, Math.round((bulkDeleteIndex / Math.max(1, bulkDeleteTotal)) * 100))}%`,
+                  }}
+                />
+              </div>
+              <div className="text-muted-foreground">
+                {bulkDeleteStep === "photo" && "Mohon tunggu, foto sedang dihapus dari penyimpanan."}
+                {bulkDeleteStep === "record" && "Record penyiapan dihapus dan stok dikembalikan."}
+                {bulkDeleteStep === "refresh" && "Memperbarui tampilan daftar…"}
+                {bulkDeleteStep === "done" && "Semua penyiapan terpilih berhasil dihapus."}
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteBusy} onClick={() => setBulkDeleteOpen(false)}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleteBusy || selectedPreps.length === 0}
+              onClick={() => void deleteSelectedPreps()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleteBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
+              Hapus {selectedPreps.length} penyiapan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
+
 
 
 function normUnitStr(u: string | null | undefined) {
