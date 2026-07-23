@@ -278,7 +278,8 @@ describe("caption WA — urutan baris tetap stabil di semua variasi", () => {
           "Catatan: minta bungkus rangkap",
           "📍 Lokasi belum diisi (owner akan menyusul link)",
         ]),
-      ).toBe(true);
+      ),
+    ).toBe(true);
   });
 
   it("Lunas: catatan tambahan tidak menggeser posisi 📍 di paling bawah", () => {
