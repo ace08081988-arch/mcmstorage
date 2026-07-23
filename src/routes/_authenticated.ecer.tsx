@@ -2453,7 +2453,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
                 <div className="flex shrink-0 items-center justify-end gap-0.5 @[200px]/prepactions:justify-self-end">
                   <Button size="icon" variant="ghost" className={btnCls} aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className={iconCls} /></Button>
                   <Button size="icon" variant="ghost" className={btnCls} aria-label="Edit penyiapan" title="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}><Edit3 className={iconCls} /></Button>
-                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Hapus penyiapan" title="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
+                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Hapus penyiapan" title="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
                 </div>
               );
             })()}
