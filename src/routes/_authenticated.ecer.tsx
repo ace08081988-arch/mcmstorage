@@ -4207,6 +4207,18 @@ function SendEcerPrepsDialog({
       busy={busy}
       locationMissing={!preps.some((p) => (p.location_url ?? "").trim())}
       locationHint="Buka kartu penyiapan Ecer (Ready) → isi kolom Lokasi ambil (link Google Maps), lalu ulangi Verifikasi bayar."
+      onSaveLocation={async (url) => {
+        // Isi lokasi untuk semua kartu penyiapan dalam batch ini yang belum
+        // punya `location_url`. Kartu yang sudah punya lokasi tidak diubah.
+        const ids = preps.filter((p) => !(p.location_url ?? "").trim()).map((p) => p.id);
+        if (ids.length === 0) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("ecer_preparations")
+          .update({ location_url: url })
+          .in("id", ids);
+        if (error) throw error;
+        await Promise.resolve(onLocationSaved?.());
+      }}
       confirmLabel={
         payment.method === "hutang"
           ? "Kirim WA & catat piutang"
