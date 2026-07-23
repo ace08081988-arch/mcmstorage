@@ -50,3 +50,92 @@ describe("payment-summary SSOT", () => {
     expect(getPaymentBreakdown("partial", 10_000, 11_000).partialValid).toBe(false);
   });
 });
+
+/**
+ * Regresi guard: baris "Sisa hutang" WAJIB muncul di pesan WA untuk metode
+ * Hutang dan Bayar sebagian, dan link 📍 lokasi WAJIB ikut di baris terakhir
+ * kalau `location_url` terisi. Kalau salah satu asumsi ini pecah, pembeli
+ * kehilangan info kritikal (nominal hutang / titik ambil), jadi test ini
+ * sengaja ketat.
+ */
+function composeCaption(opts: {
+  title: string;
+  method: "kas" | "hutang" | "partial";
+  total: number;
+  paid?: number;
+  locationUrl?: string | null;
+}): string {
+  const p = getPaymentBreakdown(opts.method, opts.total, opts.paid ?? 0);
+  const lines: string[] = [`*${opts.title}*`, "", `Total: Rp${p.total.toLocaleString("id-ID")}`];
+  lines.push(...buildPaymentMessageLines(p));
+  if (opts.locationUrl) {
+    lines.push("", "📍 Lokasi ambil:", opts.locationUrl);
+  }
+  return lines.join("\n");
+}
+
+describe("caption WA regression — Sisa hutang & 📍 wajib muncul", () => {
+  const AMOUNTS: Array<[number, number]> = [
+    [1_000, 500],
+    [10_000, 2_500],
+    [123_456, 45_678],
+    [999_999, 1],
+    [50_000_000, 12_345_678],
+  ];
+
+  it.each(AMOUNTS)("Hutang total=%s → 'Sisa hutang: Rp<total>' muncul", (total) => {
+    const lines = buildPaymentMessageLines(getPaymentBreakdown("hutang", total, 0));
+    expect(lines[0]).toBe("Pembayaran: Hutang");
+    expect(lines).toContain(`Sisa hutang: Rp${total.toLocaleString("id-ID")}`);
+    expect(lines.some((l) => l.startsWith("Sisa hutang:"))).toBe(true);
+  });
+
+  it.each(AMOUNTS)("Bayar sebagian total=%s paid=%s → 'Dibayar' + 'Sisa hutang' terurut", (total, paid) => {
+    const lines = buildPaymentMessageLines(getPaymentBreakdown("partial", total, paid));
+    const iBayar = lines.findIndex((l) => l.startsWith("Dibayar:"));
+    const iSisa = lines.findIndex((l) => l.startsWith("Sisa hutang:"));
+    expect(iBayar).toBeGreaterThan(-1);
+    expect(iSisa).toBeGreaterThan(iBayar);
+    expect(lines).toContain(`Dibayar: Rp${paid.toLocaleString("id-ID")}`);
+    expect(lines).toContain(`Sisa hutang: Rp${(total - paid).toLocaleString("id-ID")}`);
+  });
+
+  it("Lunas TIDAK boleh mencantumkan 'Sisa hutang' (menghindari pesan menyesatkan)", () => {
+    const lines = buildPaymentMessageLines(getPaymentBreakdown("kas", 10_000, 0));
+    expect(lines.some((l) => l.includes("Sisa hutang"))).toBe(false);
+  });
+
+  it("Caption Hutang menyertakan 'Sisa hutang' + baris 📍 lokasi", () => {
+    const cap = composeCaption({
+      title: "Kacang tanah 500g",
+      method: "hutang",
+      total: 25_000,
+      locationUrl: "https://maps.google.com/?q=-6.2,106.8",
+    });
+    expect(cap).toContain("Pembayaran: Hutang");
+    expect(cap).toContain("Sisa hutang: Rp25.000");
+    expect(cap).toContain("📍 Lokasi ambil:");
+    expect(cap).toContain("https://maps.google.com/?q=-6.2,106.8");
+    // 📍 harus setelah baris pembayaran, bukan di atasnya.
+    expect(cap.indexOf("📍")).toBeGreaterThan(cap.indexOf("Sisa hutang:"));
+  });
+
+  it("Caption Bayar sebagian menyertakan Dibayar + Sisa hutang + 📍", () => {
+    const cap = composeCaption({
+      title: "Gula 1kg",
+      method: "partial",
+      total: 30_000,
+      paid: 10_000,
+      locationUrl: "https://maps.app.goo.gl/xyz",
+    });
+    expect(cap).toContain("Dibayar: Rp10.000");
+    expect(cap).toContain("Sisa hutang: Rp20.000");
+    expect(cap).toMatch(/📍 Lokasi ambil:\nhttps:\/\/maps\.app\.goo\.gl\/xyz/);
+  });
+
+  it("Tanpa location_url: caption tidak memuat blok 📍 (tidak ada baris kosong palsu)", () => {
+    const cap = composeCaption({ title: "X", method: "hutang", total: 5_000 });
+    expect(cap.includes("📍")).toBe(false);
+    expect(cap).toContain("Sisa hutang: Rp5.000");
+  });
+});
