@@ -370,15 +370,40 @@ function GudangPage() {
   // di background segera setelah paint pertama, jadi UX tab-switch
   // tetap instan tanpa memblokir tampilan awal.
   async function reloadAllNow() {
-    const [w, s, sa, wc] = await Promise.all([
-      supabase.from("warehouse_items").select("*").order("name"),
-      supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
-      supabase.from("sales").select("*").order("created_at", { ascending: false }).limit(200),
-      supabase
-        .from("warehouse_categories")
-        .select("name, position")
-        .order("position", { ascending: true }),
-    ]);
+    // Safety: query manapun yang menggantung (mis. WebView kehilangan
+    // konektivitas saat berpindah tab) TIDAK boleh membekukan skeleton
+    // "Gel-1 · memuat stok…" selamanya. Bungkus tiap query dengan
+    // timeout 12 dtk + fallback data lama; `setLoading(false)` dijamin
+    // jalan di `finally` supaya UI selalu sempat bernapas.
+    const withTimeout = <T,>(p: PromiseLike<T>, ms = 12_000): Promise<T> =>
+      new Promise((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error("query-timeout")), ms);
+        Promise.resolve(p).then(
+          (v) => { clearTimeout(t); resolve(v); },
+          (e) => { clearTimeout(t); reject(e); },
+        );
+      });
+    let w, s, sa, wc;
+    try {
+      [w, s, sa, wc] = await Promise.all([
+        withTimeout(supabase.from("warehouse_items").select("*").order("name")),
+        withTimeout(supabase.from("suppliers").select("*").order("created_at", { ascending: false })),
+        withTimeout(supabase.from("sales").select("*").order("created_at", { ascending: false }).limit(200)),
+        withTimeout(
+          supabase
+            .from("warehouse_categories")
+            .select("name, position")
+            .order("position", { ascending: true }),
+        ),
+      ]);
+    } catch (err) {
+      // Gagal / timeout — jangan biarkan skeleton menggantung.
+      // Cache SWR (bila ada) sudah terpasang di useEffect init.
+      console.warn("[gudang] wave-1 gagal, lepas skeleton", err);
+      setLoading(false);
+      setSecondaryLoading(false);
+      return;
+    }
     const nextItems = (w.data as WItem[] | null) ?? [];
     const nextSuppliers = (s.data as Supplier[] | null) ?? [];
     const nextSales = (sa.data as Sale[] | null) ?? [];
@@ -393,16 +418,23 @@ function GudangPage() {
     if (wc.data) setCategoryOrder(new Map(nextCatOrder));
     setLoading(false);
 
-    // Gelombang 2 — non-blocking. Tetap `await` di dalam fungsi supaya
-    // caller yang menunggu reload penuh (mis. setelah mutasi) mendapat
-    // data terbaru sebelum resolve.
-    const [p, py, c, cp, or] = await Promise.all([
-      supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
-      supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("customers").select("*").order("created_at", { ascending: false }),
-      supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200),
-    ]);
+    // Gelombang 2 — non-blocking. Sama-sama pakai timeout + finally
+    // supaya tab dependen (Hutang/Jual/Pesanan/…) tidak menampilkan
+    // skeleton selamanya bila jaringan bermasalah.
+    let p, py, c, cp, or;
+    try {
+      [p, py, c, cp, or] = await Promise.all([
+        withTimeout(supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200)),
+        withTimeout(supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500)),
+        withTimeout(supabase.from("customers").select("*").order("created_at", { ascending: false })),
+        withTimeout(supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500)),
+        withTimeout(supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200)),
+      ]);
+    } catch (err) {
+      console.warn("[gudang] wave-2 gagal, lepas skeleton", err);
+      setSecondaryLoading(false);
+      return;
+    }
     const nextPurchases = (p.data as Purchase[] | null) ?? [];
     const nextPayments = (py.data as Payment[] | null) ?? [];
     const nextCustomers = (c.data as Customer[] | null) ?? [];
