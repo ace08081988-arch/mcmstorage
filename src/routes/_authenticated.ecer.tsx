@@ -55,8 +55,7 @@ import {
   finalizeAutoSend,
 } from "@/lib/auto-send-audit";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
-import { fmtItemQty } from "@/lib/stock-format";
-import { rupiah } from "@/lib/stock-format";
+import { fmtItemQty, fmtWeight, rupiah } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
 import { copyUrlWithToast } from "@/lib/copy-url-toast";
