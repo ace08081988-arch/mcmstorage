@@ -2533,17 +2533,47 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             </AlertDialogDescription>
           </AlertDialogHeader>
           {deleteBusy && (
-            <div className="rounded-md border border-border/60 bg-muted/40 p-ms-2 text-ms-2xs leading-snug">
-              <div className="mb-1 flex items-center gap-2 font-medium">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                Sedang menghapus… mohon tunggu
+            <div className="rounded-lg border border-border/60 bg-muted/40 p-ms-2 text-ms-2xs leading-snug">
+              <div className="mb-2 flex items-center justify-between gap-2 font-medium">
+                <div className="flex items-center gap-2">
+                  {deleteStep === "done" ? (
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                  ) : (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  )}
+                  <span>
+                    {deleteStep === "photo" && "Menghapus foto…"}
+                    {deleteStep === "record" && "Menghapus data & mengembalikan stok…"}
+                    {deleteStep === "refresh" && "Menyegarkan daftar…"}
+                    {deleteStep === "done" && "Selesai"}
+                  </span>
+                </div>
+                <span className="text-muted-foreground">
+                  {deleteStep === "photo" && "1/4"}
+                  {deleteStep === "record" && "2/4"}
+                  {deleteStep === "refresh" && "3/4"}
+                  {deleteStep === "done" && "4/4"}
+                </span>
               </div>
-              <ul className="space-y-0.5 pl-1">
-                <li className={deleteStep === "photo" ? "text-primary" : (deleteStep === "record" || deleteStep === "done") ? "text-success" : "text-muted-foreground"}>
-                  {prep.photo_path ? (deleteStep === "photo" ? "→ Menghapus foto dari penyimpanan…" : (deleteStep === "record" || deleteStep === "done") ? "✓ Foto dihapus" : "• Hapus foto") : "• (tanpa foto)"}
+              <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all duration-300 ease-out"
+                  style={{
+                    width: deleteStep === "photo" ? "25%" : deleteStep === "record" ? "50%" : deleteStep === "refresh" ? "75%" : "100%",
+                  }}
+                />
+              </div>
+              <ul className="space-y-1 pl-0.5">
+                <li className={deleteStep === "photo" ? "text-primary" : (deleteStep === "record" || deleteStep === "refresh" || deleteStep === "done") ? "text-success" : "text-muted-foreground"}>
+                  {prep.photo_path
+                    ? (deleteStep === "photo" ? "→ Menghapus foto dari penyimpanan…" : (deleteStep === "record" || deleteStep === "refresh" || deleteStep === "done") ? "✓ Foto dihapus" : "• Hapus foto")
+                    : "• (tanpa foto)"}
                 </li>
-                <li className={deleteStep === "record" ? "text-primary" : deleteStep === "done" ? "text-success" : "text-muted-foreground"}>
-                  {deleteStep === "record" ? "→ Menghapus data & mengembalikan stok…" : deleteStep === "done" ? "✓ Data dihapus" : "• Hapus data & kembalikan stok"}
+                <li className={deleteStep === "record" ? "text-primary" : (deleteStep === "refresh" || deleteStep === "done") ? "text-success" : "text-muted-foreground"}>
+                  {deleteStep === "record" ? "→ Menghapus data & mengembalikan stok…" : (deleteStep === "refresh" || deleteStep === "done") ? "✓ Data dihapus" : "• Hapus data & kembalikan stok"}
+                </li>
+                <li className={deleteStep === "refresh" ? "text-primary" : deleteStep === "done" ? "text-success" : "text-muted-foreground"}>
+                  {deleteStep === "refresh" ? "→ Menyegarkan daftar penyiapan…" : deleteStep === "done" ? "✓ Daftar diperbarui" : "• Segarkan daftar"}
                 </li>
               </ul>
             </div>
