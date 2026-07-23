@@ -2099,7 +2099,14 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         }}
       />
 
-      <WorkerSubmissionsCard title={title} itemName={item.name} />
+      {/*
+        Kartu "Kiriman pegawai" dilebur ke Daftar penyiapan di atas —
+        kiriman pegawai sudah tampil sebagai kartu ber-badge "Pegawai"
+        (prep.created_by === "worker") sehingga panel terpisah ini
+        cuma duplikasi yang bikin bingung. Komponen sengaja disimpan
+        dead-but-present agar mudah di-rollback bila perlu.
+      */}
+      {/* <WorkerSubmissionsCard title={title} itemName={item.name} /> */}
     </div>
   );
 }
