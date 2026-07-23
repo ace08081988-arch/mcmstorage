@@ -1109,6 +1109,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                     const base = preset.defaultColor;
                     const light = shadeHex(base, 0.55);
                     const dark = shadeHex(base, -0.35);
+                    const isArrow = preset.group === "panah";
                     return (
                       <button
                         key={key}
@@ -1117,22 +1118,33 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                         aria-label={`Tambah stiker ${preset.label}`}
                         className="group flex flex-col items-center gap-ms-1 rounded-xl border border-[#c9a84c]/15 bg-white/[0.03] p-ms-2 text-white/90 transition hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10 active:scale-95"
                       >
-                        {/* Preview 3D: radial-gradient + inner ring + glossy highlight */}
-                        <span
-                          className="relative grid h-11 w-11 place-items-center rounded-full text-white ring-1 ring-black/40"
-                          style={{
-                            background: `radial-gradient(circle at 32% 28%, ${light} 0%, ${base} 55%, ${dark} 100%)`,
-                            boxShadow: `0 ${6 * (stickerShadow / 100)}px ${14 * (stickerShadow / 100)}px -4px rgba(0,0,0,${0.7 * (stickerShadow / 100)}), inset 0 1px 0 rgba(255,255,255,${0.35 * (stickerRim / 100)})`,
-                          }}
-                        >
-                          <Ic className="h-[22px] w-[22px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]" />
-                          {/* glossy highlight */}
+                        {isArrow ? (
+                          // Panah modern — flat, tanpa medali. Warna aksen brand.
                           <span
-                            aria-hidden
-                            className="pointer-events-none absolute inset-x-2 top-1 h-2 rounded-full blur-[2px]"
-                            style={{ background: `rgba(255,255,255,${0.55 * (stickerGloss / 100)})` }}
-                          />
-                        </span>
+                            className="grid h-11 w-11 place-items-center"
+                            style={{
+                              color: base,
+                              filter: `drop-shadow(0 2px 4px rgba(0,0,0,${0.5 * (stickerShadow / 100)}))`,
+                            }}
+                          >
+                            <Ic className="h-8 w-8" strokeWidth={2.75} />
+                          </span>
+                        ) : (
+                          <span
+                            className="relative grid h-11 w-11 place-items-center rounded-full text-white ring-1 ring-black/40"
+                            style={{
+                              background: `radial-gradient(circle at 32% 28%, ${light} 0%, ${base} 55%, ${dark} 100%)`,
+                              boxShadow: `0 ${6 * (stickerShadow / 100)}px ${14 * (stickerShadow / 100)}px -4px rgba(0,0,0,${0.7 * (stickerShadow / 100)}), inset 0 1px 0 rgba(255,255,255,${0.35 * (stickerRim / 100)})`,
+                            }}
+                          >
+                            <Ic className="h-[22px] w-[22px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]" />
+                            <span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-x-2 top-1 h-2 rounded-full blur-[2px]"
+                              style={{ background: `rgba(255,255,255,${0.55 * (stickerGloss / 100)})` }}
+                            />
+                          </span>
+                        )}
                         <span className="text-ms-2xs text-[#f0d78c]/90">{preset.label}</span>
                       </button>
                     );
