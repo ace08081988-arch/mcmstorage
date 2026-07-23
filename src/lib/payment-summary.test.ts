@@ -505,3 +505,63 @@ describe("buildPaymentMessageLines — whitespace-only locationUrl = placeholder
     expect(lines).toContain("https://maps.app.goo.gl/xyz");
   });
 });
+
+/**
+ * Snapshot test: mengunci urutan baris DAN pemisah baris (LF, `CHAR(10)`).
+ * Kalau seseorang tanpa sengaja mengganti separator jadi CRLF, menambah
+ * baris kosong, atau menukar posisi "Sisa hutang" vs blok lokasi, snapshot
+ * ini akan gagal — sebelum caption yang salah sampai ke pembeli.
+ *
+ * Kunci: kita snapshot hasil `lines.join("\n")` (bukan array-nya). Nilai
+ * harga divariasikan untuk memastikan STRUKTUR-nya yang dikunci, bukan
+ * angka spesifik.
+ */
+describe("buildPaymentMessageLines — snapshot urutan & separator (CHAR(10))", () => {
+  const cases: Array<{
+    name: string;
+    method: "kas" | "hutang" | "partial";
+    total: number;
+    paid: number;
+    locationUrl?: string | null;
+  }> = [
+    { name: "kas — tanpa opsi lokasi", method: "kas", total: 12_500, paid: 12_500 },
+    { name: "kas — lokasi valid", method: "kas", total: 999_000, paid: 999_000, locationUrl: "https://maps.app.goo.gl/aaa" },
+    { name: "kas — lokasi kosong (null)", method: "kas", total: 1, paid: 1, locationUrl: null },
+    { name: "kas — lokasi kosong (string kosong)", method: "kas", total: 50_000, paid: 50_000, locationUrl: "" },
+    { name: "hutang — tanpa opsi lokasi", method: "hutang", total: 250_000, paid: 0 },
+    { name: "hutang — lokasi valid", method: "hutang", total: 7_500_000, paid: 0, locationUrl: "https://maps.app.goo.gl/bbb" },
+    { name: "hutang — lokasi kosong", method: "hutang", total: 42, paid: 0, locationUrl: "" },
+    { name: "partial — tanpa opsi lokasi", method: "partial", total: 100_000, paid: 30_000 },
+    { name: "partial — lokasi valid", method: "partial", total: 1_234_567, paid: 500_000, locationUrl: "https://maps.app.goo.gl/ccc" },
+    { name: "partial — lokasi kosong", method: "partial", total: 88_888, paid: 8_888, locationUrl: null },
+  ];
+
+  it.each(cases)("$name", ({ method, total, paid, locationUrl }) => {
+    const p = getPaymentBreakdown(method, total, paid);
+    const lines =
+      locationUrl === undefined
+        ? buildPaymentMessageLines(p)
+        : buildPaymentMessageLines(p, { locationUrl });
+    const joined = lines.join("\n");
+
+    // Separator kontrak: LF (CHAR(10)) — bukan CRLF, bukan CR.
+    expect(joined).not.toMatch(/\r/);
+    // Snapshot mengunci urutan + separator + literal placeholder.
+    expect(joined).toMatchSnapshot();
+  });
+
+  it("join(\\n) round-trip: split(\\n) mengembalikan array baris asli", () => {
+    const p = getPaymentBreakdown("partial", 100_000, 40_000);
+    const lines = buildPaymentMessageLines(p, { locationUrl: "https://x.test/1" });
+    expect(lines.join("\n").split("\n")).toEqual(lines);
+  });
+
+  it("Perubahan nilai harga TIDAK menggeser struktur baris (jumlah & posisi)", () => {
+    const shape = (total: number, paid: number) =>
+      buildPaymentMessageLines(getPaymentBreakdown("partial", total, paid), {
+        locationUrl: "https://x.test/loc",
+      }).map((l) => (l === "" ? "<EMPTY>" : l.replace(/Rp[\d.]+/g, "Rp<AMOUNT>")));
+    // Dua nominal berbeda harus menghasilkan struktur baris IDENTIK.
+    expect(shape(100_000, 25_000)).toEqual(shape(9_999_999, 1));
+  });
+});
