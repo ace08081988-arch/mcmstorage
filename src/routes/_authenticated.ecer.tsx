@@ -2227,6 +2227,14 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   };
   const [shareDiag, setShareDiag] = useState<ShareDiag | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  // Dialog konfirmasi + indikator progres untuk "Hapus penyiapan". Kita
+  // gunakan AlertDialog (bukan window.confirm) supaya tombol tidak bisa
+  // ditap dua kali dan user melihat langkah mana yang sedang berjalan
+  // (hapus foto → hapus record). Dialog TIDAK boleh ditutup selagi proses
+  // berlangsung agar tidak ada race di WebView Android.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"idle" | "photo" | "record" | "done">("idle");
   const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
     if (!path) return null;
     // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
@@ -2319,16 +2327,37 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
       toast.error(t.title, { description: t.description });
       return;
     }
-    const ok = typeof window !== "undefined" && window.confirm(
-      `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}.`
-    );
-    if (!ok) return;
-    if (prep.photo_path) await deleteEcerPhoto(prep.photo_path);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", prep.id);
-    if (error) { toast.error("Gagal: " + error.message); return; }
-    toast.success("Dihapus, stok dikembalikan");
-    onChanged(); onTitleUpdated();
+    setDeleteStep("idle");
+    setDeleteOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (deleteBusy) return;
+    setDeleteBusy(true);
+    try {
+      if (prep.photo_path) {
+        setDeleteStep("photo");
+        await deleteEcerPhoto(prep.photo_path);
+      }
+      setDeleteStep("record");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", prep.id);
+      if (error) {
+        toast.error("Gagal: " + error.message);
+        setDeleteBusy(false);
+        setDeleteStep("idle");
+        return;
+      }
+      setDeleteStep("done");
+      toast.success("Dihapus, stok dikembalikan");
+      setDeleteOpen(false);
+      onChanged(); onTitleUpdated();
+    } catch (e) {
+      toast.error("Gagal: " + ((e as Error)?.message ?? String(e)));
+    } finally {
+      setDeleteBusy(false);
+      setDeleteStep("idle");
+    }
   }
 
   return (
@@ -2460,6 +2489,59 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
           }}
         />
       )}
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(o) => {
+          if (deleteBusy) return; // jangan tutup saat proses jalan
+          setDeleteOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus penyiapan ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
+              dikembalikan sebanyak{" "}
+              <span className="font-semibold">
+                {prep.actual_grams} {displayUnit(itemName, title.unit_label)}
+              </span>
+              . Foto di penyimpanan juga ikut dihapus.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteBusy && (
+            <div className="rounded-md border border-border/60 bg-muted/40 p-ms-2 text-ms-2xs leading-snug">
+              <div className="mb-1 flex items-center gap-2 font-medium">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                Sedang menghapus… mohon tunggu
+              </div>
+              <ul className="space-y-0.5 pl-1">
+                <li className={deleteStep === "photo" ? "text-primary" : (deleteStep === "record" || deleteStep === "done") ? "text-success" : "text-muted-foreground"}>
+                  {prep.photo_path ? (deleteStep === "photo" ? "→ Menghapus foto dari penyimpanan…" : (deleteStep === "record" || deleteStep === "done") ? "✓ Foto dihapus" : "• Hapus foto") : "• (tanpa foto)"}
+                </li>
+                <li className={deleteStep === "record" ? "text-primary" : deleteStep === "done" ? "text-success" : "text-muted-foreground"}>
+                  {deleteStep === "record" ? "→ Menghapus data & mengembalikan stok…" : deleteStep === "done" ? "✓ Data dihapus" : "• Hapus data & kembalikan stok"}
+                </li>
+              </ul>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteBusy}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteBusy}
+              onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBusy ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menghapus…
+                </span>
+              ) : (
+                "Hapus penyiapan"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
