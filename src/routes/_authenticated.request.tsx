@@ -36,6 +36,7 @@ import {
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { CaptionPreviewDialog } from "@/components/CaptionPreviewDialog";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
@@ -2493,9 +2494,10 @@ function SendPrepToCustomerDialog({
   // Hanya dipakai bila `channel === "chat"`.
   const [chatPickerOpen, setChatPickerOpen] = useState(false);
   const [chatConv, setChatConv] = useState<{ id: string; title: string } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   // Reset pilihan percakapan setiap kali dialog dibuka ulang / kanal berubah.
   useEffect(() => {
-    if (open) { setChatConv(null); setChatPickerOpen(false); }
+    if (open) { setChatConv(null); setChatPickerOpen(false); setPreviewOpen(false); }
   }, [open, channel]);
   const [initialSnap, setInitialSnap] = useState<{ mode: "link" | "manual"; customerId: string; manualName: string; totalStr: string; payMethod: "kas" | "hutang" | "partial"; paidStr: string; note: string }>({ mode: "link", customerId: "", manualName: "", totalStr: "", payMethod: "kas", paidStr: "", note: "" });
   // Dibaca `useSaveStatusToast` saat saving → dirty (gagal kirim).
@@ -2873,7 +2875,7 @@ function SendPrepToCustomerDialog({
           </div>
           <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
-            <Button size="sm" onClick={handleSend} disabled={!canSend}>
+            <Button size="sm" onClick={() => setPreviewOpen(true)} disabled={!canSend}>
               {busy
                 ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                 : channel === "chat"
@@ -2890,6 +2892,23 @@ function SendPrepToCustomerDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <CaptionPreviewDialog
+      open={previewOpen}
+      onOpenChange={setPreviewOpen}
+      caption={(() => { try { return buildCaption(); } catch { return ""; } })()}
+      channel={channel === "chat" ? "chat" : "wa"}
+      photoCount={photoPaths.length}
+      busy={busy}
+      confirmLabel={
+        (channel === "chat" ? "Kirim Chat & " : "Kirim WA & ") +
+        (payMethod === "hutang"
+          ? "catat piutang"
+          : payMethod === "partial"
+            ? "catat sebagian"
+            : "catat penjualan")
+      }
+      onConfirm={() => { setPreviewOpen(false); handleSend(); }}
+    />
     {channel === "chat" && (
       <PickChatConversationDialog
         open={chatPickerOpen}

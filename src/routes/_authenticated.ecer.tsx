@@ -46,6 +46,7 @@ import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFi
 import { shareToChat } from "@/lib/share-chat";
 import { markSent, useSentShots } from "@/lib/wa-sent-history";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { CaptionPreviewDialog } from "@/components/CaptionPreviewDialog";
 import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import {
@@ -3598,6 +3599,7 @@ function SendEcerPrepsDialog({
   // aktif setelah langkah 2 lulus validasi (metode + nominal). Ini mencegah
   // owner main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
 
   useEffect(() => {
@@ -3610,6 +3612,7 @@ function SendEcerPrepsDialog({
     setPaidStr("");
     setNote("");
     setStep(1);
+    setPreviewOpen(false);
   }, [open, customers, title.id, prepIdsKey]);
 
   const totalAmount = useMemo(() => {
@@ -3884,6 +3887,7 @@ function SendEcerPrepsDialog({
   const totalQty = preps.reduce((s, p) => s + Number(p.actual_grams || 0), 0);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
       <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader>
@@ -4177,7 +4181,7 @@ function SendEcerPrepsDialog({
               </Button>
             )}
             {step === 3 && (
-              <Button size="sm" onClick={handleSend} disabled={!canSend}>
+              <Button size="sm" onClick={() => setPreviewOpen(true)} disabled={!canSend}>
                 {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
                 {payment.method === "hutang"
                   ? "Kirim ke pembeli & catat piutang"
@@ -4190,5 +4194,22 @@ function SendEcerPrepsDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <CaptionPreviewDialog
+      open={previewOpen}
+      onOpenChange={setPreviewOpen}
+      caption={(() => { try { return buildCaption(); } catch { return ""; } })()}
+      channel="wa"
+      photoCount={preps.length}
+      busy={busy}
+      confirmLabel={
+        payment.method === "hutang"
+          ? "Kirim WA & catat piutang"
+          : payment.method === "partial"
+            ? "Kirim WA & catat sebagian"
+            : "Kirim WA & catat lunas"
+      }
+      onConfirm={() => { setPreviewOpen(false); void handleSend(); }}
+    />
+    </>
   );
 }
