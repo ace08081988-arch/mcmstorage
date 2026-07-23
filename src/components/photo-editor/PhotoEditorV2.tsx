@@ -502,6 +502,94 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     const shF = stickerShadow / 100;
     const glF = stickerGloss / 100;
     const rmF = stickerRim / 100;
+    const preset = STICKER_PRESETS[o.sticker];
+    const isArrow = preset?.group === "panah";
+    // ── Arrow modern: tanpa latar bulat, murni vector (untuk arah lurus/serong/bold)
+    //    atau glyph berwarna tanpa badge (untuk lengkung/putar). Ini yang diminta
+    //    user — panah "clean" seperti stiker WA modern, bukan medali bulat.
+    if (isArrow) {
+      const vectorKeys = new Set([
+        "arrow","arrow-left","arrow-up","arrow-down",
+        "arrow-upright","arrow-upleft","arrow-both",
+        "arrow-bold-r","arrow-bold-l","arrow-bold-u","arrow-bold-d",
+      ]);
+      const commonWrap = {
+        key: o.id,
+        id: o.id,
+        x: o.x, y: o.y, rotation: o.rotation, opacity: o.opacity,
+        draggable: tool === "pilih" && !o.locked,
+        onClick: () => setSelectedId(o.id),
+        onTap: () => setSelectedId(o.id),
+        onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => updateObject(o.id, { x: e.target.x(), y: e.target.y() }),
+        onTransformEnd: (e: Konva.KonvaEventObject<Event>) => {
+          const n = e.target as unknown as Konva.Node;
+          const sx = n.scaleX(), sy = n.scaleY();
+          updateObject(o.id, {
+            x: n.x(), y: n.y(),
+            width: Math.max(24, o.width * sx),
+            height: Math.max(24, o.height * sy),
+            rotation: n.rotation(),
+          });
+          n.scaleX(1); n.scaleY(1);
+        },
+      } as const;
+      if (vectorKeys.has(o.sticker)) {
+        const w = o.width, h = o.height;
+        const bold = o.sticker.startsWith("arrow-bold-");
+        // titik pangkal → ujung (padding 8% supaya arrowhead tidak terpotong)
+        let points: number[];
+        switch (o.sticker) {
+          case "arrow": case "arrow-bold-r": points = [w * 0.08, h / 2, w * 0.92, h / 2]; break;
+          case "arrow-left": case "arrow-bold-l": points = [w * 0.92, h / 2, w * 0.08, h / 2]; break;
+          case "arrow-up": case "arrow-bold-u": points = [w / 2, h * 0.92, w / 2, h * 0.08]; break;
+          case "arrow-down": case "arrow-bold-d": points = [w / 2, h * 0.08, w / 2, h * 0.92]; break;
+          case "arrow-upright": points = [w * 0.08, h * 0.92, w * 0.92, h * 0.08]; break;
+          case "arrow-upleft": points = [w * 0.92, h * 0.92, w * 0.08, h * 0.08]; break;
+          case "arrow-both": points = [w * 0.12, h / 2, w * 0.88, h / 2]; break;
+          default: points = [w * 0.08, h / 2, w * 0.92, h / 2];
+        }
+        const sw = bold ? Math.max(8, r * 0.32) : Math.max(5, r * 0.18);
+        const ptr = bold ? Math.max(20, r * 0.7) : Math.max(16, r * 0.5);
+        return (
+          <Group {...commonWrap}>
+            <Arrow
+              points={points}
+              stroke={o.color}
+              fill={o.color}
+              strokeWidth={sw}
+              pointerLength={ptr}
+              pointerWidth={ptr}
+              pointerAtBeginning={o.sticker === "arrow-both"}
+              lineCap="round"
+              lineJoin="round"
+              shadowColor={`rgba(0,0,0,${0.55 * shF})`}
+              shadowBlur={r * 0.18 * shF}
+              shadowOffsetY={r * 0.08 * shF}
+              listening
+            />
+          </Group>
+        );
+      }
+      // Lengkung / putar / refresh → glyph unicode berwarna (tanpa badge)
+      return (
+        <Group {...commonWrap}>
+          <KText
+            x={0}
+            y={cy - r * 0.95}
+            width={o.width}
+            align="center"
+            text={stickerGlyph(o.sticker)}
+            fontSize={r * 1.8}
+            fontStyle="bold"
+            fill={o.color}
+            shadowColor={`rgba(0,0,0,${0.5 * shF})`}
+            shadowBlur={r * 0.18 * shF}
+            shadowOffsetY={r * 0.07 * shF}
+            listening
+          />
+        </Group>
+      );
+    }
     return (
       <Group
         key={o.id}
