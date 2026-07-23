@@ -16,6 +16,12 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -36,7 +42,7 @@ import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
   Share2, ExternalLink, Loader2, ChevronLeft, ChevronRight, ChevronDown, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
   Calendar, Clock, Hash, CheckCircle2, Boxes, Send, Wallet, HandCoins,
-  Search, LayoutGrid, PackageSearch, Sparkles,
+  Search, LayoutGrid, PackageSearch, Sparkles, MoreHorizontal,
 } from "lucide-react";
 import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
@@ -55,8 +61,7 @@ import {
   finalizeAutoSend,
 } from "@/lib/auto-send-audit";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
-import { fmtItemQty } from "@/lib/stock-format";
-import { rupiah } from "@/lib/stock-format";
+import { fmtItemQty, fmtWeight, rupiah } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
 import { copyUrlWithToast } from "@/lib/copy-url-toast";
@@ -813,7 +818,7 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, st
           <div className="text-ms-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
           <div className="mt-1 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
             <span className="inline-flex items-center gap-ms-1 rounded-md bg-muted px-1.5 py-0.5 font-medium tabular-nums text-foreground">
-              <Scale className="h-3 w-3" /> {title.target_grams} {displayUnit(itemName, title.unit_label)}
+              <Scale className="h-3 w-3" /> {fmtWeight(Number(title.target_grams), displayUnit(itemName, title.unit_label))}
             </span>
             <span className="inline-flex items-center gap-ms-1 tabular-nums">
               <Hash className="h-3 w-3" />
@@ -1135,7 +1140,7 @@ function DetailHero({
                 <span className="truncate">{item.name}</span>
               </span>
               <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/15 px-ms-2 leading-none backdrop-blur-sm">
-                Target <b className="ml-0.5">{title.target_grams} {unit}</b>
+                Target <b className="ml-0.5">{fmtWeight(Number(title.target_grams), unit)}</b>
               </span>
               <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/25 px-ms-2 font-semibold leading-none text-success ring-1 ring-success/50 backdrop-blur-sm">
                 <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
@@ -1159,8 +1164,8 @@ function DetailHero({
           sub={`Stok: ${fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}`}
         />
         <DetailRow icon={<Scale className="h-3.5 w-3.5" />} label="Target per kotak"
-          value={<span className="font-semibold">{title.target_grams} {unit}</span>}
-          sub={preps.length > 0 ? `Total target ${targetTotal} ${unit} · aktual ${totalActual} ${unit}` : undefined}
+          value={<span className="font-semibold">{fmtWeight(Number(title.target_grams), unit)}</span>}
+          sub={preps.length > 0 ? `Total target ${fmtWeight(targetTotal, unit)} · aktual ${fmtWeight(totalActual, unit)}` : undefined}
         />
         {/* `preps` di header ini sudah difilter aktif (lihat pemanggilan
             `<Header preps={active} />` di komponen induk). Label
@@ -1197,31 +1202,19 @@ function DetailHero({
         <div className="hidden text-ms-2xs uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
           Simpan halaman ini sebagai referensi penyiapan.
         </div>
-        {/* Mobile: bar bawah dengan kolom auto-fit — tetap rapi walau jumlah
-            tombol bervariasi (Judul & Produk kondisional). Desktop: flex wrap. */}
-        <div className="grid auto-cols-fr grid-flow-col gap-ms-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-ms-1.5">
-          {onCreateTitle && (
-            <button
-              type="button"
-              onClick={onCreateTitle}
-              title="Judul ecer baru untuk produk yang sama"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
-            >
-              <Plus className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Judul</span>
-            </button>
-          )}
-          {onCreateProduct && (
-            <button
-              type="button"
-              onClick={onCreateProduct}
-              title="Buat produk gudang baru lalu langsung dibuatkan judulnya"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
-            >
-              <Package className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Produk</span>
-            </button>
-          )}
+        {/* Mobile: maksimal 4 slot — slot ke-4 adalah menu "Lainnya".
+            Tombol yang jarang dipakai (Judul, Produk, Salin link, QR) disembunyikan
+            di dropdown supaya bar bawah tidak padat & label tidak terpotong. */}
+        <div className="grid grid-cols-4 gap-ms-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-ms-1.5">
+          <button
+            type="button"
+            onClick={onAdd}
+            title="Tambah penyiapan untuk judul ini"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl border border-success/40 bg-success/10 p-ms-2 text-success transition-all active:scale-95 dark:bg-success/15 dark:text-success sm:hidden"
+          >
+            <Plus className="h-5 w-5" aria-hidden />
+            <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Tambah</span>
+          </button>
           <button
             type="button"
             onClick={onScrollToWorker}
@@ -1231,7 +1224,7 @@ function DetailHero({
             <Users className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Pegawai</span>
           </button>
-          {isAdmin && (
+          {isAdmin ? (
             <Link
               to="/tugas-baru"
               search={{ title_id: title.id }}
@@ -1242,41 +1235,43 @@ function DetailHero({
               <UserPlus className="h-5 w-5" aria-hidden />
               <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Perintah</span>
             </Link>
+          ) : (
+            <span className="hidden sm:block" />
           )}
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={onCopyPrepLink}
-              title={copyLinkTooltip}
-              aria-label={copyLinkAriaLabel}
-              aria-keyshortcuts="Shift+L"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
-            >
-              <Link2 className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Salin link</span>
-            </button>
-          )}
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setQrOpen(true)}
-              title="Tampilkan QR permalink Penyiapan pegawai (Shift+Q)"
-              aria-label="Tampilkan QR permalink Penyiapan pegawai"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
-            >
-              <QrCode className="h-5 w-5" aria-hidden />
-              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">QR</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onAdd}
-            title="Tambah penyiapan untuk judul ini"
-            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl border border-success/40 bg-success/10 p-ms-2 text-success transition-all active:scale-95 dark:bg-success/15 dark:text-success sm:hidden"
-          >
-            <Plus className="h-5 w-5" aria-hidden />
-            <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Penyiapan</span>
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                title="Opsi lainnya"
+                className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+              >
+                <MoreHorizontal className="h-5 w-5" aria-hidden />
+                <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Lainnya</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {onCreateTitle && (
+                <DropdownMenuItem onSelect={onCreateTitle}>
+                  <Plus className="mr-2 h-4 w-4" /> Judul ecer baru
+                </DropdownMenuItem>
+              )}
+              {onCreateProduct && (
+                <DropdownMenuItem onSelect={onCreateProduct}>
+                  <Package className="mr-2 h-4 w-4" /> Produk gudang baru
+                </DropdownMenuItem>
+              )}
+              {isAdmin && (
+                <DropdownMenuItem onSelect={onCopyPrepLink}>
+                  <Link2 className="mr-2 h-4 w-4" /> Salin link pegawai
+                </DropdownMenuItem>
+              )}
+              {isAdmin && (
+                <DropdownMenuItem onSelect={() => setQrOpen(true)}>
+                  <QrCode className="mr-2 h-4 w-4" /> Tampilkan QR
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Desktop / tablet — keep richer labels */}
           {onCreateTitle && (
@@ -1401,12 +1396,12 @@ function DetailHero({
 
 function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-ms-2 py-ms-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
+    <div className="grid min-h-[40px] grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] items-center gap-ms-2 py-ms-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
       <EcerLabel className="flex min-w-0 items-center gap-ms-1.5 leading-snug" title={label}>
         <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground/70 [&_svg]:h-3.5 [&_svg]:w-3.5">
           {icon}
         </span>
-        <span className="truncate">{label}</span>
+        <span className="line-clamp-2 whitespace-normal">{label}</span>
       </EcerLabel>
       <div
         className="flex min-w-0 items-center justify-end gap-x-1.5 text-right text-ms-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
@@ -2272,7 +2267,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   async function onShare() {
     const text =
       `*${title.name}* #${index}\n` +
-      `Berat aktual: ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}\n` +
+      `Berat aktual: ${fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}\n` +
       (prep.location_url ? `Lokasi: ${prep.location_url}\n` : "") +
       (prep.note ? `Catatan: ${prep.note}\n` : "");
     const nav = typeof navigator !== "undefined" ? navigator : undefined;
@@ -2369,7 +2364,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
       }
       setDeleteStep("done");
       toast.success(
-        `Penyiapan #${index} (${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}) dihapus · stok dikembalikan`,
+        `Penyiapan #${index} (${fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}) dihapus · stok dikembalikan`,
         { duration: 4000 }
       );
       // Biarkan user melihat status "Selesai" sebentar sebelum dialog tertutup.
@@ -2426,7 +2421,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         )}
       </div>
       <div className="flex flex-col gap-y-2 p-ms-2">
-        <div className="text-ms-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
+        <div className="text-ms-xs font-semibold">{fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}</div>
         {prep.note && <div className="line-clamp-2 text-ms-2xs leading-snug text-muted-foreground">{prep.note}</div>}
         {sold && (
           <details className="group rounded-md border border-success/40 bg-success/10 text-ms-2xs leading-snug text-success dark:text-success">
@@ -2527,7 +2522,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
               Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
               dikembalikan sebanyak{" "}
               <span className="font-semibold">
-                {prep.actual_grams} {displayUnit(itemName, title.unit_label)}
+                {fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}
               </span>
               . Foto di penyimpanan juga ikut dihapus.
             </AlertDialogDescription>
@@ -4115,7 +4110,7 @@ function SendEcerPrepsDialog({
             <div className="flex flex-wrap gap-ms-1">
               {preps.map((p, i) => (
                 <span key={p.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-medium text-primary">
-                  #{i + 1} · {p.actual_grams}{displayUnit(itemName, title.unit_label)}
+                  #{i + 1} · {fmtWeight(Number(p.actual_grams), displayUnit(itemName, title.unit_label))}
                 </span>
               ))}
             </div>
