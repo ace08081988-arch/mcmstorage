@@ -64,7 +64,8 @@ export async function saveWaTemplate(rec: WaTemplateRecord): Promise<void> {
       {
         user_id: uid,
         template: rec.template,
-        options: rec.options as unknown as Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        options: rec.options as any,
       },
       { onConflict: "user_id" },
     );
