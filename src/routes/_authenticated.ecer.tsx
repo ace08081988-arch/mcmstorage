@@ -2227,6 +2227,14 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   };
   const [shareDiag, setShareDiag] = useState<ShareDiag | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  // Dialog konfirmasi + indikator progres untuk "Hapus penyiapan". Kita
+  // gunakan AlertDialog (bukan window.confirm) supaya tombol tidak bisa
+  // ditap dua kali dan user melihat langkah mana yang sedang berjalan
+  // (hapus foto → hapus record). Dialog TIDAK boleh ditutup selagi proses
+  // berlangsung agar tidak ada race di WebView Android.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"idle" | "photo" | "record" | "done">("idle");
   const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
     if (!path) return null;
     // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
@@ -2319,16 +2327,37 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
       toast.error(t.title, { description: t.description });
       return;
     }
-    const ok = typeof window !== "undefined" && window.confirm(
-      `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}.`
-    );
-    if (!ok) return;
-    if (prep.photo_path) await deleteEcerPhoto(prep.photo_path);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", prep.id);
-    if (error) { toast.error("Gagal: " + error.message); return; }
-    toast.success("Dihapus, stok dikembalikan");
-    onChanged(); onTitleUpdated();
+    setDeleteStep("idle");
+    setDeleteOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (deleteBusy) return;
+    setDeleteBusy(true);
+    try {
+      if (prep.photo_path) {
+        setDeleteStep("photo");
+        await deleteEcerPhoto(prep.photo_path);
+      }
+      setDeleteStep("record");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", prep.id);
+      if (error) {
+        toast.error("Gagal: " + error.message);
+        setDeleteBusy(false);
+        setDeleteStep("idle");
+        return;
+      }
+      setDeleteStep("done");
+      toast.success("Dihapus, stok dikembalikan");
+      setDeleteOpen(false);
+      onChanged(); onTitleUpdated();
+    } catch (e) {
+      toast.error("Gagal: " + ((e as Error)?.message ?? String(e)));
+    } finally {
+      setDeleteBusy(false);
+      setDeleteStep("idle");
+    }
   }
 
   return (
