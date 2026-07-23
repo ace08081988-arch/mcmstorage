@@ -2151,6 +2151,7 @@ function PrepSections({
       customers={customers}
       onDelete={guardedDelete}
       onSent={guardedSent}
+      onLocationSaved={onChanged}
       autoOpenSend={!inSent && !!autoOpenSend && idx === 0}
       autoOpenSendChannel={autoOpenSendChannel}
       onConsumeAutoOpenSend={onConsumeAutoOpenSend}
