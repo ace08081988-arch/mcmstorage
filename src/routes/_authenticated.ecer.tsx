@@ -1651,7 +1651,11 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         onCreateTitle={onCreateTitle}
         onCreateProduct={onCreateProduct}
         onScrollToWorker={() => {
-          const el = document.getElementById(`worker-shots-${title.id}`);
+          // Kartu "Kiriman pegawai" sudah dilebur ke Daftar penyiapan
+          // (kiriman pegawai tampil sebagai kartu ber-badge "Pegawai").
+          // Shortcut lama diarahkan ke Daftar penyiapan supaya tetap
+          // memberi umpan balik yang benar.
+          const el = document.getElementById(`daftar-penyiapan-${title.id}`);
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "start" });
             el.classList.add("ring-2", "ring-primary");
