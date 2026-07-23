@@ -1251,22 +1251,22 @@ function DetailHero({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               {onCreateTitle && (
-                <DropdownMenuItem onClick={onCreateTitle}>
+                <DropdownMenuItem onSelect={onCreateTitle}>
                   <Plus className="mr-2 h-4 w-4" /> Judul ecer baru
                 </DropdownMenuItem>
               )}
               {onCreateProduct && (
-                <DropdownMenuItem onClick={onCreateProduct}>
+                <DropdownMenuItem onSelect={onCreateProduct}>
                   <Package className="mr-2 h-4 w-4" /> Produk gudang baru
                 </DropdownMenuItem>
               )}
               {isAdmin && (
-                <DropdownMenuItem onClick={onCopyPrepLink}>
+                <DropdownMenuItem onSelect={onCopyPrepLink}>
                   <Link2 className="mr-2 h-4 w-4" /> Salin link pegawai
                 </DropdownMenuItem>
               )}
               {isAdmin && (
-                <DropdownMenuItem onClick={() => setQrOpen(true)}>
+                <DropdownMenuItem onSelect={() => setQrOpen(true)}>
                   <QrCode className="mr-2 h-4 w-4" /> Tampilkan QR
                 </DropdownMenuItem>
               )}
