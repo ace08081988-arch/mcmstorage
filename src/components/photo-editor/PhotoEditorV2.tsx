@@ -1081,6 +1081,11 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             const nh = Math.max(40, Math.round(nw / (aspect || 1)));
             updateObject(s.id, { width: nw, height: nh });
           };
+          const resizeTransient = (w: number) => {
+            const nw = Math.max(40, Math.min(720, Math.round(w)));
+            const nh = Math.max(40, Math.round(nw / (aspect || 1)));
+            updateObjectTransient(s.id, { width: nw, height: nh });
+          };
           const preset = STICKER_PRESETS[s.sticker];
           const isArrow = preset?.group === "panah";
           // Normalisasi -180..180 supaya tampilan angka enak dibaca.
@@ -1091,6 +1096,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             return d;
           };
           const setRot = (deg: number) => updateObject(s.id, { rotation: normRot(deg) });
+          const setRotTransient = (deg: number) => updateObjectTransient(s.id, { rotation: normRot(deg) });
           const nudge = (delta: number) => setRot((s.rotation ?? 0) + delta);
           const snap = (target: number) => setRot(target);
           return (
