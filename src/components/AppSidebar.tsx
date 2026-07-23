@@ -542,20 +542,25 @@ export function AppSidebar() {
       <SidebarContent className="gap-0">
         {(() => {
           const renderGroup = (group: typeof visibleGroups[number], gi: number) => (
-          <SidebarGroup key={group.label} className="px-ms-2 py-1.5">
+          <SidebarGroup key={group.label} className="px-ms-2 py-ms-2">
             {gi > 0 ? (
-              <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />
+              <div className="mx-ms-2 mb-ms-2 h-px group-data-[collapsible=icon]:hidden"
+                style={{ background: "linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 22%, transparent), transparent)" }}
+              />
             ) : null}
-            <SidebarGroupLabel className="flex items-center gap-ms-2 px-ms-2 pb-1 text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">
+            <SidebarGroupLabel
+              className="flex items-center gap-ms-2 px-ms-2 pb-ms-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/75"
+              style={{ fontFamily: "'Fira Sans', sans-serif" }}
+            >
               <span
                 aria-hidden
-                className="inline-block h-[3px] w-[3px] rounded-full"
-                style={{ background: "color-mix(in oklab, var(--primary) 65%, transparent)" }}
+                className="inline-block h-1 w-1 rounded-full"
+                style={{ background: "var(--primary)", boxShadow: "0 0 8px color-mix(in oklab, var(--primary) 70%, transparent)" }}
               />
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="gap-0.5">
+              <SidebarMenu className="gap-ms-1.5">
                 {group.items.map((item) => {
                   const active = isActive(item.url);
                   return (
@@ -564,7 +569,7 @@ export function AppSidebar() {
                         asChild
                         isActive={active}
                         tooltip={item.title}
-                        className="group/nav relative h-10 overflow-hidden rounded-xl px-ms-2.5 font-medium text-sidebar-foreground/85 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground hover:translate-x-0.5 data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/20 data-[active=true]:via-primary/8 data-[active=true]:to-transparent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:font-semibold data-[active=true]:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent)] before:absolute before:left-0 before:top-1/2 before:h-6 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-gradient-to-b before:from-primary before:to-primary/60 before:opacity-0 before:transition-opacity data-[active=true]:before:opacity-100"
+                        className="group/nav relative h-auto min-h-12 overflow-hidden rounded-2xl border border-sidebar-border/40 bg-sidebar-accent/15 px-ms-2.5 py-ms-2 font-medium text-sidebar-foreground/90 backdrop-blur-sm transition-all duration-200 hover:border-primary/30 hover:bg-sidebar-accent/40 hover:-translate-y-[1px] hover:shadow-[0_6px_18px_-10px_color-mix(in_oklab,var(--primary)_55%,transparent)] active:translate-y-0 active:scale-[0.985] data-[active=true]:border-primary/45 data-[active=true]:bg-gradient-to-br data-[active=true]:from-primary/22 data-[active=true]:via-primary/8 data-[active=true]:to-transparent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:shadow-[inset_0_1px_0_color-mix(in_oklab,var(--primary)_35%,transparent),0_8px_24px_-12px_color-mix(in_oklab,var(--primary)_70%,transparent)]"
                       >
                         <NavLinkItem
                           item={item}
@@ -573,15 +578,24 @@ export function AppSidebar() {
                           setOpenMobile={setOpenMobile}
                           navigate={navigate}
                         >
-                          <item.icon
+                          <span
+                            aria-hidden
                             className={
-                              "h-[17px] w-[17px] shrink-0 transition-colors " +
+                              "grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition-all duration-200 " +
                               (active
-                                ? "text-primary"
-                                : "text-muted-foreground group-hover/nav:text-sidebar-foreground")
+                                ? "border-primary/45 bg-primary/20 text-primary shadow-[0_0_16px_-4px_color-mix(in_oklab,var(--primary)_75%,transparent)]"
+                                : "border-sidebar-border/50 bg-sidebar/60 text-muted-foreground group-hover/nav:border-primary/25 group-hover/nav:text-primary")
                             }
-                          />
-                          <span className="truncate text-ms-sm tracking-[-0.005em]">
+                          >
+                            <item.icon className="h-[17px] w-[17px]" />
+                          </span>
+                          <span
+                            className={
+                              "truncate text-ms-sm tracking-[-0.005em] " +
+                              (active ? "font-semibold text-sidebar-accent-foreground" : "")
+                            }
+                            style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                          >
                             {item.title}
                           </span>
                           {item.url === "/chat" && (chatCounts.unread > 0 || chatCounts.archivedUnread > 0) ? (
