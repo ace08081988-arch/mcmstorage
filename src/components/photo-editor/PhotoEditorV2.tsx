@@ -171,6 +171,13 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   const SNAP_ANGLE = 15; // derajat
   const snapToGrid = (v: number) => Math.round(v / SNAP_GRID) * SNAP_GRID;
   const snapToAngle = (deg: number) => Math.round(deg / SNAP_ANGLE) * SNAP_ANGLE;
+  // Kelas fokus konsisten — memastikan kontrol pada panel Ukuran & Rotasi
+  // (yang bisa wrap/stack di layar sempit) tetap terlihat saat dijangkau via
+  // Tab keyboard. Ring emas cukup kontras di latar hitam panel.
+  const focusRing =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f0d78c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]";
+  const panelFocusWithin =
+    "focus-within:border-[#c9a84c]/70 focus-within:ring-1 focus-within:ring-[#c9a84c]/40";
   // Panel gaya (warna/tebal/opacity) muncul otomatis saat tool coret/bentuk/teks aktif.
   // Panel dapat ditutup manual lewat handle drag di atasnya — state ini menyimpan
   // pilihan pemilik agar tidak "muncul lagi" saat mengganti antar tool goresan.
