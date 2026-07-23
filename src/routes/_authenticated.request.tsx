@@ -2875,7 +2875,7 @@ function SendPrepToCustomerDialog({
           </div>
           <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
-            <Button size="sm" onClick={handleSend} disabled={!canSend}>
+            <Button size="sm" onClick={() => setPreviewOpen(true)} disabled={!canSend}>
               {busy
                 ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                 : channel === "chat"
@@ -2892,6 +2892,23 @@ function SendPrepToCustomerDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <CaptionPreviewDialog
+      open={previewOpen}
+      onOpenChange={setPreviewOpen}
+      caption={(() => { try { return buildCaption(); } catch { return ""; } })()}
+      channel={channel === "chat" ? "chat" : "wa"}
+      photoCount={photoPaths.length}
+      busy={busy}
+      confirmLabel={
+        (channel === "chat" ? "Kirim Chat & " : "Kirim WA & ") +
+        (payMethod === "hutang"
+          ? "catat piutang"
+          : payMethod === "partial"
+            ? "catat sebagian"
+            : "catat penjualan")
+      }
+      onConfirm={() => { setPreviewOpen(false); handleSend(); }}
+    />
     {channel === "chat" && (
       <PickChatConversationDialog
         open={chatPickerOpen}
