@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPaymentMessageLines,
+  LOCATION_MISSING_PLACEHOLDER,
   formatSoldPaymentSummary,
   getPaymentBreakdown,
   parsePaymentAmountInput,
