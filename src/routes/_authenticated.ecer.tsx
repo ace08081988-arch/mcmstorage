@@ -1767,13 +1767,23 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
             </CardTitle>
             {active.length > 0 && (
               selectionMode ? (
-                <div className="flex items-center gap-ms-1">
+                <div className="flex flex-wrap items-center justify-end gap-ms-1">
                   <Button size="sm" variant="outline" onClick={exitSelection}>Batal</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={selectedPreps.length === 0 || bulkDeleteBusy}
+                    onClick={() => setBulkDeleteOpen(true)}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus ({selectedPreps.length})
+                  </Button>
                   <Button size="sm" onClick={() => setSendOpen(true)} disabled={selectedPreps.length === 0}>
                     <Send className="mr-1 h-3.5 w-3.5" /> Verifikasi bayar ({selectedPreps.length})
                   </Button>
                 </div>
               ) : (
+
                 <Button size="sm" variant="outline" onClick={() => setSelectionMode(true)}>
                   <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pilih
                 </Button>
