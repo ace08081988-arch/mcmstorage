@@ -330,6 +330,22 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     }));
   }, [commitScene]);
 
+  // Transient edit path: mutasi scene TANPA push history (untuk slider drag
+  // kontinu). Dipanggil setiap tik slider; ketika gesture selesai
+  // (pointerup / blur / keyup), panggil `flushTransient` untuk mendorong
+  // satu snapshot history — jadi undo satu tap = balik ke sebelum gesture,
+  // bukan mundur ratusan tik. Autosave IndexedDB tetap jalan karena
+  // useAutosaveScene mengawasi history.present + scene state teratas.
+  const updateObjectTransient = useCallback((id: string, patch: Partial<SceneObject>) => {
+    setScene((s) => ({
+      ...s,
+      objects: s.objects.map((o) => (o.id === id ? ({ ...o, ...patch } as SceneObject) : o)),
+    }));
+  }, []);
+  const flushTransient = useCallback(() => {
+    setScene((s) => { setHistory((h) => pushHistory(h, s)); return s; });
+  }, []);
+
   const deleteObject = useCallback((id: string) => {
     commitScene((s) => ({ ...s, objects: s.objects.filter((o) => o.id !== id) }));
     setSelectedId((cur) => (cur === id ? null : cur));
