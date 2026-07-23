@@ -1663,7 +1663,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           }
         }}
       />
-      <Card>
+      <Card id={`daftar-penyiapan-${title.id}`} className="scroll-mt-20 transition-shadow">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-ms-2">
             <CardTitle className="flex items-center gap-ms-1.5 text-ms-sm leading-snug">
