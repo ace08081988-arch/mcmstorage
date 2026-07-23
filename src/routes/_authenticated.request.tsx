@@ -36,6 +36,7 @@ import {
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { CaptionPreviewDialog } from "@/components/CaptionPreviewDialog";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
