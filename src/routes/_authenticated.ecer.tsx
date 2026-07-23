@@ -3887,6 +3887,7 @@ function SendEcerPrepsDialog({
   const totalQty = preps.reduce((s, p) => s + Number(p.actual_grams || 0), 0);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
       <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader>
