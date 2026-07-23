@@ -52,9 +52,21 @@ import { toast } from "sonner";
 import { Capacitor } from "@capacitor/core";
 import { pickWhatsAppTarget, type WaTarget } from "./wa-target";
 import { confirmWaShare } from "./wa-preview";
+import { normalizeWaNumber } from "./phone";
 
-export function buildWhatsAppUrl(text: string, phone?: string) {
-  const base = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : "https://wa.me/";
+/**
+ * Bangun URL wa.me. Bila `countryCode` diisi, nomor dinormalisasi via
+ * `normalizeWaNumber` (buang "00", pasang kode negara, ganti trunk lokal).
+ * Tanpa `countryCode` fallback ke perilaku lama (buang non-digit) demi
+ * backward compatibility dengan pemanggil yang sudah menyimpan digit E.164.
+ */
+export function buildWhatsAppUrl(text: string, phone?: string, countryCode?: string | null) {
+  const digits = phone
+    ? countryCode
+      ? normalizeWaNumber(phone, countryCode) ?? phone.replace(/\D/g, "")
+      : phone.replace(/\D/g, "")
+    : "";
+  const base = digits ? `https://wa.me/${digits}` : "https://wa.me/";
   return `${base}?text=${encodeURIComponent(text)}`;
 }
 
@@ -64,9 +76,17 @@ export function buildWhatsAppUrl(text: string, phone?: string) {
  * falls back to the `S.browser_fallback_url` (wa.me) which then opens regular
  * WhatsApp or the browser.
  */
-export function buildWhatsAppBusinessIntentUrl(text: string, phone?: string) {
-  const digits = (phone ?? "").replace(/\D/g, "");
-  const fallback = buildWhatsAppUrl(text, phone);
+export function buildWhatsAppBusinessIntentUrl(
+  text: string,
+  phone?: string,
+  countryCode?: string | null,
+) {
+  const digits = phone
+    ? countryCode
+      ? normalizeWaNumber(phone, countryCode) ?? phone.replace(/\D/g, "")
+      : phone.replace(/\D/g, "")
+    : "";
+  const fallback = buildWhatsAppUrl(text, phone, countryCode);
   const encodedText = encodeURIComponent(text);
   const phonePart = digits ? `phone=${digits}&` : "";
   return (
