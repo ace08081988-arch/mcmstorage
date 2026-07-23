@@ -2532,7 +2532,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
               Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
               dikembalikan sebanyak{" "}
               <span className="font-semibold">
-                {prep.actual_grams} {displayUnit(itemName, title.unit_label)}
+                {fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}
               </span>
               . Foto di penyimpanan juga ikut dihapus.
             </AlertDialogDescription>
