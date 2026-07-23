@@ -111,6 +111,7 @@ export function openWhatsAppPreferBusiness(
   text: string,
   phone?: string,
   target: WaTarget | "auto" = "auto",
+  countryCode?: string | null,
 ): Window | null {
   let url: string;
   let isIntent = false;
@@ -118,19 +119,19 @@ export function openWhatsAppPreferBusiness(
     // Pakai intent:// di Android; di luar Android tidak ada cara memaksa,
     // jadi fallback ke wa.me (browser/iOS akan pakai WA terpasang).
     if (isAndroidWeb()) {
-      url = buildWhatsAppBusinessIntentUrl(text, phone);
+      url = buildWhatsAppBusinessIntentUrl(text, phone, countryCode);
       isIntent = true;
     } else {
-      url = buildWhatsAppUrl(text, phone);
+      url = buildWhatsAppUrl(text, phone, countryCode);
     }
   } else if (target === "regular") {
-    url = buildWhatsAppUrl(text, phone);
+    url = buildWhatsAppUrl(text, phone, countryCode);
   } else {
     if (isAndroidWeb()) {
-      url = buildWhatsAppBusinessIntentUrl(text, phone);
+      url = buildWhatsAppBusinessIntentUrl(text, phone, countryCode);
       isIntent = true;
     } else {
-      url = buildWhatsAppUrl(text, phone);
+      url = buildWhatsAppUrl(text, phone, countryCode);
     }
   }
   // Chrome Android hanya memproses `intent://` kalau navigasi terjadi di tab
