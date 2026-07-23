@@ -46,6 +46,7 @@ import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFi
 import { shareToChat } from "@/lib/share-chat";
 import { markSent, useSentShots } from "@/lib/wa-sent-history";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { CaptionPreviewDialog } from "@/components/CaptionPreviewDialog";
 import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import {
