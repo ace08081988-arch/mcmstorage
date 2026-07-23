@@ -1164,8 +1164,8 @@ function DetailHero({
           sub={`Stok: ${fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}`}
         />
         <DetailRow icon={<Scale className="h-3.5 w-3.5" />} label="Target per kotak"
-          value={<span className="font-semibold">{title.target_grams} {unit}</span>}
-          sub={preps.length > 0 ? `Total target ${targetTotal} ${unit} · aktual ${totalActual} ${unit}` : undefined}
+          value={<span className="font-semibold">{fmtWeight(Number(title.target_grams), unit)}</span>}
+          sub={preps.length > 0 ? `Total target ${fmtWeight(targetTotal, unit)} · aktual ${fmtWeight(totalActual, unit)}` : undefined}
         />
         {/* `preps` di header ini sudah difilter aktif (lihat pemanggilan
             `<Header preps={active} />` di komponen induk). Label
