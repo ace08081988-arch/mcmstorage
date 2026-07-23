@@ -2367,22 +2367,22 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             )}
           </details>
         )}
-        <div className="flex items-center justify-between gap-ms-1 pt-1">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-1 pt-1">
           {prep.location_url ? (
             <a href={prep.location_url} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-0.5 text-ms-2xs leading-snug text-primary hover:underline">
-              <MapPin className="h-3 w-3" /> Lokasi <ExternalLink className="h-2.5 w-2.5" />
+              className="inline-flex min-w-0 items-center gap-0.5 text-ms-2xs leading-snug text-primary hover:underline">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">Lokasi</span>
+              <ExternalLink className="h-2.5 w-2.5 shrink-0" />
             </a>
-          ) : <span />}
-          <div className="flex gap-0.5">
-            {!readOnly && (
-              <>
-                <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3 w-3" /></Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
-              </>
-            )}
-          </div>
+          ) : <span className="min-w-0" />}
+          {!readOnly && (
+            <div className="flex shrink-0 items-center gap-0.5 justify-self-end">
+              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3 w-3" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+            </div>
+          )}
         </div>
         <div className="text-ms-2xs leading-snug text-muted-foreground">
           {new Date(prep.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
