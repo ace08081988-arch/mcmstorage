@@ -355,3 +355,94 @@ describe("caption WA — urutan baris tetap stabil di semua variasi", () => {
     expect(withoutUrl.includes("Lokasi ambil:")).toBe(false);
   });
 });
+/**
+ * SSOT: `buildPaymentMessageLines` sendiri (bukan hanya call-site) sekarang
+ * bertanggung jawab menyisipkan blok 📍 kalau caller memberikan `locationUrl`.
+ * Kontrak:
+ *   - opsi tanpa key `locationUrl` → tidak ada baris lokasi (backward-compat).
+ *   - `locationUrl: string non-kosong` → "📍 Lokasi ambil:" + URL, dipisahkan baris kosong.
+ *   - `locationUrl: null | "" | "   "` → satu baris placeholder persis.
+ * Berlaku identik untuk metode kas / hutang / partial.
+ */
+describe("buildPaymentMessageLines — opsi locationUrl (semua metode)", () => {
+  const CASES = [
+    { method: "kas" as const, total: 10_000, paid: 0, base: ["Pembayaran: Lunas"] },
+    {
+      method: "hutang" as const,
+      total: 10_000,
+      paid: 0,
+      base: ["Pembayaran: Hutang", "Sisa hutang: Rp10.000"],
+    },
+    {
+      method: "partial" as const,
+      total: 10_000,
+      paid: 2_500,
+      base: ["Pembayaran: Bayar sebagian", "Dibayar: Rp2.500", "Sisa hutang: Rp7.500"],
+    },
+  ];
+
+  it.each(CASES)("$method: tanpa opsi → tidak menambah blok lokasi", ({ method, total, paid, base }) => {
+    const p = getPaymentBreakdown(method, total, paid);
+    expect(buildPaymentMessageLines(p)).toEqual(base);
+  });
+
+  it.each(CASES)("$method: locationUrl string → append 📍 Lokasi ambil + URL", ({ method, total, paid, base }) => {
+    const p = getPaymentBreakdown(method, total, paid);
+    const url = "https://maps.app.goo.gl/xyz";
+    expect(buildPaymentMessageLines(p, { locationUrl: url })).toEqual([
+      ...base,
+      "",
+      "📍 Lokasi ambil:",
+      url,
+    ]);
+  });
+
+  it.each(CASES)("$method: locationUrl null → append placeholder tepat", ({ method, total, paid, base }) => {
+    const p = getPaymentBreakdown(method, total, paid);
+    expect(buildPaymentMessageLines(p, { locationUrl: null })).toEqual([
+      ...base,
+      LOCATION_MISSING_PLACEHOLDER,
+    ]);
+  });
+
+  it.each(CASES)("$method: locationUrl '' → placeholder (bukan URL kosong)", ({ method, total, paid, base }) => {
+    const p = getPaymentBreakdown(method, total, paid);
+    expect(buildPaymentMessageLines(p, { locationUrl: "" })).toEqual([
+      ...base,
+      LOCATION_MISSING_PLACEHOLDER,
+    ]);
+  });
+
+  it.each(CASES)("$method: locationUrl whitespace → placeholder (di-trim)", ({ method, total, paid, base }) => {
+    const p = getPaymentBreakdown(method, total, paid);
+    expect(buildPaymentMessageLines(p, { locationUrl: "   \n\t " })).toEqual([
+      ...base,
+      LOCATION_MISSING_PLACEHOLDER,
+    ]);
+  });
+
+  it("Urutan: 📍 selalu SETELAH baris pembayaran (semua metode)", () => {
+    for (const { method, total, paid } of CASES) {
+      const p = getPaymentBreakdown(method, total, paid);
+      const linesUrl = buildPaymentMessageLines(p, { locationUrl: "https://x.test" });
+      const linesEmpty = buildPaymentMessageLines(p, { locationUrl: null });
+      // Baris terakhir yang menyebut pembayaran ada di indeks base.length - 1.
+      const iPayLast = linesUrl.findIndex((l) => l.startsWith("Pembayaran:"));
+      expect(iPayLast).toBeGreaterThanOrEqual(0);
+      expect(linesUrl.indexOf("📍 Lokasi ambil:")).toBeGreaterThan(iPayLast);
+      expect(linesEmpty.indexOf(LOCATION_MISSING_PLACEHOLDER)).toBeGreaterThan(iPayLast);
+    }
+  });
+
+  it("Placeholder dan URL tidak pernah muncul bersamaan", () => {
+    const p = getPaymentBreakdown("hutang", 5_000, 0);
+    const withUrl = buildPaymentMessageLines(p, { locationUrl: "https://x.test" });
+    const withoutUrl = buildPaymentMessageLines(p, { locationUrl: null });
+    expect(withUrl).not.toContain(LOCATION_MISSING_PLACEHOLDER);
+    expect(withoutUrl).not.toContain("📍 Lokasi ambil:");
+  });
+
+  it("Placeholder literal tidak berubah (snapshot kunci)", () => {
+    expect(LOCATION_MISSING_PLACEHOLDER).toBe("📍 Lokasi belum diisi (owner akan menyusul link)");
+  });
+});
