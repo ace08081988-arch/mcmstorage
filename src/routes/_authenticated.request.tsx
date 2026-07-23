@@ -2573,10 +2573,14 @@ function SendPrepToCustomerDialog({
     lines.push(...buildPaymentMessageLines(payment));
     if (resolvedParty.name) lines.push(`Untuk: ${resolvedParty.name}`);
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
+    lines.push("");
     if (prep.location_url) {
-      lines.push("");
       lines.push(`📍 Lokasi ambil:`);
       lines.push(prep.location_url);
+    } else {
+      // Placeholder eksplisit supaya owner langsung sadar caption dikirim
+      // tanpa link Google Maps — bukan sekadar baris hilang senyap.
+      lines.push("📍 Lokasi belum diisi (owner akan menyusul link)");
     }
     lines.push("");
     lines.push("Terima kasih 🙏");
