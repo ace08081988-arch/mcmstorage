@@ -66,6 +66,8 @@ import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 import { debounce } from "@/lib/realtime-debounce";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
+import { renderWaCaption } from "@/lib/wa-template";
+import { useWaTemplate } from "@/lib/wa-template-store";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { withPlainTimeout, withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
 
