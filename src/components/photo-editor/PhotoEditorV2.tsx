@@ -101,6 +101,16 @@ const STICKER_PRESETS: Record<
   "arrow-rotate-cw": { label: "Putar Kanan", Icon: RotateCw, defaultColor: "#f0d78c", group: "panah" },
   "arrow-rotate-ccw": { label: "Putar Kiri", Icon: RotateCcw, defaultColor: "#f0d78c", group: "panah" },
   "arrow-refresh": { label: "Refresh", Icon: RefreshCw, defaultColor: "#c9a84c", group: "panah" },
+  // ── Panah modern (varian gaya) — semua render vektor tanpa latar
+  "arrow-thin-r": { label: "Tipis Kanan", Icon: ChevronRight, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-thin-l": { label: "Tipis Kiri", Icon: ChevronLeft, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-double-r": { label: "Ganda Kanan", Icon: ChevronsRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-double-l": { label: "Ganda Kiri", Icon: ChevronsLeft, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-block-r": { label: "Blok Kanan", Icon: ArrowBigRight, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-block-l": { label: "Blok Kiri", Icon: ArrowBigLeft, defaultColor: "#c9a84c", group: "panah" },
+  "arrow-arc-r": { label: "Lengkung Kanan", Icon: Redo2, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-arc-l": { label: "Lengkung Kiri", Icon: Undo2, defaultColor: "#f0d78c", group: "panah" },
+  "arrow-zigzag-r": { label: "Zigzag", Icon: Zap, defaultColor: "#c9a84c", group: "panah" },
   // ── Status operasional
   check: { label: "Checklist", Icon: Check, defaultColor: "#22c55e", group: "status" },
   x: { label: "Silang", Icon: X, defaultColor: "#ef4444", group: "status" },
