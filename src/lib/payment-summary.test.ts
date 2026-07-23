@@ -446,3 +446,62 @@ describe("buildPaymentMessageLines — opsi locationUrl (semua metode)", () => {
     expect(LOCATION_MISSING_PLACEHOLDER).toBe("📍 Lokasi belum diisi (owner akan menyusul link)");
   });
 });
+
+/**
+ * Whitespace-only locationUrl WAJIB dianggap kosong. Kalau tidak, kita akan
+ * mengirim "📍 Lokasi ambil:\n   " ke pembeli — link mati yang menyesatkan.
+ * Jadi kunci kontrak ini eksplisit untuk berbagai varian whitespace dan
+ * SEMUA metode pembayaran yang relevan (kas / hutang / partial).
+ */
+describe("buildPaymentMessageLines — whitespace-only locationUrl = placeholder", () => {
+  const METHODS = [
+    { method: "kas" as const, total: 10_000, paid: 0, baseLastLine: "Pembayaran: Lunas" },
+    { method: "hutang" as const, total: 10_000, paid: 0, baseLastLine: "Sisa hutang: Rp10.000" },
+    { method: "partial" as const, total: 10_000, paid: 3_000, baseLastLine: "Sisa hutang: Rp7.000" },
+  ];
+
+  const WHITESPACE_VARIANTS: Array<{ label: string; value: string }> = [
+    { label: "single space", value: " " },
+    { label: "many spaces", value: "          " },
+    { label: "tabs", value: "\t\t\t" },
+    { label: "newlines", value: "\n\n" },
+    { label: "CRLF", value: "\r\n\r\n" },
+    { label: "mixed spaces+tabs+newlines", value: " \t \n \t " },
+    { label: "non-breaking space (U+00A0)", value: "\u00A0\u00A0" },
+    { label: "ideographic space (U+3000)", value: "\u3000" },
+    { label: "zero-width space (U+200B)", value: "\u200B" },
+    { label: "form feed + vertical tab", value: "\f\v" },
+    { label: "leading+trailing whitespace around empty", value: "   \t\n   " },
+  ];
+
+  for (const { method, total, paid, baseLastLine } of METHODS) {
+    describe(`method=${method}`, () => {
+      it.each(WHITESPACE_VARIANTS)(
+        `whitespace "$label" → placeholder muncul, TIDAK ada 'Lokasi ambil:'`,
+        ({ value }) => {
+          const p = getPaymentBreakdown(method, total, paid);
+          const lines = buildPaymentMessageLines(p, { locationUrl: value });
+          expect(lines).toContain(LOCATION_MISSING_PLACEHOLDER);
+          expect(lines).not.toContain("📍 Lokasi ambil:");
+          // Tidak boleh ada baris yang isinya hanya whitespace mentah.
+          expect(lines.some((l) => l.length > 0 && l.trim().length === 0)).toBe(false);
+          // Placeholder harus JADI baris terakhir.
+          expect(lines[lines.length - 1]).toBe(LOCATION_MISSING_PLACEHOLDER);
+          // Baris pembayaran terakhir tetap ada di posisi yang benar (tepat sebelum placeholder).
+          expect(lines[lines.length - 2]).toBe(baseLastLine);
+        },
+      );
+    });
+  }
+
+  it("URL valid dengan whitespace di sekitar → di-trim & dipakai sebagai link", () => {
+    const p = getPaymentBreakdown("hutang", 5_000, 0);
+    const lines = buildPaymentMessageLines(p, {
+      locationUrl: "   https://maps.app.goo.gl/xyz   \n",
+    });
+    // Kontrol positif: whitespace di sekeliling URL valid TIDAK memicu placeholder.
+    expect(lines).not.toContain(LOCATION_MISSING_PLACEHOLDER);
+    expect(lines).toContain("📍 Lokasi ambil:");
+    expect(lines).toContain("https://maps.app.goo.gl/xyz");
+  });
+});
