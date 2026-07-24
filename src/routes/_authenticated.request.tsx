@@ -1226,6 +1226,10 @@ function SendPrepLinkDialog({
     } catch { /* noop */ }
     loadedKeyRef.current = workerNameStorageKey;
   }, [workerNameStorageKey]);
+
+  // Jumlah paket yang ingin disiapkan oleh pegawai lewat link ini.
+  // Dipakai sebagai batas `_max_submissions` dan ditampilkan pada pesan WA.
+  const [targetQty, setTargetQty] = useState<number>(1);
   const [nameError, setNameError] = useState<string | null>(null);
   // Tear-down saat dialog ditutup: hapus SEMUA state internal + draft nama
   // pegawai di localStorage. Ini menutup celah "nilai bocor antar-title" —
@@ -1332,6 +1336,7 @@ function SendPrepLinkDialog({
     const err = validateWorkerName(workerName);
     setNameError(err);
     if (err) return;
+    const qty = Math.max(1, Math.min(999, Math.floor(Number(targetQty) || 1)));
     setBusy(true);
     setError(null);
     try {
@@ -1339,6 +1344,7 @@ function SendPrepLinkDialog({
       const token = genShareToken();
       const noteLines: string[] = [];
       noteLines.push(`Siapkan paket untuk judul "${title.name}".`);
+      noteLines.push(`Jumlah yang diminta: ${qty} paket.`);
       if (title.note) noteLines.push(title.note);
       if (titleItems.length > 0) {
         noteLines.push("");
@@ -1355,10 +1361,9 @@ function SendPrepLinkDialog({
         _pin: pin,
         _share_token: token,
         _items: [],
-        // Satu link = satu permintaan pegawai (bukan 1× unggah). Pegawai boleh
-        // mengunggah beberapa produk/foto di bawah PIN yang sama. Pemilik
-        // menutup tugas secara manual (tombol "Selesai/Arsipkan") kalau sudah cukup.
-        _max_submissions: 999,
+        // Batas submisi = jumlah paket yang admin minta. Pemilik masih bisa
+        // menutup tugas manual lebih awal via tombol "Selesai/Arsipkan".
+        _max_submissions: qty,
         _title_ids: [title.id],
       });
       if (rpcErr) throw rpcErr;
