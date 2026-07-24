@@ -2655,14 +2655,24 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus penyiapan ini?</AlertDialogTitle>
+            <AlertDialogTitle>{readOnly ? "Hapus arsip terkirim?" : "Hapus penyiapan ini?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
-              dikembalikan sebanyak{" "}
-              <span className="font-semibold">
-                {fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}
-              </span>
-              . Foto di penyimpanan juga ikut dihapus.
+              {readOnly ? (
+                <>
+                  Kartu ini akan hilang dari <span className="font-semibold">Riwayat Terkirim</span>.
+                  Catatan penjualan, pembayaran, dan piutang <span className="font-semibold">tidak</span> ikut dibatalkan —
+                  stok tetap seperti setelah terjual. Foto di penyimpanan ikut dihapus.
+                </>
+              ) : (
+                <>
+                  Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
+                  dikembalikan sebanyak{" "}
+                  <span className="font-semibold">
+                    {fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}
+                  </span>
+                  . Foto di penyimpanan juga ikut dihapus.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {deleteBusy && (
