@@ -1226,6 +1226,10 @@ function SendPrepLinkDialog({
     } catch { /* noop */ }
     loadedKeyRef.current = workerNameStorageKey;
   }, [workerNameStorageKey]);
+
+  // Jumlah paket yang ingin disiapkan oleh pegawai lewat link ini.
+  // Dipakai sebagai batas `_max_submissions` dan ditampilkan pada pesan WA.
+  const [targetQty, setTargetQty] = useState<number>(1);
   const [nameError, setNameError] = useState<string | null>(null);
   // Tear-down saat dialog ditutup: hapus SEMUA state internal + draft nama
   // pegawai di localStorage. Ini menutup celah "nilai bocor antar-title" —
@@ -1332,6 +1336,7 @@ function SendPrepLinkDialog({
     const err = validateWorkerName(workerName);
     setNameError(err);
     if (err) return;
+    const qty = Math.max(1, Math.min(999, Math.floor(Number(targetQty) || 1)));
     setBusy(true);
     setError(null);
     try {
@@ -1339,6 +1344,7 @@ function SendPrepLinkDialog({
       const token = genShareToken();
       const noteLines: string[] = [];
       noteLines.push(`Siapkan paket untuk judul "${title.name}".`);
+      noteLines.push(`Jumlah yang diminta: ${qty} paket.`);
       if (title.note) noteLines.push(title.note);
       if (titleItems.length > 0) {
         noteLines.push("");
@@ -1355,10 +1361,9 @@ function SendPrepLinkDialog({
         _pin: pin,
         _share_token: token,
         _items: [],
-        // Satu link = satu permintaan pegawai (bukan 1× unggah). Pegawai boleh
-        // mengunggah beberapa produk/foto di bawah PIN yang sama. Pemilik
-        // menutup tugas secara manual (tombol "Selesai/Arsipkan") kalau sudah cukup.
-        _max_submissions: 999,
+        // Batas submisi = jumlah paket yang admin minta. Pemilik masih bisa
+        // menutup tugas manual lebih awal via tombol "Selesai/Arsipkan".
+        _max_submissions: qty,
         _title_ids: [title.id],
       });
       if (rpcErr) throw rpcErr;
@@ -1379,6 +1384,7 @@ function SendPrepLinkDialog({
     lines.push(greet);
     lines.push("");
     lines.push(`*Judul Request:* ${title.name}`);
+    lines.push(`*Jumlah paket diminta:* ${Math.max(1, Math.min(999, Math.floor(Number(targetQty) || 1)))}`);
     if (titleItems.length > 0) {
       lines.push("");
       lines.push("*Isi paket:*");
@@ -1393,7 +1399,7 @@ function SendPrepLinkDialog({
     lines.push("");
     lines.push("Buka link, masukkan PIN, lalu isi berat aktual + foto + lokasi. Terima kasih!");
     return lines.join("\n");
-  }, [session, title, titleItems, warehouseItems, workerName]);
+  }, [session, title, titleItems, warehouseItems, workerName, targetQty]);
 
   const canPrepare = useMemo(() => {
     if (!session || !title) return false;
@@ -1785,6 +1791,30 @@ function SendPrepLinkDialog({
               ) : (
                 <div className="mt-1.5 text-ms-2xs text-muted-foreground">Wajib diisi sebelum link & PIN dibuat.</div>
               )}
+            </div>
+            <div>
+              <Label htmlFor="worker-target-qty" className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
+                Mau disiapkan berapa paket? <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="worker-target-qty"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={999}
+                step={1}
+                value={targetQty}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "") { setTargetQty(1); return; }
+                  const n = Math.floor(Number(v));
+                  if (Number.isFinite(n)) setTargetQty(Math.max(1, Math.min(999, n)));
+                }}
+                className="h-8"
+              />
+              <div className="mt-1.5 text-ms-2xs text-muted-foreground">
+                Link otomatis tertutup setelah pegawai mengunggah {targetQty} paket.
+              </div>
             </div>
             <div className="rounded-md border border-warning/40 bg-warning/5 p-ms-2.5 text-ms-2xs leading-relaxed text-warning dark:text-warning">
               <b>Langkah:</b> masukkan nama pegawai yang akan mengerjakan, lalu tekan <b>Buat link & PIN</b>. Setelah itu baru bisa menyalin atau mengunduh pesan.
