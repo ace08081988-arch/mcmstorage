@@ -1384,6 +1384,7 @@ function SendPrepLinkDialog({
     lines.push(greet);
     lines.push("");
     lines.push(`*Judul Request:* ${title.name}`);
+    lines.push(`*Jumlah paket diminta:* ${Math.max(1, Math.min(999, Math.floor(Number(targetQty) || 1)))}`);
     if (titleItems.length > 0) {
       lines.push("");
       lines.push("*Isi paket:*");
