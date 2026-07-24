@@ -69,16 +69,16 @@ export function PendingVerificationSection({
           ? supabase.from("prep_tasks").select("id,title").in("id", taskIdSet)
           : Promise.resolve({ data: [] as Array<{ id: string; title: string | null }> }),
         itemIdSet.length > 0
-          ? supabase.from("prep_task_items").select("id,name").in("id", itemIdSet)
-          : Promise.resolve({ data: [] as Array<{ id: string; name: string | null }> }),
+          ? supabase.from("prep_task_items").select("id,name_snapshot").in("id", itemIdSet)
+          : Promise.resolve({ data: [] as Array<{ id: string; name_snapshot: string | null }> }),
       ]);
       const tMap: Record<string, string> = {};
       for (const t of (tasksRes.data ?? []) as Array<{ id: string; title: string | null }>) {
         if (t.title) tMap[t.id] = t.title;
       }
       const iMap: Record<string, string> = {};
-      for (const it of (itemsRes.data ?? []) as Array<{ id: string; name: string | null }>) {
-        if (it.name) iMap[it.id] = it.name;
+      for (const it of (itemsRes.data ?? []) as Array<{ id: string; name_snapshot: string | null }>) {
+        if (it.name_snapshot) iMap[it.id] = it.name_snapshot;
       }
       setTaskNames(tMap);
       setItemNames(iMap);
