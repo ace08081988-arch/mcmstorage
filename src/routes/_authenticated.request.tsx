@@ -1399,7 +1399,7 @@ function SendPrepLinkDialog({
     lines.push("");
     lines.push("Buka link, masukkan PIN, lalu isi berat aktual + foto + lokasi. Terima kasih!");
     return lines.join("\n");
-  }, [session, title, titleItems, warehouseItems, workerName]);
+  }, [session, title, titleItems, warehouseItems, workerName, targetQty]);
 
   const canPrepare = useMemo(() => {
     if (!session || !title) return false;
