@@ -1792,6 +1792,30 @@ function SendPrepLinkDialog({
                 <div className="mt-1.5 text-ms-2xs text-muted-foreground">Wajib diisi sebelum link & PIN dibuat.</div>
               )}
             </div>
+            <div>
+              <Label htmlFor="worker-target-qty" className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
+                Mau disiapkan berapa paket? <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="worker-target-qty"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={999}
+                step={1}
+                value={targetQty}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "") { setTargetQty(1); return; }
+                  const n = Math.floor(Number(v));
+                  if (Number.isFinite(n)) setTargetQty(Math.max(1, Math.min(999, n)));
+                }}
+                className="h-8"
+              />
+              <div className="mt-1.5 text-ms-2xs text-muted-foreground">
+                Link otomatis tertutup setelah pegawai mengunggah {targetQty} paket.
+              </div>
+            </div>
             <div className="rounded-md border border-warning/40 bg-warning/5 p-ms-2.5 text-ms-2xs leading-relaxed text-warning dark:text-warning">
               <b>Langkah:</b> masukkan nama pegawai yang akan mengerjakan, lalu tekan <b>Buat link & PIN</b>. Setelah itu baru bisa menyalin atau mengunduh pesan.
             </div>
