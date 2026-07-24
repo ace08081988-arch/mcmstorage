@@ -67,7 +67,6 @@ import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
 import { copyUrlWithToast } from "@/lib/copy-url-toast";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
-import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 import { debounce } from "@/lib/realtime-debounce";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
@@ -2467,11 +2466,6 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   }
 
   async function onDelete() {
-    if (readOnly) {
-      const t = buildReadOnlyToast("delete", prep);
-      toast.error(t.title, { description: t.description });
-      return;
-    }
     setDeleteStep("idle");
     setDeleteOpen(true);
   }
@@ -2592,14 +2586,18 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
                 <ExternalLink className="h-2.5 w-2.5 shrink-0" />
               </a>
             ) : <span className="min-w-0" />}
-            {!readOnly && (() => {
+            {(() => {
               const btnCls = "inline-flex h-8 w-8 shrink-0 items-center justify-center p-0 leading-none @[200px]/prepactions:h-7 @[200px]/prepactions:w-7";
               const iconCls = "h-3.5 w-3.5 shrink-0 @[200px]/prepactions:h-3 @[200px]/prepactions:w-3";
               return (
                 <div className="flex shrink-0 items-center justify-end gap-0.5 @[200px]/prepactions:justify-self-end">
-                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className={iconCls} /></Button>
-                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Edit penyiapan" title="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}><Edit3 className={iconCls} /></Button>
-                  <Button size="icon" variant="ghost" className={btnCls} aria-label="Hapus penyiapan" title="Hapus penyiapan" onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
+                  {!readOnly && (
+                    <>
+                      <Button size="icon" variant="ghost" className={btnCls} aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className={iconCls} /></Button>
+                      <Button size="icon" variant="ghost" className={btnCls} aria-label="Edit penyiapan" title="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}><Edit3 className={iconCls} /></Button>
+                    </>
+                  )}
+                  <Button size="icon" variant="ghost" className={btnCls} aria-label={readOnly ? "Hapus arsip" : "Hapus penyiapan"} title={readOnly ? "Hapus arsip dari Riwayat Terkirim" : "Hapus penyiapan"} onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
                 </div>
               );
             })()}
@@ -2656,14 +2654,24 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus penyiapan ini?</AlertDialogTitle>
+            <AlertDialogTitle>{readOnly ? "Hapus arsip terkirim?" : "Hapus penyiapan ini?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
-              dikembalikan sebanyak{" "}
-              <span className="font-semibold">
-                {fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}
-              </span>
-              . Foto di penyimpanan juga ikut dihapus.
+              {readOnly ? (
+                <>
+                  Kartu ini akan hilang dari <span className="font-semibold">Riwayat Terkirim</span>.
+                  Catatan penjualan, pembayaran, dan piutang <span className="font-semibold">tidak</span> ikut dibatalkan —
+                  stok tetap seperti setelah terjual. Foto di penyimpanan ikut dihapus.
+                </>
+              ) : (
+                <>
+                  Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
+                  dikembalikan sebanyak{" "}
+                  <span className="font-semibold">
+                    {fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}
+                  </span>
+                  . Foto di penyimpanan juga ikut dihapus.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {deleteBusy && (
