@@ -13,6 +13,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   ArrowLeft,
   Plus,
   Wallet,
@@ -24,6 +29,9 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Scale,
+  Search,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
 import { assertDebtSource } from "@/lib/debt-source";
 import {
@@ -35,13 +43,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/hutang-piutang")({
   head: () => ({
@@ -1328,6 +1329,113 @@ function PaymentsReport({
   );
 }
 
+/**
+ * Dropdown kontak dengan pencarian cepat. Lebih ringan dari cmdk dan
+ * lebih ramah mobile: input tetap terlihat, tap target besar, hasil
+ * difilter secara lokal tanpa request tambahan ke backend.
+ */
+function SearchablePartySelect({
+  options,
+  value,
+  onChange,
+  onOpenChange,
+  placeholder,
+  kind,
+}: {
+  options: Party[];
+  value: string;
+  onChange: (id: string) => void;
+  onOpenChange?: (open: boolean) => void;
+  placeholder?: string;
+  kind: Kind;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(
+      (o) =>
+        o.name.toLowerCase().includes(q) ||
+        (o.contact ?? "").toLowerCase().includes(q),
+    );
+  }, [options, query]);
+
+  const selected = options.find((o) => o.id === value);
+
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      // Fokus input setelah popover ter-render agar keyboard mobile langsung muncul.
+      const t = requestAnimationFrame(() => inputRef.current?.focus());
+      return () => cancelAnimationFrame(t);
+    }
+  }, [open]);
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    onOpenChange?.(next);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span className="truncate">
+            {selected?.name ?? placeholder ?? "Pilih…"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] p-0"
+        align="start"
+      >
+        <div className="flex items-center border-b px-3">
+          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <Input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Cari ${kind === "hutang" ? "supplier" : "customer"}…`}
+            className="h-10 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
+        <div className="max-h-[260px] overflow-y-auto p-1">
+          {filtered.length === 0 ? (
+            <div className="py-6 text-center text-ms-sm text-muted-foreground">
+              Tidak ditemukan
+            </div>
+          ) : (
+            filtered.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => {
+                  onChange(o.id);
+                  setOpen(false);
+                  onOpenChange?.(false);
+                }}
+                className="relative flex w-full items-center rounded-sm px-2 py-2 text-ms-sm text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <span className="flex-1 truncate">{o.name}</span>
+                {value === o.id && (
+                  <Check className="ml-2 h-4 w-4 shrink-0" />
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function AddDebtDialog({
   open,
   onOpenChange,
@@ -1502,9 +1610,12 @@ function AddDebtDialog({
                 placeholder="cth: Pak Andi"
               />
             ) : (
-              <Select
+              <SearchablePartySelect
+                options={partyOptions}
                 value={partyId}
-                onValueChange={(v) => {
+                kind={kind}
+                placeholder="Pilih…"
+                onChange={(v) => {
                   selectGuardRef.current = Date.now() + 600;
                   setPartyId(v);
                 }}
@@ -1513,18 +1624,7 @@ function AddDebtDialog({
                     ? Number.MAX_SAFE_INTEGER
                     : Date.now() + 600;
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {partyOptions.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             )}
           </div>
 
