@@ -1554,6 +1554,7 @@ function AddDebtDialog({
   // terlempar balik ke halaman Hutang & Piutang. Kunci penutupan dialog
   // selama dropdown terbuka dan sesaat setelahnya.
   const selectGuardRef = useRef(0);
+  const [recentIds, setRecentIds] = useState<string[]>([]);
   const handleOpenChange = (v: boolean) => {
     if (!v && Date.now() < selectGuardRef.current) return;
     onOpenChange(v);
@@ -1563,6 +1564,7 @@ function AddDebtDialog({
     if (open) {
       const k = prefill?.kind ?? defaultKind;
       setKind(k);
+      setRecentIds(readRecentParties(uid, k));
       const linkId =
         k === "hutang" ? prefill?.supplierId : prefill?.customerId;
       if (linkId) {
@@ -1582,7 +1584,12 @@ function AddDebtDialog({
       setDue("");
       setNote("");
     }
-  }, [open, defaultKind, prefill]);
+  }, [open, defaultKind, prefill, uid]);
+
+  // Jenis (hutang/piutang) bisa diganti setelah dialog terbuka.
+  useEffect(() => {
+    if (open) setRecentIds(readRecentParties(uid, kind));
+  }, [open, kind, uid]);
 
   const partyOptions = kind === "hutang" ? suppliers : customers;
 
@@ -1696,9 +1703,11 @@ function AddDebtDialog({
                 value={partyId}
                 kind={kind}
                 placeholder="Pilih…"
+                recentIds={recentIds}
                 onChange={(v) => {
                   selectGuardRef.current = Date.now() + 600;
                   setPartyId(v);
+                  setRecentIds(pushRecentParty(uid, kind, v));
                 }}
                 onOpenChange={(o) => {
                   selectGuardRef.current = o
