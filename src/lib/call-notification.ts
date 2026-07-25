@@ -58,6 +58,7 @@ export async function showIncomingCallNotification(opts: {
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     vibrate: [500, 400, 500],
+    data: { url: "/chat" },
   };
   try {
     // Service worker lebih andal di Android (notifikasi tetap tampil
