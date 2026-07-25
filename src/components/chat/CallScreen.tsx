@@ -803,9 +803,34 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               void listOutputDevices().then(setOutputs);
             },
             onIceState: (s) => {
-              if (s === "failed" || s === "disconnected") {
-                void finalize("failed", `ice:${s}`);
+              if (s === "connected" || s === "completed") {
+                if (iceRecoverTimerRef.current) {
+                  clearTimeout(iceRecoverTimerRef.current);
+                  iceRecoverTimerRef.current = null;
+                }
+                iceRestartCountRef.current = 0;
+                setErrorMsg(null);
+                return;
               }
+              if (s !== "failed" && s !== "disconnected") return;
+              if (iceRecoverTimerRef.current) return;
+              // Jaringan seluler sering "disconnected" sesaat lalu pulih.
+              // Coba ICE restart (dari sisi caller) dan tunggu sebentar
+              // sebelum benar-benar mengakhiri panggilan.
+              setErrorMsg("Koneksi tidak stabil — mencoba menyambung ulang…");
+              if (role === "caller" && sessionRef.current && iceRestartCountRef.current < 2) {
+                iceRestartCountRef.current += 1;
+                void restartIce(sessionRef.current).catch(() => { /* ignore */ });
+              }
+              iceRecoverTimerRef.current = setTimeout(() => {
+                iceRecoverTimerRef.current = null;
+                const st = sessionRef.current?.pc.iceConnectionState;
+                if (st === "connected" || st === "completed") {
+                  setErrorMsg(null);
+                  return;
+                }
+                void finalize("failed", `ice:${st ?? s}`);
+              }, s === "failed" ? 6000 : 10000);
             },
             onError: (err) => {
               const info = describeCallError(err, kind === "video" ? "video" : "audio");
