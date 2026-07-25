@@ -1506,14 +1506,35 @@ function PartyOptionRow({
   onPick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      className="relative flex w-full items-center rounded-sm px-2 py-2 text-left text-ms-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-    >
-      <span className="flex-1 truncate">{option.name}</span>
-      {selected && <Check className="ml-2 h-4 w-4 shrink-0" />}
-    </button>
+    <div className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-ms-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium">{option.name}</div>
+        {option.contact && (
+          <div className="truncate text-ms-2xs text-muted-foreground">
+            {option.contact}
+          </div>
+        )}
+      </div>
+      {selected ? (
+        <span className="flex items-center gap-1 text-ms-2xs font-semibold text-success">
+          <Check className="h-3.5 w-3.5" />
+          Dipilih
+        </span>
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPick();
+          }}
+          className="h-7 text-ms-2xs"
+        >
+          Pilih
+        </Button>
+      )}
+    </div>
   );
 }
 
