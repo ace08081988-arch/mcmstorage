@@ -1767,7 +1767,13 @@ function AddDebtDialog({
     if (open) setRecentIds(readRecentParties(uid, kind));
   }, [open, kind, uid]);
 
-  const partyOptions = kind === "hutang" ? suppliers : customers;
+  const partyOptions = useMemo(() => {
+    const base = kind === "hutang" ? suppliers : customers;
+    const map = new Map<string, Party>();
+    for (const p of base) map.set(p.id, p);
+    for (const p of createdParties) map.set(p.id, p);
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [kind, suppliers, customers, createdParties]);
 
   const submit = async () => {
     if (!uid) return;
