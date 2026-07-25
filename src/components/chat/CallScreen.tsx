@@ -753,6 +753,10 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     async (status: "ended" | "declined" | "missed" | "cancelled" | "failed", reason?: string) => {
       if (doneRef.current) return;
       doneRef.current = true;
+      if (iceRecoverTimerRef.current) {
+        clearTimeout(iceRecoverTimerRef.current);
+        iceRecoverTimerRef.current = null;
+      }
       setPhase("ended");
       setFinalStatus(status);
       try { sessionRef.current?.sendBye(reason); } catch { /* ignore */ }
