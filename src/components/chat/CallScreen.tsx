@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   createPeerSession,
   startOffer,
+  restartIce,
   type CallKind,
   type PeerSession,
 } from "@/lib/webrtc";
@@ -706,6 +707,10 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     : undefined;
 
   const sessionRef = useRef<PeerSession | null>(null);
+  // Pemulihan koneksi: jangan langsung akhiri panggilan saat ICE
+  // "disconnected"/"failed" — beri masa tenggang & coba ICE restart.
+  const iceRecoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const iceRestartCountRef = useRef(0);
   const acceptedAtRef = useRef<string | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
