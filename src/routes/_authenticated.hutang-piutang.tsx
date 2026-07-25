@@ -32,6 +32,7 @@ import {
   Search,
   ChevronsUpDown,
   Check,
+  Loader2,
 } from "lucide-react";
 import { assertDebtSource } from "@/lib/debt-source";
 import { scopedKey } from "@/lib/user-scoped-storage";
@@ -1374,6 +1375,8 @@ function SearchablePartySelect({
   placeholder,
   kind,
   recentIds = [],
+  uid,
+  onCreate,
 }: {
   options: Party[];
   value: string;
@@ -1382,10 +1385,17 @@ function SearchablePartySelect({
   placeholder?: string;
   kind: Kind;
   recentIds?: string[];
+  uid: string | null;
+  onCreate?: (party: Party) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newContact, setNewContact] = useState("");
+  const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const createNameRef = useRef<HTMLInputElement>(null);
 
   const { recent, rest } = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -1411,16 +1421,70 @@ function SearchablePartySelect({
   useEffect(() => {
     if (open) {
       setQuery("");
+      setCreating(false);
+      setNewName("");
+      setNewContact("");
       // Fokus input setelah popover ter-render agar keyboard mobile langsung muncul.
       const t = requestAnimationFrame(() => inputRef.current?.focus());
       return () => cancelAnimationFrame(t);
     }
   }, [open]);
 
+  // Saat masuk mode buat kontak, fokus ke input nama dan isi dengan query saat ini.
+  useEffect(() => {
+    if (creating) {
+      setNewName(query.trim());
+      const t = requestAnimationFrame(() => createNameRef.current?.focus());
+      return () => cancelAnimationFrame(t);
+    }
+  }, [creating, query]);
+
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
     onOpenChange?.(next);
   };
+
+  const startCreate = () => {
+    if (!uid) {
+      toast.error("Sesi belum siap, coba lagi sebentar.");
+      return;
+    }
+    setCreating(true);
+  };
+
+  const saveContact = async () => {
+    if (!uid) return;
+    const name = newName.trim();
+    const contact = newContact.trim() || null;
+    if (!name) {
+      toast.error("Nama kontak wajib diisi.");
+      return;
+    }
+    setBusy(true);
+    const table = kind === "hutang" ? "suppliers" : "customers";
+    const { data, error } = await supabase
+      .from(table)
+      .insert({ user_id: uid, name, contact })
+      .select("id,name,contact")
+      .single();
+    setBusy(false);
+    if (error || !data) {
+      notifyError(error ?? new Error("Gagal menyimpan kontak"));
+      return;
+    }
+    const party: Party = {
+      id: data.id,
+      name: data.name,
+      contact: data.contact,
+    };
+    onCreate?.(party);
+    onChange(party.id);
+    setOpen(false);
+    onOpenChange?.(false);
+    toast.success(`${kind === "hutang" ? "Supplier" : "Customer"} baru ditambahkan`);
+  };
+
+  const empty = recent.length + rest.length === 0;
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -1439,82 +1503,148 @@ function SearchablePartySelect({
         className="w-[--radix-popover-trigger-width] p-0"
         align="start"
       >
-        <div className="flex items-center border-b px-3">
-          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-          <Input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Cari ${kind === "hutang" ? "supplier" : "customer"}…`}
-            className="h-10 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          />
-        </div>
-        <div className="max-h-[260px] overflow-y-auto p-1">
-          {recent.length + rest.length === 0 ? (
-            <div className="px-3 py-6 text-center">
-              <div className="mx-auto mb-2 grid h-9 w-9 place-items-center rounded-full bg-muted">
-                <Search className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="text-ms-sm font-medium text-foreground">
-                Tidak ada kontak yang cocok
-              </div>
-              <div className="mt-1 text-ms-2xs text-muted-foreground">
-                {query.trim() ? (
-                  <>
-                    Pencarian untuk "<span className="font-medium text-foreground">{query.trim()}</span>" tidak menemukan nama atau nomor.
-                  </>
-                ) : (
-                  "Belum ada data " + (kind === "hutang" ? "supplier" : "customer") + " tersimpan."
-                )}
-              </div>
-              {query.trim() && (
-                <div className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
-                  <div className="font-medium text-foreground">Saran pencarian:</div>
-                  <ul className="list-disc space-y-0.5 pl-4 text-left">
-                    <li>Coba singkatan atau nama panggilan</li>
-                    <li>Gunakan nomor HP awalan 08 tanpa spasi/titik</li>
-                    <li>Periksa ejaan atau huruf kecil/besar</li>
-                  </ul>
+        {!creating ? (
+          <>
+            <div className="flex items-center border-b px-3">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Cari ${kind === "hutang" ? "supplier" : "customer"}…`}
+                className="h-10 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+            <div className="max-h-[260px] overflow-y-auto p-1">
+              {empty ? (
+                <div className="px-3 py-5 text-center">
+                  <div className="mx-auto mb-2 grid h-9 w-9 place-items-center rounded-full bg-muted">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="text-ms-sm font-medium text-foreground">
+                    Tidak ada kontak yang cocok
+                  </div>
+                  <div className="mt-1 text-ms-2xs text-muted-foreground">
+                    {query.trim() ? (
+                      <>
+                        Pencarian untuk "<span className="font-medium text-foreground">{query.trim()}</span>" tidak menemukan nama atau nomor.
+                      </>
+                    ) : (
+                      "Belum ada data " + (kind === "hutang" ? "supplier" : "customer") + " tersimpan."
+                    )}
+                  </div>
+                  {query.trim() && (
+                    <div className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
+                      <div className="font-medium text-foreground">Saran pencarian:</div>
+                      <ul className="list-disc space-y-0.5 pl-4 text-left">
+                        <li>Coba singkatan atau nama panggilan</li>
+                        <li>Gunakan nomor HP awalan 08 tanpa spasi/titik</li>
+                        <li>Periksa ejaan atau huruf kecil/besar</li>
+                      </ul>
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-4 w-full"
+                    onClick={startCreate}
+                  >
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    Tambah kontak
+                  </Button>
                 </div>
+              ) : (
+                <>
+                  {recent.length > 0 && (
+                    <div className="px-2 pb-1 pt-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Terakhir dipakai
+                    </div>
+                  )}
+                  {recent.map((o) => (
+                    <PartyOptionRow
+                      key={o.id}
+                      option={o}
+                      selected={value === o.id}
+                      onPick={() => {
+                        onChange(o.id);
+                        setOpen(false);
+                        onOpenChange?.(false);
+                      }}
+                    />
+                  ))}
+                  {recent.length > 0 && rest.length > 0 && (
+                    <div className="my-1 border-t" />
+                  )}
+                  {rest.map((o) => (
+                    <PartyOptionRow
+                      key={o.id}
+                      option={o}
+                      selected={value === o.id}
+                      onPick={() => {
+                        onChange(o.id);
+                        setOpen(false);
+                        onOpenChange?.(false);
+                      }}
+                    />
+                  ))}
+                </>
               )}
             </div>
-          ) : (
-            <>
-              {recent.length > 0 && (
-                <div className="px-2 pb-1 pt-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Terakhir dipakai
-                </div>
-              )}
-              {recent.map((o) => (
-                <PartyOptionRow
-                  key={o.id}
-                  option={o}
-                  selected={value === o.id}
-                  onPick={() => {
-                    onChange(o.id);
-                    setOpen(false);
-                    onOpenChange?.(false);
-                  }}
+          </>
+        ) : (
+          <div className="p-3">
+            <div className="mb-2 text-ms-sm font-semibold text-foreground">
+              Tambah {kind === "hutang" ? "supplier" : "customer"} baru
+            </div>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <Label className="text-ms-2xs">Nama</Label>
+                <Input
+                  ref={createNameRef}
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="cth: Pak Andi"
+                  className="h-9 text-ms-sm"
                 />
-              ))}
-              {recent.length > 0 && rest.length > 0 && (
-                <div className="my-1 border-t" />
-              )}
-              {rest.map((o) => (
-                <PartyOptionRow
-                  key={o.id}
-                  option={o}
-                  selected={value === o.id}
-                  onPick={() => {
-                    onChange(o.id);
-                    setOpen(false);
-                    onOpenChange?.(false);
-                  }}
+              </div>
+              <div className="space-y-1">
+                <Label className="text-ms-2xs">Kontak (opsional)</Label>
+                <Input
+                  value={newContact}
+                  onChange={(e) => setNewContact(e.target.value)}
+                  placeholder="Nomor WA / email"
+                  className="h-9 text-ms-sm"
                 />
-              ))}
-            </>
-          )}
-        </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCreating(false)}
+                  disabled={busy}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => void saveContact()}
+                  disabled={busy || !newName.trim()}
+                >
+                  {busy ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Simpan
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -1600,6 +1730,7 @@ function AddDebtDialog({
   // selama dropdown terbuka dan sesaat setelahnya.
   const selectGuardRef = useRef(0);
   const [recentIds, setRecentIds] = useState<string[]>([]);
+  const [createdParties, setCreatedParties] = useState<Party[]>([]);
   const handleOpenChange = (v: boolean) => {
     if (!v && Date.now() < selectGuardRef.current) return;
     onOpenChange(v);
@@ -1636,7 +1767,13 @@ function AddDebtDialog({
     if (open) setRecentIds(readRecentParties(uid, kind));
   }, [open, kind, uid]);
 
-  const partyOptions = kind === "hutang" ? suppliers : customers;
+  const partyOptions = useMemo(() => {
+    const base = kind === "hutang" ? suppliers : customers;
+    const map = new Map<string, Party>();
+    for (const p of base) map.set(p.id, p);
+    for (const p of createdParties) map.set(p.id, p);
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [kind, suppliers, customers, createdParties]);
 
   const submit = async () => {
     if (!uid) return;
@@ -1749,6 +1886,7 @@ function AddDebtDialog({
                 kind={kind}
                 placeholder="Pilih…"
                 recentIds={recentIds}
+                uid={uid}
                 onChange={(v) => {
                   selectGuardRef.current = Date.now() + 600;
                   setPartyId(v);
@@ -1758,6 +1896,10 @@ function AddDebtDialog({
                   selectGuardRef.current = o
                     ? Number.MAX_SAFE_INTEGER
                     : Date.now() + 600;
+                }}
+                onCreate={(party) => {
+                  setCreatedParties((prev) => [...prev, party]);
+                  setRecentIds(pushRecentParty(uid, kind, party.id));
                 }}
               />
             )}
