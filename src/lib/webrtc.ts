@@ -270,6 +270,23 @@ export async function createPeerSession(opts: {
  * belum menjawab (maks 3× tiap 2 detik). Idempoten — panggilan berulang
  * setelah SDP sudah di-set aman karena kita cek `signalingState`.
  */
+
+/**
+ * Pemanggil: ulang negosiasi ICE tanpa memutus panggilan. Dipakai saat
+ * jaringan berpindah (WiFi ↔ seluler) atau koneksi sempat "disconnected".
+ */
+export async function restartIce(session: PeerSession): Promise<void> {
+  const { pc, channel, meId } = session;
+  if (pc.connectionState === "closed") return;
+  const offer = await pc.createOffer({ iceRestart: true });
+  await pc.setLocalDescription(offer);
+  void channel.send({
+    type: "broadcast",
+    event: "signal",
+    payload: { t: "offer", from: meId, sdp: offer } satisfies CallSignal,
+  });
+}
+
 export async function startOffer(session: PeerSession): Promise<void> {
   const { pc, channel, meId } = session;
   if (pc.signalingState !== "stable" && pc.localDescription) {
