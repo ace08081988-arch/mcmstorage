@@ -1335,6 +1335,37 @@ function PaymentsReport({
  * lebih ramah mobile: input tetap terlihat, tap target besar, hasil
  * difilter secara lokal tanpa request tambahan ke backend.
  */
+
+/** Riwayat kontak terakhir dipilih (per user + per jenis), max 5 id. */
+const RECENT_LIMIT = 5;
+function recentKey(uid: string | null, kind: Kind) {
+  return scopedKey("mcm:hutangPiutang:recentParty", uid, kind);
+}
+function readRecentParties(uid: string | null, kind: Kind): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(recentKey(uid, kind));
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed)
+      ? parsed.filter((v): v is string => typeof v === "string").slice(0, RECENT_LIMIT)
+      : [];
+  } catch {
+    return [];
+  }
+}
+function pushRecentParty(uid: string | null, kind: Kind, id: string): string[] {
+  const next = [id, ...readRecentParties(uid, kind).filter((v) => v !== id)].slice(
+    0,
+    RECENT_LIMIT,
+  );
+  try {
+    window.localStorage.setItem(recentKey(uid, kind), JSON.stringify(next));
+  } catch {
+    /* private mode — abaikan */
+  }
+  return next;
+}
+
 function SearchablePartySelect({
   options,
   value,
@@ -1342,6 +1373,7 @@ function SearchablePartySelect({
   onOpenChange,
   placeholder,
   kind,
+  recentIds = [],
 }: {
   options: Party[];
   value: string;
@@ -1349,20 +1381,30 @@ function SearchablePartySelect({
   onOpenChange?: (open: boolean) => void;
   placeholder?: string;
   kind: Kind;
+  recentIds?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = useMemo(() => {
+  const { recent, rest } = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return options;
-    return options.filter(
-      (o) =>
-        o.name.toLowerCase().includes(q) ||
-        (o.contact ?? "").toLowerCase().includes(q),
-    );
-  }, [options, query]);
+    const match = q
+      ? options.filter(
+          (o) =>
+            o.name.toLowerCase().includes(q) ||
+            (o.contact ?? "").toLowerCase().includes(q),
+        )
+      : options;
+    const rank = new Map(recentIds.map((id, i) => [id, i]));
+    const recentList = match
+      .filter((o) => rank.has(o.id))
+      .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+    return {
+      recent: recentList,
+      rest: match.filter((o) => !rank.has(o.id)),
+    };
+  }, [options, query, recentIds]);
 
   const selected = options.find((o) => o.id === value);
 
@@ -1408,32 +1450,70 @@ function SearchablePartySelect({
           />
         </div>
         <div className="max-h-[260px] overflow-y-auto p-1">
-          {filtered.length === 0 ? (
+          {recent.length + rest.length === 0 ? (
             <div className="py-6 text-center text-ms-sm text-muted-foreground">
               Tidak ditemukan
             </div>
           ) : (
-            filtered.map((o) => (
-              <button
-                key={o.id}
-                type="button"
-                onClick={() => {
-                  onChange(o.id);
-                  setOpen(false);
-                  onOpenChange?.(false);
-                }}
-                className="relative flex w-full items-center rounded-sm px-2 py-2 text-ms-sm text-left outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                <span className="flex-1 truncate">{o.name}</span>
-                {value === o.id && (
-                  <Check className="ml-2 h-4 w-4 shrink-0" />
-                )}
-              </button>
-            ))
+            <>
+              {recent.length > 0 && (
+                <div className="px-2 pb-1 pt-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Terakhir dipakai
+                </div>
+              )}
+              {recent.map((o) => (
+                <PartyOptionRow
+                  key={o.id}
+                  option={o}
+                  selected={value === o.id}
+                  onPick={() => {
+                    onChange(o.id);
+                    setOpen(false);
+                    onOpenChange?.(false);
+                  }}
+                />
+              ))}
+              {recent.length > 0 && rest.length > 0 && (
+                <div className="my-1 border-t" />
+              )}
+              {rest.map((o) => (
+                <PartyOptionRow
+                  key={o.id}
+                  option={o}
+                  selected={value === o.id}
+                  onPick={() => {
+                    onChange(o.id);
+                    setOpen(false);
+                    onOpenChange?.(false);
+                  }}
+                />
+              ))}
+            </>
           )}
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function PartyOptionRow({
+  option,
+  selected,
+  onPick,
+}: {
+  option: Party;
+  selected: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      className="relative flex w-full items-center rounded-sm px-2 py-2 text-left text-ms-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+    >
+      <span className="flex-1 truncate">{option.name}</span>
+      {selected && <Check className="ml-2 h-4 w-4 shrink-0" />}
+    </button>
   );
 }
 
