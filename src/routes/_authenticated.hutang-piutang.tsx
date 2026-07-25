@@ -1565,6 +1565,7 @@ function SearchablePartySelect({
                       key={o.id}
                       option={o}
                       selected={value === o.id}
+                      query={query}
                       onPick={() => {
                         onChange(o.id);
                         setOpen(false);
@@ -1580,6 +1581,7 @@ function SearchablePartySelect({
                       key={o.id}
                       option={o}
                       selected={value === o.id}
+                      query={query}
                       onPick={() => {
                         onChange(o.id);
                         setOpen(false);
@@ -1653,19 +1655,23 @@ function SearchablePartySelect({
 function PartyOptionRow({
   option,
   selected,
+  query,
   onPick,
 }: {
   option: Party;
   selected: boolean;
+  query: string;
   onPick: () => void;
 }) {
   return (
     <div className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-ms-sm transition-colors hover:bg-accent hover:text-accent-foreground">
       <div className="min-w-0 flex-1">
-        <div className="truncate font-medium">{option.name}</div>
+        <div className="truncate font-medium">
+          <HighlightText text={option.name} query={query} />
+        </div>
         {option.contact && (
           <div className="truncate text-ms-2xs text-muted-foreground">
-            {option.contact}
+            <HighlightText text={option.contact} query={query} />
           </div>
         )}
       </div>
@@ -1690,6 +1696,36 @@ function PartyOptionRow({
       )}
     </div>
   );
+}
+
+function HighlightText({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+  const lower = q.toLowerCase();
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+  while (remaining.length > 0) {
+    const idx = remaining.toLowerCase().indexOf(lower);
+    if (idx === -1) {
+      parts.push(<span key={key++}>{remaining}</span>);
+      break;
+    }
+    if (idx > 0) {
+      parts.push(<span key={key++}>{remaining.slice(0, idx)}</span>);
+    }
+    const match = remaining.slice(idx, idx + q.length);
+    parts.push(
+      <mark
+        key={key++}
+        className="rounded-sm bg-primary/20 px-0.5 font-semibold text-primary"
+      >
+        {match}
+      </mark>,
+    );
+    remaining = remaining.slice(idx + q.length);
+  }
+  return <>{parts}</>;
 }
 
 function AddDebtDialog({
