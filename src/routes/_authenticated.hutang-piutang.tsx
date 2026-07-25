@@ -1730,6 +1730,7 @@ function AddDebtDialog({
   // selama dropdown terbuka dan sesaat setelahnya.
   const selectGuardRef = useRef(0);
   const [recentIds, setRecentIds] = useState<string[]>([]);
+  const [createdParties, setCreatedParties] = useState<Party[]>([]);
   const handleOpenChange = (v: boolean) => {
     if (!v && Date.now() < selectGuardRef.current) return;
     onOpenChange(v);
