@@ -13,6 +13,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   ArrowLeft,
   Plus,
   Wallet,
@@ -24,6 +29,9 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Scale,
+  Search,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
 import { assertDebtSource } from "@/lib/debt-source";
 import {
