@@ -1451,8 +1451,32 @@ function SearchablePartySelect({
         </div>
         <div className="max-h-[260px] overflow-y-auto p-1">
           {recent.length + rest.length === 0 ? (
-            <div className="py-6 text-center text-ms-sm text-muted-foreground">
-              Tidak ditemukan
+            <div className="px-3 py-6 text-center">
+              <div className="mx-auto mb-2 grid h-9 w-9 place-items-center rounded-full bg-muted">
+                <Search className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-ms-sm font-medium text-foreground">
+                Tidak ada kontak yang cocok
+              </div>
+              <div className="mt-1 text-ms-2xs text-muted-foreground">
+                {query.trim() ? (
+                  <>
+                    Pencarian untuk "<span className="font-medium text-foreground">{query.trim()}</span>" tidak menemukan nama atau nomor.
+                  </>
+                ) : (
+                  "Belum ada data " + (kind === "hutang" ? "supplier" : "customer") + " tersimpan."
+                )}
+              </div>
+              {query.trim() && (
+                <div className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
+                  <div className="font-medium text-foreground">Saran pencarian:</div>
+                  <ul className="list-disc space-y-0.5 pl-4 text-left">
+                    <li>Coba singkatan atau nama panggilan</li>
+                    <li>Gunakan nomor HP awalan 08 tanpa spasi/titik</li>
+                    <li>Periksa ejaan atau huruf kecil/besar</li>
+                  </ul>
+                </div>
+              )}
             </div>
           ) : (
             <>
