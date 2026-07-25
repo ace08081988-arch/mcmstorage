@@ -1886,6 +1886,7 @@ function AddDebtDialog({
                 kind={kind}
                 placeholder="Pilih…"
                 recentIds={recentIds}
+                uid={uid}
                 onChange={(v) => {
                   selectGuardRef.current = Date.now() + 600;
                   setPartyId(v);
@@ -1895,6 +1896,10 @@ function AddDebtDialog({
                   selectGuardRef.current = o
                     ? Number.MAX_SAFE_INTEGER
                     : Date.now() + 600;
+                }}
+                onCreate={(party) => {
+                  setCreatedParties((prev) => [...prev, party]);
+                  setRecentIds(pushRecentParty(uid, kind, party.id));
                 }}
               />
             )}
