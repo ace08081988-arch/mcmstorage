@@ -1617,9 +1617,12 @@ function AddDebtDialog({
                 placeholder="cth: Pak Andi"
               />
             ) : (
-              <Select
+              <SearchablePartySelect
+                options={partyOptions}
                 value={partyId}
-                onValueChange={(v) => {
+                kind={kind}
+                placeholder="Pilih…"
+                onChange={(v) => {
                   selectGuardRef.current = Date.now() + 600;
                   setPartyId(v);
                 }}
@@ -1628,18 +1631,7 @@ function AddDebtDialog({
                     ? Number.MAX_SAFE_INTEGER
                     : Date.now() + 600;
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {partyOptions.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             )}
           </div>
 
