@@ -119,7 +119,32 @@ async function getLocalMedia(kind: CallKind): Promise<MediaStream> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error("Perangkat/browser tidak mendukung panggilan.");
   }
-  return await navigator.mediaDevices.getUserMedia(constraints);
+  try {
+    return await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (err) {
+    const name = (err as { name?: string })?.name ?? "";
+    // Panggilan video: bila kamera bermasalah (dipakai app lain / tidak
+    // ada), jangan gagal total — turunkan ke audio saja supaya panggilan
+    // tetap tersambung.
+    if (kind === "video" && (name === "NotFoundError" || name === "NotReadableError" || name === "OverconstrainedError")) {
+      try {
+        return await navigator.mediaDevices.getUserMedia({ audio: constraints.audio, video: false });
+      } catch { /* lanjut ke pesan error di bawah */ }
+    }
+    if (name === "NotAllowedError" || name === "SecurityError") {
+      throw new Error(
+        "Izin mikrofon/kamera ditolak. Buka Pengaturan aplikasi → Izin, lalu aktifkan Mikrofon" +
+          (kind === "video" ? " dan Kamera." : "."),
+      );
+    }
+    if (name === "NotFoundError") {
+      throw new Error("Mikrofon tidak terdeteksi di perangkat ini.");
+    }
+    if (name === "NotReadableError") {
+      throw new Error("Mikrofon/kamera sedang dipakai aplikasi lain. Tutup aplikasi tersebut lalu coba lagi.");
+    }
+    throw err as Error;
+  }
 }
 
 /**
@@ -245,6 +270,23 @@ export async function createPeerSession(opts: {
  * belum menjawab (maks 3× tiap 2 detik). Idempoten — panggilan berulang
  * setelah SDP sudah di-set aman karena kita cek `signalingState`.
  */
+
+/**
+ * Pemanggil: ulang negosiasi ICE tanpa memutus panggilan. Dipakai saat
+ * jaringan berpindah (WiFi ↔ seluler) atau koneksi sempat "disconnected".
+ */
+export async function restartIce(session: PeerSession): Promise<void> {
+  const { pc, channel, meId } = session;
+  if (pc.connectionState === "closed") return;
+  const offer = await pc.createOffer({ iceRestart: true });
+  await pc.setLocalDescription(offer);
+  void channel.send({
+    type: "broadcast",
+    event: "signal",
+    payload: { t: "offer", from: meId, sdp: offer } satisfies CallSignal,
+  });
+}
+
 export async function startOffer(session: PeerSession): Promise<void> {
   const { pc, channel, meId } = session;
   if (pc.signalingState !== "stable" && pc.localDescription) {
