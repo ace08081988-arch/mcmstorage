@@ -1565,6 +1565,7 @@ function SearchablePartySelect({
                       key={o.id}
                       option={o}
                       selected={value === o.id}
+                      query={query}
                       onPick={() => {
                         onChange(o.id);
                         setOpen(false);
