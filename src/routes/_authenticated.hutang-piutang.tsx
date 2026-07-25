@@ -1360,6 +1360,15 @@ function AddDebtDialog({
   const [due, setDue] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  // Di Android WebView, "touch release" setelah memilih item Select bisa
+  // tembus ke overlay Dialog sehingga dialog ikut tertutup dan user
+  // terlempar balik ke halaman Hutang & Piutang. Kunci penutupan dialog
+  // selama dropdown terbuka dan sesaat setelahnya.
+  const selectGuardRef = useRef(0);
+  const handleOpenChange = (v: boolean) => {
+    if (!v && Date.now() < selectGuardRef.current) return;
+    onOpenChange(v);
+  };
 
   useEffect(() => {
     if (open) {
@@ -1427,8 +1436,16 @@ function AddDebtDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="sm:max-w-md"
+        onPointerDownOutside={(e) => {
+          if (Date.now() < selectGuardRef.current) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (Date.now() < selectGuardRef.current) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Tambah catatan</DialogTitle>
           <DialogDescription>
@@ -1485,7 +1502,18 @@ function AddDebtDialog({
                 placeholder="cth: Pak Andi"
               />
             ) : (
-              <Select value={partyId} onValueChange={setPartyId}>
+              <Select
+                value={partyId}
+                onValueChange={(v) => {
+                  selectGuardRef.current = Date.now() + 600;
+                  setPartyId(v);
+                }}
+                onOpenChange={(o) => {
+                  selectGuardRef.current = o
+                    ? Number.MAX_SAFE_INTEGER
+                    : Date.now() + 600;
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih…" />
                 </SelectTrigger>
