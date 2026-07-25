@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { callChannelName, userInboxChannelName, type CallKind, type CallSignal } from "@/lib/webrtc";
 import { fetchCall, markEnded } from "@/lib/calls";
+import {
+  clearIncomingCallNotification,
+  ensureNotificationPermission,
+  showIncomingCallNotification,
+} from "@/lib/call-notification";
 import { CallScreen } from "@/components/chat/CallScreen";
 
 /**
@@ -57,6 +62,23 @@ export function CallHost() {
     });
     return () => { mounted = false; };
   }, []);
+
+  // Minta izin notifikasi lebih awal supaya saat ada panggilan masuk
+  // notifikasi OS bisa langsung tampil (Android 13+ butuh runtime grant).
+  useEffect(() => {
+    if (!meId) return;
+    void ensureNotificationPermission();
+  }, [meId]);
+
+  // Notifikasi sistem + getar selama dialog panggilan masuk tampil.
+  useEffect(() => {
+    if (!incoming) return;
+    void showIncomingCallNotification({
+      callerName: incoming.callerName,
+      kind: incoming.kind === "video" ? "video" : "audio",
+    });
+    return () => { void clearIncomingCallNotification(); };
+  }, [incoming]);
 
   // Inbox: dengarkan ring masuk.
   useEffect(() => {
