@@ -1494,24 +1494,24 @@ function ChatRoomPage() {
               `Grup · ${members.data?.length ?? 0} anggota`
             )}
           </div>
-          {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
+          {meta.data?.kind === "dm" && myId ? (
             <div className="mt-0.5 flex max-w-full items-center sm:hidden">
               <ChatHeaderDebtControls
                 myId={myId}
-                peerUserId={dmPeer.peerUserId}
-                peerPhone={dmPeer.peerPhone ?? null}
+                peerUserId={dmPeer?.peerUserId ?? null}
+                peerPhone={dmPeer?.peerPhone ?? null}
                 peerName={displayedPeerName}
               />
             </div>
           ) : null}
         </div>
-        {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
+        {meta.data?.kind === "dm" && myId ? (
           <>
             <div className="hidden sm:flex">
               <ChatHeaderDebtControls
                 myId={myId}
-                peerUserId={dmPeer.peerUserId}
-                peerPhone={dmPeer.peerPhone ?? null}
+                peerUserId={dmPeer?.peerUserId ?? null}
+                peerPhone={dmPeer?.peerPhone ?? null}
                 peerName={displayedPeerName}
               />
             </div>
@@ -2807,7 +2807,7 @@ function ChatRoomPage() {
         <PeerProfileDialog
           open={peerProfileOpen}
           onOpenChange={setPeerProfileOpen}
-          peerUserId={dmPeer.peerUserId}
+          peerUserId={dmPeer?.peerUserId ?? null}
           displayName={displayedPeerName}
           peerPhone={dmPeer.peerPhone}
           peerInviteCode={
