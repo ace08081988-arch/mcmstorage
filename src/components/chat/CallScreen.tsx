@@ -47,6 +47,8 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { logCall } from "@/lib/call-diagnostics";
+import { CallDiagnosticsSheet } from "@/components/chat/CallDiagnosticsSheet";
 
 /**
  * Full-screen UI panggilan. Bertanggung jawab atas: setup peer, negosiasi
@@ -74,6 +76,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
    */
   const [recovery, setRecovery] = useState<"idle" | "recovering" | "recovered" | "failed">("idle");
   const [recoveryAttempt, setRecoveryAttempt] = useState(0);
+  const [diagOpen, setDiagOpen] = useState(false);
   const [finalStatus, setFinalStatus] = useState<
     "ended" | "declined" | "missed" | "cancelled" | "failed" | null
   >(null);
@@ -764,6 +767,12 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     async (status: "ended" | "declined" | "missed" | "cancelled" | "failed", reason?: string) => {
       if (doneRef.current) return;
       doneRef.current = true;
+      logCall(callId, "finalize", `finalize: ${status}`, {
+        reason: reason ?? null,
+        iceConnectionState: sessionRef.current?.pc.iceConnectionState ?? null,
+        signalingState: sessionRef.current?.pc.signalingState ?? null,
+        connectionState: sessionRef.current?.pc.connectionState ?? null,
+      });
       if (iceRecoverTimerRef.current) {
         clearTimeout(iceRecoverTimerRef.current);
         iceRecoverTimerRef.current = null;
