@@ -827,6 +827,19 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 }
                 iceRestartCountRef.current = 0;
                 setErrorMsg(null);
+                // Hanya tampilkan "pulih" bila memang sempat terputus.
+                setRecovery((prev) => {
+                  if (prev !== "recovering") return "idle";
+                  toast.success("Koneksi pulih", {
+                    description: "Panggilan tersambung kembali.",
+                  });
+                  if (recoveredHideTimerRef.current) clearTimeout(recoveredHideTimerRef.current);
+                  recoveredHideTimerRef.current = setTimeout(() => {
+                    recoveredHideTimerRef.current = null;
+                    setRecovery("idle");
+                  }, 3000);
+                  return "recovered";
+                });
                 return;
               }
               if (s !== "failed" && s !== "disconnected") return;
@@ -835,17 +848,27 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               // Coba ICE restart (dari sisi caller) dan tunggu sebentar
               // sebelum benar-benar mengakhiri panggilan.
               setErrorMsg("Koneksi tidak stabil — mencoba menyambung ulang…");
+              if (recoveredHideTimerRef.current) {
+                clearTimeout(recoveredHideTimerRef.current);
+                recoveredHideTimerRef.current = null;
+              }
+              setRecovery("recovering");
               if (role === "caller" && sessionRef.current && iceRestartCountRef.current < 2) {
                 iceRestartCountRef.current += 1;
+                setRecoveryAttempt(iceRestartCountRef.current);
                 void restartIce(sessionRef.current).catch(() => { /* ignore */ });
+              } else {
+                setRecoveryAttempt(0);
               }
               iceRecoverTimerRef.current = setTimeout(() => {
                 iceRecoverTimerRef.current = null;
                 const st = sessionRef.current?.pc.iceConnectionState;
                 if (st === "connected" || st === "completed") {
                   setErrorMsg(null);
+                  setRecovery("idle");
                   return;
                 }
+                setRecovery("failed");
                 void finalize("failed", `ice:${st ?? s}`);
               }, s === "failed" ? 6000 : 10000);
             },
