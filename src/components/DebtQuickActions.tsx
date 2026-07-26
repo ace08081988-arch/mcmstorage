@@ -253,6 +253,28 @@ export function DebtQuickActions({
   if (!data) return null;
 
   if (!data.party) {
+    const regName = (peerName ?? "").trim();
+    const canRegister = !!uid && regName.length > 0;
+    const registerParty = async (table: "customers" | "suppliers") => {
+      if (!canRegister) return;
+      setRegistering(table);
+      try {
+        const payload: Record<string, unknown> = { user_id: uid, name: regName };
+        if (peerPhone) payload.contact = peerPhone;
+        const accId = data.accountUserId ?? peerAccountUserId ?? null;
+        if (accId) payload.account_user_id = accId;
+        const { error } = await supabase.from(table).insert(payload as never);
+        if (error) throw error;
+        toast.success(
+          `${regName} terdaftar sebagai ${table === "customers" ? "pelanggan" : "supplier"}. Pencatatan hutang/piutang aktif.`,
+        );
+        await qc.invalidateQueries({ queryKey });
+      } catch (e) {
+        toast.error((e as { message?: string })?.message ?? "Gagal mendaftarkan kontak.");
+      } finally {
+        setRegistering(null);
+      }
+    };
     return (
       <div className="rounded-md border border-dashed bg-muted/20 p-ms-2 text-ms-2xs text-muted-foreground">
         <div className="flex items-center gap-ms-1.5">
@@ -261,8 +283,32 @@ export function DebtQuickActions({
         </div>
         <p className="mt-1 leading-snug">
           {peerName ? <b>{peerName}</b> : "Lawan"} belum terdaftar sebagai pelanggan atau supplier.
-          Tambahkan di menu Kontak / Pelanggan agar tombol pencatatan aktif.
+          Daftarkan sekali di sini agar pencatatan dari chat ikut tersinkron ke Hutang &amp; Piutang.
         </p>
+        {canRegister ? (
+          <div className="mt-2 flex flex-wrap gap-ms-1.5">
+            <button
+              type="button"
+              onClick={() => void registerParty("customers")}
+              disabled={registering !== null}
+              className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-success/60 bg-success/10 px-ms-2 font-semibold text-success hover:bg-success/20 disabled:opacity-50 dark:text-success"
+            >
+              {registering === "customers" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+              Daftarkan sebagai pelanggan
+            </button>
+            <button
+              type="button"
+              onClick={() => void registerParty("suppliers")}
+              disabled={registering !== null}
+              className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-warning/60 bg-warning/10 px-ms-2 font-semibold text-warning hover:bg-warning/20 disabled:opacity-50 dark:text-warning"
+            >
+              {registering === "suppliers" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+              Daftarkan sebagai supplier
+            </button>
+          </div>
+        ) : (
+          <p className="mt-1 leading-snug">Nama lawan belum diketahui — buka chat/kontaknya dulu.</p>
+        )}
       </div>
     );
   }
