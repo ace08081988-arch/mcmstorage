@@ -1301,9 +1301,18 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
 
   const status = useMemo(() => {
     if (errorMsg && phase === "ended") return errorMsg;
+    if (phase !== "ended") {
+      if (recovery === "recovering") {
+        return recoveryAttempt > 0
+          ? `Memulihkan koneksi… (percobaan ${recoveryAttempt})`
+          : "Memulihkan koneksi…";
+      }
+      if (recovery === "recovered") return "Koneksi pulih";
+    }
+    if (phase === "ended" && recovery === "failed") return "Gagal memulihkan koneksi";
     if (phase === "in-call") return formatCallDuration(seconds);
     return visual.label;
-  }, [phase, seconds, errorMsg, visual.label]);
+  }, [phase, seconds, errorMsg, visual.label, recovery, recoveryAttempt]);
 
   const activeDevice = useMemo<OutputDevice | null>(() => {
     if (outputs.length === 0) return null;
