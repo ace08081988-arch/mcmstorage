@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+import * as React from "react";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { VirtualizedList } from "@/components/VirtualizedList";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
@@ -99,6 +101,37 @@ function ChatListPage() {
       return next;
     });
   }, []);
+  // Handler stabil supaya baris daftar (memo) tidak ikut re-render tiap render induk.
+  const handlePin = useCallback(
+    (c: { id: string; pinned_at?: string | null }) =>
+      pin.mutate(
+        { conversationId: c.id, pin: !c.pinned_at },
+        { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
+      ),
+    [pin],
+  );
+  const handleArchive = useCallback(
+    (c: { id: string; archived_at?: string | null }) =>
+      archive.mutate(
+        { conversationId: c.id, archive: !c.archived_at },
+        {
+          onSuccess: () =>
+            toast.success(c.archived_at ? "Percakapan dikembalikan" : "Percakapan diarsipkan"),
+        },
+      ),
+    [archive],
+  );
+  const handleMute = useCallback(
+    (c: { id: string }, until: Date | null) =>
+      mute.mutate(
+        { conversationId: c.id, until },
+        {
+          onSuccess: () =>
+            toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
+        },
+      ),
+    [mute],
+  );
   // Pantau path aktif untuk menandai item menu yang sedang dibuka.
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
   const isPathActive = (to: string): boolean =>
@@ -654,27 +687,9 @@ function ChatListPage() {
                   </div>
                 </div>
               }
-              onPin={(c) =>
-                pin.mutate(
-                  { conversationId: c.id, pin: !c.pinned_at },
-                  { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                )
-              }
-              onArchive={(c) =>
-                archive.mutate(
-                  { conversationId: c.id, archive: true },
-                  { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                )
-              }
-              onMute={(c, until) =>
-                mute.mutate(
-                  { conversationId: c.id, until },
-                  {
-                    onSuccess: () =>
-                      toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                  },
-                )
-              }
+              onPin={handlePin}
+              onArchive={handleArchive}
+              onMute={handleMute}
             />
           </TabsContent>
           <TabsContent value="customer">
@@ -705,27 +720,9 @@ function ChatListPage() {
                             onLongPressStart={toggleSelect}
                             onRowTap={toggleSelect}
                             empty={null}
-                            onPin={(c) =>
-                              pin.mutate(
-                                { conversationId: c.id, pin: !c.pinned_at },
-                                { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                              )
-                            }
-                            onArchive={(c) =>
-                              archive.mutate(
-                                { conversationId: c.id, archive: true },
-                                { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                              )
-                            }
-                            onMute={(c, until) =>
-                              mute.mutate(
-                                { conversationId: c.id, until },
-                                {
-                                  onSuccess: () =>
-                                    toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                                },
-                              )
-                            }
+                            onPin={handlePin}
+                            onArchive={handleArchive}
+                            onMute={handleMute}
                           />
                         </AccordionContent>
                       </AccordionItem>
@@ -745,27 +742,9 @@ function ChatListPage() {
                       onLongPressStart={toggleSelect}
                       onRowTap={toggleSelect}
                       empty={null}
-                      onPin={(c) =>
-                        pin.mutate(
-                          { conversationId: c.id, pin: !c.pinned_at },
-                          { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                        )
-                      }
-                      onArchive={(c) =>
-                        archive.mutate(
-                          { conversationId: c.id, archive: true },
-                          { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                        )
-                      }
-                      onMute={(c, until) =>
-                        mute.mutate(
-                          { conversationId: c.id, until },
-                          {
-                            onSuccess: () =>
-                              toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                          },
-                        )
-                      }
+                      onPin={handlePin}
+                      onArchive={handleArchive}
+                      onMute={handleMute}
                     />
                   </div>
                 ) : null}
@@ -785,27 +764,9 @@ function ChatListPage() {
                   Belum ada chat karyawan.
                 </div>
               }
-              onPin={(c) =>
-                pin.mutate(
-                  { conversationId: c.id, pin: !c.pinned_at },
-                  { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                )
-              }
-              onArchive={(c) =>
-                archive.mutate(
-                  { conversationId: c.id, archive: true },
-                  { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                )
-              }
-              onMute={(c, until) =>
-                mute.mutate(
-                  { conversationId: c.id, until },
-                  {
-                    onSuccess: () =>
-                      toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                  },
-                )
-              }
+              onPin={handlePin}
+              onArchive={handleArchive}
+              onMute={handleMute}
             />
           </TabsContent>
           <TabsContent value="internal">
@@ -821,27 +782,9 @@ function ChatListPage() {
                   Belum ada catatan internal.
                 </div>
               }
-              onPin={(c) =>
-                pin.mutate(
-                  { conversationId: c.id, pin: !c.pinned_at },
-                  { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                )
-              }
-              onArchive={(c) =>
-                archive.mutate(
-                  { conversationId: c.id, archive: true },
-                  { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                )
-              }
-              onMute={(c, until) =>
-                mute.mutate(
-                  { conversationId: c.id, until },
-                  {
-                    onSuccess: () =>
-                      toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                  },
-                )
-              }
+              onPin={handlePin}
+              onArchive={handleArchive}
+              onMute={handleMute}
             />
           </TabsContent>
           <TabsContent value="archived">
@@ -859,12 +802,7 @@ function ChatListPage() {
               }
               archivedView
               onPin={() => undefined}
-              onArchive={(c) =>
-                archive.mutate(
-                  { conversationId: c.id, archive: false },
-                  { onSuccess: () => toast.success("Dipulihkan ke Aktif") },
-                )
-              }
+              onArchive={handleArchive}
               onMute={() => undefined}
             />
           </TabsContent>
@@ -924,17 +862,55 @@ function ConvList({
     return <div className="rounded-lg border border-[var(--wa-border)] p-6">{empty}</div>;
   }
   return (
-    <div className="-mx-3">
-      <ul className="divide-y divide-[var(--wa-border)]/60">
-        {list.map((c) => {
-          const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
-          const isMuted = mutedUntil && mutedUntil.getTime() > Date.now();
-          const isSelected = selectedIds.has(c.id);
-          return (
-            <li
-              key={c.id}
-              className={`relative ${isSelected ? "bg-primary/10" : ""}`}
-            >
+    <div className="-mx-3 divide-y divide-[var(--wa-border)]/60">
+      <VirtualizedList
+        items={list}
+        getKey={(c) => c.id}
+        estimateSize={76}
+        gap={0}
+        renderItem={(c) => (
+          <ConvListItem
+            c={c}
+            archivedView={archivedView}
+            selecting={selecting}
+            isSelected={selectedIds.has(c.id)}
+            onPin={onPin}
+            onArchive={onArchive}
+            onMute={onMute}
+            onLongPressStart={onLongPressStart}
+            onRowTap={onRowTap}
+          />
+        )}
+      />
+    </div>
+  );
+}
+
+const ConvListItem = React.memo(function ConvListItem({
+  c,
+  archivedView,
+  selecting,
+  isSelected,
+  onPin,
+  onArchive,
+  onMute,
+  onLongPressStart,
+  onRowTap,
+}: {
+  c: ConvItem;
+  archivedView?: boolean;
+  selecting: boolean;
+  isSelected: boolean;
+  onPin: (c: ConvItem) => void;
+  onArchive: (c: ConvItem) => void;
+  onMute: (c: ConvItem, until: Date | null) => void;
+  onLongPressStart: (id: string) => void;
+  onRowTap: (id: string) => void;
+}) {
+  const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
+  const isMuted = !!(mutedUntil && mutedUntil.getTime() > Date.now());
+  return (
+    <div className={`relative ${isSelected ? "bg-primary/10" : ""}`}>
               <ConvRow
                 conv={c}
                 isMuted={!!isMuted}
@@ -1050,13 +1026,9 @@ function ConvList({
                 </DropdownMenu>
               </div>
               )}
-            </li>
-          );
-        })}
-      </ul>
     </div>
   );
-}
+});
 
 /**
  * Baris satu percakapan dengan dukungan tekan lama (long-press) untuk masuk
