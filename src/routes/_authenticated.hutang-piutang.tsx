@@ -221,11 +221,20 @@ function HutangPiutangPage() {
     if (s.data) setSuppliers(s.data as Party[]);
     if (c.data) setCustomers(c.data as Party[]);
     setLoading(false);
+    void refreshSsot();
   };
 
   useEffect(() => {
     if (uid) void refresh();
   }, [uid]);
+
+  // Transaksi hutang/piutang dari layar mana pun (Ecer, Kios, Request,
+  // aksi cepat) langsung menyegarkan halaman ini juga.
+  useOnDebtTx(
+    useCallback(() => {
+      if (uid) void refresh();
+    }, [uid]),
+  );
 
   // H21: realtime — pull fresh data when debts / payments change from another
   // tab or device so the piutang view isn't stale.
