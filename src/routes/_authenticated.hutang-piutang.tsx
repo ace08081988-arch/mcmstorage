@@ -631,14 +631,18 @@ function HutangPiutangPage() {
             <FinanceStatCard
               label="Total Piutang"
               value={rupiah(overall.piutangSisa)}
-              hint="Uang yang belum masuk"
+              hint={overall.fromSsot
+                ? "Uang belum masuk · catatan + penjualan hutang"
+                : "Uang belum masuk · catatan periode ini"}
               icon={ArrowDownCircle}
               tone="emerald"
             />
             <FinanceStatCard
               label="Total Hutang"
               value={rupiah(overall.hutangSisa)}
-              hint="Uang yang belum keluar"
+              hint={overall.fromSsot
+                ? "Uang belum keluar · catatan + pembelian hutang"
+                : "Uang belum keluar · catatan periode ini"}
               icon={ArrowUpCircle}
               tone="rose"
             />
