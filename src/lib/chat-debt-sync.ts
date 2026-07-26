@@ -13,10 +13,9 @@
  *
  * Pencocokan memakai nama percakapan (display_title) yang dinormalisasi.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 export type DebtSyncEntry = {
