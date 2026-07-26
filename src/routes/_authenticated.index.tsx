@@ -1737,8 +1737,10 @@ function Index() {
         </header>
 
         <main className="mx-auto w-full max-w-6xl px-ms-3 py-ms-3 sm:px-ms-6">
-        <SecurityScanReminder />
-        <SecurityFindingsBanner />
+        <Suspense fallback={null}>
+          <SecurityScanReminder />
+          <SecurityFindingsBanner />
+        </Suspense>
         {(() => {
           const total = scopedItems.length;
           const terkirim = scopedItems.filter((i) => i.status === "Sudah Dikirim");
