@@ -322,30 +322,32 @@ function RiwayatKiosPage() {
             .
           </div>
         ) : (
-          <ul className="space-y-2">
-            {filtered.map((r) => (
-              <li key={`${r.kind}:${r.id}`}>
-                <Link
-                  to="/kios/riwayat/$kind/$id"
-                  params={{ kind: r.kind, id: r.id }}
-                  className="block rounded-lg border bg-card p-3 transition hover:bg-accent"
-                >
-                  {r.kind === "terima" ? (
-                    <TerimaRow r={r} />
-                  ) : (
-                    <JualRow r={r} />
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <VirtualizedList
+            items={filtered}
+            getKey={(r) => `${r.kind}:${r.id}`}
+            estimateSize={96}
+            gap={8}
+            renderItem={(r) => <HistoryCard r={r} />}
+          />
         )}
       </main>
     </div>
   );
 }
 
-function TerimaRow({
+const HistoryCard = React.memo(function HistoryCard({ r }: { r: Row }) {
+  return (
+    <Link
+      to="/kios/riwayat/$kind/$id"
+      params={{ kind: r.kind, id: r.id }}
+      className="block rounded-lg border bg-card p-3 transition hover:bg-accent"
+    >
+      {r.kind === "terima" ? <TerimaRow r={r} /> : <JualRow r={r} />}
+    </Link>
+  );
+});
+
+const TerimaRow = React.memo(function TerimaRow({
   r,
 }: {
   r: Extract<Row, { kind: "terima" }>;
