@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -210,6 +210,25 @@ export function ChatHeaderDebtControls({
     return items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
   }, [debtsQ.data]);
 
+  const [historyQuery, setHistoryQuery] = useState("");
+  const filteredHistory = useMemo(() => {
+    const q = historyQuery.trim().toLowerCase();
+    if (!q) return history;
+    return history.filter((h) => {
+      const amount = String(h.amount);
+      const note = (h.note ?? "").toLowerCase();
+      const type = (h.type === "tagihan" ? "tagihan" : "pembayaran").toLowerCase();
+      const kind = (h.kind === "hutang" ? "hutang" : "piutang").toLowerCase();
+      return (
+        amount.includes(q) ||
+        rupiah(h.amount).toLowerCase().includes(q) ||
+        note.includes(q) ||
+        type.includes(q) ||
+        kind.includes(q)
+      );
+    });
+  }, [history, historyQuery]);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -277,9 +296,37 @@ export function ChatHeaderDebtControls({
           Tersinkron langsung ke Hutang & Piutang MCM Storage.
         </p>
         <div className="mt-3 border-t pt-2">
-          <div className="mb-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Riwayat perubahan
+          <div className="mb-1.5 flex items-center justify-between gap-ms-2">
+            <span className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Riwayat perubahan
+            </span>
+            {!debtsQ.isLoading && history.length > 0 && (
+              <span className="text-ms-2xs text-muted-foreground">
+                {filteredHistory.length}/{history.length}
+              </span>
+            )}
           </div>
+          {!debtsQ.isLoading && history.length > 0 && (
+            <div className="relative mb-2">
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={historyQuery}
+                onChange={(e) => setHistoryQuery(e.target.value)}
+                placeholder="Cari nominal, catatan, jenis…"
+                className="h-8 pl-7 pr-7 text-ms-xs"
+              />
+              {historyQuery && (
+                <button
+                  type="button"
+                  onClick={() => setHistoryQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  aria-label="Hapus kata kunci"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
           {debtsQ.isLoading ? (
             <div className="flex items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" /> Memuat…
@@ -288,23 +335,38 @@ export function ChatHeaderDebtControls({
             <p className="text-ms-2xs text-muted-foreground">
               Belum ada perubahan tercatat.
             </p>
+          ) : filteredHistory.length === 0 ? (
+            <p className="text-ms-2xs text-muted-foreground">
+              Tidak ada riwayat cocok dengan “{historyQuery}”.
+            </p>
           ) : (
             <ul className="max-h-40 space-y-1 overflow-y-auto pr-1">
-              {history.slice(0, 30).map((h) => (
+              {filteredHistory.slice(0, 30).map((h) => (
                 <li
                   key={h.id}
                   className="flex items-start justify-between gap-ms-2 rounded-md bg-muted/40 px-2 py-1"
                 >
                   <div className="min-w-0">
                     <div className="text-ms-2xs font-medium">
-                      {h.type === "tagihan" ? "Tambah tagihan" : "Pembayaran"}
+                      {highlight(
+                        h.type === "tagihan" ? "Tambah tagihan" : "Pembayaran",
+                        historyQuery,
+                      )}
                       <span className="ml-1 font-normal text-muted-foreground">
-                        {h.kind === "hutang" ? "hutang" : "piutang"}
+                        {highlight(
+                          h.kind === "hutang" ? "hutang" : "piutang",
+                          historyQuery,
+                        )}
                       </span>
                     </div>
                     <div className="truncate text-ms-2xs text-muted-foreground">
                       {formatWhen(h.at)}
-                      {h.note ? ` · ${h.note}` : ""}
+                      {h.note ? (
+                        <span>
+                          {" · "}
+                          {highlight(h.note, historyQuery)}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                   <span
@@ -335,6 +397,20 @@ function formatWhen(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function highlight(text: string, query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="rounded bg-primary/20 px-0.5">{text.slice(idx, idx + q.length)}</mark>
+      {text.slice(idx + q.length)}
+    </>
+  );
 }
 
 function KindRow({
