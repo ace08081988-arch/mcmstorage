@@ -329,8 +329,14 @@ function HutangPiutangPage() {
       if (d.kind === "hutang") hutangSisa += sisa;
       else piutangSisa += sisa;
     }
-    return { hutangSisa, piutangSisa, net: piutangSisa - hutangSisa };
-  }, [debtsInPeriod, paidByDebt]);
+    // Saat periode "semua", pakai SSOT gabungan supaya identik dengan
+    // Dashboard/Gudang/chat. Untuk periode terfilter, angka manual di
+    // periode itu yang relevan (SSOT bersifat all-time).
+    const useSsot = period === "all" && ssot !== null;
+    const h = useSsot ? ssot!.hutang : hutangSisa;
+    const p = useSsot ? ssot!.piutang : piutangSisa;
+    return { hutangSisa: h, piutangSisa: p, net: p - h, fromSsot: useSsot };
+  }, [debtsInPeriod, paidByDebt, period, ssot]);
 
   const financeStats = useMemo(() => {
     const today = new Date();
