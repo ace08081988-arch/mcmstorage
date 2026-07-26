@@ -97,7 +97,14 @@ function LabelPreviewPage() {
   const [samples, setSamples] = useState<Sample[]>(DEFAULT_SAMPLES);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(100);
+  // Fase loading pratinjau — dipakai untuk skeleton yang informatif.
+  const [phase, setPhase] = useState<"engine" | "render" | "ready">(
+    isJsPDFReady() ? "render" : "engine",
+  );
+  const [rebuilding, setRebuilding] = useState(false);
+  const [buildError, setBuildError] = useState<string | null>(null);
   const lastUrlRef = useRef<string | null>(null);
+  const firstBuildRef = useRef(true);
 
   const update = (idx: number, patch: Partial<Sample>) =>
     setSamples((arr) => arr.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
