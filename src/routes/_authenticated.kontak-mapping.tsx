@@ -1,15 +1,32 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, RefreshCw, UserPlus, Truck, CheckCircle2, Search, X } from "lucide-react";
+import { ArrowLeft, Loader2, RefreshCw, UserPlus, Truck, CheckCircle2, Search, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useConversations } from "@/lib/chat";
 import { normalizeParty } from "@/lib/chat-debt-sync";
+import {
+  findDuplicates,
+  kindLabel,
+  normalizeName,
+  type DupMatch,
+  type PartyCandidate,
+} from "@/lib/contact-dup";
 import { getCurrentUserId } from "@/lib/current-user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { goBackOr } from "@/lib/back-nav";
 
 export const Route = createFileRoute("/_authenticated/kontak-mapping")({
@@ -33,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/kontak-mapping")({
   component: KontakMappingPage,
 });
 
-type PartyRow = { id: string; name: string };
+type PartyRow = { id: string; name: string; contact?: string | null };
 
 function usePartyDirectory() {
   return useQuery({
@@ -41,8 +58,8 @@ function usePartyDirectory() {
     staleTime: 30_000,
     queryFn: async () => {
       const [sup, cus, deb] = await Promise.all([
-        supabase.from("suppliers").select("id,name").limit(2000),
-        supabase.from("customers").select("id,name").limit(2000),
+        supabase.from("suppliers").select("id,name,contact").limit(2000),
+        supabase.from("customers").select("id,name,contact").limit(2000),
         supabase.from("debts").select("party_name").limit(2000),
       ]);
       const suppliers = (sup.data ?? []) as PartyRow[];
@@ -51,7 +68,17 @@ function usePartyDirectory() {
       const supplierKeys = new Set(suppliers.map((s) => normalizeParty(s.name)));
       const customerKeys = new Set(customers.map((c) => normalizeParty(c.name)));
       const debtKeys = new Set(debtNames.map((n) => normalizeParty(n)));
-      return { supplierKeys, customerKeys, debtKeys };
+      const candidates: PartyCandidate[] = [
+        ...customers.map((c) => ({ id: c.id, name: c.name, contact: c.contact, kind: "customer" as const })),
+        ...suppliers.map((s) => ({ id: s.id, name: s.name, contact: s.contact, kind: "supplier" as const })),
+        ...Array.from(new Set(debtNames.filter(Boolean))).map((n) => ({
+          id: `debt:${n}`,
+          name: n,
+          contact: null,
+          kind: "debt" as const,
+        })),
+      ];
+      return { supplierKeys, customerKeys, debtKeys, candidates };
     },
   });
 }
@@ -64,6 +91,11 @@ function KontakMappingPage() {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [doneIds, setDoneIds] = useState<Record<string, "customer" | "supplier">>({});
+  const [confirm, setConfirm] = useState<{
+    row: { id: string; title: string };
+    kind: "customer" | "supplier";
+    dups: DupMatch[];
+  } | null>(null);
 
   const unmapped = useMemo(() => {
     if (!dir) return [];
@@ -81,11 +113,44 @@ function KontakMappingPage() {
     return out;
   }, [conversations, dir]);
 
+  /** Kandidat duplikat per kontak (nama mirip / nomor sama). */
+  const dupByRow = useMemo(() => {
+    const m = new Map<string, DupMatch[]>();
+    if (!dir) return m;
+    for (const row of unmapped) {
+      const dups = findDuplicates(row.title, dir.candidates);
+      if (dups.length) m.set(row.id, dups);
+    }
+    return m;
+  }, [unmapped, dir]);
+
   const filtered = useMemo(() => {
     const needle = normalizeParty(q);
     if (!needle) return unmapped;
-    return unmapped.filter((u) => u.key.includes(needle));
-  }, [unmapped, q]);
+    const loose = normalizeName(q);
+    const digits = q.replace(/\D+/g, "");
+    return unmapped.filter((u) => {
+      if (u.key.includes(needle)) return true;
+      if (loose && normalizeName(u.title).includes(loose)) return true;
+      if (digits.length >= 3 && u.title.replace(/\D+/g, "").includes(digits)) return true;
+      // cocokkan juga lewat nama kandidat mirip, agar "budi" menemukan "Pak Budi".
+      return (dupByRow.get(u.id) ?? []).some((d) => normalizeName(d.candidate.name).includes(loose));
+    });
+  }, [unmapped, q, dupByRow]);
+
+  const dupCount = useMemo(
+    () => filtered.filter((r) => (dupByRow.get(r.id) ?? []).length > 0).length,
+    [filtered, dupByRow],
+  );
+
+  const requestMap = (row: { id: string; title: string }, kind: "customer" | "supplier") => {
+    const dups = dupByRow.get(row.id) ?? [];
+    if (dups.length > 0) {
+      setConfirm({ row, kind, dups });
+      return;
+    }
+    void mapAs(row, kind);
+  };
 
   const mapAs = async (row: { id: string; title: string }, kind: "customer" | "supplier") => {
     setBusy(`${row.id}:${kind}`);
@@ -191,13 +256,31 @@ function KontakMappingPage() {
             <p className="text-xs text-muted-foreground">
               {filtered.length} kontak belum terpetakan
               {q ? ` (dari ${unmapped.length})` : ""}
+              {dupCount > 0 ? (
+                <span className="ml-1 text-amber-500">· {dupCount} berpotensi duplikat</span>
+              ) : null}
             </p>
             <ul className="divide-y rounded-lg border">
               {filtered.map((row) => {
                 const done = doneIds[row.id];
+                const dups = dupByRow.get(row.id) ?? [];
                 return (
                   <li key={row.id} className="flex items-center justify-between gap-2 px-3 py-2.5">
-                    <span className="min-w-0 truncate text-sm font-medium">{row.title}</span>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-medium">{row.title}</span>
+                      {dups.length > 0 ? (
+                        <span className="mt-0.5 inline-flex items-start gap-1 text-[11px] leading-snug text-amber-500">
+                          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                          <span className="truncate">
+                            Mirip: {dups
+                              .slice(0, 2)
+                              .map((d) => `${d.candidate.name} (${kindLabel(d.candidate.kind)})`)
+                              .join(", ")}
+                            {dups.length > 2 ? ` +${dups.length - 2}` : ""}
+                          </span>
+                        </span>
+                      ) : null}
+                    </span>
                     {done ? (
                       <span className="inline-flex shrink-0 items-center gap-1 text-xs text-emerald-500">
                         <CheckCircle2 className="h-3.5 w-3.5" />
@@ -211,7 +294,7 @@ function KontakMappingPage() {
                           variant="outline"
                           className="h-8 gap-1 px-2 text-xs"
                           disabled={busy !== null}
-                          onClick={() => void mapAs(row, "customer")}
+                          onClick={() => requestMap(row, "customer")}
                         >
                           {busy === `${row.id}:customer` ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -226,7 +309,7 @@ function KontakMappingPage() {
                           variant="outline"
                           className="h-8 gap-1 px-2 text-xs"
                           disabled={busy !== null}
-                          onClick={() => void mapAs(row, "supplier")}
+                          onClick={() => requestMap(row, "supplier")}
                         >
                           {busy === `${row.id}:supplier` ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -244,6 +327,49 @@ function KontakMappingPage() {
           </>
         )}
       </div>
+
+      <AlertDialog open={confirm !== null} onOpenChange={(o) => { if (!o) setConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              Kemungkinan kontak duplikat
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-left">
+                <p>
+                  “{confirm?.row.title}” mirip dengan kontak yang sudah ada. Lanjutkan hanya jika
+                  ini benar-benar orang/toko berbeda.
+                </p>
+                <ul className="space-y-1 rounded-md border p-2 text-xs">
+                  {(confirm?.dups ?? []).map((d) => (
+                    <li key={`${d.candidate.kind}:${d.candidate.id}`} className="flex justify-between gap-2">
+                      <span className="truncate">{d.candidate.name}</span>
+                      <span className="shrink-0 text-muted-foreground">
+                        {kindLabel(d.candidate.kind)} ·{" "}
+                        {d.reason === "phone" ? "nomor sama" : `${Math.round(d.score * 100)}% mirip`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!confirm) return;
+                const { row, kind } = confirm;
+                setConfirm(null);
+                void mapAs(row, kind);
+              }}
+            >
+              Tetap petakan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
