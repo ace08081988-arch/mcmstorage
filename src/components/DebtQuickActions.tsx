@@ -97,6 +97,9 @@ export function DebtQuickActions({
         if (peer) accountUserId = peer as string;
       }
 
+      const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+      const peerNameNorm = norm(peerName ?? "");
+
       const findParty = async (table: "customers" | "suppliers") => {
         const { data } = await supabase
           .from(table)
@@ -108,7 +111,7 @@ export function DebtQuickActions({
           contact: string | null;
           account_user_id: string | null;
         }>;
-        return rows.filter((r) => {
+        const strong = rows.filter((r) => {
           if (accountUserId && r.account_user_id === accountUserId) return true;
           if (phoneDigits) {
             const c = (r.contact ?? "").replace(/\D+/g, "");
@@ -118,6 +121,12 @@ export function DebtQuickActions({
           }
           return false;
         });
+        if (strong.length > 0) return strong;
+        // Fallback: cocokkan nama persis (case-insensitive). Banyak peer chat
+        // tidak menyimpan nomor HP / account_user_id, sehingga tanpa fallback
+        // ini pencatatan dari chat tampak "tidak sinkron".
+        if (peerNameNorm) return rows.filter((r) => norm(r.name ?? "") === peerNameNorm);
+        return [];
       };
 
       const [customers, suppliers] = await Promise.all([
