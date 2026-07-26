@@ -1432,9 +1432,6 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             className="hidden"
           />
         ) : null}
-        {!remoteReady && kind === "video" ? (
-          <></>
-        ) : null}
         {/* Banner pemulihan koneksi — selalu di atas konten panggilan. */}
         {recovery !== "idle" ? (
           <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center p-ms-3">
