@@ -57,7 +57,7 @@ function collect() {
     console.error("Hasil build tidak ditemukan. Jalankan `bun run build` dulu.");
     process.exit(1);
   }
-  const files = walk(dir)
+  let files = walk(dir)
     .filter((f) => /\.(m?js|css)$/.test(f.file))
     .map((f) => {
       const rel = path.relative(dir, f.file).split(path.sep).join("/");
@@ -65,6 +65,15 @@ function collect() {
       try { gzip = gzipSync(readFileSync(f.file)).length; } catch { /* abaikan */ }
       return { name: stableName(rel), raw: f.size, gzip, kind: rel.endsWith(".css") ? "css" : "js" };
     });
+  // Gabungkan file dengan nama stabil yang sama (mis. beberapa chunk
+  // "dist-<hash>.js") agar perbandingan antar build tidak salah hitung.
+  const merged = new Map();
+  for (const f of files) {
+    const cur = merged.get(f.name);
+    if (cur) { cur.raw += f.raw; cur.gzip += f.gzip; cur.parts += 1; }
+    else merged.set(f.name, { ...f, parts: 1 });
+  }
+  files = [...merged.values()];
   files.sort((a, b) => b.raw - a.raw);
   const total = files.reduce((s, f) => s + f.raw, 0);
   const totalGzip = files.reduce((s, f) => s + f.gzip, 0);
