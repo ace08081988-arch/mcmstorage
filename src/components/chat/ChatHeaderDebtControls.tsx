@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -251,8 +251,13 @@ function KindRow({
 }) {
   const [raw, setRaw] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [quick, setQuick] = useState(false);
+  const [target, setTarget] = useState<string>("");
   const parsed = Number(raw.replace(/\D+/g, ""));
   const hasAmount = Number.isFinite(parsed) && parsed > 0;
+  const targetParsed = Number(target.replace(/\D+/g, ""));
+  const hasTarget = target.trim() !== "" && Number.isFinite(targetParsed);
+  const delta = hasTarget ? targetParsed - balance : 0;
 
   const submit = async (sign: 1 | -1) => {
     if (!hasAmount) {
@@ -268,20 +273,84 @@ function KindRow({
     }
   };
 
+  const submitTarget = async () => {
+    if (!hasTarget) {
+      toast.error("Isi nominal baru dulu.");
+      return;
+    }
+    if (delta === 0) {
+      toast.info("Nominal sudah sama.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await onSubmit(delta);
+      setTarget("");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="rounded-lg border p-ms-2">
       <div className="mb-1.5 flex items-center justify-between gap-ms-2 text-ms-2xs">
         <span className="text-muted-foreground">{label}</span>
-        <span
-          className={`font-mono font-semibold ${
-            kind === "piutang"
-              ? "text-success dark:text-success"
-              : "text-warning dark:text-warning"
-          }`}
-        >
-          {rupiah(balance)}
-        </span>
+        <div className="flex items-center gap-ms-1.5">
+          <span
+            className={`font-mono font-semibold ${
+              kind === "piutang"
+                ? "text-success dark:text-success"
+                : "text-warning dark:text-warning"
+            }`}
+          >
+            {rupiah(balance)}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setQuick((v) => !v);
+              setTarget(quick ? "" : String(balance));
+            }}
+            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label={quick ? "Tutup edit cepat" : "Edit cepat nominal"}
+            title={quick ? "Tutup edit cepat" : "Edit cepat nominal"}
+          >
+            {quick ? <X className="h-3 w-3" /> : <Pencil className="h-3 w-3" />}
+          </button>
+        </div>
       </div>
+      {quick ? (
+        <div className="mb-1.5 rounded-md bg-muted/50 p-ms-1.5">
+          <div className="flex items-center gap-ms-1.5">
+            <NumericTextField
+              value={target}
+              onValueChange={setTarget}
+              decimal={false}
+              placeholder="Nominal baru"
+              className="flex h-8 flex-1 rounded-md border border-input bg-background px-3 py-2 text-right font-mono text-ms-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={busy}
+            />
+            <Button
+              type="button"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              disabled={busy || !hasTarget || delta === 0}
+              onClick={submitTarget}
+              aria-label="Simpan nominal baru"
+              title="Simpan nominal baru"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Equal className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+          <p className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
+            {hasTarget && delta !== 0
+              ? delta > 0
+                ? `Tambah tagihan ${rupiah(delta)}`
+                : `Catat pembayaran ${rupiah(Math.abs(delta))}`
+              : "Isi saldo akhir yang benar — selisihnya dicatat otomatis."}
+          </p>
+        </div>
+      ) : null}
       <div className="flex items-center gap-ms-1.5">
         <Button
           type="button"
