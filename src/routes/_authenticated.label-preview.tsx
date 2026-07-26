@@ -227,25 +227,55 @@ function LabelPreviewPage() {
   };
 
   // Build the same PDF used for export, expose as blob URL for live preview.
-  // Debounced so rapid edits don't thrash.
+  // Render pertama TANPA debounce (supaya pratinjau muncul secepat mungkin);
+  // edit berikutnya di-debounce agar ketikan cepat tidak menggilas render.
   useEffect(() => {
-    const t = setTimeout(async () => {
+    let cancelled = false;
+    const run = async () => {
       try {
+        setBuildError(null);
+        if (!isJsPDFReady()) setPhase("engine");
         const jsPDF = await loadJsPDF();
+        if (cancelled) return;
+        if (firstBuildRef.current) setPhase("render");
+        else setRebuilding(true);
         const doc = new jsPDF({ unit: "mm", format: "a4" });
         renderSamplesGrid(doc, samples.length ? samples : DEFAULT_SAMPLES);
         const blob = doc.output("blob");
+        if (cancelled) return;
         const url = URL.createObjectURL(blob);
         if (lastUrlRef.current) URL.revokeObjectURL(lastUrlRef.current);
         lastUrlRef.current = url;
         setPdfUrl(url);
+        setPhase("ready");
       } catch (e) {
         console.error("Gagal membangun pratinjau PDF", e);
+        if (!cancelled) setBuildError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) {
+          setRebuilding(false);
+          firstBuildRef.current = false;
+        }
       }
-    }, 200);
-    return () => clearTimeout(t);
+    };
+    if (firstBuildRef.current) {
+      void run();
+      return () => {
+        cancelled = true;
+      };
+    }
+    const t = setTimeout(run, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [samples]);
+
+  // Ekspor juga butuh jsPDF — hangatkan cache-nya sedini mungkin.
+  useEffect(() => {
+    prefetchJsPDF();
+  }, []);
 
   useEffect(() => {
     return () => {
