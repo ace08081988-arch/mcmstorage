@@ -717,6 +717,8 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // "disconnected"/"failed" — beri masa tenggang & coba ICE restart.
   const iceRecoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const iceRestartCountRef = useRef(0);
+  // Timer untuk menyembunyikan banner "koneksi pulih" setelah beberapa detik.
+  const recoveredHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const acceptedAtRef = useRef<string | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -763,6 +765,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         clearTimeout(iceRecoverTimerRef.current);
         iceRecoverTimerRef.current = null;
       }
+      if (recoveredHideTimerRef.current) {
+        clearTimeout(recoveredHideTimerRef.current);
+        recoveredHideTimerRef.current = null;
+      }
+      setRecovery(status === "failed" ? "failed" : "idle");
       setPhase("ended");
       setFinalStatus(status);
       try { sessionRef.current?.sendBye(reason); } catch { /* ignore */ }
