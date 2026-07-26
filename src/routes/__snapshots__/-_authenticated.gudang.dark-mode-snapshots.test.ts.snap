@@ -396,327 +396,8 @@ exports[`Gudang shell — dark-mode × viewport snapshot > viewport: tablet (768
 [body:loading] skeleton bg-muted/60 · rows=4 · h-16"
 `;
 
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: light · loading 1`] = `
-"# viewport=mobile-xxs (320px) · state=loading · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:loading] padding: p-ms-6
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: light · empty 1`] = `
-"# viewport=mobile-xxs (320px) · state=empty · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:empty] padding: p-ms-6
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: light · data 1`] = `
-"# viewport=mobile-xxs (320px) · state=data · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:data] padding: p-ms-6
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: dark · loading 1`] = `
-"# viewport=mobile-xxs (320px) · state=loading · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:loading] padding: p-ms-6
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: dark · empty 1`] = `
-"# viewport=mobile-xxs (320px) · state=empty · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:empty] padding: p-ms-6
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: dark · data 1`] = `
-"# viewport=mobile-xxs (320px) · state=data · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:data] padding: p-ms-6
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: light · loading 1`] = `
-"# viewport=mobile-xs (360px) · state=loading · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:loading] padding: p-ms-6
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: light · empty 1`] = `
-"# viewport=mobile-xs (360px) · state=empty · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:empty] padding: p-ms-6
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: light · data 1`] = `
-"# viewport=mobile-xs (360px) · state=data · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:data] padding: p-ms-6
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: dark · loading 1`] = `
-"# viewport=mobile-xs (360px) · state=loading · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:loading] padding: p-ms-6
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: dark · empty 1`] = `
-"# viewport=mobile-xs (360px) · state=empty · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:empty] padding: p-ms-6
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: dark · data 1`] = `
-"# viewport=mobile-xs (360px) · state=data · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:data] padding: p-ms-6
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: light · loading 1`] = `
-"# viewport=mobile (390px) · state=loading · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:loading] padding: p-ms-6
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: light · empty 1`] = `
-"# viewport=mobile (390px) · state=empty · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:empty] padding: p-ms-6
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: light · data 1`] = `
-"# viewport=mobile (390px) · state=data · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:data] padding: p-ms-6
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: dark · loading 1`] = `
-"# viewport=mobile (390px) · state=loading · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:loading] padding: p-ms-6
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: dark · empty 1`] = `
-"# viewport=mobile (390px) · state=empty · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:empty] padding: p-ms-6
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: dark · data 1`] = `
-"# viewport=mobile (390px) · state=data · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:data] padding: p-ms-6
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: light · loading 1`] = `
-"# viewport=mobile-lg (411px) · state=loading · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:loading] padding: p-ms-6
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: light · empty 1`] = `
-"# viewport=mobile-lg (411px) · state=empty · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:empty] padding: p-ms-6
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: light · data 1`] = `
-"# viewport=mobile-lg (411px) · state=data · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:data] padding: p-ms-6
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: dark · loading 1`] = `
-"# viewport=mobile-lg (411px) · state=loading · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:loading] padding: p-ms-6
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: dark · empty 1`] = `
-"# viewport=mobile-lg (411px) · state=empty · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:empty] padding: p-ms-6
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: dark · data 1`] = `
-"# viewport=mobile-lg (411px) · state=data · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-2 (mobile) · gap-ms-3
-[body:data] padding: p-ms-6
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: light · loading 1`] = `
-"# viewport=tablet (768px) · state=loading · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:loading] padding: p-ms-6 (sm+)
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: light · empty 1`] = `
-"# viewport=tablet (768px) · state=empty · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:empty] padding: p-ms-6 (sm+)
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: light · data 1`] = `
-"# viewport=tablet (768px) · state=data · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:data] padding: p-ms-6 (sm+)
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: dark · loading 1`] = `
-"# viewport=tablet (768px) · state=loading · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:loading] padding: p-ms-6 (sm+)
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: dark · empty 1`] = `
-"# viewport=tablet (768px) · state=empty · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:empty] padding: p-ms-6 (sm+)
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: dark · data 1`] = `
-"# viewport=tablet (768px) · state=data · theme=dark
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: dark · data 1`] = `
+"# viewport=desktop (1280px) · state=data · theme=dark
 [wrapper] ancestor-class: .dark
 [shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
 [header] p-ms-4 · sticky · text-foreground
@@ -724,50 +405,6 @@ exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px
 [summary] grid-cols-4 (md+) · gap-ms-3
 [body:data] padding: p-ms-6 (sm+)
 [body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: light · loading 1`] = `
-"# viewport=desktop (1280px) · state=loading · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:loading] padding: p-ms-6 (sm+)
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: light · empty 1`] = `
-"# viewport=desktop (1280px) · state=empty · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:empty] padding: p-ms-6 (sm+)
-[body:empty] border-dashed border-border/60 · text-center"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: light · data 1`] = `
-"# viewport=desktop (1280px) · state=data · theme=light
-[wrapper] ancestor-class: (none)
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:data] padding: p-ms-6 (sm+)
-[body:data] rows=3 · border · bg-card · text-ms-sm"
-`;
-
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: dark · loading 1`] = `
-"# viewport=desktop (1280px) · state=loading · theme=dark
-[wrapper] ancestor-class: .dark
-[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
-[header] p-ms-4 · sticky · text-foreground
-[pills] gap-ms-2 · text-muted-foreground
-[summary] grid-cols-4 (md+) · gap-ms-3
-[body:loading] padding: p-ms-6 (sm+)
-[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
 `;
 
 exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: dark · empty 1`] = `
@@ -781,8 +418,316 @@ exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280
 [body:empty] border-dashed border-border/60 · text-center"
 `;
 
-exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: dark · data 1`] = `
-"# viewport=desktop (1280px) · state=data · theme=dark
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: dark · loading 1`] = `
+"# viewport=desktop (1280px) · state=loading · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:loading] padding: p-ms-6 (sm+)
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: light · data 1`] = `
+"# viewport=desktop (1280px) · state=data · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:data] padding: p-ms-6 (sm+)
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: light · empty 1`] = `
+"# viewport=desktop (1280px) · state=empty · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:empty] padding: p-ms-6 (sm+)
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280px) snapshot: light · loading 1`] = `
+"# viewport=desktop (1280px) · state=loading · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:loading] padding: p-ms-6 (sm+)
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: dark · data 1`] = `
+"# viewport=mobile (390px) · state=data · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:data] padding: p-ms-6
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: dark · empty 1`] = `
+"# viewport=mobile (390px) · state=empty · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:empty] padding: p-ms-6
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: dark · loading 1`] = `
+"# viewport=mobile (390px) · state=loading · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:loading] padding: p-ms-6
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: light · data 1`] = `
+"# viewport=mobile (390px) · state=data · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:data] padding: p-ms-6
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: light · empty 1`] = `
+"# viewport=mobile (390px) · state=empty · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:empty] padding: p-ms-6
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile (390px) snapshot: light · loading 1`] = `
+"# viewport=mobile (390px) · state=loading · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:loading] padding: p-ms-6
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: dark · data 1`] = `
+"# viewport=mobile-lg (411px) · state=data · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:data] padding: p-ms-6
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: dark · empty 1`] = `
+"# viewport=mobile-lg (411px) · state=empty · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:empty] padding: p-ms-6
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: dark · loading 1`] = `
+"# viewport=mobile-lg (411px) · state=loading · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:loading] padding: p-ms-6
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: light · data 1`] = `
+"# viewport=mobile-lg (411px) · state=data · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:data] padding: p-ms-6
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: light · empty 1`] = `
+"# viewport=mobile-lg (411px) · state=empty · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:empty] padding: p-ms-6
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-lg (411px) snapshot: light · loading 1`] = `
+"# viewport=mobile-lg (411px) · state=loading · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:loading] padding: p-ms-6
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: dark · data 1`] = `
+"# viewport=mobile-xs (360px) · state=data · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:data] padding: p-ms-6
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: dark · empty 1`] = `
+"# viewport=mobile-xs (360px) · state=empty · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:empty] padding: p-ms-6
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: dark · loading 1`] = `
+"# viewport=mobile-xs (360px) · state=loading · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:loading] padding: p-ms-6
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: light · data 1`] = `
+"# viewport=mobile-xs (360px) · state=data · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:data] padding: p-ms-6
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: light · empty 1`] = `
+"# viewport=mobile-xs (360px) · state=empty · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:empty] padding: p-ms-6
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xs (360px) snapshot: light · loading 1`] = `
+"# viewport=mobile-xs (360px) · state=loading · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:loading] padding: p-ms-6
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: dark · data 1`] = `
+"# viewport=mobile-xxs (320px) · state=data · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:data] padding: p-ms-6
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: dark · empty 1`] = `
+"# viewport=mobile-xxs (320px) · state=empty · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:empty] padding: p-ms-6
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: dark · loading 1`] = `
+"# viewport=mobile-xxs (320px) · state=loading · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:loading] padding: p-ms-6
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: light · data 1`] = `
+"# viewport=mobile-xxs (320px) · state=data · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:data] padding: p-ms-6
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: light · empty 1`] = `
+"# viewport=mobile-xxs (320px) · state=empty · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:empty] padding: p-ms-6
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: mobile-xxs (320px) snapshot: light · loading 1`] = `
+"# viewport=mobile-xxs (320px) · state=loading · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-2 (mobile) · gap-ms-3
+[body:loading] padding: p-ms-6
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: dark · data 1`] = `
+"# viewport=tablet (768px) · state=data · theme=dark
 [wrapper] ancestor-class: .dark
 [shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
 [header] p-ms-4 · sticky · text-foreground
@@ -790,4 +735,59 @@ exports[`Gudang shell — dark-mode × viewport snapshot viewport: desktop (1280
 [summary] grid-cols-4 (md+) · gap-ms-3
 [body:data] padding: p-ms-6 (sm+)
 [body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: dark · empty 1`] = `
+"# viewport=tablet (768px) · state=empty · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:empty] padding: p-ms-6 (sm+)
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: dark · loading 1`] = `
+"# viewport=tablet (768px) · state=loading · theme=dark
+[wrapper] ancestor-class: .dark
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:loading] padding: p-ms-6 (sm+)
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: light · data 1`] = `
+"# viewport=tablet (768px) · state=data · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:data] padding: p-ms-6 (sm+)
+[body:data] rows=3 · border · bg-card · text-ms-sm"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: light · empty 1`] = `
+"# viewport=tablet (768px) · state=empty · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:empty] padding: p-ms-6 (sm+)
+[body:empty] border-dashed border-border/60 · text-center"
+`;
+
+exports[`Gudang shell — dark-mode × viewport snapshot viewport: tablet (768px) snapshot: light · loading 1`] = `
+"# viewport=tablet (768px) · state=loading · theme=light
+[wrapper] ancestor-class: (none)
+[shell] classes: bg-background text-foreground text-muted-foreground border-border bg-muted bg-card
+[header] p-ms-4 · sticky · text-foreground
+[pills] gap-ms-2 · text-muted-foreground
+[summary] grid-cols-4 (md+) · gap-ms-3
+[body:loading] padding: p-ms-6 (sm+)
+[body:loading] skeleton bg-muted/60 · rows=4 · h-16"
 `;

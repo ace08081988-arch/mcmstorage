@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { NumericTextField } from "@/components/NumericDraftInput";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
+import { fetchPiutangSummary } from "@/lib/piutang";
+import { fetchHutangSummary } from "@/lib/hutang";
+import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,9 +179,21 @@ function HutangPiutangPage() {
   const [customTo, setCustomTo] = useState<string>("");
   const [draftFrom, setDraftFrom] = useState<string>("");
   const [draftTo, setDraftTo] = useState<string>("");
+  /**
+   * SSOT gabungan (RPC `piutang_summary_v1` / `hutang_summary_v1`) —
+   * angka yang sama persis dipakai Dashboard & Gudang. Catatan manual di
+   * daftar bawah hanya salah satu sumbernya, jadi kartu total harus
+   * membaca SSOT, bukan hasil penjumlahan daftar manual.
+   */
+  const [ssot, setSsot] = useState<{ piutang: number; hutang: number } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
+  }, []);
+
+  const refreshSsot = useCallback(async () => {
+    const [p, h] = await Promise.all([fetchPiutangSummary(), fetchHutangSummary()]);
+    setSsot({ piutang: p.total_outstanding, hutang: h.total_outstanding });
   }, []);
 
   const refresh = async () => {
@@ -206,11 +221,20 @@ function HutangPiutangPage() {
     if (s.data) setSuppliers(s.data as Party[]);
     if (c.data) setCustomers(c.data as Party[]);
     setLoading(false);
+    void refreshSsot();
   };
 
   useEffect(() => {
     if (uid) void refresh();
   }, [uid]);
+
+  // Transaksi hutang/piutang dari layar mana pun (Ecer, Kios, Request,
+  // aksi cepat) langsung menyegarkan halaman ini juga.
+  useOnDebtTx(
+    useCallback(() => {
+      if (uid) void refresh();
+    }, [uid]),
+  );
 
   // H21: realtime — pull fresh data when debts / payments change from another
   // tab or device so the piutang view isn't stale.
@@ -305,8 +329,14 @@ function HutangPiutangPage() {
       if (d.kind === "hutang") hutangSisa += sisa;
       else piutangSisa += sisa;
     }
-    return { hutangSisa, piutangSisa, net: piutangSisa - hutangSisa };
-  }, [debtsInPeriod, paidByDebt]);
+    // Saat periode "semua", pakai SSOT gabungan supaya identik dengan
+    // Dashboard/Gudang/chat. Untuk periode terfilter, angka manual di
+    // periode itu yang relevan (SSOT bersifat all-time).
+    const useSsot = period === "all" && ssot !== null;
+    const h = useSsot ? ssot!.hutang : hutangSisa;
+    const p = useSsot ? ssot!.piutang : piutangSisa;
+    return { hutangSisa: h, piutangSisa: p, net: p - h, fromSsot: useSsot };
+  }, [debtsInPeriod, paidByDebt, period, ssot]);
 
   const financeStats = useMemo(() => {
     const today = new Date();
@@ -601,14 +631,18 @@ function HutangPiutangPage() {
             <FinanceStatCard
               label="Total Piutang"
               value={rupiah(overall.piutangSisa)}
-              hint="Uang yang belum masuk"
+              hint={overall.fromSsot
+                ? "Uang belum masuk · catatan + penjualan hutang"
+                : "Uang belum masuk · catatan periode ini"}
               icon={ArrowDownCircle}
               tone="emerald"
             />
             <FinanceStatCard
               label="Total Hutang"
               value={rupiah(overall.hutangSisa)}
-              hint="Uang yang belum keluar"
+              hint={overall.fromSsot
+                ? "Uang belum keluar · catatan + pembelian hutang"
+                : "Uang belum keluar · catatan periode ini"}
               icon={ArrowUpCircle}
               tone="rose"
             />

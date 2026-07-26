@@ -3970,6 +3970,7 @@ export type Database = {
       }
       normalize_phone: { Args: { _p: string }; Returns: string }
       normalize_unit_label: { Args: { _u: string }; Returns: string }
+      party_balance_v1: { Args: never; Returns: Json }
       piutang_summary_v1: { Args: never; Returns: Json }
       pos_commit_sale: {
         Args: {

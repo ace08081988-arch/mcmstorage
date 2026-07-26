@@ -31,6 +31,7 @@ import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
 import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
 import { fetchHutangSummary, type HutangSummary } from "@/lib/hutang";
+import { useOnDebtTx } from "@/lib/debt-tx-event";
 import {
   readGudangCache,
   writeGudangCache,
@@ -1060,6 +1061,8 @@ function PiutangTab({
     });
     return () => { cancelled = true; };
   }, [sales, custPayments]);
+  // Transaksi hutang/piutang dari layar lain langsung menyegarkan kartu ini.
+  useOnDebtTx(useCallback(() => { void refreshPiutangSSOT(); }, [refreshPiutangSSOT]));
   const owedDisplay = piutangSSOT ? piutangSSOT.total_outstanding : totals.owed;
 
   if (groups.length === 0) {
@@ -3842,6 +3845,8 @@ function HutangTab({
     });
     return () => { cancelled = true; };
   }, [purchases, payments]);
+  // Transaksi hutang/piutang dari layar lain langsung menyegarkan kartu ini.
+  useOnDebtTx(useCallback(() => { void refreshHutangSSOT(); }, [refreshHutangSSOT]));
   const totalDisplay = hutangSSOT
     ? hutangSSOT.purchase_hutang_gross + hutangSSOT.manual_gross
     : totals.total;

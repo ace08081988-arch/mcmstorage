@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
 import {
   ArrowUpRight,
   Boxes,
@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { fetchPiutangSummary } from "@/lib/piutang";
+import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -65,6 +66,14 @@ function greetingFor(hour: number) {
 
 /** Ambil semua data ringkasan sekali. Query di-cache oleh TanStack Query. */
 function useDashboardData() {
+  const qc = useQueryClient();
+  // Setiap transaksi hutang/piutang di layar lain langsung menyegarkan
+  // ringkasan dashboard supaya angkanya tidak pernah tertinggal.
+  useOnDebtTx(
+    useCallback(() => {
+      void qc.invalidateQueries({ queryKey: ["dashboard-summary-v1"] });
+    }, [qc]),
+  );
   return useQuery({
     queryKey: ["dashboard-summary-v1"],
     staleTime: 30_000,
