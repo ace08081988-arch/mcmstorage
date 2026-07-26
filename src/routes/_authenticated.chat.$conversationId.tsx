@@ -1310,7 +1310,10 @@ function ChatRoomPage() {
   );
   const oneSelected = selectedMessages.length === 1;
   const onlyOne = oneSelected ? selectedMessages[0] : null;
-  const allMineSelected = selectedMessages.length > 0 && selectedMessages.every((m) => m.sender_id === myId);
+  // "Hapus untuk semua" tersedia bila semua pesan terpilih boleh dihapus
+  // menurut aturan server (pengirim sendiri, atau pemilik percakapan).
+  const allMineSelected =
+    selectedMessages.length > 0 && selectedMessages.every((m) => canDeleteForAll(m.sender_id));
 
   // Outbox = pesan yang baru saja kita kirim → selalu turun ke bawah.
   const prevOutboxCountRef = useRef(0);
