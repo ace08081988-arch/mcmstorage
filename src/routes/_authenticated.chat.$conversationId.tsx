@@ -479,13 +479,11 @@ function ChatRoomPage() {
   const iAmConvOwner = !!myId && meta.data?.owner_user_id === myId;
   const canDeleteForAll = (senderId: string | null | undefined) =>
     (!!myId && senderId === myId) || iAmConvOwner;
-  const deleteErrText = (e: unknown) => {
-    const msg = e instanceof Error ? e.message : "";
-    if (/forbidden|not_allowed|permission/i.test(msg))
-      return "Anda tidak punya izin menghapus pesan ini untuk semua orang.";
-    if (/not_found/i.test(msg)) return "Pesan sudah tidak ada.";
-    if (/unauthenticated/i.test(msg)) return "Sesi berakhir, silakan masuk lagi.";
-    return msg || "Gagal menghapus";
+  // Kegagalan hapus WAJIB terlihat: tampilkan alasan (offline / izin / sesi)
+  // bukan hanya mengembalikan UI diam-diam.
+  const notifyDeleteError = (e: unknown, action = "menghapus pesan") => {
+    const info = describeChatError(e, action);
+    toast.error(info.title, { description: info.description, duration: 8000 });
   };
 
   // Member list & profiles for sender names (DM/group)
