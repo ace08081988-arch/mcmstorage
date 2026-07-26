@@ -1490,8 +1490,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                     : "Gagal memulihkan koneksi"}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => setDiagOpen(true)}
+              className="pointer-events-auto ml-ms-2 rounded-full bg-black/40 px-ms-3 py-ms-2 text-ms-xs font-medium text-white/90 ring-1 ring-white/20 backdrop-blur"
+            >
+              Lihat log
+            </button>
           </div>
         ) : null}
+        <CallDiagnosticsSheet open={diagOpen} onOpenChange={setDiagOpen} callId={callId} />
         {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
             <div className="flex flex-col items-center gap-ms-3 text-center">
