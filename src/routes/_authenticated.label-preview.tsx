@@ -94,6 +94,48 @@ const DEFAULT_SAMPLES: Sample[] = [
 ];
 
 function LabelPreviewPage() {
+  return <LabelPreviewInner />;
+}
+
+/** Skeleton berbentuk halaman A4 + 8 kartu label — mencerminkan hasil
+ *  akhir sehingga transisi ke pratinjau asli tidak terasa melompat. */
+function PreviewSkeleton({ phase, zoom }: { phase: "engine" | "render" | "ready"; zoom: number }) {
+  const label = phase === "engine" ? "Memuat mesin PDF…" : "Merender label…";
+  return (
+    <div
+      className="mx-auto block border bg-white shadow dark:bg-neutral-100"
+      style={{ width: `${(210 / 297) * 90}vh`, maxWidth: "100%", height: "90vh" }}
+      aria-busy="true"
+      aria-label={label}
+      data-zoom={zoom}
+    >
+      <div className="flex h-full flex-col gap-3 p-[4%]">
+        <div className="h-3 w-1/2 animate-pulse rounded bg-neutral-300" />
+        <div className="grid flex-1 grid-cols-2 grid-rows-4 gap-[2%]">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex animate-pulse flex-col justify-center gap-2 rounded border border-neutral-200 bg-neutral-100 p-3"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="h-2.5 w-3/4 rounded bg-neutral-300" />
+              <div className="h-2 w-1/2 rounded bg-neutral-200" />
+              <div className="mt-1 h-1.5 w-full rounded bg-neutral-200" />
+              <div className="h-1.5 w-5/6 rounded bg-neutral-200" />
+              <div className="h-1.5 w-2/3 rounded bg-neutral-200" />
+            </div>
+          ))}
+        </div>
+        <div className="h-2 w-1/3 animate-pulse rounded bg-neutral-200" />
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-ms-xs font-medium text-neutral-600">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function LabelPreviewInner() {
   const [samples, setSamples] = useState<Sample[]>(DEFAULT_SAMPLES);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(100);
