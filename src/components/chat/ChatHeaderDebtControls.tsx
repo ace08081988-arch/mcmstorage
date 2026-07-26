@@ -161,8 +161,12 @@ export function ChatHeaderDebtControls({
     };
   }, [debtsQ.data]);
 
-  if (!summary || !summary.hasAny) return null;
+  // Chip selalu tampil agar konsisten di semua percakapan. Saat belum ada
+  // catatan, chip tampil netral (Rp 0) dan popover tetap bisa dipakai untuk
+  // mencatat hutang/piutang pertama.
+  if (debtsQ.isLoading || !summary) return null;
 
+  const isEmpty = !summary.hasAny || (summary.hutang <= 0 && summary.piutang <= 0);
   const dominantKind: Kind =
     summary.piutang >= summary.hutang ? "piutang" : "hutang";
   const dominantValue =
@@ -174,28 +178,34 @@ export function ChatHeaderDebtControls({
         <button
           type="button"
           className={`inline-flex max-w-full items-center gap-ms-1 whitespace-nowrap rounded-full border px-ms-2 py-0.5 text-ms-2xs font-semibold transition hover:bg-accent ${
-            dominantKind === "piutang"
+            isEmpty
+              ? "border-border bg-muted/40 text-muted-foreground"
+              : dominantKind === "piutang"
               ? "border-success/40 bg-success/10 text-success dark:text-success"
               : "border-warning/40 bg-warning/10 text-warning dark:text-warning"
           }`}
           aria-label={
-            dominantKind === "piutang"
+            isEmpty
+              ? `Belum ada catatan hutang/piutang dengan ${peerName}`
+              : dominantKind === "piutang"
               ? `Piutang dari ${peerName}: ${rupiah(dominantValue)}`
               : `Hutang kepada ${peerName}: ${rupiah(dominantValue)}`
           }
           title={
-            dominantKind === "piutang"
+            isEmpty
+              ? "Belum ada catatan — ketuk untuk mencatat hutang/piutang"
+              : dominantKind === "piutang"
               ? `Piutang (dia berhutang ke Anda): ${rupiah(dominantValue)}`
               : `Hutang (Anda berhutang ke dia): ${rupiah(dominantValue)}`
           }
         >
           <Wallet className="h-3 w-3 shrink-0" />
           <span>
-            {dominantKind === "piutang" ? "Piutang" : "Hutang"}
+            {isEmpty ? "Catatan" : dominantKind === "piutang" ? "Piutang" : "Hutang"}
           </span>
           <span className="font-mono">
-            <span className="sm:hidden">{rupiahCompact(dominantValue)}</span>
-            <span className="hidden sm:inline">{rupiah(dominantValue)}</span>
+            <span className="sm:hidden">{rupiahCompact(isEmpty ? 0 : dominantValue)}</span>
+            <span className="hidden sm:inline">{rupiah(isEmpty ? 0 : dominantValue)}</span>
           </span>
         </button>
       </PopoverTrigger>
