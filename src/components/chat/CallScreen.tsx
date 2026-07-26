@@ -47,6 +47,8 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { logCall } from "@/lib/call-diagnostics";
+import { CallDiagnosticsSheet } from "@/components/chat/CallDiagnosticsSheet";
 
 /**
  * Full-screen UI panggilan. Bertanggung jawab atas: setup peer, negosiasi
@@ -74,6 +76,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
    */
   const [recovery, setRecovery] = useState<"idle" | "recovering" | "recovered" | "failed">("idle");
   const [recoveryAttempt, setRecoveryAttempt] = useState(0);
+  const [diagOpen, setDiagOpen] = useState(false);
   const [finalStatus, setFinalStatus] = useState<
     "ended" | "declined" | "missed" | "cancelled" | "failed" | null
   >(null);
@@ -764,6 +767,12 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     async (status: "ended" | "declined" | "missed" | "cancelled" | "failed", reason?: string) => {
       if (doneRef.current) return;
       doneRef.current = true;
+      logCall(callId, "finalize", `finalize: ${status}`, {
+        reason: reason ?? null,
+        iceConnectionState: sessionRef.current?.pc.iceConnectionState ?? null,
+        signalingState: sessionRef.current?.pc.signalingState ?? null,
+        connectionState: sessionRef.current?.pc.connectionState ?? null,
+      });
       if (iceRecoverTimerRef.current) {
         clearTimeout(iceRecoverTimerRef.current);
         iceRecoverTimerRef.current = null;
@@ -833,6 +842,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 // Hanya tampilkan "pulih" bila memang sempat terputus.
                 if (recoveringRef.current) {
                   recoveringRef.current = false;
+                  logCall(callId, "recovery", "pulih: ICE kembali connected", {
+                    attempt: iceRestartCountRef.current,
+                  });
                   setRecovery("recovered");
                   toast.success("Koneksi pulih", {
                     description: "Panggilan tersambung kembali.",
@@ -853,6 +865,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               // Coba ICE restart (dari sisi caller) dan tunggu sebentar
               // sebelum benar-benar mengakhiri panggilan.
               setErrorMsg("Koneksi tidak stabil — mencoba menyambung ulang…");
+              logCall(callId, "recovery", `mulai pemulihan (ice=${s})`, {
+                role,
+                attemptSoFar: iceRestartCountRef.current,
+                graceMs: s === "failed" ? 6000 : 10000,
+              });
               if (recoveredHideTimerRef.current) {
                 clearTimeout(recoveredHideTimerRef.current);
                 recoveredHideTimerRef.current = null;
@@ -862,13 +879,22 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               if (role === "caller" && sessionRef.current && iceRestartCountRef.current < 2) {
                 iceRestartCountRef.current += 1;
                 setRecoveryAttempt(iceRestartCountRef.current);
-                void restartIce(sessionRef.current).catch(() => { /* ignore */ });
+                logCall(callId, "recovery", `panggil restartIce #${iceRestartCountRef.current}`);
+                void restartIce(sessionRef.current).catch((err) => {
+                  logCall(callId, "recovery", `restartIce gagal: ${(err as Error)?.message ?? String(err)}`);
+                });
               } else {
+                logCall(callId, "recovery", "tidak restartIce (bukan caller / batas percobaan tercapai)", {
+                  role, attempts: iceRestartCountRef.current,
+                });
                 setRecoveryAttempt(0);
               }
               iceRecoverTimerRef.current = setTimeout(() => {
                 iceRecoverTimerRef.current = null;
                 const st = sessionRef.current?.pc.iceConnectionState;
+                logCall(callId, "recovery", `masa tenggang habis — ice=${st ?? "?"}`, {
+                  signalingState: sessionRef.current?.pc.signalingState ?? null,
+                });
                 if (st === "connected" || st === "completed") {
                   setErrorMsg(null);
                   recoveringRef.current = false;
@@ -1464,8 +1490,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                     : "Gagal memulihkan koneksi"}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => setDiagOpen(true)}
+              className="pointer-events-auto ml-ms-2 rounded-full bg-black/40 px-ms-3 py-ms-2 text-ms-xs font-medium text-white/90 ring-1 ring-white/20 backdrop-blur"
+            >
+              Lihat log
+            </button>
           </div>
         ) : null}
+        <CallDiagnosticsSheet open={diagOpen} onOpenChange={setDiagOpen} callId={callId} />
         {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
             <div className="flex flex-col items-center gap-ms-3 text-center">

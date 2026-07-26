@@ -16,6 +16,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { getIceServers, type IceServerConfig } from "@/lib/calls.functions";
+import { logCall } from "@/lib/call-diagnostics";
 
 export type CallKind = "audio" | "video";
 
@@ -175,7 +176,22 @@ export async function createPeerSession(opts: {
   };
 
   pc.oniceconnectionstatechange = () => {
+    logCall(callId, "ice", `iceConnectionState → ${pc.iceConnectionState}`, {
+      signalingState: pc.signalingState,
+      connectionState: pc.connectionState,
+      iceGatheringState: pc.iceGatheringState,
+    });
     handlers.onIceState?.(pc.iceConnectionState);
+  };
+
+  pc.onsignalingstatechange = () => {
+    logCall(callId, "sig", `signalingState → ${pc.signalingState}`);
+  };
+  pc.onicegatheringstatechange = () => {
+    logCall(callId, "gather", `iceGatheringState → ${pc.iceGatheringState}`);
+  };
+  pc.onconnectionstatechange = () => {
+    logCall(callId, "ice", `connectionState → ${pc.connectionState}`);
   };
 
   const channel = supabase.channel(callChannelName(callId), {
@@ -184,6 +200,7 @@ export async function createPeerSession(opts: {
 
   const send = (payload: CallSignal) => {
     try {
+      logCall(callId, "signal", `kirim ${payload.t}`);
       void channel.send({ type: "broadcast", event: "signal", payload });
     } catch (e) {
       handlers.onError?.(e as Error);
@@ -199,11 +216,13 @@ export async function createPeerSession(opts: {
   channel.on("broadcast", { event: "signal" }, async ({ payload }) => {
     const sig = payload as CallSignal;
     if (!sig || sig.from === meId) return;
+    logCall(callId, "signal", `terima ${sig.t}`, { signalingState: pc.signalingState });
     try {
       if (sig.t === "offer") {
         // Offer ulang (ICE restart) bisa datang saat kita masih punya
         // local offer sendiri — rollback dulu agar tidak error state.
         if (pc.signalingState === "have-local-offer") {
+          logCall(callId, "recovery", "glare: rollback local offer sebelum set remote offer");
           try { await pc.setLocalDescription({ type: "rollback" }); } catch { /* ignore */ }
         }
         await pc.setRemoteDescription(sig.sdp);
@@ -215,6 +234,11 @@ export async function createPeerSession(opts: {
         // offer lokal — termasuk answer hasil ICE restart.
         if (pc.signalingState === "have-local-offer") {
           await pc.setRemoteDescription(sig.sdp);
+          logCall(callId, "recovery", "answer diterapkan (termasuk hasil ICE restart)");
+        } else {
+          logCall(callId, "recovery", "answer diabaikan — bukan have-local-offer", {
+            signalingState: pc.signalingState,
+          });
         }
       } else if (sig.t === "ice") {
         try { await pc.addIceCandidate(sig.candidate); } catch { /* candidate stale */ }
@@ -226,6 +250,7 @@ export async function createPeerSession(opts: {
         handlers.onPeerHello?.();
       }
     } catch (e) {
+      logCall(callId, "info", `error signaling: ${(e as Error)?.message ?? String(e)}`);
       handlers.onError?.(e as Error);
     }
   });
@@ -285,8 +310,15 @@ export async function createPeerSession(opts: {
  * jaringan berpindah (WiFi ↔ seluler) atau koneksi sempat "disconnected".
  */
 export async function restartIce(session: PeerSession): Promise<void> {
-  const { pc, channel, meId } = session;
-  if (pc.connectionState === "closed") return;
+  const { pc, channel, meId, callId } = session;
+  if (pc.connectionState === "closed") {
+    logCall(callId, "recovery", "restartIce dibatalkan — koneksi sudah closed");
+    return;
+  }
+  logCall(callId, "recovery", "restartIce: buat offer baru", {
+    signalingState: pc.signalingState,
+    iceConnectionState: pc.iceConnectionState,
+  });
   const offer = await pc.createOffer({ iceRestart: true });
   await pc.setLocalDescription(offer);
   void channel.send({
