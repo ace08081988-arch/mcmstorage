@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+import * as React from "react";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { VirtualizedList } from "@/components/VirtualizedList";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
@@ -972,11 +974,7 @@ const ConvListItem = React.memo(function ConvListItem({
   const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
   const isMuted = !!(mutedUntil && mutedUntil.getTime() > Date.now());
   return (
-
-    <li
-              key={c.id}
-              className={`relative ${isSelected ? "bg-primary/10" : ""}`}
-            >
+    <div className={`relative ${isSelected ? "bg-primary/10" : ""}`}>
               <ConvRow
                 conv={c}
                 isMuted={!!isMuted}
@@ -1092,7 +1090,7 @@ const ConvListItem = React.memo(function ConvListItem({
                 </DropdownMenu>
               </div>
               )}
-            </li>
+    </div>
   );
 });
 
