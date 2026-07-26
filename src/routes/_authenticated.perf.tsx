@@ -165,6 +165,12 @@ function PerfPage() {
       <p className="text-ms-xs text-muted-foreground">
         Data diambil langsung dari perangkat ini (Performance API) dan diperbarui tiap 2 detik. Tidak mengubah data aplikasi.
       </p>
+      <p className="rounded-lg border border-dashed bg-muted/30 p-ms-2 text-ms-2xs text-muted-foreground">
+        Analisis bundle (build-time): jalankan <code className="font-mono">bun run analyze</code> untuk peta treemap di{" "}
+        <code className="font-mono">bundle-report/stats.html</code> + daftar chunk terberat,{" "}
+        <code className="font-mono">bun run analyze:save</code> untuk mengunci baseline, lalu{" "}
+        <code className="font-mono">bun run analyze:report</code> setelah perubahan untuk melihat selisih per chunk.
+      </p>
 
       <section className="grid grid-cols-2 gap-ms-2 md:grid-cols-4">
         <Stat icon={<HardDrive className="h-3.5 w-3.5" />} label="Total transfer" value={bundle ? fmtKB(bundle.total) : "—"} hint={bundle ? `${bundle.count} resource` : undefined} />

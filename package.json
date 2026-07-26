@@ -92,7 +92,10 @@
     "check:no-turnstile": "node scripts/check-no-turnstile.mjs",
     "check:noir-gold": "node scripts/check-noir-gold.mjs",
     "check:noir-gold:update-baseline": "node scripts/check-noir-gold.mjs --update-baseline",
-    "codemod:noir-gold": "node scripts/codemod-noir-gold.mjs"
+    "codemod:noir-gold": "node scripts/codemod-noir-gold.mjs",
+    "analyze": "cross-env-shell ANALYZE=1 vite build && node scripts/bundle-report.mjs",
+    "analyze:report": "node scripts/bundle-report.mjs",
+    "analyze:save": "node scripts/bundle-report.mjs --save"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
@@ -212,6 +215,7 @@
     "pixelmatch": "^7.2.0",
     "pngjs": "^7.0.0",
     "prettier": "^3.7.3",
+    "rollup-plugin-visualizer": "^7.0.1",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16",
