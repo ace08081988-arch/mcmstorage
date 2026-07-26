@@ -842,6 +842,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 // Hanya tampilkan "pulih" bila memang sempat terputus.
                 if (recoveringRef.current) {
                   recoveringRef.current = false;
+                  logCall(callId, "recovery", "pulih: ICE kembali connected", {
+                    attempt: iceRestartCountRef.current,
+                  });
                   setRecovery("recovered");
                   toast.success("Koneksi pulih", {
                     description: "Panggilan tersambung kembali.",
@@ -862,6 +865,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               // Coba ICE restart (dari sisi caller) dan tunggu sebentar
               // sebelum benar-benar mengakhiri panggilan.
               setErrorMsg("Koneksi tidak stabil — mencoba menyambung ulang…");
+              logCall(callId, "recovery", `mulai pemulihan (ice=${s})`, {
+                role,
+                attemptSoFar: iceRestartCountRef.current,
+                graceMs: s === "failed" ? 6000 : 10000,
+              });
               if (recoveredHideTimerRef.current) {
                 clearTimeout(recoveredHideTimerRef.current);
                 recoveredHideTimerRef.current = null;
@@ -871,13 +879,22 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               if (role === "caller" && sessionRef.current && iceRestartCountRef.current < 2) {
                 iceRestartCountRef.current += 1;
                 setRecoveryAttempt(iceRestartCountRef.current);
-                void restartIce(sessionRef.current).catch(() => { /* ignore */ });
+                logCall(callId, "recovery", `panggil restartIce #${iceRestartCountRef.current}`);
+                void restartIce(sessionRef.current).catch((err) => {
+                  logCall(callId, "recovery", `restartIce gagal: ${(err as Error)?.message ?? String(err)}`);
+                });
               } else {
+                logCall(callId, "recovery", "tidak restartIce (bukan caller / batas percobaan tercapai)", {
+                  role, attempts: iceRestartCountRef.current,
+                });
                 setRecoveryAttempt(0);
               }
               iceRecoverTimerRef.current = setTimeout(() => {
                 iceRecoverTimerRef.current = null;
                 const st = sessionRef.current?.pc.iceConnectionState;
+                logCall(callId, "recovery", `masa tenggang habis — ice=${st ?? "?"}`, {
+                  signalingState: sessionRef.current?.pc.signalingState ?? null,
+                });
                 if (st === "connected" || st === "completed") {
                   setErrorMsg(null);
                   recoveringRef.current = false;
