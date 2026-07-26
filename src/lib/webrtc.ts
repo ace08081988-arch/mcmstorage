@@ -201,12 +201,21 @@ export async function createPeerSession(opts: {
     if (!sig || sig.from === meId) return;
     try {
       if (sig.t === "offer") {
+        // Offer ulang (ICE restart) bisa datang saat kita masih punya
+        // local offer sendiri — rollback dulu agar tidak error state.
+        if (pc.signalingState === "have-local-offer") {
+          try { await pc.setLocalDescription({ type: "rollback" }); } catch { /* ignore */ }
+        }
         await pc.setRemoteDescription(sig.sdp);
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         send({ t: "answer", from: meId, sdp: answer });
       } else if (sig.t === "answer") {
-        if (!pc.currentRemoteDescription) await pc.setRemoteDescription(sig.sdp);
+        // Terima answer setiap kali kita sedang menunggu jawaban atas
+        // offer lokal — termasuk answer hasil ICE restart.
+        if (pc.signalingState === "have-local-offer") {
+          await pc.setRemoteDescription(sig.sdp);
+        }
       } else if (sig.t === "ice") {
         try { await pc.addIceCandidate(sig.candidate); } catch { /* candidate stale */ }
       } else if (sig.t === "bye") {
