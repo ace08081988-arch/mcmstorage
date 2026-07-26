@@ -35,8 +35,12 @@ const ProductEditDrawer = lazy(() =>
   import("@/components/ProductEditDrawer").then((m) => ({ default: m.ProductEditDrawer })),
 );
 import { confirm } from "@/lib/confirm";
-import { SecurityScanReminder } from "@/components/SecurityScanReminder";
-import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
+const SecurityScanReminder = lazy(() =>
+  import("@/components/SecurityScanReminder").then((m) => ({ default: m.SecurityScanReminder })),
+);
+const SecurityFindingsBanner = lazy(() =>
+  import("@/components/SecurityFindingsBanner").then((m) => ({ default: m.SecurityFindingsBanner })),
+);
 import { NumericDraftInput } from "@/components/NumericDraftInput";
 import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
 import {
