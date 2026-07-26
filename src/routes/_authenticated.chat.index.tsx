@@ -32,6 +32,7 @@ import { ChatListIcon } from "@/lib/chat-list-icons";
 import { CHAT_CATEGORY_LABEL_ID, type ChatCategory } from "@/lib/chat-category";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
+import { DebtSyncBadge } from "@/components/chat/DebtSyncBadge";
 import { goBackOr } from "@/lib/back-nav";
 import { ChatListSkeleton } from "@/components/chat/ChatSkeletons";
 import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
@@ -949,6 +950,9 @@ function ConvList({
                       {isMuted ? <BellOff className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                     </span>
                     <span className={`shrink-0 text-ms-2xs ${c.unread > 0 ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)]"}`}>{timeShort(c.last_at)}</span>
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-1">
+                    <DebtSyncBadge title={c.display_title} />
                   </div>
                   <div className="flex items-center justify-between gap-ms-2">
                     <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-xs text-[var(--wa-text-muted)]">
