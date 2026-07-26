@@ -472,6 +472,22 @@ function ChatRoomPage() {
     queryFn: () => getConversationMeta(conversationId),
   });
 
+  // Izin "hapus untuk semua" harus sama persis dengan RPC
+  // `message_delete_for_all`: pengirim pesan ATAU pemilik percakapan (admin
+  // grup). Sebelumnya UI hanya memakai `mine`, jadi admin grup tidak pernah
+  // melihat opsi itu walau server mengizinkan.
+  const iAmConvOwner = !!myId && meta.data?.owner_user_id === myId;
+  const canDeleteForAll = (senderId: string | null | undefined) =>
+    (!!myId && senderId === myId) || iAmConvOwner;
+  const deleteErrText = (e: unknown) => {
+    const msg = e instanceof Error ? e.message : "";
+    if (/forbidden|not_allowed|permission/i.test(msg))
+      return "Anda tidak punya izin menghapus pesan ini untuk semua orang.";
+    if (/not_found/i.test(msg)) return "Pesan sudah tidak ada.";
+    if (/unauthenticated/i.test(msg)) return "Sesi berakhir, silakan masuk lagi.";
+    return msg || "Gagal menghapus";
+  };
+
   // Member list & profiles for sender names (DM/group)
   const members = useQuery({
     queryKey: ["chat", "conv-members", conversationId],
