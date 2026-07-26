@@ -719,6 +719,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const iceRestartCountRef = useRef(0);
   // Timer untuk menyembunyikan banner "koneksi pulih" setelah beberapa detik.
   const recoveredHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirror `recovery` untuk dibaca di dalam callback tanpa efek samping
+  // di updater state (aman terhadap double-invoke React StrictMode).
+  const recoveringRef = useRef(false);
   const acceptedAtRef = useRef<string | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -828,8 +831,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 iceRestartCountRef.current = 0;
                 setErrorMsg(null);
                 // Hanya tampilkan "pulih" bila memang sempat terputus.
-                setRecovery((prev) => {
-                  if (prev !== "recovering") return "idle";
+                if (recoveringRef.current) {
+                  recoveringRef.current = false;
+                  setRecovery("recovered");
                   toast.success("Koneksi pulih", {
                     description: "Panggilan tersambung kembali.",
                   });
@@ -838,8 +842,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                     recoveredHideTimerRef.current = null;
                     setRecovery("idle");
                   }, 3000);
-                  return "recovered";
-                });
+                } else {
+                  setRecovery("idle");
+                }
                 return;
               }
               if (s !== "failed" && s !== "disconnected") return;
@@ -852,6 +857,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 clearTimeout(recoveredHideTimerRef.current);
                 recoveredHideTimerRef.current = null;
               }
+              recoveringRef.current = true;
               setRecovery("recovering");
               if (role === "caller" && sessionRef.current && iceRestartCountRef.current < 2) {
                 iceRestartCountRef.current += 1;
@@ -865,9 +871,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 const st = sessionRef.current?.pc.iceConnectionState;
                 if (st === "connected" || st === "completed") {
                   setErrorMsg(null);
+                  recoveringRef.current = false;
                   setRecovery("idle");
                   return;
                 }
+                recoveringRef.current = false;
                 setRecovery("failed");
                 void finalize("failed", `ice:${st ?? s}`);
               }, s === "failed" ? 6000 : 10000);
