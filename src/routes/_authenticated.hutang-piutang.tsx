@@ -176,9 +176,21 @@ function HutangPiutangPage() {
   const [customTo, setCustomTo] = useState<string>("");
   const [draftFrom, setDraftFrom] = useState<string>("");
   const [draftTo, setDraftTo] = useState<string>("");
+  /**
+   * SSOT gabungan (RPC `piutang_summary_v1` / `hutang_summary_v1`) —
+   * angka yang sama persis dipakai Dashboard & Gudang. Catatan manual di
+   * daftar bawah hanya salah satu sumbernya, jadi kartu total harus
+   * membaca SSOT, bukan hasil penjumlahan daftar manual.
+   */
+  const [ssot, setSsot] = useState<{ piutang: number; hutang: number } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
+  }, []);
+
+  const refreshSsot = useCallback(async () => {
+    const [p, h] = await Promise.all([fetchPiutangSummary(), fetchHutangSummary()]);
+    setSsot({ piutang: p.total_outstanding, hutang: h.total_outstanding });
   }, []);
 
   const refresh = async () => {
