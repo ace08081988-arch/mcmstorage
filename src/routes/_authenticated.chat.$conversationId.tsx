@@ -472,6 +472,22 @@ function ChatRoomPage() {
     queryFn: () => getConversationMeta(conversationId),
   });
 
+  // Izin "hapus untuk semua" harus sama persis dengan RPC
+  // `message_delete_for_all`: pengirim pesan ATAU pemilik percakapan (admin
+  // grup). Sebelumnya UI hanya memakai `mine`, jadi admin grup tidak pernah
+  // melihat opsi itu walau server mengizinkan.
+  const iAmConvOwner = !!myId && meta.data?.owner_user_id === myId;
+  const canDeleteForAll = (senderId: string | null | undefined) =>
+    (!!myId && senderId === myId) || iAmConvOwner;
+  const deleteErrText = (e: unknown) => {
+    const msg = e instanceof Error ? e.message : "";
+    if (/forbidden|not_allowed|permission/i.test(msg))
+      return "Anda tidak punya izin menghapus pesan ini untuk semua orang.";
+    if (/not_found/i.test(msg)) return "Pesan sudah tidak ada.";
+    if (/unauthenticated/i.test(msg)) return "Sesi berakhir, silakan masuk lagi.";
+    return msg || "Gagal menghapus";
+  };
+
   // Member list & profiles for sender names (DM/group)
   const members = useQuery({
     queryKey: ["chat", "conv-members", conversationId],
@@ -1294,7 +1310,10 @@ function ChatRoomPage() {
   );
   const oneSelected = selectedMessages.length === 1;
   const onlyOne = oneSelected ? selectedMessages[0] : null;
-  const allMineSelected = selectedMessages.length > 0 && selectedMessages.every((m) => m.sender_id === myId);
+  // "Hapus untuk semua" tersedia bila semua pesan terpilih boleh dihapus
+  // menurut aturan server (pengirim sendiri, atau pemilik percakapan).
+  const allMineSelected =
+    selectedMessages.length > 0 && selectedMessages.every((m) => canDeleteForAll(m.sender_id));
 
   // Outbox = pesan yang baru saja kita kirim → selalu turun ke bawah.
   const prevOutboxCountRef = useRef(0);
@@ -2060,15 +2079,16 @@ function ChatRoomPage() {
                                 );
                               })()
                             ) : null}
-                            {mine ? (
+                            {canDeleteForAll(m.sender_id) ? (
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
                                 disabled={deleteMsg.isPending}
                                 onSelect={async () => {
                                   const ok = await confirm({
                                     title: "Hapus untuk semua orang?",
-                                    description:
-                                      "Pesan akan dihapus dari sisi Anda dan lawan chat. Tindakan ini tidak bisa dibatalkan setelah beberapa detik.",
+                                    description: mine
+                                      ? "Pesan akan dihapus dari sisi Anda dan lawan chat. Tindakan ini tidak bisa dibatalkan setelah beberapa detik."
+                                      : "Sebagai pemilik grup, Anda menghapus pesan anggota ini untuk semua orang. Tindakan ini tidak bisa dibatalkan setelah beberapa detik.",
                                     confirmText: "Hapus untuk semua",
                                     cancelText: "Batal",
                                     destructive: true,
@@ -2088,7 +2108,7 @@ function ChatRoomPage() {
                                           },
                                           onError: (e) => {
                                             restore();
-                                            toast.error(e instanceof Error ? e.message : "Gagal menghapus");
+                                            toast.error(deleteErrText(e));
                                           },
                                         },
                                       ),
@@ -2679,7 +2699,7 @@ function ChatRoomPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus pesan?</AlertDialogTitle>
             <AlertDialogDescription>
-              {longPressMsg?.sender_id === myId
+              {canDeleteForAll(longPressMsg?.sender_id)
                 ? "Pilih cara menghapus pesan ini. \"Hapus untuk semua orang\" akan menghapus pesan dari sisi lawan chat juga."
                 : "Pesan ini bukan milik Anda, jadi hanya bisa disembunyikan di perangkat Anda."}
             </AlertDialogDescription>
@@ -2714,7 +2734,7 @@ function ChatRoomPage() {
               )}
               {hideMsg.isPending ? "Menghapus…" : "Hapus untuk saya"}
             </Button>
-            {longPressMsg?.sender_id === myId ? (
+            {canDeleteForAll(longPressMsg?.sender_id) ? (
               <Button
                 variant="destructive"
                 className="w-full justify-start"
@@ -2738,7 +2758,7 @@ function ChatRoomPage() {
                           },
                           onError: (e) => {
                             restore();
-                            toast.error(e instanceof Error ? e.message : "Gagal menghapus");
+                            toast.error(deleteErrText(e));
                           },
                         },
                       ),
