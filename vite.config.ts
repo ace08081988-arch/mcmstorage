@@ -9,6 +9,7 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { loadEnv } from "vite";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const serverEnv = loadEnv("development", process.cwd(), "");
@@ -20,6 +21,10 @@ const BUILD_ID = (() => {
   return `${t}-${r}`;
 })();
 const BUILD_TIME = new Date().toISOString();
+
+// Bundle analyzer aktif hanya saat ANALYZE=1 supaya build normal / dev
+// tidak terbebani. Jalankan: `bun run analyze`.
+const ANALYZE = process.env.ANALYZE === "1" || process.env.ANALYZE === "true";
 
 export default defineConfig({
   tanstackStart: {
@@ -40,7 +45,21 @@ export default defineConfig({
     },
   },
   vite: {
-    plugins: [mcpPlugin()],
+    plugins: [
+      mcpPlugin(),
+      ...(ANALYZE
+        ? [
+            visualizer({
+              filename: "bundle-report/stats.html",
+              template: "treemap",
+              gzipSize: true,
+              brotliSize: true,
+              sourcemap: false,
+              emitFile: false,
+            }),
+          ]
+        : []),
+    ],
     resolve: {
       alias: {
         "entities/lib/decode.js": path.resolve(
