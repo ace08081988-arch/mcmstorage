@@ -68,6 +68,12 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     role === "caller" ? "dialing" : "connecting",
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  /**
+   * Status pemulihan koneksi (ICE restart) supaya pengguna tahu apa yang
+   * sedang terjadi: sedang mencoba, berhasil pulih, atau gagal total.
+   */
+  const [recovery, setRecovery] = useState<"idle" | "recovering" | "recovered" | "failed">("idle");
+  const [recoveryAttempt, setRecoveryAttempt] = useState(0);
   const [finalStatus, setFinalStatus] = useState<
     "ended" | "declined" | "missed" | "cancelled" | "failed" | null
   >(null);
