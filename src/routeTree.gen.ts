@@ -61,6 +61,7 @@ import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMetrikQueryRouteImport } from './routes/_authenticated.metrik-query'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
+import { Route as AuthenticatedKontakMappingRouteImport } from './routes/_authenticated.kontak-mapping'
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
 import { Route as AuthenticatedKiosRouteImport } from './routes/_authenticated.kios'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
@@ -424,6 +425,12 @@ const AuthenticatedLabelPreviewRoute =
   AuthenticatedLabelPreviewRouteImport.update({
     id: '/label-preview',
     path: '/label-preview',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKontakMappingRoute =
+  AuthenticatedKontakMappingRouteImport.update({
+    id: '/kontak-mapping',
+    path: '/kontak-mapping',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedKontakRoute = AuthenticatedKontakRouteImport.update({
@@ -944,6 +951,7 @@ export interface FileRoutesByFullPath {
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
+  '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/metrik-query': typeof AuthenticatedMetrikQueryRoute
@@ -1078,6 +1086,7 @@ export interface FileRoutesByTo {
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/kios': typeof AuthenticatedKiosRouteWithChildren
+  '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/metrik-query': typeof AuthenticatedMetrikQueryRoute
@@ -1218,6 +1227,7 @@ export interface FileRoutesById {
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/_authenticated/kios': typeof AuthenticatedKiosRouteWithChildren
   '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
+  '/_authenticated/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/metrik-query': typeof AuthenticatedMetrikQueryRoute
@@ -1359,6 +1369,7 @@ export interface FileRouteTypes {
     | '/hutang-piutang'
     | '/kios'
     | '/kontak'
+    | '/kontak-mapping'
     | '/label-preview'
     | '/link-pegawai'
     | '/metrik-query'
@@ -1493,6 +1504,7 @@ export interface FileRouteTypes {
     | '/gudang'
     | '/hutang-piutang'
     | '/kios'
+    | '/kontak-mapping'
     | '/label-preview'
     | '/link-pegawai'
     | '/metrik-query'
@@ -1632,6 +1644,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hutang-piutang'
     | '/_authenticated/kios'
     | '/_authenticated/kontak'
+    | '/_authenticated/kontak-mapping'
     | '/_authenticated/label-preview'
     | '/_authenticated/link-pegawai'
     | '/_authenticated/metrik-query'
@@ -2173,6 +2186,13 @@ declare module '@tanstack/react-router' {
       path: '/label-preview'
       fullPath: '/label-preview'
       preLoaderRoute: typeof AuthenticatedLabelPreviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/kontak-mapping': {
+      id: '/_authenticated/kontak-mapping'
+      path: '/kontak-mapping'
+      fullPath: '/kontak-mapping'
+      preLoaderRoute: typeof AuthenticatedKontakMappingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/kontak': {
@@ -2870,6 +2890,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
   AuthenticatedKiosRoute: typeof AuthenticatedKiosRouteWithChildren
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
+  AuthenticatedKontakMappingRoute: typeof AuthenticatedKontakMappingRoute
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedMetrikQueryRoute: typeof AuthenticatedMetrikQueryRoute
@@ -2932,6 +2953,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
   AuthenticatedKiosRoute: AuthenticatedKiosRouteWithChildren,
   AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
+  AuthenticatedKontakMappingRoute: AuthenticatedKontakMappingRoute,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedMetrikQueryRoute: AuthenticatedMetrikQueryRoute,
