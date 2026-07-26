@@ -101,6 +101,37 @@ function ChatListPage() {
       return next;
     });
   }, []);
+  // Handler stabil supaya baris daftar (memo) tidak ikut re-render tiap render induk.
+  const handlePin = useCallback(
+    (c: { id: string; pinned_at?: string | null }) =>
+      pin.mutate(
+        { conversationId: c.id, pin: !c.pinned_at },
+        { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
+      ),
+    [pin],
+  );
+  const handleArchive = useCallback(
+    (c: { id: string; archived_at?: string | null }) =>
+      archive.mutate(
+        { conversationId: c.id, archive: !c.archived_at },
+        {
+          onSuccess: () =>
+            toast.success(c.archived_at ? "Percakapan dikembalikan" : "Percakapan diarsipkan"),
+        },
+      ),
+    [archive],
+  );
+  const handleMute = useCallback(
+    (c: { id: string }, until: Date | null) =>
+      mute.mutate(
+        { conversationId: c.id, until },
+        {
+          onSuccess: () =>
+            toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
+        },
+      ),
+    [mute],
+  );
   // Pantau path aktif untuk menandai item menu yang sedang dibuka.
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
   const isPathActive = (to: string): boolean =>
