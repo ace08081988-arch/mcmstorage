@@ -1,6 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { jsPDF } from "jspdf";
+import type { jsPDF } from "jspdf";
+
+async function loadJsPDF() {
+  const { jsPDF } = await import("jspdf");
+  return jsPDF;
+}
 
 export const Route = createFileRoute("/_authenticated/label-preview")({
   head: () => ({
@@ -202,15 +207,17 @@ function LabelPreviewPage() {
     });
   };
 
-  const buildPdfForSample = (s: Sample) => {
+  const buildPdfForSample = async (s: Sample) => {
+    const jsPDF = await loadJsPDF();
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     renderSamplesGrid(doc, [s]);
     const safe = s.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     doc.save(`label-${safe || "sampel"}.pdf`);
   };
 
-  const exportAll = () => {
+  const exportAll = async () => {
     if (samples.length === 0) return;
+    const jsPDF = await loadJsPDF();
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     renderSamplesGrid(doc, samples);
     doc.save(`label-preview-${samples.length}-sampel.pdf`);
@@ -219,8 +226,9 @@ function LabelPreviewPage() {
   // Build the same PDF used for export, expose as blob URL for live preview.
   // Debounced so rapid edits don't thrash.
   useEffect(() => {
-    const t = setTimeout(() => {
+    const t = setTimeout(async () => {
       try {
+        const jsPDF = await loadJsPDF();
         const doc = new jsPDF({ unit: "mm", format: "a4" });
         renderSamplesGrid(doc, samples.length ? samples : DEFAULT_SAMPLES);
         const blob = doc.output("blob");
