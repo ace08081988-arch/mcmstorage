@@ -224,6 +224,7 @@ export function DebtQuickActions({
   const undoConfirmedRef = useRef(false);
   const editConfirmedRef = useRef(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [registering, setRegistering] = useState<null | "customers" | "suppliers">(null);
   const log = useDebtActionLog();
   const parsed = Number(amountRaw.replace(/\D+/g, ""));
   const hasAmount = Number.isFinite(parsed) && parsed > 0;
