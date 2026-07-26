@@ -68,6 +68,12 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     role === "caller" ? "dialing" : "connecting",
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  /**
+   * Status pemulihan koneksi (ICE restart) supaya pengguna tahu apa yang
+   * sedang terjadi: sedang mencoba, berhasil pulih, atau gagal total.
+   */
+  const [recovery, setRecovery] = useState<"idle" | "recovering" | "recovered" | "failed">("idle");
+  const [recoveryAttempt, setRecoveryAttempt] = useState(0);
   const [finalStatus, setFinalStatus] = useState<
     "ended" | "declined" | "missed" | "cancelled" | "failed" | null
   >(null);
@@ -711,6 +717,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // "disconnected"/"failed" — beri masa tenggang & coba ICE restart.
   const iceRecoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const iceRestartCountRef = useRef(0);
+  // Timer untuk menyembunyikan banner "koneksi pulih" setelah beberapa detik.
+  const recoveredHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirror `recovery` untuk dibaca di dalam callback tanpa efek samping
+  // di updater state (aman terhadap double-invoke React StrictMode).
+  const recoveringRef = useRef(false);
   const acceptedAtRef = useRef<string | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -757,6 +768,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         clearTimeout(iceRecoverTimerRef.current);
         iceRecoverTimerRef.current = null;
       }
+      if (recoveredHideTimerRef.current) {
+        clearTimeout(recoveredHideTimerRef.current);
+        recoveredHideTimerRef.current = null;
+      }
+      setRecovery(status === "failed" ? "failed" : "idle");
       setPhase("ended");
       setFinalStatus(status);
       try { sessionRef.current?.sendBye(reason); } catch { /* ignore */ }
@@ -814,6 +830,21 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 }
                 iceRestartCountRef.current = 0;
                 setErrorMsg(null);
+                // Hanya tampilkan "pulih" bila memang sempat terputus.
+                if (recoveringRef.current) {
+                  recoveringRef.current = false;
+                  setRecovery("recovered");
+                  toast.success("Koneksi pulih", {
+                    description: "Panggilan tersambung kembali.",
+                  });
+                  if (recoveredHideTimerRef.current) clearTimeout(recoveredHideTimerRef.current);
+                  recoveredHideTimerRef.current = setTimeout(() => {
+                    recoveredHideTimerRef.current = null;
+                    setRecovery("idle");
+                  }, 3000);
+                } else {
+                  setRecovery("idle");
+                }
                 return;
               }
               if (s !== "failed" && s !== "disconnected") return;
@@ -822,17 +853,30 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               // Coba ICE restart (dari sisi caller) dan tunggu sebentar
               // sebelum benar-benar mengakhiri panggilan.
               setErrorMsg("Koneksi tidak stabil — mencoba menyambung ulang…");
+              if (recoveredHideTimerRef.current) {
+                clearTimeout(recoveredHideTimerRef.current);
+                recoveredHideTimerRef.current = null;
+              }
+              recoveringRef.current = true;
+              setRecovery("recovering");
               if (role === "caller" && sessionRef.current && iceRestartCountRef.current < 2) {
                 iceRestartCountRef.current += 1;
+                setRecoveryAttempt(iceRestartCountRef.current);
                 void restartIce(sessionRef.current).catch(() => { /* ignore */ });
+              } else {
+                setRecoveryAttempt(0);
               }
               iceRecoverTimerRef.current = setTimeout(() => {
                 iceRecoverTimerRef.current = null;
                 const st = sessionRef.current?.pc.iceConnectionState;
                 if (st === "connected" || st === "completed") {
                   setErrorMsg(null);
+                  recoveringRef.current = false;
+                  setRecovery("idle");
                   return;
                 }
+                recoveringRef.current = false;
+                setRecovery("failed");
                 void finalize("failed", `ice:${st ?? s}`);
               }, s === "failed" ? 6000 : 10000);
             },
@@ -1257,9 +1301,18 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
 
   const status = useMemo(() => {
     if (errorMsg && phase === "ended") return errorMsg;
+    if (phase !== "ended") {
+      if (recovery === "recovering") {
+        return recoveryAttempt > 0
+          ? `Memulihkan koneksi… (percobaan ${recoveryAttempt})`
+          : "Memulihkan koneksi…";
+      }
+      if (recovery === "recovered") return "Koneksi pulih";
+    }
+    if (phase === "ended" && recovery === "failed") return "Gagal memulihkan koneksi";
     if (phase === "in-call") return formatCallDuration(seconds);
     return visual.label;
-  }, [phase, seconds, errorMsg, visual.label]);
+  }, [phase, seconds, errorMsg, visual.label, recovery, recoveryAttempt]);
 
   const activeDevice = useMemo<OutputDevice | null>(() => {
     if (outputs.length === 0) return null;
@@ -1378,6 +1431,40 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             playsInline
             className="hidden"
           />
+        ) : null}
+        {/* Banner pemulihan koneksi — selalu di atas konten panggilan. */}
+        {recovery !== "idle" ? (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center p-ms-3">
+            <div
+              role="status"
+              aria-live="polite"
+              className={
+                "flex items-center gap-ms-2 rounded-full px-ms-4 py-ms-2 text-ms-xs font-medium shadow-lg backdrop-blur " +
+                (recovery === "recovering"
+                  ? "bg-amber-500/20 text-amber-100 ring-1 ring-amber-400/40"
+                  : recovery === "recovered"
+                    ? "bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-400/40"
+                    : "bg-destructive/25 text-red-100 ring-1 ring-destructive/50")
+              }
+            >
+              {recovery === "recovering" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : recovery === "recovered" ? (
+                <Signal className="h-3.5 w-3.5" />
+              ) : (
+                <AlertTriangle className="h-3.5 w-3.5" />
+              )}
+              <span>
+                {recovery === "recovering"
+                  ? recoveryAttempt > 0
+                    ? `Memulihkan koneksi… (percobaan ${recoveryAttempt})`
+                    : "Memulihkan koneksi…"
+                  : recovery === "recovered"
+                    ? "Koneksi pulih"
+                    : "Gagal memulihkan koneksi"}
+              </span>
+            </div>
+          </div>
         ) : null}
         {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
