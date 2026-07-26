@@ -1433,6 +1433,43 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           />
         ) : null}
         {!remoteReady && kind === "video" ? (
+          <></>
+        ) : null}
+        {/* Banner pemulihan koneksi — selalu di atas konten panggilan. */}
+        {recovery !== "idle" ? (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center p-ms-3">
+            <div
+              role="status"
+              aria-live="polite"
+              className={
+                "flex items-center gap-ms-2 rounded-full px-ms-4 py-ms-2 text-ms-xs font-medium shadow-lg backdrop-blur " +
+                (recovery === "recovering"
+                  ? "bg-amber-500/20 text-amber-100 ring-1 ring-amber-400/40"
+                  : recovery === "recovered"
+                    ? "bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-400/40"
+                    : "bg-destructive/25 text-red-100 ring-1 ring-destructive/50")
+              }
+            >
+              {recovery === "recovering" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : recovery === "recovered" ? (
+                <Signal className="h-3.5 w-3.5" />
+              ) : (
+                <AlertTriangle className="h-3.5 w-3.5" />
+              )}
+              <span>
+                {recovery === "recovering"
+                  ? recoveryAttempt > 0
+                    ? `Memulihkan koneksi… (percobaan ${recoveryAttempt})`
+                    : "Memulihkan koneksi…"
+                  : recovery === "recovered"
+                    ? "Koneksi pulih"
+                    : "Gagal memulihkan koneksi"}
+              </span>
+            </div>
+          </div>
+        ) : null}
+        {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
             <div className="flex flex-col items-center gap-ms-3 text-center">
               <div className="grid h-24 w-24 place-items-center rounded-full bg-white/10 text-ms-3xl font-semibold uppercase">
