@@ -156,6 +156,14 @@ export function ChatHeaderDebtControls({
   const linked = !!summary && summary.hasAny;
   const hutang = summary?.hutang ?? 0;
   const piutang = summary?.piutang ?? 0;
+  const safeSummary = summary ?? {
+    debts: [] as DebtRow[],
+    paidByDebt: new Map<string, number>(),
+    customerId: null,
+    customerName: null,
+    supplierId: null,
+    supplierName: null,
+  };
   const tone = debtChipTone(hutang, piutang, linked);
   const dominantValue = tone === "hutang" ? hutang : piutang;
 
@@ -192,13 +200,13 @@ export function ChatHeaderDebtControls({
         <div className="space-ms-2">
           <KindRow
             label="Piutang (dia berhutang)"
-            balance={summary.piutang}
+            balance={piutang}
             kind="piutang"
             onSubmit={(delta) =>
               applyDelta({
                 delta,
                 kind: "piutang",
-                summary,
+                summary: safeSummary,
                 myId,
                 peerName,
                 onDone: () => qc.invalidateQueries({ queryKey }),
@@ -207,13 +215,13 @@ export function ChatHeaderDebtControls({
           />
           <KindRow
             label="Hutang (Anda berhutang)"
-            balance={summary.hutang}
+            balance={hutang}
             kind="hutang"
             onSubmit={(delta) =>
               applyDelta({
                 delta,
                 kind: "hutang",
-                summary,
+                summary: safeSummary,
                 myId,
                 peerName,
                 onDone: () => qc.invalidateQueries({ queryKey }),
