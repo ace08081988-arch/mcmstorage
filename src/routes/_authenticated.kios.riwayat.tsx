@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { VirtualizedList } from "@/components/VirtualizedList";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyError } from "@/lib/friendly-error";
 
@@ -388,9 +390,9 @@ const TerimaRow = React.memo(function TerimaRow({
       </div>
     </div>
   );
-}
+});
 
-function JualRow({
+const JualRow = React.memo(function JualRow({
   r,
 }: {
   r: Extract<Row, { kind: "jual" }>;
@@ -439,4 +441,4 @@ function JualRow({
       </div>
     </div>
   );
-}
+});
