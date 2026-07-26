@@ -228,6 +228,234 @@ exports[`snapshot: computeBeliDerived lintas mode × itemId > mode new — semua
 ]
 `;
 
+exports[`snapshot: computeBeliDerived lintas mode × itemId existing × karton aktif (hanya berlaku untuk botol) 1`] = `
+[
+  {
+    "id": "botol-500",
+    "out": {
+      "baseAdded": 50000,
+      "effBaseUnit": "g",
+      "effPackageType": "botol",
+      "effectivePkgSize": 500,
+      "kartonActive": true,
+      "pkgQ": 100,
+      "price": 100,
+      "totalCost": 10000,
+    },
+  },
+  {
+    "id": "gram-1000",
+    "out": {
+      "baseAdded": 1000,
+      "effBaseUnit": "g",
+      "effPackageType": "gram",
+      "effectivePkgSize": 1000,
+      "kartonActive": false,
+      "pkgQ": 1,
+      "price": 10000,
+      "totalCost": 10000,
+    },
+  },
+  {
+    "id": "pcs-1",
+    "out": {
+      "baseAdded": 1,
+      "effBaseUnit": "pcs",
+      "effPackageType": "pcs",
+      "effectivePkgSize": 1,
+      "kartonActive": false,
+      "pkgQ": 1,
+      "price": 10000,
+      "totalCost": 10000,
+    },
+  },
+  {
+    "id": "sachet-10",
+    "out": {
+      "baseAdded": 10,
+      "effBaseUnit": "g",
+      "effPackageType": "sachet",
+      "effectivePkgSize": 10,
+      "kartonActive": false,
+      "pkgQ": 1,
+      "price": 10000,
+      "totalCost": 10000,
+    },
+  },
+]
+`;
+
+exports[`snapshot: computeBeliDerived lintas mode × itemId existing × priceMode='base' 1`] = `
+[
+  {
+    "id": "botol-500",
+    "out": {
+      "baseAdded": 1000,
+      "effBaseUnit": "g",
+      "effPackageType": "botol",
+      "effectivePkgSize": 500,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 12500,
+      "totalCost": 25000,
+    },
+  },
+  {
+    "id": "gram-1000",
+    "out": {
+      "baseAdded": 2000,
+      "effBaseUnit": "g",
+      "effPackageType": "gram",
+      "effectivePkgSize": 1000,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 25000,
+      "totalCost": 50000,
+    },
+  },
+  {
+    "id": "pcs-1",
+    "out": {
+      "baseAdded": 2,
+      "effBaseUnit": "pcs",
+      "effPackageType": "pcs",
+      "effectivePkgSize": 1,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 25,
+      "totalCost": 50,
+    },
+  },
+  {
+    "id": "sachet-10",
+    "out": {
+      "baseAdded": 20,
+      "effBaseUnit": "g",
+      "effPackageType": "sachet",
+      "effectivePkgSize": 10,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 250,
+      "totalCost": 500,
+    },
+  },
+]
+`;
+
+exports[`snapshot: computeBeliDerived lintas mode × itemId mode existing — semua itemId 1`] = `
+[
+  {
+    "id": "botol-500",
+    "out": {
+      "baseAdded": 1000,
+      "effBaseUnit": "g",
+      "effPackageType": "botol",
+      "effectivePkgSize": 500,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+  },
+  {
+    "id": "gram-1000",
+    "out": {
+      "baseAdded": 2000,
+      "effBaseUnit": "g",
+      "effPackageType": "gram",
+      "effectivePkgSize": 1000,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+  },
+  {
+    "id": "pcs-1",
+    "out": {
+      "baseAdded": 2,
+      "effBaseUnit": "pcs",
+      "effPackageType": "pcs",
+      "effectivePkgSize": 1,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+  },
+  {
+    "id": "sachet-10",
+    "out": {
+      "baseAdded": 20,
+      "effBaseUnit": "g",
+      "effPackageType": "sachet",
+      "effectivePkgSize": 10,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+  },
+]
+`;
+
+exports[`snapshot: computeBeliDerived lintas mode × itemId mode new — semua packageType 1`] = `
+[
+  {
+    "out": {
+      "baseAdded": 1000,
+      "effBaseUnit": "pcs",
+      "effPackageType": "botol",
+      "effectivePkgSize": 500,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+    "packageType": "botol",
+  },
+  {
+    "out": {
+      "baseAdded": 2000,
+      "effBaseUnit": "g",
+      "effPackageType": "gram",
+      "effectivePkgSize": 1000,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+    "packageType": "gram",
+  },
+  {
+    "out": {
+      "baseAdded": 2,
+      "effBaseUnit": "pcs",
+      "effPackageType": "pcs",
+      "effectivePkgSize": 1,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+    "packageType": "pcs",
+  },
+  {
+    "out": {
+      "baseAdded": 20,
+      "effBaseUnit": "pcs",
+      "effPackageType": "sachet",
+      "effectivePkgSize": 10,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+    "packageType": "sachet",
+  },
+]
+`;
+
 exports[`snapshot: computeBeliWarnings lintas mode × itemId > mode existing — KARTON_ON_NON_BOTOL untuk item non-botol 1`] = `
 [
   {
@@ -463,247 +691,26 @@ exports[`snapshot: computeBeliWarnings lintas mode × itemId > mode new — warn
 ]
 `;
 
-exports[`snapshot: computeBeliDerived lintas mode × itemId mode existing — semua itemId 1`] = `
+exports[`snapshot: computeBeliWarnings lintas mode × itemId mode existing — KARTON_ON_NON_BOTOL untuk item non-botol 1`] = `
 [
-  {
-    "id": "botol-500",
-    "out": {
-      "baseAdded": 1000,
-      "effBaseUnit": "g",
-      "effPackageType": "botol",
-      "effectivePkgSize": 500,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 10000,
-      "totalCost": 20000,
-    },
-  },
   {
     "id": "gram-1000",
-    "out": {
-      "baseAdded": 2000,
-      "effBaseUnit": "g",
-      "effPackageType": "gram",
-      "effectivePkgSize": 1000,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 10000,
-      "totalCost": 20000,
-    },
-  },
-  {
-    "id": "pcs-1",
-    "out": {
-      "baseAdded": 2,
-      "effBaseUnit": "pcs",
-      "effPackageType": "pcs",
-      "effectivePkgSize": 1,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 10000,
-      "totalCost": 20000,
-    },
-  },
-  {
-    "id": "sachet-10",
-    "out": {
-      "baseAdded": 20,
-      "effBaseUnit": "g",
-      "effPackageType": "sachet",
-      "effectivePkgSize": 10,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 10000,
-      "totalCost": 20000,
-    },
-  },
-]
-`;
-
-exports[`snapshot: computeBeliDerived lintas mode × itemId mode new — semua packageType 1`] = `
-[
-  {
-    "out": {
-      "baseAdded": 1000,
-      "effBaseUnit": "pcs",
-      "effPackageType": "botol",
-      "effectivePkgSize": 500,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 10000,
-      "totalCost": 20000,
-    },
-    "packageType": "botol",
-  },
-  {
-    "out": {
-      "baseAdded": 2000,
-      "effBaseUnit": "g",
-      "effPackageType": "gram",
-      "effectivePkgSize": 1000,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 10000,
-      "totalCost": 20000,
-    },
-    "packageType": "gram",
-  },
-  {
-    "out": {
-      "baseAdded": 2,
-      "effBaseUnit": "pcs",
-      "effPackageType": "pcs",
-      "effectivePkgSize": 1,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 10000,
-      "totalCost": 20000,
-    },
-    "packageType": "pcs",
-  },
-  {
-    "out": {
-      "baseAdded": 20,
-      "effBaseUnit": "pcs",
-      "effPackageType": "sachet",
-      "effectivePkgSize": 10,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 10000,
-      "totalCost": 20000,
-    },
-    "packageType": "sachet",
-  },
-]
-`;
-
-exports[`snapshot: computeBeliDerived lintas mode × itemId existing × karton aktif (hanya berlaku untuk botol) 1`] = `
-[
-  {
-    "id": "botol-500",
-    "out": {
-      "baseAdded": 50000,
-      "effBaseUnit": "g",
-      "effPackageType": "botol",
-      "effectivePkgSize": 500,
-      "kartonActive": true,
-      "pkgQ": 100,
-      "price": 100,
-      "totalCost": 10000,
-    },
-  },
-  {
-    "id": "gram-1000",
-    "out": {
-      "baseAdded": 1000,
-      "effBaseUnit": "g",
-      "effPackageType": "gram",
-      "effectivePkgSize": 1000,
-      "kartonActive": false,
-      "pkgQ": 1,
-      "price": 10000,
-      "totalCost": 10000,
-    },
-  },
-  {
-    "id": "pcs-1",
-    "out": {
-      "baseAdded": 1,
-      "effBaseUnit": "pcs",
-      "effPackageType": "pcs",
-      "effectivePkgSize": 1,
-      "kartonActive": false,
-      "pkgQ": 1,
-      "price": 10000,
-      "totalCost": 10000,
-    },
-  },
-  {
-    "id": "sachet-10",
-    "out": {
-      "baseAdded": 10,
-      "effBaseUnit": "g",
-      "effPackageType": "sachet",
-      "effectivePkgSize": 10,
-      "kartonActive": false,
-      "pkgQ": 1,
-      "price": 10000,
-      "totalCost": 10000,
-    },
-  },
-]
-`;
-
-exports[`snapshot: computeBeliDerived lintas mode × itemId existing × priceMode='base' 1`] = `
-[
-  {
-    "id": "botol-500",
-    "out": {
-      "baseAdded": 1000,
-      "effBaseUnit": "g",
-      "effPackageType": "botol",
-      "effectivePkgSize": 500,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 12500,
-      "totalCost": 25000,
-    },
-  },
-  {
-    "id": "gram-1000",
-    "out": {
-      "baseAdded": 2000,
-      "effBaseUnit": "g",
-      "effPackageType": "gram",
-      "effectivePkgSize": 1000,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 25000,
-      "totalCost": 50000,
-    },
-  },
-  {
-    "id": "pcs-1",
-    "out": {
-      "baseAdded": 2,
-      "effBaseUnit": "pcs",
-      "effPackageType": "pcs",
-      "effectivePkgSize": 1,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 25,
-      "totalCost": 50,
-    },
-  },
-  {
-    "id": "sachet-10",
-    "out": {
-      "baseAdded": 20,
-      "effBaseUnit": "g",
-      "effPackageType": "sachet",
-      "effectivePkgSize": 10,
-      "kartonActive": false,
-      "pkgQ": 2,
-      "price": 250,
-      "totalCost": 500,
-    },
-  },
-]
-`;
-
-exports[`snapshot: computeBeliWarnings lintas mode × itemId mode existing — warnings default (harga normal, qty 2) 1`] = `
-[
-  {
-    "id": "botol-500",
-    "warnings": [],
-  },
-  {
-    "id": "gram-1000",
-    "warnings": [],
+    "warnings": [
+      {
+        "code": "KARTON_ON_NON_BOTOL",
+        "level": "warn",
+        "message": "Mode karton hanya berlaku untuk item botol; item terpilih gram.",
+      },
+    ],
   },
   {
     "id": "pcs-1",
     "warnings": [
+      {
+        "code": "KARTON_ON_NON_BOTOL",
+        "level": "warn",
+        "message": "Mode karton hanya berlaku untuk item botol; item terpilih pcs.",
+      },
       {
         "code": "PCS_PACKAGE_PRICE",
         "level": "warn",
@@ -719,6 +726,11 @@ exports[`snapshot: computeBeliWarnings lintas mode × itemId mode existing — w
   {
     "id": "sachet-10",
     "warnings": [
+      {
+        "code": "KARTON_ON_NON_BOTOL",
+        "level": "warn",
+        "message": "Mode karton hanya berlaku untuk item botol; item terpilih sachet.",
+      },
       {
         "code": "PRICE_PER_BASE_HIGH",
         "level": "warn",
@@ -849,26 +861,19 @@ exports[`snapshot: computeBeliWarnings lintas mode × itemId mode existing — p
 ]
 `;
 
-exports[`snapshot: computeBeliWarnings lintas mode × itemId mode existing — KARTON_ON_NON_BOTOL untuk item non-botol 1`] = `
+exports[`snapshot: computeBeliWarnings lintas mode × itemId mode existing — warnings default (harga normal, qty 2) 1`] = `
 [
   {
+    "id": "botol-500",
+    "warnings": [],
+  },
+  {
     "id": "gram-1000",
-    "warnings": [
-      {
-        "code": "KARTON_ON_NON_BOTOL",
-        "level": "warn",
-        "message": "Mode karton hanya berlaku untuk item botol; item terpilih gram.",
-      },
-    ],
+    "warnings": [],
   },
   {
     "id": "pcs-1",
     "warnings": [
-      {
-        "code": "KARTON_ON_NON_BOTOL",
-        "level": "warn",
-        "message": "Mode karton hanya berlaku untuk item botol; item terpilih pcs.",
-      },
       {
         "code": "PCS_PACKAGE_PRICE",
         "level": "warn",
@@ -884,11 +889,6 @@ exports[`snapshot: computeBeliWarnings lintas mode × itemId mode existing — K
   {
     "id": "sachet-10",
     "warnings": [
-      {
-        "code": "KARTON_ON_NON_BOTOL",
-        "level": "warn",
-        "message": "Mode karton hanya berlaku untuk item botol; item terpilih sachet.",
-      },
       {
         "code": "PRICE_PER_BASE_HIGH",
         "level": "warn",
