@@ -1,11 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { jsPDF } from "jspdf";
-
-async function loadJsPDF() {
-  const { jsPDF } = await import("jspdf");
-  return jsPDF;
-}
+import { loadJsPDF, isJsPDFReady, prefetchJsPDF } from "@/lib/pdf-loader";
 
 export const Route = createFileRoute("/_authenticated/label-preview")({
   head: () => ({
@@ -98,10 +94,59 @@ const DEFAULT_SAMPLES: Sample[] = [
 ];
 
 function LabelPreviewPage() {
+  return <LabelPreviewInner />;
+}
+
+/** Skeleton berbentuk halaman A4 + 8 kartu label — mencerminkan hasil
+ *  akhir sehingga transisi ke pratinjau asli tidak terasa melompat. */
+function PreviewSkeleton({ phase, zoom }: { phase: "engine" | "render" | "ready"; zoom: number }) {
+  const label = phase === "engine" ? "Memuat mesin PDF…" : "Merender label…";
+  return (
+    <div
+      className="mx-auto block border bg-white shadow dark:bg-neutral-100"
+      style={{ width: `${(210 / 297) * 90}vh`, maxWidth: "100%", height: "90vh" }}
+      aria-busy="true"
+      aria-label={label}
+      data-zoom={zoom}
+    >
+      <div className="flex h-full flex-col gap-3 p-[4%]">
+        <div className="h-3 w-1/2 animate-pulse rounded bg-neutral-300" />
+        <div className="grid flex-1 grid-cols-2 grid-rows-4 gap-[2%]">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex animate-pulse flex-col justify-center gap-2 rounded border border-neutral-200 bg-neutral-100 p-3"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className="h-2.5 w-3/4 rounded bg-neutral-300" />
+              <div className="h-2 w-1/2 rounded bg-neutral-200" />
+              <div className="mt-1 h-1.5 w-full rounded bg-neutral-200" />
+              <div className="h-1.5 w-5/6 rounded bg-neutral-200" />
+              <div className="h-1.5 w-2/3 rounded bg-neutral-200" />
+            </div>
+          ))}
+        </div>
+        <div className="h-2 w-1/3 animate-pulse rounded bg-neutral-200" />
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-ms-xs font-medium text-neutral-600">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function LabelPreviewInner() {
   const [samples, setSamples] = useState<Sample[]>(DEFAULT_SAMPLES);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(100);
+  // Fase loading pratinjau — dipakai untuk skeleton yang informatif.
+  const [phase, setPhase] = useState<"engine" | "render" | "ready">(
+    isJsPDFReady() ? "render" : "engine",
+  );
+  const [rebuilding, setRebuilding] = useState(false);
+  const [buildError, setBuildError] = useState<string | null>(null);
   const lastUrlRef = useRef<string | null>(null);
+  const firstBuildRef = useRef(true);
 
   const update = (idx: number, patch: Partial<Sample>) =>
     setSamples((arr) => arr.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
@@ -224,25 +269,55 @@ function LabelPreviewPage() {
   };
 
   // Build the same PDF used for export, expose as blob URL for live preview.
-  // Debounced so rapid edits don't thrash.
+  // Render pertama TANPA debounce (supaya pratinjau muncul secepat mungkin);
+  // edit berikutnya di-debounce agar ketikan cepat tidak menggilas render.
   useEffect(() => {
-    const t = setTimeout(async () => {
+    let cancelled = false;
+    const run = async () => {
       try {
+        setBuildError(null);
+        if (!isJsPDFReady()) setPhase("engine");
         const jsPDF = await loadJsPDF();
+        if (cancelled) return;
+        if (firstBuildRef.current) setPhase("render");
+        else setRebuilding(true);
         const doc = new jsPDF({ unit: "mm", format: "a4" });
         renderSamplesGrid(doc, samples.length ? samples : DEFAULT_SAMPLES);
         const blob = doc.output("blob");
+        if (cancelled) return;
         const url = URL.createObjectURL(blob);
         if (lastUrlRef.current) URL.revokeObjectURL(lastUrlRef.current);
         lastUrlRef.current = url;
         setPdfUrl(url);
+        setPhase("ready");
       } catch (e) {
         console.error("Gagal membangun pratinjau PDF", e);
+        if (!cancelled) setBuildError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) {
+          setRebuilding(false);
+          firstBuildRef.current = false;
+        }
       }
-    }, 200);
-    return () => clearTimeout(t);
+    };
+    if (firstBuildRef.current) {
+      void run();
+      return () => {
+        cancelled = true;
+      };
+    }
+    const t = setTimeout(run, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [samples]);
+
+  // Ekspor juga butuh jsPDF — hangatkan cache-nya sedini mungkin.
+  useEffect(() => {
+    prefetchJsPDF();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -311,7 +386,7 @@ function LabelPreviewPage() {
             ) : null}
           </div>
         </div>
-        <div className="bg-neutral-200 dark:bg-neutral-800 p-ms-3 overflow-auto">
+        <div className="relative bg-neutral-200 dark:bg-neutral-800 p-ms-3 overflow-auto">
           {pdfUrl ? (
             <iframe
               key={pdfUrl}
@@ -324,11 +399,20 @@ function LabelPreviewPage() {
                 height: "90vh",
               }}
             />
-          ) : (
-            <div className="text-ms-sm text-muted-foreground p-ms-6 text-center">
-              Menyiapkan pratinjau…
+          ) : buildError ? (
+            <div className="p-ms-6 text-center text-ms-sm text-destructive">
+              Gagal menyiapkan pratinjau: {buildError}
             </div>
+          ) : (
+            <PreviewSkeleton phase={phase} zoom={zoom} />
           )}
+          {/* Rebuild setelah edit: pratinjau lama tetap terlihat, hanya
+              diberi penanda kecil supaya tidak "berkedip" kosong. */}
+          {pdfUrl && rebuilding ? (
+            <div className="pointer-events-none absolute right-ms-4 top-ms-4 rounded-full bg-background/90 px-ms-2.5 py-1 text-ms-2xs font-medium shadow ring-1 ring-border">
+              Memperbarui pratinjau…
+            </div>
+          ) : null}
         </div>
       </section>
 

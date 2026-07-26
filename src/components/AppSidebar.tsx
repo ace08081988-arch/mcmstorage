@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { getScrollGuardConfig } from "@/lib/scroll-guard-config";
+import { prefetchRouteAssets } from "@/lib/prefetch-route-assets";
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import { ADMIN_ONLY_URLS, filterSidebarItemsForAdmin } from "@/lib/admin-sidebar-visibility";
 import { supabase } from "@/integrations/supabase/client";
@@ -187,7 +188,10 @@ function NavLinkItem({
       to={item.url}
       preload="intent"
       className="flex min-w-0 items-center gap-ms-2.5"
+      onPointerEnter={() => prefetchRouteAssets(item.url)}
+      onFocus={() => prefetchRouteAssets(item.url)}
       onPointerDown={(e) => {
+        prefetchRouteAssets(item.url);
         if (!isMobile) return;
         if (e.pointerType === "mouse") return;
         if (isScrollActive()) {
