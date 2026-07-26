@@ -6,6 +6,7 @@ import { scheduleUndo } from "@/lib/undo-action";
 import { confirm } from "@/lib/confirm";
 import { logChatDelete } from "@/lib/chat-delete-audit";
 import { optimisticDeleteMessages } from "@/lib/chat-optimistic-delete";
+import { describeChatError } from "@/lib/chat-error";
 import { Linkify, UrlPreviewList } from "@/lib/linkify";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
@@ -2034,7 +2035,7 @@ function ChatRoomPage() {
                                         toast.success("Pesan disembunyikan untuk Anda");
                                         void logChatDelete({ conversationId, action: "for_me", messageId: m.id });
                                       },
-                                      onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
+                                      onError: (err) => notifyDeleteError(err, "menyembunyikan pesan"),
                                     }),
                                 });
                               }}
@@ -2106,7 +2107,7 @@ function ChatRoomPage() {
                                           },
                                           onError: (e) => {
                                             restore();
-                                            toast.error(deleteErrText(e));
+                                            notifyDeleteError(e, "menghapus pesan untuk semua");
                                           },
                                         },
                                       ),
@@ -2675,8 +2676,7 @@ function ChatRoomPage() {
                         toast.success(`${n} pesan dihapus`);
                         void logChatDelete({ conversationId, action: "all_mine", count: n });
                       },
-                      onError: (err) =>
-                        toast.error(err instanceof Error ? err.message : "Gagal menghapus"),
+                      onError: (err) => notifyDeleteError(err, "menghapus semua pesan Anda"),
                     }),
                 });
               }}
@@ -2720,7 +2720,7 @@ function ChatRoomPage() {
                         toast.success("Pesan disembunyikan untuk Anda");
                         void logChatDelete({ conversationId, action: "for_me", messageId: target.id });
                       },
-                      onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
+                      onError: (err) => notifyDeleteError(err, "menyembunyikan pesan"),
                     }),
                 });
               }}
@@ -2756,7 +2756,7 @@ function ChatRoomPage() {
                           },
                           onError: (e) => {
                             restore();
-                            toast.error(deleteErrText(e));
+                            notifyDeleteError(e, "menghapus pesan untuk semua");
                           },
                         },
                       ),
@@ -2871,12 +2871,25 @@ function ChatRoomPage() {
                 scheduleUndo({
                   label: `${items.length} pesan akan disembunyikan`,
                   onCommit: async () => {
+                    const hideFailed: string[] = [];
+                    let firstHideError: unknown = null;
                     for (const m of items) {
                       await new Promise<void>((resolve) =>
-                        hideMsg.mutate(m.id, { onSuccess: () => resolve(), onError: () => resolve() }),
+                        hideMsg.mutate(m.id, {
+                          onSuccess: () => resolve(),
+                          onError: (e) => {
+                            hideFailed.push(m.id);
+                            if (!firstHideError) firstHideError = e;
+                            resolve();
+                          },
+                        }),
                       );
                     }
-                    toast.success(`${items.length} pesan disembunyikan`);
+                    const okHidden = items.length - hideFailed.length;
+                    if (okHidden > 0) toast.success(`${okHidden} pesan disembunyikan`);
+                    if (hideFailed.length > 0) {
+                      notifyDeleteError(firstHideError, `menyembunyikan ${hideFailed.length} pesan`);
+                    }
                     void logChatDelete({
                       conversationId,
                       action: "for_me_bulk",
@@ -2944,6 +2957,7 @@ function ChatRoomPage() {
                             ? `${ok} pesan dihapus`
                             : `${ok} pesan dihapus, ${failedItems.length} gagal`,
                         );
+                        if (failedItems.length > 0) notifyDeleteError(firstError, `menghapus ${failedItems.length} pesan`);
                         void logChatDelete({
                           conversationId,
                           action: "for_all_bulk",
@@ -2952,11 +2966,7 @@ function ChatRoomPage() {
                             .map((m) => m.id),
                         });
                       } else {
-                        toast.error(
-                          firstError instanceof Error
-                            ? `Gagal menghapus: ${firstError.message}`
-                            : "Gagal menghapus pesan",
-                        );
+                        notifyDeleteError(firstError, "menghapus pesan untuk semua");
                       }
                       // Refresh from server so tombstones/failures are authoritative.
                       qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
