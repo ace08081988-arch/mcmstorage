@@ -1060,6 +1060,8 @@ function PiutangTab({
     });
     return () => { cancelled = true; };
   }, [sales, custPayments]);
+  // Transaksi hutang/piutang dari layar lain langsung menyegarkan kartu ini.
+  useOnDebtTx(useCallback(() => { void refreshPiutangSSOT(); }, [refreshPiutangSSOT]));
   const owedDisplay = piutangSSOT ? piutangSSOT.total_outstanding : totals.owed;
 
   if (groups.length === 0) {
