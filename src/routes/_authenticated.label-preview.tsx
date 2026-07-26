@@ -1,11 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { jsPDF } from "jspdf";
-
-async function loadJsPDF() {
-  const { jsPDF } = await import("jspdf");
-  return jsPDF;
-}
+import { loadJsPDF, isJsPDFReady, prefetchJsPDF } from "@/lib/pdf-loader";
 
 export const Route = createFileRoute("/_authenticated/label-preview")({
   head: () => ({
