@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { NumericTextField } from "@/components/NumericDraftInput";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
+import { fetchPiutangSummary } from "@/lib/piutang";
+import { fetchHutangSummary } from "@/lib/hutang";
+import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
