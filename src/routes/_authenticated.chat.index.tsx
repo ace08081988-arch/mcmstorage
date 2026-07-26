@@ -924,14 +924,56 @@ function ConvList({
     return <div className="rounded-lg border border-[var(--wa-border)] p-6">{empty}</div>;
   }
   return (
-    <div className="-mx-3">
-      <ul className="divide-y divide-[var(--wa-border)]/60">
-        {list.map((c) => {
-          const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
-          const isMuted = mutedUntil && mutedUntil.getTime() > Date.now();
-          const isSelected = selectedIds.has(c.id);
-          return (
-            <li
+    <div className="-mx-3 divide-y divide-[var(--wa-border)]/60">
+      <VirtualizedList
+        items={list}
+        getKey={(c) => c.id}
+        estimateSize={76}
+        gap={0}
+        renderItem={(c) => (
+          <ConvListItem
+            c={c}
+            archivedView={archivedView}
+            selecting={selecting}
+            isSelected={selectedIds.has(c.id)}
+            onPin={onPin}
+            onArchive={onArchive}
+            onMute={onMute}
+            onLongPressStart={onLongPressStart}
+            onRowTap={onRowTap}
+          />
+        )}
+      />
+    </div>
+  );
+}
+
+const ConvListItem = React.memo(function ConvListItem({
+  c,
+  archivedView,
+  selecting,
+  isSelected,
+  onPin,
+  onArchive,
+  onMute,
+  onLongPressStart,
+  onRowTap,
+}: {
+  c: ConvItem;
+  archivedView?: boolean;
+  selecting: boolean;
+  isSelected: boolean;
+  onPin: (c: ConvItem) => void;
+  onArchive: (c: ConvItem) => void;
+  onMute: (c: ConvItem, until: Date | null) => void;
+  onLongPressStart: (id: string) => void;
+  onRowTap: (id: string) => void;
+}) {
+  const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
+  const isMuted = !!(mutedUntil && mutedUntil.getTime() > Date.now());
+  return (
+
+    <li
               key={c.id}
               className={`relative ${isSelected ? "bg-primary/10" : ""}`}
             >
@@ -1051,12 +1093,8 @@ function ConvList({
               </div>
               )}
             </li>
-          );
-        })}
-      </ul>
-    </div>
   );
-}
+});
 
 /**
  * Baris satu percakapan dengan dukungan tekan lama (long-press) untuk masuk
