@@ -1515,6 +1515,19 @@ function SearchablePartySelect({
                 placeholder={`Cari ${kind === "hutang" ? "supplier" : "customer"}…`}
                 className="h-10 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
+              {query.trim().length > 0 && (
+                <button
+                  type="button"
+                  aria-label="Hapus kata kunci"
+                  onClick={() => {
+                    setQuery("");
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                  }}
+                  className="ml-2 grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <div className="max-h-[260px] overflow-y-auto p-1">
               {empty ? (
