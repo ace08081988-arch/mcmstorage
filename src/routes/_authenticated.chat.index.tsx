@@ -656,27 +656,9 @@ function ChatListPage() {
                   </div>
                 </div>
               }
-              onPin={(c) =>
-                pin.mutate(
-                  { conversationId: c.id, pin: !c.pinned_at },
-                  { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                )
-              }
-              onArchive={(c) =>
-                archive.mutate(
-                  { conversationId: c.id, archive: true },
-                  { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                )
-              }
-              onMute={(c, until) =>
-                mute.mutate(
-                  { conversationId: c.id, until },
-                  {
-                    onSuccess: () =>
-                      toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                  },
-                )
-              }
+              onPin={handlePin}
+              onArchive={handleArchive}
+              onMute={handleMute}
             />
           </TabsContent>
           <TabsContent value="customer">
@@ -707,27 +689,9 @@ function ChatListPage() {
                             onLongPressStart={toggleSelect}
                             onRowTap={toggleSelect}
                             empty={null}
-                            onPin={(c) =>
-                              pin.mutate(
-                                { conversationId: c.id, pin: !c.pinned_at },
-                                { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                              )
-                            }
-                            onArchive={(c) =>
-                              archive.mutate(
-                                { conversationId: c.id, archive: true },
-                                { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                              )
-                            }
-                            onMute={(c, until) =>
-                              mute.mutate(
-                                { conversationId: c.id, until },
-                                {
-                                  onSuccess: () =>
-                                    toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                                },
-                              )
-                            }
+                            onPin={handlePin}
+                            onArchive={handleArchive}
+                            onMute={handleMute}
                           />
                         </AccordionContent>
                       </AccordionItem>
@@ -747,27 +711,9 @@ function ChatListPage() {
                       onLongPressStart={toggleSelect}
                       onRowTap={toggleSelect}
                       empty={null}
-                      onPin={(c) =>
-                        pin.mutate(
-                          { conversationId: c.id, pin: !c.pinned_at },
-                          { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                        )
-                      }
-                      onArchive={(c) =>
-                        archive.mutate(
-                          { conversationId: c.id, archive: true },
-                          { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                        )
-                      }
-                      onMute={(c, until) =>
-                        mute.mutate(
-                          { conversationId: c.id, until },
-                          {
-                            onSuccess: () =>
-                              toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                          },
-                        )
-                      }
+                      onPin={handlePin}
+                      onArchive={handleArchive}
+                      onMute={handleMute}
                     />
                   </div>
                 ) : null}
@@ -787,27 +733,9 @@ function ChatListPage() {
                   Belum ada chat karyawan.
                 </div>
               }
-              onPin={(c) =>
-                pin.mutate(
-                  { conversationId: c.id, pin: !c.pinned_at },
-                  { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                )
-              }
-              onArchive={(c) =>
-                archive.mutate(
-                  { conversationId: c.id, archive: true },
-                  { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                )
-              }
-              onMute={(c, until) =>
-                mute.mutate(
-                  { conversationId: c.id, until },
-                  {
-                    onSuccess: () =>
-                      toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                  },
-                )
-              }
+              onPin={handlePin}
+              onArchive={handleArchive}
+              onMute={handleMute}
             />
           </TabsContent>
           <TabsContent value="internal">
@@ -823,27 +751,9 @@ function ChatListPage() {
                   Belum ada catatan internal.
                 </div>
               }
-              onPin={(c) =>
-                pin.mutate(
-                  { conversationId: c.id, pin: !c.pinned_at },
-                  { onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal") },
-                )
-              }
-              onArchive={(c) =>
-                archive.mutate(
-                  { conversationId: c.id, archive: true },
-                  { onSuccess: () => toast.success("Percakapan diarsipkan") },
-                )
-              }
-              onMute={(c, until) =>
-                mute.mutate(
-                  { conversationId: c.id, until },
-                  {
-                    onSuccess: () =>
-                      toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
-                  },
-                )
-              }
+              onPin={handlePin}
+              onArchive={handleArchive}
+              onMute={handleMute}
             />
           </TabsContent>
           <TabsContent value="archived">
@@ -861,12 +771,7 @@ function ChatListPage() {
               }
               archivedView
               onPin={() => undefined}
-              onArchive={(c) =>
-                archive.mutate(
-                  { conversationId: c.id, archive: false },
-                  { onSuccess: () => toast.success("Dipulihkan ke Aktif") },
-                )
-              }
+              onArchive={handleArchive}
               onMute={() => undefined}
             />
           </TabsContent>
