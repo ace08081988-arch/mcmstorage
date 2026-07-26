@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { messagePreviewText } from "@/lib/chat-deleted";
+import { describeChatError } from "@/lib/chat-error";
 import { debounce } from "@/lib/realtime-debounce";
 
 export type ConversationRow = {
@@ -834,13 +835,8 @@ export function useHideMessageForMe(conversationId: string) {
           qc.setQueryData(key, list);
         }
       }
-      // Extract Supabase Postgrest error shape too, not just Error instances.
-      const anyE = e as { message?: string; code?: string; details?: string } | undefined;
-      const description =
-        anyE?.message ||
-        anyE?.details ||
-        (typeof e === "string" ? e : "Coba lagi beberapa saat.");
-      toast.error("Gagal menghapus pesan", { description });
+      const info = describeChatError(e, "menyembunyikan pesan");
+      toast.error(info.title, { description: info.description, duration: 8000 });
     },
     onSuccess: (_data, messageId) => {
       // Undo: DELETE the message_hidden row for this user. RLS scopes it to
