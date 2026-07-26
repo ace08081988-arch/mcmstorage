@@ -344,7 +344,7 @@ function LabelPreviewPage() {
             ) : null}
           </div>
         </div>
-        <div className="bg-neutral-200 dark:bg-neutral-800 p-ms-3 overflow-auto">
+        <div className="relative bg-neutral-200 dark:bg-neutral-800 p-ms-3 overflow-auto">
           {pdfUrl ? (
             <iframe
               key={pdfUrl}
@@ -357,11 +357,20 @@ function LabelPreviewPage() {
                 height: "90vh",
               }}
             />
-          ) : (
-            <div className="text-ms-sm text-muted-foreground p-ms-6 text-center">
-              Menyiapkan pratinjau…
+          ) : buildError ? (
+            <div className="p-ms-6 text-center text-ms-sm text-destructive">
+              Gagal menyiapkan pratinjau: {buildError}
             </div>
+          ) : (
+            <PreviewSkeleton phase={phase} zoom={zoom} />
           )}
+          {/* Rebuild setelah edit: pratinjau lama tetap terlihat, hanya
+              diberi penanda kecil supaya tidak "berkedip" kosong. */}
+          {pdfUrl && rebuilding ? (
+            <div className="pointer-events-none absolute right-ms-4 top-ms-4 rounded-full bg-background/90 px-ms-2.5 py-1 text-ms-2xs font-medium shadow ring-1 ring-border">
+              Memperbarui pratinjau…
+            </div>
+          ) : null}
         </div>
       </section>
 
