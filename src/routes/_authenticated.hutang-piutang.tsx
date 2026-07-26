@@ -1486,6 +1486,7 @@ function SearchablePartySelect({
   };
 
   const empty = recent.length + rest.length === 0;
+  const totalFound = recent.length + rest.length;
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -1529,6 +1530,23 @@ function SearchablePartySelect({
                 </button>
               )}
             </div>
+            {!empty && (
+              <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5 text-ms-2xs text-muted-foreground">
+                <span>
+                  {totalFound} kontak ditemukan
+                  {recent.length > 0 && rest.length > 0 && (
+                    <span className="ml-1 text-muted-foreground/70">
+                      ({recent.length} terakhir, {rest.length} lainnya)
+                    </span>
+                  )}
+                </span>
+                {query.trim() && (
+                  <span className="truncate max-w-[55%] text-right">
+                    cocok “{query.trim()}”
+                  </span>
+                )}
+              </div>
+            )}
             <div className="max-h-[260px] overflow-y-auto p-1">
               {empty ? (
                 <div className="px-3 py-5 text-center">
