@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Wallet, Loader2, ArrowRight } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -11,16 +11,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
-
-/** Format rupiah compact untuk badge mobile agar nominal tetap terlihat. */
-function rupiahCompact(n: number): string {
-  const v = Math.abs(n || 0);
-  const sign = n < 0 ? "-" : "";
-  if (v >= 1_000_000_000) return `${sign}Rp ${(v / 1_000_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })} M`;
-  if (v >= 1_000_000) return `${sign}Rp ${(v / 1_000_000).toLocaleString("id-ID", { maximumFractionDigits: 1 })} Jt`;
-  if (v >= 1_000) return `${sign}Rp ${(v / 1_000).toLocaleString("id-ID", { maximumFractionDigits: 0 })} rb`;
-  return rupiah(n);
-}
+import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
 
 type Kind = "hutang" | "piutang";
 
@@ -161,53 +152,38 @@ export function ChatHeaderDebtControls({
     };
   }, [debtsQ.data]);
 
-  // Chip selalu tampil agar konsisten di semua percakapan. Saat belum ada
-  // catatan, chip tampil netral (Rp 0) dan popover tetap bisa dipakai untuk
-  // mencatat hutang/piutang pertama.
-  if (debtsQ.isLoading || !summary) return null;
-
-  const isEmpty = !summary.hasAny || (summary.hutang <= 0 && summary.piutang <= 0);
-  const dominantKind: Kind =
-    summary.piutang >= summary.hutang ? "piutang" : "hutang";
-  const dominantValue =
-    dominantKind === "piutang" ? summary.piutang : summary.hutang;
+  // Chip selalu tampil agar konsisten di semua percakapan & lokasi kartu.
+  const linked = !!summary && summary.hasAny;
+  const hutang = summary?.hutang ?? 0;
+  const piutang = summary?.piutang ?? 0;
+  const tone = debtChipTone(hutang, piutang, linked);
+  const dominantValue = tone === "hutang" ? hutang : piutang;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={`inline-flex max-w-full items-center gap-ms-1 whitespace-nowrap rounded-full border px-ms-2 py-0.5 text-ms-2xs font-semibold transition hover:bg-accent ${
-            isEmpty
-              ? "border-border bg-muted/40 text-muted-foreground"
-              : dominantKind === "piutang"
-              ? "border-success/40 bg-success/10 text-success dark:text-success"
-              : "border-warning/40 bg-warning/10 text-warning dark:text-warning"
-          }`}
+        <DebtChip
+          tone={tone}
+          amount={dominantValue}
           aria-label={
-            isEmpty
+            tone === "empty"
               ? `Belum ada catatan hutang/piutang dengan ${peerName}`
-              : dominantKind === "piutang"
-              ? `Piutang dari ${peerName}: ${rupiah(dominantValue)}`
-              : `Hutang kepada ${peerName}: ${rupiah(dominantValue)}`
+              : tone === "settled"
+                ? `Catatan dengan ${peerName} lunas`
+                : tone === "piutang"
+                  ? `Piutang dari ${peerName}: ${rupiah(dominantValue)}`
+                  : `Hutang kepada ${peerName}: ${rupiah(dominantValue)}`
           }
           title={
-            isEmpty
+            tone === "empty"
               ? "Belum ada catatan — ketuk untuk mencatat hutang/piutang"
-              : dominantKind === "piutang"
-              ? `Piutang (dia berhutang ke Anda): ${rupiah(dominantValue)}`
-              : `Hutang (Anda berhutang ke dia): ${rupiah(dominantValue)}`
+              : tone === "settled"
+                ? "Tidak ada sisa hutang/piutang"
+                : tone === "piutang"
+                  ? `Piutang (dia berhutang ke Anda): ${rupiah(dominantValue)}`
+                  : `Hutang (Anda berhutang ke dia): ${rupiah(dominantValue)}`
           }
-        >
-          <Wallet className="h-3 w-3 shrink-0" />
-          <span>
-            {isEmpty ? "Catatan" : dominantKind === "piutang" ? "Piutang" : "Hutang"}
-          </span>
-          <span className="font-mono">
-            <span className="sm:hidden">{rupiahCompact(isEmpty ? 0 : dominantValue)}</span>
-            <span className="hidden sm:inline">{rupiah(isEmpty ? 0 : dominantValue)}</span>
-          </span>
-        </button>
+        />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 p-ms-3">
         <div className="mb-2 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
