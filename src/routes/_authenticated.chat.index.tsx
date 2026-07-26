@@ -372,6 +372,7 @@ function ChatListPage() {
                   | { label: string; action: () => void };
                 const items: Item[] = [
                   { label: "Kontak", to: "/kontak" },
+                  { label: "Mapping kontak", to: "/kontak-mapping" },
                   { label: "Grup baru", action: () => setGrupOpen(true) },
                   { label: "Daftar", to: "/daftar" },
                   { label: "Perangkat tertaut", to: "/sesi" },
