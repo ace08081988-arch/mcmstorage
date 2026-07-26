@@ -26,18 +26,7 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
-    router: {
-      routeFileIgnorePattern:
-        "(?:^|/)[-_][^/]+\\.test\\.(?:ts|tsx)$|(?:^|/)_authenticated\\.gudang\\.strict-compute-spy\\.ts$",
-      codeSplittingOptions: {
-        defaultBehavior: [
-          ["component"],
-          ["pendingComponent"],
-          ["errorComponent"],
-          ["notFoundComponent"],
-        ],
-      },
-    },
+    routeFileIgnorePattern: "(?:^|/)_[^/]+\\.test\\.(?:ts|tsx)$|(?:^|/)_authenticated\\.gudang\\.strict-compute-spy\\.ts$",
   },
   vite: {
     plugins: [mcpPlugin()],
