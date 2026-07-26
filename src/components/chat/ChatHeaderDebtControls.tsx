@@ -24,7 +24,23 @@ type DebtRow = {
   customer_id: string | null;
   created_at: string;
 };
-type PaymentRow = { id: string; debt_id: string; amount: number };
+type PaymentRow = {
+  id: string;
+  debt_id: string;
+  amount: number;
+  paid_at: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+type HistoryEntry = {
+  id: string;
+  at: string;
+  kind: Kind;
+  type: "tagihan" | "pembayaran";
+  amount: number;
+  note: string | null;
+};
 
 /**
  * Panel kontrol hutang/piutang ringkas di header chat.
@@ -115,7 +131,7 @@ export function ChatHeaderDebtControls({
       if (debtRows.length > 0) {
         const { data: pays } = await supabase
           .from("debt_payments")
-          .select("id, debt_id, amount")
+          .select("id, debt_id, amount, paid_at, note, created_at")
           .in("debt_id", debtRows.map((d) => d.id));
         payments = (pays ?? []) as PaymentRow[];
       }
@@ -166,6 +182,33 @@ export function ChatHeaderDebtControls({
   };
   const tone = debtChipTone(hutang, piutang, linked);
   const dominantValue = tone === "hutang" ? hutang : piutang;
+
+  // Riwayat perubahan: gabungan entri tagihan (debts) & pembayaran
+  // (debt_payments) untuk peer ini, terbaru di atas.
+  const history = useMemo<HistoryEntry[]>(() => {
+    const d = debtsQ.data;
+    if (!d) return [];
+    const kindByDebt = new Map(d.debts.map((x) => [x.id, x.kind]));
+    const items: HistoryEntry[] = [
+      ...d.debts.map((x) => ({
+        id: `d-${x.id}`,
+        at: x.created_at,
+        kind: x.kind,
+        type: "tagihan" as const,
+        amount: Number(x.amount),
+        note: null,
+      })),
+      ...d.payments.map((p) => ({
+        id: `p-${p.id}`,
+        at: p.created_at ?? `${p.paid_at ?? ""}T00:00:00Z`,
+        kind: (kindByDebt.get(p.debt_id) ?? "piutang") as Kind,
+        type: "pembayaran" as const,
+        amount: Number(p.amount),
+        note: p.note,
+      })),
+    ];
+    return items.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  }, [debtsQ.data]);
 
   return (
     <Popover>
@@ -233,9 +276,65 @@ export function ChatHeaderDebtControls({
           <ArrowRight className="mr-1 inline h-2.5 w-2.5" />
           Tersinkron langsung ke Hutang & Piutang MCM Storage.
         </p>
+        <div className="mt-3 border-t pt-2">
+          <div className="mb-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Riwayat perubahan
+          </div>
+          {debtsQ.isLoading ? (
+            <div className="flex items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Memuat…
+            </div>
+          ) : history.length === 0 ? (
+            <p className="text-ms-2xs text-muted-foreground">
+              Belum ada perubahan tercatat.
+            </p>
+          ) : (
+            <ul className="max-h-40 space-y-1 overflow-y-auto pr-1">
+              {history.slice(0, 30).map((h) => (
+                <li
+                  key={h.id}
+                  className="flex items-start justify-between gap-ms-2 rounded-md bg-muted/40 px-2 py-1"
+                >
+                  <div className="min-w-0">
+                    <div className="text-ms-2xs font-medium">
+                      {h.type === "tagihan" ? "Tambah tagihan" : "Pembayaran"}
+                      <span className="ml-1 font-normal text-muted-foreground">
+                        {h.kind === "hutang" ? "hutang" : "piutang"}
+                      </span>
+                    </div>
+                    <div className="truncate text-ms-2xs text-muted-foreground">
+                      {formatWhen(h.at)}
+                      {h.note ? ` · ${h.note}` : ""}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 font-mono text-ms-2xs font-semibold ${
+                      h.type === "tagihan" ? "text-warning" : "text-success"
+                    }`}
+                  >
+                    {h.type === "tagihan" ? "+" : "−"}
+                    {rupiah(h.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );
+}
+
+function formatWhen(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function KindRow({
