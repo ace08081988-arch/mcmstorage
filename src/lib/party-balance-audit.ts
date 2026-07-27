@@ -26,6 +26,10 @@ export type BalanceEvent = {
   at: string;
   note: string | null;
   refId: string;
+  /** Saldo jenis ini (hutang/piutang) sebelum kejadian. Diisi oleh groupByParty. */
+  balanceBefore?: number;
+  /** Saldo jenis ini sesudah kejadian. Diisi oleh groupByParty. */
+  balanceAfter?: number;
 };
 
 type RawEvent = {
@@ -137,6 +141,15 @@ export function groupByParty(events: readonly BalanceEvent[]): PartyAuditGroup[]
     g.hutang = Math.max(g.hutang, 0);
     g.piutang = Math.max(g.piutang, 0);
     g.events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+    // Saldo berjalan per jenis, dihitung dari kejadian terlama ke terbaru.
+    const running: Record<BalanceEventKind, number> = { hutang: 0, piutang: 0 };
+    for (let i = g.events.length - 1; i >= 0; i--) {
+      const e = g.events[i];
+      const before = running[e.kind];
+      const after = before + e.delta;
+      running[e.kind] = after;
+      g.events[i] = { ...e, balanceBefore: before, balanceAfter: after };
+    }
   }
   out.sort((a, b) => (a.lastAt < b.lastAt ? 1 : a.lastAt > b.lastAt ? -1 : 0));
   return out;

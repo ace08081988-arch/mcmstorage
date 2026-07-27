@@ -244,6 +244,19 @@ function EventRow({ e }: { e: BalanceEvent }) {
             {e.note}
           </div>
         )}
+        {e.balanceAfter !== undefined && (
+          <div className="mt-1 inline-flex flex-wrap items-center gap-1 text-[0.625rem] tabular-nums text-muted-foreground">
+            <span>Sebelum</span>
+            <span className="rounded bg-muted px-1 py-0.5 font-medium text-foreground">
+              {rupiah(Math.max(e.balanceBefore ?? 0, 0))}
+            </span>
+            <span aria-hidden>→</span>
+            <span>Sesudah</span>
+            <span className="rounded bg-muted px-1 py-0.5 font-semibold text-foreground">
+              {rupiah(Math.max(e.balanceAfter, 0))}
+            </span>
+          </div>
+        )}
       </div>
       <div
         className={`shrink-0 text-xs font-semibold tabular-nums ${
