@@ -464,7 +464,9 @@ function AuditSaldoPage() {
               <li
                 key={g.key}
                 id={`audit-kontak-${g.key}`}
-                className="overflow-hidden rounded-xl border bg-card scroll-mt-4"
+                className={`overflow-hidden rounded-xl border bg-card scroll-mt-4 transition-colors ${
+                  highlight === g.key ? "border-primary ring-2 ring-primary/40" : ""
+                }`}
               >
                 <button
                   type="button"
