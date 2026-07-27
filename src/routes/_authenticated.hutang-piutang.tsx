@@ -626,6 +626,12 @@ function HutangPiutangPage() {
                 {(overall.net >= 0 ? "+" : "−") + rupiah(Math.abs(overall.net))}
               </span>
             </span>
+            <Link
+              to="/audit-saldo"
+              className="ml-auto text-ms-2xs font-medium text-primary underline"
+            >
+              Audit saldo
+            </Link>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-ms-2 sm:grid-cols-3 lg:grid-cols-5">
             <FinanceStatCard

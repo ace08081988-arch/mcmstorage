@@ -79,6 +79,7 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.c
 import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticated.catatan'
 import { Route as AuthenticatedBukuAlamatRouteImport } from './routes/_authenticated.buku-alamat'
 import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
+import { Route as AuthenticatedAuditSaldoRouteImport } from './routes/_authenticated.audit-saldo'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -522,6 +523,11 @@ const AuthenticatedBalasCepatRoute = AuthenticatedBalasCepatRouteImport.update({
   path: '/balas-cepat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAuditSaldoRoute = AuthenticatedAuditSaldoRouteImport.update({
+  id: '/audit-saldo',
+  path: '/audit-saldo',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -941,6 +947,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/audit-saldo': typeof AuthenticatedAuditSaldoRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/buku-alamat': typeof AuthenticatedBukuAlamatRoute
   '/catatan': typeof AuthenticatedCatatanRoute
@@ -1079,6 +1086,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/audit-saldo': typeof AuthenticatedAuditSaldoRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/buku-alamat': typeof AuthenticatedBukuAlamatRoute
   '/catatan': typeof AuthenticatedCatatanRoute
@@ -1219,6 +1227,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
+  '/_authenticated/audit-saldo': typeof AuthenticatedAuditSaldoRoute
   '/_authenticated/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/_authenticated/buku-alamat': typeof AuthenticatedBukuAlamatRoute
   '/_authenticated/catatan': typeof AuthenticatedCatatanRoute
@@ -1362,6 +1371,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin-denial-log'
     | '/audit'
+    | '/audit-saldo'
     | '/balas-cepat'
     | '/buku-alamat'
     | '/catatan'
@@ -1500,6 +1510,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin-denial-log'
     | '/audit'
+    | '/audit-saldo'
     | '/balas-cepat'
     | '/buku-alamat'
     | '/catatan'
@@ -1639,6 +1650,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/admin-denial-log'
     | '/_authenticated/audit'
+    | '/_authenticated/audit-saldo'
     | '/_authenticated/balas-cepat'
     | '/_authenticated/buku-alamat'
     | '/_authenticated/catatan'
@@ -2326,6 +2338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBalasCepatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/audit-saldo': {
+      id: '/_authenticated/audit-saldo'
+      path: '/audit-saldo'
+      fullPath: '/audit-saldo'
+      preLoaderRoute: typeof AuthenticatedAuditSaldoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/audit': {
       id: '/_authenticated/audit'
       path: '/audit'
@@ -2893,6 +2912,7 @@ const AuthenticatedKontakRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminDenialLogRoute: typeof AuthenticatedAdminDenialLogRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
+  AuthenticatedAuditSaldoRoute: typeof AuthenticatedAuditSaldoRoute
   AuthenticatedBalasCepatRoute: typeof AuthenticatedBalasCepatRoute
   AuthenticatedBukuAlamatRoute: typeof AuthenticatedBukuAlamatRoute
   AuthenticatedCatatanRoute: typeof AuthenticatedCatatanRoute
@@ -2957,6 +2977,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminDenialLogRoute: AuthenticatedAdminDenialLogRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
+  AuthenticatedAuditSaldoRoute: AuthenticatedAuditSaldoRoute,
   AuthenticatedBalasCepatRoute: AuthenticatedBalasCepatRoute,
   AuthenticatedBukuAlamatRoute: AuthenticatedBukuAlamatRoute,
   AuthenticatedCatatanRoute: AuthenticatedCatatanRoute,
