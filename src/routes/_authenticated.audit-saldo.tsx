@@ -385,6 +385,79 @@ function AuditSaldoPage() {
 }
 
 function EventRow({ e }: { e: BalanceEvent }) {
+  return <EventRowInner e={e} />;
+}
+
+function FactorBreakdown({
+  events,
+  onOpenAll,
+}: {
+  events: BalanceEvent[];
+  onOpenAll: () => void;
+}) {
+  const factors = useMemo(() => breakdownFactors(events), [events]);
+  const [openSrc, setOpenSrc] = useState<string | null>(null);
+  if (factors.length === 0) return null;
+  return (
+    <div className="mt-1.5 space-y-1 rounded-lg border bg-background/60 p-2">
+      <div className="text-[0.625rem] font-medium text-muted-foreground">
+        Faktor penyebab perubahan
+      </div>
+      {factors.map((f) => {
+        const id = `${f.sourceTable}::${f.source}`;
+        const isOpen = openSrc === id;
+        return (
+          <div key={id} className="rounded-md border bg-card">
+            <button
+              type="button"
+              onClick={() => setOpenSrc(isOpen ? null : id)}
+              aria-expanded={isOpen}
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-left hover:bg-muted/40"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[0.6875rem] font-medium">{f.label}</div>
+                <div className="text-[0.625rem] text-muted-foreground">
+                  {f.count} transaksi · {f.share.toFixed(0)}% dampak ·{" "}
+                  <code>{f.sourceTable}</code>
+                </div>
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full ${f.delta >= 0 ? "bg-rose-500" : "bg-emerald-500"}`}
+                    style={{ width: `${Math.max(f.share, 2)}%` }}
+                  />
+                </div>
+              </div>
+              <div
+                className={`shrink-0 text-[0.6875rem] font-semibold tabular-nums ${
+                  f.delta >= 0 ? "text-rose-600" : "text-emerald-600"
+                }`}
+              >
+                {f.delta >= 0 ? "+" : "−"}
+                {rupiah(Math.abs(f.delta))}
+              </div>
+            </button>
+            {isOpen && (
+              <ol className="border-t bg-background/50">
+                {f.events.map((e) => (
+                  <EventRowInner key={`${e.sourceTable}-${e.refId}-${e.at}`} e={e} />
+                ))}
+              </ol>
+            )}
+          </div>
+        );
+      })}
+      <button
+        type="button"
+        onClick={onOpenAll}
+        className="w-full rounded-md border px-2 py-1 text-[0.625rem] text-primary hover:bg-muted"
+      >
+        Lihat semua transaksi kontak ini →
+      </button>
+    </div>
+  );
+}
+
+function EventRowInner({ e }: { e: BalanceEvent }) {
   const naik = e.delta >= 0;
   return (
     <li className="flex items-start gap-2 border-b px-3 py-2 last:border-b-0">
