@@ -117,6 +117,56 @@ export type PartyAuditGroup = {
   events: BalanceEvent[];
 };
 
+/** Ringkasan delta bersih (tanpa clamp) untuk rentang tanggal terpilih. */
+export type PartyDeltaSummary = {
+  key: string;
+  name: string;
+  /** Delta bersih piutang pada rentang (naik = tagihan baru). */
+  piutangDelta: number;
+  /** Delta bersih hutang pada rentang. */
+  hutangDelta: number;
+  /** Total tagihan baru (delta positif) pada rentang. */
+  naik: number;
+  /** Total pembayaran (delta negatif, dinyatakan positif) pada rentang. */
+  turun: number;
+  count: number;
+  lastAt: string;
+};
+
+/** Hitung delta bersih per kontak dari daftar kejadian yang sudah difilter. */
+export function summarizeDeltas(events: readonly BalanceEvent[]): PartyDeltaSummary[] {
+  const map = new Map<string, PartyDeltaSummary>();
+  for (const e of events) {
+    const s =
+      map.get(e.key) ??
+      {
+        key: e.key,
+        name: e.name,
+        piutangDelta: 0,
+        hutangDelta: 0,
+        naik: 0,
+        turun: 0,
+        count: 0,
+        lastAt: e.at,
+      };
+    if (e.kind === "hutang") s.hutangDelta += e.delta;
+    else s.piutangDelta += e.delta;
+    if (e.delta >= 0) s.naik += e.delta;
+    else s.turun += -e.delta;
+    s.count += 1;
+    if (e.at > s.lastAt) {
+      s.lastAt = e.at;
+      s.name = e.name || s.name;
+    }
+    map.set(e.key, s);
+  }
+  return Array.from(map.values()).sort(
+    (a, b) =>
+      Math.abs(b.piutangDelta) + Math.abs(b.hutangDelta) -
+      (Math.abs(a.piutangDelta) + Math.abs(a.hutangDelta)),
+  );
+}
+
 /**
  * Kelompokkan event per kontak dan hitung saldo berjalan.
  * Rumusnya mengikuti party_balance_v1: saldo per jenis tidak pernah negatif.
