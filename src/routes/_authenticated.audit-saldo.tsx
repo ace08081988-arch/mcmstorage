@@ -363,9 +363,85 @@ function AuditSaldoPage() {
         )}
       </div>
 
+      <section className="rounded-xl border bg-card p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-semibold">Peringkat kontak</h2>
+          <span className="text-[0.625rem] text-muted-foreground">
+            {rangeActive ? "rentang terpilih" : "semua tanggal"} · top {ranked.length}
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1">
+          {(["total", "piutang", "hutang", "bayar"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setRankBy(m)}
+              aria-pressed={rankBy === m}
+              className={`rounded-full border px-2.5 py-1 text-[0.6875rem] ${
+                rankBy === m ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
+            >
+              {RANK_LABEL[m]}
+            </button>
+          ))}
+        </div>
+        {ranked.length === 0 ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Belum ada kontak dengan perubahan pada kriteria ini.
+          </p>
+        ) : (
+          <ol className="mt-2 space-y-1">
+            {ranked.map((s, i) => {
+              const score = rankScore(s, rankBy);
+              const top = rankScore(ranked[0], rankBy) || 1;
+              const isHi = highlight === s.key;
+              return (
+                <li key={s.key}>
+                  <button
+                    type="button"
+                    onClick={() => focusParty(s.key)}
+                    className={`flex w-full items-center gap-2 rounded-lg border p-2 text-left transition-colors ${
+                      isHi ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <span className="w-5 shrink-0 text-center text-[0.625rem] font-semibold text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-medium">{s.name}</span>
+                      <span className="mt-1 block h-1 w-full overflow-hidden rounded-full bg-muted">
+                        <span
+                          className={`block h-full ${
+                            rankBy === "bayar" ? "bg-emerald-500" : "bg-primary"
+                          }`}
+                          style={{ width: `${Math.max((score / top) * 100, 3)}%` }}
+                        />
+                      </span>
+                      <span className="mt-0.5 block text-[0.625rem] text-muted-foreground">
+                        {s.count} perubahan · naik {rupiah(s.naik)} · turun {rupiah(s.turun)}
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 text-xs font-semibold tabular-nums ${
+                        rankBy === "bayar"
+                          ? "text-emerald-600"
+                          : score >= 0
+                            ? "text-rose-600"
+                            : "text-emerald-600"
+                      }`}
+                    >
+                      {rupiah(Math.abs(score))}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
+
       {query.isError && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-2 text-xs text-destructive">
-          {null}
           Gagal memuat audit: {(query.error as Error)?.message ?? "kesalahan tak dikenal"}
         </div>
       )}
