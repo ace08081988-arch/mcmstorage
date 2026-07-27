@@ -16,6 +16,7 @@ import {
   fetchPartyBalanceEvents,
   groupByParty,
   sourceLabel,
+  summarizeDeltas,
   type BalanceEvent,
 } from "@/lib/party-balance-audit";
 
@@ -58,11 +59,24 @@ function fmtTime(iso: string): string {
 
 type KindFilter = "semua" | "hutang" | "piutang";
 
+/** Tanggal lokal (Asia/Jakarta) dalam format YYYY-MM-DD untuk perbandingan rentang. */
+function localDay(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Jakarta" }).format(
+      new Date(iso),
+    );
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
 function AuditSaldoPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [kind, setKind] = useState<KindFilter>("semua");
   const [open, setOpen] = useState<string | null>(null);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const query = useQuery({
     queryKey: PARTY_AUDIT_QUERY_KEY,
@@ -76,14 +90,33 @@ function AuditSaldoPage() {
     }, [qc]),
   );
 
-  const groups = useMemo(() => {
-    const events = (query.data ?? []).filter(
-      (e) => kind === "semua" || e.kind === kind,
-    );
-    const all = groupByParty(events);
+  const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return needle ? all.filter((g) => g.key.includes(needle)) : all;
-  }, [query.data, kind, q]);
+    return (query.data ?? []).filter((e) => {
+      if (kind !== "semua" && e.kind !== kind) return false;
+      if (needle && !e.key.includes(needle)) return false;
+      const d = localDay(e.at);
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      return true;
+    });
+  }, [query.data, kind, q, from, to]);
+
+  const groups = useMemo(() => groupByParty(filtered), [filtered]);
+  const summaries = useMemo(() => summarizeDeltas(filtered), [filtered]);
+  const totals = useMemo(
+    () =>
+      summaries.reduce(
+        (acc, s) => {
+          acc.piutangDelta += s.piutangDelta;
+          acc.hutangDelta += s.hutangDelta;
+          return acc;
+        },
+        { piutangDelta: 0, hutangDelta: 0 },
+      ),
+    [summaries],
+  );
+  const rangeActive = Boolean(from || to);
 
   const totalEvents = groups.reduce((n, g) => n + g.events.length, 0);
 
@@ -155,6 +188,100 @@ function AuditSaldoPage() {
         <span className="ml-auto text-[0.6875rem] text-muted-foreground">
           {groups.length} kontak · {totalEvents} perubahan
         </span>
+      </div>
+
+      <div className="rounded-xl border bg-card p-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1 text-[0.6875rem] text-muted-foreground">
+            Dari tanggal
+            <input
+              type="date"
+              value={from}
+              max={to || undefined}
+              onChange={(e) => setFrom(e.target.value)}
+              className="h-9 rounded-lg border bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-[0.6875rem] text-muted-foreground">
+            Sampai tanggal
+            <input
+              type="date"
+              value={to}
+              min={from || undefined}
+              onChange={(e) => setTo(e.target.value)}
+              className="h-9 rounded-lg border bg-background px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          {rangeActive && (
+            <button
+              type="button"
+              onClick={() => {
+                setFrom("");
+                setTo("");
+              }}
+              className="h-9 rounded-lg border px-3 text-xs hover:bg-muted"
+            >
+              Semua tanggal
+            </button>
+          )}
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+          <div className="rounded-lg border bg-background/60 p-2">
+            <div className="text-[0.625rem] text-muted-foreground">Delta bersih piutang</div>
+            <div
+              className={`text-sm font-semibold tabular-nums ${
+                totals.piutangDelta >= 0 ? "text-rose-600" : "text-emerald-600"
+              }`}
+            >
+              {totals.piutangDelta >= 0 ? "+" : "−"}
+              {rupiah(Math.abs(totals.piutangDelta))}
+            </div>
+          </div>
+          <div className="rounded-lg border bg-background/60 p-2">
+            <div className="text-[0.625rem] text-muted-foreground">Delta bersih hutang</div>
+            <div
+              className={`text-sm font-semibold tabular-nums ${
+                totals.hutangDelta >= 0 ? "text-rose-600" : "text-emerald-600"
+              }`}
+            >
+              {totals.hutangDelta >= 0 ? "+" : "−"}
+              {rupiah(Math.abs(totals.hutangDelta))}
+            </div>
+          </div>
+        </div>
+
+        {summaries.length > 0 && (
+          <ul className="mt-3 divide-y border-t pt-1">
+            {summaries.map((s) => (
+              <li key={s.key} className="flex items-center gap-2 py-1.5">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-medium">{s.name}</div>
+                  <div className="text-[0.625rem] text-muted-foreground">
+                    {s.count} perubahan · naik {rupiah(s.naik)} · turun {rupiah(s.turun)}
+                  </div>
+                </div>
+                <div className="shrink-0 space-y-0.5 text-right text-[0.6875rem] tabular-nums">
+                  {s.piutangDelta !== 0 && (
+                    <div className={s.piutangDelta > 0 ? "text-rose-600" : "text-emerald-600"}>
+                      Piutang {s.piutangDelta > 0 ? "+" : "−"}
+                      {rupiah(Math.abs(s.piutangDelta))}
+                    </div>
+                  )}
+                  {s.hutangDelta !== 0 && (
+                    <div className={s.hutangDelta > 0 ? "text-rose-600" : "text-emerald-600"}>
+                      Hutang {s.hutangDelta > 0 ? "+" : "−"}
+                      {rupiah(Math.abs(s.hutangDelta))}
+                    </div>
+                  )}
+                  {s.piutangDelta === 0 && s.hutangDelta === 0 && (
+                    <div className="text-muted-foreground">Netral</div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {query.isError && (
