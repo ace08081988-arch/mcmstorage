@@ -79,6 +79,8 @@ function AuditSaldoPage() {
   const [openFactor, setOpenFactor] = useState<string | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [rankBy, setRankBy] = useState<RankMode>("total");
+  const [highlight, setHighlight] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: PARTY_AUDIT_QUERY_KEY,
@@ -119,6 +121,18 @@ function AuditSaldoPage() {
     [summaries],
   );
   const rangeActive = Boolean(from || to);
+
+  const ranked = useMemo(() => rankSummaries(summaries, rankBy), [summaries, rankBy]);
+
+  const focusParty = useCallback((key: string) => {
+    setHighlight(key);
+    setOpen(key);
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`audit-kontak-${key}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
 
   const totalEvents = groups.reduce((n, g) => n + g.events.length, 0);
 
