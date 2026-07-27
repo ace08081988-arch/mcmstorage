@@ -60,6 +60,38 @@ function fmtTime(iso: string): string {
 
 type KindFilter = "semua" | "hutang" | "piutang";
 
+type RankMode = "total" | "piutang" | "hutang" | "bayar";
+
+const RANK_LABEL: Record<RankMode, string> = {
+  total: "Pergerakan terbesar",
+  piutang: "Piutang naik",
+  hutang: "Hutang naik",
+  bayar: "Pembayaran terbesar",
+};
+
+function rankScore(s: PartyDeltaSummary, mode: RankMode): number {
+  switch (mode) {
+    case "piutang":
+      return s.piutangDelta;
+    case "hutang":
+      return s.hutangDelta;
+    case "bayar":
+      return s.turun;
+    default:
+      return Math.abs(s.piutangDelta) + Math.abs(s.hutangDelta);
+  }
+}
+
+function rankSummaries(
+  summaries: readonly PartyDeltaSummary[],
+  mode: RankMode,
+): PartyDeltaSummary[] {
+  return summaries
+    .filter((s) => rankScore(s, mode) > 0)
+    .sort((a, b) => rankScore(b, mode) - rankScore(a, mode))
+    .slice(0, 10);
+}
+
 /** Tanggal lokal (Asia/Jakarta) dalam format YYYY-MM-DD untuk perbandingan rentang. */
 function localDay(iso: string): string {
   try {
