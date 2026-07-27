@@ -890,11 +890,12 @@ function ConvList({
   onPin: (c: ConvItem) => void;
   onArchive: (c: ConvItem) => void;
   onMute: (c: ConvItem, until: Date | null) => void;
+  onClearChat: (c: ConvItem) => void;
   selecting: boolean;
   selectedIds: Set<string>;
   onLongPressStart: (id: string) => void;
   onRowTap: (id: string) => void;
-}) {
+} & { onClearChat: (c: ConvItem) => void }) {
   if (isLoading) {
     return <ChatListSkeleton rows={7} />;
   }
@@ -917,6 +918,7 @@ function ConvList({
             onPin={onPin}
             onArchive={onArchive}
             onMute={onMute}
+            onClearChat={onClearChat}
             onLongPressStart={onLongPressStart}
             onRowTap={onRowTap}
           />
@@ -944,6 +946,7 @@ const ConvListItem = React.memo(function ConvListItem({
   onPin: (c: ConvItem) => void;
   onArchive: (c: ConvItem) => void;
   onMute: (c: ConvItem, until: Date | null) => void;
+  onClearChat: (c: ConvItem) => void;
   onLongPressStart: (id: string) => void;
   onRowTap: (id: string) => void;
 }) {
@@ -1061,6 +1064,13 @@ const ConvListItem = React.memo(function ConvListItem({
                           <Archive className="mr-2 h-4 w-4" /> Arsipkan
                         </>
                       )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => onClearChat(c)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Hapus chat (kontak tetap)
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
