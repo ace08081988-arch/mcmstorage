@@ -19,6 +19,7 @@ import {
   sourceLabel,
   summarizeDeltas,
   type BalanceEvent,
+  type PartyDeltaSummary,
 } from "@/lib/party-balance-audit";
 
 export const Route = createFileRoute("/_authenticated/audit-saldo")({
