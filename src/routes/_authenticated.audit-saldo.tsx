@@ -8,11 +8,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownCircle, ArrowUpCircle, RefreshCw, Search, X } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, ChevronRight, RefreshCw, Search, X } from "lucide-react";
 import { rupiah } from "@/lib/stock-format";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import {
   PARTY_AUDIT_QUERY_KEY,
+  breakdownFactors,
   fetchPartyBalanceEvents,
   groupByParty,
   sourceLabel,
@@ -75,6 +76,7 @@ function AuditSaldoPage() {
   const [q, setQ] = useState("");
   const [kind, setKind] = useState<KindFilter>("semua");
   const [open, setOpen] = useState<string | null>(null);
+  const [openFactor, setOpenFactor] = useState<string | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
@@ -253,33 +255,63 @@ function AuditSaldoPage() {
 
         {summaries.length > 0 && (
           <ul className="mt-3 divide-y border-t pt-1">
-            {summaries.map((s) => (
-              <li key={s.key} className="flex items-center gap-2 py-1.5">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-xs font-medium">{s.name}</div>
-                  <div className="text-[0.625rem] text-muted-foreground">
-                    {s.count} perubahan · naik {rupiah(s.naik)} · turun {rupiah(s.turun)}
-                  </div>
-                </div>
-                <div className="shrink-0 space-y-0.5 text-right text-[0.6875rem] tabular-nums">
-                  {s.piutangDelta !== 0 && (
-                    <div className={s.piutangDelta > 0 ? "text-rose-600" : "text-emerald-600"}>
-                      Piutang {s.piutangDelta > 0 ? "+" : "−"}
-                      {rupiah(Math.abs(s.piutangDelta))}
+            {summaries.map((s) => {
+              const isOpenFactor = openFactor === s.key;
+              const evs = filtered.filter((e) => e.key === s.key);
+              return (
+                <li key={s.key} className="py-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFactor(isOpenFactor ? null : s.key)}
+                    aria-expanded={isOpenFactor}
+                    className="flex w-full items-center gap-2 rounded-lg px-1 py-0.5 text-left hover:bg-muted/50"
+                  >
+                    <ChevronRight
+                      className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${
+                        isOpenFactor ? "rotate-90" : ""
+                      }`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-medium">{s.name}</div>
+                      <div className="text-[0.625rem] text-muted-foreground">
+                        {s.count} perubahan · naik {rupiah(s.naik)} · turun {rupiah(s.turun)}
+                        <span className="ml-1 text-primary underline">
+                          {isOpenFactor ? "tutup faktor" : "lihat faktor"}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  {s.hutangDelta !== 0 && (
-                    <div className={s.hutangDelta > 0 ? "text-rose-600" : "text-emerald-600"}>
-                      Hutang {s.hutangDelta > 0 ? "+" : "−"}
-                      {rupiah(Math.abs(s.hutangDelta))}
+                    <div className="shrink-0 space-y-0.5 text-right text-[0.6875rem] tabular-nums">
+                      {s.piutangDelta !== 0 && (
+                        <div className={s.piutangDelta > 0 ? "text-rose-600" : "text-emerald-600"}>
+                          Piutang {s.piutangDelta > 0 ? "+" : "−"}
+                          {rupiah(Math.abs(s.piutangDelta))}
+                        </div>
+                      )}
+                      {s.hutangDelta !== 0 && (
+                        <div className={s.hutangDelta > 0 ? "text-rose-600" : "text-emerald-600"}>
+                          Hutang {s.hutangDelta > 0 ? "+" : "−"}
+                          {rupiah(Math.abs(s.hutangDelta))}
+                        </div>
+                      )}
+                      {s.piutangDelta === 0 && s.hutangDelta === 0 && (
+                        <div className="text-muted-foreground">Netral</div>
+                      )}
                     </div>
+                  </button>
+                  {isOpenFactor && (
+                    <FactorBreakdown
+                      events={evs}
+                      onOpenAll={() => {
+                        setOpen(s.key);
+                        document
+                          .getElementById(`audit-kontak-${s.key}`)
+                          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                    />
                   )}
-                  {s.piutangDelta === 0 && s.hutangDelta === 0 && (
-                    <div className="text-muted-foreground">Netral</div>
-                  )}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -305,7 +337,11 @@ function AuditSaldoPage() {
           {groups.map((g) => {
             const isOpen = open === g.key;
             return (
-              <li key={g.key} className="overflow-hidden rounded-xl border bg-card">
+              <li
+                key={g.key}
+                id={`audit-kontak-${g.key}`}
+                className="overflow-hidden rounded-xl border bg-card scroll-mt-4"
+              >
                 <button
                   type="button"
                   onClick={() => setOpen(isOpen ? null : g.key)}
@@ -349,6 +385,79 @@ function AuditSaldoPage() {
 }
 
 function EventRow({ e }: { e: BalanceEvent }) {
+  return <EventRowInner e={e} />;
+}
+
+function FactorBreakdown({
+  events,
+  onOpenAll,
+}: {
+  events: BalanceEvent[];
+  onOpenAll: () => void;
+}) {
+  const factors = useMemo(() => breakdownFactors(events), [events]);
+  const [openSrc, setOpenSrc] = useState<string | null>(null);
+  if (factors.length === 0) return null;
+  return (
+    <div className="mt-1.5 space-y-1 rounded-lg border bg-background/60 p-2">
+      <div className="text-[0.625rem] font-medium text-muted-foreground">
+        Faktor penyebab perubahan
+      </div>
+      {factors.map((f) => {
+        const id = `${f.sourceTable}::${f.source}`;
+        const isOpen = openSrc === id;
+        return (
+          <div key={id} className="rounded-md border bg-card">
+            <button
+              type="button"
+              onClick={() => setOpenSrc(isOpen ? null : id)}
+              aria-expanded={isOpen}
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-left hover:bg-muted/40"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[0.6875rem] font-medium">{f.label}</div>
+                <div className="text-[0.625rem] text-muted-foreground">
+                  {f.count} transaksi · {f.share.toFixed(0)}% dampak ·{" "}
+                  <code>{f.sourceTable}</code>
+                </div>
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full ${f.delta >= 0 ? "bg-rose-500" : "bg-emerald-500"}`}
+                    style={{ width: `${Math.max(f.share, 2)}%` }}
+                  />
+                </div>
+              </div>
+              <div
+                className={`shrink-0 text-[0.6875rem] font-semibold tabular-nums ${
+                  f.delta >= 0 ? "text-rose-600" : "text-emerald-600"
+                }`}
+              >
+                {f.delta >= 0 ? "+" : "−"}
+                {rupiah(Math.abs(f.delta))}
+              </div>
+            </button>
+            {isOpen && (
+              <ol className="border-t bg-background/50">
+                {f.events.map((e) => (
+                  <EventRowInner key={`${e.sourceTable}-${e.refId}-${e.at}`} e={e} />
+                ))}
+              </ol>
+            )}
+          </div>
+        );
+      })}
+      <button
+        type="button"
+        onClick={onOpenAll}
+        className="w-full rounded-md border px-2 py-1 text-[0.625rem] text-primary hover:bg-muted"
+      >
+        Lihat semua transaksi kontak ini →
+      </button>
+    </div>
+  );
+}
+
+function EventRowInner({ e }: { e: BalanceEvent }) {
   const naik = e.delta >= 0;
   return (
     <li className="flex items-start gap-2 border-b px-3 py-2 last:border-b-0">

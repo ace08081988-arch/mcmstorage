@@ -171,6 +171,59 @@ export function summarizeDeltas(events: readonly BalanceEvent[]): PartyDeltaSumm
  * Kelompokkan event per kontak dan hitung saldo berjalan.
  * Rumusnya mengikuti party_balance_v1: saldo per jenis tidak pernah negatif.
  */
+export type DeltaFactor = {
+  /** Label ramah pengguna untuk sumber (kanal) perubahan. */
+  label: string;
+  sourceTable: string;
+  source: string;
+  /** Delta bersih dari kanal ini. */
+  delta: number;
+  naik: number;
+  turun: number;
+  count: number;
+  /** Kontribusi terhadap total pergerakan absolut kontak (0–100). */
+  share: number;
+  events: BalanceEvent[];
+};
+
+/**
+ * Rincian faktor penyebab delta bersih seorang kontak:
+ * event dikelompokkan per kanal sumber, diurutkan dari dampak terbesar.
+ */
+export function breakdownFactors(events: readonly BalanceEvent[]): DeltaFactor[] {
+  const map = new Map<string, DeltaFactor>();
+  for (const e of events) {
+    const id = `${e.sourceTable}::${e.source}`;
+    const f =
+      map.get(id) ??
+      {
+        label: sourceLabel(e),
+        sourceTable: e.sourceTable,
+        source: e.source,
+        delta: 0,
+        naik: 0,
+        turun: 0,
+        count: 0,
+        share: 0,
+        events: [] as BalanceEvent[],
+      };
+    f.delta += e.delta;
+    if (e.delta >= 0) f.naik += e.delta;
+    else f.turun += -e.delta;
+    f.count += 1;
+    f.events.push(e);
+    map.set(id, f);
+  }
+  const out = Array.from(map.values());
+  const total = out.reduce((n, f) => n + Math.abs(f.delta), 0);
+  for (const f of out) {
+    f.share = total > 0 ? (Math.abs(f.delta) / total) * 100 : 0;
+    f.events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  }
+  out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  return out;
+}
+
 export function groupByParty(events: readonly BalanceEvent[]): PartyAuditGroup[] {
   const map = new Map<string, PartyAuditGroup>();
   for (const e of events) {
