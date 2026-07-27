@@ -365,6 +365,7 @@ function AuditSaldoPage() {
 
       {query.isError && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-2 text-xs text-destructive">
+          {null}
           Gagal memuat audit: {(query.error as Error)?.message ?? "kesalahan tak dikenal"}
         </div>
       )}
