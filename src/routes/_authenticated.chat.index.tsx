@@ -730,6 +730,7 @@ function ChatListPage() {
               onPin={handlePin}
               onArchive={handleArchive}
               onMute={handleMute}
+              onClearChat={handleClearChat}
             />
           </TabsContent>
           <TabsContent value="customer">
@@ -763,6 +764,7 @@ function ChatListPage() {
                             onPin={handlePin}
                             onArchive={handleArchive}
                             onMute={handleMute}
+                            onClearChat={handleClearChat}
                           />
                         </AccordionContent>
                       </AccordionItem>
@@ -785,6 +787,7 @@ function ChatListPage() {
                       onPin={handlePin}
                       onArchive={handleArchive}
                       onMute={handleMute}
+                      onClearChat={handleClearChat}
                     />
                   </div>
                 ) : null}
@@ -807,6 +810,7 @@ function ChatListPage() {
               onPin={handlePin}
               onArchive={handleArchive}
               onMute={handleMute}
+              onClearChat={handleClearChat}
             />
           </TabsContent>
           <TabsContent value="internal">
@@ -825,6 +829,7 @@ function ChatListPage() {
               onPin={handlePin}
               onArchive={handleArchive}
               onMute={handleMute}
+              onClearChat={handleClearChat}
             />
           </TabsContent>
           <TabsContent value="archived">
@@ -844,6 +849,7 @@ function ChatListPage() {
               onPin={() => undefined}
               onArchive={handleArchive}
               onMute={() => undefined}
+              onClearChat={handleClearChat}
             />
           </TabsContent>
         </Tabs>
@@ -878,6 +884,7 @@ function ConvList({
   onPin,
   onArchive,
   onMute,
+  onClearChat,
   selecting,
   selectedIds,
   onLongPressStart,
@@ -895,7 +902,7 @@ function ConvList({
   selectedIds: Set<string>;
   onLongPressStart: (id: string) => void;
   onRowTap: (id: string) => void;
-} & { onClearChat: (c: ConvItem) => void }) {
+}) {
   if (isLoading) {
     return <ChatListSkeleton rows={7} />;
   }
@@ -936,6 +943,7 @@ const ConvListItem = React.memo(function ConvListItem({
   onPin,
   onArchive,
   onMute,
+  onClearChat,
   onLongPressStart,
   onRowTap,
 }: {
