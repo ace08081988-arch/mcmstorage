@@ -19,6 +19,7 @@ import {
   sourceLabel,
   summarizeDeltas,
   type BalanceEvent,
+  type PartyDeltaSummary,
 } from "@/lib/party-balance-audit";
 
 export const Route = createFileRoute("/_authenticated/audit-saldo")({
@@ -60,6 +61,38 @@ function fmtTime(iso: string): string {
 
 type KindFilter = "semua" | "hutang" | "piutang";
 
+type RankMode = "total" | "piutang" | "hutang" | "bayar";
+
+const RANK_LABEL: Record<RankMode, string> = {
+  total: "Pergerakan terbesar",
+  piutang: "Piutang naik",
+  hutang: "Hutang naik",
+  bayar: "Pembayaran terbesar",
+};
+
+function rankScore(s: PartyDeltaSummary, mode: RankMode): number {
+  switch (mode) {
+    case "piutang":
+      return s.piutangDelta;
+    case "hutang":
+      return s.hutangDelta;
+    case "bayar":
+      return s.turun;
+    default:
+      return Math.abs(s.piutangDelta) + Math.abs(s.hutangDelta);
+  }
+}
+
+function rankSummaries(
+  summaries: readonly PartyDeltaSummary[],
+  mode: RankMode,
+): PartyDeltaSummary[] {
+  return summaries
+    .filter((s) => rankScore(s, mode) > 0)
+    .sort((a, b) => rankScore(b, mode) - rankScore(a, mode))
+    .slice(0, 10);
+}
+
 /** Tanggal lokal (Asia/Jakarta) dalam format YYYY-MM-DD untuk perbandingan rentang. */
 function localDay(iso: string): string {
   try {
@@ -79,6 +112,8 @@ function AuditSaldoPage() {
   const [openFactor, setOpenFactor] = useState<string | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [rankBy, setRankBy] = useState<RankMode>("total");
+  const [highlight, setHighlight] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: PARTY_AUDIT_QUERY_KEY,
@@ -119,6 +154,18 @@ function AuditSaldoPage() {
     [summaries],
   );
   const rangeActive = Boolean(from || to);
+
+  const ranked = useMemo(() => rankSummaries(summaries, rankBy), [summaries, rankBy]);
+
+  const focusParty = useCallback((key: string) => {
+    setHighlight(key);
+    setOpen(key);
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`audit-kontak-${key}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
 
   const totalEvents = groups.reduce((n, g) => n + g.events.length, 0);
 
@@ -316,6 +363,83 @@ function AuditSaldoPage() {
         )}
       </div>
 
+      <section className="rounded-xl border bg-card p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-semibold">Peringkat kontak</h2>
+          <span className="text-[0.625rem] text-muted-foreground">
+            {rangeActive ? "rentang terpilih" : "semua tanggal"} · top {ranked.length}
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1">
+          {(["total", "piutang", "hutang", "bayar"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setRankBy(m)}
+              aria-pressed={rankBy === m}
+              className={`rounded-full border px-2.5 py-1 text-[0.6875rem] ${
+                rankBy === m ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
+            >
+              {RANK_LABEL[m]}
+            </button>
+          ))}
+        </div>
+        {ranked.length === 0 ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Belum ada kontak dengan perubahan pada kriteria ini.
+          </p>
+        ) : (
+          <ol className="mt-2 space-y-1">
+            {ranked.map((s, i) => {
+              const score = rankScore(s, rankBy);
+              const top = rankScore(ranked[0], rankBy) || 1;
+              const isHi = highlight === s.key;
+              return (
+                <li key={s.key}>
+                  <button
+                    type="button"
+                    onClick={() => focusParty(s.key)}
+                    className={`flex w-full items-center gap-2 rounded-lg border p-2 text-left transition-colors ${
+                      isHi ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                    }`}
+                  >
+                    <span className="w-5 shrink-0 text-center text-[0.625rem] font-semibold text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-medium">{s.name}</span>
+                      <span className="mt-1 block h-1 w-full overflow-hidden rounded-full bg-muted">
+                        <span
+                          className={`block h-full ${
+                            rankBy === "bayar" ? "bg-emerald-500" : "bg-primary"
+                          }`}
+                          style={{ width: `${Math.max((score / top) * 100, 3)}%` }}
+                        />
+                      </span>
+                      <span className="mt-0.5 block text-[0.625rem] text-muted-foreground">
+                        {s.count} perubahan · naik {rupiah(s.naik)} · turun {rupiah(s.turun)}
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 text-xs font-semibold tabular-nums ${
+                        rankBy === "bayar"
+                          ? "text-emerald-600"
+                          : score >= 0
+                            ? "text-rose-600"
+                            : "text-emerald-600"
+                      }`}
+                    >
+                      {rupiah(Math.abs(score))}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
+
       {query.isError && (
         <div className="rounded-md border border-destructive bg-destructive/10 p-2 text-xs text-destructive">
           Gagal memuat audit: {(query.error as Error)?.message ?? "kesalahan tak dikenal"}
@@ -340,7 +464,9 @@ function AuditSaldoPage() {
               <li
                 key={g.key}
                 id={`audit-kontak-${g.key}`}
-                className="overflow-hidden rounded-xl border bg-card scroll-mt-4"
+                className={`overflow-hidden rounded-xl border bg-card scroll-mt-4 transition-colors ${
+                  highlight === g.key ? "border-primary ring-2 ring-primary/40" : ""
+                }`}
               >
                 <button
                   type="button"
