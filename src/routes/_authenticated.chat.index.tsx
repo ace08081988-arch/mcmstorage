@@ -132,6 +132,46 @@ function ChatListPage() {
       ),
     [mute],
   );
+  /**
+   * Hapus isi chat satu percakapan TANPA menghapus kontaknya.
+   * Memakai RPC yang sama dengan hapus massal (`chat_clear_conversation_for_me`):
+   * pesan hilang dari riwayat saya, baris percakapan & kontak tetap ada.
+   */
+  const handleClearChat = useCallback(
+    async (c: { id: string; display_title: string }) => {
+      const ok = await confirm({
+        title: `Hapus chat dengan ${c.display_title}?`,
+        description:
+          "Semua pesan di percakapan ini dihapus dari riwayatmu. Kontaknya tetap tersimpan dan percakapan bisa dilanjutkan kapan saja.",
+        confirmText: "Hapus chat",
+        cancelText: "Batal",
+        destructive: true,
+      });
+      if (!ok) return;
+      setDeleting(true);
+      try {
+        const { data, error } = await supabase.rpc("chat_clear_conversation_for_me", {
+          _conv: c.id,
+        });
+        if (error) throw error;
+        const paths = ((data ?? []) as string[]).filter((p): p is string => !!p);
+        if (paths.length > 0) {
+          await supabase.storage
+            .from("chat-attachments")
+            .remove(paths)
+            .catch(() => undefined);
+        }
+        qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+        qc.invalidateQueries({ queryKey: ["chat", "messages", c.id] });
+        toast.success("Chat dihapus — kontak tetap tersimpan");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Gagal menghapus chat");
+      } finally {
+        setDeleting(false);
+      }
+    },
+    [qc],
+  );
   // Pantau path aktif untuk menandai item menu yang sedang dibuka.
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
   const isPathActive = (to: string): boolean =>
@@ -690,6 +730,7 @@ function ChatListPage() {
               onPin={handlePin}
               onArchive={handleArchive}
               onMute={handleMute}
+              onClearChat={handleClearChat}
             />
           </TabsContent>
           <TabsContent value="customer">
@@ -723,6 +764,7 @@ function ChatListPage() {
                             onPin={handlePin}
                             onArchive={handleArchive}
                             onMute={handleMute}
+                            onClearChat={handleClearChat}
                           />
                         </AccordionContent>
                       </AccordionItem>
@@ -745,6 +787,7 @@ function ChatListPage() {
                       onPin={handlePin}
                       onArchive={handleArchive}
                       onMute={handleMute}
+                      onClearChat={handleClearChat}
                     />
                   </div>
                 ) : null}
@@ -767,6 +810,7 @@ function ChatListPage() {
               onPin={handlePin}
               onArchive={handleArchive}
               onMute={handleMute}
+              onClearChat={handleClearChat}
             />
           </TabsContent>
           <TabsContent value="internal">
@@ -785,6 +829,7 @@ function ChatListPage() {
               onPin={handlePin}
               onArchive={handleArchive}
               onMute={handleMute}
+              onClearChat={handleClearChat}
             />
           </TabsContent>
           <TabsContent value="archived">
@@ -804,6 +849,7 @@ function ChatListPage() {
               onPin={() => undefined}
               onArchive={handleArchive}
               onMute={() => undefined}
+              onClearChat={handleClearChat}
             />
           </TabsContent>
         </Tabs>
@@ -838,6 +884,7 @@ function ConvList({
   onPin,
   onArchive,
   onMute,
+  onClearChat,
   selecting,
   selectedIds,
   onLongPressStart,
@@ -850,6 +897,7 @@ function ConvList({
   onPin: (c: ConvItem) => void;
   onArchive: (c: ConvItem) => void;
   onMute: (c: ConvItem, until: Date | null) => void;
+  onClearChat: (c: ConvItem) => void;
   selecting: boolean;
   selectedIds: Set<string>;
   onLongPressStart: (id: string) => void;
@@ -877,6 +925,7 @@ function ConvList({
             onPin={onPin}
             onArchive={onArchive}
             onMute={onMute}
+            onClearChat={onClearChat}
             onLongPressStart={onLongPressStart}
             onRowTap={onRowTap}
           />
@@ -894,6 +943,7 @@ const ConvListItem = React.memo(function ConvListItem({
   onPin,
   onArchive,
   onMute,
+  onClearChat,
   onLongPressStart,
   onRowTap,
 }: {
@@ -904,6 +954,7 @@ const ConvListItem = React.memo(function ConvListItem({
   onPin: (c: ConvItem) => void;
   onArchive: (c: ConvItem) => void;
   onMute: (c: ConvItem, until: Date | null) => void;
+  onClearChat: (c: ConvItem) => void;
   onLongPressStart: (id: string) => void;
   onRowTap: (id: string) => void;
 }) {
@@ -1021,6 +1072,13 @@ const ConvListItem = React.memo(function ConvListItem({
                           <Archive className="mr-2 h-4 w-4" /> Arsipkan
                         </>
                       )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => onClearChat(c)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Hapus chat (kontak tetap)
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
