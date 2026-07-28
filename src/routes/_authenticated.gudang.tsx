@@ -244,6 +244,7 @@ import { KartonRumusPopover } from "@/components/KartonRumusPopover";
 import { KemasanRumusPopover } from "@/components/KemasanRumusPopover";
 import { KemasanKonversiBadge } from "@/components/KemasanKonversiBadge";
 import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
+import { ReadyPrepPicker, type ReadyPrep } from "@/components/gudang/ReadyPrepPicker";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -3412,6 +3413,14 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
     setPricePerPackage("");
   }, [itemId]);
 
+  // Setelah item terkunci oleh paket siap, isi jumlah dari berat paket.
+  // Efek ini sengaja berada SETELAH reset di atas supaya nilainya menang.
+  useEffect(() => {
+    if (!prep) return;
+    setSellMode("base");
+    setQty(prep.grams > 0 ? String(prep.grams) : "");
+  }, [prep, itemId]);
+
   const item = items.find((i) => i.id === itemId);
   const qtyN = Number(qty) || 0;
   // 1 karton = BOTOL_PER_KARTON botol. Faktor pengali ke base untuk tiap mode.
@@ -3478,6 +3487,24 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       payment_method: paymentMethod,
     });
     if (error) { notifyError(error); return; }
+    if (prep) {
+      // Tandai paket siap sebagai terjual agar tidak bisa dijual dua kali
+      // dan status di /ecer ikut sinkron. Kegagalan di sini tidak
+      // membatalkan penjualan — hanya diberitahukan ke operator.
+      const { error: prepErr } = await supabase
+        .from("ecer_preparations")
+        .update({
+          sold_at: new Date().toISOString(),
+          sold_customer_id: useCustomerId,
+          sold_total: total,
+          sold_paid_amount: paymentMethod === "hutang" ? 0 : total,
+          sold_payment_method: paymentMethod,
+          sold_party_name: customers.find((c) => c.id === useCustomerId)?.name ?? null,
+        })
+        .eq("id", prep.id);
+      if (prepErr) toast.warning("Penjualan tersimpan, tapi status paket siap gagal diperbarui");
+      setPrep(null);
+    }
     toast.success(`Penjualan dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok berkurang`);
     setQty(""); setPricePerBase(""); setPricePerPackage(""); setNote("");
     setNewCustName(""); setNewCustWa("");
@@ -3493,9 +3520,26 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
     <form onSubmit={submit} className="space-ms-3 rounded-lg border bg-card p-ms-3">
       <div className="text-ms-xs font-semibold">Catat Penjualan</div>
 
+      <ReadyPrepPicker
+        selectedId={prep?.id ?? null}
+        itemNameById={(id) => items.find((i) => i.id === id)?.name ?? null}
+        onPick={(p) => {
+          if (!p.warehouseItemId || !items.some((i) => i.id === p.warehouseItemId)) {
+            toast.error("Paket ini belum tertaut ke barang gudang");
+            return;
+          }
+          setItemId(p.warehouseItemId);
+          setPrep(p);
+        }}
+        onClear={() => {
+          setPrep(null);
+          setQty("");
+        }}
+      />
+
       <label className="block">
         <span className="text-[0.6875rem] text-muted-foreground">Barang</span>
-        <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+        <select className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={itemId} disabled={!!prep} onChange={(e) => setItemId(e.target.value)}>
           {items.map((i) => (
             <option key={i.id} value={i.id}>
               {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base", i.name)} · HPP {rupiah(i.avg_cost_per_base)}/{humanBaseUnit(i.package_type, i.base_unit)}
