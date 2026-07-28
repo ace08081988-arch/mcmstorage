@@ -67,7 +67,7 @@ import {
   logAppearanceMigration,
   type ImportSource,
 } from "@/lib/appearance-migrator.telemetry";
-import { scopedKey } from "@/lib/user-scoped-storage";
+import { scopedKey, peekUserIdSync } from "@/lib/user-scoped-storage";
 
 const COMPACT_LS = "app-compact-mode";
 
@@ -77,7 +77,7 @@ const SYNC_TRACE_LS = "appearance-sync-trace";
 function readSyncTrace(): SyncTrace {
   if (typeof window === "undefined") return { pushAt: null, pullAt: null, error: null };
   try {
-    const raw = localStorage.getItem(scopedKey(SYNC_TRACE_LS));
+    const raw = localStorage.getItem(scopedKey(SYNC_TRACE_LS, peekUserIdSync()));
     if (!raw) return { pushAt: null, pullAt: null, error: null };
     const p = JSON.parse(raw) as Partial<SyncTrace>;
     return {
@@ -92,7 +92,7 @@ function readSyncTrace(): SyncTrace {
 function writeSyncTrace(t: SyncTrace) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(scopedKey(SYNC_TRACE_LS), JSON.stringify(t));
+    localStorage.setItem(scopedKey(SYNC_TRACE_LS, peekUserIdSync()), JSON.stringify(t));
   } catch {
     /* kuota penuh — indikator boleh gagal diam-diam */
   }
