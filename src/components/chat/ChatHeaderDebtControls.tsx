@@ -744,6 +744,7 @@ export function ChatHeaderDebtControls({
                 setReportStyle(s);
                 setPreviewBody(reportBody(s));
                 setPreviewEdited(false);
+                setActiveTemplateId(null);
               }}
             >
               {s}
@@ -761,6 +762,38 @@ export function ChatHeaderDebtControls({
             {previewEdit ? "Selesai edit" : "Edit teks"}
           </Button>
         </div>
+        {templates.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-ms-2xs text-muted-foreground">Template saya:</span>
+            {templates.map((t) => (
+              <span
+                key={t.id}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-ms-2xs ${
+                  activeTemplateId === t.id ? "border-primary bg-primary/10" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  className="max-w-[9rem] truncate"
+                  disabled={sendingReport}
+                  onClick={() => applyTemplate(t)}
+                  title={`Pakai template "${t.name}"`}
+                >
+                  {t.name}
+                </button>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-destructive"
+                  disabled={sendingReport}
+                  onClick={() => removeTemplate(t)}
+                  aria-label={`Hapus template ${t.name}`}
+                >
+                  <Trash2 className="size-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
         {previewEdit ? (
           <Textarea
             value={previewBody}
