@@ -1206,9 +1206,11 @@ html[data-midnight="1"][data-midnight-page="1"] {
   --popover: oklch(0.215 0.05 275);
   --popover-foreground: oklch(0.95 0.012 275);
 
-  --primary: oklch(0.66 0.19 278);
-  --primary-foreground: oklch(0.16 0.05 275);
-  --ring: oklch(0.66 0.19 278);
+  /* !important: preset user menulis --primary/--ring sebagai inline style di
+     <html>, jadi tanpa ini aksen preview tidak pernah jadi indigo. */
+  --primary: oklch(0.66 0.19 278) !important;
+  --primary-foreground: oklch(0.16 0.05 275) !important;
+  --ring: oklch(0.66 0.19 278) !important;
 
   --secondary: oklch(0.26 0.05 275);
   --secondary-foreground: oklch(0.94 0.012 275);
