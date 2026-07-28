@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
+import { normalizeParty, usePartyLinks } from "@/lib/chat-debt-sync";
 
 type Kind = "hutang" | "piutang";
 
