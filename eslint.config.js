@@ -102,7 +102,11 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
-        {
+        ...MMSS_SELECTORS,
+      ],
+    },
+  },
+  // ── Guardrail sold_at (lihat MMSS_SELECTORS di atas untuk chat). ────────
           selector:
             "CallExpression[callee.object.name='Math'][callee.property.name='floor'] BinaryExpression[operator='/'][right.value=60]",
           message:
