@@ -10,7 +10,7 @@ import { describeChatError } from "@/lib/chat-error";
 import { Linkify, UrlPreviewList } from "@/lib/linkify";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
-  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin, Clock,
+  RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
   History as HistoryIcon,
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
@@ -122,6 +122,7 @@ import { dispatchStartCall } from "@/components/chat/CallHost";
 import { usePeerAlias } from "@/lib/contact-alias";
 import { AttachMenu } from "@/components/chat/AttachMenu";
 import { MessageAttachment, CardBlock, UnknownCardBlock, decodeCard } from "@/components/chat/MessageAttachment";
+import { MessageStatusIcon, messageStatusLabel } from "@/components/chat/MessageStatusIcon";
 import { previewText } from "@/lib/chat-cards";
 import { SelectionToolbar } from "@/components/chat/SelectionToolbar";
 import { PinnedBanner } from "@/components/chat/PinnedBanner";
@@ -1031,12 +1032,18 @@ function ChatRoomPage() {
   type OutboxItem = {
     tempId: string;
     body: string;
-    status: "sending" | "failed";
+    status: "queued" | "sending" | "failed";
     error?: string;
+    /** Berapa kali percobaan kirim sudah dilakukan (untuk backoff & UI). */
+    attempts?: number;
     createdAt: string;
     replyToId?: string;
   };
   const [outbox, setOutbox] = useState<OutboxItem[]>([]);
+  // Ref bayangan supaya timer retry tidak mengirim ulang item yang sudah
+  // dibuang user (setTimeout memegang salinan lama dari state).
+  const outboxRef = useRef<OutboxItem[]>([]);
+  useEffect(() => { outboxRef.current = outbox; }, [outbox]);
   const [online, setOnline] = useState(() =>
     typeof navigator === "undefined" ? true : navigator.onLine,
   );
@@ -1053,8 +1060,20 @@ function ChatRoomPage() {
 
   const doSend = useCallback(
     async (item: OutboxItem) => {
+      // Offline: jangan buang percobaan — tandai "menunggu koneksi" dan
+      // biarkan effect reconnect yang melanjutkan.
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        setOutbox((prev) =>
+          prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "queued", error: undefined } : o)),
+        );
+        return;
+      }
       setOutbox((prev) =>
-        prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "sending", error: undefined } : o)),
+        prev.map((o) =>
+          o.tempId === item.tempId
+            ? { ...o, status: "sending", error: undefined, attempts: (o.attempts ?? 0) + 1 }
+            : o,
+        ),
       );
       try {
         await sendMessage({
@@ -1072,7 +1091,7 @@ function ChatRoomPage() {
         setOutbox((prev) =>
           prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "failed", error: msg } : o)),
         );
-        toast.error(msg);
+        toast.error(`Pesan gagal terkirim: ${msg}`);
       }
     },
     [conversationId, othersRead],
@@ -1270,18 +1289,49 @@ function ChatRoomPage() {
     setReplyTo(null);
   };
 
-  // Auto-retry failed messages once the browser is back online.
+  // Auto-retry: (1) langsung saat koneksi kembali, (2) backoff bertingkat
+  // 2s → 4s → 8s untuk maksimal 3 percobaan otomatis. Setelah itu pesan
+  // berhenti di status "gagal" dan menunggu keputusan pengguna, supaya
+  // tidak ada pengiriman berulang tanpa henti di jaringan buruk.
+  const MAX_AUTO_ATTEMPTS = 3;
+  const retryTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  useEffect(() => {
+    const timers = retryTimers.current;
+    return () => { timers.forEach((t) => clearTimeout(t)); timers.clear(); };
+  }, []);
   const prevOnlineRef = useRef(online);
   useEffect(() => {
-    if (!prevOnlineRef.current && online) {
-      outbox
-        .filter((o) => o.status === "failed")
-        .forEach((o) => {
-          void doSend(o);
-        });
-    }
+    const backOnline = !prevOnlineRef.current && online;
     prevOnlineRef.current = online;
+    if (!online) return;
+    for (const o of outbox) {
+      const attempts = o.attempts ?? 0;
+      const isQueued = o.status === "queued";
+      const retryable = isQueued || (o.status === "failed" && attempts < MAX_AUTO_ATTEMPTS);
+      if (!retryable) continue;
+      if (retryTimers.current.has(o.tempId)) continue;
+      const delay = backOnline || isQueued ? 0 : Math.min(8000, 2000 * 2 ** (attempts - 1));
+      const t = setTimeout(() => {
+        retryTimers.current.delete(o.tempId);
+        const live = outboxRef.current.find((x) => x.tempId === o.tempId);
+        if (live && live.status !== "sending") void doSend(live);
+      }, delay);
+      retryTimers.current.set(o.tempId, t);
+    }
   }, [online, outbox, doSend]);
+
+  const failedCount = outbox.filter((o) => o.status === "failed").length;
+  /** Kirim ulang manual: reset hitungan percobaan supaya backoff mulai dari awal. */
+  const manualRetry = useCallback(
+    (item: OutboxItem) => {
+      setOutbox((prev) => prev.map((o) => (o.tempId === item.tempId ? { ...o, attempts: 0 } : o)));
+      void doSend(item);
+    },
+    [doSend],
+  );
+  const retryAllFailed = useCallback(() => {
+    outboxRef.current.filter((o) => o.status === "failed").forEach(manualRetry);
+  }, [manualRetry]);
 
   // Group messages by day
   const grouped = useMemo(() => {
@@ -1912,11 +1962,7 @@ function ChatRoomPage() {
                             (() => {
                               const sentMs = new Date(m.created_at).getTime();
                               const read = othersRead.data !== null && othersRead.data !== undefined && othersRead.data >= sentMs;
-                              return read ? (
-                                <CheckCheck className="h-3.5 w-3.5 wa-check" aria-label="Dibaca" />
-                              ) : (
-                                <Check className="h-3.5 w-3.5 opacity-80" aria-label="Terkirim" />
-                              );
+                              return <MessageStatusIcon status={read ? "read" : "sent"} />;
                             })()
                           ) : null}
                         </div>
@@ -2142,7 +2188,7 @@ function ChatRoomPage() {
                     className={`rounded-2xl rounded-br-md px-ms-3 py-ms-2 text-ms-sm leading-relaxed ${
                       o.status === "failed"
                         ? "bg-destructive/15 text-foreground ring-1 ring-destructive/40"
-                        : "wa-bubble-out opacity-80"
+                        : `wa-bubble-out ${o.status === "queued" ? "opacity-70" : "opacity-85"}`
                     }`}
                   >
                     {(() => {
@@ -2160,15 +2206,20 @@ function ChatRoomPage() {
                     })()}
                     <div className="mt-1 flex items-center justify-end gap-ms-1 text-ms-2xs tabular-nums opacity-80">
                       <span>{fmtTime(o.createdAt)}</span>
-                      {o.status === "sending" ? (
-                        <Clock className="h-3 w-3 opacity-70" aria-label="Mengirim" />
-                      ) : (
-                        <span className="inline-flex items-center gap-ms-1 text-destructive">
-                          <AlertCircle className="h-3.5 w-3.5" aria-label="Gagal" />
-                          Gagal
-                        </span>
-                      )}
+                      <span
+                        className={`inline-flex items-center gap-ms-1 ${o.status === "failed" ? "text-destructive" : ""}`}
+                        title={o.error ?? messageStatusLabel(o.status)}
+                      >
+                        <MessageStatusIcon status={o.status} />
+                        {o.status !== "sending" ? messageStatusLabel(o.status) : null}
+                      </span>
                     </div>
+                    {o.status === "failed" && o.error ? (
+                      <div className="mt-0.5 max-w-[18rem] break-words text-right text-ms-2xs text-destructive/90">
+                        {o.error}
+                        {(o.attempts ?? 0) > 1 ? ` · ${o.attempts}× dicoba` : ""}
+                      </div>
+                    ) : null}
                   </div>
                   {o.status === "failed" ? (
                     <div className="flex flex-col gap-ms-1 self-center">
@@ -2178,7 +2229,7 @@ function ChatRoomPage() {
                         variant="ghost"
                         className="h-6 w-6"
                         aria-label="Kirim ulang"
-                        onClick={() => void doSend(o)}
+                        onClick={() => manualRetry(o)}
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
                       </Button>
@@ -2211,6 +2262,17 @@ function ChatRoomPage() {
           >
             ↓ Pesan baru
           </button>
+        </div>
+      ) : null}
+      {failedCount > 0 ? (
+        <div className="z-10 flex shrink-0 items-center gap-ms-2 border-t border-destructive/30 bg-destructive/10 px-ms-3 py-1.5 text-ms-xs">
+          <span className="min-w-0 flex-1 truncate text-destructive">
+            {failedCount} pesan gagal terkirim
+            {!online ? " · menunggu koneksi" : ""}
+          </span>
+          <Button type="button" size="sm" variant="outline" className="h-7 shrink-0 gap-ms-1" onClick={retryAllFailed}>
+            <RefreshCw className="h-3.5 w-3.5" /> Kirim ulang semua
+          </Button>
         </div>
       ) : null}
       <form
