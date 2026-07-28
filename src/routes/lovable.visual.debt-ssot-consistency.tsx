@@ -69,6 +69,27 @@ function DebtSsotHarness() {
           <span className="font-semibold tabular-nums text-warning">{rupiah(sisa)}</span>
         </span>
       </section>
+
+      {/*
+        Kartu per-kontak di halaman Hutang & Piutang. Sebelumnya kartu ini
+        menjumlahkan tabel `debts` saja; sekarang membaca SSOT yang sama
+        (party_balance_v1 → DebtSyncMap) sehingga nominalnya identik.
+      */}
+      <section
+        data-testid={`surface-party-card-${normalizeParty(nama)}`}
+        className="rounded-xl border p-ms-3"
+      >
+        <p className="text-ms-xs text-muted-foreground">Kartu per-kontak · {nama}</p>
+        <span className="text-ms-sm">
+          1 catatan · sisa{" "}
+          <span
+            data-testid="party-card-sisa"
+            className="font-semibold tabular-nums text-warning"
+          >
+            {rupiah(sisa)}
+          </span>
+        </span>
+      </section>
     </div>
   );
 }
