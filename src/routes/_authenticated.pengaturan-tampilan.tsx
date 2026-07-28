@@ -389,6 +389,11 @@ function PengaturanTampilanPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [cloudBusy, setCloudBusy] = useState<"push" | "pull" | null>(null);
   const [cloudAt, setCloudAt] = useState<string | null>(null);
+  const [syncTrace, setSyncTrace] = useState<SyncTrace>({
+    pushAt: null,
+    pullAt: null,
+    error: null,
+  });
   const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
@@ -490,14 +495,17 @@ function PengaturanTampilanPage() {
       .then((res) => {
         setCloudAt(res.updatedAt);
         setBackups(listAppearanceBackups());
+        markSync({ pushAt: new Date().toISOString(), error: null });
       })
       .catch((e) => {
         if (e instanceof AppearanceValidationError) {
+          markSync({ error: `Ditolak validasi: ${e.errors.join(" ")}` });
           toast.error("Tersimpan di perangkat ini, tapi ditolak saat sinkron.", {
             description: e.errors.join(" "),
           });
           return;
         }
+        markSync({ error: "Gagal menyimpan ke akun (koneksi / server)." });
         toast.warning("Tersimpan di perangkat ini, tapi gagal sinkron ke akun.", {
           description: "Coba lagi lewat tombol “Simpan ke akun”.",
         });
