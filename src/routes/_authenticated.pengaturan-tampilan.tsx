@@ -71,32 +71,8 @@ import { scopedKey, peekUserIdSync } from "@/lib/user-scoped-storage";
 
 const COMPACT_LS = "app-compact-mode";
 
-/** Jejak sinkronisasi terakhir per perangkat (untuk indikator status). */
-type SyncTrace = { pushAt: string | null; pullAt: string | null; error: string | null };
-const SYNC_TRACE_LS = "appearance-sync-trace";
-function readSyncTrace(): SyncTrace {
-  if (typeof window === "undefined") return { pushAt: null, pullAt: null, error: null };
-  try {
-    const raw = localStorage.getItem(scopedKey(SYNC_TRACE_LS, peekUserIdSync()));
-    if (!raw) return { pushAt: null, pullAt: null, error: null };
-    const p = JSON.parse(raw) as Partial<SyncTrace>;
-    return {
-      pushAt: typeof p.pushAt === "string" ? p.pushAt : null,
-      pullAt: typeof p.pullAt === "string" ? p.pullAt : null,
-      error: typeof p.error === "string" ? p.error : null,
-    };
-  } catch {
-    return { pushAt: null, pullAt: null, error: null };
-  }
-}
-function writeSyncTrace(t: SyncTrace) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(scopedKey(SYNC_TRACE_LS, peekUserIdSync()), JSON.stringify(t));
-  } catch {
-    /* kuota penuh — indikator boleh gagal diam-diam */
-  }
-}
+import { readSyncTrace, writeSyncTrace, type SyncTrace } from "@/lib/appearance-sync-trace";
+
 function fmtStamp(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);

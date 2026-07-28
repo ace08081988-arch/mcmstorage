@@ -43,6 +43,63 @@ try {
   }
 }
 
+// Selector mm:ss (scope: src/components/chat).
+const MMSS_SELECTORS = [
+  {
+    selector:
+      "CallExpression[callee.object.name='Math'][callee.property.name='floor'] BinaryExpression[operator='/'][right.value=60]",
+    message:
+      "[mm:ss] `Math.floor(x / 60)` ad-hoc dilarang di src/components/chat.\n" +
+      "  Ganti dengan: formatDurationMMSS(x) dari '@/lib/format-duration'.\n" +
+      "  Contoh: `${formatDurationMMSS(sec)}` (import: import { formatDurationMMSS } from \"@/lib/format-duration\").\n" +
+      "  Auto-fix: jalankan `bun run codemod:mmss` untuk mengganti pola ini di src/components/chat.",
+  },
+  {
+    selector: "BinaryExpression[operator='%'][right.value=60]",
+    message:
+      "[mm:ss] `x % 60` ad-hoc dilarang di src/components/chat.\n" +
+      "  Ganti seluruh label detik→mm:ss dengan: formatDurationMMSS(x) dari '@/lib/format-duration'.\n" +
+      "  Auto-fix: jalankan `bun run codemod:mmss` (pola template-literal umum dikonversi otomatis).",
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='padStart'][arguments.0.value=2][arguments.1.value='0']",
+    message:
+      "[mm:ss] `padStart(2, \"0\")` untuk label waktu dilarang di src/components/chat.\n" +
+      "  Ganti dengan: formatDurationMMSS(sec) dari '@/lib/format-duration' — sudah zero-pad menit & detik.\n" +
+      "  Auto-fix: jalankan `bun run codemod:mmss`.",
+  },
+];
+
+// Selector sold_at (scope: src/components, src/routes, src/lib).
+const SOLD_AT_SELECTORS = [
+  {
+    selector:
+      "UnaryExpression[operator='!'] > MemberExpression[property.name='sold_at']",
+    message:
+      "[sold_at] Literal `!x.sold_at` / `!!x.sold_at` dilarang sebagai predikat aktif/terkirim.\n" +
+      "  Ganti dengan: isActivePrep(x) atau isSentPrep(x) dari '@/lib/prep-active-selector'.\n" +
+      "  Untuk memfilter array: filterActivePreps(preps) / filterSentPreps(preps).\n" +
+      "  Untuk menghitung: countActivePreps / countActiveByTitle.",
+  },
+  {
+    selector:
+      "BinaryExpression[operator=/^(===|!==|==|!=)$/][left.type='MemberExpression'][left.property.name='sold_at'][right.type='Literal'][right.value=null]",
+    message:
+      "[sold_at] Perbandingan `x.sold_at === null` / `!== null` dilarang.\n" +
+      "  Ganti dengan: isActivePrep(x) / isSentPrep(x) dari '@/lib/prep-active-selector'.\n" +
+      "  Ini melindungi konsistensi definisi 'aktif vs terkirim' agar tetap tunggal.",
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='is'][arguments.0.value='sold_at'][arguments.1.type='Literal'][arguments.1.value=null]",
+    message:
+      "[sold_at] `.is(\"sold_at\", null)` langsung di query dilarang.\n" +
+      "  Ganti dengan: withActivePrepsFilter(builder) dari '@/lib/prep-active-selector'.\n" +
+      "  Alasan: satu titik untuk mengubah semantik filter aktif.",
+  },
+];
+
 export default tseslint.config(
   { ignores: ["dist", ".output", ".vinxi"] },
   {
@@ -93,42 +150,6 @@ export default tseslint.config(
   // Allowlist file dibaca dari `eslint.mmss-allowlist.json` (setiap entri
   // wajib menyertakan `reason`). Inline exception juga didukung via:
   //   // eslint-disable-next-line no-restricted-syntax -- mmss-allow: <alasan>
-  {
-    files: ["src/components/chat/**/*.{ts,tsx}"],
-    ignores: [
-      "src/components/chat/**/*.test.{ts,tsx}",
-      ...mmssAllowlistFiles,
-    ],
-    rules: {
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector:
-            "CallExpression[callee.object.name='Math'][callee.property.name='floor'] BinaryExpression[operator='/'][right.value=60]",
-          message:
-            "[mm:ss] `Math.floor(x / 60)` ad-hoc dilarang di src/components/chat.\n" +
-            "  Ganti dengan: formatDurationMMSS(x) dari '@/lib/format-duration'.\n" +
-            "  Contoh: `${formatDurationMMSS(sec)}` (import: import { formatDurationMMSS } from \"@/lib/format-duration\").\n" +
-            "  Auto-fix: jalankan `bun run codemod:mmss` untuk mengganti pola ini di src/components/chat.",
-        },
-        {
-          selector: "BinaryExpression[operator='%'][right.value=60]",
-          message:
-            "[mm:ss] `x % 60` ad-hoc dilarang di src/components/chat.\n" +
-            "  Ganti seluruh label detik→mm:ss dengan: formatDurationMMSS(x) dari '@/lib/format-duration'.\n" +
-            "  Auto-fix: jalankan `bun run codemod:mmss` (pola template-literal umum dikonversi otomatis).",
-        },
-        {
-          selector:
-            "CallExpression[callee.property.name='padStart'][arguments.0.value=2][arguments.1.value='0']",
-          message:
-            "[mm:ss] `padStart(2, \"0\")` untuk label waktu dilarang di src/components/chat.\n" +
-            "  Ganti dengan: formatDurationMMSS(sec) dari '@/lib/format-duration' — sudah zero-pad menit & detik.\n" +
-            "  Auto-fix: jalankan `bun run codemod:mmss`.",
-        },
-      ],
-    },
-  },
   // ── Guardrail: badge "aktif" / "terkirim" untuk paket prep. ────────────
   //
   // Definisi "sent" (paket sudah masuk Riwayat Terkirim) HANYA boleh
@@ -166,37 +187,36 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
-        {
-          // `!<ident>.sold_at` — juga men-cover `!!<ident>.sold_at` karena
-          // AST-nya adalah UnaryExpression `!` di luar UnaryExpression `!`
-          // di dalam; yang di dalam tetap tercatat.
-          selector:
-            "UnaryExpression[operator='!'] > MemberExpression[property.name='sold_at']",
-          message:
-            "[sold_at] Literal `!x.sold_at` / `!!x.sold_at` dilarang sebagai predikat aktif/terkirim.\n" +
-            "  Ganti dengan: isActivePrep(x) atau isSentPrep(x) dari '@/lib/prep-active-selector'.\n" +
-            "  Untuk memfilter array: filterActivePreps(preps) / filterSentPreps(preps).\n" +
-            "  Untuk menghitung: countActivePreps / countActiveByTitle.",
-        },
-        {
-          // Perbandingan langsung terhadap null.
-          selector:
-            "BinaryExpression[operator=/^(===|!==|==|!=)$/][left.type='MemberExpression'][left.property.name='sold_at'][right.type='Literal'][right.value=null]",
-          message:
-            "[sold_at] Perbandingan `x.sold_at === null` / `!== null` dilarang.\n" +
-            "  Ganti dengan: isActivePrep(x) / isSentPrep(x) dari '@/lib/prep-active-selector'.\n" +
-            "  Ini melindungi konsistensi definisi 'aktif vs terkirim' agar tetap tunggal.",
-        },
-        {
-          // Filter server-side ad-hoc — pakai withActivePrepsFilter().
-          selector:
-            "CallExpression[callee.property.name='is'][arguments.0.value='sold_at'][arguments.1.type='Literal'][arguments.1.value=null]",
-          message:
-            "[sold_at] `.is(\"sold_at\", null)` langsung di query dilarang.\n" +
-            "  Ganti dengan: withActivePrepsFilter(builder) dari '@/lib/prep-active-selector'.\n" +
-            "  Alasan: satu titik untuk mengubah semantik filter aktif.",
-        },
+        ...SOLD_AT_SELECTORS,
       ],
     },
   },
+  // Chat berada di irisan kedua scope di atas. Karena flat-config menimpa
+  // rule dengan nama sama (bukan menggabung), blok terakhir ini menyatukan
+  // selector mm:ss + sold_at supaya keduanya tetap aktif di src/components/chat.
+  {
+    files: ["src/components/chat/**/*.{ts,tsx}"],
+    ignores: [
+      "src/components/chat/**/*.test.{ts,tsx}",
+      "src/components/chat/**/__tests__/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...MMSS_SELECTORS,
+        ...SOLD_AT_SELECTORS,
+      ],
+    },
+  },
+  // File chat yang di-allowlist mm:ss tetap kena guardrail sold_at saja.
+  ...(mmssAllowlistFiles.length
+    ? [
+        {
+          files: mmssAllowlistFiles,
+          rules: {
+            "no-restricted-syntax": ["error", ...SOLD_AT_SELECTORS],
+          },
+        },
+      ]
+    : []),
 );

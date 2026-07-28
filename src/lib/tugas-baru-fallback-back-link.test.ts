@@ -43,8 +43,16 @@ describe("tugas-baru: banner fallback → link balik ke /ecer", () => {
     // Cari fragmen <Link to="/ecer" ...> lalu pastikan tidak ada `search=` sampai `>`.
     const linkMatch = block.match(/<Link\s+to="\/ecer"[^>]*>/);
     expect(linkMatch, "tag <Link to=\"/ecer\"> tidak ditemukan").not.toBeNull();
-    expect(linkMatch![0]).not.toMatch(/\bsearch\s*=/);
+    // Router bertipe ketat: param wajib disebut eksplisit sebagai
+    // `undefined` untuk MEMBERSIHKAN state, bukan meneruskannya.
     expect(linkMatch![0]).not.toMatch(/title_id/);
+    const search = linkMatch![0].match(/search=\{\{([^}]*)\}\}/);
+    if (search) {
+      for (const pair of search[1].split(",")) {
+        if (!pair.trim()) continue;
+        expect(pair).toMatch(/:\s*undefined\s*$/);
+      }
+    }
   });
 
   it("teks link berbunyi 'kembali ke Ecer' (label jelas untuk owner)", () => {

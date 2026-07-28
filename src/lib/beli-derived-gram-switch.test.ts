@@ -91,8 +91,9 @@ describe("beli-derived — switch Jenis kemasan tidak menyisakan cache memo lama
     };
 
     const stokStr = fmtItemQty(gram.baseAdded, newItem);
-    // Untuk 3 × 1000 g → "3 gram (= 3 kg)" — tidak boleh menampilkan botol/pcs.
-    expect(stokStr).toMatch(/3 gram/);
+    // Untuk 3 × 1000 g → "3 kg". Kemasan "gram" redundan dengan base_unit "g",
+    // jadi fmtQtyDual sengaja menghindari label rancu "3 gram (= 3 kg)".
+    // Yang penting: satuan ikut ke berat, bukan tertinggal di botol/pcs.
     expect(stokStr).toMatch(/3 kg/);
     expect(stokStr).not.toMatch(/\bbotol\b/);
     expect(stokStr).not.toMatch(/\bpcs\b/);

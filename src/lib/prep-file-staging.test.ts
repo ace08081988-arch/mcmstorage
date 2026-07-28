@@ -2,9 +2,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as staging from "./prep-file-staging";
 const { stageFile, isHeic, formatFileSize, formatLabel } = staging;
 
+// Konverter HEIC dikontrol lewat flag supaya kasus "gagal konversi" bisa
+// diuji lewat modul aslinya (spyOn namespace ESM tidak mempengaruhi
+// pemanggilan internal di dalam stageFile).
+const heicState = vi.hoisted(() => ({ shouldFail: false }));
 vi.mock("heic2any", () => ({
-  default: async ({ blob }: { blob: Blob }) =>
-    new Blob([await blob.text(), "-converted"], { type: "image/jpeg" }),
+  default: async ({ blob }: { blob: Blob }) => {
+    if (heicState.shouldFail) throw new Error("libheif not available");
+    return new Blob([await blob.text(), "-converted"], { type: "image/jpeg" });
+  },
 }));
 
 type G = {
@@ -196,11 +202,14 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
   });
 
   it("HEIC gagal dikonversi (heic2any melempar) → pesan panduan iPhone", async () => {
-    vi.spyOn(staging, "convertHeicToJpeg").mockRejectedValue(new Error("libheif not available"));
+    heicState.shouldFail = true;
     g.URL = { createObjectURL: () => "blob:mock/heic" };
     const heic = new File(["heic-bytes"], "IMG_0003.heic", { type: "image/heic" });
-    await expect(staging.stageFile(heic)).rejects.toThrow(/Paling Kompatibel|HEIC/i);
-    vi.restoreAllMocks();
+    try {
+      await expect(staging.stageFile(heic)).rejects.toThrow(/Paling Kompatibel|HEIC/i);
+    } finally {
+      heicState.shouldFail = false;
+    }
   });
 
   // ────────────────────────────────────────────────────────────────

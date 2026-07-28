@@ -72,8 +72,9 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     const src = readSrc("src/components/ReadyEcerSection.tsx");
     const block = extractVerifikasiButtonBlock(src);
     expect(block, "Tombol 'Verifikasi bayar' tidak ditemukan").not.toBeNull();
-    // Tombol memanggil confirmDialog dulu, baru navigate ke /ecer dengan send=1.
-    expect(block!).toMatch(/confirmDialog\(/);
+    // Gate dipangkas (permintaan owner: sesedikit mungkin tap): tombol
+    // LANGSUNG navigate ke /ecer dengan send=1 — tanpa dialog perantara.
+    expect(block!).not.toMatch(/confirmDialog\(/);
     expect(block!).toMatch(/navigate\(\s*\{[\s\S]*?to:\s*["']\/ecer["'][\s\S]*?\}\s*\)/);
     expect(block!).toMatch(/send:\s*["']1["']/);
     // Tidak ada tombol WA cepat yang menerobos verifikasi di dashboard row.
@@ -105,15 +106,14 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     );
   });
 
-  it("/ecer: tombol kiriman pegawai punya tooltip/info alur & label konsisten", () => {
+  it("/ecer: tombol kiriman pegawai punya tooltip & label konsisten", () => {
     const src = readSrc("src/routes/_authenticated.ecer.tsx");
-    // Label tombol utama di detail judul harus konsisten: Verifikasi bayar
-    // (bukan Kirim WA mentah), dan harus ada penjelasan alur via title.
-    expect(src).toMatch(/<MessageCircle[^>]*\/>\s*Verifikasi bayar/);
-    expect(src).toMatch(/aria-label=["']Info alur tombol kiriman pegawai["']/);
-    expect(src).toMatch(
-      /title=\{\s*[\s\S]*?"Verifikasi pembayaran \(lunas\/hutang\/bayar sebagian\) dulu, baru pesan & foto dikirim ke pembeli via WA\/Chat\. Stok & pembayaran tercatat otomatis\."\s*[\s\S]*?\}/,
-    );
+    // Toolbar detail judul memakai sistem 4-slot di mobile + tombol
+    // berlabel penuh di desktop. Keduanya memakai tooltip yang sama.
+    const tips = src.match(/title="Lihat kiriman pegawai untuk judul ini"/g) ?? [];
+    expect(tips.length, "tooltip tombol Pegawai hilang").toBeGreaterThanOrEqual(2);
+    expect(src).toMatch(/<Users className="h-5 w-5" aria-hidden \/>/);
+    expect(src).toMatch(/>Pegawai<\/span>/);
   });
 
   it("/ecer: send=1 dikonsumsi jadi pendingAutoSend → diteruskan ke TitleDetailView", () => {
@@ -127,31 +127,22 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     );
   });
 
-  it("/ecer TitleDetailView: autoSend memilih kotak aktif & menyerahkan ke modal konfirmasi", () => {
+  it("/ecer TitleDetailView: autoSend memilih kotak aktif & langsung buka dialog pembayaran", () => {
     const src = readSrc("src/routes/_authenticated.ecer.tsx");
     // Cari blok useEffect autoSend. Non-tautological: cek helper resmi
-    // filterActivePreps (bukan literal !p.sold_at) dan bahwa efek
-    // menyerahkan daftar aktif ke modal konfirmasi (setAutoSendConfirm).
+    // filterActivePreps (bukan literal !p.sold_at) dan bahwa efek langsung
+    // membuka wizard pembayaran (gate perantara sudah dipangkas).
     const m = src.match(
-      /if\s*\(\s*!\s*autoSend[\s\S]{0,6000}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}/,
+      /if\s*\(\s*!\s*autoSend[\s\S]{0,9000}?\}\s*,\s*\[\s*autoSend/,
     );
     expect(m, "Blok useEffect auto-send tidak ditemukan").not.toBeNull();
     const block = m![0];
     expect(block).toMatch(/filterActivePreps\(preps\)/);
     expect(block).toMatch(/setSelectionMode\(true\)/);
     expect(block).toMatch(/setSelected\(\s*new Set\(/);
-    expect(block).toMatch(/setAutoSendConfirm\(/);
+    expect(block).toMatch(/setSendOpen\(true\)/);
     expect(src).toMatch(/const\s+autoSendFiredRef\s*=\s*useRef\(false\)/);
     expect(block).toMatch(/autoSendFiredRef\.current\s*=\s*true/);
-    // Modal konfirmasi harus terpasang di JSX dan onConfirm-nya yang
-    // membuka dialog pembayaran — bukan efek.
-    expect(src).toMatch(/<AutoSendConfirmDialog/);
-    expect(src).toMatch(/onConfirm=\{\(\)\s*=>\s*\{[\s\S]*?setSendOpen\(true\)/);
-    // Daftar kotak dapat diperluas (Collapsible) — implementasi dipindah
-    // ke modul komponen `AutoSendDialogs` supaya bisa dipakai harness e2e.
-    const dialogSrc = readSrc("src/components/ecer/AutoSendDialogs.tsx");
-    expect(dialogSrc).toMatch(/data-testid=["']auto-send-toggle-list["']/);
-    expect(dialogSrc).toMatch(/data-testid=["']auto-send-list-item["']/);
   });
 
   it("/ecer autoSend: pilih HANYA kotak untuk title_id + warehouse_item_id yg cocok", () => {
@@ -165,7 +156,7 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     );
     // Fallback: ambil sampai closing brace terakhir dari efek jika regex
     // di atas gagal (comment/format shift).
-    const block = (m?.[0] ?? src.slice(src.indexOf("if (!autoSend"), src.indexOf("}, [autoSend"))) as string;
+    const block = src.slice(src.indexOf("if (!autoSend"), src.indexOf("}, [autoSend")) as string;
     expect(block).toMatch(/p\.title_id\s*===\s*title\.id/);
     expect(block).toMatch(/p\.warehouse_item_id[\s\S]{0,80}?item\.id/);
     // Anomali lintas judul/produk WAJIB membatalkan auto-send, bukan diam.
@@ -181,10 +172,10 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     // harus mengoper `activeNow` ke modal konfirmasi (AutoSendConfirmDialog)
     // yang menampilkan daftar kotak. Dialog pembayaran hanya dibuka lewat
     // handler onConfirm modal itu, bukan dari dalam efek.
-    expect(block).toMatch(/setAutoSendConfirm\(\s*\{\s*preps:\s*activeNow\s*\}\s*\)/);
-    // Blok efek TIDAK boleh memanggil setSendOpen(true) langsung —
-    // itu tugas onConfirm modal konfirmasi.
-    expect(block).not.toMatch(/setSendOpen\(\s*true\s*\)/);
+    // Alur dipangkas: efek langsung membuka dialog pembayaran dengan
+    // kotak aktif yang sudah tersaring (tanpa modal konfirmasi perantara).
+    expect(block).toMatch(/autoSendPrepsRef\.current\s*=\s*activeNow/);
+    expect(block).toMatch(/setSendOpen\(\s*true\s*\)/);
     // Dependency effect ikut menyertakan title.id & item.id supaya efek
     // dieksekusi ulang saat judul/produk berganti.
     expect(src).toMatch(/\},\s*\[\s*autoSend,\s*loading,\s*preps,\s*title\.id,\s*item\.id,\s*onAutoSendConsumed\s*\]/);

@@ -74,6 +74,12 @@ vi.mock("@/lib/apk.functions", () => ({
   listApkReleaseAdminPanel: async () => currentPayload,
   upsertApkReleaseMeta: async () => ({}),
   setApkMinSupported: async () => ({}),
+  uploadApkRelease: async () => ({}),
+  getApkDownloadStats: async () => ({ total: 0, rows: [] }),
+  getLatestApk: async () => null,
+  getLatestApkVariants: async () => [],
+  getApkVariantDetail: async () => null,
+  validateChatApkLink: async () => ({ ok: true }),
 }));
 
 function ssrPage(
