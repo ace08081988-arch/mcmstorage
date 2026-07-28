@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -208,6 +208,16 @@ export function ChatHeaderDebtControls({
   const tone = debtChipTone(hutang, piutang, linked);
   const dominantValue = tone === "hutang" ? hutang : piutang;
 
+  // Peringatan selisih: bandingkan angka SSOT (dipakai chip & daftar chat)
+  // dengan angka hasil hitung lokal dari catatan manual (tabel debts).
+  const mismatch = useMemo(() => {
+    if (!ssotEntry || !summary) return null;
+    const dh = Math.round(ssotEntry.hutang - summary.hutang);
+    const dp = Math.round(ssotEntry.piutang - summary.piutang);
+    if (Math.abs(dh) < 1 && Math.abs(dp) < 1) return null;
+    return { dh, dp };
+  }, [ssotEntry, summary]);
+
   // Riwayat perubahan: gabungan entri tagihan (debts) & pembayaran
   // (debt_payments) untuk peer ini, terbaru di atas.
   const history = useMemo<HistoryEntry[]>(() => {
@@ -284,6 +294,31 @@ export function ChatHeaderDebtControls({
         <div className="mb-2 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
           Tagihan dengan {peerName}
         </div>
+        {mismatch && (
+          <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-ms-2xs text-destructive">
+            <div className="flex items-center gap-1 font-semibold">
+              <AlertTriangle className="size-3.5" />
+              Angka tidak sinkron
+            </div>
+            <div className="mt-1 space-y-0.5 text-foreground/80">
+              {Math.abs(mismatch.dp) >= 1 && (
+                <div>
+                  Piutang: SSOT {rupiah(ssotEntry!.piutang)} vs catatan manual {rupiah(summary!.piutang)}
+                  {" "}(selisih {rupiah(Math.abs(mismatch.dp))})
+                </div>
+              )}
+              {Math.abs(mismatch.dh) >= 1 && (
+                <div>
+                  Hutang: SSOT {rupiah(ssotEntry!.hutang)} vs catatan manual {rupiah(summary!.hutang)}
+                  {" "}(selisih {rupiah(Math.abs(mismatch.dh))})
+                </div>
+              )}
+              <div className="text-muted-foreground">
+                Selisih biasanya berasal dari penjualan berstatus hutang yang belum masuk catatan manual.
+              </div>
+            </div>
+          </div>
+        )}
         <div className="space-ms-2">
           <KindRow
             label="Piutang (dia berhutang)"
