@@ -67,6 +67,7 @@ import {
   logAppearanceMigration,
   type ImportSource,
 } from "@/lib/appearance-migrator.telemetry";
+import { scopedKey } from "@/lib/user-scoped-storage";
 
 const COMPACT_LS = "app-compact-mode";
 
