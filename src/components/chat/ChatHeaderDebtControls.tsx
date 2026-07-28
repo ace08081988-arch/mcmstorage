@@ -322,6 +322,16 @@ export function ChatHeaderDebtControls({
     }
   };
 
+  const copyPreview = async () => {
+    if (!previewBody.trim()) return;
+    try {
+      await navigator.clipboard.writeText(previewBody);
+      toast.success("Teks laporan disalin ke clipboard.");
+    } catch {
+      toast.error("Gagal menyalin teks. Izinkan akses clipboard jika diminta.");
+    }
+  };
+
   const sendReport = async () => {
     if (!conversationId) return;
     setSendingReport(true);
