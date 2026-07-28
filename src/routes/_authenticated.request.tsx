@@ -2974,12 +2974,15 @@ function SendPrepToCustomerDialog({
       channel={channel === "chat" ? "chat" : "wa"}
       photoCount={photoPaths.length}
       busy={busy}
-      locationMissing={!(prep.location_url ?? "").trim()}
+      locationMissing={!primaryLocation.trim()}
       locationHint="Buka kartu penyiapan Request → isi kolom Lokasi ambil (link Google Maps), lalu ulangi tombol Kirim."
       onSaveLocation={async (url) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Simpan sekaligus ke slot lokasi foto ke-1 supaya pasangan
+        // foto ↔ lokasi tetap sejajar dengan urutan `photo_paths`.
+        const nextLocs = photoPairs.map((p, i) => (i === 0 ? url : (p.locationUrl ?? "")));
         const { error } = await (supabase.from as any)("request_preparations")
-          .update({ location_url: url })
+          .update({ location_url: url, location_urls: nextLocs })
           .eq("id", prep.id);
         if (error) throw error;
         await Promise.resolve(onLocationSaved?.());
