@@ -66,9 +66,14 @@ describe("SSOT saldo kontak konsisten di semua permukaan", () => {
     const links: PartyLinkMap = new Map([
       [normalizeParty("PANGAT"), normalizeParty("PWNGAT")],
     ]);
-    expect(debtSyncStatus("PANGAT", map).state).toBe("unlinked");
+    // Tanpa tautan manual pun, nama sangat mirip kini ditautkan otomatis.
+    const autoMatched = debtSyncStatus("PANGAT", map);
+    if (autoMatched.state === "unlinked") throw new Error("auto-link gagal");
+    expect(autoMatched.auto).toBe(true);
+    expect(autoMatched.entry.piutang).toBe(21_000_000);
     const linked = debtSyncStatus("PANGAT", map, links);
     if (linked.state === "unlinked") throw new Error("alias gagal");
+    expect(linked.auto).toBeFalsy();
     expect(linked.entry.piutang).toBe(21_000_000);
     expect(linked.entry.piutang).toBe(
       (debtSyncStatus("PWNGAT", map) as { entry: { piutang: number } }).entry.piutang,
