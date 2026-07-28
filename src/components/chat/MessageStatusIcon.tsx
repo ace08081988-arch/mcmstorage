@@ -30,10 +30,13 @@ export function MessageStatusIcon({
 }) {
   const label = LABEL[status];
   const common = `h-3.5 w-3.5 shrink-0 ${className}`;
-  if (status === "queued") return <CloudOff className={`${common} opacity-70`} aria-label={label} />;
-  if (status === "sending") return <Clock className={`${common} animate-pulse opacity-70`} aria-label={label} />;
+  if (status === "queued")
+    return <CloudOff className={`${common} opacity-70`} aria-label={label} />;
+  if (status === "sending")
+    return <Clock className={`${common} animate-pulse opacity-70`} aria-label={label} />;
   if (status === "read") return <CheckCheck className={`${common} wa-check`} aria-label={label} />;
-  if (status === "failed") return <AlertCircle className={`${common} text-destructive`} aria-label={label} />;
+  if (status === "failed")
+    return <AlertCircle className={`${common} text-destructive`} aria-label={label} />;
   return <Check className={`${common} opacity-80`} aria-label={label} />;
 }
 
