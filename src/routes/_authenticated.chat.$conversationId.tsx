@@ -2202,7 +2202,7 @@ function ChatRoomPage() {
       </div>
 
       {hasNewBelow ? (
-        <div className="pointer-events-none sticky bottom-20 z-30 flex justify-center px-ms-2 sm:bottom-16">
+        <div className="pointer-events-none relative z-30 -mt-12 mb-2 flex justify-center px-ms-2">
           <button
             type="button"
             onClick={() => scrollToBottom("smooth")}
@@ -2215,7 +2215,7 @@ function ChatRoomPage() {
       ) : null}
       <form
         onSubmit={onSubmit}
-        className="sticky bottom-0 z-10 border-t bg-background/95 p-ms-2 backdrop-blur"
+        className="z-10 shrink-0 border-t bg-background/95 p-ms-2 backdrop-blur"
         style={{ paddingBottom: `max(env(safe-area-inset-bottom), 0.5rem)` }}
       >
         {editing ? (
