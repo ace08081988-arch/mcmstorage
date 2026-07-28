@@ -19,7 +19,7 @@
 // ============================================================================
 
 export type Theme = "light" | "dark" | "system";
-export type FontFamily = "sans" | "serif" | "mono" | "display";
+export type FontFamily = "sans" | "serif" | "mono" | "display" | "editorial";
 export type FontSize = "sm" | "md" | "lg" | "xl";
 
 export const EXPORT_SCHEMA_TYPE = "mcm.appearance-settings";
@@ -27,7 +27,13 @@ export const EXPORT_SCHEMA_VERSION = 2;
 export const APPEARANCE_APP_ID = "mcm-storage";
 
 export const VALID_THEMES: readonly Theme[] = ["light", "dark", "system"];
-export const VALID_FONTS: readonly FontFamily[] = ["sans", "serif", "mono", "display"];
+export const VALID_FONTS: readonly FontFamily[] = [
+  "sans",
+  "serif",
+  "mono",
+  "display",
+  "editorial",
+];
 export const VALID_SIZES: readonly FontSize[] = ["sm", "md", "lg", "xl"];
 
 export type ImportedPatch = {

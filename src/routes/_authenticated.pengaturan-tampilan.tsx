@@ -36,7 +36,7 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
-import { useMidnightPreview } from "@/lib/midnight-preview";
+import { useMidnightPreview, useMidnightScope } from "@/lib/midnight-preview";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
   pullAppearanceFromCloud,
@@ -413,6 +413,7 @@ function PengaturanTampilanPage() {
   };
   const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const [midnightOn, setMidnightOn] = useMidnightPreview();
+  const [midnightScope, setMidnightScope] = useMidnightScope();
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
@@ -915,6 +916,59 @@ function PengaturanTampilanPage() {
               aria-label="Aktifkan pratinjau Midnight Indigo"
             />
           </CardContent>
+          {midnightOn ? (
+            <CardContent className="space-ms-3 border-t pt-ms-3">
+              <div>
+                <p className="text-ms-xs text-muted-foreground">Cakupan tema</p>
+                <div className="mt-2 grid grid-cols-2 gap-ms-2">
+                  {(
+                    [
+                      { v: "pages" as const, label: "Beranda & Gudang", hint: "Halaman lain pakai preset Anda" },
+                      { v: "all" as const, label: "Semua halaman", hint: "Konsisten di seluruh aplikasi" },
+                    ]
+                  ).map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => {
+                        setMidnightScope(o.v);
+                        toast.success(
+                          o.v === "all"
+                            ? "Midnight Indigo aktif di semua halaman"
+                            : "Midnight Indigo dibatasi ke Beranda & Gudang",
+                        );
+                      }}
+                      className={`rounded-md border px-ms-2 py-ms-2 text-left transition-transform hover:bg-accent active:scale-[0.97] ${midnightScope === o.v ? "border-primary bg-accent" : ""}`}
+                    >
+                      <span className="block text-ms-xs font-semibold">{o.label}</span>
+                      <span className="block text-ms-2xs leading-ms-snug text-muted-foreground">
+                        {o.hint}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          ) : null}
+          <CardContent className="border-t pt-ms-3">
+            <Button
+              type="button"
+              className="w-full"
+              onClick={() => {
+                patch({ font: "editorial", theme: "dark" });
+                setMidnightOn(true);
+                setMidnightScope("all");
+                toast.success("Preset Editorial × Midnight Indigo diterapkan ke semua halaman");
+              }}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Terapkan Editorial × Midnight Indigo (semua halaman)
+            </Button>
+            <p className="mt-2 text-ms-2xs leading-ms-snug text-muted-foreground">
+              Judul Instrument Serif + teks Work Sans, dipadukan tema indigo gelap di
+              seluruh halaman. Tekan Simpan untuk menyimpan pilihan font.
+            </p>
+          </CardContent>
         </Card>
 
         {/* Preset profesional */}
@@ -1021,6 +1075,7 @@ function PengaturanTampilanPage() {
                   { v: "serif" as FontFamily, label: "Serif (Merriweather)", family: "Merriweather, Georgia, serif" },
                   { v: "mono" as FontFamily, label: "Mono (JetBrains)", family: "'JetBrains Mono', monospace" },
                   { v: "display" as FontFamily, label: "Display (Space Grotesk)", family: "'Space Grotesk', sans-serif" },
+                  { v: "editorial" as FontFamily, label: "Editorial (Instrument Serif)", family: "'Instrument Serif', Georgia, serif" },
                 ]).map((o) => (
                   <button
                     key={o.v}

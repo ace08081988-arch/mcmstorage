@@ -16,7 +16,7 @@ import { useEffect } from "react";
 import { applyMidnightPreview } from "@/lib/midnight-preview";
 
 type Theme = "light" | "dark" | "system";
-type FontFamily = "sans" | "serif" | "mono" | "display";
+type FontFamily = "sans" | "serif" | "mono" | "display" | "editorial";
 type FontSize = "sm" | "md" | "lg" | "xl";
 
 export const LS = {

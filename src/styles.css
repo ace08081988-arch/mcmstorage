@@ -562,6 +562,17 @@ html[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
 html[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
 html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }
 
+/* Editorial: body Work Sans, judul Instrument Serif — pasangan tipografi
+   premium yang dipakai preset "Editorial × Midnight Indigo". */
+html[data-font="editorial"] { --app-font-family: var(--font-body); }
+html[data-font="editorial"] :is(h1, h2, h3),
+html[data-font="editorial"] [data-slot="card-title"],
+html[data-font="editorial"] [data-slot="dialog-title"] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
 /* ==========================================================================
    MCM chat surface (dark-first, light fallback).
    Dipakai di halaman /chat, /chat/$conversationId, /profil-chat.
@@ -1195,7 +1206,7 @@ html[data-accent-gradient="1"] .bg-primary {
    tidak ikut berubah. Semua nilai memakai token, bukan warna hardcode, agar
    tetap tunduk pada radius/font/efek permukaan pilihan user.
    ========================================================================== */
-html[data-midnight="1"][data-midnight-page="1"] {
+html[data-midnight="1"]:is([data-midnight-page="1"], [data-midnight-scope="all"]) {
   color-scheme: dark;
 
   --background: oklch(0.17 0.045 275);
@@ -1233,7 +1244,7 @@ html[data-midnight="1"][data-midnight-page="1"] {
 }
 
 /* Sentuhan editorial: gradasi indigo lembut di latar halaman target. */
-html[data-midnight="1"][data-midnight-page="1"] body::before {
+html[data-midnight="1"]:is([data-midnight-page="1"], [data-midnight-scope="all"]) body::before {
   content: "";
   position: fixed;
   inset: 0;
