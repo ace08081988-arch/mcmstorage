@@ -1397,5 +1397,16 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // Skenario : Chip hutang/piutang tetap rapi (tidak tumpah keluar
+      //            border, tinggi seragam, nominal terpotong selalu
+      //            punya keterangan penuh) di lebar 320–1280px.
+      // Harness  : /lovable/visual/debt-ssot-consistency (no-auth) —
+      //            viewport diatur per-test, jadi tanpa device preset.
+      name: "debt-chip-responsive-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /debt-chip-responsive\.spec\.ts/,
+      use: { viewport: { width: 390, height: 844 } },
+    },
   ],
 });
