@@ -22,6 +22,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CallHost } from "@/components/chat/CallHost";
+import { LiveNotificationHost } from "@/components/LiveNotificationHost";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { withPlainTimeout } from "@/lib/supabase-timeout";
 
@@ -144,6 +145,7 @@ function AuthLock() {
       </div>
       {uid && cfg && locked && <AppLockScreen uid={uid} cfg={cfg} />}
       <CallHost />
+      <LiveNotificationHost />
       <MobileBottomNav />
     </SidebarProvider>
   );

@@ -44,11 +44,30 @@ export async function showIncomingCallNotification(opts: {
   callerName: string;
   kind: "audio" | "video";
 }): Promise<void> {
+  const title = `Panggilan ${opts.kind === "video" ? "video" : "suara"} masuk`;
+  const body = `${opts.callerName} sedang memanggil…`;
+  // Native (APK): Notification API web tidak menampilkan apa pun di WebView,
+  // jadi pakai local notification dengan channel "Panggilan masuk".
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform()) {
+      const { notifyLocal } = await import("./local-notify");
+      await notifyLocal({
+        kind: "call",
+        title,
+        body,
+        url: "/chat",
+        tag: TAG,
+        urgent: true,
+      });
+      return;
+    }
+  } catch {
+    /* lanjut ke jalur web */
+  }
   const granted = await ensureNotificationPermission();
   vibrateRing();
   if (!granted) return;
-  const title = `Panggilan ${opts.kind === "video" ? "video" : "suara"} masuk`;
-  const body = `${opts.callerName} sedang memanggil…`;
   const options: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
     body,
     tag: TAG,
@@ -82,6 +101,12 @@ export async function showIncomingCallNotification(opts: {
 export async function clearIncomingCallNotification(): Promise<void> {
   try {
     navigator.vibrate?.(0);
+  } catch {
+    /* ignore */
+  }
+  try {
+    const { clearLocalNotification } = await import("./local-notify");
+    await clearLocalNotification(TAG);
   } catch {
     /* ignore */
   }
