@@ -929,6 +929,7 @@ export type Database = {
           location_url: string | null
           note: string | null
           photo_path: string | null
+          photo_paths: string[]
           prep_submission_id: string | null
           prep_task_item_id: string | null
           ready_at: string | null
@@ -958,6 +959,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           prep_submission_id?: string | null
           prep_task_item_id?: string | null
           ready_at?: string | null
@@ -987,6 +989,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           prep_submission_id?: string | null
           prep_task_item_id?: string | null
           ready_at?: string | null
