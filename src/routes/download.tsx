@@ -11,6 +11,11 @@ import {
   Check,
   AlertTriangle,
   Sparkles,
+  ShieldCheck,
+  FolderDown,
+  LogIn,
+  Globe,
+  RefreshCw,
 } from "lucide-react";
 import {
   getLatestApkVariants,
@@ -70,6 +75,8 @@ function DownloadPage() {
           </p>
         </div>
 
+        <InstallFlow />
+
         {isLoading ? (
           <div className="flex items-center justify-center gap-ms-2 rounded-2xl border border-dashed p-ms-6 text-ms-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -107,15 +114,117 @@ function DownloadPage() {
               min={data?.minSupported.chat ?? null}
               highlight
             />
-            <p className="text-center text-ms-2xs leading-relaxed text-muted-foreground">
-              Setelah terunduh, buka berkas dan izinkan instalasi dari sumber tidak dikenal jika diminta.
-              Kedua APK bisa dipasang berdampingan di satu HP.
-            </p>
+            <InstallDetail onRetry={() => refetch()} />
           </>
         )}
       </main>
     <PublicFooter />
     </div>
+  );
+}
+
+const STEPS = [
+  {
+    icon: Smartphone,
+    title: "1. Pilih varian",
+    body: "MCM Storage untuk operasional lengkap (gudang, ecer, hutang piutang, chat). MCM Chat kalau hanya butuh komunikasi. Keduanya boleh dipasang bersamaan di satu HP dengan akun yang sama.",
+  },
+  {
+    icon: Download,
+    title: "2. Unduh berkas APK",
+    body: "Tekan tombol unduh pada kartu varian. Ukuran dan versi build ditampilkan di tombol supaya bisa dipastikan sebelum mengunduh.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "3. Izinkan instalasi",
+    body: "Android akan bertanya soal “sumber tidak dikenal”. Buka Izinkan dari sumber ini untuk aplikasi browser atau pengelola berkas yang dipakai, lalu kembali.",
+  },
+  {
+    icon: FolderDown,
+    title: "4. Pasang",
+    body: "Buka berkas dari notifikasi unduhan atau folder Download, tekan Pasang, tunggu sampai selesai.",
+  },
+  {
+    icon: LogIn,
+    title: "5. Masuk akun",
+    body: "Buka aplikasi, masuk dengan akun yang sama seperti di web. Semua data (stok, hutang piutang, chat) langsung tersinkron.",
+  },
+] as const;
+
+function InstallFlow() {
+  return (
+    <section
+      aria-labelledby="alur-pasang"
+      className="rounded-2xl border bg-card p-ms-4 shadow-sm"
+    >
+      <h2 id="alur-pasang" className="text-ms-sm font-semibold">
+        Alur pemasangan
+      </h2>
+      <p className="mt-0.5 text-ms-2xs text-muted-foreground">
+        Lima langkah, dari pilih varian sampai siap dipakai.
+      </p>
+      <ol className="mt-ms-3 space-y-ms-3">
+        {STEPS.map((s) => {
+          const Icon = s.icon;
+          return (
+            <li key={s.title} className="flex gap-ms-3">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-ms-xs font-semibold leading-tight">{s.title}</p>
+                <p className="mt-0.5 text-ms-2xs leading-relaxed text-muted-foreground">
+                  {s.body}
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+function InstallDetail({ onRetry }: { onRetry: () => void }) {
+  return (
+    <section className="rounded-2xl border border-dashed p-ms-4">
+      <h2 className="text-ms-sm font-semibold">Catatan penting</h2>
+      <ul className="mt-ms-2 list-disc space-y-1 pl-4 text-ms-2xs leading-relaxed text-muted-foreground">
+        <li>
+          Kedua APK memakai identitas aplikasi berbeda, jadi bisa terpasang
+          berdampingan tanpa saling menimpa.
+        </li>
+        <li>
+          Memperbarui versi cukup pasang APK baru di atas yang lama — data di HP
+          tidak terhapus.
+        </li>
+        <li>
+          “Salin link file” hanya berlaku ± 1 jam. Untuk dibagikan ke orang lain,
+          gunakan “Salin link halaman”.
+        </li>
+        <li>
+          Jika muncul “Aplikasi tidak terpasang”, hapus dulu versi lama yang
+          berasal dari sumber berbeda, lalu pasang ulang.
+        </li>
+      </ul>
+      <div className="mt-ms-3 flex flex-wrap gap-ms-2">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Periksa versi terbaru
+        </button>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+        >
+          <Globe className="h-3.5 w-3.5" />
+          Pakai versi web dulu
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -168,8 +277,29 @@ function ApkCard({
         </div>
       </div>
       {!apk ? (
-        <div className="rounded-lg border border-dashed p-ms-4 text-center text-ms-xs text-muted-foreground">
-          APK belum tersedia. Silakan cek kembali nanti.
+        <div className="rounded-lg border border-dashed p-ms-4 text-ms-xs text-muted-foreground">
+          <p className="font-semibold text-foreground">Build belum diunggah</p>
+          <p className="mt-1 leading-relaxed">
+            Varian ini belum punya berkas APK aktif. Sementara menunggu, jalankan{" "}
+            {title} lewat versi web di browser — data dan akunnya sama persis.
+          </p>
+          <div className="mt-ms-3 flex flex-wrap gap-ms-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 font-medium text-foreground hover:bg-muted"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              Buka versi web
+            </Link>
+            <Link
+              to="/download/$variant"
+              params={{ variant }}
+              className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 font-medium text-foreground hover:bg-muted"
+            >
+              Riwayat & changelog
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       ) : (
         <>
