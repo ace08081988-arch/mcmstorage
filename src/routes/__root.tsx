@@ -330,10 +330,15 @@ function RootShell({ children }: { children: ReactNode }) {
   d.dataset.fontSize=ls.getItem('app-font-size')||'md';
   if(bg) d.dataset.hasBg='1'; else delete d.dataset.hasBg;
 }catch(e){}})();`;
+  // `translate="no"` + class `notranslate`: penerjemah otomatis Chrome /
+  // Google Translate mengganti text node di luar sepengetahuan React —
+  // penyebab klasik `NotFoundError: Failed to execute 'removeChild'`
+  // yang selama ini bikin halaman Gudang "reload sendiri" di Android.
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="id" className="dark notranslate" translate="no" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <meta name="google" content="notranslate" />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body suppressHydrationWarning>

@@ -45,6 +45,7 @@ import {
   SummaryCard,
 } from "@/components/shell";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { useFormDraft } from "@/lib/form-draft";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
@@ -2796,6 +2797,35 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // Input dalam karton (hanya untuk satuan botol). 1 karton = 100 botol.
   const [inputKarton, setInputKarton] = useState(false);
 
+  // ── Draft persisten ───────────────────────────────────────────────
+  // Form ini panjang dan sering diketik sambil keyboard/notifikasi WA
+  // muncul. Bila WebView me-restart tab ATAU DomRaceBoundary memulihkan
+  // subtree setelah race `removeChild`, seluruh state lokal hilang.
+  // Draft di localStorage (per user) membuat ketikan kembali otomatis.
+  const beliDraft = useMemo(
+    () => ({
+      supplierId, mode, itemId, name, category, packageType, packageSize,
+      packageQty, pricePerPackage, priceMode, pricePerBase, paymentMethod, inputKarton,
+    }),
+    [supplierId, mode, itemId, name, category, packageType, packageSize,
+      packageQty, pricePerPackage, priceMode, pricePerBase, paymentMethod, inputKarton],
+  );
+  const draft = useFormDraft("mcm:draft:gudang-beli", uid, beliDraft, (d) => {
+    if (typeof d.supplierId === "string") setSupplierId(d.supplierId);
+    if (d.mode === "new" || d.mode === "existing") setMode(d.mode);
+    if (typeof d.itemId === "string") setItemId(d.itemId);
+    if (typeof d.name === "string") setName(d.name);
+    if (typeof d.category === "string") setCategory(d.category);
+    if (typeof d.packageType === "string") setPackageType(d.packageType as PackageType);
+    if (typeof d.packageSize === "string") setPackageSize(d.packageSize);
+    if (typeof d.packageQty === "string") setPackageQty(d.packageQty);
+    if (typeof d.pricePerPackage === "string") setPricePerPackage(d.pricePerPackage);
+    if (d.priceMode === "package" || d.priceMode === "base") setPriceMode(d.priceMode);
+    if (typeof d.pricePerBase === "string") setPricePerBase(d.pricePerBase);
+    if (d.paymentMethod === "kas" || d.paymentMethod === "hutang") setPaymentMethod(d.paymentMethod);
+    if (typeof d.inputKarton === "boolean") setInputKarton(d.inputKarton);
+  });
+
   useEffect(() => {
     if (mode === "existing" && !itemId && items[0]) setItemId(items[0].id);
   }, [mode, items, itemId]);
@@ -2970,6 +3000,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     setPricePerBase("");
     setPaymentMethod(defaultPayment);
     setInputKarton(false);
+    draft.clear();
     toast.success("Form direset");
   }
 
@@ -3022,6 +3053,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (error) { notifyError(error); return; }
     toast.success(`Pembelian dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok bertambah`);
     setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage(""); setPricePerBase(""); setNewImagePath(null);
+    draft.clear();
     onChanged();
   }
 
