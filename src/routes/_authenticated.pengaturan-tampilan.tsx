@@ -38,10 +38,19 @@ import {
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
-  pushAppearanceToCloud,
   pullAppearanceFromCloud,
+  pushAppearanceToCloudSafe,
+  AppearanceValidationError,
+  applyCloudPayload,
   fetchAppearanceFromCloud,
 } from "@/lib/appearance-cloud";
+import {
+  listAppearanceBackups,
+  deleteAppearanceBackup,
+  validateAppearancePayload,
+  MAX_APPEARANCE_BACKUPS,
+  type AppearanceBackup,
+} from "@/lib/appearance-backup";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 import {
   migrateImportedAppearance,
@@ -335,6 +344,7 @@ function PengaturanTampilanPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [cloudBusy, setCloudBusy] = useState<"push" | "pull" | null>(null);
   const [cloudAt, setCloudAt] = useState<string | null>(null);
+  const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
@@ -430,10 +440,19 @@ function PengaturanTampilanPage() {
     // Izinkan draft berikutnya kembali di-revert saat unmount.
     setTimeout(() => { savedRef.current = false; }, 0);
 
-    // Sinkronkan ke akun supaya tersimpan lintas perangkat.
-    void pushAppearanceToCloud(buildPayloadFrom(d))
-      .then((at) => setCloudAt(at))
-      .catch(() => {
+    // Sinkronkan ke akun (validasi + cadangkan versi lama dulu).
+    void pushAppearanceToCloudSafe(buildPayloadFrom(d))
+      .then((res) => {
+        setCloudAt(res.updatedAt);
+        setBackups(listAppearanceBackups());
+      })
+      .catch((e) => {
+        if (e instanceof AppearanceValidationError) {
+          toast.error("Tersimpan di perangkat ini, tapi ditolak saat sinkron.", {
+            description: e.errors.join(" "),
+          });
+          return;
+        }
         toast.warning("Tersimpan di perangkat ini, tapi gagal sinkron ke akun.", {
           description: "Coba lagi lewat tombol “Simpan ke akun”.",
         });
@@ -493,11 +512,61 @@ function PengaturanTampilanPage() {
   const saveToCloud = async () => {
     setCloudBusy("push");
     try {
-      const at = await pushAppearanceToCloud(buildExportPayload());
-      setCloudAt(at);
-      toast.success("Pengaturan tampilan tersimpan di akun Anda.");
+      const res = await pushAppearanceToCloudSafe(buildExportPayload());
+      setCloudAt(res.updatedAt);
+      setBackups(listAppearanceBackups());
+      toast.success("Pengaturan tampilan tersimpan di akun Anda.", {
+        description: res.backup
+          ? "Versi akun sebelumnya dicadangkan dan bisa dipulihkan."
+          : undefined,
+      });
+      if (res.warnings.length > 0) {
+        toast.warning("Beberapa nilai dilewati saat menyimpan.", {
+          description: res.warnings.join(" "),
+        });
+      }
+    } catch (e) {
+      if (e instanceof AppearanceValidationError) {
+        toast.error("Pengaturan belum valid — penyimpanan dibatalkan.", {
+          description: e.errors.join(" "),
+          duration: 8000,
+        });
+      } else {
+        toast.error("Gagal menyimpan ke akun. Periksa koneksi lalu coba lagi.");
+      }
+    } finally {
+      setCloudBusy(null);
+    }
+  };
+
+  /** Muat daftar cadangan lokal saat halaman dibuka. */
+  useEffect(() => {
+    setBackups(listAppearanceBackups());
+  }, []);
+
+  /** Pulihkan satu cadangan: terapkan di perangkat ini lalu dorong ke akun. */
+  const restoreBackup = async (b: AppearanceBackup) => {
+    setCloudBusy("push");
+    try {
+      applyCloudPayload(b.payload);
+      const p = getAppPrefs();
+      const fresh = readSnapshot({
+        fontScale: p.fontScale,
+        highContrast: p.highContrast,
+        reduceMotion: p.reduceMotion,
+      });
+      savedRef.current = true;
+      setSnapshot(fresh);
+      setDraft(fresh);
+      setTimeout(() => { savedRef.current = false; }, 0);
+
+      const res = await pushAppearanceToCloudSafe(b.payload);
+      setCloudAt(res.updatedAt);
+      setBackups(listAppearanceBackups());
+      toast.success("Cadangan dipulihkan dan disimpan kembali ke akun.");
     } catch {
-      toast.error("Gagal menyimpan ke akun. Periksa koneksi lalu coba lagi.");
+      toast.warning("Cadangan diterapkan di perangkat ini, tapi gagal sinkron ke akun.");
+      setBackups(listAppearanceBackups());
     } finally {
       setCloudBusy(null);
     }
@@ -1263,6 +1332,77 @@ function PengaturanTampilanPage() {
               <Download className="h-4 w-4" />
               {cloudBusy === "pull" ? "Mengambil…" : "Ambil dari akun"}
             </Button>
+          </CardContent>
+          <CardContent className="space-ms-3 pt-0">
+            {(() => {
+              const check = validateAppearancePayload(buildExportPayload());
+              if (check.ok) return null;
+              return (
+                <div
+                  data-testid="appearance-validation-errors"
+                  className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-2xs text-destructive"
+                >
+                  <p className="font-semibold">Belum bisa disimpan ke akun:</p>
+                  <ul className="mt-1 list-disc pl-4">
+                    {check.errors.map((e) => (
+                      <li key={e}>{e}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+
+            <div className="rounded-md border p-ms-3">
+              <p className="text-ms-sm font-semibold">Cadangan otomatis</p>
+              <p className="text-ms-2xs text-muted-foreground">
+                Setiap kali menimpa preset di akun, versi sebelumnya dicadangkan di
+                perangkat ini (maks. {MAX_APPEARANCE_BACKUPS} versi terakhir).
+              </p>
+              {backups.length === 0 ? (
+                <p className="mt-ms-2 text-ms-2xs text-muted-foreground">
+                  Belum ada cadangan.
+                </p>
+              ) : (
+                <ul className="mt-ms-2 space-y-1" data-testid="appearance-backup-list">
+                  {backups.map((b) => (
+                    <li
+                      key={b.id}
+                      className="flex items-center gap-ms-2 rounded-md border bg-card px-ms-2 py-ms-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-ms-xs font-medium">
+                          {new Date(b.cloudUpdatedAt ?? b.createdAt).toLocaleString("id-ID")}
+                        </p>
+                        <p className="truncate text-ms-2xs text-muted-foreground">
+                          Dicadangkan {new Date(b.createdAt).toLocaleString("id-ID")}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={cloudBusy !== null}
+                        onClick={() => void restoreBackup(b)}
+                      >
+                        Pulihkan
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={cloudBusy !== null}
+                        onClick={() => {
+                          deleteAppearanceBackup(b.id);
+                          setBackups(listAppearanceBackups());
+                        }}
+                      >
+                        Hapus
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </CardContent>
         </Card>
 

@@ -16,6 +16,11 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { setAppPrefs } from "@/lib/app-prefs";
+import {
+  saveAppearanceBackup,
+  validateAppearancePayload,
+  type AppearanceBackup,
+} from "@/lib/appearance-backup";
 
 const COMPACT_LS = "app-compact-mode";
 const LAST_SYNC_LS = "app-appearance-cloud-sync";
@@ -105,6 +110,43 @@ export async function pushAppearanceToCloud(
   const updatedAt = data?.updated_at ?? new Date().toISOString();
   markSynced(updatedAt);
   return updatedAt;
+}
+
+/** Gagal validasi — dipakai UI untuk menampilkan daftar masalah. */
+export class AppearanceValidationError extends Error {
+  constructor(public readonly errors: string[]) {
+    super(errors[0] ?? "Pengaturan tampilan tidak valid.");
+    this.name = "AppearanceValidationError";
+  }
+}
+
+export type SafePushResult = {
+  updatedAt: string;
+  /** Cadangan versi akun sebelumnya (null bila belum ada / duplikat). */
+  backup: AppearanceBackup | null;
+  warnings: string[];
+};
+
+/**
+ * Simpan ke akun dengan pengaman: validasi payload dulu, lalu cadangkan
+ * versi akun yang akan tertimpa sebelum upsert dijalankan.
+ */
+export async function pushAppearanceToCloudSafe(
+  payload: AppearanceCloudPayload,
+): Promise<SafePushResult> {
+  const check = validateAppearancePayload(payload);
+  if (!check.ok) throw new AppearanceValidationError(check.errors);
+
+  let backup: AppearanceBackup | null = null;
+  try {
+    const prev = await fetchAppearanceFromCloud();
+    if (prev) backup = saveAppearanceBackup(prev.payload, prev.updatedAt);
+  } catch {
+    /* gagal ambil versi lama — lanjut simpan, cadangan best-effort */
+  }
+
+  const updatedAt = await pushAppearanceToCloud(payload);
+  return { updatedAt, backup, warnings: check.warnings };
 }
 
 /** Ambil payload tampilan milik akun ini (null bila belum pernah disimpan). */
