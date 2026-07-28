@@ -34,7 +34,7 @@ export const Route = createFileRoute("/lovable/visual/debt-ssot-consistency")({
     piutang: Number(s.piutang ?? 55_000_000) || 0,
     nama: typeof s.nama === "string" && s.nama ? s.nama : "Dompeng",
   }),
-  component: DebtSsotHarness;
+  component: DebtSsotHarness,
 });
 
 function DebtSsotHarness() {

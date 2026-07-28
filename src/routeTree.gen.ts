@@ -107,6 +107,7 @@ import { Route as LovableVisualGudangShellRouteImport } from './routes/lovable.v
 import { Route as LovableVisualEcerReturnFromWaRouteImport } from './routes/lovable.visual.ecer-return-from-wa'
 import { Route as LovableVisualDesignTokensRouteImport } from './routes/lovable.visual.design-tokens'
 import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
+import { Route as LovableVisualDebtSsotConsistencyRouteImport } from './routes/lovable.visual.debt-ssot-consistency'
 import { Route as LovableVisualChatQueueNetworkDropRouteImport } from './routes/lovable.visual.chat-queue-network-drop'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as LovableVisualCallVideoStageRouteImport } from './routes/lovable.visual.call-video-stage'
@@ -685,6 +686,12 @@ const LovableVisualDeliveryHistoryRoute =
     path: '/lovable/visual/delivery-history',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualDebtSsotConsistencyRoute =
+  LovableVisualDebtSsotConsistencyRouteImport.update({
+    id: '/lovable/visual/debt-ssot-consistency',
+    path: '/lovable/visual/debt-ssot-consistency',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualChatQueueNetworkDropRoute =
   LovableVisualChatQueueNetworkDropRouteImport.update({
     id: '/lovable/visual/chat-queue-network-drop',
@@ -1040,6 +1047,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
+  '/lovable/visual/debt-ssot-consistency': typeof LovableVisualDebtSsotConsistencyRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
@@ -1179,6 +1187,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
+  '/lovable/visual/debt-ssot-consistency': typeof LovableVisualDebtSsotConsistencyRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
@@ -1323,6 +1332,7 @@ export interface FileRoutesById {
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
+  '/lovable/visual/debt-ssot-consistency': typeof LovableVisualDebtSsotConsistencyRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
@@ -1467,6 +1477,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
+    | '/lovable/visual/debt-ssot-consistency'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
     | '/lovable/visual/ecer-return-from-wa'
@@ -1606,6 +1617,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
+    | '/lovable/visual/debt-ssot-consistency'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
     | '/lovable/visual/ecer-return-from-wa'
@@ -1749,6 +1761,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
+    | '/lovable/visual/debt-ssot-consistency'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
     | '/lovable/visual/ecer-return-from-wa'
@@ -1824,6 +1837,7 @@ export interface RootRouteChildren {
   LovableVisualCallVideoStageRoute: typeof LovableVisualCallVideoStageRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualChatQueueNetworkDropRoute: typeof LovableVisualChatQueueNetworkDropRoute
+  LovableVisualDebtSsotConsistencyRoute: typeof LovableVisualDebtSsotConsistencyRoute
   LovableVisualDeliveryHistoryRoute: typeof LovableVisualDeliveryHistoryRoute
   LovableVisualDesignTokensRoute: typeof LovableVisualDesignTokensRoute
   LovableVisualEcerReturnFromWaRoute: typeof LovableVisualEcerReturnFromWaRoute
@@ -2547,6 +2561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualDeliveryHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/debt-ssot-consistency': {
+      id: '/lovable/visual/debt-ssot-consistency'
+      path: '/lovable/visual/debt-ssot-consistency'
+      fullPath: '/lovable/visual/debt-ssot-consistency'
+      preLoaderRoute: typeof LovableVisualDebtSsotConsistencyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/chat-queue-network-drop': {
       id: '/lovable/visual/chat-queue-network-drop'
       path: '/lovable/visual/chat-queue-network-drop'
@@ -3136,6 +3157,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
   LovableVisualChatQueueNetworkDropRoute:
     LovableVisualChatQueueNetworkDropRoute,
+  LovableVisualDebtSsotConsistencyRoute: LovableVisualDebtSsotConsistencyRoute,
   LovableVisualDeliveryHistoryRoute: LovableVisualDeliveryHistoryRoute,
   LovableVisualDesignTokensRoute: LovableVisualDesignTokensRoute,
   LovableVisualEcerReturnFromWaRoute: LovableVisualEcerReturnFromWaRoute,
