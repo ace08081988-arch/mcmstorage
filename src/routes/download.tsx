@@ -11,6 +11,11 @@ import {
   Check,
   AlertTriangle,
   Sparkles,
+  ShieldCheck,
+  FolderDown,
+  LogIn,
+  Globe,
+  RefreshCw,
 } from "lucide-react";
 import {
   getLatestApkVariants,
