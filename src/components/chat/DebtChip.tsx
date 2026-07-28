@@ -64,14 +64,14 @@ export const DebtChip = forwardRef<
       ref={ref}
       type="button"
       disabled={!interactive ? true : rest.disabled}
-      className={`inline-flex max-w-full shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-ms-2xs font-semibold transition ${
+      className={`inline-flex min-w-0 max-w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 text-ms-2xs font-semibold leading-tight transition ${
         interactive ? "hover:bg-accent" : "cursor-default"
       } ${TONE_CLASS[tone]} ${className}`}
       {...rest}
     >
       <Wallet className="h-3 w-3 shrink-0" />
-      <span>{TONE_LABEL[tone]}</span>
-      <span className="font-mono font-normal">
+      <span className="shrink-0">{TONE_LABEL[tone]}</span>
+      <span className="min-w-0 truncate font-mono font-normal">
         {compactOnly ? (
           rupiahCompact(value)
         ) : (
