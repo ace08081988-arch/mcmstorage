@@ -2038,7 +2038,7 @@ function ChatRoomPage() {
                                 ) : null}
                                 {!card && !isCardBody(m.body) && m.body ? (
                                   <div className="whitespace-pre-wrap break-words text-pretty [overflow-wrap:anywhere]">
-                                    <Linkify text={m.body} />
+                                    <Linkify text={m.body} highlight={quickSearchOpen ? quickNeedle : undefined} />
                                   </div>
                                 ) : null}
                                 {!card && !isCardBody(m.body) && m.body ? (
