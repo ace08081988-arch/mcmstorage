@@ -441,10 +441,19 @@ function PengaturanTampilanPage() {
     // Izinkan draft berikutnya kembali di-revert saat unmount.
     setTimeout(() => { savedRef.current = false; }, 0);
 
-    // Sinkronkan ke akun supaya tersimpan lintas perangkat.
-    void pushAppearanceToCloud(buildPayloadFrom(d))
-      .then((at) => setCloudAt(at))
-      .catch(() => {
+    // Sinkronkan ke akun (validasi + cadangkan versi lama dulu).
+    void pushAppearanceToCloudSafe(buildPayloadFrom(d))
+      .then((res) => {
+        setCloudAt(res.updatedAt);
+        setBackups(listAppearanceBackups());
+      })
+      .catch((e) => {
+        if (e instanceof AppearanceValidationError) {
+          toast.error("Tersimpan di perangkat ini, tapi ditolak saat sinkron.", {
+            description: e.errors.join(" "),
+          });
+          return;
+        }
         toast.warning("Tersimpan di perangkat ini, tapi gagal sinkron ke akun.", {
           description: "Coba lagi lewat tombol “Simpan ke akun”.",
         });
