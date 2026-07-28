@@ -1229,7 +1229,11 @@ function SendPrepLinkDialog({
 
   // Jumlah paket yang ingin disiapkan oleh pegawai lewat link ini.
   // Dipakai sebagai batas `_max_submissions` dan ditampilkan pada pesan WA.
-  const [targetQty, setTargetQty] = useState<number>(1);
+  // Disimpan sebagai teks mentah supaya user bisa menghapus isinya (backspace)
+  // atau mengganti angka tanpa langsung dipaksa balik ke 1 saat mengetik.
+  // Clamp 1–999 hanya dilakukan saat blur dan saat dipakai (createSession/WA).
+  const [targetQtyText, setTargetQtyText] = useState<string>("1");
+  const targetQty = Math.max(1, Math.min(999, Math.floor(Number(targetQtyText) || 1)));
   const [nameError, setNameError] = useState<string | null>(null);
   // Tear-down saat dialog ditutup: hapus SEMUA state internal + draft nama
   // pegawai di localStorage. Ini menutup celah "nilai bocor antar-title" —
