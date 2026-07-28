@@ -1361,6 +1361,42 @@ function ChatRoomPage() {
       .slice(0, 3);
   }, [visibleMessages]);
 
+  // Hasil pencarian cepat: id pesan (urut kronologis) yang body-nya memuat
+  // kata kunci. Hanya pesan yang sudah dimuat di memori — sama seperti
+  // dialog "Cari di percakapan", tanpa round-trip tambahan.
+  const quickNeedle = quickQuery.trim().toLowerCase();
+  const quickHits = useMemo(() => {
+    if (!quickNeedle) return [] as string[];
+    return (visibleMessages ?? [])
+      .filter((m) => !m.deleted_at && (m.body ?? "").toLowerCase().includes(quickNeedle))
+      .map((m) => m.id);
+  }, [visibleMessages, quickNeedle]);
+  const quickHitSet = useMemo(() => new Set(quickHits), [quickHits]);
+  // Reset posisi kursor tiap kata kunci berubah, lalu lompat ke hasil
+  // terbaru (paling bawah) supaya alur baca tetap natural.
+  useEffect(() => {
+    if (quickHits.length === 0) return;
+    const last = quickHits.length - 1;
+    setQuickIdx(last);
+    jumpToMessage(quickHits[last]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickNeedle]);
+  const activeHitId = quickHits[quickIdx] ?? null;
+  const gotoHit = useCallback(
+    (dir: 1 | -1) => {
+      if (quickHits.length === 0) return;
+      const next = (quickIdx + dir + quickHits.length) % quickHits.length;
+      setQuickIdx(next);
+      jumpToMessage(quickHits[next]);
+    },
+    [quickHits, quickIdx, jumpToMessage],
+  );
+  const closeQuickSearch = useCallback(() => {
+    setQuickSearchOpen(false);
+    setQuickQuery("");
+    setQuickIdx(0);
+  }, []);
+
   const selectedMessages = useMemo(
     () => (messages ?? []).filter((m) => selectedIds.has(m.id)),
     [messages, selectedIds],
