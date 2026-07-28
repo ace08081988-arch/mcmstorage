@@ -419,6 +419,13 @@ function ChatRoomPage() {
     setTimeout(() => el.classList.remove("ring-2", "ring-warning"), 1500);
   }, []);
 
+  // ---- Pencarian cepat di dalam percakapan -------------------------------
+  // Bilah tipis di bawah header: mencari pada pesan yang sudah dimuat,
+  // menyorot semua kecocokan, dan menyediakan navigasi hasil ↑/↓.
+  const [quickSearchOpen, setQuickSearchOpen] = useState(false);
+  const [quickQuery, setQuickQuery] = useState("");
+  const [quickIdx, setQuickIdx] = useState(0);
+
   // Quick reply popover state (driven by `/shortcut` in composer)
   const [qrQuery, setQrQuery] = useState<string | null>(null);
 
