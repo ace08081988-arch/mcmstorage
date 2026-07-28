@@ -77,6 +77,12 @@ export function useDebtSyncMap() {
     queryKey: DEBT_SYNC_QUERY_KEY,
     queryFn: fetchDebtSyncMap,
     staleTime: 30_000,
+    // Otomatis segar: saat kembali ke app / online lagi / tiap 60 detik,
+    // supaya angka di chip chat tidak pernah tertinggal dari halaman lain.
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 
