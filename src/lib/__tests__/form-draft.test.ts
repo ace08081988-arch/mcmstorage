@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+// @vitest-environment jsdom
 import { readFormDraft, clearFormDraft } from "@/lib/form-draft";
 
 const BASE = "mcm:draft:test-form";
