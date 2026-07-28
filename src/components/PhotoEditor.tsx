@@ -1032,7 +1032,6 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setTextPrompt((s) => ({ ...s, open: false, value: "" }));
   }
 
-  if (typeof document === "undefined") return null;
   // Sisi bawah editor bisa tertutup soft-keyboard (dialog Teks) atau
   // ter-clip saat toolbar browser Android muncul. Hook ini melacak
   // selisih visualViewport vs layoutViewport dan diaplikasikan ke:
@@ -1048,6 +1047,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   // menggulir untuk mencapai tombol.
   const toolPanelRef = useRef<HTMLDivElement | null>(null);
   const { topShadow, bottomShadow } = useScrollShadow(toolPanelRef);
+
+  // Early-return SETELAH semua hook (React error #310 kalau sebaliknya).
+  if (typeof document === "undefined") return null;
+
   return (
     <div
       className="fixed inset-x-0 top-0 z-[100] flex flex-col bg-background text-foreground"
