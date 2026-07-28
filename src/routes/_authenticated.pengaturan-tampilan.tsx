@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle, ClipboardPaste, Link2 } from "lucide-react";
+import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle, ClipboardPaste, ClipboardCopy, Link2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import {
@@ -36,6 +36,7 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
+import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 import {
   migrateImportedAppearance,
@@ -433,9 +434,8 @@ function PengaturanTampilanPage() {
     toast.info("Perubahan dibatalkan");
   };
 
-  const exportSettings = () => {
-    try {
-      const payload = {
+  /** Payload ekspor tunggal — dipakai file .json maupun kode preset. */
+  const buildExportPayload = () => ({
         __type: EXPORT_SCHEMA_TYPE,
         schemaVersion: EXPORT_SCHEMA_VERSION,
         // `version` dipertahankan untuk kompatibilitas importer versi lama
@@ -453,13 +453,18 @@ function PengaturanTampilanPage() {
           bgOverlay: String(draft.bgOverlay),
           bgBlur: String(draft.bgBlur),
         },
+        fx: draft.fx,
         compact: draft.compact,
         appPrefs: {
           fontScale: draft.fontScale,
           highContrast: draft.highContrast,
           reduceMotion: draft.reduceMotion,
         },
-      };
+  });
+
+  const exportSettings = () => {
+    try {
+      const payload = buildExportPayload();
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -488,8 +493,14 @@ function PengaturanTampilanPage() {
 
   const runImportFromText = (text: string, source: ImportSource) => {
     let data: unknown;
+    const json = decodeShareText(text || "{}");
+    if (json == null) {
+      logAppearanceMigration(source, { ok: false, reason: "invalid" });
+      toast.error("Kode preset rusak atau tidak lengkap.");
+      return;
+    }
     try {
-      data = JSON.parse(text || "{}");
+      data = JSON.parse(json || "{}");
     } catch {
       const invalid: MigrateResult = { ok: false, reason: "invalid" };
       logAppearanceMigration(source, invalid);
@@ -526,7 +537,23 @@ function PengaturanTampilanPage() {
           `Pengaturan diimpor via ${source} (skema v${result.fromVersion}) — tekan Simpan untuk menerapkan.`,
         );
       }
-      return { ...d, ...result.patch };
+      const { fx, ...rest } = result.patch;
+      return { ...d, ...rest, ...(fx ? { fx: { ...d.fx, ...fx } } : {}) };
+    });
+  };
+
+  /** Salin kode preset ringkas supaya bisa dikirim lewat chat ke HP lain. */
+  const copyPresetCode = async () => {
+    const { code, droppedBackground } = encodePresetCode(buildExportPayload());
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      window.prompt("Salin kode preset ini:", code);
+    }
+    toast.success("Kode preset disalin.", {
+      description: droppedBackground
+        ? "Foto latar tidak ikut (terlalu besar) — pakai ekspor file untuk menyertakannya."
+        : "Tempel di perangkat lain lewat “Impor dari clipboard/kode”.",
     });
   };
 
@@ -1172,10 +1199,25 @@ function PengaturanTampilanPage() {
               >
                 <ClipboardPaste className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
-                  <p className="text-ms-sm font-semibold">Impor dari clipboard</p>
+                  <p className="text-ms-sm font-semibold">Impor dari clipboard / kode</p>
                   <p className="text-ms-2xs text-muted-foreground">
-                    Tempel JSON pengaturan dari clipboard. Fallback prompt manual
-                    jika izin clipboard tidak tersedia.
+                    Tempel kode preset (MCMTAMPILAN1:…) atau JSON pengaturan.
+                    Fallback prompt manual jika izin clipboard ditolak.
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                data-testid="copy-preset-code"
+                onClick={copyPresetCode}
+                className="flex items-start gap-ms-3 rounded-md border p-ms-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+              >
+                <ClipboardCopy className="h-4 w-4 mt-0.5 text-primary" />
+                <div>
+                  <p className="text-ms-sm font-semibold">Salin kode preset</p>
+                  <p className="text-ms-2xs text-muted-foreground">
+                    Kode teks pendek untuk dikirim lewat WhatsApp/chat ke perangkat
+                    lain, lalu ditempel di sana.
                   </p>
                 </div>
               </button>

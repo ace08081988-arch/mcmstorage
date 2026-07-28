@@ -223,3 +223,32 @@ describe("migrateImportedAppearance — backward compatibility", () => {
     });
   });
 });
+describe("efek permukaan (fx) — additive", () => {
+  const base = {
+    __type: "mcm.appearance-settings",
+    schemaVersion: 2,
+    appearance: { theme: "dark" },
+  };
+
+  it("mengambil fx dari payload dan meng-clamp nilainya", () => {
+    const res = migrateImportedAppearance(
+      { ...base, fx: { glass: true, surfaceOpacity: 0.1, shadow: 9, saturation: 1.2 } },
+      CURRENT_DEFAULT,
+    );
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.patch.fx).toMatchObject({
+      glass: true,
+      surfaceOpacity: 0.3,
+      shadow: 3,
+      saturation: 1.2,
+    });
+  });
+
+  it("tidak menambah kunci fx untuk payload lama tanpa fx", () => {
+    const res = migrateImportedAppearance(base, CURRENT_DEFAULT);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect("fx" in res.patch).toBe(false);
+  });
+});
