@@ -1940,7 +1940,13 @@ function ChatRoomPage() {
                             : mine
                               ? "rounded-br-md wa-bubble-out"
                               : "rounded-bl-md wa-bubble-in"
-                        } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""}`}
+                        } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""} ${
+                          activeHitId === m.id
+                            ? "ring-2 ring-warning"
+                            : quickHitSet.has(m.id)
+                              ? "ring-1 ring-warning/50"
+                              : ""
+                        }`}
                         onPointerDown={(e) => {
                           if (e.pointerType === "mouse" && e.button !== 0) return;
                           startLongPress(m);
