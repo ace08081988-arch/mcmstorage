@@ -8,7 +8,7 @@
  * "Periksa lagi" menutup modal tanpa mengirim.
  */
 import { useEffect, useState } from "react";
-import { AlertTriangle, Check, Copy, Loader2, MapPin, MessageCircle, Send } from "lucide-react";
+import { AlertTriangle, Check, Copy, Images, Loader2, MapPin, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -110,11 +110,46 @@ export function CaptionPreviewDialog({
           </DialogTitle>
           <DialogDescription>
             Periksa isi pesan (termasuk sisa hutang dan link lokasi) sebelum
-            dikirim. Foto{typeof photoCount === "number" ? ` (${photoCount})` : ""} ikut terkirim bersama pesan ini.
+            dikirim. Foto ikut terkirim bersama pesan ini.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-ms-2">
+          {typeof photoCount === "number" ? (
+            <div
+              data-testid="caption-preview-photo-count"
+              className={`flex items-center gap-ms-2 rounded-md border p-ms-2 text-ms-2xs ${
+                photoCount > 0
+                  ? "border-primary/30 bg-primary/5 text-foreground"
+                  : "border-amber-400/60 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-950/40 dark:text-amber-100"
+              }`}
+            >
+              {photoCount > 0 ? (
+                <Images className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+              ) : (
+                <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold">
+                  {photoCount > 0
+                    ? `${photoCount.toLocaleString("id-ID")} foto akan dikirim`
+                    : "Tidak ada foto — hanya teks"}
+                </div>
+                <div className="opacity-80">
+                  {photoCount > 1
+                    ? `Foto dikirim satu per satu (1–${photoCount}) mengikuti urutan kotak.`
+                    : photoCount === 1
+                    ? "1 lampiran foto menyertai pesan ini."
+                    : "Pesan tetap bisa dikirim tanpa lampiran."}
+                </div>
+              </div>
+              {photoCount > 0 ? (
+                <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-primary tabular-nums">
+                  ×{photoCount}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {locationMissing ? (
             <div
               role="alert"
