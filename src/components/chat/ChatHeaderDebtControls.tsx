@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -267,6 +268,8 @@ export function ChatHeaderDebtControls({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewBody, setPreviewBody] = useState("");
   const [reportStyle, setReportStyle] = useState<DebtReportStyle>("detail");
+  const [previewEdit, setPreviewEdit] = useState(false);
+  const [previewEdited, setPreviewEdited] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
@@ -311,6 +314,8 @@ export function ChatHeaderDebtControls({
     try {
       await qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY });
       setPreviewBody(reportBody());
+      setPreviewEdit(false);
+      setPreviewEdited(false);
       setPreviewOpen(true);
     } finally {
       setPreparingPreview(false);
@@ -668,7 +673,7 @@ export function ChatHeaderDebtControls({
             Periksa angkanya dulu. Pesan ini akan dikirim ke chat {peerName}.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-ms-2xs text-muted-foreground">Gaya pesan:</span>
           {(["ringkas", "detail"] as const).map((s) => (
             <Button
@@ -681,15 +686,46 @@ export function ChatHeaderDebtControls({
               onClick={() => {
                 setReportStyle(s);
                 setPreviewBody(reportBody(s));
+                setPreviewEdited(false);
               }}
             >
               {s}
             </Button>
           ))}
+          <Button
+            type="button"
+            size="sm"
+            variant={previewEdit ? "default" : "outline"}
+            className="ml-auto h-7 px-2.5 text-ms-2xs"
+            disabled={sendingReport}
+            onClick={() => setPreviewEdit((v) => !v)}
+          >
+            <Pencil className="mr-1 size-3" />
+            {previewEdit ? "Selesai edit" : "Edit teks"}
+          </Button>
         </div>
-        <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted/50 p-3 text-ms-xs leading-relaxed">
-          {previewBody}
-        </pre>
+        {previewEdit ? (
+          <Textarea
+            value={previewBody}
+            onChange={(e) => {
+              setPreviewBody(e.target.value);
+              setPreviewEdited(true);
+            }}
+            spellCheck={false}
+            className="max-h-72 min-h-56 font-mono text-ms-xs leading-relaxed"
+            aria-label="Edit teks laporan sebelum dikirim"
+          />
+        ) : (
+          <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted/50 p-3 text-ms-xs leading-relaxed">
+            {previewBody}
+          </pre>
+        )}
+        {previewEdited ? (
+          <p className="text-ms-2xs leading-snug text-warning">
+            Teks sudah diubah manual — angka tidak lagi otomatis mengikuti SSOT.
+            Tekan gaya pesan untuk memulihkan teks asli.
+          </p>
+        ) : null}
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
             type="button"
@@ -700,7 +736,12 @@ export function ChatHeaderDebtControls({
           >
             Batal
           </Button>
-          <Button type="button" size="sm" disabled={sendingReport} onClick={() => void sendReport()}>
+          <Button
+            type="button"
+            size="sm"
+            disabled={sendingReport || previewBody.trim().length === 0}
+            onClick={() => void sendReport()}
+          >
             {sendingReport ? (
               <Loader2 className="mr-1 size-3.5 animate-spin" />
             ) : (
