@@ -252,8 +252,8 @@ export function AddContactFab() {
                     <div className="truncate font-medium">
                       {preview.display_name || "Pengguna MCM"}
                     </div>
-                    <div className="truncate text-ms-2xs text-muted-foreground">
-                      PIN {formatInviteCode(preview.invite_code)}
+                    <div className="mt-0.5 flex min-w-0 items-center gap-ms-2">
+                      <PinChip code={preview.invite_code} />
                     </div>
                   </div>
                   <Check className="h-4 w-4 text-success" aria-hidden />
