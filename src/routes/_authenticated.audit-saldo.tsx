@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownCircle, ArrowUpCircle, ChevronRight, RefreshCw, Search, X } from "lucide-react";
 import { rupiah } from "@/lib/stock-format";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
+import { useDebtSyncMap } from "@/lib/chat-debt-sync";
 import {
   PARTY_AUDIT_QUERY_KEY,
   breakdownFactors,
@@ -120,6 +121,11 @@ function AuditSaldoPage() {
     queryFn: () => fetchPartyBalanceEvents(400),
     staleTime: 30_000,
   });
+  // Total saldo per kontak WAJIB berasal dari SSOT `party_balance_v1()` —
+  // bukan dijumlahkan dari daftar kejadian. Agregasi event tidak bisa
+  // menyamai SSOT karena SSOT meng-clamp tiap sumber (manual/sales/purchase)
+  // secara terpisah, dan daftar kejadian dibatasi 400 baris terbaru.
+  const ssot = useDebtSyncMap();
 
   useOnDebtTx(
     useCallback(() => {
@@ -481,12 +487,21 @@ function AuditSaldoPage() {
                     </div>
                   </div>
                   <div className="shrink-0 space-y-0.5 text-right">
-                    <div className="inline-flex items-center gap-1 text-xs tabular-nums text-emerald-600">
-                      <ArrowDownCircle className="h-3 w-3" /> {rupiah(g.piutang)}
-                    </div>
-                    <div className="inline-flex items-center gap-1 text-xs tabular-nums text-rose-600">
-                      <ArrowUpCircle className="h-3 w-3" /> {rupiah(g.hutang)}
-                    </div>
+                    {(() => {
+                      const bal = ssot.data?.get(g.key);
+                      const piutang = bal ? bal.piutang : g.piutang;
+                      const hutang = bal ? bal.hutang : g.hutang;
+                      return (
+                        <>
+                          <div className="inline-flex items-center gap-1 text-xs tabular-nums text-emerald-600">
+                            <ArrowDownCircle className="h-3 w-3" /> {rupiah(piutang)}
+                          </div>
+                          <div className="inline-flex items-center gap-1 text-xs tabular-nums text-rose-600">
+                            <ArrowUpCircle className="h-3 w-3" /> {rupiah(hutang)}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </button>
                 {isOpen && (
@@ -503,8 +518,10 @@ function AuditSaldoPage() {
       )}
 
       <p className="text-[0.6875rem] text-muted-foreground">
-        Saldo per kontak di atas dihitung dari kejadian yang sama dengan yang dipakai chip
-        chat, kartu total, dan halaman Hutang &amp; Piutang. Maksimal 400 kejadian terbaru.
+        Total saldo per kontak di atas diambil langsung dari SSOT{" "}
+        <code>party_balance_v1</code> — angkanya persis sama dengan chip chat, kartu total,
+        dan halaman Hutang &amp; Piutang. Daftar kejadian di dalamnya dibatasi 400 perubahan
+        terbaru, jadi saldo berjalan (sebelum → sesudah) hanya menelusuri rentang tersebut.
       </p>
     </div>
   );
