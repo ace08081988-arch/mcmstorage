@@ -29,6 +29,16 @@ export function MobileBottomNav() {
   // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
   // Sembunyikan bottom nav global agar tidak menutupi sub-tab tersebut.
+  // Semua hook dipanggil sebelum early-return (React error #310 kalau tidak).
+  const activeTo = useMemo(() => {
+    // "/" cocokkan persis, rute lain gunakan prefix segmen.
+    if (path === "/") return "/" as const;
+    const hit = (["/gudang", "/ecer", "/chat"] as const).find(
+      (to) => path === to || path.startsWith(`${to}/`),
+    );
+    return hit;
+  }, [path]);
+
   const hideOnChatFamily =
     path === "/chat" ||
     path.startsWith("/chat/") ||
@@ -46,16 +56,6 @@ export function MobileBottomNav() {
     { to: "/ecer", label: "Ecer", Icon: PackageSearch },
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
   ];
-
-  const activeTo = useMemo(() => {
-    // "/" cocokkan persis, rute lain gunakan prefix segmen.
-    if (path === "/") return "/" as const;
-    const hit = items.slice(1).find(
-      (it) => path === it.to || path.startsWith(`${it.to}/`),
-    );
-    return hit?.to;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path]);
 
   // Index tab aktif untuk menggerakkan indikator "pill" bergeser mulus.
   // 5 slot total (4 link + tombol Menu). Bila rute saat ini tidak

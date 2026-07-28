@@ -50,6 +50,11 @@ export function SmartWeightInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
+  // PENTING: semua hook harus dipanggil sebelum early-return apa pun.
+  // `baseUnit` bisa berubah g <-> pcs saat user ganti barang; kalau useMemo
+  // ada di bawah return, jumlah hook berubah antar render → React error #310.
+  const parsed = useMemo(() => parseWeightToGrams(raw), [raw]);
+
   if (baseUnit !== "g") {
     // Fallback untuk pcs — pakai text+inputMode="decimal" supaya angka bawaan
     // bisa dihapus bebas di Android WebView (type="number" kadang menahan
@@ -60,7 +65,6 @@ export function SmartWeightInput({
     );
   }
 
-  const parsed = useMemo(() => parseWeightToGrams(raw), [raw]);
   const hasUnit = /[a-zA-Z]/.test(raw);
   const showPreview =
     showHint && parsed != null && parsed > 0 && (hasUnit || parsed >= 1000 || parsed < 1);
