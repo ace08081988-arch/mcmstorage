@@ -886,12 +886,12 @@ function HutangPiutangPage() {
                         data-testid={`party-card-${normalizeParty(group.name)}`}
                         className="overflow-hidden rounded-2xl border bg-card shadow-sm"
                       >
-                        <header className="flex flex-wrap items-center gap-ms-2 border-b bg-muted/30 px-ms-3 py-ms-2.5">
-                          <div className="min-w-0 flex-1">
+                        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/30 px-ms-3 py-ms-2.5 sm:flex sm:flex-wrap sm:items-center">
+                          <div className="min-w-0 sm:flex-1">
                             <div className="truncate text-ms-sm font-semibold text-foreground">
                               {group.name}
                             </div>
-                            <div className="text-ms-2xs text-muted-foreground">
+                            <div className="text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                               {group.items.length} catatan · sisa{" "}
                               <span
                                 data-testid="party-card-sisa"
@@ -907,10 +907,11 @@ function HutangPiutangPage() {
                               )}
                             </div>
                           </div>
+                          <div className="col-start-2 row-span-2 flex shrink-0 flex-wrap items-center justify-end gap-ms-2 sm:contents">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 rounded-lg"
+                            className="h-8 shrink-0 rounded-lg"
                             onClick={() => {
                               setAddPrefill({
                                 kind: k,
@@ -927,12 +928,13 @@ function HutangPiutangPage() {
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            className="h-8 shrink-0 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
                             onClick={() => void sendPartyReportWA(group)}
                             title="Kirim laporan via MCM"
                           >
                             Kirim laporan
                           </Button>
+                          </div>
                         </header>
                         <ul className="divide-y">
                           {group.items.map((d) => {
@@ -960,40 +962,36 @@ function HutangPiutangPage() {
                                 {d.party_name}
                               </span>
                               {d.source !== "manual" && (
-                                <StatusBadge
-                                  size="xs"
-                                  variant="info"
-                                  className="max-w-[7rem]"
-                                >
+                                <StatusBadge size="xs" variant="info" className="shrink-0">
                                   {d.source === "purchase" ? "Pembelian" : "Penjualan"}
                                 </StatusBadge>
                               )}
                               {lunas ? (
-                                <StatusBadge size="xs" variant="lunas">Lunas</StatusBadge>
+                                <StatusBadge size="xs" variant="lunas" className="shrink-0">Lunas</StatusBadge>
                               ) : overdue ? (
-                                <StatusBadge size="xs" variant="danger">Telat</StatusBadge>
+                                <StatusBadge size="xs" variant="danger" className="shrink-0">Telat</StatusBadge>
                               ) : null}
                             </div>
                             {d.note && (
-                              <div className="mt-0.5 truncate text-ms-xs text-muted-foreground">
+                              <div className="mt-0.5 line-clamp-2 text-ms-xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                                 {d.note}
                               </div>
                             )}
                             <div
                               className={
-                                "mt-1 flex items-center gap-ms-1 text-ms-xs " +
+                                "mt-1 flex min-w-0 items-center gap-ms-1 text-ms-xs " +
                                 (overdue ? "text-destructive" : "text-muted-foreground")
                               }
                             >
                               <CalendarClock className="h-3 w-3 shrink-0" />
-                              <span className="truncate">
+                              <span className="min-w-0 truncate">
                                 {d.due_date
                                   ? `Jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
                                   : "Tanpa jatuh tempo"}
                               </span>
                             </div>
                           </div>
-                          <div className="shrink-0 text-right">
+                          <div className="shrink-0 whitespace-nowrap text-right">
                             <div className="font-semibold tabular-nums">
                               {rupiah(Number(d.amount))}
                             </div>
