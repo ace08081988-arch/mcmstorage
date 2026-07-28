@@ -45,6 +45,7 @@ import {
   SummaryCard,
 } from "@/components/shell";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { useFormDraft } from "@/lib/form-draft";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
