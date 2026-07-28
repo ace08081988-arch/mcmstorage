@@ -338,6 +338,7 @@ function PengaturanTampilanPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [cloudBusy, setCloudBusy] = useState<"push" | "pull" | null>(null);
   const [cloudAt, setCloudAt] = useState<string | null>(null);
+  const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
