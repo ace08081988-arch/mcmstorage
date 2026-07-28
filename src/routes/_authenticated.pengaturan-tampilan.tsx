@@ -376,32 +376,44 @@ function PengaturanTampilanPage() {
     toast.info("Draft direset ke bawaan — tekan Simpan untuk menerapkan.");
   };
 
-  const commitSave = () => {
+  /** Reset semua pengaturan tampilan ke bawaan sekaligus menyimpannya. */
+  const resetAllAndSave = () => {
+    setDraft(DEFAULT_DRAFT);
+    persist(DEFAULT_DRAFT);
+    setResetOpen(false);
+    toast.success("Semua pengaturan tampilan dikembalikan ke bawaan.");
+  };
+
+  const persist = (d: Draft) => {
     // Persist appearance-* LS
-    localStorage.setItem(LS.theme, draft.theme);
-    localStorage.setItem(LS.font, draft.font);
-    localStorage.setItem(LS.size, draft.size);
-    localStorage.setItem(LS.accent, draft.accent);
-    localStorage.setItem(LS.radius, String(draft.radius));
-    if (draft.bgImage) localStorage.setItem(LS.bgImage, draft.bgImage);
+    localStorage.setItem(LS.theme, d.theme);
+    localStorage.setItem(LS.font, d.font);
+    localStorage.setItem(LS.size, d.size);
+    localStorage.setItem(LS.accent, d.accent);
+    localStorage.setItem(LS.radius, String(d.radius));
+    if (d.bgImage) localStorage.setItem(LS.bgImage, d.bgImage);
     else localStorage.removeItem(LS.bgImage);
-    localStorage.setItem(LS.bgOverlay, String(draft.bgOverlay));
-    localStorage.setItem(LS.bgBlur, String(draft.bgBlur));
-    writeSurfaceFx(draft.fx);
+    localStorage.setItem(LS.bgOverlay, String(d.bgOverlay));
+    localStorage.setItem(LS.bgBlur, String(d.bgBlur));
+    writeSurfaceFx(d.fx);
     applyAppearance();
 
     // Compact + app-prefs
-    writeCompact(draft.compact);
+    writeCompact(d.compact);
     setAppPrefs({
-      fontScale: draft.fontScale,
-      highContrast: draft.highContrast,
-      reduceMotion: draft.reduceMotion,
+      fontScale: d.fontScale,
+      highContrast: d.highContrast,
+      reduceMotion: d.reduceMotion,
     });
 
     savedRef.current = true;
-    setSnapshot(draft);
+    setSnapshot(d);
     // Izinkan draft berikutnya kembali di-revert saat unmount.
     setTimeout(() => { savedRef.current = false; }, 0);
+  };
+
+  const commitSave = () => {
+    persist(draft);
     toast.success("Pengaturan tampilan disimpan");
   };
 
