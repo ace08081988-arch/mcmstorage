@@ -4369,6 +4369,10 @@ function RequestForm({
   const fallbackPickerReleaseRef = useRef<null | (() => void)>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [manualCoordOpen, setManualCoordOpen] = useState(false);
+  // Link lokasi tambahan untuk paket ke-2, ke-3, dst. Index 0 di sini =
+  // "Lokasi foto 2" — foto pertama selalu memakai `locUrl` utama, supaya
+  // urutan foto ↔ urutan link tetap konsisten saat dikirim ke WA.
+  const [extraLocs, setExtraLocs] = useState<string[]>([]);
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
 
