@@ -15,7 +15,7 @@ import {
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
   Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus, Package,
-  Minus, Plus, MapPin,
+  Minus, Plus, MapPin, ChevronUp, ChevronDown,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -418,6 +418,13 @@ function ChatRoomPage() {
     el.classList.add("ring-2", "ring-warning");
     setTimeout(() => el.classList.remove("ring-2", "ring-warning"), 1500);
   }, []);
+
+  // ---- Pencarian cepat di dalam percakapan -------------------------------
+  // Bilah tipis di bawah header: mencari pada pesan yang sudah dimuat,
+  // menyorot semua kecocokan, dan menyediakan navigasi hasil ↑/↓.
+  const [quickSearchOpen, setQuickSearchOpen] = useState(false);
+  const [quickQuery, setQuickQuery] = useState("");
+  const [quickIdx, setQuickIdx] = useState(0);
 
   // Quick reply popover state (driven by `/shortcut` in composer)
   const [qrQuery, setQrQuery] = useState<string | null>(null);
@@ -1347,11 +1354,48 @@ function ChatRoomPage() {
 
   // Pinned messages (sorted by pinned_at desc, max 3)
   const pinnedMessages = useMemo(() => {
+
     return (visibleMessages ?? [])
       .filter((m) => !!m.pinned_at && !m.deleted_at)
       .sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? ""))
       .slice(0, 3);
   }, [visibleMessages]);
+
+  // Hasil pencarian cepat: id pesan (urut kronologis) yang body-nya memuat
+  // kata kunci. Hanya pesan yang sudah dimuat di memori — sama seperti
+  // dialog "Cari di percakapan", tanpa round-trip tambahan.
+  const quickNeedle = quickQuery.trim().toLowerCase();
+  const quickHits = useMemo(() => {
+    if (!quickNeedle) return [] as string[];
+    return (visibleMessages ?? [])
+      .filter((m) => !m.deleted_at && (m.body ?? "").toLowerCase().includes(quickNeedle))
+      .map((m) => m.id);
+  }, [visibleMessages, quickNeedle]);
+  const quickHitSet = useMemo(() => new Set(quickHits), [quickHits]);
+  // Reset posisi kursor tiap kata kunci berubah, lalu lompat ke hasil
+  // terbaru (paling bawah) supaya alur baca tetap natural.
+  useEffect(() => {
+    if (quickHits.length === 0) return;
+    const last = quickHits.length - 1;
+    setQuickIdx(last);
+    jumpToMessage(quickHits[last]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickNeedle]);
+  const activeHitId = quickHits[quickIdx] ?? null;
+  const gotoHit = useCallback(
+    (dir: 1 | -1) => {
+      if (quickHits.length === 0) return;
+      const next = (quickIdx + dir + quickHits.length) % quickHits.length;
+      setQuickIdx(next);
+      jumpToMessage(quickHits[next]);
+    },
+    [quickHits, quickIdx, jumpToMessage],
+  );
+  const closeQuickSearch = useCallback(() => {
+    setQuickSearchOpen(false);
+    setQuickQuery("");
+    setQuickIdx(0);
+  }, []);
 
   const selectedMessages = useMemo(
     () => (messages ?? []).filter((m) => selectedIds.has(m.id)),
@@ -1558,6 +1602,15 @@ function ChatRoomPage() {
             </div>
           ) : null}
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
+          aria-label="Cari pesan di percakapan"
+          onClick={() => setQuickSearchOpen((v) => !v)}
+        >
+          <SearchIcon className="h-5 w-5" />
+        </Button>
         {meta.data?.kind === "dm" && myId ? (
           <>
             <div className="hidden sm:flex">
@@ -1767,6 +1820,56 @@ function ChatRoomPage() {
       </header>
       )}
 
+      {quickSearchOpen ? (
+        <div className="z-10 flex shrink-0 items-center gap-ms-2 border-b bg-background/95 px-ms-2 py-1.5 backdrop-blur">
+          <SearchIcon className="ml-1 h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            autoFocus
+            value={quickQuery}
+            onChange={(e) => setQuickQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); gotoHit(e.shiftKey ? -1 : 1); }
+              if (e.key === "Escape") { e.preventDefault(); closeQuickSearch(); }
+            }}
+            placeholder="Cari pesan di percakapan ini…"
+            className="min-w-0 flex-1 bg-transparent text-ms-sm outline-none placeholder:text-muted-foreground"
+            aria-label="Kata kunci pencarian pesan"
+          />
+          <span className="shrink-0 tabular-nums text-ms-2xs text-muted-foreground">
+            {quickNeedle ? (quickHits.length ? `${quickIdx + 1}/${quickHits.length}` : "0 hasil") : ""}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label="Hasil sebelumnya"
+            disabled={quickHits.length === 0}
+            onClick={() => gotoHit(-1)}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label="Hasil berikutnya"
+            disabled={quickHits.length === 0}
+            onClick={() => gotoHit(1)}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label="Tutup pencarian"
+            onClick={closeQuickSearch}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : null}
+
       <PinnedBanner
         conversationId={conversationId}
         pinned={pinnedMessages}
@@ -1837,7 +1940,13 @@ function ChatRoomPage() {
                             : mine
                               ? "rounded-br-md wa-bubble-out"
                               : "rounded-bl-md wa-bubble-in"
-                        } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""}`}
+                        } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""} ${
+                          activeHitId === m.id
+                            ? "ring-2 ring-warning"
+                            : quickHitSet.has(m.id)
+                              ? "ring-1 ring-warning/50"
+                              : ""
+                        }`}
                         onPointerDown={(e) => {
                           if (e.pointerType === "mouse" && e.button !== 0) return;
                           startLongPress(m);
@@ -1929,7 +2038,7 @@ function ChatRoomPage() {
                                 ) : null}
                                 {!card && !isCardBody(m.body) && m.body ? (
                                   <div className="whitespace-pre-wrap break-words text-pretty [overflow-wrap:anywhere]">
-                                    <Linkify text={m.body} />
+                                    <Linkify text={m.body} highlight={quickSearchOpen ? quickNeedle : undefined} />
                                   </div>
                                 ) : null}
                                 {!card && !isCardBody(m.body) && m.body ? (
