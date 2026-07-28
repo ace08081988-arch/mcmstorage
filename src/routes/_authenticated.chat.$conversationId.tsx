@@ -424,6 +424,8 @@ function ChatRoomPage() {
   // menyorot semua kecocokan, dan menyediakan navigasi hasil ↑/↓.
   const [quickSearchOpen, setQuickSearchOpen] = useState(false);
   const [quickQuery, setQuickQuery] = useState("");
+  // Filter pengirim untuk pencarian cepat: semua / hanya saya / hanya lawan bicara.
+  const [quickFrom, setQuickFrom] = useState<"all" | "me" | "them">("all");
   const [quickIdx, setQuickIdx] = useState(0);
 
   // Quick reply popover state (driven by `/shortcut` in composer)
