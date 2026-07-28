@@ -36,6 +36,7 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
+import { useMidnightPreview } from "@/lib/midnight-preview";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
   pullAppearanceFromCloud,
