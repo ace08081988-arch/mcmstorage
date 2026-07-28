@@ -394,6 +394,14 @@ function PengaturanTampilanPage() {
     pullAt: null,
     error: null,
   });
+  /** Catat hasil sinkronisasi terakhir (memory + localStorage per user). */
+  const markSync = (patch: Partial<SyncTrace>) => {
+    setSyncTrace((prev) => {
+      const next = { ...prev, ...patch };
+      writeSyncTrace(next);
+      return next;
+    });
+  };
   const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
