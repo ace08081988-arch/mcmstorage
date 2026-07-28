@@ -4369,6 +4369,10 @@ function RequestForm({
   const fallbackPickerReleaseRef = useRef<null | (() => void)>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [manualCoordOpen, setManualCoordOpen] = useState(false);
+  // Link lokasi tambahan untuk paket ke-2, ke-3, dst. Index 0 di sini =
+  // "Lokasi foto 2" — foto pertama selalu memakai `locUrl` utama, supaya
+  // urutan foto ↔ urutan link tetap konsisten saat dikirim ke WA.
+  const [extraLocs, setExtraLocs] = useState<string[]>([]);
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
 
@@ -4702,6 +4706,25 @@ function RequestForm({
         return;
       }
     }
+    // Link lokasi tambahan (foto ke-2 dst). Validasi sama seperti link utama,
+    // lalu dititipkan ke catatan supaya admin melihat pasangan foto ↔ lokasi.
+    const trimmedExtras = extraLocs.map((v) => (v || "").trim());
+    for (let i = 0; i < trimmedExtras.length; i++) {
+      const v = trimmedExtras[i];
+      if (!v) continue;
+      if (v.length > 2048) {
+        toast.error(`Link Maps foto ${i + 2} terlalu panjang.`);
+        return;
+      }
+      if (!/^https:\/\//i.test(v)) {
+        toast.error(`Link Maps foto ${i + 2} belum valid. Harus diawali https:// atau kosongkan.`);
+        return;
+      }
+    }
+    const extraLocLines = trimmedExtras
+      .map((v, i) => (v ? `Lokasi foto ${i + 2}: ${v}` : ""))
+      .filter(Boolean);
+    const noteWithLocs = [note.trim(), ...extraLocLines].filter(Boolean).join(" · ");
     onKeepAlive();
     onActivityChange(true);
     setBusy(true);
@@ -4766,7 +4789,7 @@ function RequestForm({
         _location_url: trimmedLoc || null,
         _gps_lat: gps?.lat ?? null,
         _gps_lng: gps?.lng ?? null,
-        _note: note || null,
+        _note: noteWithLocs || null,
         _prep_task_item_id: null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -4802,6 +4825,7 @@ function RequestForm({
       });
       setPhotos([]);
       setUploads([]);
+      setExtraLocs([]);
       void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
@@ -5061,6 +5085,69 @@ function RequestForm({
           </div>
         );
       })()}
+      {/* Link lokasi tambahan: 1 kolom per paket/foto berikutnya. */}
+      <div className="space-y-ms-2">
+        {extraLocs.length > 0 && (
+          <p className="text-ms-2xs text-muted-foreground">
+            Link di atas dipakai untuk foto ke-1. Kolom di bawah mengikuti urutan foto berikutnya.
+          </p>
+        )}
+        {extraLocs.map((v, i) => (
+          <div key={i} className="flex items-center gap-ms-2">
+            <span className="w-14 shrink-0 text-ms-2xs text-muted-foreground">Foto {i + 2}</span>
+            <input
+              value={v}
+              onChange={(e) =>
+                setExtraLocs((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))
+              }
+              placeholder={`Link Google Maps foto ${i + 2}`}
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-ms-3 text-ms-xs"
+            />
+            <button
+              type="button"
+              title="Tempel link dari papan klip"
+              onClick={async () => {
+                try {
+                  if (!navigator.clipboard?.readText) {
+                    toast.error("Clipboard tidak tersedia — tempel manual di kolom");
+                    return;
+                  }
+                  const text = (await navigator.clipboard.readText()).trim();
+                  if (!text) { toast.error("Papan klip kosong"); return; }
+                  if (!/^https:\/\//i.test(text)) {
+                    toast.error("Isi papan klip bukan URL https://");
+                    return;
+                  }
+                  setExtraLocs((prev) =>
+                    prev.map((x, j) => (j === i ? text.slice(0, 2048) : x)),
+                  );
+                  toast.success("Link ditempel");
+                } catch {
+                  toast.error("Gagal membaca papan klip");
+                }
+              }}
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border bg-background px-ms-2 text-ms-xs hover:bg-muted"
+            >
+              <ClipboardPaste className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Hapus kolom link foto ${i + 2}`}
+              onClick={() => setExtraLocs((prev) => prev.filter((_, j) => j !== i))}
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border bg-background px-ms-2 text-ms-xs text-muted-foreground hover:bg-muted"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => setExtraLocs((prev) => (prev.length >= 9 ? prev : [...prev, ""]))}
+          className="inline-flex h-10 items-center gap-ms-1.5 rounded-lg border border-dashed bg-background px-ms-3 text-ms-xs font-medium hover:bg-muted"
+        >
+          <MapPin className="h-4 w-4" /> Tambah kolom link lokasi
+        </button>
+      </div>
       <div>
         <button
           type="button"
