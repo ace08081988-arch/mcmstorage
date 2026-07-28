@@ -9,7 +9,32 @@ function normalize(href: string): string {
   return `https://${href}`;
 }
 
-export function Linkify({ text }: { text: string }) {
+/** Bungkus setiap kemunculan `needle` (case-insensitive) dengan <mark>. */
+function markTerm(text: string, needle: string, keyBase: string): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  const hay = text.toLowerCase();
+  const n = needle.toLowerCase();
+  let from = 0;
+  let idx = hay.indexOf(n, from);
+  let i = 0;
+  while (idx !== -1) {
+    if (idx > from) out.push(text.slice(from, idx));
+    out.push(
+      <mark
+        key={`${keyBase}-mk-${i++}`}
+        className="rounded-[3px] bg-warning/70 px-0.5 text-foreground"
+      >
+        {text.slice(idx, idx + n.length)}
+      </mark>,
+    );
+    from = idx + n.length;
+    idx = hay.indexOf(n, from);
+  }
+  if (from < text.length) out.push(text.slice(from));
+  return out;
+}
+
+export function Linkify({ text, highlight }: { text: string; highlight?: string }) {
   if (!text) return null;
   const parts: React.ReactNode[] = [];
   let last = 0;
@@ -18,7 +43,7 @@ export function Linkify({ text }: { text: string }) {
   while ((m = URL_RE.exec(text)) !== null) {
     const match = m[0];
     const start = m.index;
-    if (start > last) parts.push(text.slice(last, start));
+    if (start > last) parts.push(...withHl(text.slice(last, start), highlight, `p${last}`));
     const href = normalize(match);
     parts.push(
       <a
@@ -34,8 +59,14 @@ export function Linkify({ text }: { text: string }) {
     );
     last = start + match.length;
   }
-  if (last < text.length) parts.push(text.slice(last));
+  if (last < text.length) parts.push(...withHl(text.slice(last), highlight, `p${last}`));
   return <>{parts}</>;
+}
+
+function withHl(chunk: string, highlight: string | undefined, keyBase: string): React.ReactNode[] {
+  const needle = highlight?.trim();
+  if (!needle) return [chunk];
+  return markTerm(chunk, needle, keyBase);
 }
 
 // ---------------- URL Preview chips ----------------
