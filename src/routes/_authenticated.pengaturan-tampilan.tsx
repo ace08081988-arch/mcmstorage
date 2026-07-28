@@ -1383,6 +1383,43 @@ function PengaturanTampilanPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2">
+            <div className="sm:col-span-2" data-testid="appearance-sync-status">
+              <div className="grid grid-cols-1 gap-ms-2 sm:grid-cols-3">
+                <SyncStat
+                  icon={<CloudUpload className="h-3.5 w-3.5" />}
+                  label="Terakhir disimpan"
+                  value={fmtStamp(syncTrace.pushAt)}
+                  hint={relStamp(syncTrace.pushAt)}
+                  busy={cloudBusy === "push"}
+                  testId="appearance-sync-push-at"
+                />
+                <SyncStat
+                  icon={<CloudDownload className="h-3.5 w-3.5" />}
+                  label="Terakhir diambil"
+                  value={fmtStamp(syncTrace.pullAt)}
+                  hint={relStamp(syncTrace.pullAt)}
+                  busy={cloudBusy === "pull"}
+                  testId="appearance-sync-pull-at"
+                />
+                <SyncStat
+                  icon={<Sparkles className="h-3.5 w-3.5" />}
+                  label="Versi di akun"
+                  value={fmtStamp(cloudAt)}
+                  hint={relStamp(cloudAt)}
+                  busy={false}
+                  testId="appearance-sync-cloud-at"
+                />
+              </div>
+              {syncTrace.error && (
+                <p
+                  data-testid="appearance-sync-error"
+                  className="mt-ms-2 flex items-start gap-ms-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-ms-2 py-ms-2 text-ms-2xs text-destructive"
+                >
+                  <CloudOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{syncTrace.error}</span>
+                </p>
+              )}
+            </div>
             <Button
               type="button"
               variant="outline"
