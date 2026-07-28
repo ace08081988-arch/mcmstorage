@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -13,6 +13,7 @@ import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
 import { buildDebtReport } from "@/lib/debt-report";
+import { exportDebtReport } from "@/lib/debt-report-export";
 import { sendMessage } from "@/lib/chat.functions";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import {
@@ -255,6 +256,7 @@ export function ChatHeaderDebtControls({
   const [historyQuery, setHistoryQuery] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
+  const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
   // "Kirim laporan" menonjol dan pemilik toko tidak lupa mengabarkan.
   const [dirty, setDirty] = useState(false);
@@ -302,6 +304,37 @@ export function ChatHeaderDebtControls({
       );
     } finally {
       setSendingReport(false);
+    }
+  };
+
+  const runExport = async (format: "csv" | "pdf") => {
+    setExporting(format);
+    try {
+      await qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY });
+      await exportDebtReport(
+        {
+          peerName,
+          hutang,
+          piutang,
+          history: history.map((h) => ({
+            at: h.at,
+            kind: h.kind,
+            type: h.type,
+            amount: h.amount,
+            note: h.note,
+          })),
+        },
+        format,
+      );
+      toast.success(
+        format === "pdf" ? "Laporan PDF diunduh." : "Laporan Excel (CSV) diunduh.",
+      );
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal mengekspor laporan.",
+      );
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -468,6 +501,38 @@ export function ChatHeaderDebtControls({
             Kirim laporan ke chat
           </Button>
         ) : null}
+        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 w-full text-ms-2xs"
+            disabled={exporting !== null}
+            onClick={() => void runExport("pdf")}
+          >
+            {exporting === "pdf" ? (
+              <Loader2 className="mr-1 size-3.5 animate-spin" />
+            ) : (
+              <FileText className="mr-1 size-3.5" />
+            )}
+            Ekspor PDF
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 w-full text-ms-2xs"
+            disabled={exporting !== null}
+            onClick={() => void runExport("csv")}
+          >
+            {exporting === "csv" ? (
+              <Loader2 className="mr-1 size-3.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="mr-1 size-3.5" />
+            )}
+            Ekspor Excel
+          </Button>
+        </div>
         {dirty ? (
           <p className="mt-1 text-ms-2xs leading-snug text-warning">
             Saldo baru saja berubah — kirim laporan agar kedua pihak sepakat.
