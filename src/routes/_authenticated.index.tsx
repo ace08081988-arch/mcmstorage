@@ -1520,6 +1520,7 @@ function Index() {
 
   return (
     <div className="flex min-h-screen bg-background" data-press-scope="on">
+      <MidnightScope />
       {/* Mobile drawer backdrop */}
       {railOpen && (
         <button
