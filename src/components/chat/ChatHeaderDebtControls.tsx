@@ -782,6 +782,22 @@ export function ChatHeaderDebtControls({
             <Pencil className="mr-1 size-3" />
             {previewEdit ? "Selesai edit" : "Edit teks"}
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 px-2.5 text-ms-2xs"
+            disabled={sendingReport || resetPending}
+            onClick={resetPreviewToSsot}
+            title="Buang editan dan ambil ulang angka terbaru dari SSOT"
+          >
+            {resetPending ? (
+              <Loader2 className="mr-1 size-3 animate-spin" />
+            ) : (
+              <RotateCcw className="mr-1 size-3" />
+            )}
+            Kembalikan ke SSOT
+          </Button>
         </div>
         {templates.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
