@@ -331,9 +331,14 @@ function RootShell({ children }: { children: ReactNode }) {
   if(bg) d.dataset.hasBg='1'; else delete d.dataset.hasBg;
 }catch(e){}})();`;
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    // `translate="no"` + class `notranslate`: penerjemah otomatis Chrome /
+    // Google Translate mengganti text node di luar sepengetahuan React —
+    // penyebab klasik `NotFoundError: Failed to execute 'removeChild'`
+    // yang selama ini bikin halaman Gudang "reload sendiri" di Android.
+    <html lang="id" className="dark notranslate" translate="no" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <meta name="google" content="notranslate" />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body suppressHydrationWarning>
