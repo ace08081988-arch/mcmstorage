@@ -106,33 +106,6 @@ export default tseslint.config(
       ],
     },
   },
-  // ── Guardrail sold_at (lihat MMSS_SELECTORS di atas untuk chat). ────────
-          selector:
-            "CallExpression[callee.object.name='Math'][callee.property.name='floor'] BinaryExpression[operator='/'][right.value=60]",
-          message:
-            "[mm:ss] `Math.floor(x / 60)` ad-hoc dilarang di src/components/chat.\n" +
-            "  Ganti dengan: formatDurationMMSS(x) dari '@/lib/format-duration'.\n" +
-            "  Contoh: `${formatDurationMMSS(sec)}` (import: import { formatDurationMMSS } from \"@/lib/format-duration\").\n" +
-            "  Auto-fix: jalankan `bun run codemod:mmss` untuk mengganti pola ini di src/components/chat.",
-        },
-        {
-          selector: "BinaryExpression[operator='%'][right.value=60]",
-          message:
-            "[mm:ss] `x % 60` ad-hoc dilarang di src/components/chat.\n" +
-            "  Ganti seluruh label detik→mm:ss dengan: formatDurationMMSS(x) dari '@/lib/format-duration'.\n" +
-            "  Auto-fix: jalankan `bun run codemod:mmss` (pola template-literal umum dikonversi otomatis).",
-        },
-        {
-          selector:
-            "CallExpression[callee.property.name='padStart'][arguments.0.value=2][arguments.1.value='0']",
-          message:
-            "[mm:ss] `padStart(2, \"0\")` untuk label waktu dilarang di src/components/chat.\n" +
-            "  Ganti dengan: formatDurationMMSS(sec) dari '@/lib/format-duration' — sudah zero-pad menit & detik.\n" +
-            "  Auto-fix: jalankan `bun run codemod:mmss`.",
-        },
-      ],
-    },
-  },
   // ── Guardrail: badge "aktif" / "terkirim" untuk paket prep. ────────────
   //
   // Definisi "sent" (paket sudah masuk Riwayat Terkirim) HANYA boleh
