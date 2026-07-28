@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy, Bookmark, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -23,6 +23,13 @@ import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
 import { buildDebtReport, type DebtReportStyle } from "@/lib/debt-report";
 import { exportDebtReport } from "@/lib/debt-report-export";
+import {
+  listReportTemplates,
+  saveReportTemplate,
+  deleteReportTemplate,
+  renderTemplate,
+  type DebtReportTemplate,
+} from "@/lib/debt-report-templates";
 import { sendMessage } from "@/lib/chat.functions";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import {
@@ -270,6 +277,10 @@ export function ChatHeaderDebtControls({
   const [reportStyle, setReportStyle] = useState<DebtReportStyle>("detail");
   const [previewEdit, setPreviewEdit] = useState(false);
   const [previewEdited, setPreviewEdited] = useState(false);
+  const [templates, setTemplates] = useState<DebtReportTemplate[]>([]);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
@@ -316,10 +327,46 @@ export function ChatHeaderDebtControls({
       setPreviewBody(reportBody());
       setPreviewEdit(false);
       setPreviewEdited(false);
+      setTemplates(listReportTemplates());
+      setActiveTemplateId(null);
+      setTemplateName("");
       setPreviewOpen(true);
     } finally {
       setPreparingPreview(false);
     }
+  };
+
+  const tplCtx = { peerName, hutang, piutang };
+
+  /** Pakai ulang gaya tersimpan: placeholder diisi angka SSOT terbaru. */
+  const applyTemplate = (t: DebtReportTemplate) => {
+    setPreviewBody(renderTemplate(t.body, tplCtx));
+    setActiveTemplateId(t.id);
+    setPreviewEdited(false);
+    setTemplateName(t.name);
+  };
+
+  const saveTemplate = () => {
+    const name =
+      templateName.trim() ||
+      `Gaya ${new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}`;
+    setSavingTemplate(true);
+    try {
+      const next = saveReportTemplate(name, previewBody, tplCtx);
+      setTemplates(next);
+      setActiveTemplateId(next[0]?.id ?? null);
+      setTemplateName(name);
+      toast.success(`Template "${name}" disimpan — bisa dipilih lagi nanti.`);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const removeTemplate = (t: DebtReportTemplate) => {
+    const next = deleteReportTemplate(t.id);
+    setTemplates(next);
+    if (activeTemplateId === t.id) setActiveTemplateId(null);
+    toast.info(`Template "${t.name}" dihapus.`);
   };
 
   const copyPreview = async () => {
@@ -697,6 +744,7 @@ export function ChatHeaderDebtControls({
                 setReportStyle(s);
                 setPreviewBody(reportBody(s));
                 setPreviewEdited(false);
+                setActiveTemplateId(null);
               }}
             >
               {s}
@@ -714,6 +762,38 @@ export function ChatHeaderDebtControls({
             {previewEdit ? "Selesai edit" : "Edit teks"}
           </Button>
         </div>
+        {templates.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-ms-2xs text-muted-foreground">Template saya:</span>
+            {templates.map((t) => (
+              <span
+                key={t.id}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-ms-2xs ${
+                  activeTemplateId === t.id ? "border-primary bg-primary/10" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  className="max-w-[9rem] truncate"
+                  disabled={sendingReport}
+                  onClick={() => applyTemplate(t)}
+                  title={`Pakai template "${t.name}"`}
+                >
+                  {t.name}
+                </button>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-destructive"
+                  disabled={sendingReport}
+                  onClick={() => removeTemplate(t)}
+                  aria-label={`Hapus template ${t.name}`}
+                >
+                  <Trash2 className="size-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
         {previewEdit ? (
           <Textarea
             value={previewBody}
@@ -736,6 +816,40 @@ export function ChatHeaderDebtControls({
             Tekan gaya pesan untuk memulihkan teks asli.
           </p>
         ) : null}
+        <div className="rounded-md border p-2">
+          <div className="mb-1.5 flex items-center gap-1 text-ms-2xs font-medium">
+            <Bookmark className="size-3 text-primary" />
+            Simpan gaya ini sebagai template
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Input
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Nama template (mis. Tagihan sopan)"
+              className="h-8 text-ms-2xs"
+              disabled={sendingReport}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 shrink-0 px-2.5 text-ms-2xs"
+              disabled={sendingReport || savingTemplate || previewBody.trim().length === 0}
+              onClick={saveTemplate}
+            >
+              {savingTemplate ? (
+                <Loader2 className="mr-1 size-3 animate-spin" />
+              ) : (
+                <Bookmark className="mr-1 size-3" />
+              )}
+              Simpan
+            </Button>
+          </div>
+          <p className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
+            Nama, nominal, dan tanggal otomatis jadi isian dinamis — saat template
+            dipakai lagi, angkanya diambil ulang dari data terbaru.
+          </p>
+        </div>
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
             type="button"
