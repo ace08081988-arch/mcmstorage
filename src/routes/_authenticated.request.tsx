@@ -2383,11 +2383,10 @@ function PrepCard({
     onConsumeAutoOpenSend?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpenSend]);
-  // Kumpulkan semua path foto (photo_path lama + photo_paths[] baru), dedup.
-  const photoPaths = useMemo(() => {
-    const all = [prep.photo_path, ...(prep.photo_paths ?? [])].filter((x): x is string => !!x);
-    return Array.from(new Set(all));
-  }, [prep.photo_path, prep.photo_paths]);
+  // Pasangan foto ↔ lokasi (SSOT di src/lib/request.ts). Urutan foto ke-N
+  // selalu memakai lokasi ke-N yang dikirim pegawai.
+  const photoPairs = useMemo(() => requestPhotoLocationPairs(prep), [prep]);
+  const photoPaths = useMemo(() => photoPairs.map((p) => p.path), [photoPairs]);
   useEffect(() => { requestSignedUrl(photoPaths[0] ?? null, 60 * 60).then(setPhoto); }, [photoPaths]);
   const sold = isSentPrep(prep);
   const unitFor = (wid: string) => {
