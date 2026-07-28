@@ -1,6 +1,12 @@
 import { Wallet } from "lucide-react";
-import { forwardRef } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { rupiah } from "@/lib/stock-format";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 /**
  * Chip catatan hutang/piutang — SSOT tampilan.
@@ -59,11 +65,34 @@ export const DebtChip = forwardRef<
   ref,
 ) {
   const value = tone === "empty" || tone === "settled" ? 0 : amount;
-  return (
+  const amountRef = useRef<HTMLSpanElement | null>(null);
+  const [truncated, setTruncated] = useState(false);
+
+  // Tooltip hanya muncul kalau nominal benar-benar terpotong di layar sempit.
+  const measure = useCallback(() => {
+    const el = amountRef.current;
+    if (!el) return;
+    setTruncated(el.scrollWidth - el.clientWidth > 1);
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const el = amountRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    if (el.parentElement) ro.observe(el.parentElement);
+    return () => ro.disconnect();
+  }, [measure, value, tone, compactOnly]);
+
+  const fullText = `${TONE_LABEL[tone]} ${rupiah(value)}`;
+
+  const chip = (
     <button
       ref={ref}
       type="button"
       disabled={!interactive ? true : rest.disabled}
+      title={rest.title ?? (truncated ? fullText : undefined)}
       className={`inline-flex min-w-0 max-w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 text-ms-2xs font-semibold leading-tight transition ${
         interactive ? "hover:bg-accent" : "cursor-default"
       } ${TONE_CLASS[tone]} ${className}`}
@@ -71,7 +100,7 @@ export const DebtChip = forwardRef<
     >
       <Wallet className="h-3 w-3 shrink-0" />
       <span className="shrink-0">{TONE_LABEL[tone]}</span>
-      <span className="min-w-0 truncate font-mono font-normal">
+      <span ref={amountRef} className="min-w-0 truncate font-mono font-normal">
         {compactOnly ? (
           rupiahCompact(value)
         ) : (
@@ -82,5 +111,18 @@ export const DebtChip = forwardRef<
         )}
       </span>
     </button>
+  );
+
+  if (!truncated) return chip;
+
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>{chip}</TooltipTrigger>
+        <TooltipContent side="bottom" className="font-mono text-ms-2xs tabular-nums">
+          {fullText}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 });
