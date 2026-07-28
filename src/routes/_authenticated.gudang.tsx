@@ -45,6 +45,7 @@ import {
   SummaryCard,
 } from "@/components/shell";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 import { useFormDraft } from "@/lib/form-draft";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
@@ -64,7 +65,17 @@ export const Route = createFileRoute("/_authenticated/gudang")({
  */
 function GudangRoute() {
   return (
-    <DomRaceBoundary label="gudang">
+    <DomRaceBoundary
+      label="gudang"
+      renderFallback={(error, reset, info) => (
+        <DomRaceRecoveryPanel
+          error={error}
+          reset={reset}
+          info={info}
+          title="Halaman Gudang gagal ditampilkan"
+        />
+      )}
+    >
       <GudangPage />
     </DomRaceBoundary>
   );
