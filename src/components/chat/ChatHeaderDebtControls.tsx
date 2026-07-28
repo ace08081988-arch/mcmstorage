@@ -8,6 +8,14 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
@@ -256,6 +264,9 @@ export function ChatHeaderDebtControls({
   const [historyQuery, setHistoryQuery] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewBody, setPreviewBody] = useState("");
+  const [preparingPreview, setPreparingPreview] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
   // "Kirim laporan" menonjol dan pemilik toko tidak lupa mengabarkan.
@@ -277,26 +288,41 @@ export function ChatHeaderDebtControls({
     ]);
   };
 
+  const reportBody = () =>
+    buildDebtReport({
+      peerName,
+      hutang,
+      piutang,
+      history: history.map((h) => ({
+        at: h.at,
+        kind: h.kind,
+        type: h.type,
+        amount: h.amount,
+        note: h.note,
+      })),
+    });
+
+  /** Buka pratinjau: segarkan SSOT dulu supaya angka yang dilihat = yang dikirim. */
+  const openPreview = async () => {
+    if (!conversationId) return;
+    setPreparingPreview(true);
+    try {
+      await qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY });
+      setPreviewBody(reportBody());
+      setPreviewOpen(true);
+    } finally {
+      setPreparingPreview(false);
+    }
+  };
+
   const sendReport = async () => {
     if (!conversationId) return;
     setSendingReport(true);
     try {
-      // Pastikan angka terbaru sebelum laporan dikirim.
-      await qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY });
-      const body = buildDebtReport({
-        peerName,
-        hutang,
-        piutang,
-        history: history.map((h) => ({
-          at: h.at,
-          kind: h.kind,
-          type: h.type,
-          amount: h.amount,
-          note: h.note,
-        })),
-      });
+      const body = previewBody || reportBody();
       await sendMessage({ data: { conversationId, body } });
       setDirty(false);
+      setPreviewOpen(false);
       toast.success("Laporan hutang/piutang terkirim ke chat.");
     } catch (e) {
       toast.error(
@@ -357,6 +383,7 @@ export function ChatHeaderDebtControls({
   }, [history, historyQuery]);
 
   return (
+    <>
     <Popover>
       <PopoverTrigger asChild>
         <DebtChip
@@ -490,10 +517,10 @@ export function ChatHeaderDebtControls({
             size="sm"
             variant={dirty ? "default" : "outline"}
             className="mt-2 h-8 w-full text-ms-2xs"
-            disabled={sendingReport}
-            onClick={sendReport}
+            disabled={sendingReport || preparingPreview}
+            onClick={() => void openPreview()}
           >
-            {sendingReport ? (
+            {sendingReport || preparingPreview ? (
               <Loader2 className="mr-1 size-3.5 animate-spin" />
             ) : (
               <Send className="mr-1 size-3.5" />
@@ -631,6 +658,39 @@ export function ChatHeaderDebtControls({
         </div>
       </PopoverContent>
     </Popover>
+    <Dialog open={previewOpen} onOpenChange={(o) => !sendingReport && setPreviewOpen(o)}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Pratinjau laporan</DialogTitle>
+          <DialogDescription>
+            Periksa angkanya dulu. Pesan ini akan dikirim ke chat {peerName}.
+          </DialogDescription>
+        </DialogHeader>
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted/50 p-3 text-ms-xs leading-relaxed">
+          {previewBody}
+        </pre>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={sendingReport}
+            onClick={() => setPreviewOpen(false)}
+          >
+            Batal
+          </Button>
+          <Button type="button" size="sm" disabled={sendingReport} onClick={() => void sendReport()}>
+            {sendingReport ? (
+              <Loader2 className="mr-1 size-3.5 animate-spin" />
+            ) : (
+              <Send className="mr-1 size-3.5" />
+            )}
+            Kirim sekarang
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
