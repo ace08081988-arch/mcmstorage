@@ -90,6 +90,54 @@ function DebtSsotHarness() {
           </span>
         </span>
       </section>
+
+      {/*
+        Baris header percakapan realistis (avatar + nama panjang + chip)
+        untuk verifikasi E2E responsif: chip WAJIB tetap di dalam border
+        dan tidak menumpahkan teks pada layar sempit.
+      */}
+      <section
+        data-testid="surface-header-row"
+        className="overflow-hidden rounded-xl border p-ms-3"
+      >
+        <p className="text-ms-xs text-muted-foreground">Baris header percakapan</p>
+        <div
+          data-testid="header-row"
+          className="flex min-w-0 items-center gap-2 rounded-lg border bg-card px-2 py-1.5"
+        >
+          <div className="h-8 w-8 shrink-0 rounded-full bg-muted" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-ms-sm font-semibold">
+              {nama} Sumber Rejeki Abadi Jaya Makmur
+            </div>
+          </div>
+          <DebtChip
+            data-testid="chip-header-row"
+            tone={tone}
+            amount={sisa}
+            interactive={false}
+          />
+        </div>
+      </section>
+
+      {/* Kasus ekstrem: kontainer sangat sempit (mis. kartu daftar padat). */}
+      <section
+        data-testid="surface-narrow"
+        className="overflow-hidden rounded-xl border p-ms-3"
+      >
+        <p className="text-ms-xs text-muted-foreground">Kontainer sempit 140px</p>
+        <div
+          data-testid="narrow-box"
+          className="w-[140px] overflow-hidden rounded-lg border bg-card p-1"
+        >
+          <DebtChip
+            data-testid="chip-narrow"
+            tone={tone}
+            amount={sisa}
+            interactive={false}
+          />
+        </div>
+      </section>
     </div>
   );
 }
