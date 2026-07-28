@@ -45,6 +45,13 @@ import {
   applyCloudPayload,
   fetchAppearanceFromCloud,
 } from "@/lib/appearance-cloud";
+import {
+  listAppearanceBackups,
+  deleteAppearanceBackup,
+  validateAppearancePayload,
+  MAX_APPEARANCE_BACKUPS,
+  type AppearanceBackup,
+} from "@/lib/appearance-backup";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 import {
   migrateImportedAppearance,
