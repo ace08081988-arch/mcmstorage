@@ -1830,7 +1830,8 @@ function ChatRoomPage() {
       )}
 
       {quickSearchOpen ? (
-        <div className="z-10 flex shrink-0 items-center gap-ms-2 border-b bg-background/95 px-ms-2 py-1.5 backdrop-blur">
+        <div className="z-10 shrink-0 border-b bg-background/95 px-ms-2 py-1.5 backdrop-blur">
+        <div className="flex items-center gap-ms-2">
           <SearchIcon className="ml-1 h-4 w-4 shrink-0 text-muted-foreground" />
           <input
             autoFocus
@@ -1876,6 +1877,32 @@ function ChatRoomPage() {
           >
             <X className="h-4 w-4" />
           </Button>
+        </div>
+        <div
+          role="group"
+          aria-label="Filter pengirim"
+          className="mt-1.5 flex items-center gap-ms-1 overflow-x-auto pb-0.5 pl-6"
+        >
+          {([
+            { key: "all", label: "Semua" },
+            { key: "me", label: "Dari saya" },
+            { key: "them", label: isGroup ? "Dari anggota lain" : "Dari lawan bicara" },
+          ] as const).map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              aria-pressed={quickFrom === opt.key}
+              onClick={() => setQuickFrom(opt.key)}
+              className={`shrink-0 rounded-full border px-ms-2 py-0.5 text-ms-2xs transition-colors ${
+                quickFrom === opt.key
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
         </div>
       ) : null}
 
