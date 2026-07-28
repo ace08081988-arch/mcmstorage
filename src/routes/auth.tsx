@@ -116,6 +116,8 @@ function AuthPage() {
       return { intent: null, mode: "login", email: "" };
     }
   };
+  // Route ini `ssr: false`, jadi aman membaca localStorage saat init —
+  // preferensi langsung terisi tanpa kedipan field kosong.
   const initial = readPrefs();
   const [mode, setMode] = useState<"login" | "signup">(initial.mode);
   const [intent, setIntent] = useState<"storage" | "chat" | null>(initial.intent);

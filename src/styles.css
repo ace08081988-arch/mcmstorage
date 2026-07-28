@@ -71,8 +71,8 @@
   /* Premium++ typography tokens (Slice 0 — opt-in via `font-display`/`font-body`).
      Terhubung ke class utility Tailwind: `font-display`, `font-body`.
      Tidak mengubah default `font-sans` app; komponen harus opt-in. */
-  --font-display: "DM Serif Display", ui-serif, Georgia, Cambria, "Times New Roman", serif;
-  --font-body: "Fira Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-body: "Work Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
@@ -486,7 +486,7 @@ html[data-has-bg="1"] .min-h-screen.bg-gradient-to-bl {
   background-color: transparent !important;
 }
 
-html[data-font="sans"]    { --app-font-family: "Inter", system-ui, sans-serif; }
+html[data-font="sans"]    { --app-font-family: "Work Sans", system-ui, sans-serif; }
 html[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
 html[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
 html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }

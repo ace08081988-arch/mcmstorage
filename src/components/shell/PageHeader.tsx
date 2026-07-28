@@ -57,7 +57,7 @@ export function PageHeader({
             {backLabel}
           </Link>
           <div className="min-w-0 leading-tight">
-            <p className="flex min-w-0 items-center gap-ms-1.5 text-ms-base font-semibold tracking-ms-tight text-foreground">
+            <p className="flex min-w-0 items-center gap-ms-1.5 text-ms-lg text-premium-heading text-foreground">
               {Icon ? <Icon className="h-4 w-4 shrink-0 text-primary" /> : null}
               <span className="truncate">{title}</span>
             </p>
