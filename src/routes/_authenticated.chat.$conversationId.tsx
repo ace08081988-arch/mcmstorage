@@ -1031,12 +1031,18 @@ function ChatRoomPage() {
   type OutboxItem = {
     tempId: string;
     body: string;
-    status: "sending" | "failed";
+    status: "queued" | "sending" | "failed";
     error?: string;
+    /** Berapa kali percobaan kirim sudah dilakukan (untuk backoff & UI). */
+    attempts?: number;
     createdAt: string;
     replyToId?: string;
   };
   const [outbox, setOutbox] = useState<OutboxItem[]>([]);
+  // Ref bayangan supaya timer retry tidak mengirim ulang item yang sudah
+  // dibuang user (setTimeout memegang salinan lama dari state).
+  const outboxRef = useRef<OutboxItem[]>([]);
+  useEffect(() => { outboxRef.current = outbox; }, [outbox]);
   const [online, setOnline] = useState(() =>
     typeof navigator === "undefined" ? true : navigator.onLine,
   );
@@ -1053,8 +1059,20 @@ function ChatRoomPage() {
 
   const doSend = useCallback(
     async (item: OutboxItem) => {
+      // Offline: jangan buang percobaan — tandai "menunggu koneksi" dan
+      // biarkan effect reconnect yang melanjutkan.
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        setOutbox((prev) =>
+          prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "queued", error: undefined } : o)),
+        );
+        return;
+      }
       setOutbox((prev) =>
-        prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "sending", error: undefined } : o)),
+        prev.map((o) =>
+          o.tempId === item.tempId
+            ? { ...o, status: "sending", error: undefined, attempts: (o.attempts ?? 0) + 1 }
+            : o,
+        ),
       );
       try {
         await sendMessage({
@@ -1072,7 +1090,7 @@ function ChatRoomPage() {
         setOutbox((prev) =>
           prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "failed", error: msg } : o)),
         );
-        toast.error(msg);
+        toast.error(`Pesan gagal terkirim: ${msg}`);
       }
     },
     [conversationId, othersRead],
