@@ -10,6 +10,16 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle, ClipboardPaste, Link2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -316,6 +326,7 @@ function PengaturanTampilanPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [resetOpen, setResetOpen] = useState(false);
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
@@ -376,32 +387,44 @@ function PengaturanTampilanPage() {
     toast.info("Draft direset ke bawaan — tekan Simpan untuk menerapkan.");
   };
 
-  const commitSave = () => {
+  /** Reset semua pengaturan tampilan ke bawaan sekaligus menyimpannya. */
+  const resetAllAndSave = () => {
+    setDraft(DEFAULT_DRAFT);
+    persist(DEFAULT_DRAFT);
+    setResetOpen(false);
+    toast.success("Semua pengaturan tampilan dikembalikan ke bawaan.");
+  };
+
+  const persist = (d: Draft) => {
     // Persist appearance-* LS
-    localStorage.setItem(LS.theme, draft.theme);
-    localStorage.setItem(LS.font, draft.font);
-    localStorage.setItem(LS.size, draft.size);
-    localStorage.setItem(LS.accent, draft.accent);
-    localStorage.setItem(LS.radius, String(draft.radius));
-    if (draft.bgImage) localStorage.setItem(LS.bgImage, draft.bgImage);
+    localStorage.setItem(LS.theme, d.theme);
+    localStorage.setItem(LS.font, d.font);
+    localStorage.setItem(LS.size, d.size);
+    localStorage.setItem(LS.accent, d.accent);
+    localStorage.setItem(LS.radius, String(d.radius));
+    if (d.bgImage) localStorage.setItem(LS.bgImage, d.bgImage);
     else localStorage.removeItem(LS.bgImage);
-    localStorage.setItem(LS.bgOverlay, String(draft.bgOverlay));
-    localStorage.setItem(LS.bgBlur, String(draft.bgBlur));
-    writeSurfaceFx(draft.fx);
+    localStorage.setItem(LS.bgOverlay, String(d.bgOverlay));
+    localStorage.setItem(LS.bgBlur, String(d.bgBlur));
+    writeSurfaceFx(d.fx);
     applyAppearance();
 
     // Compact + app-prefs
-    writeCompact(draft.compact);
+    writeCompact(d.compact);
     setAppPrefs({
-      fontScale: draft.fontScale,
-      highContrast: draft.highContrast,
-      reduceMotion: draft.reduceMotion,
+      fontScale: d.fontScale,
+      highContrast: d.highContrast,
+      reduceMotion: d.reduceMotion,
     });
 
     savedRef.current = true;
-    setSnapshot(draft);
+    setSnapshot(d);
     // Izinkan draft berikutnya kembali di-revert saat unmount.
     setTimeout(() => { savedRef.current = false; }, 0);
+  };
+
+  const commitSave = () => {
+    persist(draft);
     toast.success("Pengaturan tampilan disimpan");
   };
 
@@ -1264,13 +1287,36 @@ function PengaturanTampilanPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-ms-2">
           <Button variant="outline" size="sm" onClick={resetAll}>
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-            Kembalikan ke bawaan
+            Pratinjau bawaan
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => setResetOpen(true)}>
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Reset semua ke bawaan
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset semua pengaturan tampilan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tema, warna aksen, font, sudut, foto latar, efek kaca/transparansi,
+              mode ringkas, dan aksesibilitas akan kembali ke bawaan dan langsung
+              disimpan. Data bisnis tidak terpengaruh.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={resetAllAndSave}>
+              Ya, reset sekarang
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Sticky action bar — muncul saat ada perubahan belum disimpan */}
       <div
