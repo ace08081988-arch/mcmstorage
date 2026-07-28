@@ -1736,7 +1736,7 @@ function ChatRoomPage() {
         />
       ) : null}
 
-      <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg relative flex-1 space-ms-3 overflow-y-auto p-ms-3">
+      <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg relative flex-1 overflow-y-auto px-ms-2 py-ms-3 sm:px-ms-4">
         {isLoading ? (
           <ChatMessagesSkeleton bubbles={6} />
         ) : (messages ?? []).length === 0 ? (
@@ -1745,9 +1745,9 @@ function ChatRoomPage() {
           </div>
         ) : (
           grouped.map((g) => (
-            <div key={g.day} className="space-ms-2">
-              <div className="my-2 flex justify-center">
-                <span className="rounded-md bg-[var(--wa-header)] px-ms-2.5 py-1 text-ms-2xs font-medium wa-muted shadow-sm">{g.day}</span>
+            <div key={g.day} className="flex flex-col gap-1.5">
+              <div className="my-2.5 flex justify-center">
+                <span className="rounded-full bg-[var(--wa-header)]/95 px-ms-3 py-1 text-ms-2xs font-medium uppercase tracking-wide wa-muted shadow-sm ring-1 ring-[var(--wa-border)]">{g.day}</span>
               </div>
               {g.items.map((m) => {
                 const mine = m.sender_id === myId;
@@ -1779,14 +1779,14 @@ function ChatRoomPage() {
                     id={`msg-${m.id}`}
                     className={`flex transition-colors duration-200 ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
-                     <div className={`group relative flex min-w-0 max-w-[85%] items-start gap-ms-1 sm:max-w-[75%] ${mine ? "flex-row-reverse" : "flex-row"}`}>
+                     <div className={`group relative flex min-w-0 max-w-[86%] items-start gap-ms-1 sm:max-w-[72%] lg:max-w-[60ch] ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
-                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-1.5 text-ms-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
+                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-ms-2 text-ms-sm leading-relaxed transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
-                            ? `${mine ? "rounded-br-sm" : "rounded-bl-sm"} bg-muted/60 text-muted-foreground border border-dashed border-border`
+                            ? `${mine ? "rounded-br-md" : "rounded-bl-md"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
-                              ? "rounded-br-sm wa-bubble-out"
-                              : "rounded-bl-sm wa-bubble-in"
+                              ? "rounded-br-md wa-bubble-out"
+                              : "rounded-bl-md wa-bubble-in"
                         } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""}`}
                         onPointerDown={(e) => {
                           if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -1813,7 +1813,7 @@ function ChatRoomPage() {
                         }}
                       >
                         {showSender ? (
-                          <div className="mb-0.5 text-ms-2xs font-semibold opacity-80">{senderName}</div>
+                          <div className="mb-1 truncate text-ms-2xs font-semibold tracking-wide text-[color-mix(in_oklab,currentColor_70%,transparent)]">{senderName}</div>
                         ) : null}
                         {m.pinned_at && !m.deleted_at ? (
                           <div className={`mb-0.5 inline-flex items-center gap-ms-1 text-ms-2xs ${mine ? "text-primary-foreground/80" : "text-warning dark:text-warning"}`}>
@@ -1862,7 +1862,7 @@ function ChatRoomPage() {
                           (() => {
                             const card = decodeCard(m.body);
                             return (
-                              <div className="space-y-1">
+                              <div className="space-y-1.5">
                                 {m.attachment_path ? (
                                   <MessageAttachment
                                     path={m.attachment_path}
@@ -1878,7 +1878,7 @@ function ChatRoomPage() {
                                   <UnknownCardBlock mine={mine} />
                                 ) : null}
                                 {!card && !isCardBody(m.body) && m.body ? (
-                                  <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                                  <div className="whitespace-pre-wrap break-words text-pretty [overflow-wrap:anywhere]">
                                     <Linkify text={m.body} />
                                   </div>
                                 ) : null}
@@ -1890,12 +1890,12 @@ function ChatRoomPage() {
                           })()
                         )}
                         <div
-                          className={`mt-0.5 flex items-center justify-end gap-ms-1 text-ms-2xs ${
+                          className={`mt-1 flex items-center justify-end gap-ms-1 text-ms-2xs tabular-nums ${
                             m.deleted_at
                               ? "text-muted-foreground/80"
                               : mine
-                                ? "text-primary-foreground/70"
-                                : "text-muted-foreground"
+                                ? "wa-meta-out"
+                                : "wa-meta-in"
                           }`}
                           title={
                             m.deleted_at
@@ -1913,7 +1913,7 @@ function ChatRoomPage() {
                               const sentMs = new Date(m.created_at).getTime();
                               const read = othersRead.data !== null && othersRead.data !== undefined && othersRead.data >= sentMs;
                               return read ? (
-                                <CheckCheck className="h-3.5 w-3.5 text-sky-300" aria-label="Dibaca" />
+                                <CheckCheck className="h-3.5 w-3.5 wa-check" aria-label="Dibaca" />
                               ) : (
                                 <Check className="h-3.5 w-3.5 opacity-80" aria-label="Terkirim" />
                               );
@@ -1921,7 +1921,7 @@ function ChatRoomPage() {
                           ) : null}
                         </div>
                         {reactionEntries.length > 0 ? (
-                          <div className={`mt-1 flex flex-wrap gap-ms-1 ${mine ? "justify-end" : "justify-start"}`}>
+                          <div className={`mt-1.5 flex flex-wrap gap-ms-1 ${mine ? "justify-end" : "justify-start"}`}>
                             {reactionEntries.map((r) => (
                               <button
                                 key={r.emoji}
@@ -2134,15 +2134,15 @@ function ChatRoomPage() {
         )}
 
         {outbox.length > 0 ? (
-          <div className="space-ms-2">
+          <div className="flex flex-col gap-1.5">
             {outbox.map((o) => (
               <div key={o.tempId} className="flex justify-end">
-                <div className="flex min-w-0 max-w-[85%] flex-row-reverse items-start gap-ms-1 sm:max-w-[75%]">
+                <div className="flex min-w-0 max-w-[86%] flex-row-reverse items-start gap-ms-1 sm:max-w-[72%] lg:max-w-[60ch]">
                   <div
-                    className={`rounded-2xl rounded-br-sm px-ms-3 py-1.5 text-ms-sm leading-snug shadow-sm ${
+                    className={`rounded-2xl rounded-br-md px-ms-3 py-ms-2 text-ms-sm leading-relaxed ${
                       o.status === "failed"
                         ? "bg-destructive/15 text-foreground ring-1 ring-destructive/40"
-                        : "bg-primary/80 text-primary-foreground"
+                        : "wa-bubble-out opacity-80"
                     }`}
                   >
                     {(() => {
@@ -2151,14 +2151,14 @@ function ChatRoomPage() {
                       if (isCardBody(o.body)) return <UnknownCardBlock mine={true} />;
                       return (
                         <>
-                          <div className="whitespace-pre-wrap break-words">
+                          <div className="whitespace-pre-wrap break-words text-pretty [overflow-wrap:anywhere]">
                             <Linkify text={o.body} />
                           </div>
                           <UrlPreviewList text={o.body} mine />
                         </>
                       );
                     })()}
-                    <div className="mt-0.5 flex items-center justify-end gap-ms-1 text-ms-2xs opacity-90">
+                    <div className="mt-1 flex items-center justify-end gap-ms-1 text-ms-2xs tabular-nums opacity-80">
                       <span>{fmtTime(o.createdAt)}</span>
                       {o.status === "sending" ? (
                         <Clock className="h-3 w-3 opacity-70" aria-label="Mengirim" />

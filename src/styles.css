@@ -585,10 +585,23 @@ html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-
 @utility wa-bubble-out {
   background-color: var(--wa-bubble-out);
   color: var(--wa-bubble-out-fg);
+  border: 1px solid color-mix(in oklab, var(--wa-bubble-out-fg) 8%, transparent);
+  box-shadow: 0 1px 1.5px color-mix(in oklab, #000 12%, transparent);
 }
 @utility wa-bubble-in {
   background-color: var(--wa-bubble-in);
   color: var(--wa-bubble-in-fg);
+  border: 1px solid color-mix(in oklab, var(--wa-bubble-in-fg) 8%, transparent);
+  box-shadow: 0 1px 1.5px color-mix(in oklab, #000 12%, transparent);
+}
+/* Meta baris waktu/centang di dalam bubble: selalu turunan warna teks
+   bubble-nya sendiri supaya kontras benar di light & dark, dan tidak
+   memakai token halaman (primary-foreground) yang bisa salah warna. */
+@utility wa-meta-out {
+  color: color-mix(in oklab, var(--wa-bubble-out-fg) 62%, transparent);
+}
+@utility wa-meta-in {
+  color: color-mix(in oklab, var(--wa-bubble-in-fg) 55%, transparent);
 }
 @utility wa-badge {
   background-color: var(--wa-green);
