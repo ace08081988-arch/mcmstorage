@@ -146,6 +146,7 @@ export function LiveProductGallery() {
             return (
               <li
                 key={it.id}
+                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 132px" }}
                 className={`rounded-lg border p-1.5 transition-colors duration-500 ${
                   isFlash ? "border-primary bg-primary/10" : "border-border/50 bg-background/60"
                 }`}

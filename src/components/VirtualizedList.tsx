@@ -14,7 +14,7 @@ export function VirtualizedList<T>({
   renderItem,
   estimateSize = 88,
   overscan = 6,
-  threshold = 18,
+  threshold = 8,
   gap = 8,
   className,
 }: {
