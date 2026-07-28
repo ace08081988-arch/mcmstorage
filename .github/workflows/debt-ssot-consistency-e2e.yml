@@ -83,6 +83,16 @@ jobs:
             --retries=0 \
             --project=debt-ssot-dompeng-consistency-e2e
 
+      - name: Run debt chip responsive E2E
+        # Chip yang tumpah keluar border membuat nominal tidak terbaca
+        # di HP, jadi lebar 320–1280px ikut diuji sebelum rilis.
+        run: |
+          bunx playwright test \
+            --reporter=list,html \
+            --max-failures=1 \
+            --retries=0 \
+            --project=debt-chip-responsive-e2e
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
