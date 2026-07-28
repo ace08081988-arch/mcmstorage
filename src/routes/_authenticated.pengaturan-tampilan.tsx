@@ -38,7 +38,6 @@ import {
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
-  pushAppearanceToCloud,
   pullAppearanceFromCloud,
   pushAppearanceToCloudSafe,
   AppearanceValidationError,
