@@ -10,7 +10,7 @@ import { describeChatError } from "@/lib/chat-error";
 import { Linkify, UrlPreviewList } from "@/lib/linkify";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
-  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin, Clock,
+  RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
   History as HistoryIcon,
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
