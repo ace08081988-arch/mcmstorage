@@ -167,6 +167,11 @@ export function applyAppearance() {
 export function AppearanceInit() {
   useEffect(() => {
     applyAppearance();
+    // Hidrasi lintas perangkat: ambil preset dari akun bila lebih baru.
+    // Dynamic import supaya modul cloud tidak masuk initial bundle.
+    void import("@/lib/appearance-cloud")
+      .then((m) => m.hydrateAppearanceFromCloud())
+      .catch(() => {});
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => {
       if (localStorage.getItem(LS.theme) === "system") applyAppearance();
