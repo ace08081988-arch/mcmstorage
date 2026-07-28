@@ -486,6 +486,39 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_party_links: {
+        Row: {
+          alias_key: string
+          alias_label: string
+          created_at: string
+          id: string
+          party_key: string
+          party_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alias_key: string
+          alias_label: string
+          created_at?: string
+          id?: string
+          party_key: string
+          party_name: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          alias_key?: string
+          alias_label?: string
+          created_at?: string
+          id?: string
+          party_key?: string
+          party_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_quick_replies: {
         Row: {
           body: string
