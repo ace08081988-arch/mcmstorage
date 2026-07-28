@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -319,6 +319,16 @@ export function ChatHeaderDebtControls({
       setPreviewOpen(true);
     } finally {
       setPreparingPreview(false);
+    }
+  };
+
+  const copyPreview = async () => {
+    if (!previewBody.trim()) return;
+    try {
+      await navigator.clipboard.writeText(previewBody);
+      toast.success("Teks laporan disalin ke clipboard.");
+    } catch {
+      toast.error("Gagal menyalin teks. Izinkan akses clipboard jika diminta.");
     }
   };
 
@@ -727,6 +737,16 @@ export function ChatHeaderDebtControls({
           </p>
         ) : null}
         <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={sendingReport || previewBody.trim().length === 0}
+            onClick={() => void copyPreview()}
+          >
+            <ClipboardCopy className="mr-1 size-3.5" />
+            Salin teks
+          </Button>
           <Button
             type="button"
             variant="outline"
