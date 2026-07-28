@@ -23,7 +23,6 @@ import {
   type ContactRecord,
   type ReconcileIssue,
 } from "@/lib/party-reconcile";
-import { emitDebtTx } from "@/lib/debt-tx-event";
 
 export const Route = createFileRoute("/_authenticated/rekonsiliasi-kontak")({
   head: () => ({
@@ -152,7 +151,8 @@ function RekonsiliasiKontakPage() {
               contacts={data?.contacts ?? []}
               onDone={() => {
                 void qc.invalidateQueries({ queryKey: RECON_KEY });
-                emitDebtTx();
+                // Saldo & audit membaca SSOT yang sama — segarkan semuanya.
+                void qc.invalidateQueries({ queryKey: ["party-balance"] });
               }}
             />
           ))}
