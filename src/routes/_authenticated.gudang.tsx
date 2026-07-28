@@ -47,6 +47,7 @@ import {
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 import { useFormDraft } from "@/lib/form-draft";
+import { DraftSafetyNotice } from "@/components/DraftSafetyNotice";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
@@ -3081,6 +3082,8 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           Reset
         </button>
       </div>
+
+      <DraftSafetyNotice status={draft.status} savedAt={draft.savedAt} />
 
       <label className="block">
         <span className="text-[0.6875rem] text-muted-foreground">Supplier</span>
