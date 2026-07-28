@@ -5084,6 +5084,69 @@ function RequestForm({
           </div>
         );
       })()}
+      {/* Link lokasi tambahan: 1 kolom per paket/foto berikutnya. */}
+      <div className="space-y-ms-2">
+        {extraLocs.length > 0 && (
+          <p className="text-ms-2xs text-muted-foreground">
+            Link di atas dipakai untuk foto ke-1. Kolom di bawah mengikuti urutan foto berikutnya.
+          </p>
+        )}
+        {extraLocs.map((v, i) => (
+          <div key={i} className="flex items-center gap-ms-2">
+            <span className="w-14 shrink-0 text-ms-2xs text-muted-foreground">Foto {i + 2}</span>
+            <input
+              value={v}
+              onChange={(e) =>
+                setExtraLocs((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))
+              }
+              placeholder={`Link Google Maps foto ${i + 2}`}
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-ms-3 text-ms-xs"
+            />
+            <button
+              type="button"
+              title="Tempel link dari papan klip"
+              onClick={async () => {
+                try {
+                  if (!navigator.clipboard?.readText) {
+                    toast.error("Clipboard tidak tersedia — tempel manual di kolom");
+                    return;
+                  }
+                  const text = (await navigator.clipboard.readText()).trim();
+                  if (!text) { toast.error("Papan klip kosong"); return; }
+                  if (!/^https:\/\//i.test(text)) {
+                    toast.error("Isi papan klip bukan URL https://");
+                    return;
+                  }
+                  setExtraLocs((prev) =>
+                    prev.map((x, j) => (j === i ? text.slice(0, 2048) : x)),
+                  );
+                  toast.success("Link ditempel");
+                } catch {
+                  toast.error("Gagal membaca papan klip");
+                }
+              }}
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border bg-background px-ms-2 text-ms-xs hover:bg-muted"
+            >
+              <ClipboardPaste className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label={`Hapus kolom link foto ${i + 2}`}
+              onClick={() => setExtraLocs((prev) => prev.filter((_, j) => j !== i))}
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border bg-background px-ms-2 text-ms-xs text-muted-foreground hover:bg-muted"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => setExtraLocs((prev) => (prev.length >= 9 ? prev : [...prev, ""]))}
+          className="inline-flex h-10 items-center gap-ms-1.5 rounded-lg border border-dashed bg-background px-ms-3 text-ms-xs font-medium hover:bg-muted"
+        >
+          <MapPin className="h-4 w-4" /> Tambah kolom link lokasi
+        </button>
+      </div>
       <div>
         <button
           type="button"
