@@ -12,7 +12,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
-import { normalizeParty, usePartyLinks } from "@/lib/chat-debt-sync";
+import {
+  debtSyncStatus,
+  normalizeParty,
+  useDebtSyncMap,
+  usePartyLinks,
+} from "@/lib/chat-debt-sync";
 
 type Kind = "hutang" | "piutang";
 
@@ -67,6 +72,11 @@ export function ChatHeaderDebtControls({
   // Tautan manual nama chat → nama pihak di buku hutang/piutang, supaya
   // header memakai kontak yang sama dengan chip di daftar chat.
   const { data: partyLinks } = usePartyLinks();
+  // SSOT saldo: sama persis dengan chip di daftar chat & halaman
+  // Hutang & Piutang (debts + penjualan/pembelian hutang − pembayaran).
+  const { data: debtSyncMap } = useDebtSyncMap();
+  const ssot = debtSyncStatus(peerName, debtSyncMap, partyLinks);
+  const ssotEntry = ssot.state === "unlinked" ? null : ssot.entry;
   const linkedPartyKey = partyLinks?.get(normalizeParty(peerName)) ?? null;
   const queryKey = [
     "chat-debts",
@@ -182,9 +192,11 @@ export function ChatHeaderDebtControls({
   }, [debtsQ.data]);
 
   // Chip selalu tampil agar konsisten di semua percakapan & lokasi kartu.
-  const linked = !!summary && summary.hasAny;
-  const hutang = summary?.hutang ?? 0;
-  const piutang = summary?.piutang ?? 0;
+  // Angka yang ditampilkan WAJIB dari SSOT bila kontak dikenali, supaya
+  // header tidak pernah beda dengan daftar chat / halaman hutang piutang.
+  const linked = !!ssotEntry || (!!summary && summary.hasAny);
+  const hutang = ssotEntry ? ssotEntry.hutang : (summary?.hutang ?? 0);
+  const piutang = ssotEntry ? ssotEntry.piutang : (summary?.piutang ?? 0);
   const safeSummary = summary ?? {
     debts: [] as DebtRow[],
     paidByDebt: new Map<string, number>(),
