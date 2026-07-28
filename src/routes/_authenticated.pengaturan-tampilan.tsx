@@ -35,8 +35,13 @@ import {
   applySurfaceFx,
   type SurfaceFx,
 } from "@/components/appearance-init";
-import { useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
+import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
+import {
+  pushAppearanceToCloud,
+  pullAppearanceFromCloud,
+  fetchAppearanceFromCloud,
+} from "@/lib/appearance-cloud";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 import {
   migrateImportedAppearance,
@@ -328,6 +333,8 @@ function PengaturanTampilanPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  const [cloudBusy, setCloudBusy] = useState<"push" | "pull" | null>(null);
+  const [cloudAt, setCloudAt] = useState<string | null>(null);
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
@@ -422,6 +429,15 @@ function PengaturanTampilanPage() {
     setSnapshot(d);
     // Izinkan draft berikutnya kembali di-revert saat unmount.
     setTimeout(() => { savedRef.current = false; }, 0);
+
+    // Sinkronkan ke akun supaya tersimpan lintas perangkat.
+    void pushAppearanceToCloud(buildPayloadFrom(d))
+      .then((at) => setCloudAt(at))
+      .catch(() => {
+        toast.warning("Tersimpan di perangkat ini, tapi gagal sinkron ke akun.", {
+          description: "Coba lagi lewat tombol “Simpan ke akun”.",
+        });
+      });
   };
 
   const commitSave = () => {
@@ -435,7 +451,7 @@ function PengaturanTampilanPage() {
   };
 
   /** Payload ekspor tunggal — dipakai file .json maupun kode preset. */
-  const buildExportPayload = () => ({
+  const buildPayloadFrom = (d: Draft) => ({
         __type: EXPORT_SCHEMA_TYPE,
         schemaVersion: EXPORT_SCHEMA_VERSION,
         // `version` dipertahankan untuk kompatibilitas importer versi lama
@@ -444,23 +460,76 @@ function PengaturanTampilanPage() {
         app: APPEARANCE_APP_ID,
         exportedAt: new Date().toISOString(),
         appearance: {
-          theme: draft.theme,
-          font: draft.font,
-          size: draft.size,
-          accent: draft.accent,
-          radius: String(draft.radius),
-          bgImage: draft.bgImage,
-          bgOverlay: String(draft.bgOverlay),
-          bgBlur: String(draft.bgBlur),
+          theme: d.theme,
+          font: d.font,
+          size: d.size,
+          accent: d.accent,
+          radius: String(d.radius),
+          bgImage: d.bgImage,
+          bgOverlay: String(d.bgOverlay),
+          bgBlur: String(d.bgBlur),
         },
-        fx: draft.fx,
-        compact: draft.compact,
+        fx: d.fx,
+        compact: d.compact,
         appPrefs: {
-          fontScale: draft.fontScale,
-          highContrast: draft.highContrast,
-          reduceMotion: draft.reduceMotion,
+          fontScale: d.fontScale,
+          highContrast: d.highContrast,
+          reduceMotion: d.reduceMotion,
         },
   });
+
+  const buildExportPayload = () => buildPayloadFrom(draft);
+
+  // Tampilkan kapan terakhir tersinkron ke akun.
+  useEffect(() => {
+    let alive = true;
+    void fetchAppearanceFromCloud()
+      .then((c) => { if (alive && c) setCloudAt(c.updatedAt); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  /** Simpan pengaturan saat ini ke akun (manual). */
+  const saveToCloud = async () => {
+    setCloudBusy("push");
+    try {
+      const at = await pushAppearanceToCloud(buildExportPayload());
+      setCloudAt(at);
+      toast.success("Pengaturan tampilan tersimpan di akun Anda.");
+    } catch {
+      toast.error("Gagal menyimpan ke akun. Periksa koneksi lalu coba lagi.");
+    } finally {
+      setCloudBusy(null);
+    }
+  };
+
+  /** Ambil pengaturan tampilan dari akun dan terapkan di perangkat ini. */
+  const loadFromCloud = async () => {
+    setCloudBusy("pull");
+    try {
+      const cloud = await pullAppearanceFromCloud();
+      if (!cloud) {
+        toast.info("Belum ada pengaturan tampilan tersimpan di akun ini.");
+        return;
+      }
+      const p = getAppPrefs();
+      const fresh = readSnapshot({
+        fontScale: p.fontScale,
+        highContrast: p.highContrast,
+        reduceMotion: p.reduceMotion,
+      });
+      savedRef.current = true;
+      setSnapshot(fresh);
+      setDraft(fresh);
+      setCloudAt(cloud.updatedAt);
+      setTimeout(() => { savedRef.current = false; }, 0);
+      toast.success("Pengaturan tampilan dari akun diterapkan.");
+    } catch {
+      toast.error("Gagal mengambil pengaturan dari akun.");
+    } finally {
+      setCloudBusy(null);
+    }
+  };
 
   const exportSettings = () => {
     try {
@@ -1150,6 +1219,53 @@ function PengaturanTampilanPage() {
         </Card>
 
         {/* Ekspor & impor */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
+              <Sparkles className="h-4 w-4" /> Sinkron ke akun
+            </CardTitle>
+            <CardDescription className="text-ms-xs">
+              Pengaturan tampilan otomatis tersimpan ke akun Anda setiap kali menekan
+              Simpan, lalu ikut terpasang saat Anda masuk di perangkat lain.
+              {cloudAt ? (
+                <>
+                  {" "}Terakhir tersinkron:{" "}
+                  <span className="font-semibold text-foreground">
+                    {new Date(cloudAt).toLocaleString("id-ID")}
+                  </span>
+                  .
+                </>
+              ) : (
+                " Belum ada data tersimpan di akun."
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2">
+            <Button
+              type="button"
+              variant="outline"
+              data-testid="appearance-cloud-push"
+              disabled={cloudBusy !== null}
+              onClick={saveToCloud}
+              className="justify-start gap-ms-2"
+            >
+              <Upload className="h-4 w-4" />
+              {cloudBusy === "push" ? "Menyimpan…" : "Simpan ke akun"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              data-testid="appearance-cloud-pull"
+              disabled={cloudBusy !== null}
+              onClick={loadFromCloud}
+              className="justify-start gap-ms-2"
+            >
+              <Download className="h-4 w-4" />
+              {cloudBusy === "pull" ? "Mengambil…" : "Ambil dari akun"}
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-ms-2 text-ms-base">
