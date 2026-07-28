@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { useChatContacts, useStartDm } from "@/lib/chat";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
-import { formatInviteCode } from "@/lib/invite";
+import { PinChip } from "@/components/chat/ContactIdentity";
 import { z } from "zod";
 
 // Normalisasi nomor → digit-only E.164 (tanpa "+").
