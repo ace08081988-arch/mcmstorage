@@ -287,6 +287,77 @@
   }
 }
 
+/* --------------------------------------------------------------------------
+   Editorial × Midnight Indigo — utility presentasi untuk Beranda.
+   Semua nilai diturunkan dari token tema aktif (`--primary`, `--card`,
+   `--border`) sehingga preset warna pilihan user tetap dihormati.
+   -------------------------------------------------------------------------- */
+
+/* Label kecil di atas judul (kapital, tracking lebar) — penanda seksi editorial. */
+@utility eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: color-mix(in oklab, var(--primary) 82%, var(--foreground));
+}
+
+/* Garis rambut horizontal untuk memisah blok tanpa border tebal. */
+@utility hairline {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    color-mix(in oklab, var(--primary) 45%, transparent),
+    transparent
+  );
+}
+
+/* Permukaan utama Beranda: kartu berlapis + cahaya aksen dari sudut atas. */
+@utility surface-editorial {
+  position: relative;
+  border-radius: calc(var(--ms-radius-card) + 6px);
+  border: 1px solid color-mix(in oklab, var(--primary) 18%, var(--border));
+  background:
+    radial-gradient(
+      120% 100% at 0% 0%,
+      color-mix(in oklab, var(--primary) 10%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--card);
+  color: var(--card-foreground);
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--foreground) 5%, transparent) inset,
+    0 24px 60px -34px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+
+/* Baris/kartu sekunder — lebih tenang dari surface-editorial. */
+@utility surface-quiet {
+  border-radius: var(--ms-radius-card);
+  border: 1px solid color-mix(in oklab, var(--primary) 12%, var(--border));
+  background: color-mix(in oklab, var(--card) 92%, var(--background));
+  color: var(--card-foreground);
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover { transform: translateY(-1px); }
+  }
+  &:hover {
+    border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+    background: color-mix(in oklab, var(--card) 78%, var(--primary) 6%);
+  }
+}
+
+/* Angka urut / inisial bergaya editorial (serif, ring aksen tipis). */
+@utility numeral-editorial {
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: 0.04em;
+  color: color-mix(in oklab, var(--primary) 90%, var(--foreground));
+}
+
 /*
  * Utility soft-status — pengganti hardcoded `bg-warning/15 text-warning`
  * agar konsisten light/dark & mengikuti aksen aksesibilitas kontras tinggi.
