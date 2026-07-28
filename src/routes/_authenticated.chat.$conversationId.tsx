@@ -1354,6 +1354,7 @@ function ChatRoomPage() {
 
   // Pinned messages (sorted by pinned_at desc, max 3)
   const pinnedMessages = useMemo(() => {
+
     return (visibleMessages ?? [])
       .filter((m) => !!m.pinned_at && !m.deleted_at)
       .sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? ""))
