@@ -1277,13 +1277,36 @@ function PengaturanTampilanPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-ms-2">
           <Button variant="outline" size="sm" onClick={resetAll}>
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-            Kembalikan ke bawaan
+            Pratinjau bawaan
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => setResetOpen(true)}>
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Reset semua ke bawaan
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset semua pengaturan tampilan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tema, warna aksen, font, sudut, foto latar, efek kaca/transparansi,
+              mode ringkas, dan aksesibilitas akan kembali ke bawaan dan langsung
+              disimpan. Data bisnis tidak terpengaruh.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={resetAllAndSave}>
+              Ya, reset sekarang
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Sticky action bar — muncul saat ada perubahan belum disimpan */}
       <div
