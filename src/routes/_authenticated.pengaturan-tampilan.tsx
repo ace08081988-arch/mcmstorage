@@ -348,6 +348,7 @@ function PengaturanTampilanPage() {
       size: p.values.size,
       compact: p.values.compact,
       fontScale: p.values.fontScale,
+      ...(p.values.fx ? { fx: { ...DEFAULT_FX, ...p.values.fx } } : {}),
     });
     toast.success(`Preset "${p.label}" dipratinjau`, {
       description: `${p.desc} — tekan Simpan untuk menerapkan.`,
@@ -384,6 +385,7 @@ function PengaturanTampilanPage() {
     else localStorage.removeItem(LS.bgImage);
     localStorage.setItem(LS.bgOverlay, String(draft.bgOverlay));
     localStorage.setItem(LS.bgBlur, String(draft.bgBlur));
+    writeSurfaceFx(draft.fx);
     applyAppearance();
 
     // Compact + app-prefs
