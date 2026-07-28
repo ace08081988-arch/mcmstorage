@@ -1368,9 +1368,16 @@ function ChatRoomPage() {
   const quickHits = useMemo(() => {
     if (!quickNeedle) return [] as string[];
     return (visibleMessages ?? [])
-      .filter((m) => !m.deleted_at && (m.body ?? "").toLowerCase().includes(quickNeedle))
+      .filter((m) => {
+        if (m.deleted_at) return false;
+        if (!(m.body ?? "").toLowerCase().includes(quickNeedle)) return false;
+        // Filter pengirim: "me" = hanya pesan saya, "them" = hanya lawan bicara.
+        if (quickFrom === "me") return m.sender_id === myId;
+        if (quickFrom === "them") return m.sender_id !== myId;
+        return true;
+      })
       .map((m) => m.id);
-  }, [visibleMessages, quickNeedle]);
+  }, [visibleMessages, quickNeedle, quickFrom, myId]);
   const quickHitSet = useMemo(() => new Set(quickHits), [quickHits]);
   // Reset posisi kursor tiap kata kunci berubah, lalu lompat ke hasil
   // terbaru (paling bawah) supaya alur baca tetap natural.
@@ -1380,7 +1387,7 @@ function ChatRoomPage() {
     setQuickIdx(last);
     jumpToMessage(quickHits[last]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quickNeedle]);
+  }, [quickNeedle, quickFrom]);
   const activeHitId = quickHits[quickIdx] ?? null;
   const gotoHit = useCallback(
     (dir: 1 | -1) => {
