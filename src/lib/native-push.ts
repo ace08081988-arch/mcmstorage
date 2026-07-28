@@ -53,10 +53,28 @@ export async function startNativePush(opts?: {
       console.warn("[native-push] registrationError", err);
     });
 
-    // Foreground: log saja — FCM notification block akan tetap tampil di system tray
-    // di Android dengan Capacitor plugin default.
-    await PushNotifications.addListener("pushNotificationReceived", (n) => {
-      console.debug("[native-push] received", n);
+    // Foreground: Android TIDAK menampilkan push saat aplikasi dibuka.
+    // Tampilkan sendiri lewat local notification (channel asli + getar)
+    // supaya perilakunya sama seperti aplikasi chat sungguhan.
+    await PushNotifications.addListener("pushNotificationReceived", async (n) => {
+      try {
+        const data = (n.data ?? {}) as { url?: string; kind?: string; tag?: string };
+        const { notifyLocal } = await import("./local-notify");
+        const kind = (["chat", "tugas", "order", "system"] as const).includes(
+          data.kind as never,
+        )
+          ? (data.kind as "chat" | "tugas" | "order" | "system")
+          : "system";
+        await notifyLocal({
+          kind,
+          title: n.title ?? "MCM Storage",
+          body: n.body ?? "",
+          url: data.url,
+          tag: data.tag ?? `push:${kind}:${n.title ?? ""}`,
+        });
+      } catch (e) {
+        console.warn("[native-push] foreground render gagal", e);
+      }
     });
 
     // Tap notifikasi → buka deep link
@@ -69,6 +87,14 @@ export async function startNativePush(opts?: {
     });
 
     await PushNotifications.register();
+    // Siapkan channel notifikasi lokal + listener tap sekali di sini juga,
+    // supaya notifikasi in-app tetap muncul walau push belum pernah tiba.
+    try {
+      const { initLocalNotifications } = await import("./local-notify");
+      await initLocalNotifications({ onOpenUrl: opts?.onOpenUrl });
+    } catch {
+      /* non-fatal */
+    }
     return { ok: true };
   } catch (e) {
     started = false;
