@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { useChatContacts, useStartDm } from "@/lib/chat";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
-import { formatInviteCode } from "@/lib/invite";
+import { PinChip } from "@/components/chat/ContactIdentity";
 import { z } from "zod";
 
 // Normalisasi nomor → digit-only E.164 (tanpa "+").
@@ -190,11 +190,14 @@ export function NewDmDialog() {
                   <UserRound className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-ms-sm font-medium">
-                    {c.display_name || (c.invite_code ? `PIN ${formatInviteCode(c.invite_code)}` : "Pengguna")}
+                  <div className="flex min-w-0 items-center gap-ms-2">
+                    <span className="min-w-0 flex-1 truncate text-ms-sm font-medium">
+                      {c.display_name || "Pengguna MCM"}
+                    </span>
+                    <PinChip code={c.invite_code} />
                   </div>
                   <div className="truncate text-ms-2xs text-muted-foreground">
-                    {c.invite_code ? `PIN ${formatInviteCode(c.invite_code)} · ` : ""}{c.label ?? c.kind}
+                    {c.label ?? c.kind}
                   </div>
                 </div>
               </button>
