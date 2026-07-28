@@ -1,14 +1,26 @@
-import { RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { Link2, RefreshCw } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  DEBT_SYNC_QUERY_KEY,
+  PARTY_LINK_QUERY_KEY,
   debtSyncStatus,
   fetchDebtSyncMap,
+  savePartyLink,
+  suggestPartyMatches,
   useDebtSyncMap,
+  usePartyLinks,
 } from "@/lib/chat-debt-sync";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
 import { rupiah } from "@/lib/stock-format";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 /**
  * Chip catatan hutang/piutang di kartu/pratinjau daftar chat.
@@ -19,9 +31,17 @@ import { rupiah } from "@/lib/stock-format";
  */
 export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
   const { data: map } = useDebtSyncMap();
-  const status = debtSyncStatus(title, map);
+  const { data: links } = usePartyLinks();
+  const status = debtSyncStatus(title, map, links);
   const qc = useQueryClient();
   const [syncing, setSyncing] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Kandidat nama mirip di buku hutang/piutang — mengatasi beda ejaan.
+  const candidates = useMemo(
+    () => (status.state === "unlinked" ? suggestPartyMatches(title, map) : []),
+    [status.state, title, map],
+  );
 
   const hutang = status.state === "unlinked" ? 0 : status.entry.hutang;
   const piutang = status.state === "unlinked" ? 0 : status.entry.piutang;
@@ -37,12 +57,18 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
     setSyncing(true);
     try {
       const fresh = await fetchDebtSyncMap();
-      qc.setQueryData(["chat", "debt-sync"], fresh);
-      const next = debtSyncStatus(title, fresh);
+      qc.setQueryData(DEBT_SYNC_QUERY_KEY, fresh);
+      const next = debtSyncStatus(title, fresh, links);
       if (next.state === "unlinked") {
-        toast.info(`Belum ada catatan hutang/piutang atas nama "${title ?? "-"}"`, {
-          description: "Buat entri di halaman Hutang & Piutang dengan nama yang sama agar tersinkron.",
-        });
+        const near = suggestPartyMatches(title, fresh);
+        if (near.length > 0) {
+          setPickerOpen(true);
+        } else {
+          toast.info(`Belum ada catatan hutang/piutang atas nama "${title ?? "-"}"`, {
+            description:
+              "Buat entri di halaman Hutang & Piutang, atau tautkan manual ke nama yang sudah ada.",
+          });
+        }
       } else {
         toast.success("Tersinkron", {
           description:
@@ -57,6 +83,21 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
       });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const linkTo = async (partyName: string) => {
+    try {
+      await savePartyLink((title ?? "").trim(), partyName);
+      await qc.invalidateQueries({ queryKey: PARTY_LINK_QUERY_KEY });
+      setPickerOpen(false);
+      toast.success("Tertaut", {
+        description: `"${title}" kini memakai catatan "${partyName}".`,
+      });
+    } catch (err) {
+      toast.error("Gagal menautkan", {
+        description: err instanceof Error ? err.message : "Coba lagi.",
+      });
     }
   };
 
@@ -78,16 +119,68 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
         }
       />
       {tone === "empty" ? (
-        <button
-          type="button"
-          onClick={resync}
-          disabled={syncing}
-          aria-label="Sinkronkan ulang hutang piutang"
-          className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-ms-2xs text-primary disabled:opacity-60"
-        >
-          <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Menyinkron…" : "Sinkronkan"}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (candidates.length > 0) setPickerOpen(true);
+              else void resync(e);
+            }}
+            disabled={syncing}
+            aria-label="Sinkronkan ulang hutang piutang"
+            className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-ms-2xs text-primary disabled:opacity-60"
+          >
+            {candidates.length > 0 ? (
+              <Link2 className="h-3 w-3" />
+            ) : (
+              <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+            )}
+            {syncing ? "Menyinkron…" : candidates.length > 0 ? "Tautkan" : "Sinkronkan"}
+          </button>
+
+          <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+            <DialogContent
+              className="max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <DialogHeader>
+                <DialogTitle>Tautkan “{title}”</DialogTitle>
+                <DialogDescription>
+                  Nama di chat berbeda ejaan dengan buku Hutang &amp; Piutang.
+                  Pilih catatan yang benar agar saldonya tersinkron di semua
+                  halaman.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                {suggestPartyMatches(title, map, 8).map((c) => (
+                  <button
+                    key={c.entry.name}
+                    type="button"
+                    onClick={() => void linkTo(c.entry.name)}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-accent"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{c.entry.name}</span>
+                      <span className="block text-ms-2xs text-muted-foreground">
+                        Piutang {rupiah(c.entry.piutang)} · Hutang {rupiah(c.entry.hutang)}
+                      </span>
+                    </span>
+                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-ms-2xs text-primary">
+                      {Math.round(c.score * 100)}% mirip
+                    </span>
+                  </button>
+                ))}
+                {suggestPartyMatches(title, map, 8).length === 0 ? (
+                  <p className="text-ms-2xs text-muted-foreground">
+                    Tidak ada nama mirip. Buat entri baru di halaman Hutang &amp; Piutang.
+                  </p>
+                ) : null}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
       ) : null}
     </span>
   );

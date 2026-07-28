@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
+import { normalizeParty, usePartyLinks } from "@/lib/chat-debt-sync";
 
 type Kind = "hutang" | "piutang";
 
@@ -63,11 +64,17 @@ export function ChatHeaderDebtControls({
   peerName: string;
 }) {
   const qc = useQueryClient();
+  // Tautan manual nama chat → nama pihak di buku hutang/piutang, supaya
+  // header memakai kontak yang sama dengan chip di daftar chat.
+  const { data: partyLinks } = usePartyLinks();
+  const linkedPartyKey = partyLinks?.get(normalizeParty(peerName)) ?? null;
   const queryKey = [
     "chat-debts",
     myId,
     peerUserId ?? "",
     peerPhone ?? "",
+    linkedPartyKey ?? "",
+    normalizeParty(peerName),
   ];
 
   const debtsQ = useQuery({
@@ -91,6 +98,12 @@ export function ChatHeaderDebtControls({
         }>;
         const matches = rows.filter((r) => {
           if (peerUserId && r.account_user_id === peerUserId) return true;
+          // Cocokkan juga lewat nama: persis, atau lewat tautan manual
+          // (mis. chat "PANGAT" ditautkan ke catatan "PWNGAT").
+          const rowKey = normalizeParty(r.name);
+          if (rowKey && (rowKey === normalizeParty(peerName) || rowKey === linkedPartyKey)) {
+            return true;
+          }
           if (phoneNorm) {
             const c = (r.contact ?? "").replace(/\D+/g, "");
             if (c && (c === phoneNorm || c.endsWith(phoneNorm) || phoneNorm.endsWith(c))) {
