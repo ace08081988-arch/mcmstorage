@@ -4721,10 +4721,13 @@ function RequestForm({
         return;
       }
     }
-    const extraLocLines = trimmedExtras
-      .map((v, i) => (v ? `Lokasi foto ${i + 2}: ${v}` : ""))
-      .filter(Boolean);
-    const noteWithLocs = [note.trim(), ...extraLocLines].filter(Boolean).join(" · ");
+    // Daftar lokasi disejajarkan dengan urutan foto: index 0 = foto ke-1.
+    // Disimpan terstruktur di kolom `location_urls` (bukan lagi dititipkan ke
+    // catatan) supaya pasangan foto ↔ lokasi tidak pernah bergeser saat kirim.
+    const orderedLocs = photos.map((_, i) =>
+      i === 0 ? trimmedLoc : (trimmedExtras[i - 1] ?? ""),
+    );
+    const noteClean = note.trim();
     onKeepAlive();
     onActivityChange(true);
     setBusy(true);
@@ -4787,9 +4790,10 @@ function RequestForm({
         _photo_path: uploaded[0],
         _photo_paths: uploaded,
         _location_url: trimmedLoc || null,
+        _location_urls: orderedLocs,
         _gps_lat: gps?.lat ?? null,
         _gps_lng: gps?.lng ?? null,
-        _note: noteWithLocs || null,
+        _note: noteClean || null,
         _prep_task_item_id: null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
