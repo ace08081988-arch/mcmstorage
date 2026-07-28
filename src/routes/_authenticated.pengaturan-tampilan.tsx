@@ -36,6 +36,7 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
+import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 import {
   migrateImportedAppearance,
@@ -433,9 +434,8 @@ function PengaturanTampilanPage() {
     toast.info("Perubahan dibatalkan");
   };
 
-  const exportSettings = () => {
-    try {
-      const payload = {
+  /** Payload ekspor tunggal — dipakai file .json maupun kode preset. */
+  const buildExportPayload = () => ({
         __type: EXPORT_SCHEMA_TYPE,
         schemaVersion: EXPORT_SCHEMA_VERSION,
         // `version` dipertahankan untuk kompatibilitas importer versi lama
@@ -453,13 +453,18 @@ function PengaturanTampilanPage() {
           bgOverlay: String(draft.bgOverlay),
           bgBlur: String(draft.bgBlur),
         },
+        fx: draft.fx,
         compact: draft.compact,
         appPrefs: {
           fontScale: draft.fontScale,
           highContrast: draft.highContrast,
           reduceMotion: draft.reduceMotion,
         },
-      };
+  });
+
+  const exportSettings = () => {
+    try {
+      const payload = buildExportPayload();
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
