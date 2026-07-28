@@ -3244,6 +3244,8 @@ function PrepEditorDialog({
       const { data: prep, error } = await sb.from("request_preparations").insert({
         user_id: uid, title_id: title.id, photo_path: photoPath,
         location_url: locUrl.trim() || null,
+        // Satu foto → satu slot lokasi, tetap sejajar index dengan foto.
+        location_urls: [locUrl.trim()],
         gps_lat: gps?.lat ?? null, gps_lng: gps?.lng ?? null,
         note: note.trim() || null, created_by: "admin",
       }).select("id").single();
