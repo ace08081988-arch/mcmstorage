@@ -2,16 +2,23 @@
  * SSOT untuk kolom `debts.source`.
  *
  * Nilai harus SAMA PERSIS dengan constraint database `debts_source_check`:
- *   CHECK (source = ANY (ARRAY['manual','purchase','sale','request_prep','ecer_prep']))
+ *   CHECK (source = ANY (ARRAY['manual','purchase','sale','request_prep','ecer_prep','self_prep']))
  *
  * Setiap client-side insert ke tabel `debts` WAJIB melewati
  * `assertDebtSource()` sebelum dikirim ke Supabase — jika tidak, Postgres akan
  * menolak dengan pesan constraint yang tidak ramah pengguna.
  *
- * Sumber lain (mis. `request_prep` / `ecer_prep`) hanya di-insert oleh RPC
+ * Sumber lain (mis. `request_prep` / `ecer_prep` / `self_prep`) hanya di-insert oleh RPC
  * server-side; tidak boleh dipakai dari klien.
  */
-export const DEBT_SOURCES = ["manual", "purchase", "sale", "request_prep", "ecer_prep"] as const;
+export const DEBT_SOURCES = [
+  "manual",
+  "purchase",
+  "sale",
+  "request_prep",
+  "ecer_prep",
+  "self_prep",
+] as const;
 export type DebtSource = (typeof DEBT_SOURCES)[number];
 
 /** Sumber yang boleh di-insert langsung dari UI (bukan lewat RPC). */
