@@ -123,7 +123,7 @@ function TxPartyCard({
     }
     setAmount("");
     toast.success("Pembayaran dicatat");
-    emitDebtTx();
+    emitDebtTx({ kind, wasCash: true, amount: n, partyId: row.partyId, at: Date.now() });
     onChanged();
   };
 
