@@ -3394,6 +3394,8 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
   const [newCustName, setNewCustName] = useState("");
   const [newCustWa, setNewCustWa] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">("kas");
+  // Paket "barang sudah jadi" yang sedang dipilih (hasil penyiapan pegawai).
+  const [prep, setPrep] = useState<ReadyPrep | null>(null);
 
   useEffect(() => {
     if (!itemId && items[0]) setItemId(items[0].id);
