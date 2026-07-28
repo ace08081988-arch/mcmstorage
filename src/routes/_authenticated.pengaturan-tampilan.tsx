@@ -537,7 +537,23 @@ function PengaturanTampilanPage() {
           `Pengaturan diimpor via ${source} (skema v${result.fromVersion}) — tekan Simpan untuk menerapkan.`,
         );
       }
-      return { ...d, ...result.patch };
+      const { fx, ...rest } = result.patch;
+      return { ...d, ...rest, ...(fx ? { fx: { ...d.fx, ...fx } } : {}) };
+    });
+  };
+
+  /** Salin kode preset ringkas supaya bisa dikirim lewat chat ke HP lain. */
+  const copyPresetCode = async () => {
+    const { code, droppedBackground } = encodePresetCode(buildExportPayload());
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      window.prompt("Salin kode preset ini:", code);
+    }
+    toast.success("Kode preset disalin.", {
+      description: droppedBackground
+        ? "Foto latar tidak ikut (terlalu besar) — pakai ekspor file untuk menyertakannya."
+        : "Tempel di perangkat lain lewat “Impor dari clipboard/kode”.",
     });
   };
 
