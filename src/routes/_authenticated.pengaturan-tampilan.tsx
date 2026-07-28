@@ -36,7 +36,7 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
-import { useMidnightPreview } from "@/lib/midnight-preview";
+import { useMidnightPreview, useMidnightScope } from "@/lib/midnight-preview";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
   pullAppearanceFromCloud,
@@ -413,6 +413,7 @@ function PengaturanTampilanPage() {
   };
   const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const [midnightOn, setMidnightOn] = useMidnightPreview();
+  const [midnightScope, setMidnightScope] = useMidnightScope();
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
@@ -1021,6 +1022,7 @@ function PengaturanTampilanPage() {
                   { v: "serif" as FontFamily, label: "Serif (Merriweather)", family: "Merriweather, Georgia, serif" },
                   { v: "mono" as FontFamily, label: "Mono (JetBrains)", family: "'JetBrains Mono', monospace" },
                   { v: "display" as FontFamily, label: "Display (Space Grotesk)", family: "'Space Grotesk', sans-serif" },
+                  { v: "editorial" as FontFamily, label: "Editorial (Instrument Serif)", family: "'Instrument Serif', Georgia, serif" },
                 ]).map((o) => (
                   <button
                     key={o.v}
