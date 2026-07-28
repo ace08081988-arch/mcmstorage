@@ -37,6 +37,7 @@ import {
   writeGudangCache,
   clearGudangCache,
 } from "@/lib/gudang-cache";
+import { subscribeStockChanges, applyStockEvent, type LiveStockItem } from "@/lib/live-stock";
 import { withPlainTimeout, withSupabaseQueryTimeout } from "@/lib/supabase-timeout";
 import {
   PageContainer,
