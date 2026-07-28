@@ -44,6 +44,7 @@ import {
   PillsTabs,
   SummaryCard,
 } from "@/components/shell";
+import { DomRaceBoundary } from "@/components/DomRaceBoundary";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
@@ -52,8 +53,21 @@ export const Route = createFileRoute("/_authenticated/gudang")({
       { name: "description", content: "Kelola stok gudang, supplier, pembelian dan penjualan dengan perhitungan otomatis." },
     ],
   }),
-  component: GudangPage,
+  component: GudangRoute,
 });
+
+/**
+ * Bungkus halaman Gudang dengan boundary anti race DOM (Android WebView
+ * kadang melempar `removeChild ... not a child of this node` saat list besar
+ * ter-commit ulang). Boundary retry diam-diam, tidak reload halaman penuh.
+ */
+function GudangRoute() {
+  return (
+    <DomRaceBoundary label="gudang">
+      <GudangPage />
+    </DomRaceBoundary>
+  );
+}
 
 function AiPingButton() {
   const ping = useServerFn(pingLovableAi);
