@@ -102,17 +102,21 @@ export function extractUrls(text: string): DetectedUrl[] {
 function labelFor(host: string): { kind: string; emoji: string } {
   const h = host.toLowerCase();
   if (/(^|\.)google\.[^/]+$/.test(h) && /maps/.test(h)) return { kind: "Google Maps", emoji: "📍" };
-  if (h === "maps.app.goo.gl" || h === "goo.gl" || h.endsWith("g.co")) return { kind: "Google Maps", emoji: "📍" };
-  if (h.endsWith("google.com") || h.endsWith("google.co.id")) return { kind: "Google", emoji: "🔎" };
+  if (h === "maps.app.goo.gl" || h === "goo.gl" || h.endsWith("g.co"))
+    return { kind: "Google Maps", emoji: "📍" };
+  if (h.endsWith("google.com") || h.endsWith("google.co.id"))
+    return { kind: "Google", emoji: "🔎" };
   if (h === "wa.me" || h.endsWith("whatsapp.com")) return { kind: "WhatsApp", emoji: "💬" };
   if (h.endsWith("youtube.com") || h === "youtu.be") return { kind: "YouTube", emoji: "▶️" };
   if (h.endsWith("instagram.com")) return { kind: "Instagram", emoji: "📷" };
   if (h.endsWith("facebook.com") || h === "fb.com") return { kind: "Facebook", emoji: "📘" };
   if (h.endsWith("tiktok.com")) return { kind: "TikTok", emoji: "🎵" };
   if (h.endsWith("twitter.com") || h === "x.com") return { kind: "X / Twitter", emoji: "🐦" };
-  if (h.endsWith("shopee.co.id") || h.endsWith("shopee.com")) return { kind: "Shopee", emoji: "🛒" };
+  if (h.endsWith("shopee.co.id") || h.endsWith("shopee.com"))
+    return { kind: "Shopee", emoji: "🛒" };
   if (h.endsWith("tokopedia.com")) return { kind: "Tokopedia", emoji: "🛍️" };
-  if (h.endsWith("mcmstorage.biz") || h.endsWith("mcmstorage.lovable.app")) return { kind: "MCM Storage", emoji: "📦" };
+  if (h.endsWith("mcmstorage.biz") || h.endsWith("mcmstorage.lovable.app"))
+    return { kind: "MCM Storage", emoji: "📦" };
   return { kind: "Tautan", emoji: "🔗" };
 }
 
@@ -142,7 +146,9 @@ export function UrlPreviewList({ text, mine = false }: { text: string; mine?: bo
             }
             title={u.href}
           >
-            <span aria-hidden className="text-ms-base leading-none">{emoji}</span>
+            <span aria-hidden className="text-ms-base leading-none">
+              {emoji}
+            </span>
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">{kind}</span>
               <span className="block truncate opacity-80">
