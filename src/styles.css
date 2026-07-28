@@ -1206,7 +1206,7 @@ html[data-accent-gradient="1"] .bg-primary {
    tidak ikut berubah. Semua nilai memakai token, bukan warna hardcode, agar
    tetap tunduk pada radius/font/efek permukaan pilihan user.
    ========================================================================== */
-html[data-midnight="1"][data-midnight-page="1"] {
+html[data-midnight="1"]:is([data-midnight-page="1"], [data-midnight-scope="all"]) {
   color-scheme: dark;
 
   --background: oklch(0.17 0.045 275);
@@ -1244,7 +1244,7 @@ html[data-midnight="1"][data-midnight-page="1"] {
 }
 
 /* Sentuhan editorial: gradasi indigo lembut di latar halaman target. */
-html[data-midnight="1"][data-midnight-page="1"] body::before {
+html[data-midnight="1"]:is([data-midnight-page="1"], [data-midnight-scope="all"]) body::before {
   content: "";
   position: fixed;
   inset: 0;
