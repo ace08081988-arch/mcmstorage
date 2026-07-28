@@ -93,7 +93,7 @@ export const DebtChip = forwardRef<
       type="button"
       disabled={!interactive ? true : rest.disabled}
       title={rest.title ?? (truncated ? fullText : undefined)}
-      className={`inline-flex min-w-0 max-w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 text-ms-2xs font-semibold leading-tight transition ${
+      className={`inline-flex h-6 min-w-0 max-w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0 text-ms-2xs font-semibold leading-none transition ${
         interactive ? "hover:bg-accent" : "cursor-default"
       } ${TONE_CLASS[tone]} ${className}`}
       {...rest}
