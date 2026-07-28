@@ -1961,11 +1961,7 @@ function ChatRoomPage() {
                             (() => {
                               const sentMs = new Date(m.created_at).getTime();
                               const read = othersRead.data !== null && othersRead.data !== undefined && othersRead.data >= sentMs;
-                              return read ? (
-                                <CheckCheck className="h-3.5 w-3.5 wa-check" aria-label="Dibaca" />
-                              ) : (
-                                <Check className="h-3.5 w-3.5 opacity-80" aria-label="Terkirim" />
-                              );
+                              return <MessageStatusIcon status={read ? "read" : "sent"} />;
                             })()
                           ) : null}
                         </div>
@@ -2191,7 +2187,7 @@ function ChatRoomPage() {
                     className={`rounded-2xl rounded-br-md px-ms-3 py-ms-2 text-ms-sm leading-relaxed ${
                       o.status === "failed"
                         ? "bg-destructive/15 text-foreground ring-1 ring-destructive/40"
-                        : "wa-bubble-out opacity-80"
+                        : `wa-bubble-out ${o.status === "queued" ? "opacity-70" : "opacity-85"}`
                     }`}
                   >
                     {(() => {
@@ -2209,15 +2205,20 @@ function ChatRoomPage() {
                     })()}
                     <div className="mt-1 flex items-center justify-end gap-ms-1 text-ms-2xs tabular-nums opacity-80">
                       <span>{fmtTime(o.createdAt)}</span>
-                      {o.status === "sending" ? (
-                        <Clock className="h-3 w-3 opacity-70" aria-label="Mengirim" />
-                      ) : (
-                        <span className="inline-flex items-center gap-ms-1 text-destructive">
-                          <AlertCircle className="h-3.5 w-3.5" aria-label="Gagal" />
-                          Gagal
-                        </span>
-                      )}
+                      <span
+                        className={`inline-flex items-center gap-ms-1 ${o.status === "failed" ? "text-destructive" : ""}`}
+                        title={o.error ?? messageStatusLabel(o.status)}
+                      >
+                        <MessageStatusIcon status={o.status} />
+                        {o.status !== "sending" ? messageStatusLabel(o.status) : null}
+                      </span>
                     </div>
+                    {o.status === "failed" && o.error ? (
+                      <div className="mt-0.5 max-w-[18rem] break-words text-right text-ms-2xs text-destructive/90">
+                        {o.error}
+                        {(o.attempts ?? 0) > 1 ? ` · ${o.attempts}× dicoba` : ""}
+                      </div>
+                    ) : null}
                   </div>
                   {o.status === "failed" ? (
                     <div className="flex flex-col gap-ms-1 self-center">
@@ -2227,7 +2228,7 @@ function ChatRoomPage() {
                         variant="ghost"
                         className="h-6 w-6"
                         aria-label="Kirim ulang"
-                        onClick={() => void doSend(o)}
+                        onClick={() => manualRetry(o)}
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
                       </Button>
