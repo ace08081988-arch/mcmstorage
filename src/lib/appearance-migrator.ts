@@ -43,6 +43,21 @@ export type ImportedPatch = {
   fontScale: number;
   highContrast: boolean;
   reduceMotion: boolean;
+  /**
+   * Efek permukaan (kaca/transparansi). Additive di skema v2: payload lama
+   * tidak memuatnya, jadi opsional dan selalu jatuh balik ke nilai draft aktif.
+   */
+  fx?: ImportedFx;
+};
+
+export type ImportedFx = {
+  glass: boolean;
+  surfaceOpacity: number;
+  surfaceBlur: number;
+  sidebarOpacity: number;
+  shadow: number;
+  saturation: number;
+  accentGradient: boolean;
 };
 
 export type MigrateResult =
@@ -121,7 +136,31 @@ export function migrateImportedAppearance(
       ap2.reduceMotion ?? raw.reduceMotion,
       current.reduceMotion,
     ),
+    fx: migrateFx(raw.fx ?? ap.fx, current.fx),
   };
 
   return { ok: true, patch, forward, fromVersion };
+}
+
+/** Bacaan aman efek permukaan; field hilang diisi dari draft aktif. */
+function migrateFx(raw: unknown, current?: ImportedFx): ImportedFx | undefined {
+  if (!isRecord(raw)) return current;
+  const base: ImportedFx = current ?? {
+    glass: false,
+    surfaceOpacity: 1,
+    surfaceBlur: 12,
+    sidebarOpacity: 1,
+    shadow: 1,
+    saturation: 1,
+    accentGradient: false,
+  };
+  return {
+    glass: pickBool(raw.glass, base.glass),
+    surfaceOpacity: pickNumber(raw.surfaceOpacity, base.surfaceOpacity, 0.3, 1),
+    surfaceBlur: pickNumber(raw.surfaceBlur, base.surfaceBlur, 0, 30),
+    sidebarOpacity: pickNumber(raw.sidebarOpacity, base.sidebarOpacity, 0.3, 1),
+    shadow: pickNumber(raw.shadow, base.shadow, 0, 3),
+    saturation: pickNumber(raw.saturation, base.saturation, 0.6, 1.4),
+    accentGradient: pickBool(raw.accentGradient, base.accentGradient),
+  };
 }
