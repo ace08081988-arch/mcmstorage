@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
-import { buildDebtReport } from "@/lib/debt-report";
+import { buildDebtReport, type DebtReportStyle } from "@/lib/debt-report";
 import { exportDebtReport } from "@/lib/debt-report-export";
 import { sendMessage } from "@/lib/chat.functions";
 import { emitDebtTx } from "@/lib/debt-tx-event";
@@ -266,6 +266,7 @@ export function ChatHeaderDebtControls({
   const [sendingReport, setSendingReport] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewBody, setPreviewBody] = useState("");
+  const [reportStyle, setReportStyle] = useState<DebtReportStyle>("detail");
   const [preparingPreview, setPreparingPreview] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
@@ -288,11 +289,12 @@ export function ChatHeaderDebtControls({
     ]);
   };
 
-  const reportBody = () =>
+  const reportBody = (style: DebtReportStyle = reportStyle) =>
     buildDebtReport({
       peerName,
       hutang,
       piutang,
+      style,
       history: history.map((h) => ({
         at: h.at,
         kind: h.kind,
@@ -666,6 +668,25 @@ export function ChatHeaderDebtControls({
             Periksa angkanya dulu. Pesan ini akan dikirim ke chat {peerName}.
           </DialogDescription>
         </DialogHeader>
+        <div className="flex items-center gap-1.5">
+          <span className="text-ms-2xs text-muted-foreground">Gaya pesan:</span>
+          {(["ringkas", "detail"] as const).map((s) => (
+            <Button
+              key={s}
+              type="button"
+              size="sm"
+              variant={reportStyle === s ? "default" : "outline"}
+              className="h-7 px-2.5 text-ms-2xs capitalize"
+              disabled={sendingReport}
+              onClick={() => {
+                setReportStyle(s);
+                setPreviewBody(reportBody(s));
+              }}
+            >
+              {s}
+            </Button>
+          ))}
+        </div>
         <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted/50 p-3 text-ms-xs leading-relaxed">
           {previewBody}
         </pre>

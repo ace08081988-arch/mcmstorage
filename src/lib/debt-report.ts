@@ -23,7 +23,15 @@ export type DebtReportInput = {
   /** Batas jumlah baris riwayat yang ikut dikirim. */
   maxLines?: number;
   now?: Date;
+  /**
+   * Gaya pesan:
+   * - "ringkas": hanya saldo akhir (tanpa riwayat), untuk kabar cepat.
+   * - "detail": rincian lengkap + riwayat perubahan terakhir.
+   */
+  style?: DebtReportStyle;
 };
+
+export type DebtReportStyle = "ringkas" | "detail";
 
 function fmtWhen(iso: string) {
   const d = new Date(iso);
@@ -42,7 +50,9 @@ export function buildDebtReport({
   history = [],
   maxLines = 5,
   now = new Date(),
+  style = "detail",
 }: DebtReportInput): string {
+  const ringkas = style === "ringkas";
   const lines: string[] = [];
   lines.push("*Laporan Hutang & Piutang*");
   lines.push(`Pihak: ${peerName}`);
@@ -67,7 +77,7 @@ export function buildDebtReport({
         : `• Saldo akhir: ${rupiah(Math.abs(net))} (kewajiban ke ${peerName})`,
   );
 
-  const recent = history.slice(0, maxLines);
+  const recent = ringkas ? [] : history.slice(0, maxLines);
   if (recent.length > 0) {
     lines.push("");
     lines.push("*Perubahan terakhir*");
