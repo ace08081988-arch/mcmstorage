@@ -8,6 +8,9 @@ import { MidnightScope } from "@/lib/midnight-preview";
 const LiveProductGallery = lazy(() =>
   import("@/components/LiveProductGallery").then((m) => ({ default: m.LiveProductGallery })),
 );
+const HeroAnalyticsPanel = lazy(() =>
+  import("@/components/HeroAnalyticsPanel").then((m) => ({ default: m.HeroAnalyticsPanel })),
+);
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 import {
@@ -1749,6 +1752,11 @@ function Index() {
         <Suspense fallback={null}>
           <SecurityScanReminder />
           <SecurityFindingsBanner />
+        </Suspense>
+        <Suspense fallback={null}>
+          <div className="mb-ms-3">
+            <HeroAnalyticsPanel />
+          </div>
         </Suspense>
         <Suspense fallback={null}>
           <div className="mb-ms-3">
