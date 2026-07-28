@@ -246,6 +246,7 @@ export function ChatHeaderDebtControls({
   }, [debtsQ.data]);
 
   const [historyQuery, setHistoryQuery] = useState("");
+  const [syncing, setSyncing] = useState(false);
   const filteredHistory = useMemo(() => {
     const q = historyQuery.trim().toLowerCase();
     if (!q) return history;
