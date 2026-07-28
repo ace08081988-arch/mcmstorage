@@ -569,6 +569,11 @@ function PengaturanTampilanPage() {
     return () => { alive = false; };
   }, []);
 
+  // Pulihkan jejak sinkronisasi perangkat ini (terakhir disimpan / diambil).
+  useEffect(() => {
+    setSyncTrace(readSyncTrace());
+  }, []);
+
   /** Simpan pengaturan saat ini ke akun (manual). */
   const saveToCloud = async () => {
     setCloudBusy("push");
@@ -576,6 +581,7 @@ function PengaturanTampilanPage() {
       const res = await pushAppearanceToCloudSafe(buildExportPayload());
       setCloudAt(res.updatedAt);
       setBackups(listAppearanceBackups());
+      markSync({ pushAt: new Date().toISOString(), error: null });
       toast.success("Pengaturan tampilan tersimpan di akun Anda.", {
         description: res.backup
           ? "Versi akun sebelumnya dicadangkan dan bisa dipulihkan."
@@ -588,11 +594,13 @@ function PengaturanTampilanPage() {
       }
     } catch (e) {
       if (e instanceof AppearanceValidationError) {
+        markSync({ error: `Ditolak validasi: ${e.errors.join(" ")}` });
         toast.error("Pengaturan belum valid — penyimpanan dibatalkan.", {
           description: e.errors.join(" "),
           duration: 8000,
         });
       } else {
+        markSync({ error: "Gagal menyimpan ke akun (koneksi / server)." });
         toast.error("Gagal menyimpan ke akun. Periksa koneksi lalu coba lagi.");
       }
     } finally {
@@ -624,8 +632,10 @@ function PengaturanTampilanPage() {
       const res = await pushAppearanceToCloudSafe(b.payload);
       setCloudAt(res.updatedAt);
       setBackups(listAppearanceBackups());
+      markSync({ pushAt: new Date().toISOString(), error: null });
       toast.success("Cadangan dipulihkan dan disimpan kembali ke akun.");
     } catch {
+      markSync({ error: "Cadangan gagal disinkronkan ke akun." });
       toast.warning("Cadangan diterapkan di perangkat ini, tapi gagal sinkron ke akun.");
       setBackups(listAppearanceBackups());
     } finally {
@@ -653,8 +663,10 @@ function PengaturanTampilanPage() {
       setDraft(fresh);
       setCloudAt(cloud.updatedAt);
       setTimeout(() => { savedRef.current = false; }, 0);
+      markSync({ pullAt: new Date().toISOString(), error: null });
       toast.success("Pengaturan tampilan dari akun diterapkan.");
     } catch {
+      markSync({ error: "Gagal mengambil pengaturan dari akun." });
       toast.error("Gagal mengambil pengaturan dari akun.");
     } finally {
       setCloudBusy(null);
