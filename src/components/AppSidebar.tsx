@@ -268,13 +268,13 @@ function OrgHeader() {
       <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
         <div
           className="truncate text-[22px] leading-tight tracking-tight text-foreground"
-          style={{ fontFamily: "'DM Serif Display', serif" }}
+          style={{ fontFamily: "var(--font-display)" }}
         >
           {full}
         </div>
         <div
           className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.24em] text-primary/70"
-          style={{ fontFamily: "'Fira Sans', sans-serif" }}
+          style={{ fontFamily: "var(--font-body)" }}
         >
           Manajemen Operasional
         </div>
@@ -557,7 +557,7 @@ export function AppSidebar() {
             ) : null}
             <SidebarGroupLabel
               className="flex items-center gap-ms-2 px-ms-2 pb-ms-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/75"
-              style={{ fontFamily: "'Fira Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-body)" }}
             >
               <span
                 aria-hidden
@@ -601,7 +601,7 @@ export function AppSidebar() {
                               "truncate text-ms-sm tracking-[-0.005em] " +
                               (active ? "font-semibold text-sidebar-accent-foreground" : "")
                             }
-                            style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                            style={{ fontFamily: "var(--font-body)" }}
                           >
                             {item.title}
                           </span>
@@ -774,13 +774,13 @@ export function AppSidebar() {
             <span className="relative min-w-0 flex-1 leading-tight">
               <span
                 className="block truncate text-[15px] tracking-tight text-white"
-                style={{ fontFamily: "'DM Serif Display', serif" }}
+                style={{ fontFamily: "var(--font-display)" }}
               >
                 Coba MCM Chat
               </span>
               <span
                 className="mt-0.5 block truncate text-[10.5px] font-normal text-white/75"
-                style={{ fontFamily: "'Fira Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-body)" }}
               >
                 APK khusus chat · akun sama
               </span>

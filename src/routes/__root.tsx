@@ -289,7 +289,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         : []),
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=Fira+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap",
+        // Dipangkas dari 7 → 5 keluarga font (Instrument Serif + Work Sans jadi
+        // pasangan utama). Lebih sedikit request & byte pada buka pertama.
+        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600;700&family=Merriweather:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap",
       },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/icon-512.png" },

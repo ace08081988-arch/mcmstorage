@@ -14,7 +14,7 @@ export function VirtualizedList<T>({
   renderItem,
   estimateSize = 88,
   overscan = 6,
-  threshold = 30,
+  threshold = 18,
   gap = 8,
   className,
 }: {
@@ -54,7 +54,14 @@ export function VirtualizedList<T>({
     return (
       <div className={className} style={{ display: "grid", rowGap: gap }}>
         {items.map((item, i) => (
-          <div key={getKey(item, i)}>{renderItem(item, i)}</div>
+          <div
+            key={getKey(item, i)}
+            // Lewati paint/layout untuk baris di luar viewport — hemat CPU saat
+            // scroll di HP tanpa mengubah tinggi/urutan konten.
+            style={{ contentVisibility: "auto", containIntrinsicSize: `auto ${estimateSize}px` }}
+          >
+            {renderItem(item, i)}
+          </div>
         ))}
       </div>
     );
