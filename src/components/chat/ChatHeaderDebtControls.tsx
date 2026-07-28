@@ -246,6 +246,7 @@ export function ChatHeaderDebtControls({
   }, [debtsQ.data]);
 
   const [historyQuery, setHistoryQuery] = useState("");
+  const [syncing, setSyncing] = useState(false);
   const filteredHistory = useMemo(() => {
     const q = historyQuery.trim().toLowerCase();
     if (!q) return history;
@@ -317,6 +318,47 @@ export function ChatHeaderDebtControls({
                 Selisih biasanya berasal dari penjualan berstatus hutang yang belum masuk catatan manual.
               </div>
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2 h-7 w-full text-ms-2xs"
+              disabled={syncing}
+              onClick={async () => {
+                setSyncing(true);
+                try {
+                  if (Math.abs(mismatch.dp) >= 1) {
+                    await applyDelta({
+                      delta: mismatch.dp,
+                      kind: "piutang",
+                      summary: safeSummary,
+                      myId,
+                      peerName,
+                      onDone: () => {},
+                    });
+                  }
+                  if (Math.abs(mismatch.dh) >= 1) {
+                    await applyDelta({
+                      delta: mismatch.dh,
+                      kind: "hutang",
+                      summary: safeSummary,
+                      myId,
+                      peerName,
+                      onDone: () => {},
+                    });
+                  }
+                  await qc.invalidateQueries({ queryKey });
+                } finally {
+                  setSyncing(false);
+                }
+              }}
+            >
+              {syncing ? (
+                <Loader2 className="mr-1 size-3.5 animate-spin" />
+              ) : (
+                <Equal className="mr-1 size-3.5" />
+              )}
+              Selaraskan catatan manual ke SSOT
+            </Button>
           </div>
         )}
         <div className="space-ms-2">

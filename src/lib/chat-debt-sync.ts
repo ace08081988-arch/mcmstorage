@@ -77,6 +77,12 @@ export function useDebtSyncMap() {
     queryKey: DEBT_SYNC_QUERY_KEY,
     queryFn: fetchDebtSyncMap,
     staleTime: 30_000,
+    // Otomatis segar: saat kembali ke app / online lagi / tiap 60 detik,
+    // supaya angka di chip chat tidak pernah tertinggal dari halaman lain.
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 
@@ -146,8 +152,30 @@ export function suggestPartyMatches(
 
 export type DebtSyncStatus =
   | { state: "unlinked" }
-  | { state: "settled"; entry: DebtSyncEntry }
-  | { state: "open"; entry: DebtSyncEntry };
+  | { state: "settled"; entry: DebtSyncEntry; auto?: boolean }
+  | { state: "open"; entry: DebtSyncEntry; auto?: boolean };
+
+/** Ambang kemiripan nama untuk penautan otomatis (tanpa tombol manual). */
+export const AUTO_LINK_MIN_SCORE = 0.8;
+/** Jarak minimal skor juara vs runner-up agar tidak salah tautan. */
+export const AUTO_LINK_MIN_GAP = 0.08;
+
+/**
+ * Penautan otomatis: cari satu kandidat nama yang sangat mirip dan jelas
+ * lebih unggul dari kandidat lain ("PANGAT" → "PWNGAT"). Kalau ada dua nama
+ * yang sama-sama mirip, biarkan manual supaya tidak salah orang.
+ */
+export function autoMatchParty(
+  title: string | null | undefined,
+  map: DebtSyncMap | undefined,
+): DebtSyncEntry | null {
+  const candidates = suggestPartyMatches(title, map, 3);
+  const best = candidates[0];
+  if (!best || best.score < AUTO_LINK_MIN_SCORE) return null;
+  const second = candidates[1];
+  if (second && best.score - second.score < AUTO_LINK_MIN_GAP) return null;
+  return best.entry;
+}
 
 export function debtSyncStatus(
   title: string | null | undefined,
@@ -158,8 +186,14 @@ export function debtSyncStatus(
   // Tautan manual menang: satu orang boleh punya ejaan berbeda di chat
   // dan di buku hutang/piutang ("PANGAT" vs "PWNGAT").
   const linked = links?.get(key);
-  const entry = (linked ? map?.get(linked) : undefined) ?? map?.get(key);
+  const exact = (linked ? map?.get(linked) : undefined) ?? map?.get(key);
+  // Kalau belum ada tautan manual/persis, coba tautkan otomatis.
+  const auto = exact ? null : autoMatchParty(title, map);
+  const entry = exact ?? auto;
   if (!entry) return { state: "unlinked" };
-  if (entry.hutang <= 0 && entry.piutang <= 0) return { state: "settled", entry };
-  return { state: "open", entry };
+  const isAuto = !exact && !!auto;
+  if (entry.hutang <= 0 && entry.piutang <= 0) {
+    return { state: "settled", entry, auto: isAuto };
+  }
+  return { state: "open", entry, auto: isAuto };
 }
