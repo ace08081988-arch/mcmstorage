@@ -115,6 +115,38 @@ function relStamp(iso: string | null): string | null {
 }
 
 function readCompact(): boolean {
+  return readCompactImpl();
+}
+
+/** Kartu kecil status sinkronisasi (waktu absolut + relatif). */
+function SyncStat({
+  icon,
+  label,
+  value,
+  hint,
+  busy,
+  testId,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  hint: string | null;
+  busy: boolean;
+  testId: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-muted/40 px-ms-2 py-ms-2" data-testid={testId}>
+      <p className="flex items-center gap-ms-1.5 text-ms-2xs font-medium text-muted-foreground">
+        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon}
+        {label}
+      </p>
+      <p className="mt-0.5 truncate text-ms-xs font-semibold">{value}</p>
+      {hint && <p className="text-ms-2xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+function readCompactImpl(): boolean {
   if (typeof window === "undefined") return false;
   const raw = localStorage.getItem(COMPACT_LS);
   return raw == null ? true : raw === "1";
