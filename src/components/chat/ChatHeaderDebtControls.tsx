@@ -327,10 +327,46 @@ export function ChatHeaderDebtControls({
       setPreviewBody(reportBody());
       setPreviewEdit(false);
       setPreviewEdited(false);
+      setTemplates(listReportTemplates());
+      setActiveTemplateId(null);
+      setTemplateName("");
       setPreviewOpen(true);
     } finally {
       setPreparingPreview(false);
     }
+  };
+
+  const tplCtx = { peerName, hutang, piutang };
+
+  /** Pakai ulang gaya tersimpan: placeholder diisi angka SSOT terbaru. */
+  const applyTemplate = (t: DebtReportTemplate) => {
+    setPreviewBody(renderTemplate(t.body, tplCtx));
+    setActiveTemplateId(t.id);
+    setPreviewEdited(false);
+    setTemplateName(t.name);
+  };
+
+  const saveTemplate = () => {
+    const name =
+      templateName.trim() ||
+      `Gaya ${new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}`;
+    setSavingTemplate(true);
+    try {
+      const next = saveReportTemplate(name, previewBody, tplCtx);
+      setTemplates(next);
+      setActiveTemplateId(next[0]?.id ?? null);
+      setTemplateName(name);
+      toast.success(`Template "${name}" disimpan — bisa dipilih lagi nanti.`);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const removeTemplate = (t: DebtReportTemplate) => {
+    const next = deleteReportTemplate(t.id);
+    setTemplates(next);
+    if (activeTemplateId === t.id) setActiveTemplateId(null);
+    toast.info(`Template "${t.name}" dihapus.`);
   };
 
   const copyPreview = async () => {
