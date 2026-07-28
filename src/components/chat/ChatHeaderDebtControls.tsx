@@ -668,6 +668,25 @@ export function ChatHeaderDebtControls({
             Periksa angkanya dulu. Pesan ini akan dikirim ke chat {peerName}.
           </DialogDescription>
         </DialogHeader>
+        <div className="flex items-center gap-1.5">
+          <span className="text-ms-2xs text-muted-foreground">Gaya pesan:</span>
+          {(["ringkas", "detail"] as const).map((s) => (
+            <Button
+              key={s}
+              type="button"
+              size="sm"
+              variant={reportStyle === s ? "default" : "outline"}
+              className="h-7 px-2.5 text-ms-2xs capitalize"
+              disabled={sendingReport}
+              onClick={() => {
+                setReportStyle(s);
+                setPreviewBody(reportBody(s));
+              }}
+            >
+              {s}
+            </Button>
+          ))}
+        </div>
         <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-muted/50 p-3 text-ms-xs leading-relaxed">
           {previewBody}
         </pre>
