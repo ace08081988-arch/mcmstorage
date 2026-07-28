@@ -30,7 +30,7 @@ import {
   CheckCircle2, Wallet, HandCoins, Sparkles, Wrench,
 } from "lucide-react";
 import {
-  requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
+  requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto, requestPhotoLocationPairs,
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
