@@ -4825,6 +4825,7 @@ function RequestForm({
       });
       setPhotos([]);
       setUploads([]);
+      setExtraLocs([]);
       void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
