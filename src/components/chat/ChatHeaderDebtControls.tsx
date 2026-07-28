@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -13,6 +13,7 @@ import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
 import { buildDebtReport } from "@/lib/debt-report";
+import { exportDebtReport } from "@/lib/debt-report-export";
 import { sendMessage } from "@/lib/chat.functions";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import {
@@ -255,6 +256,7 @@ export function ChatHeaderDebtControls({
   const [historyQuery, setHistoryQuery] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
+  const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
   // "Kirim laporan" menonjol dan pemilik toko tidak lupa mengabarkan.
   const [dirty, setDirty] = useState(false);
@@ -306,6 +308,8 @@ export function ChatHeaderDebtControls({
   };
 
   const filteredHistory = useMemo(() => {
+    return filterHistory();
+    function filterHistory() {
     const q = historyQuery.trim().toLowerCase();
     if (!q) return history;
     return history.filter((h) => {
@@ -321,6 +325,7 @@ export function ChatHeaderDebtControls({
         kind.includes(q)
       );
     });
+    }
   }, [history, historyQuery]);
 
   return (
