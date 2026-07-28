@@ -8,7 +8,7 @@ import { confirm } from "@/lib/confirm";
 import { fetchPiutangSummary } from "@/lib/piutang";
 import { fetchHutangSummary } from "@/lib/hutang";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
-import { useDebtSyncMap } from "@/lib/chat-debt-sync";
+import { useDebtSyncMap, normalizeParty } from "@/lib/chat-debt-sync";
 import { TxOnlyPartyCards } from "@/components/hutang/TxOnlyPartyCards";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
