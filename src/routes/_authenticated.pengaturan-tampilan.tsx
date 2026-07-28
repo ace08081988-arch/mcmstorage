@@ -493,8 +493,14 @@ function PengaturanTampilanPage() {
 
   const runImportFromText = (text: string, source: ImportSource) => {
     let data: unknown;
+    const json = decodeShareText(text || "{}");
+    if (json == null) {
+      logAppearanceMigration(source, { ok: false, reason: "invalid" });
+      toast.error("Kode preset rusak atau tidak lengkap.");
+      return;
+    }
     try {
-      data = JSON.parse(text || "{}");
+      data = JSON.parse(json || "{}");
     } catch {
       const invalid: MigrateResult = { ok: false, reason: "invalid" };
       logAppearanceMigration(source, invalid);
