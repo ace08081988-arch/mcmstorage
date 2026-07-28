@@ -1391,6 +1391,15 @@ function ChatRoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickNeedle, quickFrom]);
   const activeHitId = quickHits[quickIdx] ?? null;
+  // Konteks percakapan di sekitar hasil aktif: 2 pesan sebelum & 2 sesudah,
+  // supaya alur obrolan langsung terbaca tanpa harus melompat dulu.
+  const quickContext = useMemo(() => {
+    if (!activeHitId) return [] as MessageRow[];
+    const list = visibleMessages ?? [];
+    const i = list.findIndex((m) => m.id === activeHitId);
+    if (i < 0) return [] as MessageRow[];
+    return list.slice(Math.max(0, i - 2), Math.min(list.length, i + 3));
+  }, [activeHitId, visibleMessages]);
   const gotoHit = useCallback(
     (dir: 1 | -1) => {
       if (quickHits.length === 0) return;
