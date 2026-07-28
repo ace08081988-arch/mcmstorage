@@ -77,6 +77,7 @@ function GudangRoute() {
         />
       )}
     >
+      <MidnightScope />
       <GudangPage />
     </DomRaceBoundary>
   );
