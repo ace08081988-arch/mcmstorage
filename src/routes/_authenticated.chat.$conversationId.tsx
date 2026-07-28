@@ -1333,7 +1333,7 @@ function ChatRoomPage() {
       // soft-keyboard muncul/tertutup — daftar pesan & composer bergerak
       // ke posisi baru dengan easing 200ms, bukan snap. Dihormati
       // preferensi reduce-motion pengguna.
-      className="mx-auto flex h-[100dvh] max-w-2xl flex-col overflow-x-hidden wa-surface transition-[height] duration-200 ease-out motion-reduce:transition-none"
+      className="mx-auto flex h-full max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden wa-surface transition-[height] duration-200 ease-out motion-reduce:transition-none"
       style={
         kbInset > 0
           ? { height: `calc(100dvh - ${kbInset}px)` }
@@ -1431,7 +1431,10 @@ function ChatRoomPage() {
           }}
         />
       ) : (
-      <header className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-ms-1 border-b px-1.5 py-1 sm:gap-ms-2 sm:px-ms-2 sm:py-ms-2">
+      <header
+        className="wa-header z-20 flex shrink-0 items-center gap-ms-1 border-b px-1.5 py-1 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_8%,transparent)] sm:gap-ms-2 sm:px-ms-2 sm:py-ms-2"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 0.25rem)" }}
+      >
         <Button
           variant="ghost"
           size="icon"
@@ -2199,7 +2202,7 @@ function ChatRoomPage() {
       </div>
 
       {hasNewBelow ? (
-        <div className="pointer-events-none sticky bottom-20 z-30 flex justify-center px-ms-2 sm:bottom-16">
+        <div className="pointer-events-none relative z-30 -mt-12 mb-2 flex justify-center px-ms-2">
           <button
             type="button"
             onClick={() => scrollToBottom("smooth")}
@@ -2212,7 +2215,7 @@ function ChatRoomPage() {
       ) : null}
       <form
         onSubmit={onSubmit}
-        className="sticky bottom-0 z-10 border-t bg-background/95 p-ms-2 backdrop-blur"
+        className="z-10 shrink-0 border-t bg-background/95 p-ms-2 backdrop-blur"
         style={{ paddingBottom: `max(env(safe-area-inset-bottom), 0.5rem)` }}
       >
         {editing ? (
