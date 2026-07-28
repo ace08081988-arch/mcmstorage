@@ -122,6 +122,7 @@ import { dispatchStartCall } from "@/components/chat/CallHost";
 import { usePeerAlias } from "@/lib/contact-alias";
 import { AttachMenu } from "@/components/chat/AttachMenu";
 import { MessageAttachment, CardBlock, UnknownCardBlock, decodeCard } from "@/components/chat/MessageAttachment";
+import { MessageStatusIcon, messageStatusLabel } from "@/components/chat/MessageStatusIcon";
 import { previewText } from "@/lib/chat-cards";
 import { SelectionToolbar } from "@/components/chat/SelectionToolbar";
 import { PinnedBanner } from "@/components/chat/PinnedBanner";
