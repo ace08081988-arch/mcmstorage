@@ -16,7 +16,7 @@ jobs:
     name: Mark commit ready to publish
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - name: Checkout commit from upstream run
         uses: actions/checkout@v4
