@@ -4706,6 +4706,25 @@ function RequestForm({
         return;
       }
     }
+    // Link lokasi tambahan (foto ke-2 dst). Validasi sama seperti link utama,
+    // lalu dititipkan ke catatan supaya admin melihat pasangan foto ↔ lokasi.
+    const trimmedExtras = extraLocs.map((v) => (v || "").trim());
+    for (let i = 0; i < trimmedExtras.length; i++) {
+      const v = trimmedExtras[i];
+      if (!v) continue;
+      if (v.length > 2048) {
+        toast.error(`Link Maps foto ${i + 2} terlalu panjang.`);
+        return;
+      }
+      if (!/^https:\/\//i.test(v)) {
+        toast.error(`Link Maps foto ${i + 2} belum valid. Harus diawali https:// atau kosongkan.`);
+        return;
+      }
+    }
+    const extraLocLines = trimmedExtras
+      .map((v, i) => (v ? `Lokasi foto ${i + 2}: ${v}` : ""))
+      .filter(Boolean);
+    const noteWithLocs = [note.trim(), ...extraLocLines].filter(Boolean).join(" · ");
     onKeepAlive();
     onActivityChange(true);
     setBusy(true);
@@ -4770,7 +4789,7 @@ function RequestForm({
         _location_url: trimmedLoc || null,
         _gps_lat: gps?.lat ?? null,
         _gps_lng: gps?.lng ?? null,
-        _note: note || null,
+        _note: noteWithLocs || null,
         _prep_task_item_id: null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
