@@ -268,6 +268,8 @@ export function ChatHeaderDebtControls({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewBody, setPreviewBody] = useState("");
   const [reportStyle, setReportStyle] = useState<DebtReportStyle>("detail");
+  const [previewEdit, setPreviewEdit] = useState(false);
+  const [previewEdited, setPreviewEdited] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
@@ -312,6 +314,8 @@ export function ChatHeaderDebtControls({
     try {
       await qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY });
       setPreviewBody(reportBody());
+      setPreviewEdit(false);
+      setPreviewEdited(false);
       setPreviewOpen(true);
     } finally {
       setPreparingPreview(false);
