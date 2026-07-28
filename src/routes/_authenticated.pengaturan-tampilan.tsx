@@ -36,6 +36,7 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
+import { useMidnightPreview } from "@/lib/midnight-preview";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
   pullAppearanceFromCloud,
@@ -411,6 +412,7 @@ function PengaturanTampilanPage() {
     });
   };
   const [backups, setBackups] = useState<AppearanceBackup[]>([]);
+  const [midnightOn, setMidnightOn] = useMidnightPreview();
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
@@ -879,6 +881,41 @@ function PengaturanTampilanPage() {
           Tampilan halaman lain tidak berubah sampai Anda menekan{" "}
           <span className="font-semibold text-foreground">Simpan</span> di bagian bawah.
         </div>
+
+        {/* Preset profesional */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
+              <Moon className="h-4 w-4 text-primary" /> Pratinjau Midnight Indigo
+            </CardTitle>
+            <CardDescription className="text-ms-xs">
+              Tema indigo gelap bergaya editorial. Saat aktif, hanya diterapkan
+              ke halaman <span className="font-semibold text-foreground">Beranda</span> dan{" "}
+              <span className="font-semibold text-foreground">Gudang</span>; preset Anda di
+              halaman lain tidak berubah.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between gap-ms-3">
+            <div className="min-w-0">
+              <p className="text-ms-sm font-semibold">Aktifkan pratinjau</p>
+              <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
+                Berlaku langsung tanpa perlu menekan Simpan, dan bisa dimatikan kapan saja.
+              </p>
+            </div>
+            <Switch
+              checked={midnightOn}
+              onCheckedChange={(v) => {
+                setMidnightOn(v);
+                toast.success(
+                  v
+                    ? "Midnight Indigo aktif di Beranda & Gudang"
+                    : "Midnight Indigo dimatikan",
+                );
+              }}
+              aria-label="Aktifkan pratinjau Midnight Indigo"
+            />
+          </CardContent>
+        </Card>
 
         {/* Preset profesional */}
         <Card>

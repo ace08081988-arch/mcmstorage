@@ -1186,3 +1186,68 @@ html[data-accent-gradient="1"] .bg-primary {
     color-mix(in oklab, var(--primary) 62%, white)
   );
 }
+
+/* ==========================================================================
+   Midnight Indigo — mode pratinjau (opt-in via Pengaturan Tampilan).
+
+   Aktif hanya ketika flag global menyala DAN halaman memasang
+   <MidnightScope /> (Beranda & Gudang), sehingga preset user di halaman lain
+   tidak ikut berubah. Semua nilai memakai token, bukan warna hardcode, agar
+   tetap tunduk pada radius/font/efek permukaan pilihan user.
+   ========================================================================== */
+html[data-midnight="1"][data-midnight-page="1"] {
+  color-scheme: dark;
+
+  --background: oklch(0.17 0.045 275);
+  --foreground: oklch(0.95 0.012 275);
+
+  --card: oklch(0.215 0.05 275);
+  --card-foreground: oklch(0.95 0.012 275);
+  --popover: oklch(0.215 0.05 275);
+  --popover-foreground: oklch(0.95 0.012 275);
+
+  /* !important: preset user menulis --primary/--ring sebagai inline style di
+     <html>, jadi tanpa ini aksen preview tidak pernah jadi indigo. */
+  --primary: oklch(0.66 0.19 278) !important;
+  --primary-foreground: oklch(0.16 0.05 275) !important;
+  --ring: oklch(0.66 0.19 278) !important;
+
+  --secondary: oklch(0.26 0.05 275);
+  --secondary-foreground: oklch(0.94 0.012 275);
+  --muted: oklch(0.25 0.045 275);
+  --muted-foreground: oklch(0.74 0.03 275);
+  --accent: oklch(0.29 0.06 278);
+  --accent-foreground: oklch(0.96 0.012 275);
+
+  --border: oklch(0.33 0.05 275);
+  --input: oklch(0.33 0.05 275);
+
+  --sidebar: oklch(0.155 0.045 275);
+  --sidebar-foreground: oklch(0.93 0.012 275);
+  --sidebar-primary: oklch(0.66 0.19 278);
+  --sidebar-primary-foreground: oklch(0.16 0.05 275);
+  --sidebar-accent: oklch(0.26 0.055 277);
+  --sidebar-accent-foreground: oklch(0.96 0.012 275);
+  --sidebar-border: oklch(0.30 0.05 275);
+  --sidebar-ring: oklch(0.66 0.19 278);
+}
+
+/* Sentuhan editorial: gradasi indigo lembut di latar halaman target. */
+html[data-midnight="1"][data-midnight-page="1"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      90% 60% at 10% -10%,
+      color-mix(in oklab, var(--primary) 20%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      70% 50% at 100% 0%,
+      color-mix(in oklab, var(--primary) 12%, transparent) 0%,
+      transparent 58%
+    );
+}

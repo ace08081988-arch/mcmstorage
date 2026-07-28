@@ -44,6 +44,7 @@ import {
   PillsTabs,
   SummaryCard,
 } from "@/components/shell";
+import { MidnightScope } from "@/lib/midnight-preview";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 import { useFormDraft } from "@/lib/form-draft";
@@ -77,6 +78,7 @@ function GudangRoute() {
         />
       )}
     >
+      <MidnightScope />
       <GudangPage />
     </DomRaceBoundary>
   );

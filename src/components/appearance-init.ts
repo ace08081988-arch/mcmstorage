@@ -13,6 +13,7 @@
  * perlu saat dialog dibuka".
  */
 import { useEffect } from "react";
+import { applyMidnightPreview } from "@/lib/midnight-preview";
 
 type Theme = "light" | "dark" | "system";
 type FontFamily = "sans" | "serif" | "mono" | "display";
@@ -162,6 +163,7 @@ export function applyAppearance() {
   if (bgImage) root.dataset.hasBg = "1";
   else delete root.dataset.hasBg;
   applySurfaceFx(readSurfaceFx());
+  applyMidnightPreview();
 }
 
 export function AppearanceInit() {
