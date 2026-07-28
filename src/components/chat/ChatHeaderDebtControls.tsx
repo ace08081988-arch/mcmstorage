@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy, Bookmark, Trash2 } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy, Bookmark, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -282,6 +282,8 @@ export function ChatHeaderDebtControls({
   const [templateName, setTemplateName] = useState("");
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
+  // Saat true, teks pratinjau dibangun ulang begitu data SSOT selesai disegarkan.
+  const [resetPending, setResetPending] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
   // "Kirim laporan" menonjol dan pemilik toko tidak lupa mengabarkan.
@@ -368,6 +370,25 @@ export function ChatHeaderDebtControls({
     if (activeTemplateId === t.id) setActiveTemplateId(null);
     toast.info(`Template "${t.name}" dihapus.`);
   };
+
+  /** Kembalikan teks & angka pratinjau ke hasil hitungan SSOT terbaru. */
+  const resetPreviewToSsot = async () => {
+    setResetPending(true);
+    await qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY });
+    await qc.invalidateQueries({ queryKey });
+  };
+
+  useEffect(() => {
+    if (!resetPending || debtsQ.isFetching) return;
+    const tpl = templates.find((t) => t.id === activeTemplateId);
+    setPreviewBody(
+      tpl ? renderTemplate(tpl.body, { peerName, hutang, piutang }) : reportBody(),
+    );
+    setPreviewEdited(false);
+    setResetPending(false);
+    toast.success("Pratinjau disegarkan ke angka SSOT terbaru.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetPending, debtsQ.isFetching, hutang, piutang]);
 
   const copyPreview = async () => {
     if (!previewBody.trim()) return;
@@ -760,6 +781,22 @@ export function ChatHeaderDebtControls({
           >
             <Pencil className="mr-1 size-3" />
             {previewEdit ? "Selesai edit" : "Edit teks"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 px-2.5 text-ms-2xs"
+            disabled={sendingReport || resetPending}
+            onClick={resetPreviewToSsot}
+            title="Buang editan dan ambil ulang angka terbaru dari SSOT"
+          >
+            {resetPending ? (
+              <Loader2 className="mr-1 size-3 animate-spin" />
+            ) : (
+              <RotateCcw className="mr-1 size-3" />
+            )}
+            Kembalikan ke SSOT
           </Button>
         </div>
         {templates.length > 0 ? (
