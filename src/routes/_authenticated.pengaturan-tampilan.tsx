@@ -1334,6 +1334,77 @@ function PengaturanTampilanPage() {
               {cloudBusy === "pull" ? "Mengambil…" : "Ambil dari akun"}
             </Button>
           </CardContent>
+          <CardContent className="space-ms-3 pt-0">
+            {(() => {
+              const check = validateAppearancePayload(buildExportPayload());
+              if (check.ok) return null;
+              return (
+                <div
+                  data-testid="appearance-validation-errors"
+                  className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-2xs text-destructive"
+                >
+                  <p className="font-semibold">Belum bisa disimpan ke akun:</p>
+                  <ul className="mt-1 list-disc pl-4">
+                    {check.errors.map((e) => (
+                      <li key={e}>{e}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+
+            <div className="rounded-md border p-ms-3">
+              <p className="text-ms-sm font-semibold">Cadangan otomatis</p>
+              <p className="text-ms-2xs text-muted-foreground">
+                Setiap kali menimpa preset di akun, versi sebelumnya dicadangkan di
+                perangkat ini (maks. {MAX_APPEARANCE_BACKUPS} versi terakhir).
+              </p>
+              {backups.length === 0 ? (
+                <p className="mt-ms-2 text-ms-2xs text-muted-foreground">
+                  Belum ada cadangan.
+                </p>
+              ) : (
+                <ul className="mt-ms-2 space-y-1" data-testid="appearance-backup-list">
+                  {backups.map((b) => (
+                    <li
+                      key={b.id}
+                      className="flex items-center gap-ms-2 rounded-md border bg-card px-ms-2 py-ms-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-ms-xs font-medium">
+                          {new Date(b.cloudUpdatedAt ?? b.createdAt).toLocaleString("id-ID")}
+                        </p>
+                        <p className="truncate text-ms-2xs text-muted-foreground">
+                          Dicadangkan {new Date(b.createdAt).toLocaleString("id-ID")}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={cloudBusy !== null}
+                        onClick={() => void restoreBackup(b)}
+                      >
+                        Pulihkan
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={cloudBusy !== null}
+                        onClick={() => {
+                          deleteAppearanceBackup(b.id);
+                          setBackups(listAppearanceBackups());
+                        }}
+                      >
+                        Hapus
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </CardContent>
         </Card>
 
         <Card>
