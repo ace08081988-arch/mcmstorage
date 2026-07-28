@@ -504,11 +504,61 @@ function PengaturanTampilanPage() {
   const saveToCloud = async () => {
     setCloudBusy("push");
     try {
-      const at = await pushAppearanceToCloud(buildExportPayload());
-      setCloudAt(at);
-      toast.success("Pengaturan tampilan tersimpan di akun Anda.");
+      const res = await pushAppearanceToCloudSafe(buildExportPayload());
+      setCloudAt(res.updatedAt);
+      setBackups(listAppearanceBackups());
+      toast.success("Pengaturan tampilan tersimpan di akun Anda.", {
+        description: res.backup
+          ? "Versi akun sebelumnya dicadangkan dan bisa dipulihkan."
+          : undefined,
+      });
+      if (res.warnings.length > 0) {
+        toast.warning("Beberapa nilai dilewati saat menyimpan.", {
+          description: res.warnings.join(" "),
+        });
+      }
+    } catch (e) {
+      if (e instanceof AppearanceValidationError) {
+        toast.error("Pengaturan belum valid — penyimpanan dibatalkan.", {
+          description: e.errors.join(" "),
+          duration: 8000,
+        });
+      } else {
+        toast.error("Gagal menyimpan ke akun. Periksa koneksi lalu coba lagi.");
+      }
+    } finally {
+      setCloudBusy(null);
+    }
+  };
+
+  /** Muat daftar cadangan lokal saat halaman dibuka. */
+  useEffect(() => {
+    setBackups(listAppearanceBackups());
+  }, []);
+
+  /** Pulihkan satu cadangan: terapkan di perangkat ini lalu dorong ke akun. */
+  const restoreBackup = async (b: AppearanceBackup) => {
+    setCloudBusy("push");
+    try {
+      applyCloudPayload(b.payload);
+      const p = getAppPrefs();
+      const fresh = readSnapshot({
+        fontScale: p.fontScale,
+        highContrast: p.highContrast,
+        reduceMotion: p.reduceMotion,
+      });
+      savedRef.current = true;
+      setSnapshot(fresh);
+      setDraft(fresh);
+      setTimeout(() => { savedRef.current = false; }, 0);
+
+      const res = await pushAppearanceToCloudSafe(b.payload);
+      setCloudAt(res.updatedAt);
+      setBackups(listAppearanceBackups());
+      toast.success("Cadangan dipulihkan dan disimpan kembali ke akun.");
     } catch {
-      toast.error("Gagal menyimpan ke akun. Periksa koneksi lalu coba lagi.");
+      toast.warning("Cadangan diterapkan di perangkat ini, tapi gagal sinkron ke akun.");
+      setBackups(listAppearanceBackups());
     } finally {
       setCloudBusy(null);
     }
