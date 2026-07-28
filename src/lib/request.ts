@@ -44,6 +44,9 @@ export type RequestPreparation = {
   prep_task_item_id: string | null;
   created_at: string;
   photo_paths?: string[] | null;
+  /** Link lokasi per foto, sejajar index dengan `photo_paths`
+   * (index 0 = foto ke-1). String kosong = foto itu tanpa lokasi. */
+  location_urls?: string[] | null;
   sold_at?: string | null;
   sold_customer_id?: string | null;
   sold_party_name?: string | null;
@@ -58,6 +61,33 @@ export type RequestPreparationItem = {
   warehouse_item_id: string;
   actual_grams: number;
 };
+
+/**
+ * SSOT pemasangan foto ↔ lokasi untuk paket request.
+ *
+ * Urutan foto adalah urutan unggah pegawai (`photo_paths`), dan `location_urls`
+ * disimpan sejajar index dengan array itu. Fungsi ini melakukan dedup path
+ * (foto lama `photo_path` bisa duplikat dengan elemen pertama `photo_paths`)
+ * TANPA menggeser pasangan lokasi, lalu jatuh balik ke `location_url` tunggal
+ * untuk foto pertama pada data lama yang belum punya kolom baru.
+ */
+export function requestPhotoLocationPairs(
+  prep: Pick<RequestPreparation, "photo_path" | "photo_paths" | "location_url" | "location_urls">,
+): Array<{ path: string; locationUrl: string | null }> {
+  const paths = (prep.photo_paths ?? []).filter((x): x is string => !!x);
+  const base = paths.length > 0 ? paths : prep.photo_path ? [prep.photo_path] : [];
+  const locs = prep.location_urls ?? [];
+  const seen = new Set<string>();
+  const out: Array<{ path: string; locationUrl: string | null }> = [];
+  base.forEach((path, i) => {
+    if (seen.has(path)) return;
+    seen.add(path);
+    const raw = (locs[i] ?? "").trim();
+    const fallback = out.length === 0 ? (prep.location_url ?? "").trim() : "";
+    out.push({ path, locationUrl: (raw || fallback) || null });
+  });
+  return out;
+}
 
 export async function requestSignedUrl(
   path: string | null | undefined,

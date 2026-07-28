@@ -2550,6 +2550,7 @@ export type Database = {
           gps_lng: number | null
           id: string
           location_url: string | null
+          location_urls: string[] | null
           note: string | null
           photo_path: string | null
           photo_paths: string[]
@@ -2577,6 +2578,7 @@ export type Database = {
           gps_lng?: number | null
           id?: string
           location_url?: string | null
+          location_urls?: string[] | null
           note?: string | null
           photo_path?: string | null
           photo_paths?: string[]
@@ -2604,6 +2606,7 @@ export type Database = {
           gps_lng?: number | null
           id?: string
           location_url?: string | null
+          location_urls?: string[] | null
           note?: string | null
           photo_path?: string | null
           photo_paths?: string[]
@@ -4119,9 +4122,10 @@ export type Database = {
               _gps_lng: number
               _items: Json
               _location_url: string
+              _location_urls?: string[]
               _note: string
               _photo_path: string
-              _photo_paths?: string[]
+              _photo_paths: string[]
               _pin: string
               _prep_task_item_id: string
               _title_id: string

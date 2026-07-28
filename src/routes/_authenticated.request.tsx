@@ -30,7 +30,7 @@ import {
   CheckCircle2, Wallet, HandCoins, Sparkles, Wrench,
 } from "lucide-react";
 import {
-  requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
+  requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto, requestPhotoLocationPairs,
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
@@ -2383,11 +2383,10 @@ function PrepCard({
     onConsumeAutoOpenSend?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpenSend]);
-  // Kumpulkan semua path foto (photo_path lama + photo_paths[] baru), dedup.
-  const photoPaths = useMemo(() => {
-    const all = [prep.photo_path, ...(prep.photo_paths ?? [])].filter((x): x is string => !!x);
-    return Array.from(new Set(all));
-  }, [prep.photo_path, prep.photo_paths]);
+  // Pasangan foto ↔ lokasi (SSOT di src/lib/request.ts). Urutan foto ke-N
+  // selalu memakai lokasi ke-N yang dikirim pegawai.
+  const photoPairs = useMemo(() => requestPhotoLocationPairs(prep), [prep]);
+  const photoPaths = useMemo(() => photoPairs.map((p) => p.path), [photoPairs]);
   useEffect(() => { requestSignedUrl(photoPaths[0] ?? null, 60 * 60).then(setPhoto); }, [photoPaths]);
   const sold = isSentPrep(prep);
   const unitFor = (wid: string) => {
@@ -2468,10 +2467,23 @@ function PrepCard({
             <span className="text-ms-2xs italic text-muted-foreground">Item sudah dikonversi ke penjualan</span>
           )}
         </div>
-        {prep.location_url && (
-          <a href={prep.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-ms-1 text-primary hover:underline">
-            <MapPin className="h-3 w-3" /> Lokasi
-          </a>
+        {photoPairs.some((p) => p.locationUrl) && (
+          <div className="flex flex-wrap items-center gap-ms-2">
+            {photoPairs.map((p, i) =>
+              p.locationUrl ? (
+                <a
+                  key={p.path}
+                  href={p.locationUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-ms-1 text-primary hover:underline"
+                >
+                  <MapPin className="h-3 w-3" />
+                  {photoPairs.length > 1 ? `Lokasi foto ${i + 1}` : "Lokasi"}
+                </a>
+              ) : null,
+            )}
+          </div>
         )}
         {prep.note && <div className="text-muted-foreground">{prep.note}</div>}
         <div className="text-muted-foreground">{new Date(prep.created_at).toLocaleString("id-ID")}</div>
@@ -2492,6 +2504,7 @@ function PrepCard({
           titleName={titleName}
           customers={customers}
           photoPaths={photoPaths}
+          photoPairs={photoPairs}
           unitFor={unitFor}
           onSent={() => { setSendOpen(false); onSent(); }}
           onLocationSaved={onLocationSaved}
@@ -2511,7 +2524,7 @@ function PrepCard({
 // -----------------------------------------------------------------------
 function SendPrepToCustomerDialog({
   open, onClose, channel = "whatsapp", prep, items, warehouseItems, titleItems, titleName,
-  customers, photoPaths, unitFor, onSent, onLocationSaved,
+  customers, photoPaths, photoPairs, unitFor, onSent, onLocationSaved,
 }: {
   open: boolean;
   onClose: () => void;
@@ -2523,6 +2536,8 @@ function SendPrepToCustomerDialog({
   titleName: string;
   customers: CustomerRow[];
   photoPaths: string[];
+  /** Pasangan foto ↔ lokasi, sejajar index dengan `photoPaths`. */
+  photoPairs: Array<{ path: string; locationUrl: string | null }>;
   unitFor: (wid: string) => string;
   onSent: () => void;
   /** Dipanggil setelah owner menyimpan `location_url` dari banner peringatan
@@ -2607,9 +2622,12 @@ function SendPrepToCustomerDialog({
     errorMessage: sendError,
   });
 
+  // Lokasi utama = lokasi foto ke-1 (fallback ke kolom lama `location_url`).
+  const primaryLocation = photoPairs[0]?.locationUrl ?? prep.location_url ?? "";
+
   function buildCaption(): string {
     // SSOT template diatur di /pengaturan-pesan-wa.
-    return renderWaCaption(waTpl.template, waTpl.options, {
+    const base = renderWaCaption(waTpl.template, waTpl.options, {
       title: titleName,
       items: items.map((it) => {
         const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
@@ -2620,10 +2638,17 @@ function SendPrepToCustomerDialog({
         };
       }),
       payment,
-      locationUrl: prep.location_url ?? "",
+      locationUrl: primaryLocation,
       note: note.trim() || null,
       customerName: resolvedParty.name || null,
     });
+    // Multi-lokasi: cantumkan pasangan foto ↔ lokasi sesuai urutan kirim,
+    // supaya pembeli tahu foto ke-N diambil di titik ke-N.
+    const extras = photoPairs
+      .map((p, i) => (i > 0 && p.locationUrl ? `📍 Foto ${i + 1}: ${p.locationUrl}` : ""))
+      .filter(Boolean);
+    if (extras.length === 0) return base;
+    return [base.trimEnd(), "", ...extras].join("\n");
   }
 
   async function fetchPhotoFiles(): Promise<File[]> {
@@ -2710,7 +2735,7 @@ function SendPrepToCustomerDialog({
         const res = await shareToChat({
           conversationId: conv.id,
           caption: text,
-          locationUrl: prep.location_url ?? null,
+          locationUrl: primaryLocation || null,
           shots,
         });
         if (res.status !== "shared") {
@@ -2949,12 +2974,15 @@ function SendPrepToCustomerDialog({
       channel={channel === "chat" ? "chat" : "wa"}
       photoCount={photoPaths.length}
       busy={busy}
-      locationMissing={!(prep.location_url ?? "").trim()}
+      locationMissing={!primaryLocation.trim()}
       locationHint="Buka kartu penyiapan Request → isi kolom Lokasi ambil (link Google Maps), lalu ulangi tombol Kirim."
       onSaveLocation={async (url) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // Simpan sekaligus ke slot lokasi foto ke-1 supaya pasangan
+        // foto ↔ lokasi tetap sejajar dengan urutan `photo_paths`.
+        const nextLocs = photoPairs.map((p, i) => (i === 0 ? url : (p.locationUrl ?? "")));
         const { error } = await (supabase.from as any)("request_preparations")
-          .update({ location_url: url })
+          .update({ location_url: url, location_urls: nextLocs })
           .eq("id", prep.id);
         if (error) throw error;
         await Promise.resolve(onLocationSaved?.());
@@ -3216,6 +3244,8 @@ function PrepEditorDialog({
       const { data: prep, error } = await sb.from("request_preparations").insert({
         user_id: uid, title_id: title.id, photo_path: photoPath,
         location_url: locUrl.trim() || null,
+        // Satu foto → satu slot lokasi, tetap sejajar index dengan foto.
+        location_urls: [locUrl.trim()],
         gps_lat: gps?.lat ?? null, gps_lng: gps?.lng ?? null,
         note: note.trim() || null, created_by: "admin",
       }).select("id").single();
