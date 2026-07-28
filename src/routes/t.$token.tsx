@@ -2629,6 +2629,10 @@ function ItemCard({
   const [locUrl, setLocUrl] = useState("");
   const [gps, setGps] = useState<{ lat: number; lng: number; accuracy?: number | null } | null>(null);
   const [note, setNote] = useState("");
+  // Link lokasi tambahan untuk paket ke-2, ke-3, dst. Index 0 di sini =
+  // "Lokasi foto 2" (foto pertama selalu memakai `locUrl` utama), supaya
+  // urutan foto ↔ urutan link konsisten saat dikirim ke WA.
+  const [extraLocs, setExtraLocs] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [refSigned, setRefSigned] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
