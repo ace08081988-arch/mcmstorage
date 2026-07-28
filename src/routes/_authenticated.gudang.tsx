@@ -3000,6 +3000,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     setPricePerBase("");
     setPaymentMethod(defaultPayment);
     setInputKarton(false);
+    draft.clear();
     toast.success("Form direset");
   }
 
@@ -3052,6 +3053,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (error) { notifyError(error); return; }
     toast.success(`Pembelian dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok bertambah`);
     setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage(""); setPricePerBase(""); setNewImagePath(null);
+    draft.clear();
     onChanged();
   }
 
