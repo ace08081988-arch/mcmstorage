@@ -1288,18 +1288,43 @@ function ChatRoomPage() {
     setReplyTo(null);
   };
 
-  // Auto-retry failed messages once the browser is back online.
+  // Auto-retry: (1) langsung saat koneksi kembali, (2) backoff bertingkat
+  // 2s → 4s → 8s untuk maksimal 3 percobaan otomatis. Setelah itu pesan
+  // berhenti di status "gagal" dan menunggu keputusan pengguna, supaya
+  // tidak ada pengiriman berulang tanpa henti di jaringan buruk.
+  const MAX_AUTO_ATTEMPTS = 3;
+  const retryTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  useEffect(() => {
+    const timers = retryTimers.current;
+    return () => { timers.forEach((t) => clearTimeout(t)); timers.clear(); };
+  }, []);
   const prevOnlineRef = useRef(online);
   useEffect(() => {
-    if (!prevOnlineRef.current && online) {
-      outbox
-        .filter((o) => o.status === "failed")
-        .forEach((o) => {
-          void doSend(o);
-        });
-    }
+    const backOnline = !prevOnlineRef.current && online;
     prevOnlineRef.current = online;
+    if (!online) return;
+    for (const o of outbox) {
+      const attempts = o.attempts ?? 0;
+      const isQueued = o.status === "queued";
+      const retryable = isQueued || (o.status === "failed" && attempts < MAX_AUTO_ATTEMPTS);
+      if (!retryable) continue;
+      if (retryTimers.current.has(o.tempId)) continue;
+      const delay = backOnline || isQueued ? 0 : Math.min(8000, 2000 * 2 ** (attempts - 1));
+      const t = setTimeout(() => {
+        retryTimers.current.delete(o.tempId);
+        const live = outboxRef.current.find((x) => x.tempId === o.tempId);
+        if (live && live.status !== "sending") void doSend(live);
+      }, delay);
+      retryTimers.current.set(o.tempId, t);
+    }
   }, [online, outbox, doSend]);
+
+  const failedCount = outbox.filter((o) => o.status === "failed").length;
+  const retryAllFailed = useCallback(() => {
+    outboxRef.current
+      .filter((o) => o.status === "failed")
+      .forEach((o) => void doSend({ ...o, attempts: 0 }));
+  }, [doSend]);
 
   // Group messages by day
   const grouped = useMemo(() => {
