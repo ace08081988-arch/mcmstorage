@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { autoLockKey, isAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
@@ -27,6 +27,12 @@ import { withPlainTimeout } from "@/lib/supabase-timeout";
 
 function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Halaman percakapan chat tampil "immersive" (layar penuh, header
+  // sendiri): tanpa AppHeader agar tidak ada header ganda, dan tanpa
+  // padding bottom nav supaya dokumen tidak ikut men-scroll — inilah
+  // penyebab header percakapan terlihat naik-turun saat menggulir.
+  const immersive = /^\/chat\/[^/]+/.test(pathname);
   const [locked, setLockedState] = useState(false);
   const [cfgVer, setCfgVer] = useState(0);
   // H23: keep an always-current uid in a ref so pagehide/beforeunload
