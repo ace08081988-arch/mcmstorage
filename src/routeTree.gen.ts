@@ -38,6 +38,7 @@ import { Route as AuthenticatedStatusNotifikasiRouteImport } from './routes/_aut
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedRekonsiliasiPiutangRouteImport } from './routes/_authenticated.rekonsiliasi-piutang'
+import { Route as AuthenticatedRekonsiliasiKontakRouteImport } from './routes/_authenticated.rekonsiliasi-kontak'
 import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPerfRouteImport } from './routes/_authenticated.perf'
@@ -295,6 +296,12 @@ const AuthenticatedRekonsiliasiPiutangRoute =
   AuthenticatedRekonsiliasiPiutangRouteImport.update({
     id: '/rekonsiliasi-piutang',
     path: '/rekonsiliasi-piutang',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRekonsiliasiKontakRoute =
+  AuthenticatedRekonsiliasiKontakRouteImport.update({
+    id: '/rekonsiliasi-kontak',
+    path: '/rekonsiliasi-kontak',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedProfilChatRoute = AuthenticatedProfilChatRouteImport.update({
@@ -989,6 +996,7 @@ export interface FileRoutesByFullPath {
   '/perf': typeof AuthenticatedPerfRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
+  '/rekonsiliasi-kontak': typeof AuthenticatedRekonsiliasiKontakRoute
   '/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
@@ -1126,6 +1134,7 @@ export interface FileRoutesByTo {
   '/perf': typeof AuthenticatedPerfRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
+  '/rekonsiliasi-kontak': typeof AuthenticatedRekonsiliasiKontakRoute
   '/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
@@ -1269,6 +1278,7 @@ export interface FileRoutesById {
   '/_authenticated/perf': typeof AuthenticatedPerfRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/profil-chat': typeof AuthenticatedProfilChatRoute
+  '/_authenticated/rekonsiliasi-kontak': typeof AuthenticatedRekonsiliasiKontakRoute
   '/_authenticated/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
@@ -1413,6 +1423,7 @@ export interface FileRouteTypes {
     | '/perf'
     | '/profil'
     | '/profil-chat'
+    | '/rekonsiliasi-kontak'
     | '/rekonsiliasi-piutang'
     | '/request'
     | '/sesi'
@@ -1550,6 +1561,7 @@ export interface FileRouteTypes {
     | '/perf'
     | '/profil'
     | '/profil-chat'
+    | '/rekonsiliasi-kontak'
     | '/rekonsiliasi-piutang'
     | '/request'
     | '/sesi'
@@ -1692,6 +1704,7 @@ export interface FileRouteTypes {
     | '/_authenticated/perf'
     | '/_authenticated/profil'
     | '/_authenticated/profil-chat'
+    | '/_authenticated/rekonsiliasi-kontak'
     | '/_authenticated/rekonsiliasi-piutang'
     | '/_authenticated/request'
     | '/_authenticated/sesi'
@@ -2049,6 +2062,13 @@ declare module '@tanstack/react-router' {
       path: '/rekonsiliasi-piutang'
       fullPath: '/rekonsiliasi-piutang'
       preLoaderRoute: typeof AuthenticatedRekonsiliasiPiutangRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/rekonsiliasi-kontak': {
+      id: '/_authenticated/rekonsiliasi-kontak'
+      path: '/rekonsiliasi-kontak'
+      fullPath: '/rekonsiliasi-kontak'
+      preLoaderRoute: typeof AuthenticatedRekonsiliasiKontakRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/profil-chat': {
@@ -2954,6 +2974,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPerfRoute: typeof AuthenticatedPerfRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedProfilChatRoute: typeof AuthenticatedProfilChatRoute
+  AuthenticatedRekonsiliasiKontakRoute: typeof AuthenticatedRekonsiliasiKontakRoute
   AuthenticatedRekonsiliasiPiutangRoute: typeof AuthenticatedRekonsiliasiPiutangRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
@@ -3025,6 +3046,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPerfRoute: AuthenticatedPerfRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedProfilChatRoute: AuthenticatedProfilChatRoute,
+  AuthenticatedRekonsiliasiKontakRoute: AuthenticatedRekonsiliasiKontakRoute,
   AuthenticatedRekonsiliasiPiutangRoute: AuthenticatedRekonsiliasiPiutangRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
