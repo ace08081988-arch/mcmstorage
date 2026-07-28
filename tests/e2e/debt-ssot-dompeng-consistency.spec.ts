@@ -68,10 +68,16 @@ test.describe("SSOT hutang Dompeng — harness", () => {
     const list = await surfaceAmount(page, "surface-chat-list");
     const header = await surfaceAmount(page, "surface-chat-header");
     const hutangPage = await surfaceAmount(page, "surface-hutang-page");
+    const partyCard = await surfaceAmount(
+      page,
+      `surface-party-card-${PARTY.trim().toLowerCase().replace(/\s+/g, " ")}`,
+    );
 
     expect(list).toBe(EXPECTED);
     expect(header).toBe(list);
     expect(hutangPage).toBe(list);
+    // Kartu per-kontak wajib membaca SSOT yang sama, bukan hanya `debts`.
+    expect(partyCard).toBe(list);
   });
 
   test("perubahan SSOT ikut terlihat serentak di semua permukaan", async ({ page }) => {
@@ -84,6 +90,10 @@ test.describe("SSOT hutang Dompeng — harness", () => {
       surfaceAmount(page, "surface-chat-list"),
       surfaceAmount(page, "surface-chat-header"),
       surfaceAmount(page, "surface-hutang-page"),
+      surfaceAmount(
+        page,
+        `surface-party-card-${PARTY.trim().toLowerCase().replace(/\s+/g, " ")}`,
+      ),
     ]);
     expect(new Set(values).size, `nilai berbeda: ${values.join(" / ")}`).toBe(1);
     expect(values[0]).toBe(other);
@@ -126,5 +136,18 @@ test.describe("SSOT hutang Dompeng — halaman asli", () => {
       pageValues,
       `chat=${chatAmount} vs hutang-piutang=${pageValues.join("/")}`,
     ).toContain(chatAmount);
+
+    // 3) Kartu per-kontak (grup) di halaman Hutang & Piutang.
+    const partyCard = page
+      .getByTestId(`party-card-${PARTY.trim().toLowerCase().replace(/\s+/g, " ")}`)
+      .first();
+    const partyCardVisible = await partyCard.isVisible().catch(() => false);
+    test.skip(!partyCardVisible, `Kartu per-kontak "${PARTY}" tidak tampil.`);
+    const cardSisaText = await partyCard.getByTestId("party-card-sisa").first().innerText();
+    const cardSisa = Math.max(...rupiahValues(cardSisaText));
+    expect(
+      cardSisa,
+      `kartu per-kontak=${cardSisa} vs chat=${chatAmount}`,
+    ).toBe(chatAmount);
   });
 });
