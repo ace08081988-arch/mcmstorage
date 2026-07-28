@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Verifikasi perilaku draft saat localStorage ditolak / kuota penuh.
  * Kontraknya: input TIDAK boleh hilang — jatuh ke memori halaman, dan
