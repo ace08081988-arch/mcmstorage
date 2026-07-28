@@ -19,6 +19,11 @@ import {
   ACCENTS,
   BG_PRESETS,
   LS,
+  DEFAULT_FX,
+  readSurfaceFx,
+  writeSurfaceFx,
+  applySurfaceFx,
+  type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
@@ -75,6 +80,7 @@ type Preset = {
     size: FontSize;
     compact: boolean;
     fontScale: number;
+    fx?: Partial<SurfaceFx>;
   };
 };
 
@@ -126,6 +132,42 @@ const PRESETS: Preset[] = [
   },
 ];
 
+const FX_PRESETS: Preset[] = [
+  {
+    id: "kaca",
+    label: "Kaca (Glass)",
+    desc: "Permukaan tembus pandang + blur lembut",
+    icon: "🧊",
+    values: {
+      theme: "dark", accent: "cyan", radius: 1, font: "display", size: "md",
+      compact: false, fontScale: 1,
+      fx: { glass: true, surfaceOpacity: 0.62, surfaceBlur: 18, sidebarOpacity: 0.55, shadow: 1.6, saturation: 1.1, accentGradient: true },
+    },
+  },
+  {
+    id: "neon",
+    label: "Neon Malam",
+    desc: "Gelap pekat, aksen indigo, bayangan dalam",
+    icon: "🌌",
+    values: {
+      theme: "dark", accent: "indigo", radius: 0.75, font: "sans", size: "md",
+      compact: true, fontScale: 1,
+      fx: { glass: true, surfaceOpacity: 0.8, surfaceBlur: 10, sidebarOpacity: 0.7, shadow: 2.4, saturation: 1.25, accentGradient: true },
+    },
+  },
+  {
+    id: "kertas",
+    label: "Kertas",
+    desc: "Terang, datar, tanpa bayangan",
+    icon: "📄",
+    values: {
+      theme: "light", accent: "slate", radius: 0.25, font: "serif", size: "md",
+      compact: false, fontScale: 1,
+      fx: { glass: false, surfaceOpacity: 1, surfaceBlur: 0, sidebarOpacity: 1, shadow: 0, saturation: 0.92, accentGradient: false },
+    },
+  },
+];
+
 function readTheme(): Theme {
   return (typeof window !== "undefined"
     ? ((localStorage.getItem(LS.theme) as Theme | null) ?? "dark")
@@ -156,6 +198,7 @@ type Draft = {
   fontScale: number;
   highContrast: boolean;
   reduceMotion: boolean;
+  fx: SurfaceFx;
 };
 
 function resolveThemeLocal(t: Theme): "light" | "dark" {
@@ -192,6 +235,7 @@ function applyDraftDom(v: Draft) {
   root.style.setProperty("--app-font-scale", String(v.fontScale));
   root.dataset.highContrast = v.highContrast ? "on" : "off";
   root.dataset.reduceMotion = v.reduceMotion ? "on" : "off";
+  applySurfaceFx(v.fx);
 }
 
 function readSnapshot(prefsSeed: { fontScale: number; highContrast: boolean; reduceMotion: boolean }): Draft {
@@ -200,6 +244,7 @@ function readSnapshot(prefsSeed: { fontScale: number; highContrast: boolean; red
       theme: "dark", font: "sans", size: "md", accent: "emerald",
       radius: 0.625, bgImage: "", bgOverlay: 0.7, bgBlur: 0,
       compact: true, fontScale: 1, highContrast: false, reduceMotion: false,
+      fx: { ...DEFAULT_FX },
     };
   }
   return {
@@ -215,6 +260,7 @@ function readSnapshot(prefsSeed: { fontScale: number; highContrast: boolean; red
     fontScale: prefsSeed.fontScale,
     highContrast: prefsSeed.highContrast,
     reduceMotion: prefsSeed.reduceMotion,
+    fx: readSurfaceFx(),
   };
 }
 
@@ -231,6 +277,7 @@ const DEFAULT_DRAFT: Draft = {
   fontScale: 1,
   highContrast: false,
   reduceMotion: false,
+  fx: { ...DEFAULT_FX },
 };
 
 function draftsEqual(a: Draft, b: Draft): boolean {
@@ -246,7 +293,8 @@ function draftsEqual(a: Draft, b: Draft): boolean {
     a.compact === b.compact &&
     a.fontScale === b.fontScale &&
     a.highContrast === b.highContrast &&
-    a.reduceMotion === b.reduceMotion
+    a.reduceMotion === b.reduceMotion &&
+    JSON.stringify(a.fx) === JSON.stringify(b.fx)
   );
 }
 
