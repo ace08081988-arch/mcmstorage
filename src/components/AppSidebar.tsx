@@ -330,6 +330,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
     mobilePrimary: true,
     items: [
       { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
+      { title: "Rekonsiliasi Kontak", url: "/rekonsiliasi-kontak", icon: Users },
     ],
   },
   {
