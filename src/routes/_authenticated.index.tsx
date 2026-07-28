@@ -1220,53 +1220,54 @@ function Index() {
           }}
         />
 
-        <header className="relative border-b border-primary/15 bg-background/80 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
-            <div className="flex min-w-0 flex-1 items-center gap-ms-2.5">
+        <header className="sticky top-0 z-20 border-b border-primary/12 bg-background/72 backdrop-blur-xl">
+          <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
+            <div className="flex min-w-0 items-center gap-ms-2.5">
               <span
                 aria-hidden
-                className="grid h-8 w-8 place-items-center rounded-full border border-primary/60 bg-card text-[0.8125rem] font-semibold tracking-wider text-primary shadow-[0_0_18px_color-mix(in_oklab,var(--primary)_25%,transparent)]"
+                className="numeral-editorial grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/45 bg-card text-[0.9375rem] shadow-[0_0_22px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
               >
                 M
               </span>
               <div className="min-w-0 leading-tight">
-                <p className="truncate text-[0.9375rem] font-semibold tracking-tight text-foreground">
+                <p className="text-premium-heading truncate text-[1.0625rem] text-foreground">
                   MCM Storage
                 </p>
-                <p className="truncate text-[0.625rem] uppercase tracking-[0.18em] text-primary/70">
-                  Retail Operations · Premium
+                <p className="truncate text-[0.5625rem] font-semibold uppercase tracking-[0.26em] text-primary/65">
+                  Retail Operations
                 </p>
               </div>
             </div>
+            <div className="flex shrink-0 items-center gap-ms-2">
             {lockMenu(true, "inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/25 bg-card text-foreground hover:border-primary/60")}
             <button
               onClick={signOut}
-              className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-ms-3 text-[0.6875rem] font-medium text-foreground hover:border-primary/60"
+              className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-ms-3 text-[0.6875rem] font-medium tracking-wide text-foreground transition-colors hover:border-primary/60 hover:bg-accent"
             >
               Keluar
             </button>
+            </div>
           </div>
         </header>
 
-        <main className="relative mx-auto w-full max-w-md space-y-7 px-ms-4 pt-6 pb-12 sm:max-w-2xl sm:px-ms-6 sm:pt-8">
+        <main className="relative mx-auto w-full max-w-md space-y-8 px-ms-4 pt-7 pb-14 sm:max-w-2xl sm:px-ms-6 sm:pt-10">
           {/* Hero: alur kerja aplikasi */}
-          <section
-            className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-background p-ms-5 shadow-[0_20px_60px_-30px_color-mix(in_oklab,var(--primary)_35%,transparent)] sm:p-ms-6"
-          >
+          <section className="surface-editorial overflow-hidden p-ms-5 sm:p-ms-6">
             <h2 className="sr-only">Alur Kerja</h2>
-            <div className="flex items-center gap-ms-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
-              <span className="h-px w-6 bg-primary/60" />
+            <span className="eyebrow">
+              <span className="hairline w-6" />
               Alur Kerja
-            </div>
-            <h1 className="mt-3 text-[1.5rem] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-[1.75rem]">
-              Dari <span className="text-primary">stok</span> ke tangan pelanggan —
-              satu alur, tanpa kebocoran.
+            </span>
+            <h1 className="text-premium-heading mt-3.5 text-[1.75rem] leading-[1.12] text-foreground sm:text-[2.125rem]">
+              Dari <em className="not-italic text-primary">stok</em> ke tangan
+              pelanggan — satu alur, tanpa kebocoran.
             </h1>
-            <p className="mt-2.5 text-[0.8125rem] leading-relaxed text-muted-foreground">
+            <p className="mt-3 max-w-prose text-[0.84375rem] leading-relaxed text-muted-foreground">
               Empat langkah inti yang menjalankan MCM Storage setiap hari.
             </p>
+            <div className="hairline mt-5" />
 
-            <ol className="mt-6 space-ms-2.5">
+            <ol className="mt-5 space-ms-2.5">
               {[
                 { n: "01", to: "/gudang", t: "Gudang", d: "Kelola stok, pembelian, dan harga modal." },
                 { n: "02", to: "/ecer", t: "Siapkan Pesanan", d: "Ecer & request — timbang, kemas, verifikasi." },
@@ -1277,13 +1278,13 @@ function Index() {
                   <Link
                     to={step.to}
                     preload="intent"
-                    className="group flex items-center gap-ms-3 rounded-xl border border-primary/15 bg-card px-ms-3.5 py-ms-3 transition-all hover:border-primary/50 hover:bg-accent hover:translate-x-0.5"
+                    className="surface-quiet group flex items-center gap-ms-3 px-ms-3.5 py-ms-3"
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-background font-serif text-[0.84375rem] tracking-wider text-primary">
+                    <span className="numeral-editorial grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary/35 bg-background text-[0.9375rem]">
                       {step.n}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[0.875rem] font-semibold tracking-tight text-foreground">
+                      <span className="text-premium-heading block text-[1.0625rem] text-foreground">
                         {step.t}
                       </span>
                       <span className="mt-0.5 block truncate text-[0.71875rem] leading-snug text-muted-foreground">
@@ -1292,7 +1293,7 @@ function Index() {
                     </span>
                     <span
                       aria-hidden
-                      className="text-primary/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                      className="shrink-0 text-primary/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
                     >
                       →
                     </span>
@@ -1305,18 +1306,18 @@ function Index() {
           {/* CTA inti: kategori */}
           <section className="space-ms-3">
             <h2 className="sr-only">Kategori</h2>
-            <div className="flex items-center gap-ms-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
-              <span className="h-px w-6 bg-primary/50" />
+            <span className="eyebrow">
+              <span className="hairline w-6" />
               {categories.length === 0 ? "Mulai" : "Kategori"}
-            </div>
+            </span>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 addCategory(newCatName);
               }}
-              className="rounded-xl border border-primary/20 bg-card p-ms-3.5"
+              className="surface-editorial p-ms-4"
             >
-              <label className="mb-2 block text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">
+              <label className="text-premium-heading mb-2.5 block text-[1.0625rem] text-foreground">
                 {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori"}
               </label>
               <div className="flex gap-ms-2">
@@ -1324,11 +1325,11 @@ function Index() {
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   placeholder="Sembako, Pakaian, 1 gram…"
-                  className="h-10 w-full rounded-lg border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                  className="h-11 w-full min-w-0 rounded-xl border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
                 />
                 <button
                   type="submit"
-                  className="h-10 shrink-0 rounded-lg bg-primary px-ms-4 text-[0.78125rem] font-semibold tracking-tight text-primary-foreground shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
+                  className="h-11 shrink-0 rounded-xl bg-primary px-ms-4 text-[0.78125rem] font-semibold tracking-tight text-primary-foreground shadow-[0_10px_24px_-10px_color-mix(in_oklab,var(--primary)_75%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
                 >
                   Buat
                 </button>
