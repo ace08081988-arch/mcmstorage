@@ -2524,7 +2524,7 @@ function PrepCard({
 // -----------------------------------------------------------------------
 function SendPrepToCustomerDialog({
   open, onClose, channel = "whatsapp", prep, items, warehouseItems, titleItems, titleName,
-  customers, photoPaths, unitFor, onSent, onLocationSaved,
+  customers, photoPaths, photoPairs, unitFor, onSent, onLocationSaved,
 }: {
   open: boolean;
   onClose: () => void;
@@ -2536,6 +2536,8 @@ function SendPrepToCustomerDialog({
   titleName: string;
   customers: CustomerRow[];
   photoPaths: string[];
+  /** Pasangan foto ↔ lokasi, sejajar index dengan `photoPaths`. */
+  photoPairs: Array<{ path: string; locationUrl: string | null }>;
   unitFor: (wid: string) => string;
   onSent: () => void;
   /** Dipanggil setelah owner menyimpan `location_url` dari banner peringatan
