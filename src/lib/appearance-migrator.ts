@@ -136,8 +136,12 @@ export function migrateImportedAppearance(
       ap2.reduceMotion ?? raw.reduceMotion,
       current.reduceMotion,
     ),
-    fx: migrateFx(raw.fx ?? ap.fx, current.fx),
   };
+
+  // `fx` additive: kuncinya hanya muncul kalau memang ada nilainya, supaya
+  // bentuk patch untuk payload lama tetap persis seperti kontrak sebelumnya.
+  const fx = migrateFx(raw.fx ?? ap.fx, current.fx);
+  if (fx) patch.fx = fx;
 
   return { ok: true, patch, forward, fromVersion };
 }
