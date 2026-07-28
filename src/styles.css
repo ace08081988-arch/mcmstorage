@@ -1066,3 +1066,52 @@ html[data-reduce-motion="on"] [data-press-scope="on"] :is(
     transform: none !important;
   }
 }
+
+/* ==========================================================================
+   Efek permukaan modern: kaca (glass), transparansi, bayangan, saturasi.
+   Variabel diset dari Pengaturan → Tampilan (applySurfaceFx).
+   ========================================================================== */
+html[data-glass="1"] [data-slot="card"],
+html[data-glass="1"] [data-slot="popover-content"],
+html[data-glass="1"] [data-slot="dropdown-menu-content"],
+html[data-glass="1"] [data-slot="dialog-content"],
+html[data-glass="1"] [data-slot="sheet-content"] {
+  background-color: color-mix(in oklab, var(--card) calc(var(--app-surface-opacity, 1) * 100%), transparent);
+  backdrop-filter: blur(var(--app-surface-blur, 12px)) saturate(140%);
+  border-color: color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+
+html[data-glass="1"] [data-slot="sidebar-container"],
+html[data-glass="1"] [data-slot="sidebar-inner"],
+html[data-glass="1"] .app-sidebar-surface {
+  background-color: color-mix(in oklab, var(--sidebar, var(--card)) calc(var(--app-sidebar-opacity, 1) * 100%), transparent);
+  backdrop-filter: blur(var(--app-surface-blur, 12px)) saturate(140%);
+}
+
+/* Kedalaman bayangan (0 = datar, 3 = dramatis) */
+html [data-slot="card"] {
+  box-shadow:
+    0 calc(var(--app-shadow, 1) * 1px) calc(var(--app-shadow, 1) * 2px)
+      color-mix(in oklab, var(--foreground) calc(var(--app-shadow, 1) * 4%), transparent),
+    0 calc(var(--app-shadow, 1) * 6px) calc(var(--app-shadow, 1) * 16px)
+      color-mix(in oklab, var(--foreground) calc(var(--app-shadow, 1) * 5%), transparent);
+}
+
+/* Saturasi warna antarmuka */
+html {
+  --app-saturation: 1;
+}
+body {
+  filter: saturate(var(--app-saturation, 1));
+}
+
+/* Gradien pada elemen beraksen */
+html[data-accent-gradient="1"] [data-slot="button"].bg-primary,
+html[data-accent-gradient="1"] button.bg-primary,
+html[data-accent-gradient="1"] .bg-primary {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--primary) 100%, transparent),
+    color-mix(in oklab, var(--primary) 62%, white)
+  );
+}

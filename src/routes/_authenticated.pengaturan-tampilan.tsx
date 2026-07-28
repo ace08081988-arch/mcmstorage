@@ -19,6 +19,11 @@ import {
   ACCENTS,
   BG_PRESETS,
   LS,
+  DEFAULT_FX,
+  readSurfaceFx,
+  writeSurfaceFx,
+  applySurfaceFx,
+  type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
@@ -75,6 +80,7 @@ type Preset = {
     size: FontSize;
     compact: boolean;
     fontScale: number;
+    fx?: Partial<SurfaceFx>;
   };
 };
 
@@ -126,6 +132,42 @@ const PRESETS: Preset[] = [
   },
 ];
 
+const FX_PRESETS: Preset[] = [
+  {
+    id: "kaca",
+    label: "Kaca (Glass)",
+    desc: "Permukaan tembus pandang + blur lembut",
+    icon: "🧊",
+    values: {
+      theme: "dark", accent: "cyan", radius: 1, font: "display", size: "md",
+      compact: false, fontScale: 1,
+      fx: { glass: true, surfaceOpacity: 0.62, surfaceBlur: 18, sidebarOpacity: 0.55, shadow: 1.6, saturation: 1.1, accentGradient: true },
+    },
+  },
+  {
+    id: "neon",
+    label: "Neon Malam",
+    desc: "Gelap pekat, aksen indigo, bayangan dalam",
+    icon: "🌌",
+    values: {
+      theme: "dark", accent: "indigo", radius: 0.75, font: "sans", size: "md",
+      compact: true, fontScale: 1,
+      fx: { glass: true, surfaceOpacity: 0.8, surfaceBlur: 10, sidebarOpacity: 0.7, shadow: 2.4, saturation: 1.25, accentGradient: true },
+    },
+  },
+  {
+    id: "kertas",
+    label: "Kertas",
+    desc: "Terang, datar, tanpa bayangan",
+    icon: "📄",
+    values: {
+      theme: "light", accent: "slate", radius: 0.25, font: "serif", size: "md",
+      compact: false, fontScale: 1,
+      fx: { glass: false, surfaceOpacity: 1, surfaceBlur: 0, sidebarOpacity: 1, shadow: 0, saturation: 0.92, accentGradient: false },
+    },
+  },
+];
+
 function readTheme(): Theme {
   return (typeof window !== "undefined"
     ? ((localStorage.getItem(LS.theme) as Theme | null) ?? "dark")
@@ -156,6 +198,7 @@ type Draft = {
   fontScale: number;
   highContrast: boolean;
   reduceMotion: boolean;
+  fx: SurfaceFx;
 };
 
 function resolveThemeLocal(t: Theme): "light" | "dark" {
@@ -192,6 +235,7 @@ function applyDraftDom(v: Draft) {
   root.style.setProperty("--app-font-scale", String(v.fontScale));
   root.dataset.highContrast = v.highContrast ? "on" : "off";
   root.dataset.reduceMotion = v.reduceMotion ? "on" : "off";
+  applySurfaceFx(v.fx);
 }
 
 function readSnapshot(prefsSeed: { fontScale: number; highContrast: boolean; reduceMotion: boolean }): Draft {
@@ -200,6 +244,7 @@ function readSnapshot(prefsSeed: { fontScale: number; highContrast: boolean; red
       theme: "dark", font: "sans", size: "md", accent: "emerald",
       radius: 0.625, bgImage: "", bgOverlay: 0.7, bgBlur: 0,
       compact: true, fontScale: 1, highContrast: false, reduceMotion: false,
+      fx: { ...DEFAULT_FX },
     };
   }
   return {
@@ -215,6 +260,7 @@ function readSnapshot(prefsSeed: { fontScale: number; highContrast: boolean; red
     fontScale: prefsSeed.fontScale,
     highContrast: prefsSeed.highContrast,
     reduceMotion: prefsSeed.reduceMotion,
+    fx: readSurfaceFx(),
   };
 }
 
@@ -231,6 +277,7 @@ const DEFAULT_DRAFT: Draft = {
   fontScale: 1,
   highContrast: false,
   reduceMotion: false,
+  fx: { ...DEFAULT_FX },
 };
 
 function draftsEqual(a: Draft, b: Draft): boolean {
@@ -246,7 +293,8 @@ function draftsEqual(a: Draft, b: Draft): boolean {
     a.compact === b.compact &&
     a.fontScale === b.fontScale &&
     a.highContrast === b.highContrast &&
-    a.reduceMotion === b.reduceMotion
+    a.reduceMotion === b.reduceMotion &&
+    JSON.stringify(a.fx) === JSON.stringify(b.fx)
   );
 }
 
@@ -290,6 +338,8 @@ function PengaturanTampilanPage() {
   const dirty = useMemo(() => !draftsEqual(draft, snapshot), [draft, snapshot]);
 
   const patch = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
+  const patchFx = (p: Partial<SurfaceFx>) =>
+    setDraft((d) => ({ ...d, fx: { ...d.fx, ...p } }));
 
   const applyPreset = (p: Preset) => {
     patch({
@@ -300,6 +350,7 @@ function PengaturanTampilanPage() {
       size: p.values.size,
       compact: p.values.compact,
       fontScale: p.values.fontScale,
+      ...(p.values.fx ? { fx: { ...DEFAULT_FX, ...p.values.fx } } : {}),
     });
     toast.success(`Preset "${p.label}" dipratinjau`, {
       description: `${p.desc} — tekan Simpan untuk menerapkan.`,
@@ -336,6 +387,7 @@ function PengaturanTampilanPage() {
     else localStorage.removeItem(LS.bgImage);
     localStorage.setItem(LS.bgOverlay, String(draft.bgOverlay));
     localStorage.setItem(LS.bgBlur, String(draft.bgBlur));
+    writeSurfaceFx(draft.fx);
     applyAppearance();
 
     // Compact + app-prefs
@@ -582,6 +634,18 @@ function PengaturanTampilanPage() {
                 <span className="text-ms-2xs leading-ms-snug text-muted-foreground">{p.desc}</span>
               </button>
             ))}
+            {FX_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => applyPreset(p)}
+                className="group flex flex-col gap-ms-1 rounded-lg border bg-card px-ms-3 py-ms-3 text-left transition-all duration-150 hover:border-primary/50 hover:bg-accent active:scale-[0.98]"
+              >
+                <span className="text-ms-lg leading-none">{p.icon}</span>
+                <span className="text-ms-sm font-semibold">{p.label}</span>
+                <span className="text-ms-2xs leading-ms-snug text-muted-foreground">{p.desc}</span>
+              </button>
+            ))}
           </CardContent>
         </Card>
 
@@ -766,6 +830,157 @@ function PengaturanTampilanPage() {
         </Card>
 
         {/* Latar & transparansi */}
+        {/* Transparansi & efek kaca */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
+              <Sparkles className="h-4 w-4 text-primary" /> Transparansi & efek kaca
+            </CardTitle>
+            <CardDescription className="text-ms-xs">
+              Atur seberapa tembus pandang kartu, sidebar, dan panel — plus blur,
+              bayangan, saturasi warna, dan gradien aksen.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-ms-4">
+            <div className="flex items-start justify-between gap-ms-4">
+              <div>
+                <p className="text-ms-sm font-medium">Efek kaca (glass)</p>
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
+                  Kartu, dialog, dan sidebar jadi tembus pandang dengan blur di belakangnya.
+                </p>
+              </div>
+              <Switch
+                checked={draft.fx.glass}
+                onCheckedChange={(v) => patchFx({ glass: v })}
+              />
+            </div>
+
+            <div className={draft.fx.glass ? "space-ms-4" : "space-ms-4 pointer-events-none opacity-50"}>
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-ms-xs text-muted-foreground">Transparansi kartu & dialog</p>
+                  <span className="text-ms-xs font-semibold tabular-nums">
+                    {Math.round(draft.fx.surfaceOpacity * 100)}% padat
+                  </span>
+                </div>
+                <Slider
+                  value={[draft.fx.surfaceOpacity]}
+                  min={0.3}
+                  max={1}
+                  step={0.02}
+                  onValueChange={(v) => patchFx({ surfaceOpacity: v[0] ?? 1 })}
+                  aria-label="Transparansi kartu"
+                />
+              </div>
+
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-ms-xs text-muted-foreground">Transparansi sidebar & panel</p>
+                  <span className="text-ms-xs font-semibold tabular-nums">
+                    {Math.round(draft.fx.sidebarOpacity * 100)}% padat
+                  </span>
+                </div>
+                <Slider
+                  value={[draft.fx.sidebarOpacity]}
+                  min={0.3}
+                  max={1}
+                  step={0.02}
+                  onValueChange={(v) => patchFx({ sidebarOpacity: v[0] ?? 1 })}
+                  aria-label="Transparansi sidebar"
+                />
+              </div>
+
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-ms-xs text-muted-foreground">Blur di belakang permukaan</p>
+                  <span className="text-ms-xs font-semibold tabular-nums">{draft.fx.surfaceBlur}px</span>
+                </div>
+                <Slider
+                  value={[draft.fx.surfaceBlur]}
+                  min={0}
+                  max={30}
+                  step={1}
+                  onValueChange={(v) => patchFx({ surfaceBlur: v[0] ?? 12 })}
+                  aria-label="Blur permukaan"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <p className="text-ms-xs text-muted-foreground">Kedalaman bayangan</p>
+                <span className="text-ms-xs font-semibold tabular-nums">{draft.fx.shadow.toFixed(1)}×</span>
+              </div>
+              <Slider
+                value={[draft.fx.shadow]}
+                min={0}
+                max={3}
+                step={0.1}
+                onValueChange={(v) => patchFx({ shadow: v[0] ?? 1 })}
+                aria-label="Kedalaman bayangan"
+              />
+              <p className="mt-1 text-ms-2xs text-muted-foreground">0 = datar (flat), 3 = melayang dramatis.</p>
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <p className="text-ms-xs text-muted-foreground">Saturasi warna antarmuka</p>
+                <span className="text-ms-xs font-semibold tabular-nums">{Math.round(draft.fx.saturation * 100)}%</span>
+              </div>
+              <Slider
+                value={[draft.fx.saturation]}
+                min={0.6}
+                max={1.4}
+                step={0.02}
+                onValueChange={(v) => patchFx({ saturation: v[0] ?? 1 })}
+                aria-label="Saturasi warna"
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-ms-4">
+              <div>
+                <p className="text-ms-sm font-medium">Gradien aksen</p>
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
+                  Tombol utama memakai gradasi warna aksen agar terlihat lebih mewah.
+                </p>
+              </div>
+              <Switch
+                checked={draft.fx.accentGradient}
+                onCheckedChange={(v) => patchFx({ accentGradient: v })}
+              />
+            </div>
+
+            {/* Pratinjau mini */}
+            <div className="relative overflow-hidden rounded-lg border p-ms-3">
+              <div
+                aria-hidden
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: draft.bgImage
+                    ? `url("${draft.bgImage}")`
+                    : "linear-gradient(135deg, var(--primary), var(--muted))",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: 0.9,
+                }}
+              />
+              <div
+                className="relative rounded-md border p-ms-3"
+                style={{
+                  backgroundColor: `color-mix(in oklab, var(--card) ${Math.round((draft.fx.glass ? draft.fx.surfaceOpacity : 1) * 100)}%, transparent)`,
+                  backdropFilter: draft.fx.glass ? `blur(${draft.fx.surfaceBlur}px) saturate(140%)` : undefined,
+                }}
+              >
+                <p className="text-ms-sm font-semibold">Pratinjau kartu</p>
+                <p className="text-ms-2xs text-muted-foreground">
+                  Begini tampilan permukaan di atas latar.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Latar & foto */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-ms-2 text-ms-base">
