@@ -1507,14 +1507,24 @@ function SendPrepLinkDialog({
     ctx.fillStyle = "#475569";
     ctx.fillText("Link", W / 2, y);
     y += 30;
-    ctx.font = "500 22px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.fillStyle = "#0f172a";
-    // shrink link to fit
-    let linkText = session.url;
-    while (ctx.measureText(linkText).width > W - 80 && linkText.length > 20) {
-      ctx.font = `500 ${Math.max(14, parseInt(ctx.font) - 1)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
-      if (parseInt(ctx.font) <= 14) break;
+    // Kecilkan font link sampai muat; kalau sudah font minimum masih
+    // kepanjangan, potong teksnya. Loop dibatasi eksplisit oleh fontSize
+    // (dulu memakai parseInt(ctx.font) yang membaca font-weight "500",
+    // sehingga loop tidak pernah berhenti → halaman macet).
+    const linkFont = (size: number) =>
+      `500 ${size}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+    let linkSize = 22;
+    ctx.font = linkFont(linkSize);
+    while (linkSize > 14 && ctx.measureText(session.url).width > W - 80) {
+      linkSize -= 1;
+      ctx.font = linkFont(linkSize);
     }
+    let linkText = session.url;
+    while (linkText.length > 20 && ctx.measureText(`${linkText}…`).width > W - 80) {
+      linkText = linkText.slice(0, -1);
+    }
+    if (linkText !== session.url) linkText = `${linkText}…`;
     ctx.fillText(linkText, W / 2, y);
     y += 60;
     ctx.font = "500 20px system-ui, -apple-system, Segoe UI, sans-serif";
