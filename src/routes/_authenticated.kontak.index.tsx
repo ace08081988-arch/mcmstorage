@@ -500,19 +500,19 @@ function LinkAccountDialog({
                     type="button"
                     disabled={busy}
                     onClick={() => void link(c.user_id)}
-                    className="flex w-full items-center justify-between gap-ms-2 rounded-md border bg-card px-ms-3 py-ms-2 text-left text-ms-sm hover:bg-accent disabled:opacity-50"
+                    className="flex w-full items-center gap-ms-3 rounded-md border bg-card px-ms-3 py-ms-2 text-left text-ms-sm hover:bg-accent disabled:opacity-50"
                   >
                     <span className="min-w-0 flex-1">
-                       <span className="block truncate font-medium">
-                         {c.display_name || c.phone || c.user_id}
-                       </span>
-                       {c.phone && c.display_name && (
-                         <span className="block truncate text-ms-xs text-muted-foreground">
-                           {c.phone}
-                         </span>
-                       )}
+                      <span className="block truncate font-medium">
+                        {c.display_name || c.phone || "Pengguna MCM"}
+                      </span>
+                      {c.phone && (
+                        <PhoneText phone={c.phone} className="mt-0.5 max-w-full" />
+                      )}
                     </span>
-                    <span className="text-ms-xs text-primary">Tautkan</span>
+                    <span className="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-ms-2xs font-medium text-primary">
+                      Tautkan
+                    </span>
                   </button>
                 </li>
               ))
