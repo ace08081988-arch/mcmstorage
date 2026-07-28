@@ -69,6 +69,50 @@ import {
 } from "@/lib/appearance-migrator.telemetry";
 
 const COMPACT_LS = "app-compact-mode";
+
+/** Jejak sinkronisasi terakhir per perangkat (untuk indikator status). */
+type SyncTrace = { pushAt: string | null; pullAt: string | null; error: string | null };
+const SYNC_TRACE_LS = "appearance-sync-trace";
+function readSyncTrace(): SyncTrace {
+  if (typeof window === "undefined") return { pushAt: null, pullAt: null, error: null };
+  try {
+    const raw = localStorage.getItem(scopedKey(SYNC_TRACE_LS));
+    if (!raw) return { pushAt: null, pullAt: null, error: null };
+    const p = JSON.parse(raw) as Partial<SyncTrace>;
+    return {
+      pushAt: typeof p.pushAt === "string" ? p.pushAt : null,
+      pullAt: typeof p.pullAt === "string" ? p.pullAt : null,
+      error: typeof p.error === "string" ? p.error : null,
+    };
+  } catch {
+    return { pushAt: null, pullAt: null, error: null };
+  }
+}
+function writeSyncTrace(t: SyncTrace) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(scopedKey(SYNC_TRACE_LS), JSON.stringify(t));
+  } catch {
+    /* kuota penuh — indikator boleh gagal diam-diam */
+  }
+}
+function fmtStamp(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+}
+function relStamp(iso: string | null): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return "baru saja";
+  if (s < 3600) return `${Math.floor(s / 60)} menit lalu`;
+  if (s < 86400) return `${Math.floor(s / 3600)} jam lalu`;
+  return `${Math.floor(s / 86400)} hari lalu`;
+}
+
 function readCompact(): boolean {
   if (typeof window === "undefined") return false;
   const raw = localStorage.getItem(COMPACT_LS);
