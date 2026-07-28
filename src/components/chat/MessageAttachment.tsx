@@ -73,7 +73,12 @@ export function MessageAttachment(props: {
   if (mime.startsWith("image/")) {
     return url ? (
       <a href={url} target="_blank" rel="noreferrer" className="block max-w-full overflow-hidden rounded-lg">
-        <img src={url} alt={props.name ?? "foto"} className="h-auto max-h-72 w-full max-w-full object-cover sm:max-w-xs" loading="lazy" />
+        <img
+          src={url}
+          alt={props.name ?? "foto"}
+          className="h-auto max-h-72 w-full max-w-full rounded-lg bg-black/5 object-contain sm:max-w-xs"
+          loading="lazy"
+        />
       </a>
     ) : (
       <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-ms-2xs text-muted-foreground">Memuat foto…</div>
