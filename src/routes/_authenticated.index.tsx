@@ -1834,6 +1834,17 @@ function Index() {
             return (
               <li
                 key={p.id}
+                // Lewati render/paint kartu di luar viewport (hemat CPU saat daftar panjang).
+                // Kartu yang sedang dibuka dikecualikan agar tinggi dinamisnya akurat.
+                style={
+                  open
+                    ? undefined
+                    : {
+                        contentVisibility: "auto",
+                        containIntrinsicSize:
+                          viewMode === "grid" ? "auto 180px" : "auto 76px",
+                      }
+                }
                 className={`overflow-hidden rounded-lg border bg-card transition-opacity ${sent ? "opacity-60" : ""} ${
                   viewMode === "grid" && open ? "col-span-full" : ""
                 }`}
