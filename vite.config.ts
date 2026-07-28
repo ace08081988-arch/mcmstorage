@@ -8,6 +8,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import fs from "node:fs";
 import { loadEnv } from "vite";
 import { visualizer } from "rollup-plugin-visualizer";
 
@@ -21,6 +22,25 @@ const BUILD_ID = (() => {
   return `${t}-${r}`;
 })();
 const BUILD_TIME = new Date().toISOString();
+
+// Versi skema DB = prefix timestamp migrasi terbaru. Dihitung di build time
+// supaya SecurityScanReminder tidak perlu import.meta.glob eager (yang dulu
+// menyeret ratusan URL migrasi ke bundle Beranda).
+const MIGRATION_VERSION = (() => {
+  try {
+    const dir = path.resolve(__dirname, "supabase/migrations");
+    const names = fs
+      .readdirSync(dir)
+      .filter((n) => n.endsWith(".sql"))
+      .sort();
+    const last = names[names.length - 1];
+    if (!last) return "";
+    const m = last.match(/^(\d{14})/);
+    return m ? m[1] : last;
+  } catch {
+    return "";
+  }
+})();
 
 // Bundle analyzer aktif hanya saat ANALYZE=1 supaya build normal / dev
 // tidak terbebani. Jalankan: `bun run analyze`.
@@ -76,6 +96,7 @@ export default defineConfig({
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+      __MIGRATION_VERSION__: JSON.stringify(MIGRATION_VERSION),
     },
   },
 });

@@ -13,7 +13,7 @@ import React, {
   type RefObject,
 } from "react";
 import { toast } from "sonner";
-import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/PhotoEditorV2";
+import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
 import {
   signedUrl,
   uploadPrepPhoto,

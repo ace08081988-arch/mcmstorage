@@ -2,27 +2,15 @@ import { useEffect, useState } from "react";
 import { ShieldAlert, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Vite reads the migration directory at build time. The latest filename's
-// timestamp prefix becomes our "schema version" — any new migration shipped
-// in a deploy bumps it and re-triggers the reminder banner.
-const migrationModules = import.meta.glob("/supabase/migrations/*.sql", {
-  query: "?url",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
-
-function computeLatestVersion(): string | null {
-  const names = Object.keys(migrationModules)
-    .map((p) => p.split("/").pop() ?? "")
-    .filter(Boolean)
-    .sort();
-  const last = names[names.length - 1];
-  if (!last) return null;
-  const m = last.match(/^(\d{14})/);
-  return m ? m[1] : last;
-}
-
-const LATEST_VERSION = computeLatestVersion();
+// Versi skema dihitung di build time (vite.config.ts → __MIGRATION_VERSION__).
+// Sebelumnya memakai import.meta.glob eager ?url atas 266 file migrasi, yang
+// menyuntikkan ratusan URL aset ke chunk ini (~440 kB raw / 109 kB gzip) dan
+// ikut terunduh di Beranda. Sekarang biayanya satu string.
+declare const __MIGRATION_VERSION__: string;
+const LATEST_VERSION: string | null =
+  typeof __MIGRATION_VERSION__ === "string" && __MIGRATION_VERSION__
+    ? __MIGRATION_VERSION__
+    : null;
 const ACK_KEY = "mcm:security-scan-ack-version";
 
 function formatVersion(v: string): string {
