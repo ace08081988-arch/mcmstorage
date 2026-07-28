@@ -1820,6 +1820,56 @@ function ChatRoomPage() {
       </header>
       )}
 
+      {quickSearchOpen ? (
+        <div className="z-10 flex shrink-0 items-center gap-ms-2 border-b bg-background/95 px-ms-2 py-1.5 backdrop-blur">
+          <SearchIcon className="ml-1 h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            autoFocus
+            value={quickQuery}
+            onChange={(e) => setQuickQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); gotoHit(e.shiftKey ? -1 : 1); }
+              if (e.key === "Escape") { e.preventDefault(); closeQuickSearch(); }
+            }}
+            placeholder="Cari pesan di percakapan ini…"
+            className="min-w-0 flex-1 bg-transparent text-ms-sm outline-none placeholder:text-muted-foreground"
+            aria-label="Kata kunci pencarian pesan"
+          />
+          <span className="shrink-0 tabular-nums text-ms-2xs text-muted-foreground">
+            {quickNeedle ? (quickHits.length ? `${quickIdx + 1}/${quickHits.length}` : "0 hasil") : ""}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label="Hasil sebelumnya"
+            disabled={quickHits.length === 0}
+            onClick={() => gotoHit(-1)}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label="Hasil berikutnya"
+            disabled={quickHits.length === 0}
+            onClick={() => gotoHit(1)}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label="Tutup pencarian"
+            onClick={closeQuickSearch}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : null}
+
       <PinnedBanner
         conversationId={conversationId}
         pinned={pinnedMessages}
