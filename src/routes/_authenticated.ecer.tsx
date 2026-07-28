@@ -67,7 +67,7 @@ import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
 import { copyUrlWithToast } from "@/lib/copy-url-toast";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
-import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
+import { filterActivePreps, filterSentPreps, isActivePrep, isSentPrep } from "@/lib/prep-active-selector";
 import { debounce } from "@/lib/realtime-debounce";
 import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 import { renderWaCaption } from "@/lib/wa-template";
@@ -2005,7 +2005,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
             const sentIds = new Set(selectedPreps.map((p) => p.id));
             if (sentIds.size > 0) {
               setPreps((prev) => prev.map((p) => (
-                sentIds.has(p.id) && !p.sold_at ? { ...p, sold_at: nowIso } : p
+                sentIds.has(p.id) && isActivePrep(p) ? { ...p, sold_at: nowIso } : p
               )));
             }
             exitSelection();
@@ -2045,7 +2045,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               const nowIso = new Date().toISOString();
               const id = quickSendPrep.id;
               setPreps((prev) => prev.map((p) => (
-                p.id === id && !p.sold_at ? { ...p, sold_at: nowIso } : p
+                p.id === id && isActivePrep(p) ? { ...p, sold_at: nowIso } : p
               )));
             }
             setQuickSendPrep(null);
