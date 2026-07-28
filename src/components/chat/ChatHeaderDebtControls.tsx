@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -12,11 +12,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
+import { buildDebtReport } from "@/lib/debt-report";
+import { sendMessage } from "@/lib/chat.functions";
+import { emitDebtTx } from "@/lib/debt-tx-event";
 import {
   debtSyncStatus,
   normalizeParty,
   useDebtSyncMap,
   usePartyLinks,
+  DEBT_SYNC_QUERY_KEY,
 } from "@/lib/chat-debt-sync";
 
 type Kind = "hutang" | "piutang";
@@ -62,11 +66,14 @@ export function ChatHeaderDebtControls({
   peerUserId,
   peerPhone,
   peerName,
+  conversationId,
 }: {
   myId: string;
   peerUserId: string | null;
   peerPhone: string | null;
   peerName: string;
+  /** Bila diisi, laporan bisa dikirim sekali klik ke percakapan ini. */
+  conversationId?: string;
 }) {
   const qc = useQueryClient();
   // Tautan manual nama chat → nama pihak di buku hutang/piutang, supaya
@@ -247,6 +254,57 @@ export function ChatHeaderDebtControls({
 
   const [historyQuery, setHistoryQuery] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
+  // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
+  // "Kirim laporan" menonjol dan pemilik toko tidak lupa mengabarkan.
+  const [dirty, setDirty] = useState(false);
+
+  /** Semua perubahan saldo dari chat memicu refresh SSOT di seluruh app. */
+  const afterChange = async () => {
+    setDirty(true);
+    emitDebtTx({
+      kind: "piutang",
+      wasCash: false,
+      amount: 0,
+      partyId: null,
+      at: Date.now(),
+    });
+    await Promise.all([
+      qc.invalidateQueries({ queryKey }),
+      qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY }),
+    ]);
+  };
+
+  const sendReport = async () => {
+    if (!conversationId) return;
+    setSendingReport(true);
+    try {
+      // Pastikan angka terbaru sebelum laporan dikirim.
+      await qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY });
+      const body = buildDebtReport({
+        peerName,
+        hutang,
+        piutang,
+        history: history.map((h) => ({
+          at: h.at,
+          kind: h.kind,
+          type: h.type,
+          amount: h.amount,
+          note: h.note,
+        })),
+      });
+      await sendMessage({ data: { conversationId, body } });
+      setDirty(false);
+      toast.success("Laporan hutang/piutang terkirim ke chat.");
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal mengirim laporan.",
+      );
+    } finally {
+      setSendingReport(false);
+    }
+  };
+
   const filteredHistory = useMemo(() => {
     const q = historyQuery.trim().toLowerCase();
     if (!q) return history;
@@ -346,7 +404,7 @@ export function ChatHeaderDebtControls({
                       onDone: () => {},
                     });
                   }
-                  await qc.invalidateQueries({ queryKey });
+                  await afterChange();
                 } finally {
                   setSyncing(false);
                 }
@@ -373,7 +431,7 @@ export function ChatHeaderDebtControls({
                 summary: safeSummary,
                 myId,
                 peerName,
-                onDone: () => qc.invalidateQueries({ queryKey }),
+                onDone: () => void afterChange(),
               })
             }
           />
@@ -388,11 +446,33 @@ export function ChatHeaderDebtControls({
                 summary: safeSummary,
                 myId,
                 peerName,
-                onDone: () => qc.invalidateQueries({ queryKey }),
+                onDone: () => void afterChange(),
               })
             }
           />
         </div>
+        {conversationId ? (
+          <Button
+            type="button"
+            size="sm"
+            variant={dirty ? "default" : "outline"}
+            className="mt-2 h-8 w-full text-ms-2xs"
+            disabled={sendingReport}
+            onClick={sendReport}
+          >
+            {sendingReport ? (
+              <Loader2 className="mr-1 size-3.5 animate-spin" />
+            ) : (
+              <Send className="mr-1 size-3.5" />
+            )}
+            Kirim laporan ke chat
+          </Button>
+        ) : null}
+        {dirty ? (
+          <p className="mt-1 text-ms-2xs leading-snug text-warning">
+            Saldo baru saja berubah — kirim laporan agar kedua pihak sepakat.
+          </p>
+        ) : null}
         <p className="mt-3 text-ms-2xs leading-snug text-muted-foreground">
           <ArrowRight className="mr-1 inline h-2.5 w-2.5" />
           Tersinkron langsung ke Hutang & Piutang MCM Storage.

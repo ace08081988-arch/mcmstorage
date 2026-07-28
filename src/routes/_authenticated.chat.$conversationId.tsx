@@ -1616,6 +1616,7 @@ function ChatRoomPage() {
                 peerUserId={dmPeer?.peerUserId ?? null}
                 peerPhone={dmPeer?.peerPhone ?? null}
                 peerName={displayedPeerName}
+                conversationId={conversationId}
               />
             </div>
           ) : null}
@@ -1637,6 +1638,7 @@ function ChatRoomPage() {
                 peerUserId={dmPeer?.peerUserId ?? null}
                 peerPhone={dmPeer?.peerPhone ?? null}
                 peerName={displayedPeerName}
+                conversationId={conversationId}
               />
             </div>
             <Button
