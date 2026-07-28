@@ -110,6 +110,8 @@ vi.mock("@tanstack/react-router", () => ({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (require("react") as any).createElement("a", rest, children);
   },
+  useNavigate: () => () => {},
+  useRouter: () => ({ navigate: () => {}, invalidate: () => {} }),
 }));
 vi.mock("@/lib/debt-tx-event", () => ({ useOnDebtTx: () => {} }));
 vi.mock("@/components/LayoutModeToggle", () => ({
