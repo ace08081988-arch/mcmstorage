@@ -161,7 +161,8 @@ describe("ReadyRequestSection — badge 'N paket' konsisten dengan countActiveBy
         a.textContent?.includes(t.name),
       );
       expect(card, `kartu untuk ${t.name} harus dirender`).toBeTruthy();
-      const badge = card!.querySelector("span.rounded.bg-primary\\/10");
+      // Badge selalu dirender (varian muted saat 0) — pakai testid stabil.
+      const badge = card!.querySelector(`[data-testid="ready-request-badge-${t.id}"]`);
       expect(badge, `badge 'N paket' untuk ${t.name} harus ada`).toBeTruthy();
       const shown = Number((badge!.textContent ?? "").replace(/[^0-9]/g, ""));
       expect(shown).toBe(expected.get(t.id) ?? 0);
@@ -175,7 +176,9 @@ describe("ReadyRequestSection — badge 'N paket' konsisten dengan countActiveBy
     mount(<ReadyRequestSection />);
     await flush();
 
-    const badges = Array.from(container!.querySelectorAll("span.rounded.bg-primary\\/10"));
+    const badges = Array.from(
+      container!.querySelectorAll('[data-testid^="ready-request-badge-"]'),
+    );
     const total = badges.reduce(
       (n, b) => n + Number((b.textContent ?? "").replace(/[^0-9]/g, "")),
       0,
