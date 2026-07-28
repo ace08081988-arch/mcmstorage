@@ -2622,9 +2622,12 @@ function SendPrepToCustomerDialog({
     errorMessage: sendError,
   });
 
+  // Lokasi utama = lokasi foto ke-1 (fallback ke kolom lama `location_url`).
+  const primaryLocation = photoPairs[0]?.locationUrl ?? prep.location_url ?? "";
+
   function buildCaption(): string {
     // SSOT template diatur di /pengaturan-pesan-wa.
-    return renderWaCaption(waTpl.template, waTpl.options, {
+    const base = renderWaCaption(waTpl.template, waTpl.options, {
       title: titleName,
       items: items.map((it) => {
         const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
@@ -2635,10 +2638,17 @@ function SendPrepToCustomerDialog({
         };
       }),
       payment,
-      locationUrl: prep.location_url ?? "",
+      locationUrl: primaryLocation,
       note: note.trim() || null,
       customerName: resolvedParty.name || null,
     });
+    // Multi-lokasi: cantumkan pasangan foto ↔ lokasi sesuai urutan kirim,
+    // supaya pembeli tahu foto ke-N diambil di titik ke-N.
+    const extras = photoPairs
+      .map((p, i) => (i > 0 && p.locationUrl ? `📍 Foto ${i + 1}: ${p.locationUrl}` : ""))
+      .filter(Boolean);
+    if (extras.length === 0) return base;
+    return [base.trimEnd(), "", ...extras].join("\n");
   }
 
   async function fetchPhotoFiles(): Promise<File[]> {
@@ -2725,7 +2735,7 @@ function SendPrepToCustomerDialog({
         const res = await shareToChat({
           conversationId: conv.id,
           caption: text,
-          locationUrl: prep.location_url ?? null,
+          locationUrl: primaryLocation || null,
           shots,
         });
         if (res.status !== "shared") {
