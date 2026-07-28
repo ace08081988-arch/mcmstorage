@@ -40,6 +40,9 @@ import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
   pushAppearanceToCloud,
   pullAppearanceFromCloud,
+  pushAppearanceToCloudSafe,
+  AppearanceValidationError,
+  applyCloudPayload,
   fetchAppearanceFromCloud,
 } from "@/lib/appearance-cloud";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
