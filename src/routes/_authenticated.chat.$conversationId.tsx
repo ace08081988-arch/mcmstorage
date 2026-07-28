@@ -1610,7 +1610,7 @@ function ChatRoomPage() {
             )}
           </div>
           {meta.data?.kind === "dm" && myId ? (
-            <div className="mt-0.5 flex max-w-full items-center sm:hidden">
+            <div className="mt-0.5 flex min-w-0 max-w-full items-center sm:hidden">
               <ChatHeaderDebtControls
                 myId={myId}
                 peerUserId={dmPeer?.peerUserId ?? null}
