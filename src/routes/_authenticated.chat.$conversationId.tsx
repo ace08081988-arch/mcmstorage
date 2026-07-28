@@ -2134,15 +2134,15 @@ function ChatRoomPage() {
         )}
 
         {outbox.length > 0 ? (
-          <div className="space-ms-2">
+          <div className="flex flex-col gap-1.5">
             {outbox.map((o) => (
               <div key={o.tempId} className="flex justify-end">
-                <div className="flex min-w-0 max-w-[85%] flex-row-reverse items-start gap-ms-1 sm:max-w-[75%]">
+                <div className="flex min-w-0 max-w-[86%] flex-row-reverse items-start gap-ms-1 sm:max-w-[72%] lg:max-w-[60ch]">
                   <div
-                    className={`rounded-2xl rounded-br-sm px-ms-3 py-1.5 text-ms-sm leading-snug shadow-sm ${
+                    className={`rounded-2xl rounded-br-md px-ms-3 py-ms-2 text-ms-sm leading-relaxed ${
                       o.status === "failed"
                         ? "bg-destructive/15 text-foreground ring-1 ring-destructive/40"
-                        : "bg-primary/80 text-primary-foreground"
+                        : "wa-bubble-out opacity-80"
                     }`}
                   >
                     {(() => {
@@ -2151,14 +2151,14 @@ function ChatRoomPage() {
                       if (isCardBody(o.body)) return <UnknownCardBlock mine={true} />;
                       return (
                         <>
-                          <div className="whitespace-pre-wrap break-words">
+                          <div className="whitespace-pre-wrap break-words text-pretty [overflow-wrap:anywhere]">
                             <Linkify text={o.body} />
                           </div>
                           <UrlPreviewList text={o.body} mine />
                         </>
                       );
                     })()}
-                    <div className="mt-0.5 flex items-center justify-end gap-ms-1 text-ms-2xs opacity-90">
+                    <div className="mt-1 flex items-center justify-end gap-ms-1 text-ms-2xs tabular-nums opacity-80">
                       <span>{fmtTime(o.createdAt)}</span>
                       {o.status === "sending" ? (
                         <Clock className="h-3 w-3 opacity-70" aria-label="Mengirim" />
