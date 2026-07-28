@@ -2,7 +2,7 @@
 
 exports[`MCM branding — snapshot label chat kunci > daftar percakapan → src/routes/_authenticated.chat.index.tsx 1`] = `
 [
-  "<h1 className="text-ms-2xl font-bold tracking-tight">MCM</h1>",
+  "<h1 className="truncate text-ms-lg font-semibold tracking-tight">MCM Chat</h1>",
 ]
 `;
 
@@ -14,7 +14,7 @@ exports[`MCM branding — snapshot label chat kunci > detail chat → src/routes
 
 exports[`MCM branding — snapshot label chat kunci > dialog undang → src/routes/_authenticated.undang.tsx 1`] = `
 [
-  "\`Tambahkan saya di MCM Chat. PIN: \${formatInviteCode(myCode)}\\n\` +",
+  "\`Tambahkan saya di MCM Chat. PIN: \${formatInviteCode(myCode)}\\n\` + \`Atau buka: \${myUrl}\`;",
   "await navigator.share({ title: "Undangan MCM Chat", text, url: myUrl });",
 ]
 `;
@@ -22,26 +22,3 @@ exports[`MCM branding — snapshot label chat kunci > dialog undang → src/rout
 exports[`MCM branding — snapshot label chat kunci > forward (selection toolbar) → src/components/chat/SelectionToolbar.tsx 1`] = `[]`;
 
 exports[`MCM branding — snapshot label chat kunci > kartu kontak → src/components/chat/ProfileQrDialog.tsx 1`] = `[]`;
-
-exports[`MCM branding — snapshot label chat kunci daftar percakapan → src/routes/_authenticated.chat.index.tsx 1`] = `
-[
-  "<h1 className="truncate text-ms-lg font-semibold tracking-tight">MCM Chat</h1>",
-]
-`;
-
-exports[`MCM branding — snapshot label chat kunci detail chat → src/routes/_authenticated.chat.$conversationId.tsx 1`] = `
-[
-  "Teruskan via MCM",
-]
-`;
-
-exports[`MCM branding — snapshot label chat kunci dialog undang → src/routes/_authenticated.undang.tsx 1`] = `
-[
-  "\`Tambahkan saya di MCM Chat. PIN: \${formatInviteCode(myCode)}\\n\` + \`Atau buka: \${myUrl}\`;",
-  "await navigator.share({ title: "Undangan MCM Chat", text, url: myUrl });",
-]
-`;
-
-exports[`MCM branding — snapshot label chat kunci forward (selection toolbar) → src/components/chat/SelectionToolbar.tsx 1`] = `[]`;
-
-exports[`MCM branding — snapshot label chat kunci kartu kontak → src/components/chat/ProfileQrDialog.tsx 1`] = `[]`;
