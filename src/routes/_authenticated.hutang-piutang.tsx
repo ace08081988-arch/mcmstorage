@@ -8,6 +8,8 @@ import { confirm } from "@/lib/confirm";
 import { fetchPiutangSummary } from "@/lib/piutang";
 import { fetchHutangSummary } from "@/lib/hutang";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
+import { useDebtSyncMap } from "@/lib/chat-debt-sync";
+import { TxOnlyPartyCards } from "@/components/hutang/TxOnlyPartyCards";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -310,6 +312,9 @@ function HutangPiutangPage() {
 
   const activeKind: Kind = tab === "piutang" ? "piutang" : "hutang";
   const filtered = debtsInPeriod.filter((d) => d.kind === activeKind);
+  // SSOT gabungan (manual + transaksi) untuk memunculkan kontak yang
+  // saldonya hanya berasal dari penjualan/pembelian hutang.
+  const { data: ssotParties } = useDebtSyncMap();
 
   const totals = useMemo(() => {
     let total = 0;
@@ -1044,6 +1049,15 @@ function HutangPiutangPage() {
                   })}
                 </div>
               )}
+
+              <TxOnlyPartyCards
+                kind={k}
+                ssot={ssotParties}
+                manualNames={groupedByParty.map((g) => g.name)}
+                parties={k === "hutang" ? suppliers : customers}
+                uid={uid}
+                onChanged={() => void refresh()}
+              />
             </TabsContent>
           ))}
 
