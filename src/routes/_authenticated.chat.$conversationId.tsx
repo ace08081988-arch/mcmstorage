@@ -2264,6 +2264,17 @@ function ChatRoomPage() {
           </button>
         </div>
       ) : null}
+      {failedCount > 0 ? (
+        <div className="z-10 flex shrink-0 items-center gap-ms-2 border-t border-destructive/30 bg-destructive/10 px-ms-3 py-1.5 text-ms-xs">
+          <span className="min-w-0 flex-1 truncate text-destructive">
+            {failedCount} pesan gagal terkirim
+            {!online ? " · menunggu koneksi" : ""}
+          </span>
+          <Button type="button" size="sm" variant="outline" className="h-7 shrink-0 gap-ms-1" onClick={retryAllFailed}>
+            <RefreshCw className="h-3.5 w-3.5" /> Kirim ulang semua
+          </Button>
+        </div>
+      ) : null}
       <form
         onSubmit={onSubmit}
         className="z-10 shrink-0 border-t bg-background/95 p-ms-2 backdrop-blur"
