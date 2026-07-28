@@ -741,6 +741,16 @@ export function ChatHeaderDebtControls({
             type="button"
             variant="outline"
             size="sm"
+            disabled={sendingReport || previewBody.trim().length === 0}
+            onClick={() => void copyPreview()}
+          >
+            <ClipboardCopy className="mr-1 size-3.5" />
+            Salin teks
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             disabled={sendingReport}
             onClick={() => setPreviewOpen(false)}
           >
