@@ -37,6 +37,7 @@ import {
   writeGudangCache,
   clearGudangCache,
 } from "@/lib/gudang-cache";
+import { subscribeStockChanges, applyStockEvent, type LiveStockItem } from "@/lib/live-stock";
 import { withPlainTimeout, withSupabaseQueryTimeout } from "@/lib/supabase-timeout";
 import {
   PageContainer,
@@ -647,6 +648,16 @@ function GudangPage() {
       if (reloadTimerRef.current) clearTimeout(reloadTimerRef.current);
     };
   }, []);
+
+  // Sinkronisasi realtime stok: patch baris yang berubah secara instan
+  // (tanpa refetch 9 tabel), sehingga Beranda & Gudang selalu sama.
+  useEffect(() => {
+    if (!uid) return;
+    const unsub = subscribeStockChanges((evt) => {
+      setItems((prev) => applyStockEvent(prev as unknown as LiveStockItem[], evt) as unknown as WItem[]);
+    });
+    return unsub;
+  }, [uid]);
 
   const itemMap = useMemo(() => Object.fromEntries(items.map((i) => [i.id, i])), [items]);
   const supMap = useMemo(() => Object.fromEntries(suppliers.map((s) => [s.id, s])), [suppliers]);

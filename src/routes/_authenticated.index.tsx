@@ -5,6 +5,9 @@ import { toast } from "sonner";
 import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { MidnightScope } from "@/lib/midnight-preview";
+const LiveProductGallery = lazy(() =>
+  import("@/components/LiveProductGallery").then((m) => ({ default: m.LiveProductGallery })),
+);
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 import {
@@ -1746,6 +1749,11 @@ function Index() {
         <Suspense fallback={null}>
           <SecurityScanReminder />
           <SecurityFindingsBanner />
+        </Suspense>
+        <Suspense fallback={null}>
+          <div className="mb-ms-3">
+            <LiveProductGallery />
+          </div>
         </Suspense>
         {(() => {
           const total = scopedItems.length;
