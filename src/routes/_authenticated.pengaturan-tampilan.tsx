@@ -632,6 +632,18 @@ function PengaturanTampilanPage() {
                 <span className="text-ms-2xs leading-ms-snug text-muted-foreground">{p.desc}</span>
               </button>
             ))}
+            {FX_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => applyPreset(p)}
+                className="group flex flex-col gap-ms-1 rounded-lg border bg-card px-ms-3 py-ms-3 text-left transition-all duration-150 hover:border-primary/50 hover:bg-accent active:scale-[0.98]"
+              >
+                <span className="text-ms-lg leading-none">{p.icon}</span>
+                <span className="text-ms-sm font-semibold">{p.label}</span>
+                <span className="text-ms-2xs leading-ms-snug text-muted-foreground">{p.desc}</span>
+              </button>
+            ))}
           </CardContent>
         </Card>
 
@@ -816,6 +828,157 @@ function PengaturanTampilanPage() {
         </Card>
 
         {/* Latar & transparansi */}
+        {/* Transparansi & efek kaca */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
+              <Sparkles className="h-4 w-4 text-primary" /> Transparansi & efek kaca
+            </CardTitle>
+            <CardDescription className="text-ms-xs">
+              Atur seberapa tembus pandang kartu, sidebar, dan panel — plus blur,
+              bayangan, saturasi warna, dan gradien aksen.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-ms-4">
+            <div className="flex items-start justify-between gap-ms-4">
+              <div>
+                <p className="text-ms-sm font-medium">Efek kaca (glass)</p>
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
+                  Kartu, dialog, dan sidebar jadi tembus pandang dengan blur di belakangnya.
+                </p>
+              </div>
+              <Switch
+                checked={draft.fx.glass}
+                onCheckedChange={(v) => patchFx({ glass: v })}
+              />
+            </div>
+
+            <div className={draft.fx.glass ? "space-ms-4" : "space-ms-4 pointer-events-none opacity-50"}>
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-ms-xs text-muted-foreground">Transparansi kartu & dialog</p>
+                  <span className="text-ms-xs font-semibold tabular-nums">
+                    {Math.round(draft.fx.surfaceOpacity * 100)}% padat
+                  </span>
+                </div>
+                <Slider
+                  value={[draft.fx.surfaceOpacity]}
+                  min={0.3}
+                  max={1}
+                  step={0.02}
+                  onValueChange={(v) => patchFx({ surfaceOpacity: v[0] ?? 1 })}
+                  aria-label="Transparansi kartu"
+                />
+              </div>
+
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-ms-xs text-muted-foreground">Transparansi sidebar & panel</p>
+                  <span className="text-ms-xs font-semibold tabular-nums">
+                    {Math.round(draft.fx.sidebarOpacity * 100)}% padat
+                  </span>
+                </div>
+                <Slider
+                  value={[draft.fx.sidebarOpacity]}
+                  min={0.3}
+                  max={1}
+                  step={0.02}
+                  onValueChange={(v) => patchFx({ sidebarOpacity: v[0] ?? 1 })}
+                  aria-label="Transparansi sidebar"
+                />
+              </div>
+
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-ms-xs text-muted-foreground">Blur di belakang permukaan</p>
+                  <span className="text-ms-xs font-semibold tabular-nums">{draft.fx.surfaceBlur}px</span>
+                </div>
+                <Slider
+                  value={[draft.fx.surfaceBlur]}
+                  min={0}
+                  max={30}
+                  step={1}
+                  onValueChange={(v) => patchFx({ surfaceBlur: v[0] ?? 12 })}
+                  aria-label="Blur permukaan"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <p className="text-ms-xs text-muted-foreground">Kedalaman bayangan</p>
+                <span className="text-ms-xs font-semibold tabular-nums">{draft.fx.shadow.toFixed(1)}×</span>
+              </div>
+              <Slider
+                value={[draft.fx.shadow]}
+                min={0}
+                max={3}
+                step={0.1}
+                onValueChange={(v) => patchFx({ shadow: v[0] ?? 1 })}
+                aria-label="Kedalaman bayangan"
+              />
+              <p className="mt-1 text-ms-2xs text-muted-foreground">0 = datar (flat), 3 = melayang dramatis.</p>
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <p className="text-ms-xs text-muted-foreground">Saturasi warna antarmuka</p>
+                <span className="text-ms-xs font-semibold tabular-nums">{Math.round(draft.fx.saturation * 100)}%</span>
+              </div>
+              <Slider
+                value={[draft.fx.saturation]}
+                min={0.6}
+                max={1.4}
+                step={0.02}
+                onValueChange={(v) => patchFx({ saturation: v[0] ?? 1 })}
+                aria-label="Saturasi warna"
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-ms-4">
+              <div>
+                <p className="text-ms-sm font-medium">Gradien aksen</p>
+                <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
+                  Tombol utama memakai gradasi warna aksen agar terlihat lebih mewah.
+                </p>
+              </div>
+              <Switch
+                checked={draft.fx.accentGradient}
+                onCheckedChange={(v) => patchFx({ accentGradient: v })}
+              />
+            </div>
+
+            {/* Pratinjau mini */}
+            <div className="relative overflow-hidden rounded-lg border p-ms-3">
+              <div
+                aria-hidden
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: draft.bgImage
+                    ? `url("${draft.bgImage}")`
+                    : "linear-gradient(135deg, var(--primary), var(--muted))",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: 0.9,
+                }}
+              />
+              <div
+                className="relative rounded-md border p-ms-3"
+                style={{
+                  backgroundColor: `color-mix(in oklab, var(--card) ${Math.round((draft.fx.glass ? draft.fx.surfaceOpacity : 1) * 100)}%, transparent)`,
+                  backdropFilter: draft.fx.glass ? `blur(${draft.fx.surfaceBlur}px) saturate(140%)` : undefined,
+                }}
+              >
+                <p className="text-ms-sm font-semibold">Pratinjau kartu</p>
+                <p className="text-ms-2xs text-muted-foreground">
+                  Begini tampilan permukaan di atas latar.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Latar & foto */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-ms-2 text-ms-base">
