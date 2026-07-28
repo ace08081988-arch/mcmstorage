@@ -1391,6 +1391,15 @@ function ChatRoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickNeedle, quickFrom]);
   const activeHitId = quickHits[quickIdx] ?? null;
+  // Konteks percakapan di sekitar hasil aktif: 2 pesan sebelum & 2 sesudah,
+  // supaya alur obrolan langsung terbaca tanpa harus melompat dulu.
+  const quickContext = useMemo(() => {
+    if (!activeHitId) return [] as MessageRow[];
+    const list = visibleMessages ?? [];
+    const i = list.findIndex((m) => m.id === activeHitId);
+    if (i < 0) return [] as MessageRow[];
+    return list.slice(Math.max(0, i - 2), Math.min(list.length, i + 3));
+  }, [activeHitId, visibleMessages]);
   const gotoHit = useCallback(
     (dir: 1 | -1) => {
       if (quickHits.length === 0) return;
@@ -1903,6 +1912,46 @@ function ChatRoomPage() {
             </button>
           ))}
         </div>
+        {quickContext.length > 0 ? (
+          <div className="mt-1.5 rounded-lg border bg-muted/40 p-1.5">
+            <div className="mb-1 px-1 text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">
+              Konteks percakapan
+            </div>
+            <ul className="space-y-0.5">
+              {quickContext.map((cm) => {
+                const isHit = cm.id === activeHitId;
+                const p = profiles.data?.get(cm.sender_id);
+                const nm =
+                  cm.sender_id === myId
+                    ? "Saya"
+                    : p?.display_name
+                      || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
+                      || "Pengguna";
+                return (
+                  <li key={cm.id}>
+                    <button
+                      type="button"
+                      onClick={() => jumpToMessage(cm.id)}
+                      className={`flex w-full items-start gap-ms-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-accent ${
+                        isHit ? "bg-primary/10 ring-1 ring-primary/40" : ""
+                      }`}
+                    >
+                      <span className="shrink-0 tabular-nums text-ms-2xs text-muted-foreground">
+                        {fmtTime(cm.created_at)}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-ms-2xs">
+                        <span className={isHit ? "font-semibold text-primary" : "font-medium"}>{nm}: </span>
+                        <span className={isHit ? "text-foreground" : "text-muted-foreground"}>
+                          {safePreview(cm)}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
         </div>
       ) : null}
 
