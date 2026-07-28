@@ -26,14 +26,23 @@ export function EditContactNameDialog({ open, onOpenChange, peerKey, initialName
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const save = useSavePeerAlias(peerKey);
 
-  // Reset saat dibuka.
+  // Reset HANYA pada transisi tertutup → terbuka.
+  //
+  // Sebelumnya effect ini juga bergantung pada `initialName`. Karena
+  // autosave memperbarui alias → `displayedPeerName` di halaman percakapan
+  // ikut berubah → `initialName` berubah saat dialog masih terbuka →
+  // `setName(initialName)` menimpa teks yang sedang diketik. Itu memicu
+  // loop ketik → simpan → reset → simpan yang berujung crash + "Memuat
+  // ulang halaman…". Sekarang nilai awal dikunci saat dialog dibuka.
+  const prevOpenRef = useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !prevOpenRef.current) {
       setName(initialName);
       lastSavedRef.current = initialName;
       setStatus("idle");
       setErrorMsg(null);
     }
+    prevOpenRef.current = open;
   }, [open, initialName]);
 
   // Debounced auto-save.
@@ -54,6 +63,7 @@ export function EditContactNameDialog({ open, onOpenChange, peerKey, initialName
       setErrorMsg("Nama maksimum 100 karakter.");
       return;
     }
+    if (save.isPending) return; // hindari mutasi bertumpuk (duplikat baris)
     setStatus("saving");
     setErrorMsg(null);
     timerRef.current = setTimeout(async () => {
@@ -69,7 +79,7 @@ export function EditContactNameDialog({ open, onOpenChange, peerKey, initialName
     }, 600);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, open]);
+  }, [name, open, save.isPending]);
 
   async function saveNow() {
     const trimmed = name.trim();
