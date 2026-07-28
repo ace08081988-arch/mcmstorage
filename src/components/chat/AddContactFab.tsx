@@ -25,6 +25,7 @@ import {
   validateInviteCode,
   type InviteProfile,
 } from "@/lib/invite";
+import { PinChip } from "@/components/chat/ContactIdentity";
 
 /**
  * Floating action button (+) di pojok kanan bawah daftar chat.
