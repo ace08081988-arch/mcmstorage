@@ -316,6 +316,7 @@ function PengaturanTampilanPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [resetOpen, setResetOpen] = useState(false);
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
