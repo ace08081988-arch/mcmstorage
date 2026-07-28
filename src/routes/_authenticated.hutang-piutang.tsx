@@ -8,7 +8,7 @@ import { confirm } from "@/lib/confirm";
 import { fetchPiutangSummary } from "@/lib/piutang";
 import { fetchHutangSummary } from "@/lib/hutang";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
-import { useDebtSyncMap } from "@/lib/chat-debt-sync";
+import { useDebtSyncMap, normalizeParty } from "@/lib/chat-debt-sync";
 import { TxOnlyPartyCards } from "@/components/hutang/TxOnlyPartyCards";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
@@ -866,9 +866,24 @@ function HutangPiutangPage() {
                       gPaid += paidByDebt.get(it.id) ?? 0;
                     }
                     const gSisa = Math.max(0, gTotal - gPaid);
+                    // Kartu per-kontak juga membaca SSOT `party_balance_v1`
+                    // (lewat useDebtSyncMap) supaya angkanya identik dengan
+                    // chip di chat & total halaman. Saat periode difilter,
+                    // SSOT (all-time) tidak berlaku → pakai agregat manual.
+                    const ssotEntry =
+                      period === "all"
+                        ? ssotParties?.get(normalizeParty(group.name))
+                        : undefined;
+                    const ssotSisa = ssotEntry
+                      ? k === "hutang"
+                        ? ssotEntry.hutang
+                        : ssotEntry.piutang
+                      : null;
+                    const displaySisa = ssotSisa ?? gSisa;
                     return (
                       <section
                         key={group.key}
+                        data-testid={`party-card-${normalizeParty(group.name)}`}
                         className="overflow-hidden rounded-2xl border bg-card shadow-sm"
                       >
                         <header className="flex flex-wrap items-center gap-ms-2 border-b bg-muted/30 px-ms-3 py-ms-2.5">
@@ -878,10 +893,18 @@ function HutangPiutangPage() {
                             </div>
                             <div className="text-ms-2xs text-muted-foreground">
                               {group.items.length} catatan · sisa{" "}
-                              <span className="font-semibold tabular-nums text-warning">
-                                {rupiah(gSisa)}
+                              <span
+                                data-testid="party-card-sisa"
+                                className="font-semibold tabular-nums text-warning"
+                              >
+                                {rupiah(displaySisa)}
                               </span>{" "}
                               dari <span className="tabular-nums">{rupiah(gTotal)}</span>
+                              {ssotSisa !== null && Math.abs(ssotSisa - gSisa) > 0.01 && (
+                                <span className="ml-1 text-warning">
+                                  · termasuk transaksi ({rupiah(gSisa)} manual)
+                                </span>
+                              )}
                             </div>
                           </div>
                           <Button
