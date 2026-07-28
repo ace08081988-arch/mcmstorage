@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy, Bookmark, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -23,6 +23,13 @@ import { assertDebtSource } from "@/lib/debt-source";
 import { DebtChip, debtChipTone } from "@/components/chat/DebtChip";
 import { buildDebtReport, type DebtReportStyle } from "@/lib/debt-report";
 import { exportDebtReport } from "@/lib/debt-report-export";
+import {
+  listReportTemplates,
+  saveReportTemplate,
+  deleteReportTemplate,
+  renderTemplate,
+  type DebtReportTemplate,
+} from "@/lib/debt-report-templates";
 import { sendMessage } from "@/lib/chat.functions";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import {
@@ -270,6 +277,10 @@ export function ChatHeaderDebtControls({
   const [reportStyle, setReportStyle] = useState<DebtReportStyle>("detail");
   const [previewEdit, setPreviewEdit] = useState(false);
   const [previewEdited, setPreviewEdited] = useState(false);
+  const [templates, setTemplates] = useState<DebtReportTemplate[]>([]);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
