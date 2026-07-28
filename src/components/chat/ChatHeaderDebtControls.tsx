@@ -307,6 +307,37 @@ export function ChatHeaderDebtControls({
     }
   };
 
+  const runExport = async (format: "csv" | "pdf") => {
+    setExporting(format);
+    try {
+      await qc.invalidateQueries({ queryKey: DEBT_SYNC_QUERY_KEY });
+      await exportDebtReport(
+        {
+          peerName,
+          hutang,
+          piutang,
+          history: history.map((h) => ({
+            at: h.at,
+            kind: h.kind,
+            type: h.type,
+            amount: h.amount,
+            note: h.note,
+          })),
+        },
+        format,
+      );
+      toast.success(
+        format === "pdf" ? "Laporan PDF diunduh." : "Laporan Excel (CSV) diunduh.",
+      );
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal mengekspor laporan.",
+      );
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const filteredHistory = useMemo(() => {
     const q = historyQuery.trim().toLowerCase();
     if (!q) return history;
@@ -470,6 +501,38 @@ export function ChatHeaderDebtControls({
             Kirim laporan ke chat
           </Button>
         ) : null}
+        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 w-full text-ms-2xs"
+            disabled={exporting !== null}
+            onClick={() => void runExport("pdf")}
+          >
+            {exporting === "pdf" ? (
+              <Loader2 className="mr-1 size-3.5 animate-spin" />
+            ) : (
+              <FileText className="mr-1 size-3.5" />
+            )}
+            Ekspor PDF
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 w-full text-ms-2xs"
+            disabled={exporting !== null}
+            onClick={() => void runExport("csv")}
+          >
+            {exporting === "csv" ? (
+              <Loader2 className="mr-1 size-3.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="mr-1 size-3.5" />
+            )}
+            Ekspor Excel
+          </Button>
+        </div>
         {dirty ? (
           <p className="mt-1 text-ms-2xs leading-snug text-warning">
             Saldo baru saja berubah — kirim laporan agar kedua pihak sepakat.
