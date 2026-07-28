@@ -150,19 +150,6 @@ export default tseslint.config(
   // Allowlist file dibaca dari `eslint.mmss-allowlist.json` (setiap entri
   // wajib menyertakan `reason`). Inline exception juga didukung via:
   //   // eslint-disable-next-line no-restricted-syntax -- mmss-allow: <alasan>
-  {
-    files: ["src/components/chat/**/*.{ts,tsx}"],
-    ignores: [
-      "src/components/chat/**/*.test.{ts,tsx}",
-      ...mmssAllowlistFiles,
-    ],
-    rules: {
-      "no-restricted-syntax": [
-        "error",
-        ...MMSS_SELECTORS,
-      ],
-    },
-  },
   // ── Guardrail: badge "aktif" / "terkirim" untuk paket prep. ────────────
   //
   // Definisi "sent" (paket sudah masuk Riwayat Terkirim) HANYA boleh
@@ -216,9 +203,7 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
-        ...MMSS_SELECTORS.filter(
-          () => true,
-        ),
+        ...MMSS_SELECTORS,
         ...SOLD_AT_SELECTORS,
       ],
     },
