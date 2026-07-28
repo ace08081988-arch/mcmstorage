@@ -1107,6 +1107,23 @@ function TestNotificationCard({
           <Button onClick={send} disabled={disabled}>
             {sending ? "Mengirim…" : "Kirim notifikasi uji"}
           </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const { sendLocalTestNotification } = await import("@/lib/local-notify");
+              const ok = await sendLocalTestNotification();
+              setResult({
+                ok,
+                sent: ok ? 1 : 0,
+                message: ok
+                  ? "Notifikasi lokal tampil di perangkat ini."
+                  : "Perangkat ini menolak/ tidak mendukung notifikasi lokal.",
+                at: Date.now(),
+              });
+            }}
+          >
+            Uji di perangkat ini
+          </Button>
           {disabled && !sending && (
             <span className="text-ms-xs text-muted-foreground">
               {perm !== "granted"
