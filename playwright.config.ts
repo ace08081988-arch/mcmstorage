@@ -1381,5 +1381,21 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // Skenario : Angka hutang/piutang satu kontak ("Dompeng") tampil
+      //            identik di layar — chip daftar chat, chip header
+      //            percakapan, dan kartu Hutang & Piutang. Harness
+      //            publik selalu jalan; bagian halaman asli (/chat +
+      //            /hutang-piutang) auto-skip tanpa sesi login.
+      // Harness  : /lovable/visual/debt-ssot-consistency (no-auth).
+      name: "debt-ssot-dompeng-consistency-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /debt-ssot-dompeng-consistency\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 915 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
