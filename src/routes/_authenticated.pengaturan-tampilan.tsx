@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle, ClipboardPaste, ClipboardCopy, Link2 } from "lucide-react";
+import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle, ClipboardPaste, ClipboardCopy, Link2, CloudUpload, CloudDownload, CloudOff, Loader2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import {
@@ -67,9 +67,86 @@ import {
   logAppearanceMigration,
   type ImportSource,
 } from "@/lib/appearance-migrator.telemetry";
+import { scopedKey, peekUserIdSync } from "@/lib/user-scoped-storage";
 
 const COMPACT_LS = "app-compact-mode";
+
+/** Jejak sinkronisasi terakhir per perangkat (untuk indikator status). */
+type SyncTrace = { pushAt: string | null; pullAt: string | null; error: string | null };
+const SYNC_TRACE_LS = "appearance-sync-trace";
+function readSyncTrace(): SyncTrace {
+  if (typeof window === "undefined") return { pushAt: null, pullAt: null, error: null };
+  try {
+    const raw = localStorage.getItem(scopedKey(SYNC_TRACE_LS, peekUserIdSync()));
+    if (!raw) return { pushAt: null, pullAt: null, error: null };
+    const p = JSON.parse(raw) as Partial<SyncTrace>;
+    return {
+      pushAt: typeof p.pushAt === "string" ? p.pushAt : null,
+      pullAt: typeof p.pullAt === "string" ? p.pullAt : null,
+      error: typeof p.error === "string" ? p.error : null,
+    };
+  } catch {
+    return { pushAt: null, pullAt: null, error: null };
+  }
+}
+function writeSyncTrace(t: SyncTrace) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(scopedKey(SYNC_TRACE_LS, peekUserIdSync()), JSON.stringify(t));
+  } catch {
+    /* kuota penuh — indikator boleh gagal diam-diam */
+  }
+}
+function fmtStamp(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+}
+function relStamp(iso: string | null): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return "baru saja";
+  if (s < 3600) return `${Math.floor(s / 60)} menit lalu`;
+  if (s < 86400) return `${Math.floor(s / 3600)} jam lalu`;
+  return `${Math.floor(s / 86400)} hari lalu`;
+}
+
 function readCompact(): boolean {
+  return readCompactImpl();
+}
+
+/** Kartu kecil status sinkronisasi (waktu absolut + relatif). */
+function SyncStat({
+  icon,
+  label,
+  value,
+  hint,
+  busy,
+  testId,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  hint: string | null;
+  busy: boolean;
+  testId: string;
+}) {
+  return (
+    <div className="rounded-lg border bg-muted/40 px-ms-2 py-ms-2" data-testid={testId}>
+      <p className="flex items-center gap-ms-1.5 text-ms-2xs font-medium text-muted-foreground">
+        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon}
+        {label}
+      </p>
+      <p className="mt-0.5 truncate text-ms-xs font-semibold">{value}</p>
+      {hint && <p className="text-ms-2xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+function readCompactImpl(): boolean {
   if (typeof window === "undefined") return false;
   const raw = localStorage.getItem(COMPACT_LS);
   return raw == null ? true : raw === "1";
@@ -344,6 +421,19 @@ function PengaturanTampilanPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [cloudBusy, setCloudBusy] = useState<"push" | "pull" | null>(null);
   const [cloudAt, setCloudAt] = useState<string | null>(null);
+  const [syncTrace, setSyncTrace] = useState<SyncTrace>({
+    pushAt: null,
+    pullAt: null,
+    error: null,
+  });
+  /** Catat hasil sinkronisasi terakhir (memory + localStorage per user). */
+  const markSync = (patch: Partial<SyncTrace>) => {
+    setSyncTrace((prev) => {
+      const next = { ...prev, ...patch };
+      writeSyncTrace(next);
+      return next;
+    });
+  };
   const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
@@ -445,14 +535,17 @@ function PengaturanTampilanPage() {
       .then((res) => {
         setCloudAt(res.updatedAt);
         setBackups(listAppearanceBackups());
+        markSync({ pushAt: new Date().toISOString(), error: null });
       })
       .catch((e) => {
         if (e instanceof AppearanceValidationError) {
+          markSync({ error: `Ditolak validasi: ${e.errors.join(" ")}` });
           toast.error("Tersimpan di perangkat ini, tapi ditolak saat sinkron.", {
             description: e.errors.join(" "),
           });
           return;
         }
+        markSync({ error: "Gagal menyimpan ke akun (koneksi / server)." });
         toast.warning("Tersimpan di perangkat ini, tapi gagal sinkron ke akun.", {
           description: "Coba lagi lewat tombol “Simpan ke akun”.",
         });
@@ -508,6 +601,11 @@ function PengaturanTampilanPage() {
     return () => { alive = false; };
   }, []);
 
+  // Pulihkan jejak sinkronisasi perangkat ini (terakhir disimpan / diambil).
+  useEffect(() => {
+    setSyncTrace(readSyncTrace());
+  }, []);
+
   /** Simpan pengaturan saat ini ke akun (manual). */
   const saveToCloud = async () => {
     setCloudBusy("push");
@@ -515,6 +613,7 @@ function PengaturanTampilanPage() {
       const res = await pushAppearanceToCloudSafe(buildExportPayload());
       setCloudAt(res.updatedAt);
       setBackups(listAppearanceBackups());
+      markSync({ pushAt: new Date().toISOString(), error: null });
       toast.success("Pengaturan tampilan tersimpan di akun Anda.", {
         description: res.backup
           ? "Versi akun sebelumnya dicadangkan dan bisa dipulihkan."
@@ -527,11 +626,13 @@ function PengaturanTampilanPage() {
       }
     } catch (e) {
       if (e instanceof AppearanceValidationError) {
+        markSync({ error: `Ditolak validasi: ${e.errors.join(" ")}` });
         toast.error("Pengaturan belum valid — penyimpanan dibatalkan.", {
           description: e.errors.join(" "),
           duration: 8000,
         });
       } else {
+        markSync({ error: "Gagal menyimpan ke akun (koneksi / server)." });
         toast.error("Gagal menyimpan ke akun. Periksa koneksi lalu coba lagi.");
       }
     } finally {
@@ -563,8 +664,10 @@ function PengaturanTampilanPage() {
       const res = await pushAppearanceToCloudSafe(b.payload);
       setCloudAt(res.updatedAt);
       setBackups(listAppearanceBackups());
+      markSync({ pushAt: new Date().toISOString(), error: null });
       toast.success("Cadangan dipulihkan dan disimpan kembali ke akun.");
     } catch {
+      markSync({ error: "Cadangan gagal disinkronkan ke akun." });
       toast.warning("Cadangan diterapkan di perangkat ini, tapi gagal sinkron ke akun.");
       setBackups(listAppearanceBackups());
     } finally {
@@ -592,8 +695,10 @@ function PengaturanTampilanPage() {
       setDraft(fresh);
       setCloudAt(cloud.updatedAt);
       setTimeout(() => { savedRef.current = false; }, 0);
+      markSync({ pullAt: new Date().toISOString(), error: null });
       toast.success("Pengaturan tampilan dari akun diterapkan.");
     } catch {
+      markSync({ error: "Gagal mengambil pengaturan dari akun." });
       toast.error("Gagal mengambil pengaturan dari akun.");
     } finally {
       setCloudBusy(null);
@@ -1310,6 +1415,43 @@ function PengaturanTampilanPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2">
+            <div className="sm:col-span-2" data-testid="appearance-sync-status">
+              <div className="grid grid-cols-1 gap-ms-2 sm:grid-cols-3">
+                <SyncStat
+                  icon={<CloudUpload className="h-3.5 w-3.5" />}
+                  label="Terakhir disimpan"
+                  value={fmtStamp(syncTrace.pushAt)}
+                  hint={relStamp(syncTrace.pushAt)}
+                  busy={cloudBusy === "push"}
+                  testId="appearance-sync-push-at"
+                />
+                <SyncStat
+                  icon={<CloudDownload className="h-3.5 w-3.5" />}
+                  label="Terakhir diambil"
+                  value={fmtStamp(syncTrace.pullAt)}
+                  hint={relStamp(syncTrace.pullAt)}
+                  busy={cloudBusy === "pull"}
+                  testId="appearance-sync-pull-at"
+                />
+                <SyncStat
+                  icon={<Sparkles className="h-3.5 w-3.5" />}
+                  label="Versi di akun"
+                  value={fmtStamp(cloudAt)}
+                  hint={relStamp(cloudAt)}
+                  busy={false}
+                  testId="appearance-sync-cloud-at"
+                />
+              </div>
+              {syncTrace.error && (
+                <p
+                  data-testid="appearance-sync-error"
+                  className="mt-ms-2 flex items-start gap-ms-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-ms-2 py-ms-2 text-ms-2xs text-destructive"
+                >
+                  <CloudOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{syncTrace.error}</span>
+                </p>
+              )}
+            </div>
             <Button
               type="button"
               variant="outline"
