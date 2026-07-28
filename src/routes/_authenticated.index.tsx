@@ -143,8 +143,8 @@ function SortableCategoryRow({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-ms-2 rounded-xl border border-primary/15 bg-card px-ms-2 py-ms-3 transition-colors hover:border-primary/40 ${
-        isDragging ? "shadow-lg border-primary/60" : ""
+      className={`surface-quiet flex items-center gap-ms-2 px-ms-2 py-ms-3 ${
+        isDragging ? "shadow-lg !border-primary/60" : ""
       }`}
     >
       <button
@@ -182,7 +182,7 @@ function SortableCategoryRow({
         <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.08em] text-primary">
           {tag}
         </span>
-        <span className="truncate text-[0.84375rem] font-medium tracking-tight text-foreground">
+        <span className="text-premium-heading truncate text-[1rem] text-foreground">
           {name}
         </span>
         <span className="ml-auto shrink-0 text-[0.65625rem] text-muted-foreground">
