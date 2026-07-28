@@ -105,6 +105,12 @@ export async function clearIncomingCallNotification(): Promise<void> {
     /* ignore */
   }
   try {
+    const { clearLocalNotification } = await import("./local-notify");
+    await clearLocalNotification(TAG);
+  } catch {
+    /* ignore */
+  }
+  try {
     const reg = await navigator.serviceWorker?.getRegistration("/");
     const list = await reg?.getNotifications({ tag: TAG });
     list?.forEach((n) => n.close());
