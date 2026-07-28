@@ -1320,11 +1320,17 @@ function ChatRoomPage() {
   }, [online, outbox, doSend]);
 
   const failedCount = outbox.filter((o) => o.status === "failed").length;
+  /** Kirim ulang manual: reset hitungan percobaan supaya backoff mulai dari awal. */
+  const manualRetry = useCallback(
+    (item: OutboxItem) => {
+      setOutbox((prev) => prev.map((o) => (o.tempId === item.tempId ? { ...o, attempts: 0 } : o)));
+      void doSend(item);
+    },
+    [doSend],
+  );
   const retryAllFailed = useCallback(() => {
-    outboxRef.current
-      .filter((o) => o.status === "failed")
-      .forEach((o) => void doSend({ ...o, attempts: 0 }));
-  }, [doSend]);
+    outboxRef.current.filter((o) => o.status === "failed").forEach(manualRetry);
+  }, [manualRetry]);
 
   // Group messages by day
   const grouped = useMemo(() => {
