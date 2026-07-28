@@ -1199,10 +1199,25 @@ function PengaturanTampilanPage() {
               >
                 <ClipboardPaste className="h-4 w-4 mt-0.5 text-primary" />
                 <div>
-                  <p className="text-ms-sm font-semibold">Impor dari clipboard</p>
+                  <p className="text-ms-sm font-semibold">Impor dari clipboard / kode</p>
                   <p className="text-ms-2xs text-muted-foreground">
-                    Tempel JSON pengaturan dari clipboard. Fallback prompt manual
-                    jika izin clipboard tidak tersedia.
+                    Tempel kode preset (MCMTAMPILAN1:…) atau JSON pengaturan.
+                    Fallback prompt manual jika izin clipboard ditolak.
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                data-testid="copy-preset-code"
+                onClick={copyPresetCode}
+                className="flex items-start gap-ms-3 rounded-md border p-ms-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+              >
+                <ClipboardCopy className="h-4 w-4 mt-0.5 text-primary" />
+                <div>
+                  <p className="text-ms-sm font-semibold">Salin kode preset</p>
+                  <p className="text-ms-2xs text-muted-foreground">
+                    Kode teks pendek untuk dikirim lewat WhatsApp/chat ke perangkat
+                    lain, lalu ditempel di sana.
                   </p>
                 </div>
               </button>
