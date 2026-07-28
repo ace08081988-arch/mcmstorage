@@ -200,37 +200,38 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": [
         "error",
-        {
-          // `!<ident>.sold_at` — juga men-cover `!!<ident>.sold_at` karena
-          // AST-nya adalah UnaryExpression `!` di luar UnaryExpression `!`
-          // di dalam; yang di dalam tetap tercatat.
-          selector:
-            "UnaryExpression[operator='!'] > MemberExpression[property.name='sold_at']",
-          message:
-            "[sold_at] Literal `!x.sold_at` / `!!x.sold_at` dilarang sebagai predikat aktif/terkirim.\n" +
-            "  Ganti dengan: isActivePrep(x) atau isSentPrep(x) dari '@/lib/prep-active-selector'.\n" +
-            "  Untuk memfilter array: filterActivePreps(preps) / filterSentPreps(preps).\n" +
-            "  Untuk menghitung: countActivePreps / countActiveByTitle.",
-        },
-        {
-          // Perbandingan langsung terhadap null.
-          selector:
-            "BinaryExpression[operator=/^(===|!==|==|!=)$/][left.type='MemberExpression'][left.property.name='sold_at'][right.type='Literal'][right.value=null]",
-          message:
-            "[sold_at] Perbandingan `x.sold_at === null` / `!== null` dilarang.\n" +
-            "  Ganti dengan: isActivePrep(x) / isSentPrep(x) dari '@/lib/prep-active-selector'.\n" +
-            "  Ini melindungi konsistensi definisi 'aktif vs terkirim' agar tetap tunggal.",
-        },
-        {
-          // Filter server-side ad-hoc — pakai withActivePrepsFilter().
-          selector:
-            "CallExpression[callee.property.name='is'][arguments.0.value='sold_at'][arguments.1.type='Literal'][arguments.1.value=null]",
-          message:
-            "[sold_at] `.is(\"sold_at\", null)` langsung di query dilarang.\n" +
-            "  Ganti dengan: withActivePrepsFilter(builder) dari '@/lib/prep-active-selector'.\n" +
-            "  Alasan: satu titik untuk mengubah semantik filter aktif.",
-        },
+        ...SOLD_AT_SELECTORS,
       ],
     },
   },
+  // Chat berada di irisan kedua scope di atas. Karena flat-config menimpa
+  // rule dengan nama sama (bukan menggabung), blok terakhir ini menyatukan
+  // selector mm:ss + sold_at supaya keduanya tetap aktif di src/components/chat.
+  {
+    files: ["src/components/chat/**/*.{ts,tsx}"],
+    ignores: [
+      "src/components/chat/**/*.test.{ts,tsx}",
+      "src/components/chat/**/__tests__/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...MMSS_SELECTORS.filter(
+          () => true,
+        ),
+        ...SOLD_AT_SELECTORS,
+      ],
+    },
+  },
+  // File chat yang di-allowlist mm:ss tetap kena guardrail sold_at saja.
+  ...(mmssAllowlistFiles.length
+    ? [
+        {
+          files: mmssAllowlistFiles,
+          rules: {
+            "no-restricted-syntax": ["error", ...SOLD_AT_SELECTORS],
+          },
+        },
+      ]
+    : []),
 );
