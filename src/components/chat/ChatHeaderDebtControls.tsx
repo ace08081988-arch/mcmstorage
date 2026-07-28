@@ -308,8 +308,6 @@ export function ChatHeaderDebtControls({
   };
 
   const filteredHistory = useMemo(() => {
-    return filterHistory();
-    function filterHistory() {
     const q = historyQuery.trim().toLowerCase();
     if (!q) return history;
     return history.filter((h) => {
@@ -325,7 +323,6 @@ export function ChatHeaderDebtControls({
         kind.includes(q)
       );
     });
-    }
   }, [history, historyQuery]);
 
   return (
