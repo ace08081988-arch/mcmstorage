@@ -2467,10 +2467,23 @@ function PrepCard({
             <span className="text-ms-2xs italic text-muted-foreground">Item sudah dikonversi ke penjualan</span>
           )}
         </div>
-        {prep.location_url && (
-          <a href={prep.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-ms-1 text-primary hover:underline">
-            <MapPin className="h-3 w-3" /> Lokasi
-          </a>
+        {photoPairs.some((p) => p.locationUrl) && (
+          <div className="flex flex-wrap items-center gap-ms-2">
+            {photoPairs.map((p, i) =>
+              p.locationUrl ? (
+                <a
+                  key={p.path}
+                  href={p.locationUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-ms-1 text-primary hover:underline"
+                >
+                  <MapPin className="h-3 w-3" />
+                  {photoPairs.length > 1 ? `Lokasi foto ${i + 1}` : "Lokasi"}
+                </a>
+              ) : null,
+            )}
+          </div>
         )}
         {prep.note && <div className="text-muted-foreground">{prep.note}</div>}
         <div className="text-muted-foreground">{new Date(prep.created_at).toLocaleString("id-ID")}</div>
@@ -2491,6 +2504,7 @@ function PrepCard({
           titleName={titleName}
           customers={customers}
           photoPaths={photoPaths}
+          photoPairs={photoPairs}
           unitFor={unitFor}
           onSent={() => { setSendOpen(false); onSent(); }}
           onLocationSaved={onLocationSaved}
