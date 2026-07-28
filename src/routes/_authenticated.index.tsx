@@ -1422,7 +1422,7 @@ function Index() {
               onToggle memicu mount pertama kali sehingga chunk lazy baru
               diunduh saat user benar-benar ingin melihat isinya. */}
           <details
-            className="group rounded-xl border border-primary/15 bg-card open:border-primary/30"
+            className="surface-editorial group overflow-hidden"
             onToggle={(e) => {
               if ((e.currentTarget as HTMLDetailsElement).open && !lainnyaMounted) {
                 setLainnyaMounted(true);
@@ -1430,12 +1430,12 @@ function Index() {
             }}
           >
             <summary
-              className="flex cursor-pointer list-none items-center justify-between gap-ms-2 px-ms-4 py-ms-3.5 text-[0.78125rem] font-medium tracking-tight text-foreground/80 [&::-webkit-details-marker]:hidden"
+              className="flex cursor-pointer list-none items-center justify-between gap-ms-2 px-ms-4 py-ms-4 text-[0.78125rem] font-medium tracking-tight text-foreground/80 [&::-webkit-details-marker]:hidden"
               onPointerEnter={() => setLainnyaMounted(true)}
               onFocus={() => setLainnyaMounted(true)}
             >
-              <span className="flex items-center gap-ms-2 text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-primary/70">
-                <span className="h-px w-5 bg-primary/50" />
+              <span className="eyebrow">
+                <span className="hairline w-5" />
                 Lainnya
               </span>
               <span className="text-primary/70 transition-transform group-open:rotate-180">
@@ -1456,10 +1456,10 @@ function Index() {
                     key={s.to}
                     to={s.to}
                     preload="intent"
-                    className="flex flex-col gap-0.5 rounded-xl border border-primary/15 bg-card px-ms-3 py-ms-3 text-left transition-all hover:border-primary/40 hover:bg-accent hover:-translate-y-0.5"
+                    className="surface-quiet flex flex-col gap-0.5 px-ms-3 py-ms-3 text-left"
                   >
                     <span className="text-[1.0625rem] leading-none">{s.emoji}</span>
-                    <span className="mt-1.5 text-[0.71875rem] font-semibold leading-tight tracking-tight text-foreground">
+                    <span className="text-premium-heading mt-1.5 text-[0.9375rem] leading-tight text-foreground">
                       {s.label}
                     </span>
                     <span className="mt-0.5 text-[0.65625rem] leading-snug text-muted-foreground">
@@ -1502,9 +1502,12 @@ function Index() {
             </div>
           </details>
 
-          <p className="pt-3 text-center text-[0.625rem] font-medium uppercase tracking-[0.28em] text-primary/40">
-            · MCM · Barokah Rizki ·
-          </p>
+          <div className="pt-4 text-center">
+            <div className="mx-auto mb-3 h-px w-16 bg-primary/25" />
+            <p className="text-[0.625rem] font-medium uppercase tracking-[0.3em] text-primary/45">
+              MCM · Barokah Rizki
+            </p>
+          </div>
         </main>
         {uid && setupOpen && (
           <Suspense fallback={null}>
