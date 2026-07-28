@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Download, MapPin, Phone, MessageCircle, Package, Navigation, ShoppingCart, AlertTriangle } from "lucide-react";
+import { FileText, Download, MapPin, Phone, MessageCircle, Package, Navigation, ShoppingCart, AlertTriangle, ImageOff } from "lucide-react";
 import { signedChatUrl } from "@/lib/chat-attachments";
 import { decodeCard, type Card } from "@/lib/chat-cards";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,31 @@ function useSignedUrl(path: string | null | undefined) {
   return url;
 }
 
+/**
+ * Ukuran media di dalam bubble chat dikunci pada satu kotak yang sama
+ * (skeleton, gambar, video, dan state error) supaya tinggi bubble tidak
+ * "melompat" saat signed URL selesai dimuat — inilah yang selama ini
+ * mengganggu alur scroll percakapan.
+ */
+const MEDIA_BOX = "w-[min(72vw,15rem)] sm:w-[18rem]";
+const MEDIA_RATIO = "aspect-[4/5] sm:aspect-[4/3]";
+
+function MediaFrame({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`${MEDIA_BOX} ${MEDIA_RATIO} overflow-hidden rounded-lg bg-muted/40 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function MediaSkeleton({ label }: { label: string }) {
+  return (
+    <MediaFrame className="animate-pulse">
+      <div className="grid h-full w-full place-items-center text-ms-2xs text-muted-foreground">{label}</div>
+    </MediaFrame>
+  );
+}
+
 export function MessageAttachment(props: {
   path: string;
   mime: string | null;
@@ -69,33 +94,52 @@ export function MessageAttachment(props: {
   durationSec?: number | null;
 }) {
   const url = useSignedUrl(props.path);
+  const [broken, setBroken] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { setBroken(false); setLoaded(false); }, [props.path]);
   const mime = props.mime ?? "";
   if (mime.startsWith("image/")) {
-    return url ? (
-      <a href={url} target="_blank" rel="noreferrer" className="block max-w-full overflow-hidden rounded-lg">
-        <img
-          src={url}
-          alt={props.name ?? "foto"}
-          className="h-auto max-h-72 w-full max-w-full rounded-lg bg-black/5 object-contain sm:max-w-xs"
-          loading="lazy"
-        />
+    if (!url) return <MediaSkeleton label="Memuat foto…" />;
+    if (broken) {
+      return (
+        <MediaFrame>
+          <div className="grid h-full w-full place-items-center gap-ms-1 text-center text-ms-2xs text-muted-foreground">
+            <ImageOff className="mx-auto h-5 w-5 opacity-60" />
+            Foto gagal dimuat
+          </div>
+        </MediaFrame>
+      );
+    }
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="block">
+        <MediaFrame className={loaded ? "" : "animate-pulse"}>
+          <img
+            src={url}
+            alt={props.name ?? "foto"}
+            className={`h-full w-full object-cover transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => setBroken(true)}
+          />
+        </MediaFrame>
       </a>
-    ) : (
-      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-ms-2xs text-muted-foreground">Memuat foto…</div>
     );
   }
   if (mime.startsWith("video/")) {
     return url ? (
-      <video src={url} controls preload="metadata" className="max-h-72 w-full max-w-full rounded-lg bg-black sm:max-w-xs" />
+      <MediaFrame className="bg-black">
+        <video src={url} controls preload="metadata" className="h-full w-full object-contain" />
+      </MediaFrame>
     ) : (
-      <div className="grid h-32 w-full max-w-[16rem] animate-pulse place-items-center rounded-lg bg-muted/60 text-ms-2xs text-muted-foreground">Memuat video…</div>
+      <MediaSkeleton label="Memuat video…" />
     );
   }
   if (mime.startsWith("audio/")) {
     return url ? (
       <VoiceNotePlayer url={url} mine={props.mine} durationSec={props.durationSec ?? null} />
     ) : (
-      <div className="grid h-10 w-52 animate-pulse place-items-center rounded-full bg-muted/60 text-ms-2xs text-muted-foreground">
+      <div className="grid h-10 w-[min(72vw,13rem)] animate-pulse place-items-center rounded-full bg-muted/60 text-ms-2xs text-muted-foreground">
         Memuat voice note…
       </div>
     );
@@ -105,7 +149,8 @@ export function MessageAttachment(props: {
       href={url ?? "#"}
       target="_blank"
       rel="noreferrer"
-      className={`flex items-center gap-ms-2 rounded-lg border px-ms-2 py-ms-2 text-ms-xs ${props.mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}
+      aria-disabled={!url}
+      className={`flex w-[min(72vw,15rem)] items-center gap-ms-2 rounded-lg border px-ms-2 py-ms-2 text-ms-xs sm:w-[18rem] ${props.mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"} ${url ? "" : "pointer-events-none opacity-70"}`}
     >
       <FileText className="h-5 w-5 shrink-0 opacity-70" />
       <div className="min-w-0 flex-1">
