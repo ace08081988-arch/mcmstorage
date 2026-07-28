@@ -1886,7 +1886,7 @@ function ChatRoomPage() {
           {([
             { key: "all", label: "Semua" },
             { key: "me", label: "Dari saya" },
-            { key: "them", label: isGroup ? "Dari anggota lain" : "Dari lawan bicara" },
+            { key: "them", label: dmPeer ? "Dari lawan bicara" : "Dari anggota lain" },
           ] as const).map((opt) => (
             <button
               key={opt.key}
