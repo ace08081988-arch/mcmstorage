@@ -338,6 +338,8 @@ function PengaturanTampilanPage() {
   const dirty = useMemo(() => !draftsEqual(draft, snapshot), [draft, snapshot]);
 
   const patch = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
+  const patchFx = (p: Partial<SurfaceFx>) =>
+    setDraft((d) => ({ ...d, fx: { ...d.fx, ...p } }));
 
   const applyPreset = (p: Preset) => {
     patch({
