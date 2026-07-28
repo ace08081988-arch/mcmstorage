@@ -816,6 +816,40 @@ export function ChatHeaderDebtControls({
             Tekan gaya pesan untuk memulihkan teks asli.
           </p>
         ) : null}
+        <div className="rounded-md border p-2">
+          <div className="mb-1.5 flex items-center gap-1 text-ms-2xs font-medium">
+            <Bookmark className="size-3 text-primary" />
+            Simpan gaya ini sebagai template
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Input
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Nama template (mis. Tagihan sopan)"
+              className="h-8 text-ms-2xs"
+              disabled={sendingReport}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 shrink-0 px-2.5 text-ms-2xs"
+              disabled={sendingReport || savingTemplate || previewBody.trim().length === 0}
+              onClick={saveTemplate}
+            >
+              {savingTemplate ? (
+                <Loader2 className="mr-1 size-3 animate-spin" />
+              ) : (
+                <Bookmark className="mr-1 size-3" />
+              )}
+              Simpan
+            </Button>
+          </div>
+          <p className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
+            Nama, nominal, dan tanggal otomatis jadi isian dinamis — saat template
+            dipakai lagi, angkanya diambil ulang dari data terbaru.
+          </p>
+        </div>
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
             type="button"
