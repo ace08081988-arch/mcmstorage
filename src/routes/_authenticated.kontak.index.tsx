@@ -10,6 +10,7 @@ import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneText } from "@/components/chat/ContactIdentity";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useStartDm } from "@/lib/chat";
 import { MessageSquare, Loader2 } from "lucide-react";
