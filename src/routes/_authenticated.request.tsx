@@ -1812,17 +1812,20 @@ function SendPrepLinkDialog({
               </Label>
               <Input
                 id="worker-target-qty"
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={1}
-                max={999}
-                step={1}
-                value={targetQty}
+                autoComplete="off"
+                value={targetQtyText}
+                onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === "") { setTargetQty(1); return; }
-                  const n = Math.floor(Number(v));
-                  if (Number.isFinite(n)) setTargetQty(Math.max(1, Math.min(999, n)));
+                  // Terima kosong & angka bebas dulu (maks 3 digit) supaya
+                  // backspace / ganti angka terasa normal di HP.
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 3);
+                  setTargetQtyText(v);
+                }}
+                onBlur={() => {
+                  const n = Math.floor(Number(targetQtyText) || 0);
+                  setTargetQtyText(String(Math.max(1, Math.min(999, n || 1))));
                 }}
                 className="h-8"
               />
