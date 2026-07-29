@@ -157,7 +157,7 @@ function InstallFlow() {
   return (
     <section
       aria-labelledby="alur-pasang"
-      className="rounded-2xl border bg-card p-ms-4 shadow-sm"
+      className="rounded-2xl border bg-muted/40 p-ms-4"
     >
       <h2 id="alur-pasang" className="text-ms-sm font-semibold">
         Alur pemasangan
@@ -189,7 +189,7 @@ function InstallFlow() {
 
 function InstallDetail({ onRetry }: { onRetry: () => void }) {
   return (
-    <section className="rounded-2xl border border-dashed p-ms-4">
+    <section className="rounded-2xl border border-dashed bg-muted/30 p-ms-4">
       <h2 className="text-ms-sm font-semibold">Catatan penting</h2>
       <ul className="mt-ms-2 list-disc space-y-1 pl-4 text-ms-2xs leading-relaxed text-muted-foreground">
         <li>
@@ -279,7 +279,7 @@ function ApkCard({
         </div>
       </div>
       {!apk ? (
-        <div className="rounded-lg border border-dashed p-ms-4 text-ms-xs text-muted-foreground">
+        <div className="rounded-lg border border-dashed bg-muted/40 p-ms-4 text-ms-xs text-muted-foreground">
           <p className="font-semibold text-foreground">Build belum diunggah</p>
           <p className="mt-1 leading-relaxed">
             Varian ini belum punya berkas APK aktif. Sementara menunggu, jalankan{" "}
