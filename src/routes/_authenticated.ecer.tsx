@@ -2570,6 +2570,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             </summary>
             {prep.sold_at && (
               <div className="px-1.5 pb-1 text-ms-2xs opacity-90">
+                <div>Nilai penjualan: <b>{rupiah(Number(prep.sold_total ?? 0))}</b></div>
                 {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
                 {prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
               </div>
