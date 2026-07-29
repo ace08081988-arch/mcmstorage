@@ -558,6 +558,19 @@ html[data-has-bg="1"] .min-h-screen.bg-gradient-to-bl {
 }
 
 html[data-font="sans"]    { --app-font-family: "Work Sans", system-ui, sans-serif; }
+
+/* Panel bacaan: dipakai halaman publik (mis. /download) supaya teks tetap
+   terbaca walau pengguna memasang gambar latar + transparansi tinggi. */
+.readable-panel {
+  background-color: color-mix(in oklab, var(--color-card) 94%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-border) 90%, transparent);
+  border-radius: 1.5rem;
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.55);
+}
+html[data-has-bg="1"] .readable-panel {
+  background-color: color-mix(in oklab, var(--color-card) 97%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+}
 html[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
 html[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
 html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }

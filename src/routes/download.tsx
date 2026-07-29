@@ -67,10 +67,11 @@ function DownloadPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PublicHeader />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-ms-4 px-ms-4 py-10">
+      <main className="mx-auto w-full max-w-md flex-1 px-ms-4 py-8">
+        <div className="readable-panel flex flex-col gap-ms-4 p-ms-4">
         <div className="text-center">
-          <h1 className="text-ms-lg font-semibold">Unduh APK</h1>
-          <p className="text-ms-xs text-muted-foreground">
+          <h1 className="text-ms-base font-semibold tracking-tight">Unduh APK</h1>
+          <p className="mt-0.5 text-ms-2xs text-muted-foreground">
             Pilih varian aplikasi Android yang ingin dipasang.
           </p>
         </div>
@@ -117,6 +118,7 @@ function DownloadPage() {
             <InstallDetail onRetry={() => refetch()} />
           </>
         )}
+        </div>
       </main>
     <PublicFooter />
     </div>
@@ -155,7 +157,7 @@ function InstallFlow() {
   return (
     <section
       aria-labelledby="alur-pasang"
-      className="rounded-2xl border bg-card p-ms-4 shadow-sm"
+      className="rounded-2xl border bg-muted/40 p-ms-4"
     >
       <h2 id="alur-pasang" className="text-ms-sm font-semibold">
         Alur pemasangan
@@ -187,7 +189,7 @@ function InstallFlow() {
 
 function InstallDetail({ onRetry }: { onRetry: () => void }) {
   return (
-    <section className="rounded-2xl border border-dashed p-ms-4">
+    <section className="rounded-2xl border border-dashed bg-muted/30 p-ms-4">
       <h2 className="text-ms-sm font-semibold">Catatan penting</h2>
       <ul className="mt-ms-2 list-disc space-y-1 pl-4 text-ms-2xs leading-relaxed text-muted-foreground">
         <li>
@@ -277,7 +279,7 @@ function ApkCard({
         </div>
       </div>
       {!apk ? (
-        <div className="rounded-lg border border-dashed p-ms-4 text-ms-xs text-muted-foreground">
+        <div className="rounded-lg border border-dashed bg-muted/40 p-ms-4 text-ms-xs text-muted-foreground">
           <p className="font-semibold text-foreground">Build belum diunggah</p>
           <p className="mt-1 leading-relaxed">
             Varian ini belum punya berkas APK aktif. Sementara menunggu, jalankan{" "}
