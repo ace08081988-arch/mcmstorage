@@ -2436,6 +2436,15 @@ function PrepCard({
               >
                 <Wrench className="h-3 w-3" /> Perbaiki bayar
               </button>
+              <button
+                onClick={() => setUndoOpen(true)}
+                className="inline-flex items-center gap-ms-1 rounded-md border border-border bg-muted/40 px-ms-2 py-1 text-ms-2xs font-semibold text-foreground/80 hover:bg-muted"
+                aria-label="Batalkan pengiriman"
+                title="Salah input? Kembalikan paket ini ke status belum dikirim"
+                data-testid={`unsend-${prep.id}`}
+              >
+                <Undo2 className="h-3 w-3" /> Batal kirim
+              </button>
             </>
           )}
           <button
@@ -2455,6 +2464,43 @@ function PrepCard({
           onFixed={() => { setFixOpen(false); onSent(); }}
         />
       )}
+      <Dialog open={undoOpen} onOpenChange={(o) => { if (!undoBusy) setUndoOpen(o); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Batalkan pengiriman?</DialogTitle>
+            <DialogDescription className="space-y-1">
+              <span className="block">Paket ini kembali ke daftar "Siap kirim" dan bisa diproses ulang.</span>
+              <span className="block">Penjualan yang tercatat dari paket ini dihapus, stok gudang dikembalikan, dan piutang dari paket ini dibatalkan.</span>
+              <span className="block text-amber-600 dark:text-amber-400">
+                Kalau piutang paket ini sudah pernah dibayar, pembatalan ditolak — hapus dulu pembayarannya.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-ms-2">
+            <Button variant="outline" disabled={undoBusy} onClick={() => setUndoOpen(false)}>Batal</Button>
+            <Button
+              disabled={undoBusy}
+              onClick={async () => {
+                setUndoBusy(true);
+                const { error } = await supabase.rpc("unsend_request_prep", { _prep_id: prep.id });
+                setUndoBusy(false);
+                if (error) {
+                  toast.error("Gagal membatalkan pengiriman", { description: error.message });
+                  return;
+                }
+                setUndoOpen(false);
+                toast.success("Pengiriman dibatalkan", {
+                  description: "Paket kembali ke daftar siap kirim, stok & piutang sudah dipulihkan.",
+                });
+                emitDebtTx();
+                onSent();
+              }}
+            >
+              {undoBusy ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Memproses…</> : "Ya, batalkan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {photo ? (
         <img src={photo} alt="" className="aspect-square w-full object-cover" />
       ) : (
