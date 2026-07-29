@@ -47,6 +47,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { logCall } from "@/lib/call-diagnostics";
 import { CallDiagnosticsSheet } from "@/components/chat/CallDiagnosticsSheet";
 
