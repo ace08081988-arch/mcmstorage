@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { MessageCircle, Phone, Bell, LayoutGrid } from "lucide-react";
 import { useMemo } from "react";
 import { useUnreadStatus } from "@/lib/chat";
+import { useViewportAnchor } from "@/lib/use-viewport-anchor";
 import { cn } from "@/lib/utils";
 
 type Item = {
@@ -25,6 +26,9 @@ export function ChatBottomNav() {
   // Ambil pathname saja lewat selector; scroll / hash / state lain tidak
   // memicu re-render, sehingga highlight tidak "berkedip" saat konten digulir.
   const path = useRouterState({ select: (s) => s.location.pathname });
+  // Tempel bar ke dasar visual viewport (anti "naik-turun" saat address bar
+  // Android menyusut) dan sembunyikan saat keyboard terbuka.
+  const { offset, keyboardOpen } = useViewportAnchor();
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
     { to: "/panggilan", label: "Panggilan", Icon: Phone },
@@ -55,7 +59,15 @@ export function ChatBottomNav() {
       // container yang menyetel variabel tersebut. Nilai sudah mencakup
       // `env(safe-area-inset-bottom)` untuk notch/home indicator iOS.
       className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
-      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)" }}
+      style={{
+        paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
+        transform: `translate3d(0, ${-offset}px, 0)`,
+        willChange: "transform",
+        transition: "opacity 160ms ease-out",
+        opacity: keyboardOpen ? 0 : 1,
+        pointerEvents: keyboardOpen ? "none" : undefined,
+        visibility: keyboardOpen ? "hidden" : "visible",
+      }}
     >
       {/* Indikator aktif — pill halus yang meluncur di bawah ikon aktif. */}
       <span
