@@ -10,6 +10,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { AnalyticsExportData } from "@/lib/analytics-export";
 import { toast } from "sonner";
+import PdfPreviewDialog, { type PdfPreviewSource } from "@/components/PdfPreviewDialog";
 
 type SaleRow = {
   id: string;
@@ -199,9 +200,12 @@ export function HeroAnalyticsPanel() {
       try {
         const data = buildExport();
         const mod = await import("@/lib/analytics-export");
-        if (kind === "csv") mod.exportAnalyticsCsv(data);
-        else await mod.exportAnalyticsPdf(data);
-        toast.success(`Ringkasan diunduh sebagai ${kind.toUpperCase()}`);
+        if (kind === "csv") {
+          mod.exportAnalyticsCsv(data);
+          toast.success("Ringkasan diunduh sebagai CSV");
+        } else {
+          setPdfPreview(await mod.buildAnalyticsPdfBlob(data));
+        }
       } catch (e) {
         toast.error(`Gagal ekspor ${kind.toUpperCase()}`, {
           description: e instanceof Error ? e.message : String(e),
