@@ -4,6 +4,7 @@
  * perhitungan ulang di sini.
  */
 import { prepareBrandHeader } from "@/lib/pdf-brand";
+import { getPdfPrefs, densityFactor } from "@/lib/pdf-prefs";
 
 export type AnalyticsExportRow = {
   waktu: string;
@@ -82,30 +83,35 @@ export async function exportAnalyticsPdf(data: AnalyticsExportData) {
   const rowCount = data.rows.length;
   const longestProduct = data.rows.reduce((m, r) => Math.max(m, r.produk.length), 0);
 
+  // Preferensi pengguna: kerapatan margin + skala font.
+  const prefs = getPdfPrefs();
+  const dFactor = densityFactor(prefs.density);
+  const fScale = prefs.fontScale;
+
   // Margin otomatis: makin padat konten (banyak baris / nama produk panjang),
   // makin ramping margin supaya tabel tidak terpotong; konten sedikit → lega.
   const dense = rowCount > 24 || longestProduct > 28;
   const roomy = rowCount <= 8 && longestProduct <= 18;
-  const marginX = dense ? 28 : roomy ? 56 : 40;
-  const marginBottom = 46;
+  const marginX = Math.round((dense ? 28 : roomy ? 56 : 40) * dFactor);
+  const marginBottom = Math.round(46 * dFactor);
   const contentW = pageW - marginX * 2;
 
-  const bodyFont = dense ? 8 : 9.5;
-  const cellPad = dense ? 3.5 : 5;
+  const bodyFont = (dense ? 8 : 9.5) * fScale;
+  const cellPad = (dense ? 3.5 : 5) * dFactor;
 
   // Kop resmi: logo + nama bisnis, digambar di setiap halaman.
   const { bandH, orgName, brand, draw: drawBrandHeader } = await prepareBrandHeader(doc, {
     marginX,
   });
-  const marginTop = (dense ? 34 : 44) + bandH;
+  const marginTop = Math.round((dense ? 34 : 44) * dFactor) + bandH;
   drawBrandHeader();
 
   // Header dokumen
   let y = marginTop + 8;
-  doc.setFontSize(dense ? 14 : 16);
+  doc.setFontSize((dense ? 14 : 16) * fScale);
   doc.text(doc.splitTextToSize(data.judul, contentW), marginX, y);
   y += dense ? 16 : 18;
-  doc.setFontSize(9);
+  doc.setFontSize(9 * fScale);
   doc.setTextColor(110);
   doc.text(`Dibuat: ${data.tanggal.toLocaleString("id-ID")}`, marginX, y);
   y += 12;
