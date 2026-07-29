@@ -18,6 +18,7 @@ import { Route as PosKasirRouteImport } from './routes/pos-kasir'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DownloadRouteImport } from './routes/download'
+import { Route as DevDialogProbeRouteImport } from './routes/dev-dialog-probe'
 import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -198,6 +199,11 @@ const ErrorRoute = ErrorRouteImport.update({
 const DownloadRoute = DownloadRouteImport.update({
   id: '/download',
   path: '/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevDialogProbeRoute = DevDialogProbeRouteImport.update({
+  id: '/dev-dialog-probe',
+  path: '/dev-dialog-probe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -968,6 +974,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/dev-dialog-probe': typeof DevDialogProbeRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/mcp': typeof McpRoute
@@ -1113,6 +1120,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/dev-dialog-probe': typeof DevDialogProbeRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/mcp': typeof McpRoute
@@ -1258,6 +1266,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
+  '/dev-dialog-probe': typeof DevDialogProbeRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/mcp': typeof McpRoute
@@ -1407,6 +1416,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/auth-callback'
+    | '/dev-dialog-probe'
     | '/download'
     | '/error'
     | '/mcp'
@@ -1552,6 +1562,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/auth-callback'
+    | '/dev-dialog-probe'
     | '/download'
     | '/error'
     | '/mcp'
@@ -1696,6 +1707,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/auth-callback'
+    | '/dev-dialog-probe'
     | '/download'
     | '/error'
     | '/mcp'
@@ -1844,6 +1856,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  DevDialogProbeRoute: typeof DevDialogProbeRoute
   DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
   McpRoute: typeof McpRoute
@@ -1974,6 +1987,13 @@ declare module '@tanstack/react-router' {
       path: '/download'
       fullPath: '/download'
       preLoaderRoute: typeof DownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev-dialog-probe': {
+      id: '/dev-dialog-probe'
+      path: '/dev-dialog-probe'
+      fullPath: '/dev-dialog-probe'
+      preLoaderRoute: typeof DevDialogProbeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth-callback': {
@@ -3187,6 +3207,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  DevDialogProbeRoute: DevDialogProbeRoute,
   DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
   McpRoute: McpRoute,
