@@ -295,6 +295,20 @@ export function ChatHeaderDebtControls({
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
   // "Kirim laporan" menonjol dan pemilik toko tidak lupa mengabarkan.
   const [dirty, setDirty] = useState(false);
+  // Catatan perubahan sesi ini (sejak laporan terakhir dikirim) — dipakai
+  // sebagai ringkasan konfirmasi terakhir sebelum "Kirim sekarang".
+  const [changeLog, setChangeLog] = useState<SessionChange[]>([]);
+  const [baseline, setBaseline] = useState<{ hutang: number; piutang: number } | null>(
+    null,
+  );
+  const [confirmSend, setConfirmSend] = useState(false);
+
+  /** Simpan saldo sebelum perubahan pertama supaya delta bisa dihitung. */
+  const markBaseline = () => {
+    setBaseline((b) => b ?? { hutang, piutang });
+  };
+  const recordChange = (entry: SessionChange) =>
+    setChangeLog((prev) => [...prev, entry]);
 
   /** Semua perubahan saldo dari chat memicu refresh SSOT di seluruh app. */
   const afterChange = async () => {
@@ -353,6 +367,7 @@ export function ChatHeaderDebtControls({
    */
   const requestDelta = async (delta: number, kind: Kind) => {
     if (delta >= 0) {
+      markBaseline();
       await applyDelta({
         delta,
         kind,
@@ -360,6 +375,7 @@ export function ChatHeaderDebtControls({
         myId,
         peerName,
         onDone: () => void afterChange(),
+        onRecord: recordChange,
       });
       return;
     }
@@ -390,6 +406,7 @@ export function ChatHeaderDebtControls({
     if (!payPlan) return;
     setPayingPlan(true);
     try {
+      markBaseline();
       await applyDelta({
         delta: -payPlan.amount,
         kind: payPlan.kind,
@@ -397,6 +414,7 @@ export function ChatHeaderDebtControls({
         myId,
         peerName,
         onDone: () => void afterChange(),
+        onRecord: recordChange,
       });
       setPayPlan(null);
     } finally {
@@ -471,6 +489,9 @@ export function ChatHeaderDebtControls({
       const body = previewBody || reportBody();
       await sendMessage({ data: { conversationId, body } });
       setDirty(false);
+      setChangeLog([]);
+      setBaseline(null);
+      setConfirmSend(false);
       setPreviewOpen(false);
       toast.success("Laporan hutang/piutang terkirim ke chat.");
     } catch (e) {
@@ -593,6 +614,7 @@ export function ChatHeaderDebtControls({
               onClick={async () => {
                 setSyncing(true);
                 try {
+                  markBaseline();
                   if (Math.abs(mismatch.dp) >= 1) {
                     await applyDelta({
                       delta: mismatch.dp,
@@ -601,6 +623,7 @@ export function ChatHeaderDebtControls({
                       myId,
                       peerName,
                       onDone: () => {},
+                      onRecord: recordChange,
                     });
                   }
                   if (Math.abs(mismatch.dh) >= 1) {
@@ -611,6 +634,7 @@ export function ChatHeaderDebtControls({
                       myId,
                       peerName,
                       onDone: () => {},
+                      onRecord: recordChange,
                     });
                   }
                   await afterChange();
@@ -959,7 +983,7 @@ export function ChatHeaderDebtControls({
             type="button"
             size="sm"
             disabled={sendingReport || previewBody.trim().length === 0}
-            onClick={() => void sendReport()}
+            onClick={() => setConfirmSend(true)}
           >
             {sendingReport ? (
               <Loader2 className="mr-1 size-3.5 animate-spin" />
@@ -967,6 +991,99 @@ export function ChatHeaderDebtControls({
               <Send className="mr-1 size-3.5" />
             )}
             Kirim sekarang
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <Dialog
+      open={confirmSend}
+      onOpenChange={(o) => !sendingReport && setConfirmSend(o)}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Konfirmasi kirim laporan</DialogTitle>
+          <DialogDescription>
+            Periksa ringkasan perubahan berikut sebelum laporan dikirim ke chat{" "}
+            {peerName}.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 text-ms-2xs">
+          <div className="rounded-md border p-2">
+            <div className="mb-1 font-semibold">Saldo yang akan dilaporkan</div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Piutang</span>
+              <span className="font-mono font-semibold">
+                {baseline && baseline.piutang !== piutang
+                  ? `${rupiah(baseline.piutang)} → ${rupiah(piutang)}`
+                  : rupiah(piutang)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Hutang</span>
+              <span className="font-mono font-semibold">
+                {baseline && baseline.hutang !== hutang
+                  ? `${rupiah(baseline.hutang)} → ${rupiah(hutang)}`
+                  : rupiah(hutang)}
+              </span>
+            </div>
+          </div>
+          {changeLog.length > 0 ? (
+            <div className="rounded-md border p-2">
+              <div className="mb-1 font-semibold">
+                {changeLog.length} transaksi dibuat sejak laporan terakhir
+              </div>
+              <ul className="max-h-48 space-y-1.5 overflow-y-auto pr-0.5">
+                {changeLog.map((c, i) => (
+                  <li key={`${c.at}-${i}`} className="rounded border p-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold capitalize">
+                        {c.type} {c.kind}
+                      </span>
+                      <span
+                        className={`font-mono font-semibold ${
+                          c.type === "pembayaran" ? "text-success" : ""
+                        }`}
+                      >
+                        {c.type === "pembayaran" ? "−" : "+"}
+                        {rupiah(c.amount)}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-muted-foreground">
+                      {c.detail.join(" · ")}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="rounded-md border border-dashed p-2 text-muted-foreground">
+              Tidak ada transaksi baru dari panel ini — laporan hanya
+              mengabarkan saldo saat ini.
+            </div>
+          )}
+        </div>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={sendingReport}
+            onClick={() => setConfirmSend(false)}
+          >
+            Periksa lagi
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={sendingReport}
+            onClick={() => void sendReport()}
+          >
+            {sendingReport ? (
+              <Loader2 className="mr-1 size-3.5 animate-spin" />
+            ) : (
+              <Send className="mr-1 size-3.5" />
+            )}
+            Ya, kirim sekarang
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1309,6 +1426,15 @@ function KindRow({
   );
 }
 
+/** Satu perubahan saldo yang dibuat dari panel chat pada sesi berjalan. */
+type SessionChange = {
+  at: number;
+  kind: Kind;
+  type: "tagihan" | "pembayaran";
+  amount: number;
+  detail: string[];
+};
+
 async function applyDelta({
   delta,
   kind,
@@ -1316,6 +1442,7 @@ async function applyDelta({
   myId,
   peerName,
   onDone,
+  onRecord,
 }: {
   delta: number;
   kind: Kind;
@@ -1330,6 +1457,7 @@ async function applyDelta({
   myId: string;
   peerName: string;
   onDone: () => void;
+  onRecord?: (entry: SessionChange) => void;
 }) {
   try {
     if (delta > 0) {
@@ -1370,6 +1498,13 @@ async function applyDelta({
       else insert.customer_id = partyId;
       const { error } = await supabase.from("debts").insert(insert);
       if (error) throw error;
+      onRecord?.({
+        at: Date.now(),
+        kind,
+        type: "tagihan",
+        amount: delta,
+        detail: [`Tagihan baru ${rupiah(delta)} untuk ${partyName}`],
+      });
       toast.success(
         `${kind === "hutang" ? "Hutang" : "Piutang"} baru ${rupiah(delta)} dicatat.`,
       );
@@ -1408,6 +1543,13 @@ async function applyDelta({
       if (error) throw error;
       const applied = plan.applied;
       const left = plan.leftover;
+      onRecord?.({
+        at: Date.now(),
+        kind,
+        type: "pembayaran",
+        amount: applied,
+        detail: plan.lines.map((l) => `${l.invoice} −${rupiah(l.used)}`),
+      });
       toast.success(
         `Pembayaran ${rupiah(applied)} dicatat${left > 0 ? ` (sisa input ${rupiah(left)} tidak dipakai).` : "."}`,
       );
