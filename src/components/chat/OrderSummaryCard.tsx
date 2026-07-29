@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
+import { useEffectiveSoldTotal, type SoldSource } from "@/lib/sold-total";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   deriveEcerStatus,
@@ -209,12 +210,25 @@ export function OrderSummaryCard({
     (ecerPrep.data as PrepLifecycleInput | null) ??
     null;
   const payBadge = paymentBadge(prepForPayment);
+  // Nilai penjualan mengikuti SSOT yang sama dengan kartu Request/Ecer:
+  // pakai sold_total, dan bila kosong ambil dari catatan penjualan paket itu.
+  const soldSource: SoldSource = links.linked_request_prep_id
+    ? "request_prep"
+    : "ecer_prep";
+  const soldSourceId =
+    links.linked_request_prep_id ?? links.linked_ecer_prep_id ?? null;
+  const soldValue = useEffectiveSoldTotal(
+    soldSource,
+    soldSourceId,
+    prepForPayment?.sold_total,
+    Boolean(prepForPayment?.sold_at),
+  );
   const customerName = customer.data?.name ?? null;
   const productName = product.data?.name ?? null;
   const grams =
     (requestPrep.data as { actual_grams?: number | null } | null | undefined)
       ?.actual_grams ?? null;
-  const soldTotal = prepForPayment?.sold_total ?? null;
+  const soldTotal = prepForPayment?.sold_at ? soldValue.total : null;
   const soldPaid = prepForPayment?.sold_paid_amount ?? null;
   const sisa =
     typeof soldTotal === "number" && typeof soldPaid === "number"
