@@ -3271,7 +3271,7 @@ function ChatRoomPage() {
                 || "Pengguna"
               );
         })()}
-        readAtMs={othersRead.data}
+        readAtMs={othersRead.data?.read ?? null}
       />
 
       <SecurityCodeDialog
