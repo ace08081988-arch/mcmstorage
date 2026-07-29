@@ -310,6 +310,81 @@ export function ChatHeaderDebtControls({
   const recordChange = (entry: SessionChange) =>
     setChangeLog((prev) => [...prev, entry]);
 
+  /** Nama pelaku (untuk kolom "siapa yang mengubah") di audit log. */
+  const actorQ = useQuery({
+    queryKey: ["debt-audit-actor", myId],
+    enabled: !!myId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", myId)
+        .maybeSingle();
+      return (data?.display_name as string | null) ?? null;
+    },
+  });
+  const actorName = actorQ.data ?? "Saya";
+
+  const auditKey = ["debt-adjust-audit", myId, peerName, conversationId ?? ""];
+  const auditQ = useQuery({
+    queryKey: auditKey,
+    enabled: !!myId,
+    staleTime: 10_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("debt_adjust_audit")
+        .select(
+          "id, actor_name, party_name, kind, action, amount, balance_before, balance_after, detail, created_at",
+        )
+        .eq("user_id", myId)
+        .eq("party_name", peerName)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      return (data ?? []) as AuditRow[];
+    },
+  });
+  const [auditOpen, setAuditOpen] = useState(false);
+
+  /**
+   * Tulis jejak audit: siapa, kapan, lewat tombol mana, dan transaksi apa
+   * saja yang ditambah / dibayar. Gagal menulis audit tidak boleh
+   * membatalkan transaksi yang sudah tersimpan — cukup diamkan.
+   */
+  const writeAudit = async (
+    entry: SessionChange,
+    meta: { via: AuditVia; before: number },
+  ) => {
+    const after =
+      entry.type === "pembayaran"
+        ? meta.before - entry.amount
+        : meta.before + entry.amount;
+    try {
+      await supabase.from("debt_adjust_audit").insert({
+        user_id: myId,
+        actor_name: actorName,
+        conversation_id: conversationId ?? null,
+        party_name: peerName,
+        kind: entry.kind,
+        action:
+          meta.via === "quick"
+            ? entry.type === "pembayaran"
+              ? "edit cepat (pembayaran)"
+              : "edit cepat (tagihan)"
+            : entry.type === "pembayaran"
+              ? "catat pembayaran"
+              : "tambah tagihan",
+        amount: entry.amount,
+        balance_before: meta.before,
+        balance_after: after,
+        detail: entry.detail,
+      });
+      await qc.invalidateQueries({ queryKey: auditKey });
+    } catch {
+      /* audit bersifat pelengkap */
+    }
+  };
+
   /** Semua perubahan saldo dari chat memicu refresh SSOT di seluruh app. */
   const afterChange = async () => {
     setDirty(true);
