@@ -2346,6 +2346,8 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   onQuickSend?: () => void;
 }) {
   const sold = isSentPrep(prep);
+  // Nilai penjualan pakai SSOT bersama (sold_total, fallback ke catatan sales).
+  const soldValue = useEffectiveSoldTotal("ecer_prep", prep.id, prep.sold_total, sold);
   const readOnly = sold;
   const [url, setUrl] = useState<string | null>(null);
   const [photoMissing, setPhotoMissing] = useState(false);
@@ -2563,7 +2565,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
               <span className="truncate">
                 {formatSoldPaymentSummary(
                   prep.sold_payment_method,
-                  Number(prep.sold_total ?? 0),
+                  soldValue.total,
                   Number(prep.sold_paid_amount ?? 0),
                 )}
               </span>
@@ -2571,7 +2573,12 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             </summary>
             {prep.sold_at && (
               <div className="px-1.5 pb-1 text-ms-2xs opacity-90">
-                <div>Nilai penjualan: <b>{rupiah(Number(prep.sold_total ?? 0))}</b></div>
+                <div>
+                  Nilai penjualan: <b>{soldValue.label}</b>
+                  {soldValue.fromSales && (
+                    <span className="ml-1 opacity-80">(dari catatan penjualan)</span>
+                  )}
+                </div>
                 {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
                 {prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
               </div>
