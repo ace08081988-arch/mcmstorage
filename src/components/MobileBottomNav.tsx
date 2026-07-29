@@ -3,6 +3,7 @@ import { Home, Warehouse, PackageSearch, MessageCircle, Menu } from "lucide-reac
 import { useMemo } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useUnreadStatus } from "@/lib/chat";
+import { useViewportAnchor } from "@/lib/use-viewport-anchor";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,6 +26,9 @@ export function MobileBottomNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
   const { toggleSidebar } = useSidebar();
+  // Kunci bar ke dasar visual viewport supaya tidak "naik-turun" saat
+  // address bar mobile mengecil/membesar, dan sembunyi saat keyboard buka.
+  const { offset, keyboardOpen } = useViewportAnchor();
 
   // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
@@ -77,6 +81,12 @@ export function MobileBottomNav() {
       )}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
+        transform: `translate3d(0, ${-offset}px, 0)`,
+        willChange: "transform",
+        transition: "opacity 160ms ease-out",
+        opacity: keyboardOpen ? 0 : 1,
+        pointerEvents: keyboardOpen ? "none" : undefined,
+        visibility: keyboardOpen ? "hidden" : "visible",
         boxShadow: "0 -8px 24px -12px color-mix(in oklab, var(--primary) 22%, transparent)",
       }}
     >
