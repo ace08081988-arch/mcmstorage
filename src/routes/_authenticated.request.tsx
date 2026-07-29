@@ -2372,6 +2372,9 @@ function PrepCard({
   const [sendOpen, setSendOpen] = useState(false);
   // Koreksi pencatatan bayar untuk paket yang terlanjur "Terkirim".
   const [fixOpen, setFixOpen] = useState(false);
+  // Batalkan pengiriman (salah input) → kembalikan paket ke daftar aktif.
+  const [undoOpen, setUndoOpen] = useState(false);
+  const [undoBusy, setUndoBusy] = useState(false);
   // Kanal aktif untuk dialog verifikasi: default WA (tombol Kirim di kartu),
   // dapat di-override oleh deep-link `send=chat` dari Beranda.
   const [dialogChannel, setDialogChannel] = useState<"whatsapp" | "chat">("whatsapp");
