@@ -79,11 +79,6 @@ export async function exportAnalyticsPdf(data: AnalyticsExportData) {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
-  // Identitas bisnis untuk kop dokumen
-  const orgName = getOrgName();
-  const logo = await loadLogo(getOrgLogo());
-  const brand = hexToRgb(getOrgBrand()) ?? ([49, 46, 129] as [number, number, number]);
-
   const rowCount = data.rows.length;
   const longestProduct = data.rows.reduce((m, r) => Math.max(m, r.produk.length), 0);
 
@@ -92,8 +87,6 @@ export async function exportAnalyticsPdf(data: AnalyticsExportData) {
   const dense = rowCount > 24 || longestProduct > 28;
   const roomy = rowCount <= 8 && longestProduct <= 18;
   const marginX = dense ? 28 : roomy ? 56 : 40;
-  const bandH = 46;
-  const marginTop = (dense ? 34 : 44) + bandH;
   const marginBottom = 46;
   const contentW = pageW - marginX * 2;
 
@@ -101,29 +94,10 @@ export async function exportAnalyticsPdf(data: AnalyticsExportData) {
   const cellPad = dense ? 3.5 : 5;
 
   // Kop resmi: logo + nama bisnis, digambar di setiap halaman.
-  const drawBrandHeader = () => {
-    doc.setFillColor(brand[0], brand[1], brand[2]);
-    doc.rect(0, 0, pageW, bandH, "F");
-    let tx = marginX;
-    if (logo) {
-      const maxH = bandH - 16;
-      const h = maxH;
-      const w = Math.min(maxH * (logo.w / logo.h), 90);
-      try {
-        doc.addImage(logo.data, logo.fmt, marginX, (bandH - h) / 2, w, h, undefined, "FAST");
-        tx = marginX + w + 10;
-      } catch { /* logo gagal dimuat — lanjut tanpa logo */ }
-    }
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(13);
-    doc.text(orgName, tx, bandH / 2 + 1, { baseline: "middle" });
-    doc.setFontSize(8);
-    doc.text("Laporan resmi", pageW - marginX, bandH / 2 + 1, {
-      align: "right",
-      baseline: "middle",
-    });
-    doc.setTextColor(0);
-  };
+  const { bandH, orgName, brand, draw: drawBrandHeader } = await prepareBrandHeader(doc, {
+    marginX,
+  });
+  const marginTop = (dense ? 34 : 44) + bandH;
   drawBrandHeader();
 
   // Header dokumen
