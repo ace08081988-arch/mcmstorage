@@ -2540,8 +2540,19 @@ function PrepCard({
               {prep.sold_payment_method === "kas" ? <Wallet className="h-3 w-3" /> : <HandCoins className="h-3 w-3" />}
               {formatSoldPaymentSummary(
                 prep.sold_payment_method,
-                Number(prep.sold_total ?? 0),
+                effectiveTotal,
                 Number(prep.sold_paid_amount ?? 0),
+              )}
+            </div>
+            <div className="text-success/90 dark:text-success/90">
+              Nilai penjualan: <b>{rupiah(effectiveTotal)}</b>
+              {totalFromSales && (
+                <span className="ml-1 text-muted-foreground">(dari catatan penjualan)</span>
+              )}
+              {effectiveTotal <= 0 && salesTotal !== null && (
+                <span className="ml-1 text-amber-600 dark:text-amber-400">
+                  · belum ada nominal, pakai "Perbaiki bayar" atau "Batal kirim"
+                </span>
               )}
             </div>
             <div className="text-success/80 dark:text-success/80">
