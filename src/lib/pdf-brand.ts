@@ -46,12 +46,21 @@ export function hexToRgb(hex: string): [number, number, number] | null {
 /** Minimal jsPDF surface yang dipakai kop. */
 type Doc = {
   internal: { pageSize: { getWidth: () => number } };
-  setFillColor: (r: number, g: number, b: number) => void;
-  rect: (x: number, y: number, w: number, h: number, s: string) => void;
-  addImage: (...a: unknown[]) => void;
-  setTextColor: (...a: number[]) => void;
-  setFontSize: (n: number) => void;
-  text: (t: string, x: number, y: number, o?: Record<string, unknown>) => void;
+  setFillColor: (r: number, g: number, b: number) => unknown;
+  rect: (x: number, y: number, w: number, h: number, s?: string) => unknown;
+  addImage: (
+    data: string,
+    fmt: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    alias?: string,
+    compression?: string,
+  ) => unknown;
+  setTextColor: (r: number, g?: number, b?: number) => unknown;
+  setFontSize: (n: number) => unknown;
+  text: (t: string, x: number, y: number, o?: Record<string, unknown>) => unknown;
 };
 
 export type BrandHeader = {
