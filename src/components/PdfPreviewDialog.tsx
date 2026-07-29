@@ -62,7 +62,7 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
         host.appendChild(canvas);
-        await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+        await page.render({ canvasContext: ctx, viewport }).promise;
       }
       setStatus("ready");
     } catch (e) {
