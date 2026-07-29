@@ -1302,7 +1302,7 @@ function KindRow({
   label: string;
   balance: number;
   kind: Kind;
-  onSubmit: (delta: number) => Promise<void>;
+  onSubmit: (delta: number, via: AuditVia) => Promise<void>;
   /** Saldo jenis lawan (untuk peringatan catatan yang bertentangan). */
   otherBalance: number;
 }) {
@@ -1370,7 +1370,7 @@ function KindRow({
     if (!guard()) return;
     setBusy(true);
     try {
-      await onSubmit(sign * parsed);
+      await onSubmit(sign * parsed, "button");
       setRaw("");
       setAck(false);
     } finally {
@@ -1394,7 +1394,7 @@ function KindRow({
     if (!guard()) return;
     setBusy(true);
     try {
-      await onSubmit(delta);
+      await onSubmit(delta, "quick");
       setTarget("");
       setAck(false);
     } finally {
