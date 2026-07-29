@@ -6,6 +6,7 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { rememberPin } from "@/lib/prep-pin-memo";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 /**
  * Dialog kecil untuk membagikan link tugas + PIN dalam satu pesan.
