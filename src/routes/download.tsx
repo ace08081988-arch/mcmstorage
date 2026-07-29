@@ -24,6 +24,7 @@ import {
 } from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { toast } from "sonner";
 import { trackApkDownload } from "@/lib/apk-download-track";
@@ -58,7 +59,7 @@ export const Route = createFileRoute("/download")({
 
 function DownloadPage() {
   const fetchApk = useServerFn(getLatestApkVariants);
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["latest-apk-variants"],
     queryFn: () => fetchApk(),
     staleTime: 60_000,
@@ -79,12 +80,15 @@ function DownloadPage() {
         <InstallFlow />
 
         {isLoading ? (
-          <div className="flex items-center justify-center gap-ms-2 rounded-2xl border border-dashed p-ms-6 text-ms-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Memuat informasi APK...
-          </div>
+          <>
+            <ApkCardSkeleton />
+            <ApkCardSkeleton />
+            <div className="sr-only" role="status">
+              Memuat informasi APK…
+            </div>
+          </>
         ) : isError ? (
-          <div className="rounded-2xl border border-red-300 bg-red-50 p-ms-4 text-ms-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
+          <div className="dl-fade-up rounded-2xl border border-red-300 bg-red-50 p-ms-4 text-ms-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
             <p>Tidak dapat memuat link unduhan.</p>
             <button
               type="button"
@@ -115,7 +119,7 @@ function DownloadPage() {
               min={data?.minSupported.chat ?? null}
               highlight
             />
-            <InstallDetail onRetry={() => refetch()} />
+            <InstallDetail onRetry={() => refetch()} refreshing={isFetching} />
           </>
         )}
         </div>
@@ -187,9 +191,41 @@ function InstallFlow() {
   );
 }
 
-function InstallDetail({ onRetry }: { onRetry: () => void }) {
+function ApkCardSkeleton() {
   return (
-    <section className="rounded-2xl border border-dashed bg-muted/30 p-ms-4">
+    <div
+      aria-hidden
+      className="dl-fade-up w-full rounded-2xl border bg-card p-ms-5 shadow-sm"
+    >
+      <div className="mb-3 flex items-center gap-ms-3">
+        <Skeleton className="h-12 w-12 rounded-xl" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-full max-w-[220px]" />
+        </div>
+      </div>
+      <Skeleton className="h-11 w-full rounded-xl" />
+      <div className="mt-3 space-y-2">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-ms-2">
+        <Skeleton className="h-9 rounded-lg" />
+        <Skeleton className="h-9 rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+function InstallDetail({
+  onRetry,
+  refreshing = false,
+}: {
+  onRetry: () => void;
+  refreshing?: boolean;
+}) {
+  return (
+    <section className="dl-fade-up rounded-2xl border border-dashed bg-muted/30 p-ms-4">
       <h2 className="text-ms-sm font-semibold">Catatan penting</h2>
       <ul className="mt-ms-2 list-disc space-y-1 pl-4 text-ms-2xs leading-relaxed text-muted-foreground">
         <li>
@@ -213,10 +249,13 @@ function InstallDetail({ onRetry }: { onRetry: () => void }) {
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+          disabled={refreshing}
+          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium transition-colors hover:bg-muted disabled:opacity-70"
         >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Periksa versi terbaru
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+          />
+          {refreshing ? "Memeriksa…" : "Periksa versi terbaru"}
         </button>
         <Link
           to="/"
@@ -249,6 +288,7 @@ function ApkCard({
   min: MinSupported | null;
   highlight?: boolean;
 }) {
+  const [starting, setStarting] = useState(false);
   const badge =
     accent === "emerald"
       ? "bg-success/10 text-success dark:text-success"
@@ -259,7 +299,7 @@ function ApkCard({
       : "bg-sky-600 hover:bg-sky-700";
   return (
     <div
-      className={`relative w-full rounded-2xl border bg-card p-ms-5 shadow-sm ${
+      className={`dl-fade-up relative w-full rounded-2xl border bg-card p-ms-5 shadow-sm transition-shadow ${
         highlight
           ? "border-sky-400/70 ring-2 ring-sky-400/40 shadow-md dark:border-sky-500/50"
           : ""
@@ -328,11 +368,25 @@ function ApkCard({
           )}
           <a
             href={apk.url}
-            onClick={() => trackApkDownload(variant, "button")}
-            className={`flex w-full items-center justify-center gap-ms-2 rounded-xl px-ms-4 py-ms-3 text-ms-sm font-semibold text-white shadow transition ${btn}`}
+            onClick={() => {
+              trackApkDownload(variant, "button");
+              setStarting(true);
+              setTimeout(() => setStarting(false), 2500);
+            }}
+            aria-busy={starting}
+            className={`flex w-full items-center justify-center gap-ms-2 rounded-xl px-ms-4 py-ms-3 text-ms-sm font-semibold text-white shadow transition-all duration-200 active:scale-[0.98] ${btn} ${starting ? "opacity-90" : ""}`}
           >
-            <Download className="h-4 w-4" />
-            Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
+            {starting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Menyiapkan unduhan…
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
+              </>
+            )}
           </a>
           <dl className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
             {(apk.versionName || apk.versionCode !== null) && (

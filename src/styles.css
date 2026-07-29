@@ -567,6 +567,16 @@ html[data-font="sans"]    { --app-font-family: "Work Sans", system-ui, sans-seri
   border-radius: 1.5rem;
   box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.55);
 }
+
+/* Transisi halus untuk konten yang baru muncul (mis. kartu APK setelah load). */
+@keyframes dl-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dl-fade-up {
+  animation: dl-fade-up .32s cubic-bezier(.22,.61,.36,1) both;
+}
+html.reduce-motion .dl-fade-up { animation: none; }
 html[data-has-bg="1"] .readable-panel {
   background-color: color-mix(in oklab, var(--color-card) 97%, transparent);
   backdrop-filter: blur(14px) saturate(140%);
