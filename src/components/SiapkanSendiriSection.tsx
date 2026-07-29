@@ -12,6 +12,7 @@ import { confirm as confirmDialog } from "@/lib/confirm";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { SellSelfPrepDialog, type SellSelfPrepCustomer, type SellSelfPrepWarehouseItem } from "@/components/SellSelfPrepDialog";
 import { formatSoldPaymentSummary } from "@/lib/payment-summary";
+import { rupiah } from "@/lib/stock-format";
 import { Wallet, HandCoins } from "lucide-react";
 import { generateSaleReceipt } from "@/lib/sale-receipt";
 import {
@@ -830,6 +831,9 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                           Number(r.sold_total ?? 0),
                           Number(r.sold_paid_amount ?? 0),
                         )}
+                      </div>
+                      <div className="text-ms-2xs text-success/90">
+                        Nilai penjualan: <b>{rupiah(Number(r.sold_total ?? 0))}</b>
                       </div>
                       <div className="text-ms-2xs text-success/80">
                         {new Date(r.sold_at).toLocaleString("id-ID")}
