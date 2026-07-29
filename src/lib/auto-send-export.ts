@@ -113,19 +113,24 @@ export async function buildAutoSendSummaryPdf(
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
-  const margin = 40;
+  const { getPdfPrefs, densityFactor } = await import("@/lib/pdf-prefs");
+  const prefs = getPdfPrefs();
+  const dFactor = densityFactor(prefs.density);
+  const fScale = prefs.fontScale;
+  const lineH = (n: number) => n * dFactor * fScale;
+  const margin = Math.round(40 * dFactor);
   const { prepareBrandHeader } = await import("@/lib/pdf-brand");
   const { bandH, draw: drawBrandHeader } = await prepareBrandHeader(doc, { marginX: margin });
   drawBrandHeader();
   let y = margin + bandH;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
+  doc.setFontSize(16 * fScale);
   doc.text("Ringkasan Auto-Kirim", margin, y);
-  y += 20;
+  y += lineH(20);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(10 * fScale);
   const meta: Array<[string, string]> = [
     ["Produk", p.itemName],
     ["Judul", p.titleName],
@@ -140,19 +145,19 @@ export async function buildAutoSendSummaryPdf(
   for (const [k, v] of meta) {
     doc.text(`${k}:`, margin, y);
     doc.text(v, margin + 110, y);
-    y += 14;
+    y += lineH(14);
   }
-  y += 6;
+  y += lineH(6);
 
   // Header tabel
   doc.setFont("helvetica", "bold");
   doc.setFillColor(230, 230, 235);
-  doc.rect(margin, y - 10, pageW - margin * 2, 16, "F");
+  doc.rect(margin, y - 10, pageW - margin * 2, lineH(16), "F");
   doc.text("Produk", margin + 4, y);
   doc.text("Jml", margin + 240, y);
   doc.text(`Total ${p.unit}`, margin + 290, y);
   if (p.unitPrice > 0) doc.text("Total harga", margin + 380, y);
-  y += 14;
+  y += lineH(14);
   doc.setFont("helvetica", "normal");
 
   for (const g of p.groups) {
@@ -169,13 +174,13 @@ export async function buildAutoSendSummaryPdf(
     doc.text(`${g.grams} ${p.unit}`, margin + 290, y);
     if (p.unitPrice > 0)
       doc.text(rupiah(g.grams * p.unitPrice), margin + 380, y);
-    y += 16;
+    y += lineH(16);
   }
   doc.setTextColor(20, 20, 20);
 
   if (p.unitPrice > 0 && p.groups.some((g) => g.isOther)) {
     y += 6;
-    doc.setFontSize(9);
+    doc.setFontSize(9 * fScale);
     doc.setTextColor(180, 30, 30);
     doc.text(
       "! Harga produk lain memakai tarif produk utama — perbaiki seleksi sebelum lanjut.",
