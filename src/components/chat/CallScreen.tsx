@@ -1424,6 +1424,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   return (
     <div
       ref={rootRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Layar panggilan"
       className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
       onPointerDown={resumePlayback}
     >
