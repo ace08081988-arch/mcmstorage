@@ -2512,15 +2512,66 @@ function PrepCard({
             <DialogDescription className="space-y-1">
               <span className="block">Paket ini kembali ke daftar "Siap kirim" dan bisa diproses ulang.</span>
               <span className="block">Penjualan yang tercatat dari paket ini dihapus, stok gudang dikembalikan, dan piutang dari paket ini dibatalkan.</span>
-              <span className="block text-amber-600 dark:text-amber-400">
-                Kalau piutang paket ini sudah pernah dibayar, pembatalan ditolak — hapus dulu pembayarannya.
-              </span>
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-2 text-ms-xs">
+            <div className="rounded-md border bg-muted/30 p-ms-2 text-muted-foreground">
+              <div className="mb-1 font-semibold uppercase tracking-wider text-ms-2xs">Aturan batal kirim</div>
+              <ul className="list-disc space-y-0.5 pl-4">
+                <li>Tidak boleh ada pembayaran piutang yang sudah tercatat untuk paket ini.</li>
+                <li>Tidak boleh ada uang tunai yang sudah diterima pada paket ini.</li>
+                <li>Paket harus masih berstatus terkirim.</li>
+              </ul>
+            </div>
+            {undoChecking && (
+              <div className="flex items-center gap-ms-2 text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memeriksa syarat pembatalan…
+              </div>
+            )}
+            {undoCheckErr && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-2 text-destructive">
+                Gagal memeriksa: {undoCheckErr}
+                <button className="ml-2 underline" onClick={() => void runUnsendCheck()}>Coba lagi</button>
+              </div>
+            )}
+            {undoCheck && (
+              <>
+                {undoCheck.blockers.length > 0 ? (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-2 text-destructive">
+                    <div className="font-semibold">Pembatalan diblokir</div>
+                    <ul className="mt-1 space-y-1">
+                      {undoCheck.blockers.map((b) => (
+                        <li key={b.code}>
+                          <span className="font-medium">{b.label}</span>
+                          {b.fix && <div className="text-destructive/80">→ {b.fix}</div>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-success/40 bg-success/10 p-ms-2 text-success">
+                    Semua syarat terpenuhi — paket ini aman dibatalkan.
+                  </div>
+                )}
+                {undoCheck.warnings.length > 0 && (
+                  <ul className="rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-amber-700 dark:text-amber-300 space-y-0.5">
+                    {undoCheck.warnings.map((w) => <li key={w.code}>• {w.label}</li>)}
+                  </ul>
+                )}
+                <div className="rounded-md border bg-background p-ms-2 text-muted-foreground">
+                  <div>Baris penjualan: <b>{undoCheck.details.sales_count}</b> · {rupiah(Number(undoCheck.details.sales_total ?? 0))}</div>
+                  <div>Piutang paket: <b>{undoCheck.details.debts_count}</b> · sisa {rupiah(Number(undoCheck.details.debt_remaining ?? 0))}</div>
+                  <div>Pembayaran tercatat: <b>{undoCheck.details.payments_count}</b> · {rupiah(Number(undoCheck.details.payments_total ?? 0))}</div>
+                  <div>Tunai diterima: <b>{rupiah(Number(undoCheck.details.cash_paid ?? 0))}</b></div>
+                </div>
+              </>
+            )}
+          </div>
           <DialogFooter className="gap-ms-2">
             <Button variant="outline" disabled={undoBusy} onClick={() => setUndoOpen(false)}>Batal</Button>
             <Button
-              disabled={undoBusy}
+              disabled={undoBusy || undoChecking || !undoCheck || !undoCheck.can_unsend}
+              title={undoCheck && !undoCheck.can_unsend ? "Selesaikan dulu syarat yang diblokir" : undefined}
               onClick={async () => {
                 setUndoBusy(true);
                 const { error } = await supabase.rpc("unsend_request_prep", { _prep_id: prep.id });
