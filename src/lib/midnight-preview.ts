@@ -11,10 +11,18 @@ import { useEffect, useState } from "react";
 
 export const MIDNIGHT_LS_KEY = "app-midnight-preview";
 export const MIDNIGHT_SCOPE_LS_KEY = "app-midnight-scope";
+export const MIDNIGHT_VARIANT_LS_KEY = "app-theme-variant";
 export const MIDNIGHT_EVENT = "app:midnight-preview";
 
 /** "pages" = hanya Beranda & Gudang, "all" = seluruh halaman. */
 export type MidnightScopeMode = "pages" | "all";
+
+/**
+ * Varian palet tema gelap. "noir" (Noir & Gold) adalah default baru —
+ * hitam pekat dengan aksen emas; "indigo" mempertahankan Midnight Indigo
+ * lama bagi yang lebih suka biru.
+ */
+export type ThemeVariant = "noir" | "indigo";
 
 export function isMidnightEnabled(): boolean {
   if (typeof window === "undefined") return false;
@@ -28,10 +36,18 @@ export function getMidnightScope(): MidnightScopeMode {
     : "pages";
 }
 
+export function getThemeVariant(): ThemeVariant {
+  if (typeof window === "undefined") return "noir";
+  return window.localStorage.getItem(MIDNIGHT_VARIANT_LS_KEY) === "indigo"
+    ? "indigo"
+    : "noir";
+}
+
 /** Terapkan flag ke <html> tanpa menulis localStorage. */
 export function applyMidnightPreview(
   on = isMidnightEnabled(),
   scope: MidnightScopeMode = getMidnightScope(),
+  variant: ThemeVariant = getThemeVariant(),
 ) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -39,6 +55,7 @@ export function applyMidnightPreview(
   else delete root.dataset.midnight;
   if (on && scope === "all") root.dataset.midnightScope = "all";
   else delete root.dataset.midnightScope;
+  root.dataset.themeVariant = variant;
 }
 
 export function setMidnightEnabled(on: boolean) {
@@ -53,6 +70,13 @@ export function setMidnightScope(scope: MidnightScopeMode) {
   window.localStorage.setItem(MIDNIGHT_SCOPE_LS_KEY, scope);
   applyMidnightPreview(isMidnightEnabled(), scope);
   window.dispatchEvent(new CustomEvent(MIDNIGHT_EVENT, { detail: scope }));
+}
+
+export function setThemeVariant(variant: ThemeVariant) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MIDNIGHT_VARIANT_LS_KEY, variant);
+  applyMidnightPreview(isMidnightEnabled(), getMidnightScope(), variant);
+  window.dispatchEvent(new CustomEvent(MIDNIGHT_EVENT, { detail: variant }));
 }
 
 /** State toggle yang ikut sinkron antar komponen/tab. */
@@ -88,6 +112,22 @@ export function useMidnightScope(): [
     };
   }, []);
   return [scope, setMidnightScope];
+}
+
+/** Varian palet (Noir & Gold vs Midnight Indigo). */
+export function useThemeVariant(): [ThemeVariant, (v: ThemeVariant) => void] {
+  const [variant, setVariant] = useState<ThemeVariant>("noir");
+  useEffect(() => {
+    setVariant(getThemeVariant());
+    const sync = () => setVariant(getThemeVariant());
+    window.addEventListener(MIDNIGHT_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(MIDNIGHT_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  return [variant, setThemeVariant];
 }
 /**
  * Menandai halaman aktif sebagai target Midnight Indigo selama komponen
