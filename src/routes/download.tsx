@@ -299,23 +299,27 @@ function ApkCard({
       : "bg-sky-600 hover:bg-sky-700";
   return (
     <div
-      className={`dl-fade-up relative w-full rounded-2xl border bg-card p-ms-5 shadow-sm transition-shadow ${
+      className={`dl-fade-up relative w-full overflow-hidden rounded-2xl border bg-card p-ms-4 shadow-sm transition-shadow sm:p-ms-5 ${
         highlight
           ? "border-sky-400/70 ring-2 ring-sky-400/40 shadow-md dark:border-sky-500/50"
           : ""
       }`}
     >
       {highlight && (
-        <span className="absolute -top-2 right-4 inline-flex items-center gap-ms-1 rounded-full bg-sky-600 px-ms-2 py-0.5 text-ms-2xs font-semibold text-white shadow">
-          <Sparkles className="h-3 w-3" />
-          Baru — bisa dipasang bersama
+        <span className="mb-ms-2 inline-flex max-w-full items-center gap-ms-1 rounded-full bg-sky-600 px-ms-2 py-0.5 text-ms-2xs font-semibold text-white shadow">
+          <Sparkles className="h-3 w-3 shrink-0" />
+          <span className="truncate">Baru — bisa dipasang bersama</span>
         </span>
       )}
-      <div className="mb-3 flex items-center gap-ms-3">
-        <div className={`rounded-xl p-ms-3 ${badge}`}>{icon}</div>
-        <div>
-          <h2 className="text-ms-base font-semibold leading-tight">{title}</h2>
-          <p className="text-ms-xs text-muted-foreground">{subtitle}</p>
+      <div className="mb-ms-3 flex items-center gap-ms-3">
+        <div className={`shrink-0 rounded-xl p-ms-2.5 ${badge}`}>{icon}</div>
+        <div className="min-w-0">
+          <h2 className="truncate text-ms-sm font-semibold leading-tight">
+            {title}
+          </h2>
+          <p className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground">
+            {subtitle}
+          </p>
         </div>
       </div>
       {!apk ? (
