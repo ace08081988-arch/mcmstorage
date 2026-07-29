@@ -77,7 +77,7 @@ export function analyticsPdfFilename(data: AnalyticsExportData, docNo?: string) 
 /** Bangun PDF sebagai Blob (dipakai untuk pratinjau sebelum unduh). */
 export async function buildAnalyticsPdfBlob(
   data: AnalyticsExportData,
-): Promise<{ blob: Blob; filename: string }> {
+): Promise<{ blob: Blob; filename: string; docNumber: string }> {
   const [{ jsPDF }, autoTableMod] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),
