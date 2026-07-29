@@ -1281,15 +1281,13 @@ async function applyDelta({
     } else {
       // Catat pembayaran → alokasi terhadap debts terlama yang masih bersaldo.
       const remaining = Math.abs(delta);
-      const openDebts = summary.debts
-        .filter((d) => d.kind === kind)
-        .map((d) => ({
-          id: d.id,
-          sisa: Math.max(0, Number(d.amount) - (summary.paidByDebt.get(d.id) ?? 0)),
-        }))
-        .filter((d) => d.sisa > 0)
-        .sort((a, b) => a.sisa - b.sisa === 0 ? 0 : 0); // urutan apa adanya (created_at desc dari query)
-      let left = remaining;
+      // SSOT alokasi: sama persis dengan pratinjau "Rincian pembayaran".
+      const plan = planDebtPayment({
+        debts: summary.debts,
+        paidByDebt: summary.paidByDebt,
+        kind,
+        amount: remaining,
+      });
       const rows: Array<{
         user_id: string;
         debt_id: string;
@@ -1298,17 +1296,14 @@ async function applyDelta({
         note: string;
       }> = [];
       const today = new Date().toISOString().slice(0, 10);
-      for (const d of openDebts) {
-        if (left <= 0) break;
-        const take = Math.min(left, d.sisa);
+      for (const l of plan.lines) {
         rows.push({
           user_id: myId,
-          debt_id: d.id,
-          amount: take,
+          debt_id: l.debtId,
+          amount: l.used,
           paid_at: today,
-          note: "Dicatat dari chat",
+          note: `Dicatat dari chat · ${l.invoice}`,
         });
-        left -= take;
       }
       if (rows.length === 0) {
         toast.error("Tidak ada saldo untuk dibayar.");
@@ -1316,7 +1311,8 @@ async function applyDelta({
       }
       const { error } = await supabase.from("debt_payments").insert(rows);
       if (error) throw error;
-      const applied = remaining - left;
+      const applied = plan.applied;
+      const left = plan.leftover;
       toast.success(
         `Pembayaran ${rupiah(applied)} dicatat${left > 0 ? ` (sisa input ${rupiah(left)} tidak dipakai).` : "."}`,
       );
