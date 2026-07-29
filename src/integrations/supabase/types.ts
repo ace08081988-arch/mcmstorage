@@ -4335,6 +4335,7 @@ export type Database = {
         Returns: boolean
       }
       unsend_request_prep: { Args: { _prep_id: string }; Returns: Json }
+      unsend_request_prep_check: { Args: { _prep_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
