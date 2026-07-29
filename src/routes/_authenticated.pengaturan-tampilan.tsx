@@ -36,7 +36,7 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
-import { useMidnightPreview, useMidnightScope } from "@/lib/midnight-preview";
+import { useMidnightPreview, useMidnightScope, useThemeVariant } from "@/lib/midnight-preview";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
   pullAppearanceFromCloud,
@@ -414,6 +414,7 @@ function PengaturanTampilanPage() {
   const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const [midnightOn, setMidnightOn] = useMidnightPreview();
   const [midnightScope, setMidnightScope] = useMidnightScope();
+  const [themeVariant, setThemeVariant] = useThemeVariant();
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
@@ -887,13 +888,13 @@ function PengaturanTampilanPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-ms-2 text-ms-base">
-              <Moon className="h-4 w-4 text-primary" /> Pratinjau Midnight Indigo
+              <Moon className="h-4 w-4 text-primary" /> Tema gelap premium
             </CardTitle>
             <CardDescription className="text-ms-xs">
-              Tema indigo gelap bergaya editorial. Saat aktif, hanya diterapkan
-              ke halaman <span className="font-semibold text-foreground">Beranda</span> dan{" "}
-              <span className="font-semibold text-foreground">Gudang</span>; preset Anda di
-              halaman lain tidak berubah.
+              Pilih <span className="font-semibold text-foreground">Noir &amp; Gold</span> (hitam
+              pekat, aksen emas) atau{" "}
+              <span className="font-semibold text-foreground">Midnight Indigo</span>. Cakupan
+              bisa dibatasi ke Beranda &amp; Gudang atau seluruh aplikasi.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-ms-3">
@@ -918,6 +919,53 @@ function PengaturanTampilanPage() {
           </CardContent>
           {midnightOn ? (
             <CardContent className="space-ms-3 border-t pt-ms-3">
+              <div className="mb-ms-3">
+                <p className="text-ms-xs text-muted-foreground">Palet</p>
+                <div className="mt-2 grid grid-cols-2 gap-ms-2">
+                  {(
+                    [
+                      {
+                        v: "noir" as const,
+                        label: "Noir & Gold",
+                        hint: "Hitam pekat, aksen emas",
+                        swatch: ["#0B0B0D", "#15151A", "#C9A227", "#EDE7D6"],
+                      },
+                      {
+                        v: "indigo" as const,
+                        label: "Midnight Indigo",
+                        hint: "Biru gelap editorial",
+                        swatch: ["#0A0F1F", "#151C33", "#6366F1", "#E6E9F5"],
+                      },
+                    ]
+                  ).map((o) => (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => {
+                        setThemeVariant(o.v);
+                        toast.success(`Palet ${o.label} diterapkan`);
+                      }}
+                      aria-pressed={themeVariant === o.v}
+                      className={`rounded-md border px-ms-2 py-ms-2 text-left transition-transform hover:bg-accent active:scale-[0.97] ${themeVariant === o.v ? "border-primary bg-accent" : ""}`}
+                    >
+                      <span className="mb-1.5 flex gap-1">
+                        {o.swatch.map((c) => (
+                          <span
+                            key={c}
+                            aria-hidden
+                            className="h-3 w-3 rounded-full border border-border/60"
+                            style={{ background: c }}
+                          />
+                        ))}
+                      </span>
+                      <span className="block text-ms-xs font-semibold">{o.label}</span>
+                      <span className="block text-ms-2xs leading-ms-snug text-muted-foreground">
+                        {o.hint}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div>
                 <p className="text-ms-xs text-muted-foreground">Cakupan tema</p>
                 <div className="mt-2 grid grid-cols-2 gap-ms-2">
@@ -934,8 +982,8 @@ function PengaturanTampilanPage() {
                         setMidnightScope(o.v);
                         toast.success(
                           o.v === "all"
-                            ? "Midnight Indigo aktif di semua halaman"
-                            : "Midnight Indigo dibatasi ke Beranda & Gudang",
+                            ? "Tema aktif di semua halaman"
+                            : "Tema dibatasi ke Beranda & Gudang",
                         );
                       }}
                       className={`rounded-md border px-ms-2 py-ms-2 text-left transition-transform hover:bg-accent active:scale-[0.97] ${midnightScope === o.v ? "border-primary bg-accent" : ""}`}
@@ -958,14 +1006,15 @@ function PengaturanTampilanPage() {
                 patch({ font: "editorial", theme: "dark" });
                 setMidnightOn(true);
                 setMidnightScope("all");
-                toast.success("Preset Editorial × Midnight Indigo diterapkan ke semua halaman");
+                setThemeVariant("noir");
+                toast.success("Preset Editorial × Noir & Gold diterapkan ke semua halaman");
               }}
             >
               <Sparkles className="mr-2 h-4 w-4" />
-              Terapkan Editorial × Midnight Indigo (semua halaman)
+              Terapkan Editorial × Noir &amp; Gold (semua halaman)
             </Button>
             <p className="mt-2 text-ms-2xs leading-ms-snug text-muted-foreground">
-              Judul Instrument Serif + teks Work Sans, dipadukan tema indigo gelap di
+              Judul Instrument Serif + teks Work Sans, dipadukan palet hitam-emas di
               seluruh halaman. Tekan Simpan untuk menyimpan pilihan font.
             </p>
           </CardContent>
