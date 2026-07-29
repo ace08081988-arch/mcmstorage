@@ -997,8 +997,8 @@ function TitleEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && confirmDiscardIfDirty(saveStatus)) onClose(); }}>
-      <DialogContent ref={scrollRef} className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-ms-6 pt-6 pb-3">
+      <DialogContent ref={scrollRef} className="max-w-lg">
+        <DialogHeader className="sticky top-0 z-10 -mx-4 -mt-4 border-b bg-background px-4 pt-4 pb-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
           <div className="flex items-start justify-between gap-ms-2">
             <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
             <DialogSaveStatus status={saveStatus} className="shrink-0" />
