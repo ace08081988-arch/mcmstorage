@@ -76,7 +76,7 @@ const DialogContent = React.forwardRef<
         {children}
         <DialogPrimitive.Close
           aria-label="Tutup"
-          className="sticky right-2 top-2 z-20 -mb-11 ml-auto grid h-11 w-11 shrink-0 place-items-center self-end rounded-md opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:right-4 sm:top-4 sm:h-8 sm:w-8 sm:-mb-8"
+          className="absolute right-2 top-2 z-20 grid h-11 w-11 place-items-center rounded-md opacity-70 ring-offset-background cursor-pointer transition-[opacity,box-shadow,background-color] hover:opacity-100 hover:bg-accent focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:right-4 sm:top-4 sm:h-8 sm:w-8"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
