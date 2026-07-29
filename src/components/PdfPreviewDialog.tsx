@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Download, FileWarning, RotateCcw } from "lucide-react";
+import { Loader2, Download, FileWarning, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 
 export type PdfPreviewSource = { blob: Blob; filename: string } | null;
 
@@ -41,13 +41,16 @@ export function sanitizePdfFilename(raw: string, fallback = "dokumen.pdf"): stri
  */
 export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinjau PDF", onDownloaded }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const thumbHostRef = useRef<HTMLDivElement | null>(null);
+  const pageElsRef = useRef<HTMLCanvasElement[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [pages, setPages] = useState(0);
+  const [current, setCurrent] = useState(1);
   const [errMsg, setErrMsg] = useState("");
   // Nama file bisa diubah owner sebelum unduh supaya arsip di perangkat rapi.
   const [name, setName] = useState("");
 
-  const render = useCallback(async (blob: Blob, host: HTMLDivElement) => {
+  const render = useCallback(async (blob: Blob, host: HTMLDivElement, thumbHost: HTMLDivElement | null) => {
     setStatus("loading");
     setErrMsg("");
     try {
@@ -58,7 +61,10 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
       const data = new Uint8Array(await blob.arrayBuffer());
       const doc = await pdfjs.getDocument({ data }).promise;
       host.innerHTML = "";
+      if (thumbHost) thumbHost.innerHTML = "";
+      pageElsRef.current = [];
       setPages(doc.numPages);
+      setCurrent(1);
 
       const hostW = host.clientWidth || 320;
       for (let i = 1; i <= doc.numPages; i++) {
@@ -75,6 +81,34 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
         if (!ctx) continue;
         host.appendChild(canvas);
         await page.render({ canvasContext: ctx, viewport }).promise;
+        pageElsRef.current[i - 1] = canvas;
+
+        // Thumbnail kecil untuk navigasi lompat halaman.
+        if (thumbHost) {
+          const tScale = 92 / base.width;
+          const tView = page.getViewport({ scale: tScale });
+          const tCanvas = document.createElement("canvas");
+          tCanvas.width = Math.floor(tView.width);
+          tCanvas.height = Math.floor(tView.height);
+          tCanvas.className = "h-full w-full object-contain bg-white";
+          const tCtx = tCanvas.getContext("2d");
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.dataset.page = String(i);
+          btn.setAttribute("aria-label", `Lompat ke halaman ${i}`);
+          btn.className =
+            "relative h-20 w-[64px] shrink-0 overflow-hidden rounded-md border border-border/60 transition hover:border-primary";
+          const badge = document.createElement("span");
+          badge.textContent = String(i);
+          badge.className =
+            "absolute bottom-0 right-0 rounded-tl bg-background/85 px-1 text-[10px] font-medium text-foreground";
+          if (tCtx) {
+            btn.appendChild(tCanvas);
+            btn.appendChild(badge);
+            thumbHost.appendChild(btn);
+            await page.render({ canvasContext: tCtx, viewport: tView }).promise;
+          }
+        }
       }
       setStatus("ready");
     } catch (e) {
@@ -83,13 +117,60 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
     }
   }, []);
 
+  const goToPage = useCallback((n: number) => {
+    const el = pageElsRef.current[n - 1];
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setCurrent(n);
+  }, []);
+
+  // Klik thumbnail → lompat ke halaman (delegasi, karena thumbnail dibuat imperatif).
+  useEffect(() => {
+    const host = thumbHostRef.current;
+    if (!host) return;
+    const onClick = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-page]");
+      if (btn?.dataset.page) goToPage(Number(btn.dataset.page));
+    };
+    host.addEventListener("click", onClick);
+    return () => host.removeEventListener("click", onClick);
+  }, [goToPage, status]);
+
+  // Sorot halaman aktif saat digulir.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || status !== "ready") return;
+    const onScroll = () => {
+      const top = host.getBoundingClientRect().top;
+      let active = 1;
+      pageElsRef.current.forEach((el, idx) => {
+        if (el && el.getBoundingClientRect().top - top <= 60) active = idx + 1;
+      });
+      setCurrent(active);
+    };
+    host.addEventListener("scroll", onScroll, { passive: true });
+    return () => host.removeEventListener("scroll", onScroll);
+  }, [status]);
+
+  // Tandai thumbnail aktif.
+  useEffect(() => {
+    const host = thumbHostRef.current;
+    if (!host) return;
+    host.querySelectorAll<HTMLElement>("[data-page]").forEach((btn) => {
+      const on = Number(btn.dataset.page) === current;
+      btn.classList.toggle("ring-2", on);
+      btn.classList.toggle("ring-primary", on);
+      btn.classList.toggle("border-primary", on);
+    });
+  }, [current, pages, status]);
+
   useEffect(() => {
     if (!open || !source) return;
     let cancelled = false;
     const id = window.setTimeout(() => {
       const host = hostRef.current;
       if (!host || cancelled) return;
-      void render(source.blob, host);
+      void render(source.blob, host, thumbHostRef.current);
     }, 30);
     return () => {
       cancelled = true;
@@ -101,7 +182,10 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
     if (!open) {
       setStatus("idle");
       setPages(0);
+      setCurrent(1);
+      pageElsRef.current = [];
       if (hostRef.current) hostRef.current.innerHTML = "";
+      if (thumbHostRef.current) thumbHostRef.current.innerHTML = "";
     }
   }, [open]);
 
@@ -123,11 +207,49 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
           </DialogDescription>
         </DialogHeader>
 
-        <div
-          ref={hostRef}
-          data-testid="pdf-preview-pages"
-          className="min-h-[220px] flex-1 space-y-3 overflow-y-auto rounded-lg bg-muted/40 p-2"
-        />
+        <div className="flex min-h-0 flex-1 gap-2">
+          <div
+            ref={thumbHostRef}
+            data-testid="pdf-preview-thumbs"
+            aria-label="Navigasi halaman"
+            className={`${pages > 1 ? "flex" : "hidden"} w-[76px] shrink-0 flex-col gap-2 overflow-y-auto rounded-lg bg-muted/40 p-1.5`}
+          />
+          <div
+            ref={hostRef}
+            data-testid="pdf-preview-pages"
+            className="min-h-[220px] flex-1 space-y-3 overflow-y-auto rounded-lg bg-muted/40 p-2"
+          />
+        </div>
+
+        {pages > 1 && (
+          <div className="flex shrink-0 items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              aria-label="Halaman sebelumnya"
+              disabled={current <= 1}
+              onClick={() => goToPage(current - 1)}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+            <span data-testid="pdf-preview-page-indicator">
+              Halaman {current} / {pages}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              aria-label="Halaman berikutnya"
+              disabled={current >= pages}
+              onClick={() => goToPage(current + 1)}
+            >
+              <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+          </div>
+        )}
 
         {status === "loading" && (
           <p className="flex items-center gap-2 text-xs text-muted-foreground">
