@@ -2370,6 +2370,8 @@ function PrepCard({
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
+  // Koreksi pencatatan bayar untuk paket yang terlanjur "Terkirim".
+  const [fixOpen, setFixOpen] = useState(false);
   // Kanal aktif untuk dialog verifikasi: default WA (tombol Kirim di kartu),
   // dapat di-override oleh deep-link `send=chat` dari Beranda.
   const [dialogChannel, setDialogChannel] = useState<"whatsapp" | "chat">("whatsapp");
@@ -2418,9 +2420,20 @@ function PrepCard({
               <Send className="h-3 w-3" /> Kirim
             </button>
           ) : (
-            <span className="inline-flex items-center gap-ms-1 rounded-md border border-success/40 bg-success/10 px-ms-2 py-1 text-ms-2xs font-semibold text-success dark:text-success">
-              <CheckCircle2 className="h-3 w-3" /> Terkirim
-            </span>
+            <>
+              <span className="inline-flex items-center gap-ms-1 rounded-md border border-success/40 bg-success/10 px-ms-2 py-1 text-ms-2xs font-semibold text-success dark:text-success">
+                <CheckCircle2 className="h-3 w-3" /> Terkirim
+              </span>
+              <button
+                onClick={() => setFixOpen(true)}
+                className="inline-flex items-center gap-ms-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 py-1 text-ms-2xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
+                aria-label="Perbaiki pencatatan pembayaran"
+                title="Keliru kirim tanpa catat bayar? Perbaiki di sini — sisa otomatis masuk piutang"
+                data-testid={`fix-payment-${prep.id}`}
+              >
+                <Wrench className="h-3 w-3" /> Perbaiki bayar
+              </button>
+            </>
           )}
           <button
             onClick={onDelete}
@@ -2432,6 +2445,13 @@ function PrepCard({
           </button>
         </div>
       </div>
+      {fixOpen && (
+        <FixPrepPaymentDialog
+          prep={prep}
+          onClose={() => setFixOpen(false)}
+          onFixed={() => { setFixOpen(false); onSent(); }}
+        />
+      )}
       {photo ? (
         <img src={photo} alt="" className="aspect-square w-full object-cover" />
       ) : (
@@ -3985,6 +4005,126 @@ function DeliveryHistoryDialog({
             <RotateCw className="mr-1 h-3.5 w-3.5" /> Segarkan
           </Button>
           <Button variant="ghost" size="sm" onClick={onClose}>Tutup</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Koreksi pencatatan bayar untuk paket yang TERLANJUR "Terkirim" tanpa
+ * pembayaran dicatat. Non-destruktif: stok & penjualan tidak diutak-atik,
+ * hanya sisa tagihan yang disinkronkan ke piutang (SSOT hutang piutang)
+ * lewat RPC `fix_request_prep_payment`.
+ */
+function FixPrepPaymentDialog({
+  prep,
+  onClose,
+  onFixed,
+}: {
+  prep: RequestPreparation;
+  onClose: () => void;
+  onFixed: () => void;
+}) {
+  const total = Number(prep.sold_total ?? 0);
+  const [method, setMethod] = useState<"kas" | "hutang">(
+    (prep.sold_payment_method as "kas" | "hutang") ?? "hutang",
+  );
+  const [paidRaw, setPaidRaw] = useState(
+    String(Math.round(Number(prep.sold_paid_amount ?? 0)) || ""),
+  );
+  const [busy, setBusy] = useState(false);
+
+  const paid = method === "kas" ? total : Math.min(parsePaymentAmountInput(paidRaw), total);
+  const remaining = Math.max(total - paid, 0);
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("fix_request_prep_payment", {
+        _prep_id: prep.id,
+        _payment_method: method,
+        _paid_amount: paid,
+        _party_name: prep.sold_party_name ?? undefined,
+      });
+      if (error) throw error;
+      emitDebtTx({
+        kind: "piutang",
+        wasCash: remaining <= 0,
+        amount: remaining,
+        partyId: prep.sold_customer_id ?? null,
+        at: Date.now(),
+      });
+      toast.success(
+        remaining > 0
+          ? `Pencatatan diperbaiki — sisa ${formatPaymentRupiah(remaining)} masuk piutang`
+          : "Pencatatan diperbaiki — lunas, piutang paket ini dihapus",
+      );
+      onFixed();
+    } catch (e) {
+      toast.error("Gagal memperbaiki pencatatan", { description: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o && !busy) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-ms-base">Perbaiki pencatatan bayar</DialogTitle>
+          <DialogDescription className="text-ms-2xs">
+            Paket sudah terkirim ke <b>{prep.sold_party_name ?? "pelanggan"}</b>. Stok &amp;
+            penjualan tidak diubah — hanya catatan hutang piutang yang disinkronkan.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-ms-3">
+          <div className="rounded-md border bg-muted/30 p-ms-2 text-ms-2xs">
+            Total tagihan: <b>{formatPaymentRupiah(total)}</b>
+          </div>
+          <div className="grid grid-cols-2 gap-ms-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={method === "kas" ? "default" : "outline"}
+              onClick={() => setMethod("kas")}
+              disabled={busy}
+            >
+              <Wallet className="mr-1 h-3.5 w-3.5" /> Lunas (kas)
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={method === "hutang" ? "default" : "outline"}
+              onClick={() => setMethod("hutang")}
+              disabled={busy}
+            >
+              <HandCoins className="mr-1 h-3.5 w-3.5" /> Hutang
+            </Button>
+          </div>
+          {method === "hutang" && (
+            <div className="space-y-1">
+              <Label className="text-ms-2xs">Dibayar sekarang (boleh 0)</Label>
+              <Input
+                inputMode="numeric"
+                value={paidRaw}
+                onChange={(e) => setPaidRaw(e.target.value)}
+                placeholder="0"
+                disabled={busy}
+                className="h-9 text-ms-sm"
+              />
+              <p className="text-ms-2xs text-muted-foreground">
+                Sisa <b>{formatPaymentRupiah(remaining)}</b> akan tercatat sebagai piutang.
+              </p>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
+          <Button size="sm" onClick={submit} disabled={busy}>
+            {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+            Simpan koreksi
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
