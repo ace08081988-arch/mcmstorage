@@ -364,6 +364,15 @@ export function ChatHeaderDebtControls({
       return;
     }
     const amount = Math.abs(delta);
+    // Jaring pengaman terakhir: jangan pernah menulis pembayaran yang
+    // membuat saldo akhir negatif, dari jalur mana pun.
+    const saldo = kind === "hutang" ? hutang : piutang;
+    if (amount > saldo) {
+      toast.error(
+        `Pembayaran ${rupiah(amount)} melebihi sisa ${kind} ${rupiah(saldo)} — saldo akhir akan negatif.`,
+      );
+      return;
+    }
     const plan = planDebtPayment({
       debts: safeSummary.debts,
       paidByDebt: safeSummary.paidByDebt,
@@ -624,12 +633,14 @@ export function ChatHeaderDebtControls({
             label="Piutang (dia berhutang)"
             balance={piutang}
             kind="piutang"
+            otherBalance={hutang}
             onSubmit={(delta) => requestDelta(delta, "piutang")}
           />
           <KindRow
             label="Hutang (Anda berhutang)"
             balance={hutang}
             kind="hutang"
+            otherBalance={piutang}
             onSubmit={(delta) => requestDelta(delta, "hutang")}
           />
         </div>
@@ -1068,11 +1079,14 @@ function KindRow({
   balance,
   kind,
   onSubmit,
+  otherBalance,
 }: {
   label: string;
   balance: number;
   kind: Kind;
   onSubmit: (delta: number) => Promise<void>;
+  /** Saldo jenis lawan (untuk peringatan catatan yang bertentangan). */
+  otherBalance: number;
 }) {
   const [raw, setRaw] = useState<string>("");
   const [busy, setBusy] = useState(false);
@@ -1083,16 +1097,64 @@ function KindRow({
   const targetParsed = Number(target.replace(/\D+/g, ""));
   const hasTarget = target.trim() !== "" && Number.isFinite(targetParsed);
   const delta = hasTarget ? targetParsed - balance : 0;
+  // Sudah dikonfirmasi untuk nominal "tidak wajar" (butuh tekan dua kali).
+  const [ack, setAck] = useState(false);
+  useEffect(() => setAck(false), [raw, target]);
+
+  /**
+   * Validasi nominal sebelum menulis ke buku hutang/piutang.
+   * - blok: pembayaran melebihi sisa (saldo akhir jadi negatif) atau saat
+   *   tidak ada tagihan terbuka;
+   * - peringatan: nominal jauh di luar kebiasaan, atau menambah tagihan
+   *   jenis ini padahal jenis lawannya masih bersaldo (saling bertentangan).
+   */
+  const payBlock =
+    hasAmount && balance <= 0
+      ? `Tidak ada sisa ${kind} untuk dibayar.`
+      : hasAmount && parsed > balance
+        ? `Pembayaran ${rupiah(parsed)} melebihi sisa ${rupiah(balance)} — saldo akhir akan negatif.`
+        : null;
+  const targetBlock =
+    hasTarget && targetParsed < 0 ? "Saldo akhir tidak boleh negatif." : null;
+  const activeAmount = quick && hasTarget ? Math.abs(delta) : parsed;
+  const unreasonable =
+    (hasAmount || (quick && hasTarget && delta !== 0)) &&
+    (activeAmount >= 1_000_000_000 ||
+      (balance > 0 && activeAmount > balance * 100));
+  const conflict =
+    otherBalance > 0 &&
+    ((hasAmount && !payBlock) || (quick && hasTarget && delta > 0));
+  const warning = targetBlock
+    ? null
+    : unreasonable
+      ? `Nominal ${rupiah(activeAmount)} jauh di luar kebiasaan untuk kontak ini. Pastikan tidak salah ketik.`
+      : conflict
+        ? `Kontak ini masih punya saldo ${kind === "piutang" ? "hutang" : "piutang"} ${rupiah(otherBalance)}. Menambah ${kind} sekaligus bisa membuat catatan saling bertentangan.`
+        : null;
+  /** Untuk peringatan (bukan blokir), butuh konfirmasi sekali. */
+  const guard = (): boolean => {
+    if (!warning) return true;
+    if (ack) return true;
+    setAck(true);
+    toast.warning(warning, { description: "Tekan sekali lagi untuk tetap menyimpan." });
+    return false;
+  };
 
   const submit = async (sign: 1 | -1) => {
     if (!hasAmount) {
       toast.error("Isi jumlah dulu.");
       return;
     }
+    if (sign === -1 && payBlock) {
+      toast.error(payBlock);
+      return;
+    }
+    if (!guard()) return;
     setBusy(true);
     try {
       await onSubmit(sign * parsed);
       setRaw("");
+      setAck(false);
     } finally {
       setBusy(false);
     }
@@ -1103,14 +1165,20 @@ function KindRow({
       toast.error("Isi nominal baru dulu.");
       return;
     }
+    if (targetBlock) {
+      toast.error(targetBlock);
+      return;
+    }
     if (delta === 0) {
       toast.info("Nominal sudah sama.");
       return;
     }
+    if (!guard()) return;
     setBusy(true);
     try {
       await onSubmit(delta);
       setTarget("");
+      setAck(false);
     } finally {
       setBusy(false);
     }
@@ -1174,6 +1242,12 @@ function KindRow({
                 : `Catat pembayaran ${rupiah(Math.abs(delta))}`
               : "Isi saldo akhir yang benar — selisihnya dicatat otomatis."}
           </p>
+          {targetBlock ? (
+            <p className="mt-1 flex items-start gap-1 text-ms-2xs leading-snug text-destructive">
+              <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+              {targetBlock}
+            </p>
+          ) : null}
         </div>
       ) : null}
       <div className="flex items-center gap-ms-1.5">
@@ -1182,10 +1256,10 @@ function KindRow({
           size="icon"
           variant="outline"
           className="h-8 w-8 shrink-0"
-          disabled={busy || balance <= 0 || !hasAmount}
+          disabled={busy || balance <= 0 || !hasAmount || !!payBlock}
           onClick={() => submit(-1)}
           aria-label="Kurangi (catat pembayaran)"
-          title="Catat pembayaran"
+          title={payBlock ?? "Catat pembayaran"}
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Minus className="h-3.5 w-3.5" />}
         </Button>
@@ -1210,6 +1284,27 @@ function KindRow({
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
         </Button>
       </div>
+      {payBlock ? (
+        <p className="mt-1 flex items-start gap-1 text-ms-2xs leading-snug text-destructive">
+          <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+          {payBlock}
+          {balance > 0 ? (
+            <button
+              type="button"
+              className="ml-1 shrink-0 underline"
+              onClick={() => setRaw(String(balance))}
+            >
+              Pakai {rupiah(balance)}
+            </button>
+          ) : null}
+        </p>
+      ) : warning ? (
+        <p className="mt-1 flex items-start gap-1 text-ms-2xs leading-snug text-warning">
+          <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+          {warning}
+          {ack ? " Tekan sekali lagi untuk tetap menyimpan." : ""}
+        </p>
+      ) : null}
     </div>
   );
 }
