@@ -4,6 +4,7 @@
  * perhitungan ulang di sini.
  */
 import { prepareBrandHeader, drawSignatureBlock } from "@/lib/pdf-brand";
+import { nextDocNumber, docNumberSlug } from "@/lib/doc-number";
 import { getPdfPrefs, densityFactor } from "@/lib/pdf-prefs";
 
 export type AnalyticsExportRow = {
@@ -67,14 +68,16 @@ export function exportAnalyticsCsv(data: AnalyticsExportData) {
   );
 }
 
-export function analyticsPdfFilename(data: AnalyticsExportData) {
-  return `ringkasan-analytics-${stamp(data.tanggal)}.pdf`;
+export function analyticsPdfFilename(data: AnalyticsExportData, docNo?: string) {
+  return docNo
+    ? `${docNumberSlug(docNo)}-ringkasan-analytics.pdf`
+    : `ringkasan-analytics-${stamp(data.tanggal)}.pdf`;
 }
 
 /** Bangun PDF sebagai Blob (dipakai untuk pratinjau sebelum unduh). */
 export async function buildAnalyticsPdfBlob(
   data: AnalyticsExportData,
-): Promise<{ blob: Blob; filename: string }> {
+): Promise<{ blob: Blob; filename: string; docNumber: string }> {
   const [{ jsPDF }, autoTableMod] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),
@@ -107,8 +110,12 @@ export async function buildAnalyticsPdfBlob(
   const cellPad = (dense ? 3.5 : 5) * dFactor;
 
   // Kop resmi: logo + nama bisnis, digambar di setiap halaman.
+  // Nomor dokumen otomatis (INV-YYYYMMDD-XXXX) untuk jejak audit.
+  const docNo = await nextDocNumber("INV", data.tanggal);
   const { bandH, orgName, brand, draw: drawBrandHeader } = await prepareBrandHeader(doc, {
     marginX,
+    docNumber: docNo,
+    subtitle: "Dokumen resmi",
   });
   const marginTop = Math.round((dense ? 34 : 44) * dFactor) + bandH;
   drawBrandHeader();
@@ -121,6 +128,8 @@ export async function buildAnalyticsPdfBlob(
   doc.setFontSize(9 * fScale);
   doc.setTextColor(110);
   doc.text(`Dibuat: ${data.tanggal.toLocaleString("id-ID")}`, marginX, y);
+  y += 12;
+  doc.text(`No. dokumen: ${docNo}`, marginX, y);
   y += 12;
   doc.text("Sumber angka: penjualan (SSOT)", marginX, y);
   doc.setTextColor(0);
@@ -207,9 +216,14 @@ export async function buildAnalyticsPdfBlob(
     fontScale: fScale,
     date: data.tanggal,
     startY: signY,
+    docNumber: docNo,
   });
 
-  return { blob: doc.output("blob") as Blob, filename: analyticsPdfFilename(data) };
+  return {
+    blob: doc.output("blob") as Blob,
+    filename: analyticsPdfFilename(data, docNo),
+    docNumber: docNo,
+  };
 }
 
 export async function exportAnalyticsPdf(data: AnalyticsExportData) {

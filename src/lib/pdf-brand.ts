@@ -76,7 +76,7 @@ export type BrandHeader = {
  */
 export async function prepareBrandHeader(
   doc: Doc,
-  opts: { marginX?: number; subtitle?: string } = {},
+  opts: { marginX?: number; subtitle?: string; docNumber?: string } = {},
 ): Promise<BrandHeader> {
   const marginX = opts.marginX ?? 40;
   const bandH = 46;
@@ -100,7 +100,18 @@ export async function prepareBrandHeader(
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13);
     doc.text(orgName, tx, bandH / 2 + 1, { baseline: "middle" });
-    if (opts.subtitle !== "") {
+    if (opts.docNumber) {
+      doc.setFontSize(8);
+      doc.text(`No. ${opts.docNumber}`, pageW - marginX, bandH / 2 - 5, {
+        align: "right",
+        baseline: "middle",
+      });
+      doc.setFontSize(7.5);
+      doc.text(opts.subtitle ?? "Dokumen resmi", pageW - marginX, bandH / 2 + 8, {
+        align: "right",
+        baseline: "middle",
+      });
+    } else if (opts.subtitle !== "") {
       doc.setFontSize(8);
       doc.text(opts.subtitle ?? "Laporan resmi", pageW - marginX, bandH / 2 + 1, {
         align: "right",
@@ -139,6 +150,8 @@ export type SignatureBlockOptions = {
   signerName?: string;
   /** Y awal blok (pt). Bila kurang ruang, blok ditempel di atas footer. */
   startY?: number;
+  /** Nomor dokumen otomatis, dicetak di sisi kiri blok tanda tangan. */
+  docNumber?: string;
 };
 
 /**
@@ -196,6 +209,11 @@ export function drawSignatureBlock(doc: SignDoc, opts: SignatureBlockOptions = {
   doc.text("Cap / stempel:", marginX, y + 14);
   doc.setDrawColor(200);
   doc.rect(marginX, y + 22, 108, 62);
+  if (opts.docNumber) {
+    doc.setTextColor(110);
+    doc.setFontSize(8 * fs);
+    doc.text(`No. dokumen: ${opts.docNumber}`, marginX, y + 96);
+  }
 
   doc.setTextColor(0);
   return lineY + 30;
