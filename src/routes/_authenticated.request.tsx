@@ -4045,10 +4045,16 @@ function FixPrepPaymentDialog({
         _prep_id: prep.id,
         _payment_method: method,
         _paid_amount: paid,
-        _party_name: prep.sold_party_name ?? null,
+        _party_name: prep.sold_party_name ?? undefined,
       });
       if (error) throw error;
-      emitDebtTx();
+      emitDebtTx({
+        kind: "piutang",
+        wasCash: remaining <= 0,
+        amount: remaining,
+        partyId: prep.sold_customer_id ?? null,
+        at: Date.now(),
+      });
       toast.success(
         remaining > 0
           ? `Pencatatan diperbaiki — sisa ${formatPaymentRupiah(remaining)} masuk piutang`
