@@ -11,6 +11,7 @@ import {
   Hash,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { rupiah } from "@/lib/stock-format";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   deriveEcerStatus,
@@ -262,11 +263,11 @@ export function OrderSummaryCard({
           <div className="flex items-center gap-ms-1.5">
             <Wallet className="h-3.5 w-3.5" aria-hidden />
             <span className="truncate">
-              Total Rp {soldTotal.toLocaleString("id-ID")}
+              Total {rupiah(soldTotal)}
               {sisa != null && sisa > 0 ? (
                 <span className="text-warning dark:text-warning">
                   {" "}
-                  · Sisa Rp {sisa.toLocaleString("id-ID")}
+                  · Sisa {rupiah(sisa)}
                 </span>
               ) : null}
             </span>
