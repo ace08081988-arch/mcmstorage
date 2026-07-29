@@ -2492,7 +2492,13 @@ function PrepCard({
                 toast.success("Pengiriman dibatalkan", {
                   description: "Paket kembali ke daftar siap kirim, stok & piutang sudah dipulihkan.",
                 });
-                emitDebtTx();
+                emitDebtTx({
+                  kind: "piutang",
+                  wasCash: prep.sold_payment_method === "kas",
+                  amount: 0,
+                  partyId: prep.sold_customer_id ?? null,
+                  at: Date.now(),
+                });
                 onSent();
               }}
             >
