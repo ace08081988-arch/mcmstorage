@@ -367,6 +367,7 @@ export function ChatHeaderDebtControls({
    */
   const requestDelta = async (delta: number, kind: Kind) => {
     if (delta >= 0) {
+      markBaseline();
       await applyDelta({
         delta,
         kind,
@@ -374,6 +375,7 @@ export function ChatHeaderDebtControls({
         myId,
         peerName,
         onDone: () => void afterChange(),
+        onRecord: recordChange,
       });
       return;
     }
@@ -404,6 +406,7 @@ export function ChatHeaderDebtControls({
     if (!payPlan) return;
     setPayingPlan(true);
     try {
+      markBaseline();
       await applyDelta({
         delta: -payPlan.amount,
         kind: payPlan.kind,
@@ -411,6 +414,7 @@ export function ChatHeaderDebtControls({
         myId,
         peerName,
         onDone: () => void afterChange(),
+        onRecord: recordChange,
       });
       setPayPlan(null);
     } finally {
