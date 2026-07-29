@@ -732,6 +732,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const rootRef = useRef<HTMLDivElement | null>(null);
   const doneRef = useRef(false);
   const helloReceivedRef = useRef(false);
+  useFocusTrap({ ref: rootRef, autoFocus: false });
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const toggleFullscreen = useCallback(async () => {
