@@ -295,6 +295,20 @@ export function ChatHeaderDebtControls({
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
   // "Kirim laporan" menonjol dan pemilik toko tidak lupa mengabarkan.
   const [dirty, setDirty] = useState(false);
+  // Catatan perubahan sesi ini (sejak laporan terakhir dikirim) — dipakai
+  // sebagai ringkasan konfirmasi terakhir sebelum "Kirim sekarang".
+  const [changeLog, setChangeLog] = useState<SessionChange[]>([]);
+  const [baseline, setBaseline] = useState<{ hutang: number; piutang: number } | null>(
+    null,
+  );
+  const [confirmSend, setConfirmSend] = useState(false);
+
+  /** Simpan saldo sebelum perubahan pertama supaya delta bisa dihitung. */
+  const markBaseline = () => {
+    setBaseline((b) => b ?? { hutang, piutang });
+  };
+  const recordChange = (entry: SessionChange) =>
+    setChangeLog((prev) => [...prev, entry]);
 
   /** Semua perubahan saldo dari chat memicu refresh SSOT di seluruh app. */
   const afterChange = async () => {
