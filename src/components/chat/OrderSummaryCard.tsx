@@ -203,13 +203,10 @@ export function OrderSummaryCard({
     task.data,
   ]);
 
-  if (!hasAnyLink) return null;
-
   const prepForPayment =
     (requestPrep.data as PrepLifecycleInput | null) ??
     (ecerPrep.data as PrepLifecycleInput | null) ??
     null;
-  const payBadge = paymentBadge(prepForPayment);
   // Nilai penjualan mengikuti SSOT yang sama dengan kartu Request/Ecer:
   // pakai sold_total, dan bila kosong ambil dari catatan penjualan paket itu.
   const soldSource: SoldSource = links.linked_request_prep_id
@@ -223,6 +220,10 @@ export function OrderSummaryCard({
     prepForPayment?.sold_total,
     Boolean(prepForPayment?.sold_at),
   );
+
+  if (!hasAnyLink) return null;
+
+  const payBadge = paymentBadge(prepForPayment);
   const customerName = customer.data?.name ?? null;
   const productName = product.data?.name ?? null;
   const grams =
