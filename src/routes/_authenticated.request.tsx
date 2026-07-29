@@ -43,6 +43,7 @@ import { ecerSignedUrl } from "@/lib/ecer";
 import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { useNavigate } from "@tanstack/react-router";
 import { rupiah } from "@/lib/stock-format";
+import { useEffectiveSoldTotal } from "@/lib/sold-total";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScrollProgress";
 import { DialogSaveStatus, useSaveStatus, useSaveStatusToast, confirmDiscardIfDirty } from "@/components/DialogSaveStatus";
@@ -2414,27 +2415,15 @@ function PrepCard({
   const photoPaths = useMemo(() => photoPairs.map((p) => p.path), [photoPairs]);
   useEffect(() => { requestSignedUrl(photoPaths[0] ?? null, 60 * 60).then(setPhoto); }, [photoPaths]);
   const sold = isSentPrep(prep);
-  // Nominal penjualan riil dari baris `sales` yang berasal dari paket ini
-  // (source_id = prep.id). Dipakai sebagai fallback bila `sold_total` kosong /
-  // 0 karena salah input saat kirim, supaya kartu tidak menampilkan Rp0.
-  const [salesTotal, setSalesTotal] = useState<number | null>(null);
-  useEffect(() => {
-    if (!sold) { setSalesTotal(null); return; }
-    let alive = true;
-    supabase
-      .from("sales")
-      .select("total_revenue")
-      .eq("source", "request_prep")
-      .eq("source_id", prep.id)
-      .then(({ data }) => {
-        if (!alive || !data) return;
-        setSalesTotal(data.reduce((s, r) => s + Number(r.total_revenue ?? 0), 0));
-      });
-    return () => { alive = false; };
-  }, [sold, prep.id]);
-  const soldTotalRaw = Number(prep.sold_total ?? 0);
-  const effectiveTotal = soldTotalRaw > 0 ? soldTotalRaw : (salesTotal ?? 0);
-  const totalFromSales = soldTotalRaw <= 0 && (salesTotal ?? 0) > 0;
+  // Nominal penjualan memakai SSOT bersama (src/lib/sold-total.ts) supaya
+  // angka & formatnya identik di kartu Request, Ecer, Siapkan Sendiri, dan
+  // ringkasan pesanan di chat.
+  const {
+    total: effectiveTotal,
+    fromSales: totalFromSales,
+    label: effectiveTotalLabel,
+    salesTotal,
+  } = useEffectiveSoldTotal("request_prep", prep.id, prep.sold_total, sold);
   const unitFor = (wid: string) => {
     const w = warehouseItems.find((x) => x.id === wid);
     const ti = titleItems.find((t) => t.warehouse_item_id === wid);
@@ -2616,7 +2605,7 @@ function PrepCard({
               )}
             </div>
             <div className="text-success/90 dark:text-success/90">
-              Nilai penjualan: <b>{rupiah(effectiveTotal)}</b>
+              Nilai penjualan: <b>{effectiveTotalLabel}</b>
               {totalFromSales && (
                 <span className="ml-1 text-muted-foreground">(dari catatan penjualan)</span>
               )}
