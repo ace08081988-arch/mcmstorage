@@ -1587,6 +1587,8 @@ type SessionChange = {
   type: "tagihan" | "pembayaran";
   amount: number;
   detail: string[];
+  /** Baris yang benar-benar tertulis — dipakai tombol Undo untuk menghapusnya. */
+  rows?: { table: "debts" | "debt_payments"; ids: string[] };
 };
 
 async function applyDelta({
@@ -1650,7 +1652,10 @@ async function applyDelta({
       };
       if (kind === "hutang") insert.supplier_id = partyId;
       else insert.customer_id = partyId;
-      const { error } = await supabase.from("debts").insert(insert);
+      const { data: inserted, error } = await supabase
+        .from("debts")
+        .insert(insert)
+        .select("id");
       if (error) throw error;
       onRecord?.({
         at: Date.now(),
@@ -1658,6 +1663,10 @@ async function applyDelta({
         type: "tagihan",
         amount: delta,
         detail: [`Tagihan baru ${rupiah(delta)} untuk ${partyName}`],
+        rows: {
+          table: "debts",
+          ids: (inserted ?? []).map((r) => r.id as string),
+        },
       });
       toast.success(
         `${kind === "hutang" ? "Hutang" : "Piutang"} baru ${rupiah(delta)} dicatat.`,
@@ -1693,7 +1702,10 @@ async function applyDelta({
         toast.error("Tidak ada saldo untuk dibayar.");
         return;
       }
-      const { error } = await supabase.from("debt_payments").insert(rows);
+      const { data: insertedPay, error } = await supabase
+        .from("debt_payments")
+        .insert(rows)
+        .select("id");
       if (error) throw error;
       const applied = plan.applied;
       const left = plan.leftover;
@@ -1703,6 +1715,10 @@ async function applyDelta({
         type: "pembayaran",
         amount: applied,
         detail: plan.lines.map((l) => `${l.invoice} −${rupiah(l.used)}`),
+        rows: {
+          table: "debt_payments",
+          ids: (insertedPay ?? []).map((r) => r.id as string),
+        },
       });
       toast.success(
         `Pembayaran ${rupiah(applied)} dicatat${left > 0 ? ` (sisa input ${rupiah(left)} tidak dipakai).` : "."}`,
