@@ -70,6 +70,22 @@ type HistoryEntry = {
   note: string | null;
 };
 
+/** Lewat kontrol mana perubahan dibuat: ikon pensil (quick) atau tombol −/+. */
+type AuditVia = "quick" | "button";
+
+type AuditRow = {
+  id: string;
+  actor_name: string | null;
+  party_name: string | null;
+  kind: string;
+  action: string;
+  amount: number;
+  balance_before: number | null;
+  balance_after: number | null;
+  detail: unknown;
+  created_at: string;
+};
+
 /**
  * Panel kontrol hutang/piutang ringkas di header chat.
  *
@@ -289,7 +305,7 @@ export function ChatHeaderDebtControls({
   // Pratinjau alokasi pembayaran (tombol "−"): rincian tagihan terlama
   // mana saja yang akan dikurangi, sebelum benar-benar disimpan.
   const [payPlan, setPayPlan] = useState<
-    { kind: Kind; amount: number; plan: AllocPlan } | null
+    { kind: Kind; amount: number; plan: AllocPlan; via: AuditVia } | null
   >(null);
   const [payingPlan, setPayingPlan] = useState(false);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
@@ -309,6 +325,81 @@ export function ChatHeaderDebtControls({
   };
   const recordChange = (entry: SessionChange) =>
     setChangeLog((prev) => [...prev, entry]);
+
+  /** Nama pelaku (untuk kolom "siapa yang mengubah") di audit log. */
+  const actorQ = useQuery({
+    queryKey: ["debt-audit-actor", myId],
+    enabled: !!myId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", myId)
+        .maybeSingle();
+      return (data?.display_name as string | null) ?? null;
+    },
+  });
+  const actorName = actorQ.data ?? "Saya";
+
+  const auditKey = ["debt-adjust-audit", myId, peerName, conversationId ?? ""];
+  const auditQ = useQuery({
+    queryKey: auditKey,
+    enabled: !!myId,
+    staleTime: 10_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("debt_adjust_audit")
+        .select(
+          "id, actor_name, party_name, kind, action, amount, balance_before, balance_after, detail, created_at",
+        )
+        .eq("user_id", myId)
+        .eq("party_name", peerName)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      return (data ?? []) as AuditRow[];
+    },
+  });
+  const [auditOpen, setAuditOpen] = useState(false);
+
+  /**
+   * Tulis jejak audit: siapa, kapan, lewat tombol mana, dan transaksi apa
+   * saja yang ditambah / dibayar. Gagal menulis audit tidak boleh
+   * membatalkan transaksi yang sudah tersimpan — cukup diamkan.
+   */
+  const writeAudit = async (
+    entry: SessionChange,
+    meta: { via: AuditVia; before: number },
+  ) => {
+    const after =
+      entry.type === "pembayaran"
+        ? meta.before - entry.amount
+        : meta.before + entry.amount;
+    try {
+      await supabase.from("debt_adjust_audit").insert({
+        user_id: myId,
+        actor_name: actorName,
+        conversation_id: conversationId ?? null,
+        party_name: peerName,
+        kind: entry.kind,
+        action:
+          meta.via === "quick"
+            ? entry.type === "pembayaran"
+              ? "edit cepat (pembayaran)"
+              : "edit cepat (tagihan)"
+            : entry.type === "pembayaran"
+              ? "catat pembayaran"
+              : "tambah tagihan",
+        amount: entry.amount,
+        balance_before: meta.before,
+        balance_after: after,
+        detail: entry.detail,
+      });
+      await qc.invalidateQueries({ queryKey: auditKey });
+    } catch {
+      /* audit bersifat pelengkap */
+    }
+  };
 
   /** Semua perubahan saldo dari chat memicu refresh SSOT di seluruh app. */
   const afterChange = async () => {
@@ -365,7 +456,8 @@ export function ChatHeaderDebtControls({
    * Tombol "−" tidak langsung menulis: tampilkan dulu rincian tagihan
    * (invoice) terlama yang akan dikurangi. Tombol "+" tetap langsung.
    */
-  const requestDelta = async (delta: number, kind: Kind) => {
+  const requestDelta = async (delta: number, kind: Kind, via: AuditVia = "button") => {
+    const before = kind === "hutang" ? hutang : piutang;
     if (delta >= 0) {
       markBaseline();
       await applyDelta({
@@ -375,7 +467,10 @@ export function ChatHeaderDebtControls({
         myId,
         peerName,
         onDone: () => void afterChange(),
-        onRecord: recordChange,
+        onRecord: (e) => {
+          recordChange(e);
+          void writeAudit(e, { via, before });
+        },
       });
       return;
     }
@@ -399,7 +494,7 @@ export function ChatHeaderDebtControls({
       toast.error("Tidak ada tagihan terbuka untuk dibayar.");
       return;
     }
-    setPayPlan({ kind, amount, plan });
+    setPayPlan({ kind, amount, plan, via });
   };
 
   const confirmPayPlan = async () => {
@@ -414,7 +509,13 @@ export function ChatHeaderDebtControls({
         myId,
         peerName,
         onDone: () => void afterChange(),
-        onRecord: recordChange,
+        onRecord: (e) => {
+          recordChange(e);
+          void writeAudit(e, {
+            via: payPlan.via,
+            before: payPlan.kind === "hutang" ? hutang : piutang,
+          });
+        },
       });
       setPayPlan(null);
     } finally {
@@ -658,15 +759,68 @@ export function ChatHeaderDebtControls({
             balance={piutang}
             kind="piutang"
             otherBalance={hutang}
-            onSubmit={(delta) => requestDelta(delta, "piutang")}
+            onSubmit={(delta, via) => requestDelta(delta, "piutang", via)}
           />
           <KindRow
             label="Hutang (Anda berhutang)"
             balance={hutang}
             kind="hutang"
             otherBalance={piutang}
-            onSubmit={(delta) => requestDelta(delta, "hutang")}
+            onSubmit={(delta, via) => requestDelta(delta, "hutang", via)}
           />
+        </div>
+        <div className="mt-2 rounded-lg border">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-ms-2xs font-semibold"
+            onClick={() => setAuditOpen((v) => !v)}
+          >
+            <span>Audit perubahan ({auditQ.data?.length ?? 0})</span>
+            <span className="text-muted-foreground">
+              {auditOpen ? "Tutup" : "Lihat"}
+            </span>
+          </button>
+          {auditOpen ? (
+            <div className="max-h-56 space-y-1.5 overflow-y-auto border-t p-2">
+              {(auditQ.data ?? []).length === 0 ? (
+                <div className="text-ms-2xs text-muted-foreground">
+                  Belum ada perubahan tercatat untuk kontak ini.
+                </div>
+              ) : (
+                (auditQ.data ?? []).map((a) => (
+                  <div key={a.id} className="rounded-md border p-1.5 text-ms-2xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">
+                        {a.action} · {a.kind}
+                      </span>
+                      <span
+                        className={`font-mono font-semibold ${
+                          a.action.includes("pembayaran") ? "text-success" : ""
+                        }`}
+                      >
+                        {a.action.includes("pembayaran") ? "−" : "+"}
+                        {rupiah(Number(a.amount))}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-muted-foreground">
+                      {a.actor_name ?? "—"} · {formatWhen(a.created_at)}
+                    </div>
+                    <div className="text-muted-foreground">
+                      Saldo {rupiah(Number(a.balance_before ?? 0))} →{" "}
+                      {rupiah(Number(a.balance_after ?? 0))}
+                    </div>
+                    {Array.isArray(a.detail) && a.detail.length > 0 ? (
+                      <ul className="mt-0.5 list-disc pl-4 text-muted-foreground">
+                        {(a.detail as string[]).map((d, i) => (
+                          <li key={i}>{d}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+          ) : null}
         </div>
         {conversationId ? (
           <Button
@@ -1201,7 +1355,7 @@ function KindRow({
   label: string;
   balance: number;
   kind: Kind;
-  onSubmit: (delta: number) => Promise<void>;
+  onSubmit: (delta: number, via: AuditVia) => Promise<void>;
   /** Saldo jenis lawan (untuk peringatan catatan yang bertentangan). */
   otherBalance: number;
 }) {
@@ -1269,7 +1423,7 @@ function KindRow({
     if (!guard()) return;
     setBusy(true);
     try {
-      await onSubmit(sign * parsed);
+      await onSubmit(sign * parsed, "button");
       setRaw("");
       setAck(false);
     } finally {
@@ -1293,7 +1447,7 @@ function KindRow({
     if (!guard()) return;
     setBusy(true);
     try {
-      await onSubmit(delta);
+      await onSubmit(delta, "quick");
       setTarget("");
       setAck(false);
     } finally {
