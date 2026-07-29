@@ -16,6 +16,8 @@ import {
   LogIn,
   Globe,
   RefreshCw,
+  History,
+  Trash2,
 } from "lucide-react";
 import {
   getLatestApkVariants,
@@ -25,9 +27,46 @@ import {
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { trackApkDownload } from "@/lib/apk-download-track";
+import { peekUserIdSync, scopedKey } from "@/lib/user-scoped-storage";
+
+/** Satu entri riwayat salin: label yang dikenali user + teks aslinya. */
+type CopyEntry = { label: string; text: string; at: number };
+
+const COPY_HISTORY_MAX = 5;
+
+function copyHistoryKey() {
+  return scopedKey("mcm:download:copyHistory", peekUserIdSync());
+}
+
+function readCopyHistory(): CopyEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(copyHistoryKey());
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (e): e is CopyEntry =>
+        !!e &&
+        typeof e === "object" &&
+        typeof (e as CopyEntry).label === "string" &&
+        typeof (e as CopyEntry).text === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeCopyHistory(list: CopyEntry[]) {
+  try {
+    window.localStorage.setItem(copyHistoryKey(), JSON.stringify(list));
+  } catch {
+    /* private mode / kuota penuh — riwayat bersifat opsional */
+  }
+}
 
 export const Route = createFileRoute("/download")({
   head: () => ({
