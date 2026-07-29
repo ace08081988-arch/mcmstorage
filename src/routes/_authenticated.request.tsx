@@ -2478,7 +2478,7 @@ function PrepCard({
                 <Wrench className="h-3 w-3" /> Perbaiki bayar
               </button>
               <button
-                onClick={() => setUndoOpen(true)}
+                onClick={() => { setUndoOpen(true); void runUnsendCheck(); }}
                 className="inline-flex items-center gap-ms-1 rounded-md border border-border bg-muted/40 px-ms-2 py-1 text-ms-2xs font-semibold text-foreground/80 hover:bg-muted"
                 aria-label="Batalkan pengiriman"
                 title="Salah input? Kembalikan paket ini ke status belum dikirim"
