@@ -43,6 +43,7 @@ import { ecerSignedUrl } from "@/lib/ecer";
 import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { useNavigate } from "@tanstack/react-router";
 import { rupiah } from "@/lib/stock-format";
+import { useEffectiveSoldTotal } from "@/lib/sold-total";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScrollProgress";
 import { DialogSaveStatus, useSaveStatus, useSaveStatusToast, confirmDiscardIfDirty } from "@/components/DialogSaveStatus";
@@ -2604,7 +2605,7 @@ function PrepCard({
               )}
             </div>
             <div className="text-success/90 dark:text-success/90">
-              Nilai penjualan: <b>{rupiah(effectiveTotal)}</b>
+              Nilai penjualan: <b>{effectiveTotalLabel}</b>
               {totalFromSales && (
                 <span className="ml-1 text-muted-foreground">(dari catatan penjualan)</span>
               )}
