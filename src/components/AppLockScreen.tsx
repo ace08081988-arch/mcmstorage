@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 import { confirm } from "@/lib/confirm";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 type Props = {
   uid: string;
