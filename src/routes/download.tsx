@@ -245,24 +245,26 @@ function InstallDetail({
           berasal dari sumber berbeda, lalu pasang ulang.
         </li>
       </ul>
-      <div className="mt-ms-3 flex flex-wrap gap-ms-2">
+      <div className="mt-ms-3 grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
         <button
           type="button"
           onClick={onRetry}
           disabled={refreshing}
-          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium transition-colors hover:bg-muted disabled:opacity-70"
+          className="inline-flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-medium transition-colors hover:bg-muted disabled:opacity-70"
         >
           <RefreshCw
-            className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+            className={`h-3.5 w-3.5 shrink-0 ${refreshing ? "animate-spin" : ""}`}
           />
-          {refreshing ? "Memeriksa…" : "Periksa versi terbaru"}
+          <span className="truncate">
+            {refreshing ? "Memeriksa…" : "Periksa versi terbaru"}
+          </span>
         </button>
         <Link
           to="/"
-          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+          className="inline-flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-medium transition-colors hover:bg-muted"
         >
-          <Globe className="h-3.5 w-3.5" />
-          Pakai versi web dulu
+          <Globe className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Pakai versi web dulu</span>
         </Link>
       </div>
     </section>
