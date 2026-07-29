@@ -32,6 +32,7 @@ import {
 } from "@/lib/debt-report-templates";
 import { sendMessage } from "@/lib/chat.functions";
 import { emitDebtTx } from "@/lib/debt-tx-event";
+import { planDebtPayment, type AllocPlan } from "@/lib/debt-allocation";
 import {
   debtSyncStatus,
   normalizeParty,
@@ -285,6 +286,12 @@ export function ChatHeaderDebtControls({
   // Saat true, teks pratinjau dibangun ulang begitu data SSOT selesai disegarkan.
   const [resetPending, setResetPending] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
+  // Pratinjau alokasi pembayaran (tombol "−"): rincian tagihan terlama
+  // mana saja yang akan dikurangi, sebelum benar-benar disimpan.
+  const [payPlan, setPayPlan] = useState<
+    { kind: Kind; amount: number; plan: AllocPlan } | null
+  >(null);
+  const [payingPlan, setPayingPlan] = useState(false);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
   // "Kirim laporan" menonjol dan pemilik toko tidak lupa mengabarkan.
   const [dirty, setDirty] = useState(false);
@@ -569,31 +576,13 @@ export function ChatHeaderDebtControls({
             label="Piutang (dia berhutang)"
             balance={piutang}
             kind="piutang"
-            onSubmit={(delta) =>
-              applyDelta({
-                delta,
-                kind: "piutang",
-                summary: safeSummary,
-                myId,
-                peerName,
-                onDone: () => void afterChange(),
-              })
-            }
+            onSubmit={(delta) => requestDelta(delta, "piutang")}
           />
           <KindRow
             label="Hutang (Anda berhutang)"
             balance={hutang}
             kind="hutang"
-            onSubmit={(delta) =>
-              applyDelta({
-                delta,
-                kind: "hutang",
-                summary: safeSummary,
-                myId,
-                peerName,
-                onDone: () => void afterChange(),
-              })
-            }
+            onSubmit={(delta) => requestDelta(delta, "hutang")}
           />
         </div>
         {conversationId ? (
