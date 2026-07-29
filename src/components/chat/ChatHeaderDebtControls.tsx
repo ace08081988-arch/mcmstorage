@@ -1323,6 +1323,15 @@ function KindRow({
   );
 }
 
+/** Satu perubahan saldo yang dibuat dari panel chat pada sesi berjalan. */
+type SessionChange = {
+  at: number;
+  kind: Kind;
+  type: "tagihan" | "pembayaran";
+  amount: number;
+  detail: string[];
+};
+
 async function applyDelta({
   delta,
   kind,
