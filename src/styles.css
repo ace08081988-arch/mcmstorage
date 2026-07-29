@@ -1290,3 +1290,73 @@ html[data-midnight="1"]:is([data-midnight-page="1"], [data-midnight-scope="all"]
       transparent 58%
     );
 }
+
+/* ==========================================================================
+ * Aksesibilitas: skeleton & animasi
+ * - Kontras skeleton dinaikkan (dari primary/10 yang nyaris tak terlihat)
+ *   memakai token semantik agar tetap ikut tema terang/gelap.
+ * - Semua animasi/transisi dihormati terhadap `prefers-reduced-motion: reduce`
+ *   maupun override manual (`html.reduce-motion` / `[data-reduce-motion="on"]`).
+ * ========================================================================== */
+
+.skeleton-a11y {
+  background-color: color-mix(in oklab, var(--muted-foreground) 22%, var(--muted));
+  border: 1px solid color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+}
+
+/* Kontras lebih tinggi lagi bila OS meminta more-contrast. */
+@media (prefers-contrast: more) {
+  .skeleton-a11y {
+    background-color: color-mix(in oklab, var(--muted-foreground) 38%, var(--muted));
+    border-color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  }
+}
+
+/* Denyut skeleton yang lebih lembut namun tetap terbaca. */
+@keyframes skeleton-a11y-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.reduce-motion):not([data-reduce-motion="on"]) .skeleton-a11y {
+    animation: skeleton-a11y-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+/* Reduced motion global: hentikan animasi dekoratif, sisakan state statis. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton-a11y,
+  .animate-pulse {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
+
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after,
+html[data-reduce-motion="on"] *,
+html[data-reduce-motion="on"] *::before,
+html[data-reduce-motion="on"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.reduce-motion .animate-pulse,
+html[data-reduce-motion="on"] .animate-pulse,
+html.reduce-motion .skeleton-a11y,
+html[data-reduce-motion="on"] .skeleton-a11y {
+  animation: none !important;
+  opacity: 1 !important;
+}
