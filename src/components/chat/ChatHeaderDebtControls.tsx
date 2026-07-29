@@ -347,6 +347,54 @@ export function ChatHeaderDebtControls({
 
   const tplCtx = { peerName, hutang, piutang };
 
+  /**
+   * Tombol "−" tidak langsung menulis: tampilkan dulu rincian tagihan
+   * (invoice) terlama yang akan dikurangi. Tombol "+" tetap langsung.
+   */
+  const requestDelta = async (delta: number, kind: Kind) => {
+    if (delta >= 0) {
+      await applyDelta({
+        delta,
+        kind,
+        summary: safeSummary,
+        myId,
+        peerName,
+        onDone: () => void afterChange(),
+      });
+      return;
+    }
+    const amount = Math.abs(delta);
+    const plan = planDebtPayment({
+      debts: safeSummary.debts,
+      paidByDebt: safeSummary.paidByDebt,
+      kind,
+      amount,
+    });
+    if (plan.lines.length === 0) {
+      toast.error("Tidak ada tagihan terbuka untuk dibayar.");
+      return;
+    }
+    setPayPlan({ kind, amount, plan });
+  };
+
+  const confirmPayPlan = async () => {
+    if (!payPlan) return;
+    setPayingPlan(true);
+    try {
+      await applyDelta({
+        delta: -payPlan.amount,
+        kind: payPlan.kind,
+        summary: safeSummary,
+        myId,
+        peerName,
+        onDone: () => void afterChange(),
+      });
+      setPayPlan(null);
+    } finally {
+      setPayingPlan(false);
+    }
+  };
+
   /** Pakai ulang gaya tersimpan: placeholder diisi angka SSOT terbaru. */
   const applyTemplate = (t: DebtReportTemplate) => {
     setPreviewBody(renderTemplate(t.body, tplCtx));
@@ -908,6 +956,79 @@ export function ChatHeaderDebtControls({
               <Send className="mr-1 size-3.5" />
             )}
             Kirim sekarang
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={!!payPlan} onOpenChange={(o) => !payingPlan && !o && setPayPlan(null)}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Rincian pembayaran</DialogTitle>
+          <DialogDescription>
+            {payPlan
+              ? `Pembayaran ${rupiah(payPlan.amount)} akan mengurangi tagihan ${
+                  payPlan.kind === "hutang" ? "hutang" : "piutang"
+                } ${peerName} mulai dari yang terlama.`
+              : ""}
+          </DialogDescription>
+        </DialogHeader>
+        {payPlan ? (
+          <div className="space-y-2">
+            <ul className="max-h-64 space-y-1.5 overflow-y-auto pr-0.5">
+              {payPlan.plan.lines.map((l, i) => (
+                <li key={l.debtId} className="rounded-md border p-2 text-ms-2xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-semibold">
+                      {i + 1}. {l.invoice}
+                    </span>
+                    <span className="font-mono font-semibold text-success">
+                      −{rupiah(l.used)}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-muted-foreground">
+                    {formatWhen(l.createdAt)} · tagihan {rupiah(l.total)}
+                  </div>
+                  <div className="text-muted-foreground">
+                    Sisa {rupiah(l.before)} → {rupiah(l.after)}
+                    {l.after === 0 ? " (lunas)" : ""}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="rounded-md bg-muted/50 p-2 text-ms-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Dipakai</span>
+                <span className="font-mono font-semibold">
+                  {rupiah(payPlan.plan.applied)}
+                </span>
+              </div>
+              {payPlan.plan.leftover > 0 ? (
+                <div className="mt-0.5 flex items-center justify-between text-destructive">
+                  <span>Sisa input tidak terpakai</span>
+                  <span className="font-mono font-semibold">
+                    {rupiah(payPlan.plan.leftover)}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={payingPlan}
+            onClick={() => setPayPlan(null)}
+          >
+            Batal
+          </Button>
+          <Button type="button" disabled={payingPlan} onClick={() => void confirmPayPlan()}>
+            {payingPlan ? (
+              <Loader2 className="mr-1 size-3.5 animate-spin" />
+            ) : (
+              <Minus className="mr-1 size-3.5" />
+            )}
+            Simpan pembayaran
           </Button>
         </DialogFooter>
       </DialogContent>
