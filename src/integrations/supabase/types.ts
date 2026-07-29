@@ -3953,6 +3953,15 @@ export type Database = {
       }
       ensure_order_conversation: { Args: { _order: string }; Returns: string }
       expire_subscriptions: { Args: never; Returns: number }
+      fix_request_prep_payment: {
+        Args: {
+          _paid_amount: number
+          _party_name?: string
+          _payment_method: string
+          _prep_id: string
+        }
+        Returns: Json
+      }
       gen_invite_code: { Args: never; Returns: string }
       get_chat_member_profiles: {
         Args: { _user_ids: string[] }
