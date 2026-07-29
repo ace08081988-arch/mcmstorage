@@ -359,9 +359,12 @@ function ChatListPage() {
           : undefined
       }
     >
+      {/* Blok atas dikunci di bawah header aplikasi (h-14) supaya judul,
+          pencarian, dan filter tidak ikut naik-turun saat daftar digulir. */}
+      <div className="sticky top-14 z-20 wa-surface border-b border-[var(--wa-border)]">
       {selecting ? (
         <header
-          className="sticky top-0 z-20 flex items-center justify-between gap-ms-2 border-b bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
+          className="flex items-center justify-between gap-ms-2 bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
           role="toolbar"
           aria-label="Mode pilih percakapan"
         >
@@ -409,7 +412,7 @@ function ChatListPage() {
           </div>
         </header>
       ) : (
-      <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-ms-2 border-b px-ms-3 py-ms-2">
+      <header className="wa-header flex items-center justify-between gap-ms-2 px-ms-3 py-ms-2">
         <div className="flex min-w-0 items-center gap-ms-2">
           <Button
             type="button"
@@ -494,23 +497,7 @@ function ChatListPage() {
         </div>
       </header>
       )}
-
-      <div className="flex-1 space-ms-3 px-ms-3 py-ms-3">
-      {isError && (conversations?.length ?? 0) > 0 ? (
-        <div className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-xs text-warning dark:text-warning">
-          <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">Menampilkan data offline</p>
-            <p className="opacity-80">
-              Tidak bisa menyegarkan daftar chat: {error instanceof Error ? error.message : "jaringan bermasalah"}.
-            </p>
-          </div>
-          <Button size="sm" variant="outline" className="h-7 px-ms-2 text-ms-2xs" disabled={isFetching} onClick={() => refetch()}>
-            {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Coba lagi"}
-          </Button>
-        </div>
-      ) : null}
-
+      <div className="space-ms-2 px-ms-3 pb-ms-2 pt-ms-2">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--wa-text-muted)]" />
         <Input
@@ -607,6 +594,24 @@ function ChatListPage() {
           >
             + Daftar
           </Link>
+        </div>
+      ) : null}
+      </div>
+      </div>
+
+      <div className="flex-1 space-ms-3 px-ms-3 py-ms-3">
+      {isError && (conversations?.length ?? 0) > 0 ? (
+        <div className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-xs text-warning dark:text-warning">
+          <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">Menampilkan data offline</p>
+            <p className="opacity-80">
+              Tidak bisa menyegarkan daftar chat: {error instanceof Error ? error.message : "jaringan bermasalah"}.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" className="h-7 px-ms-2 text-ms-2xs" disabled={isFetching} onClick={() => refetch()}>
+            {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Coba lagi"}
+          </Button>
         </div>
       ) : null}
 
