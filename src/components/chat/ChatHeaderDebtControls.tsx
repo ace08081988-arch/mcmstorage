@@ -611,6 +611,7 @@ export function ChatHeaderDebtControls({
               onClick={async () => {
                 setSyncing(true);
                 try {
+                  markBaseline();
                   if (Math.abs(mismatch.dp) >= 1) {
                     await applyDelta({
                       delta: mismatch.dp,
@@ -619,6 +620,7 @@ export function ChatHeaderDebtControls({
                       myId,
                       peerName,
                       onDone: () => {},
+                      onRecord: recordChange,
                     });
                   }
                   if (Math.abs(mismatch.dh) >= 1) {
@@ -629,6 +631,7 @@ export function ChatHeaderDebtControls({
                       myId,
                       peerName,
                       onDone: () => {},
+                      onRecord: recordChange,
                     });
                   }
                   await afterChange();
