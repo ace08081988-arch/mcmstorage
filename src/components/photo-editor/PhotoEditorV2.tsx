@@ -976,8 +976,14 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
   const selectedObj = scene.objects.find((o) => o.id === selectedId) ?? null;
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ autoFocus: false });
+
   return (
     <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Editor foto"
       className="fixed inset-0 z-50 flex flex-col text-foreground"
       style={{
         background:
