@@ -195,23 +195,23 @@ function ApkCardSkeleton() {
   return (
     <div
       aria-hidden
-      className="dl-fade-up w-full rounded-2xl border bg-card p-ms-5 shadow-sm"
+      className="dl-fade-up w-full rounded-2xl border bg-card p-ms-4 shadow-sm sm:p-ms-5"
     >
-      <div className="mb-3 flex items-center gap-ms-3">
-        <Skeleton className="h-12 w-12 rounded-xl" />
+      <div className="mb-ms-3 flex items-center gap-ms-3">
+        <Skeleton className="h-11 w-11 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-full max-w-[220px]" />
+          <Skeleton className="h-3.5 w-28" />
+          <Skeleton className="h-3 w-full" />
         </div>
       </div>
       <Skeleton className="h-11 w-full rounded-xl" />
-      <div className="mt-3 space-y-2">
+      <div className="mt-ms-3 space-y-2">
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-4/5" />
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-ms-2">
-        <Skeleton className="h-9 rounded-lg" />
-        <Skeleton className="h-9 rounded-lg" />
+      <div className="mt-ms-3 grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
+        <Skeleton className="h-10 rounded-lg" />
+        <Skeleton className="h-10 rounded-lg" />
       </div>
     </div>
   );
@@ -245,24 +245,26 @@ function InstallDetail({
           berasal dari sumber berbeda, lalu pasang ulang.
         </li>
       </ul>
-      <div className="mt-ms-3 flex flex-wrap gap-ms-2">
+      <div className="mt-ms-3 grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
         <button
           type="button"
           onClick={onRetry}
           disabled={refreshing}
-          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium transition-colors hover:bg-muted disabled:opacity-70"
+          className="inline-flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-medium transition-colors hover:bg-muted disabled:opacity-70"
         >
           <RefreshCw
-            className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+            className={`h-3.5 w-3.5 shrink-0 ${refreshing ? "animate-spin" : ""}`}
           />
-          {refreshing ? "Memeriksa…" : "Periksa versi terbaru"}
+          <span className="truncate">
+            {refreshing ? "Memeriksa…" : "Periksa versi terbaru"}
+          </span>
         </button>
         <Link
           to="/"
-          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+          className="inline-flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-medium transition-colors hover:bg-muted"
         >
-          <Globe className="h-3.5 w-3.5" />
-          Pakai versi web dulu
+          <Globe className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Pakai versi web dulu</span>
         </Link>
       </div>
     </section>
@@ -299,47 +301,51 @@ function ApkCard({
       : "bg-sky-600 hover:bg-sky-700";
   return (
     <div
-      className={`dl-fade-up relative w-full rounded-2xl border bg-card p-ms-5 shadow-sm transition-shadow ${
+      className={`dl-fade-up relative w-full overflow-hidden rounded-2xl border bg-card p-ms-4 shadow-sm transition-shadow sm:p-ms-5 ${
         highlight
           ? "border-sky-400/70 ring-2 ring-sky-400/40 shadow-md dark:border-sky-500/50"
           : ""
       }`}
     >
       {highlight && (
-        <span className="absolute -top-2 right-4 inline-flex items-center gap-ms-1 rounded-full bg-sky-600 px-ms-2 py-0.5 text-ms-2xs font-semibold text-white shadow">
-          <Sparkles className="h-3 w-3" />
-          Baru — bisa dipasang bersama
+        <span className="mb-ms-2 inline-flex max-w-full items-center gap-ms-1 rounded-full bg-sky-600 px-ms-2 py-0.5 text-ms-2xs font-semibold text-white shadow">
+          <Sparkles className="h-3 w-3 shrink-0" />
+          <span className="truncate">Baru — bisa dipasang bersama</span>
         </span>
       )}
-      <div className="mb-3 flex items-center gap-ms-3">
-        <div className={`rounded-xl p-ms-3 ${badge}`}>{icon}</div>
-        <div>
-          <h2 className="text-ms-base font-semibold leading-tight">{title}</h2>
-          <p className="text-ms-xs text-muted-foreground">{subtitle}</p>
+      <div className="mb-ms-3 flex items-center gap-ms-3">
+        <div className={`shrink-0 rounded-xl p-ms-2.5 ${badge}`}>{icon}</div>
+        <div className="min-w-0">
+          <h2 className="truncate text-ms-sm font-semibold leading-tight">
+            {title}
+          </h2>
+          <p className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground">
+            {subtitle}
+          </p>
         </div>
       </div>
       {!apk ? (
-        <div className="rounded-lg border border-dashed bg-muted/40 p-ms-4 text-ms-xs text-muted-foreground">
+        <div className="rounded-lg border border-dashed bg-muted/40 p-ms-3 text-ms-2xs text-muted-foreground">
           <p className="font-semibold text-foreground">Build belum diunggah</p>
           <p className="mt-1 leading-relaxed">
             Varian ini belum punya berkas APK aktif. Sementara menunggu, jalankan{" "}
             {title} lewat versi web di browser — data dan akunnya sama persis.
           </p>
-          <div className="mt-ms-3 flex flex-wrap gap-ms-2">
+          <div className="mt-ms-3 grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
             <Link
               to="/"
-              className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 font-medium text-foreground hover:bg-muted"
+              className="inline-flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 font-medium text-foreground transition-colors hover:bg-muted"
             >
-              <Globe className="h-3.5 w-3.5" />
-              Buka versi web
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Buka versi web</span>
             </Link>
             <Link
               to="/download/$variant"
               params={{ variant }}
-              className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 font-medium text-foreground hover:bg-muted"
+              className="inline-flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 font-medium text-foreground transition-colors hover:bg-muted"
             >
-              Riwayat & changelog
-              <ChevronRight className="h-3.5 w-3.5" />
+              <span className="truncate">Riwayat & changelog</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             </Link>
           </div>
         </div>
@@ -374,25 +380,27 @@ function ApkCard({
               setTimeout(() => setStarting(false), 2500);
             }}
             aria-busy={starting}
-            className={`flex w-full items-center justify-center gap-ms-2 rounded-xl px-ms-4 py-ms-3 text-ms-sm font-semibold text-white shadow transition-all duration-200 active:scale-[0.98] ${btn} ${starting ? "opacity-90" : ""}`}
+            className={`flex min-h-11 w-full items-center justify-center gap-ms-2 rounded-xl px-ms-3 py-ms-2.5 text-center text-ms-xs font-semibold leading-snug text-white shadow transition-all duration-200 active:scale-[0.98] ${btn} ${starting ? "opacity-90" : ""}`}
           >
             {starting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 Menyiapkan unduhan…
               </>
             ) : (
               <>
-                <Download className="h-4 w-4" />
-                Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
+                <Download className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
+                </span>
               </>
             )}
           </a>
-          <dl className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
+          <dl className="mt-ms-3 space-y-1 text-ms-2xs text-muted-foreground">
             {(apk.versionName || apk.versionCode !== null) && (
-              <div className="flex justify-between gap-ms-2">
-                <dt>Versi</dt>
-                <dd className="font-mono">
+              <div className="flex items-baseline justify-between gap-ms-2">
+                <dt className="shrink-0">Versi</dt>
+                <dd className="min-w-0 truncate text-right font-mono">
                   {apk.versionName ?? "?"}
                   {apk.versionCode !== null && (
                     <span className="ml-1 text-muted-foreground/70">
@@ -402,24 +410,26 @@ function ApkCard({
                 </dd>
               </div>
             )}
-            <div className="flex justify-between gap-ms-2">
-              <dt>Nama berkas</dt>
-              <dd className="truncate font-mono">{apk.name}</dd>
+            <div className="flex items-baseline justify-between gap-ms-2">
+              <dt className="shrink-0">Nama berkas</dt>
+              <dd className="min-w-0 truncate text-right font-mono">{apk.name}</dd>
             </div>
             {apk.updatedAt && (
-              <div className="flex justify-between gap-ms-2">
-                <dt>Diperbarui</dt>
-                <dd>{new Date(apk.updatedAt).toLocaleString("id-ID")}</dd>
+              <div className="flex items-baseline justify-between gap-ms-2">
+                <dt className="shrink-0">Diperbarui</dt>
+                <dd className="min-w-0 truncate text-right">
+                  {new Date(apk.updatedAt).toLocaleString("id-ID")}
+                </dd>
               </div>
             )}
           </dl>
           <Link
             to="/download/$variant"
             params={{ variant }}
-            className="mt-3 inline-flex items-center gap-ms-1 text-ms-xs font-semibold text-muted-foreground hover:text-foreground"
+            className="mt-ms-3 inline-flex min-h-9 items-center gap-ms-1 text-ms-xs font-semibold text-muted-foreground hover:text-foreground"
           >
             Detail & changelog
-            <ChevronRight className="h-3 w-3" />
+            <ChevronRight className="h-3 w-3 shrink-0" />
           </Link>
           <CopyLinkButtons apk={apk} variant={variant} title={title} />
         </>
@@ -467,22 +477,24 @@ function CopyLinkButtons({
       : `/download/${variant}`;
 
   return (
-    <div className="mt-3 grid grid-cols-2 gap-ms-2">
+    <div className="mt-ms-3 grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
       <button
         type="button"
         onClick={() => {
           trackApkDownload(variant, "copy_page");
           void doCopy(pageUrl, "page", "Link halaman");
         }}
-        className="flex items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+        className="flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-medium transition-colors hover:bg-muted"
         aria-label={`Salin link halaman ${title}`}
       >
         {copied === "page" ? (
-          <Check className="h-3.5 w-3.5 text-success" />
+          <Check className="h-3.5 w-3.5 shrink-0 text-success" />
         ) : (
-          <Link2 className="h-3.5 w-3.5" />
+          <Link2 className="h-3.5 w-3.5 shrink-0" />
         )}
-        {copied === "page" ? "Tersalin" : "Salin link halaman"}
+        <span className="truncate">
+          {copied === "page" ? "Tersalin" : "Salin link halaman"}
+        </span>
       </button>
       <button
         type="button"
@@ -490,16 +502,18 @@ function CopyLinkButtons({
           trackApkDownload(variant, "copy_file");
           void doCopy(apk.url, "file", "Link unduh langsung");
         }}
-        className="flex items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+        className="flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-medium transition-colors hover:bg-muted"
         aria-label={`Salin link unduh langsung ${title}`}
         title="Berlaku ± 1 jam sebelum kedaluwarsa"
       >
         {copied === "file" ? (
-          <Check className="h-3.5 w-3.5 text-success" />
+          <Check className="h-3.5 w-3.5 shrink-0 text-success" />
         ) : (
-          <Link2 className="h-3.5 w-3.5" />
+          <Link2 className="h-3.5 w-3.5 shrink-0" />
         )}
-        {copied === "file" ? "Tersalin" : "Salin link file"}
+        <span className="truncate">
+          {copied === "file" ? "Tersalin" : "Salin link file"}
+        </span>
       </button>
     </div>
   );
