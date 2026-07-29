@@ -56,6 +56,7 @@ function TransaksiHariIniPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<PdfPreviewSource>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -242,6 +243,13 @@ function TransaksiHariIniPage() {
           ))}
         </ul>
       )}
+      <PdfPreviewDialog
+        open={pdfPreview !== null}
+        onOpenChange={(v) => !v && setPdfPreview(null)}
+        source={pdfPreview}
+        title="Pratinjau daftar transaksi"
+        onDownloaded={() => toast.success("Daftar transaksi diunduh sebagai PDF")}
+      />
     </div>
   );
 }
