@@ -36,7 +36,7 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
-import { useMidnightPreview, useMidnightScope } from "@/lib/midnight-preview";
+import { useMidnightPreview, useMidnightScope, useThemeVariant } from "@/lib/midnight-preview";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
   pullAppearanceFromCloud,
@@ -414,6 +414,7 @@ function PengaturanTampilanPage() {
   const [backups, setBackups] = useState<AppearanceBackup[]>([]);
   const [midnightOn, setMidnightOn] = useMidnightPreview();
   const [midnightScope, setMidnightScope] = useMidnightScope();
+  const [themeVariant, setThemeVariant] = useThemeVariant();
   const savedRef = useRef(false);
   const snapshotRef = useRef<Draft>(snapshot);
   snapshotRef.current = snapshot;
