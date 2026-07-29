@@ -1,4 +1,4 @@
-import { n as useChatHeartbeat } from "@/lib/chat";
+import { useChatHeartbeat } from "@/lib/chat";
 
 /**
  * Detak kehadiran global: selama aplikasi terbuka (halaman apa pun),
