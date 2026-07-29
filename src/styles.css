@@ -597,7 +597,7 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
   --wa-bubble-in: #ffffff;
   --wa-bubble-in-fg: #111b21;
   --wa-chat-bg: #efeae2;
-  --wa-check: #53bdeb;
+  --wa-check: #25d366;
 }
 .dark {
   --mcm-brand: var(--primary, #14b8a6);
@@ -615,7 +615,7 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
   --wa-bubble-in: #1f2c34;
   --wa-bubble-in-fg: #e9edef;
   --wa-chat-bg: #0b141a;
-  --wa-check: #53bdeb;
+  --wa-check: #25d366;
 }
 
 @utility wa-surface {
@@ -692,6 +692,11 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
 @utility wa-check {
   color: var(--wa-check);
 }
+/* Centang ganda "sampai di perangkat" — abu gelap/hitam, belum hijau. */
+@utility wa-check-delivered {
+  color: currentColor;
+  opacity: 1;
+}
 
 /* ==========================================================================
    Industrial Precision (chat surface only)
@@ -709,7 +714,7 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
   --wa-border: rgba(148, 163, 184, 0.14);
   --wa-green: #7BA6D9;
   --wa-green-strong: #A8C4E4;
-  --wa-check: #7BA6D9;
+  --wa-check: #25d366;
   --wa-chat-bg: #0C1116;
 
   /* Tipografi: DM Sans body, Space Grotesk untuk heading/label. */
