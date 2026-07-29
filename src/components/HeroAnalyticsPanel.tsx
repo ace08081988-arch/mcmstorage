@@ -6,6 +6,7 @@
  * realtime — tanpa menyimpan salinan angka di tempat lain.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
 type SaleRow = {
@@ -99,18 +100,40 @@ function Metric({
   label,
   value,
   hint,
+  to,
+  linkLabel,
 }: {
   label: string;
   value: string;
   hint?: string;
+  to?: string;
+  linkLabel?: string;
 }) {
-  return (
-    <div className="rounded-xl border border-border/60 bg-background/60 p-ms-2.5">
+  const body = (
+    <>
       <p className="text-ms-2xs uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-0.5 truncate text-ms-lg font-semibold tabular-nums" title={value}>
         {value}
       </p>
       {hint ? <p className="truncate text-ms-2xs text-muted-foreground">{hint}</p> : null}
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        aria-label={linkLabel ?? `Lihat detail ${label}`}
+        className="block rounded-xl border border-border/60 bg-background/60 p-ms-2.5 transition-colors hover:border-primary/50 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-background/60 p-ms-2.5">
+      {body}
     </div>
   );
 }
@@ -188,10 +211,19 @@ export function HeroAnalyticsPanel() {
       ) : (
         <div className="grid grid-cols-2 gap-ms-2 sm:grid-cols-4">
           <Metric label="Omzet hari ini" value={rupiah(stats.omzet)} />
-          <Metric label="Transaksi" value={stats.trx.toLocaleString("id-ID")} hint="penjualan tercatat" />
+          <Metric
+            label="Transaksi"
+            value={stats.trx.toLocaleString("id-ID")}
+            hint="penjualan tercatat · lihat detail"
+            to="/transaksi-hari-ini"
+            linkLabel="Lihat detail transaksi hari ini"
+          />
           <Metric
             label="Unit terjual"
             value={stats.unit.toLocaleString("id-ID", { maximumFractionDigits: 2 })}
+            hint="lihat transaksi penyumbang"
+            to="/transaksi-hari-ini"
+            linkLabel="Lihat transaksi yang menyumbang unit terjual"
           />
           <Metric
             label="Terlaris"
