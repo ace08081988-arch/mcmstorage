@@ -88,8 +88,27 @@ function QuickCopyBar({
   const locUrl =
     typeof window !== "undefined" ? window.location.href : "/download";
 
+  // Pesan siap kirim: link unduhan tiap varian + link halaman (lokasi).
+  const waText = [
+    "Halo! Berikut link aplikasi MCM:",
+    "",
+    apkText || "(link APK belum tersedia)",
+    "",
+    `Halaman unduh: ${locUrl}`,
+  ].join("\n");
+
+  const openWa = async () => {
+    // Salin dulu sebagai jaring pengaman: sebagian WhatsApp Android
+    // mengabaikan teks prefill saat dibuka dari WebView.
+    await copyToClipboard(waText);
+    const url = `https://wa.me/?text=${encodeURIComponent(waText)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast.success("WhatsApp dibuka — pesan juga sudah disalin");
+  };
+
   return (
-    <div className="dl-fade-up grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
+    <div className="dl-fade-up flex flex-col gap-ms-2">
+      <div className="grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
       <button
         type="button"
         disabled={!apkText}
@@ -120,6 +139,16 @@ function QuickCopyBar({
         <span className="truncate">
           {copied === "loc" ? "Tersalin" : "Salin link lokasi"}
         </span>
+      </button>
+      </div>
+      <button
+        type="button"
+        onClick={() => void openWa()}
+        className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg bg-[#25D366] px-ms-3 text-ms-2xs font-semibold text-black transition-opacity hover:opacity-90"
+        aria-label="Buka WhatsApp dengan pesan berisi link unduhan dan link lokasi"
+      >
+        <MessageCircle className="h-4 w-4 shrink-0" />
+        <span className="truncate">Kirim lewat WhatsApp</span>
       </button>
     </div>
   );
