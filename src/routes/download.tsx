@@ -57,6 +57,95 @@ export const Route = createFileRoute("/download")({
   ),
 });
 
+/** Tombol salin cepat: link unduhan APK + link halaman (lokasi) saat ini. */
+function QuickCopyBar({
+  storageUrl,
+  chatUrl,
+}: {
+  storageUrl: string | null;
+  chatUrl: string | null;
+}) {
+  const [copied, setCopied] = useState<"apk" | "loc" | null>(null);
+
+  const run = async (kind: "apk" | "loc", text: string, label: string) => {
+    const ok = await copyToClipboard(text);
+    if (!ok) {
+      toast.error("Gagal menyalin link");
+      return;
+    }
+    setCopied(kind);
+    toast.success(`${label} disalin`);
+    setTimeout(() => setCopied((c) => (c === kind ? null : c)), 1500);
+  };
+
+  const apkText = [
+    storageUrl ? `MCM Storage: ${storageUrl}` : null,
+    chatUrl ? `MCM Chat: ${chatUrl}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const locUrl =
+    typeof window !== "undefined" ? window.location.href : "/download";
+
+  return (
+    <div className="dl-fade-up grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
+      <button
+        type="button"
+        disabled={!apkText}
+        onClick={() => void run("apk", apkText, "Link unduhan APK")}
+        className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-semibold transition-colors hover:bg-muted disabled:opacity-50"
+        aria-label="Salin semua link unduhan APK"
+      >
+        {copied === "apk" ? (
+          <Check className="h-3.5 w-3.5 shrink-0 text-success" />
+        ) : (
+          <Link2 className="h-3.5 w-3.5 shrink-0" />
+        )}
+        <span className="truncate">
+          {copied === "apk" ? "Tersalin" : "Salin link APK"}
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => void run("loc", locUrl, "Link lokasi halaman")}
+        className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-semibold transition-colors hover:bg-muted"
+        aria-label="Salin link lokasi halaman ini"
+      >
+        {copied === "loc" ? (
+          <Check className="h-3.5 w-3.5 shrink-0 text-success" />
+        ) : (
+          <Link2 className="h-3.5 w-3.5 shrink-0" />
+        )}
+        <span className="truncate">
+          {copied === "loc" ? "Tersalin" : "Salin link lokasi"}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+/** Salin teks ke clipboard dengan fallback textarea (Android WebView lama). */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function DownloadPage() {
   const fetchApk = useServerFn(getLatestApkVariants);
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
@@ -120,6 +209,10 @@ function DownloadPage() {
               highlight
             />
             <InstallDetail onRetry={() => refetch()} refreshing={isFetching} />
+            <QuickCopyBar
+              storageUrl={data?.storage?.url ?? null}
+              chatUrl={data?.chat?.url ?? null}
+            />
           </>
         )}
         </div>
