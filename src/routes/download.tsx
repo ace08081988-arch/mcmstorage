@@ -250,6 +250,65 @@ function QuickCopyBar({
         <MessageCircle className="h-4 w-4 shrink-0" />
         <span className="truncate">Kirim lewat WhatsApp</span>
       </button>
+      {history.length > 0 && (
+        <section
+          aria-label="Riwayat tautan yang disalin"
+          className="rounded-xl border border-dashed bg-muted/30 p-ms-2.5"
+        >
+          <div className="flex items-center justify-between gap-ms-2">
+            <h3 className="flex items-center gap-ms-1.5 text-ms-2xs font-semibold text-muted-foreground">
+              <History className="h-3.5 w-3.5 shrink-0" />
+              Terakhir disalin
+            </h3>
+            <button
+              type="button"
+              onClick={() => {
+                setHistory([]);
+                writeCopyHistory([]);
+                toast.success("Riwayat salin dihapus");
+              }}
+              className="is-inline-link inline-flex items-center gap-1 text-ms-2xs font-semibold text-muted-foreground hover:text-foreground"
+              aria-label="Hapus riwayat tautan yang disalin"
+            >
+              <Trash2 className="h-3.5 w-3.5 shrink-0" /> Hapus
+            </button>
+          </div>
+          <ul className="mt-ms-2 space-y-1.5">
+            {history.map((e) => (
+              <li key={`${e.text}-${e.at}`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void copyToClipboard(e.text).then((ok) =>
+                      ok
+                        ? toast.success(`${e.label} disalin ulang`)
+                        : toast.error("Gagal menyalin link"),
+                    );
+                  }}
+                  className="flex w-full items-center gap-ms-2 rounded-lg border bg-background px-ms-2 py-1.5 text-left text-ms-2xs transition-colors hover:bg-muted"
+                  aria-label={`Salin ulang ${e.label}`}
+                >
+                  <Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">
+                      {e.label}
+                    </span>
+                    <span className="block truncate font-mono text-muted-foreground">
+                      {e.text.split("\n")[0]}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-muted-foreground">
+                    {new Date(e.at).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
