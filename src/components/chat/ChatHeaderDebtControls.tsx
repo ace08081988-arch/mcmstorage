@@ -456,7 +456,8 @@ export function ChatHeaderDebtControls({
    * Tombol "−" tidak langsung menulis: tampilkan dulu rincian tagihan
    * (invoice) terlama yang akan dikurangi. Tombol "+" tetap langsung.
    */
-  const requestDelta = async (delta: number, kind: Kind) => {
+  const requestDelta = async (delta: number, kind: Kind, via: AuditVia = "button") => {
+    const before = kind === "hutang" ? hutang : piutang;
     if (delta >= 0) {
       markBaseline();
       await applyDelta({
@@ -466,7 +467,10 @@ export function ChatHeaderDebtControls({
         myId,
         peerName,
         onDone: () => void afterChange(),
-        onRecord: recordChange,
+        onRecord: (e) => {
+          recordChange(e);
+          void writeAudit(e, { via, before });
+        },
       });
       return;
     }
@@ -490,7 +494,7 @@ export function ChatHeaderDebtControls({
       toast.error("Tidak ada tagihan terbuka untuk dibayar.");
       return;
     }
-    setPayPlan({ kind, amount, plan });
+    setPayPlan({ kind, amount, plan, via });
   };
 
   const confirmPayPlan = async () => {
@@ -505,7 +509,13 @@ export function ChatHeaderDebtControls({
         myId,
         peerName,
         onDone: () => void afterChange(),
-        onRecord: recordChange,
+        onRecord: (e) => {
+          recordChange(e);
+          void writeAudit(e, {
+            via: payPlan.via,
+            before: payPlan.kind === "hutang" ? hutang : piutang,
+          });
+        },
       });
       setPayPlan(null);
     } finally {
