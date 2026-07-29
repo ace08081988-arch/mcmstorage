@@ -190,9 +190,41 @@ function InstallFlow() {
   );
 }
 
-function InstallDetail({ onRetry }: { onRetry: () => void }) {
+function ApkCardSkeleton() {
   return (
-    <section className="rounded-2xl border border-dashed bg-muted/30 p-ms-4">
+    <div
+      aria-hidden
+      className="dl-fade-up w-full rounded-2xl border bg-card p-ms-5 shadow-sm"
+    >
+      <div className="mb-3 flex items-center gap-ms-3">
+        <Skeleton className="h-12 w-12 rounded-xl" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-full max-w-[220px]" />
+        </div>
+      </div>
+      <Skeleton className="h-11 w-full rounded-xl" />
+      <div className="mt-3 space-y-2">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-ms-2">
+        <Skeleton className="h-9 rounded-lg" />
+        <Skeleton className="h-9 rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+function InstallDetail({
+  onRetry,
+  refreshing = false,
+}: {
+  onRetry: () => void;
+  refreshing?: boolean;
+}) {
+  return (
+    <section className="dl-fade-up rounded-2xl border border-dashed bg-muted/30 p-ms-4">
       <h2 className="text-ms-sm font-semibold">Catatan penting</h2>
       <ul className="mt-ms-2 list-disc space-y-1 pl-4 text-ms-2xs leading-relaxed text-muted-foreground">
         <li>
@@ -216,10 +248,13 @@ function InstallDetail({ onRetry }: { onRetry: () => void }) {
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+          disabled={refreshing}
+          className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 text-ms-xs font-medium transition-colors hover:bg-muted disabled:opacity-70"
         >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Periksa versi terbaru
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+          />
+          {refreshing ? "Memeriksa…" : "Periksa versi terbaru"}
         </button>
         <Link
           to="/"
