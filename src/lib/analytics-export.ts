@@ -3,7 +3,7 @@
  * Angka diterima apa adanya dari pemanggil (SSOT penjualan) — tidak ada
  * perhitungan ulang di sini.
  */
-import { prepareBrandHeader } from "@/lib/pdf-brand";
+import { prepareBrandHeader, drawSignatureBlock } from "@/lib/pdf-brand";
 import { getPdfPrefs, densityFactor } from "@/lib/pdf-prefs";
 
 export type AnalyticsExportRow = {
