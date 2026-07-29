@@ -1330,6 +1330,7 @@ async function applyDelta({
   myId,
   peerName,
   onDone,
+  onRecord,
 }: {
   delta: number;
   kind: Kind;
@@ -1344,6 +1345,7 @@ async function applyDelta({
   myId: string;
   peerName: string;
   onDone: () => void;
+  onRecord?: (entry: SessionChange) => void;
 }) {
   try {
     if (delta > 0) {
@@ -1384,6 +1386,13 @@ async function applyDelta({
       else insert.customer_id = partyId;
       const { error } = await supabase.from("debts").insert(insert);
       if (error) throw error;
+      onRecord?.({
+        at: Date.now(),
+        kind,
+        type: "tagihan",
+        amount: delta,
+        detail: [`Tagihan baru ${rupiah(delta)} untuk ${partyName}`],
+      });
       toast.success(
         `${kind === "hutang" ? "Hutang" : "Piutang"} baru ${rupiah(delta)} dicatat.`,
       );
@@ -1422,6 +1431,13 @@ async function applyDelta({
       if (error) throw error;
       const applied = plan.applied;
       const left = plan.leftover;
+      onRecord?.({
+        at: Date.now(),
+        kind,
+        type: "pembayaran",
+        amount: applied,
+        detail: plan.lines.map((l) => `${l.invoice} −${rupiah(l.used)}`),
+      });
       toast.success(
         `Pembayaran ${rupiah(applied)} dicatat${left > 0 ? ` (sisa input ${rupiah(left)} tidak dipakai).` : "."}`,
       );
