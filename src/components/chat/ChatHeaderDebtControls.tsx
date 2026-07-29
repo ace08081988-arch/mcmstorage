@@ -70,6 +70,22 @@ type HistoryEntry = {
   note: string | null;
 };
 
+/** Lewat kontrol mana perubahan dibuat: ikon pensil (quick) atau tombol −/+. */
+type AuditVia = "quick" | "button";
+
+type AuditRow = {
+  id: string;
+  actor_name: string | null;
+  party_name: string | null;
+  kind: string;
+  action: string;
+  amount: number;
+  balance_before: number | null;
+  balance_after: number | null;
+  detail: unknown;
+  created_at: string;
+};
+
 /**
  * Panel kontrol hutang/piutang ringkas di header chat.
  *
