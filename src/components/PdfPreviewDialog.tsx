@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download, FileWarning } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Download, FileWarning, RotateCcw } from "lucide-react";
 
 export type PdfPreviewSource = { blob: Blob; filename: string } | null;
 
@@ -25,6 +27,14 @@ function triggerDownload(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/** Bersihkan nama file agar aman di Android/Windows dan selalu berakhiran .pdf. */
+export function sanitizePdfFilename(raw: string, fallback = "dokumen.pdf"): string {
+  let name = (raw || "").trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g, "-");
+  name = name.replace(/\.pdf$/i, "").replace(/\s+/g, " ").replace(/^[.\s-]+/, "").slice(0, 120).trim();
+  if (!name) return fallback;
+  return `${name}.pdf`;
+}
+
 /**
  * Pratinjau PDF sebelum diunduh. Halaman dirender ke <canvas> lewat pdf.js
  * supaya tetap tampil di Android WebView (yang tidak punya viewer PDF bawaan).
@@ -34,6 +44,8 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [pages, setPages] = useState(0);
   const [errMsg, setErrMsg] = useState("");
+  // Nama file bisa diubah owner sebelum unduh supaya arsip di perangkat rapi.
+  const [name, setName] = useState("");
 
   const render = useCallback(async (blob: Blob, host: HTMLDivElement) => {
     setStatus("loading");
@@ -93,13 +105,20 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
     }
   }, [open]);
 
+  // Setiap dokumen baru dibuka: isi ulang kolom nama dengan nama bawaan.
+  useEffect(() => {
+    if (open && source) setName(source.filename.replace(/\.pdf$/i, ""));
+  }, [open, source]);
+
+  const finalName = sanitizePdfFilename(name, source?.filename ?? "dokumen.pdf");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] w-[min(96vw,720px)] flex-col gap-3 overflow-hidden p-3 sm:p-4">
         <DialogHeader className="space-y-1 text-left">
           <DialogTitle className="text-base">{title}</DialogTitle>
           <DialogDescription className="truncate text-xs">
-            {source?.filename ?? "—"}
+            {finalName}
             {pages > 0 ? ` · ${pages} halaman` : ""}
           </DialogDescription>
         </DialogHeader>
@@ -122,6 +141,40 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
           </p>
         )}
 
+        <div className="shrink-0 space-y-1.5">
+          <Label htmlFor="pdf-filename" className="text-xs text-muted-foreground">
+            Nama berkas
+          </Label>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Input
+                id="pdf-filename"
+                data-testid="pdf-preview-filename"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="nama-dokumen"
+                className="h-9 pr-12 text-sm"
+                autoComplete="off"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                .pdf
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              aria-label="Kembalikan nama bawaan"
+              title="Kembalikan nama bawaan"
+              disabled={!source}
+              onClick={() => setName((source?.filename ?? "").replace(/\.pdf$/i, ""))}
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden />
+            </Button>
+          </div>
+        </div>
+
         <div className="flex shrink-0 items-center justify-end gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
             Tutup
@@ -133,7 +186,7 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
             disabled={!source}
             onClick={() => {
               if (!source) return;
-              triggerDownload(source.blob, source.filename);
+              triggerDownload(source.blob, finalName);
               onDownloaded?.();
               onOpenChange(false);
             }}
