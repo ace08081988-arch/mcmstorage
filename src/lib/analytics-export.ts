@@ -3,7 +3,7 @@
  * Angka diterima apa adanya dari pemanggil (SSOT penjualan) — tidak ada
  * perhitungan ulang di sini.
  */
-import { prepareBrandHeader } from "@/lib/pdf-brand";
+import { prepareBrandHeader, drawSignatureBlock } from "@/lib/pdf-brand";
 import { getPdfPrefs, densityFactor } from "@/lib/pdf-prefs";
 
 export type AnalyticsExportRow = {
@@ -181,6 +181,32 @@ export async function buildAnalyticsPdfBlob(
       doc.text(orgName, marginX, pageH - marginBottom / 2);
       doc.setTextColor(0);
     },
+  });
+
+  // Ruang tanda tangan admin + tanggal (halaman terakhir), siap dicap.
+  const tableEndY =
+    (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? afterY;
+  const drawFooter = () => {
+    const page = doc.getCurrentPageInfo().pageNumber;
+    doc.setFontSize(8);
+    doc.setTextColor(130);
+    doc.text(`Halaman ${page}`, pageW - marginX, pageH - marginBottom / 2, { align: "right" });
+    doc.text(orgName, marginX, pageH - marginBottom / 2);
+    doc.setTextColor(0);
+  };
+  let signY = tableEndY;
+  if (tableEndY + 24 + 96 > pageH - marginBottom) {
+    doc.addPage();
+    drawBrandHeader();
+    drawFooter();
+    signY = marginTop;
+  }
+  drawSignatureBlock(doc, {
+    marginX,
+    marginBottom,
+    fontScale: fScale,
+    date: data.tanggal,
+    startY: signY,
   });
 
   return { blob: doc.output("blob") as Blob, filename: analyticsPdfFilename(data) };

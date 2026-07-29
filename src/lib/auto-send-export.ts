@@ -119,7 +119,7 @@ export async function buildAutoSendSummaryPdf(
   const fScale = prefs.fontScale;
   const lineH = (n: number) => n * dFactor * fScale;
   const margin = Math.round(40 * dFactor);
-  const { prepareBrandHeader } = await import("@/lib/pdf-brand");
+  const { prepareBrandHeader, drawSignatureBlock } = await import("@/lib/pdf-brand");
   const { bandH, draw: drawBrandHeader } = await prepareBrandHeader(doc, { marginX: margin });
   drawBrandHeader();
   let y = margin + bandH;
@@ -189,6 +189,21 @@ export async function buildAutoSendSummaryPdf(
     );
     doc.setTextColor(20, 20, 20);
   }
+
+  // Ruang tanda tangan admin + tanggal di halaman terakhir.
+  const pageH = doc.internal.pageSize.getHeight();
+  if (y + 24 + 96 > pageH - margin) {
+    doc.addPage();
+    drawBrandHeader();
+    y = margin + bandH;
+  }
+  drawSignatureBlock(doc, {
+    marginX: margin,
+    marginBottom: margin,
+    fontScale: fScale,
+    date: p.generatedAt,
+    startY: y,
+  });
 
   return doc.output("blob");
 }
