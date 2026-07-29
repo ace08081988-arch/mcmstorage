@@ -134,10 +134,12 @@ function AuthLock() {
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
           {immersive ? null : <AppHeader />}
           <div
+            id="konten-utama"
+            tabIndex={-1}
             className={
               immersive
                 ? "min-h-0 min-w-0 flex-1 overflow-hidden"
-                : "min-w-0 flex-1 pb-[calc(env(safe-area-inset-bottom)+64px)] md:pb-0"
+                : "min-w-0 flex-1 scroll-mt-16 pb-[calc(env(safe-area-inset-bottom)+64px)] focus:outline-none md:pb-0"
             }
           >
             <Outlet />
