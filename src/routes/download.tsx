@@ -65,9 +65,15 @@ function QuickCopyBar({
   storageUrl: string | null;
   chatUrl: string | null;
 }) {
-  const [copied, setCopied] = useState<"apk" | "loc" | null>(null);
+  const [copied, setCopied] = useState<
+    "apk" | "loc" | "storage" | "chat" | null
+  >(null);
 
-  const run = async (kind: "apk" | "loc", text: string, label: string) => {
+  const run = async (
+    kind: "apk" | "loc" | "storage" | "chat",
+    text: string,
+    label: string,
+  ) => {
     const ok = await copyToClipboard(text);
     if (!ok) {
       toast.error("Gagal menyalin link");
@@ -108,13 +114,50 @@ function QuickCopyBar({
 
   return (
     <div className="dl-fade-up flex flex-col gap-ms-2">
+      {/* Salin per varian: hanya link produk yang dipilih, tanpa varian lain. */}
+      <div className="grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
+        <button
+          type="button"
+          disabled={!storageUrl}
+          onClick={() =>
+            void run("storage", storageUrl ?? "", "Link MCM Storage")
+          }
+          className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-ms-2 text-ms-2xs font-semibold transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
+          aria-label="Salin link APK MCM Storage saja"
+        >
+          {copied === "storage" ? (
+            <Check className="h-3.5 w-3.5 shrink-0 text-success" />
+          ) : (
+            <Smartphone className="h-3.5 w-3.5 shrink-0" />
+          )}
+          <span className="truncate">
+            {copied === "storage" ? "Tersalin" : "Salin link Storage"}
+          </span>
+        </button>
+        <button
+          type="button"
+          disabled={!chatUrl}
+          onClick={() => void run("chat", chatUrl ?? "", "Link MCM Chat")}
+          className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg border border-sky-500/40 bg-sky-500/10 px-ms-2 text-ms-2xs font-semibold transition-colors hover:bg-sky-500/20 disabled:opacity-50"
+          aria-label="Salin link APK MCM Chat saja"
+        >
+          {copied === "chat" ? (
+            <Check className="h-3.5 w-3.5 shrink-0 text-success" />
+          ) : (
+            <MessageCircle className="h-3.5 w-3.5 shrink-0" />
+          )}
+          <span className="truncate">
+            {copied === "chat" ? "Tersalin" : "Salin link Chat"}
+          </span>
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
       <button
         type="button"
         disabled={!apkText}
         onClick={() => void run("apk", apkText, "Link unduhan APK")}
         className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-semibold transition-colors hover:bg-muted disabled:opacity-50"
-        aria-label="Salin semua link unduhan APK"
+        aria-label="Salin semua link unduhan APK (Storage dan Chat)"
       >
         {copied === "apk" ? (
           <Check className="h-3.5 w-3.5 shrink-0 text-success" />
@@ -122,7 +165,7 @@ function QuickCopyBar({
           <Link2 className="h-3.5 w-3.5 shrink-0" />
         )}
         <span className="truncate">
-          {copied === "apk" ? "Tersalin" : "Salin link APK"}
+          {copied === "apk" ? "Tersalin" : "Salin semua link"}
         </span>
       </button>
       <button
