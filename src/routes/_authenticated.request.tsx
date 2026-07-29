@@ -2418,9 +2418,20 @@ function PrepCard({
               <Send className="h-3 w-3" /> Kirim
             </button>
           ) : (
-            <span className="inline-flex items-center gap-ms-1 rounded-md border border-success/40 bg-success/10 px-ms-2 py-1 text-ms-2xs font-semibold text-success dark:text-success">
-              <CheckCircle2 className="h-3 w-3" /> Terkirim
-            </span>
+            <>
+              <span className="inline-flex items-center gap-ms-1 rounded-md border border-success/40 bg-success/10 px-ms-2 py-1 text-ms-2xs font-semibold text-success dark:text-success">
+                <CheckCircle2 className="h-3 w-3" /> Terkirim
+              </span>
+              <button
+                onClick={() => setFixOpen(true)}
+                className="inline-flex items-center gap-ms-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 py-1 text-ms-2xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-300"
+                aria-label="Perbaiki pencatatan pembayaran"
+                title="Keliru kirim tanpa catat bayar? Perbaiki di sini — sisa otomatis masuk piutang"
+                data-testid={`fix-payment-${prep.id}`}
+              >
+                <Wrench className="h-3 w-3" /> Perbaiki bayar
+              </button>
+            </>
           )}
           <button
             onClick={onDelete}
@@ -2432,6 +2443,13 @@ function PrepCard({
           </button>
         </div>
       </div>
+      {fixOpen && (
+        <FixPrepPaymentDialog
+          prep={prep}
+          onClose={() => setFixOpen(false)}
+          onFixed={() => { setFixOpen(false); onSent(); }}
+        />
+      )}
       {photo ? (
         <img src={photo} alt="" className="aspect-square w-full object-cover" />
       ) : (
