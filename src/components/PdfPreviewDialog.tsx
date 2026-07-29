@@ -3,7 +3,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Download, FileWarning, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Loader2,
+  Download,
+  FileWarning,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  RotateCw,
+  MoveHorizontal,
+  Maximize2,
+} from "lucide-react";
 
 export type PdfPreviewSource = { blob: Blob; filename: string } | null;
 
@@ -49,8 +59,18 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
   const [errMsg, setErrMsg] = useState("");
   // Nama file bisa diubah owner sebelum unduh supaya arsip di perangkat rapi.
   const [name, setName] = useState("");
+  // Mode tampilan: "width" = penuhi lebar, "page" = satu halaman utuh.
+  const [fit, setFit] = useState<"width" | "page">("width");
+  // Rotasi baca (0/90/180/270) — hanya memengaruhi pratinjau, bukan berkas.
+  const [rotation, setRotation] = useState(0);
 
-  const render = useCallback(async (blob: Blob, host: HTMLDivElement, thumbHost: HTMLDivElement | null) => {
+  const render = useCallback(async (
+    blob: Blob,
+    host: HTMLDivElement,
+    thumbHost: HTMLDivElement | null,
+    fitMode: "width" | "page",
+    rotate: number,
+  ) => {
     setStatus("loading");
     setErrMsg("");
     try {
@@ -67,15 +87,24 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
       setCurrent(1);
 
       const hostW = host.clientWidth || 320;
+      const hostH = host.clientHeight || 420;
       for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);
-        const base = page.getViewport({ scale: 1 });
-        const scale = Math.min(2, Math.max(0.5, (hostW - 8) / base.width)) * Math.min(2, window.devicePixelRatio || 1);
-        const viewport = page.getViewport({ scale });
+        const base = page.getViewport({ scale: 1, rotation: rotate });
+        const fitScale =
+          fitMode === "page"
+            ? Math.min((hostW - 16) / base.width, (hostH - 16) / base.height)
+            : (hostW - 8) / base.width;
+        const scale =
+          Math.min(2, Math.max(0.3, fitScale)) * Math.min(2, window.devicePixelRatio || 1);
+        const viewport = page.getViewport({ scale, rotation: rotate });
         const canvas = document.createElement("canvas");
         canvas.width = Math.floor(viewport.width);
         canvas.height = Math.floor(viewport.height);
-        canvas.className = "w-full rounded-md border border-border/60 bg-white shadow-sm";
+        canvas.className =
+          fitMode === "page"
+            ? "mx-auto block h-auto max-h-full w-auto max-w-full rounded-md border border-border/60 bg-white shadow-sm"
+            : "w-full rounded-md border border-border/60 bg-white shadow-sm";
         canvas.setAttribute("aria-label", `Halaman ${i}`);
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
@@ -86,7 +115,7 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
         // Thumbnail kecil untuk navigasi lompat halaman.
         if (thumbHost) {
           const tScale = 92 / base.width;
-          const tView = page.getViewport({ scale: tScale });
+          const tView = page.getViewport({ scale: tScale, rotation: rotate });
           const tCanvas = document.createElement("canvas");
           tCanvas.width = Math.floor(tView.width);
           tCanvas.height = Math.floor(tView.height);
@@ -170,19 +199,21 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
     const id = window.setTimeout(() => {
       const host = hostRef.current;
       if (!host || cancelled) return;
-      void render(source.blob, host, thumbHostRef.current);
+      void render(source.blob, host, thumbHostRef.current, fit, rotation);
     }, 30);
     return () => {
       cancelled = true;
       window.clearTimeout(id);
     };
-  }, [open, source, render]);
+  }, [open, source, render, fit, rotation]);
 
   useEffect(() => {
     if (!open) {
       setStatus("idle");
       setPages(0);
       setCurrent(1);
+      setFit("width");
+      setRotation(0);
       pageElsRef.current = [];
       if (hostRef.current) hostRef.current.innerHTML = "";
       if (thumbHostRef.current) thumbHostRef.current.innerHTML = "";
@@ -219,6 +250,60 @@ export function PdfPreviewDialog({ open, onOpenChange, source, title = "Pratinja
             data-testid="pdf-preview-pages"
             className="min-h-[220px] flex-1 space-y-3 overflow-y-auto rounded-lg bg-muted/40 p-2"
           />
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant={fit === "width" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 px-2 text-xs"
+              aria-pressed={fit === "width"}
+              data-testid="pdf-preview-fit-width"
+              onClick={() => setFit("width")}
+            >
+              <MoveHorizontal className="mr-1 h-3.5 w-3.5" aria-hidden /> Muat lebar
+            </Button>
+            <Button
+              type="button"
+              variant={fit === "page" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8 px-2 text-xs"
+              aria-pressed={fit === "page"}
+              data-testid="pdf-preview-fit-page"
+              onClick={() => setFit("page")}
+            >
+              <Maximize2 className="mr-1 h-3.5 w-3.5" aria-hidden /> Satu halaman
+            </Button>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Putar berlawanan arah jarum jam"
+              data-testid="pdf-preview-rotate-left"
+              onClick={() => setRotation((r) => (r + 270) % 360)}
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+            <span className="w-10 text-center text-[11px] tabular-nums text-muted-foreground">
+              {rotation}°
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Putar searah jarum jam"
+              data-testid="pdf-preview-rotate-right"
+              onClick={() => setRotation((r) => (r + 90) % 360)}
+            >
+              <RotateCw className="h-3.5 w-3.5" aria-hidden />
+            </Button>
+          </div>
         </div>
 
         {pages > 1 && (
