@@ -305,7 +305,7 @@ export function ChatHeaderDebtControls({
   // Pratinjau alokasi pembayaran (tombol "−"): rincian tagihan terlama
   // mana saja yang akan dikurangi, sebelum benar-benar disimpan.
   const [payPlan, setPayPlan] = useState<
-    { kind: Kind; amount: number; plan: AllocPlan } | null
+    { kind: Kind; amount: number; plan: AllocPlan; via: AuditVia } | null
   >(null);
   const [payingPlan, setPayingPlan] = useState(false);
   // Ditandai saat saldo baru saja berubah dari dalam chat, supaya tombol
