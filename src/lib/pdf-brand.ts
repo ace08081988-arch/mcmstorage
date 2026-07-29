@@ -56,7 +56,7 @@ type Doc = {
     w: number,
     h: number,
     alias?: string,
-    compression?: string,
+    compression?: "NONE" | "FAST" | "MEDIUM" | "SLOW",
   ) => unknown;
   setTextColor: (r: number, g?: number, b?: number) => unknown;
   setFontSize: (n: number) => unknown;
