@@ -2375,6 +2375,26 @@ function PrepCard({
   // Batalkan pengiriman (salah input) → kembalikan paket ke daftar aktif.
   const [undoOpen, setUndoOpen] = useState(false);
   const [undoBusy, setUndoBusy] = useState(false);
+  type UnsendRule = { code: string; label: string; fix?: string };
+  type UnsendCheck = {
+    can_unsend: boolean;
+    blockers: UnsendRule[];
+    warnings: UnsendRule[];
+    details: Record<string, number>;
+  };
+  const [undoCheck, setUndoCheck] = useState<UnsendCheck | null>(null);
+  const [undoChecking, setUndoChecking] = useState(false);
+  const [undoCheckErr, setUndoCheckErr] = useState<string | null>(null);
+
+  const runUnsendCheck = async () => {
+    setUndoChecking(true);
+    setUndoCheckErr(null);
+    setUndoCheck(null);
+    const { data, error } = await supabase.rpc("unsend_request_prep_check", { _prep_id: prep.id });
+    setUndoChecking(false);
+    if (error) { setUndoCheckErr(error.message); return; }
+    setUndoCheck(data as unknown as UnsendCheck);
+  };
   // Kanal aktif untuk dialog verifikasi: default WA (tombol Kirim di kartu),
   // dapat di-override oleh deep-link `send=chat` dari Beranda.
   const [dialogChannel, setDialogChannel] = useState<"whatsapp" | "chat">("whatsapp");
