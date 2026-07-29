@@ -114,7 +114,10 @@ export async function buildAutoSendSummaryPdf(
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 40;
-  let y = margin;
+  const { prepareBrandHeader } = await import("@/lib/pdf-brand");
+  const { bandH, draw: drawBrandHeader } = await prepareBrandHeader(doc, { marginX: margin });
+  drawBrandHeader();
+  let y = margin + bandH;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
@@ -155,7 +158,8 @@ export async function buildAutoSendSummaryPdf(
   for (const g of p.groups) {
     if (y > 780) {
       doc.addPage();
-      y = margin;
+      drawBrandHeader();
+      y = margin + bandH;
     }
     if (g.isOther) doc.setTextColor(180, 30, 30);
     else doc.setTextColor(20, 20, 20);
