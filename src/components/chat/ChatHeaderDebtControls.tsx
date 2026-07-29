@@ -523,6 +523,63 @@ export function ChatHeaderDebtControls({
     }
   };
 
+  /**
+   * Batalkan perubahan terakhir (pensil / − / +) selama laporan belum
+   * dikirim: baris yang tadi ditulis dihapus lagi, lalu audit dicatat.
+   */
+  const lastChange = changeLog[changeLog.length - 1] ?? null;
+  const canUndo = !!lastChange?.rows?.ids?.length;
+  const [undoing, setUndoing] = useState(false);
+
+  const undoLast = async () => {
+    if (!lastChange?.rows?.ids?.length) return;
+    setUndoing(true);
+    try {
+      const before = lastChange.kind === "hutang" ? hutang : piutang;
+      const { error } = await supabase
+        .from(lastChange.rows.table)
+        .delete()
+        .in("id", lastChange.rows.ids)
+        .eq("user_id", myId);
+      if (error) throw error;
+      // Undo membalik arah: tagihan yang dibatalkan = saldo turun, dan sebaliknya.
+      try {
+        await supabase.from("debt_adjust_audit").insert({
+          user_id: myId,
+          actor_name: actorName,
+          conversation_id: conversationId ?? null,
+          party_name: peerName,
+          kind: lastChange.kind,
+          action:
+            lastChange.type === "pembayaran"
+              ? "batal (undo pembayaran)"
+              : "batal (undo tagihan)",
+          amount: lastChange.amount,
+          balance_before: before,
+          balance_after:
+            lastChange.type === "pembayaran"
+              ? before + lastChange.amount
+              : before - lastChange.amount,
+          detail: lastChange.detail,
+        });
+        await qc.invalidateQueries({ queryKey: auditKey });
+      } catch {
+        /* audit bersifat pelengkap */
+      }
+      setChangeLog((prev) => prev.slice(0, -1));
+      await afterChange();
+      toast.success(
+        `Dibatalkan: ${lastChange.type} ${rupiah(lastChange.amount)} (${lastChange.kind}).`,
+      );
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal membatalkan perubahan.",
+      );
+    } finally {
+      setUndoing(false);
+    }
+  };
+
   /** Pakai ulang gaya tersimpan: placeholder diisi angka SSOT terbaru. */
   const applyTemplate = (t: DebtReportTemplate) => {
     setPreviewBody(renderTemplate(t.body, tplCtx));
@@ -769,6 +826,31 @@ export function ChatHeaderDebtControls({
             onSubmit={(delta, via) => requestDelta(delta, "hutang", via)}
           />
         </div>
+        {canUndo ? (
+          <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-dashed p-2">
+            <div className="min-w-0 text-ms-2xs">
+              <div className="font-semibold">Perubahan terakhir</div>
+              <div className="truncate text-muted-foreground">
+                {lastChange!.type === "pembayaran" ? "Pembayaran" : "Tagihan"}{" "}
+                {rupiah(lastChange!.amount)} · {lastChange!.kind}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 shrink-0 text-ms-2xs"
+              disabled={undoing}
+              onClick={undoLast}
+            >
+              {undoing ? (
+                <Loader2 className="mr-1 size-3.5 animate-spin" />
+              ) : (
+                <RotateCcw className="mr-1 size-3.5" />
+              )}
+              Undo
+            </Button>
+          </div>
+        ) : null}
         <div className="mt-2 rounded-lg border">
           <button
             type="button"
@@ -1587,6 +1669,8 @@ type SessionChange = {
   type: "tagihan" | "pembayaran";
   amount: number;
   detail: string[];
+  /** Baris yang benar-benar tertulis — dipakai tombol Undo untuk menghapusnya. */
+  rows?: { table: "debts" | "debt_payments"; ids: string[] };
 };
 
 async function applyDelta({
@@ -1650,7 +1734,10 @@ async function applyDelta({
       };
       if (kind === "hutang") insert.supplier_id = partyId;
       else insert.customer_id = partyId;
-      const { error } = await supabase.from("debts").insert(insert);
+      const { data: inserted, error } = await supabase
+        .from("debts")
+        .insert(insert)
+        .select("id");
       if (error) throw error;
       onRecord?.({
         at: Date.now(),
@@ -1658,6 +1745,10 @@ async function applyDelta({
         type: "tagihan",
         amount: delta,
         detail: [`Tagihan baru ${rupiah(delta)} untuk ${partyName}`],
+        rows: {
+          table: "debts",
+          ids: (inserted ?? []).map((r) => r.id as string),
+        },
       });
       toast.success(
         `${kind === "hutang" ? "Hutang" : "Piutang"} baru ${rupiah(delta)} dicatat.`,
@@ -1693,7 +1784,10 @@ async function applyDelta({
         toast.error("Tidak ada saldo untuk dibayar.");
         return;
       }
-      const { error } = await supabase.from("debt_payments").insert(rows);
+      const { data: insertedPay, error } = await supabase
+        .from("debt_payments")
+        .insert(rows)
+        .select("id");
       if (error) throw error;
       const applied = plan.applied;
       const left = plan.leftover;
@@ -1703,6 +1797,10 @@ async function applyDelta({
         type: "pembayaran",
         amount: applied,
         detail: plan.lines.map((l) => `${l.invoice} −${rupiah(l.used)}`),
+        rows: {
+          table: "debt_payments",
+          ids: (insertedPay ?? []).map((r) => r.id as string),
+        },
       });
       toast.success(
         `Pembayaran ${rupiah(applied)} dicatat${left > 0 ? ` (sisa input ${rupiah(left)} tidak dipakai).` : "."}`,
