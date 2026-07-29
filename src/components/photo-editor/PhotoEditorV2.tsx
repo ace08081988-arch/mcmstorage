@@ -32,6 +32,7 @@ import {
   Zap, Heart, Star, ThumbsUp, Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { Button } from "@/components/ui/button";
 import {
   type Scene, type SceneObject, type DrawObj, type ShapeObj, type TextObj, type StickerObj,
