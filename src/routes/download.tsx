@@ -195,23 +195,23 @@ function ApkCardSkeleton() {
   return (
     <div
       aria-hidden
-      className="dl-fade-up w-full rounded-2xl border bg-card p-ms-5 shadow-sm"
+      className="dl-fade-up w-full rounded-2xl border bg-card p-ms-4 shadow-sm sm:p-ms-5"
     >
-      <div className="mb-3 flex items-center gap-ms-3">
-        <Skeleton className="h-12 w-12 rounded-xl" />
+      <div className="mb-ms-3 flex items-center gap-ms-3">
+        <Skeleton className="h-11 w-11 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-full max-w-[220px]" />
+          <Skeleton className="h-3.5 w-28" />
+          <Skeleton className="h-3 w-full" />
         </div>
       </div>
       <Skeleton className="h-11 w-full rounded-xl" />
-      <div className="mt-3 space-y-2">
+      <div className="mt-ms-3 space-y-2">
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-4/5" />
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-ms-2">
-        <Skeleton className="h-9 rounded-lg" />
-        <Skeleton className="h-9 rounded-lg" />
+      <div className="mt-ms-3 grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
+        <Skeleton className="h-10 rounded-lg" />
+        <Skeleton className="h-10 rounded-lg" />
       </div>
     </div>
   );
