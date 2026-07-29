@@ -1086,16 +1086,64 @@ function KindRow({
   const targetParsed = Number(target.replace(/\D+/g, ""));
   const hasTarget = target.trim() !== "" && Number.isFinite(targetParsed);
   const delta = hasTarget ? targetParsed - balance : 0;
+  // Sudah dikonfirmasi untuk nominal "tidak wajar" (butuh tekan dua kali).
+  const [ack, setAck] = useState(false);
+  useEffect(() => setAck(false), [raw, target]);
+
+  /**
+   * Validasi nominal sebelum menulis ke buku hutang/piutang.
+   * - blok: pembayaran melebihi sisa (saldo akhir jadi negatif) atau saat
+   *   tidak ada tagihan terbuka;
+   * - peringatan: nominal jauh di luar kebiasaan, atau menambah tagihan
+   *   jenis ini padahal jenis lawannya masih bersaldo (saling bertentangan).
+   */
+  const payBlock =
+    hasAmount && balance <= 0
+      ? `Tidak ada sisa ${kind} untuk dibayar.`
+      : hasAmount && parsed > balance
+        ? `Pembayaran ${rupiah(parsed)} melebihi sisa ${rupiah(balance)} — saldo akhir akan negatif.`
+        : null;
+  const targetBlock =
+    hasTarget && targetParsed < 0 ? "Saldo akhir tidak boleh negatif." : null;
+  const activeAmount = quick && hasTarget ? Math.abs(delta) : parsed;
+  const unreasonable =
+    (hasAmount || (quick && hasTarget && delta !== 0)) &&
+    (activeAmount >= 1_000_000_000 ||
+      (balance > 0 && activeAmount > balance * 100));
+  const conflict =
+    otherBalance > 0 &&
+    ((hasAmount && !payBlock) || (quick && hasTarget && delta > 0));
+  const warning = targetBlock
+    ? null
+    : unreasonable
+      ? `Nominal ${rupiah(activeAmount)} jauh di luar kebiasaan untuk kontak ini. Pastikan tidak salah ketik.`
+      : conflict
+        ? `Kontak ini masih punya saldo ${kind === "piutang" ? "hutang" : "piutang"} ${rupiah(otherBalance)}. Menambah ${kind} sekaligus bisa membuat catatan saling bertentangan.`
+        : null;
+  /** Untuk peringatan (bukan blokir), butuh konfirmasi sekali. */
+  const guard = (): boolean => {
+    if (!warning) return true;
+    if (ack) return true;
+    setAck(true);
+    toast.warning(warning, { description: "Tekan sekali lagi untuk tetap menyimpan." });
+    return false;
+  };
 
   const submit = async (sign: 1 | -1) => {
     if (!hasAmount) {
       toast.error("Isi jumlah dulu.");
       return;
     }
+    if (sign === -1 && payBlock) {
+      toast.error(payBlock);
+      return;
+    }
+    if (!guard()) return;
     setBusy(true);
     try {
       await onSubmit(sign * parsed);
       setRaw("");
+      setAck(false);
     } finally {
       setBusy(false);
     }
@@ -1106,14 +1154,20 @@ function KindRow({
       toast.error("Isi nominal baru dulu.");
       return;
     }
+    if (targetBlock) {
+      toast.error(targetBlock);
+      return;
+    }
     if (delta === 0) {
       toast.info("Nominal sudah sama.");
       return;
     }
+    if (!guard()) return;
     setBusy(true);
     try {
       await onSubmit(delta);
       setTarget("");
+      setAck(false);
     } finally {
       setBusy(false);
     }
