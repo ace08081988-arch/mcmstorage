@@ -23,6 +23,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CallHost } from "@/components/chat/CallHost";
 import { LiveNotificationHost } from "@/components/LiveNotificationHost";
+import { ChatPresenceHost } from "@/components/chat/ChatPresenceHost";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { withPlainTimeout } from "@/lib/supabase-timeout";
 
@@ -146,6 +147,7 @@ function AuthLock() {
       {uid && cfg && locked && <AppLockScreen uid={uid} cfg={cfg} />}
       <CallHost />
       <LiveNotificationHost />
+      <ChatPresenceHost />
       <MobileBottomNav />
     </SidebarProvider>
   );

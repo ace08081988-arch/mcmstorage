@@ -986,11 +986,13 @@ const ConvListItem = React.memo(function ConvListItem({
                     <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-xs text-[var(--wa-text-muted)]">
                       {c.last_body ? (
                         <>
-                          {c.last_delivered ? (
+                          {c.last_mine ? (
                             c.last_read ? (
                               <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-check)]" aria-label="Dibaca" />
+                            ) : c.last_delivered ? (
+                              <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-text)]" aria-label="Sampai di perangkat lawan" />
                             ) : (
-                              <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" aria-label="Terkirim" />
+                              <Check className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" aria-label="Terkirim" />
                             )
                           ) : null}
                           <span className="truncate">{previewText(c.last_body) ?? ""}</span>

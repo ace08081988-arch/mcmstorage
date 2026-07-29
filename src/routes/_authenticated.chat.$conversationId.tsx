@@ -624,16 +624,21 @@ function ChatRoomPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("conversation_members")
-        .select("user_id, last_read_at")
+        .select("user_id, last_read_at, last_delivered_at")
         .eq("conversation_id", conversationId);
       if (error) throw error;
-      let minMs: number | null = null;
+      let minRead: number | null = null;
+      let minDelivered: number | null = null;
       for (const r of data ?? []) {
         if (r.user_id === myId) continue;
         const t = r.last_read_at ? new Date(r.last_read_at).getTime() : 0;
-        if (minMs === null || t < minMs) minMs = t;
+        if (minRead === null || t < minRead) minRead = t;
+        const d = r.last_delivered_at ? new Date(r.last_delivered_at).getTime() : 0;
+        // Membuka chat = pasti sudah sampai; ambil yang paling baru.
+        const dd = Math.max(d, t);
+        if (minDelivered === null || dd < minDelivered) minDelivered = dd;
       }
-      return minMs;
+      return { read: minRead, delivered: minDelivered };
     },
     // H13: rely on the postgres_changes subscription below instead of polling.
   });
@@ -2157,8 +2162,14 @@ function ChatRoomPage() {
                           {mine && !m.deleted_at ? (
                             (() => {
                               const sentMs = new Date(m.created_at).getTime();
-                              const read = othersRead.data !== null && othersRead.data !== undefined && othersRead.data >= sentMs;
-                              return <MessageStatusIcon status={read ? "read" : "sent"} />;
+                              const rd = othersRead.data?.read ?? null;
+                              const dl = othersRead.data?.delivered ?? null;
+                              const status = rd !== null && rd >= sentMs
+                                ? "read"
+                                : dl !== null && dl >= sentMs
+                                  ? "delivered"
+                                  : "sent";
+                              return <MessageStatusIcon status={status} />;
                             })()
                           ) : null}
                         </div>
@@ -3260,7 +3271,7 @@ function ChatRoomPage() {
                 || "Pengguna"
               );
         })()}
-        readAtMs={othersRead.data}
+        readAtMs={othersRead.data?.read ?? null}
       />
 
       <SecurityCodeDialog
