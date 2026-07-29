@@ -774,6 +774,51 @@ export type Database = {
         }
         Relationships: []
       }
+      debt_adjust_audit: {
+        Row: {
+          action: string
+          actor_name: string | null
+          amount: number
+          balance_after: number | null
+          balance_before: number | null
+          conversation_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          party_name: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          actor_name?: string | null
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+          party_name?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          actor_name?: string | null
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          party_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       debt_payments: {
         Row: {
           amount: number
