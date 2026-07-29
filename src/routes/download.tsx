@@ -24,6 +24,7 @@ import {
 } from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { toast } from "sonner";
 import { trackApkDownload } from "@/lib/apk-download-track";
