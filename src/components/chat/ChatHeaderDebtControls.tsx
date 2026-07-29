@@ -489,6 +489,9 @@ export function ChatHeaderDebtControls({
       const body = previewBody || reportBody();
       await sendMessage({ data: { conversationId, body } });
       setDirty(false);
+      setChangeLog([]);
+      setBaseline(null);
+      setConfirmSend(false);
       setPreviewOpen(false);
       toast.success("Laporan hutang/piutang terkirim ke chat.");
     } catch (e) {
