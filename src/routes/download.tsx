@@ -58,7 +58,7 @@ export const Route = createFileRoute("/download")({
 
 function DownloadPage() {
   const fetchApk = useServerFn(getLatestApkVariants);
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["latest-apk-variants"],
     queryFn: () => fetchApk(),
     staleTime: 60_000,
@@ -79,12 +79,15 @@ function DownloadPage() {
         <InstallFlow />
 
         {isLoading ? (
-          <div className="flex items-center justify-center gap-ms-2 rounded-2xl border border-dashed p-ms-6 text-ms-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Memuat informasi APK...
-          </div>
+          <>
+            <ApkCardSkeleton />
+            <ApkCardSkeleton />
+            <div className="sr-only" role="status">
+              Memuat informasi APK…
+            </div>
+          </>
         ) : isError ? (
-          <div className="rounded-2xl border border-red-300 bg-red-50 p-ms-4 text-ms-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
+          <div className="dl-fade-up rounded-2xl border border-red-300 bg-red-50 p-ms-4 text-ms-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
             <p>Tidak dapat memuat link unduhan.</p>
             <button
               type="button"
@@ -115,7 +118,7 @@ function DownloadPage() {
               min={data?.minSupported.chat ?? null}
               highlight
             />
-            <InstallDetail onRetry={() => refetch()} />
+            <InstallDetail onRetry={() => refetch()} refreshing={isFetching} />
           </>
         )}
         </div>
