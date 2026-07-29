@@ -43,6 +43,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(options: Optio
         (el) => el.offsetParent !== null || el === document.activeElement,
       );
 
+    let clearAutoFocus: (() => void) | undefined;
     if (autoFocus) {
       const t = window.setTimeout(() => {
         const items = list();
@@ -55,9 +56,8 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(options: Optio
           /* ignore */
         }
       }, 0);
-      // bersihkan timer bila overlay ditutup sangat cepat
       root.setAttribute("data-focus-trap", "on");
-      var clearAutoFocus = () => window.clearTimeout(t); // eslint-disable-line no-var
+      clearAutoFocus = () => window.clearTimeout(t);
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
