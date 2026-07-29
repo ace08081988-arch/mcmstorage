@@ -120,7 +120,14 @@ export async function buildAutoSendSummaryPdf(
   const lineH = (n: number) => n * dFactor * fScale;
   const margin = Math.round(40 * dFactor);
   const { prepareBrandHeader, drawSignatureBlock } = await import("@/lib/pdf-brand");
-  const { bandH, draw: drawBrandHeader } = await prepareBrandHeader(doc, { marginX: margin });
+  const { nextDocNumber } = await import("@/lib/doc-number");
+  // Nomor dokumen otomatis (INV-YYYYMMDD-XXXX) untuk jejak audit.
+  const docNo = await nextDocNumber("INV", p.generatedAt);
+  const { bandH, draw: drawBrandHeader } = await prepareBrandHeader(doc, {
+    marginX: margin,
+    docNumber: docNo,
+    subtitle: "Dokumen resmi",
+  });
   drawBrandHeader();
   let y = margin + bandH;
 
@@ -132,6 +139,7 @@ export async function buildAutoSendSummaryPdf(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10 * fScale);
   const meta: Array<[string, string]> = [
+    ["No. dokumen", docNo],
     ["Produk", p.itemName],
     ["Judul", p.titleName],
     ["Waktu", p.generatedAt.toLocaleString("id-ID")],
@@ -203,6 +211,7 @@ export async function buildAutoSendSummaryPdf(
     fontScale: fScale,
     date: p.generatedAt,
     startY: y,
+    docNumber: docNo,
   });
 
   return doc.output("blob");
