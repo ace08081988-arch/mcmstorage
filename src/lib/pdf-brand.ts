@@ -45,7 +45,7 @@ export function hexToRgb(hex: string): [number, number, number] | null {
 
 /** Minimal jsPDF surface yang dipakai kop. */
 type Doc = {
-  internal: { pageSize: { getWidth: () => number } };
+  internal: { pageSize: { getWidth: () => number; getHeight: () => number } };
   setFillColor: (r: number, g: number, b: number) => unknown;
   rect: (x: number, y: number, w: number, h: number, s?: string) => unknown;
   addImage: (
@@ -111,4 +111,92 @@ export async function prepareBrandHeader(
   };
 
   return { bandH, orgName, brand, draw };
+}
+
+/** Doc surface tambahan untuk blok tanda tangan. */
+type SignDoc = Doc & {
+  setDrawColor: (r: number, g?: number, b?: number) => unknown;
+  setLineWidth?: (n: number) => unknown;
+  line: (x1: number, y1: number, x2: number, y2: number) => unknown;
+  setFont?: (name: string, style?: string) => unknown;
+  getNumberOfPages?: () => number;
+  setPage?: (n: number) => unknown;
+};
+
+export type SignatureBlockOptions = {
+  marginX?: number;
+  /** Batas bawah konten (footer nomor halaman). Default 46. */
+  marginBottom?: number;
+  /** Skala font mengikuti preferensi PDF pengguna. */
+  fontScale?: number;
+  /** Kota/tempat penandatanganan, mis. "Surabaya". */
+  place?: string;
+  /** Tanggal dokumen. Default: sekarang. */
+  date?: Date;
+  /** Label peran penandatangan. Default "Admin". */
+  role?: string;
+  /** Nama penandatangan bila diketahui; kosong = garis titik-titik. */
+  signerName?: string;
+  /** Y awal blok (pt). Bila kurang ruang, blok ditempel di atas footer. */
+  startY?: number;
+};
+
+/**
+ * Ruang tanda tangan admin + tanggal di footer halaman terakhir,
+ * supaya dokumen ekspor siap dicetak, ditandatangani, dan dicap sebagai bukti.
+ * Mengembalikan Y akhir blok.
+ */
+export function drawSignatureBlock(doc: SignDoc, opts: SignatureBlockOptions = {}): number {
+  const marginX = opts.marginX ?? 40;
+  const marginBottom = opts.marginBottom ?? 46;
+  const fs = opts.fontScale ?? 1;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const date = opts.date ?? new Date();
+  const role = opts.role ?? "Admin";
+
+  const blockH = 96;
+  const bottomLimit = pageH - marginBottom;
+  let y = opts.startY != null ? opts.startY + 24 : bottomLimit - blockH;
+  if (y + blockH > bottomLimit) y = bottomLimit - blockH;
+
+  const colW = 200;
+  const colX = pageW - marginX - colW;
+  const tanggal = date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  doc.setTextColor(60);
+  doc.setFontSize(9.5 * fs);
+  doc.text(`${opts.place ? `${opts.place}, ` : ""}${tanggal}`, colX + colW, y, { align: "right" });
+  doc.text("Disiapkan & disetujui,", colX + colW, y + 14, { align: "right" });
+
+  // Ruang kosong untuk tanda tangan + cap
+  const lineY = y + 72;
+  doc.setDrawColor(150);
+  doc.setLineWidth?.(0.7);
+  doc.line(colX, lineY, colX + colW, lineY);
+
+  doc.setTextColor(20);
+  doc.setFontSize(10 * fs);
+  doc.setFont?.("helvetica", "bold");
+  doc.text(opts.signerName || "(  .................................  )", colX + colW, lineY + 14, {
+    align: "right",
+  });
+  doc.setFont?.("helvetica", "normal");
+  doc.setTextColor(110);
+  doc.setFontSize(8.5 * fs);
+  doc.text(role, colX + colW, lineY + 26, { align: "right" });
+
+  // Sisi kiri: catatan cap resmi
+  doc.setTextColor(140);
+  doc.setFontSize(8 * fs);
+  doc.text("Cap / stempel:", marginX, y + 14);
+  doc.setDrawColor(200);
+  doc.rect(marginX, y + 22, 108, 62);
+
+  doc.setTextColor(0);
+  return lineY + 30;
 }
