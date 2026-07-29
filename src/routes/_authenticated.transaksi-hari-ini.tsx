@@ -11,6 +11,7 @@ import { ArrowLeft, RefreshCw, FileDown, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AnalyticsExportData } from "@/lib/analytics-export";
+import PdfPreviewDialog, { type PdfPreviewSource } from "@/components/PdfPreviewDialog";
 
 export const Route = createFileRoute("/_authenticated/transaksi-hari-ini")({
   component: TransaksiHariIniPage,
@@ -55,6 +56,7 @@ function TransaksiHariIniPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<PdfPreviewSource>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -132,9 +134,12 @@ function TransaksiHariIniPage() {
         };
 
         const mod = await import("@/lib/analytics-export");
-        if (kind === "csv") mod.exportAnalyticsCsv(data);
-        else await mod.exportAnalyticsPdf(data);
-        toast.success(`Daftar transaksi diunduh sebagai ${kind.toUpperCase()}`);
+        if (kind === "csv") {
+          mod.exportAnalyticsCsv(data);
+          toast.success("Daftar transaksi diunduh sebagai CSV");
+        } else {
+          setPdfPreview(await mod.buildAnalyticsPdfBlob(data));
+        }
       } catch (e) {
         toast.error(`Gagal ekspor ${kind.toUpperCase()}`, {
           description: e instanceof Error ? e.message : String(e),
@@ -238,6 +243,13 @@ function TransaksiHariIniPage() {
           ))}
         </ul>
       )}
+      <PdfPreviewDialog
+        open={pdfPreview !== null}
+        onOpenChange={(v) => !v && setPdfPreview(null)}
+        source={pdfPreview}
+        title="Pratinjau daftar transaksi"
+        onDownloaded={() => toast.success("Daftar transaksi diunduh sebagai PDF")}
+      />
     </div>
   );
 }

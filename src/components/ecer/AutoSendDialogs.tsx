@@ -46,6 +46,7 @@ import {
   type AutoSendExportPayload,
 } from "@/lib/auto-send-export";
 import { toast } from "sonner";
+import PdfPreviewDialog, { type PdfPreviewSource } from "@/components/PdfPreviewDialog";
 
 /**
  * Menghitung daftar alasan mengapa satu kotak tidak valid untuk dikirim.
@@ -135,6 +136,7 @@ export function AutoSendConfirmDialog({
   const [search, setSearch] = useState<string>("");
   // Status loading tombol ekspor supaya double-tap tidak memicu unduhan ganda.
   const [exporting, setExporting] = useState<null | "csv" | "pdf">(null);
+  const [pdfPreview, setPdfPreview] = useState<PdfPreviewSource>(null);
   useEffect(() => {
     if (state) setExpanded(true);
   }, [state]);
@@ -346,8 +348,7 @@ export function AutoSendConfirmDialog({
                       generatedAt: new Date(),
                     };
                     const blob = await buildAutoSendSummaryPdf(payload);
-                    downloadBlob(blob, autoSendExportFilename(payload, "pdf"));
-                    toast.success("PDF ringkasan diunduh");
+                    setPdfPreview({ blob, filename: autoSendExportFilename(payload, "pdf") });
                   } catch (e) {
                     toast.error("Gagal ekspor PDF: " + (e as Error).message);
                   } finally {
@@ -816,6 +817,13 @@ export function AutoSendConfirmDialog({
             Lanjut ke pembayaran
           </AlertDialogAction>
         </AlertDialogFooter>
+        <PdfPreviewDialog
+          open={pdfPreview !== null}
+          onOpenChange={(v) => !v && setPdfPreview(null)}
+          source={pdfPreview}
+          title="Pratinjau ringkasan auto-kirim"
+          onDownloaded={() => toast.success("PDF ringkasan diunduh")}
+        />
       </AlertDialogContent>
     </AlertDialog>
   );

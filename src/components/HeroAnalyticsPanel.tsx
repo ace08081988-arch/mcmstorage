@@ -10,6 +10,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { AnalyticsExportData } from "@/lib/analytics-export";
 import { toast } from "sonner";
+import PdfPreviewDialog, { type PdfPreviewSource } from "@/components/PdfPreviewDialog";
 
 type SaleRow = {
   id: string;
@@ -143,6 +144,7 @@ function Metric({
 export function HeroAnalyticsPanel() {
   const { rows, loading, connected, lastSyncAt, refresh } = useTodaySales();
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<PdfPreviewSource>(null);
 
   const stats = useMemo(() => {
     let omzet = 0;
@@ -199,9 +201,12 @@ export function HeroAnalyticsPanel() {
       try {
         const data = buildExport();
         const mod = await import("@/lib/analytics-export");
-        if (kind === "csv") mod.exportAnalyticsCsv(data);
-        else await mod.exportAnalyticsPdf(data);
-        toast.success(`Ringkasan diunduh sebagai ${kind.toUpperCase()}`);
+        if (kind === "csv") {
+          mod.exportAnalyticsCsv(data);
+          toast.success("Ringkasan diunduh sebagai CSV");
+        } else {
+          setPdfPreview(await mod.buildAnalyticsPdfBlob(data));
+        }
       } catch (e) {
         toast.error(`Gagal ekspor ${kind.toUpperCase()}`, {
           description: e instanceof Error ? e.message : String(e),
@@ -302,6 +307,13 @@ export function HeroAnalyticsPanel() {
           />
         </div>
       )}
+      <PdfPreviewDialog
+        open={pdfPreview !== null}
+        onOpenChange={(v) => !v && setPdfPreview(null)}
+        source={pdfPreview}
+        title="Pratinjau ringkasan hari ini"
+        onDownloaded={() => toast.success("Ringkasan diunduh sebagai PDF")}
+      />
     </section>
   );
 }
