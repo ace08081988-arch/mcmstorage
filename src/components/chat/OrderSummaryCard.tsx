@@ -11,6 +11,7 @@ import {
   Hash,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { rupiah } from "@/lib/stock-format";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   deriveEcerStatus,
