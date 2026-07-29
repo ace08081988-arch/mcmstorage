@@ -34,6 +34,7 @@ import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedTugasDaftarRouteImport } from './routes/_authenticated.tugas-daftar'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
+import { Route as AuthenticatedTransaksiHariIniRouteImport } from './routes/_authenticated.transaksi-hari-ini'
 import { Route as AuthenticatedStatusNotifikasiRouteImport } from './routes/_authenticated.status-notifikasi'
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
@@ -277,6 +278,12 @@ const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
   path: '/tugas',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedTransaksiHariIniRoute =
+  AuthenticatedTransaksiHariIniRouteImport.update({
+    id: '/transaksi-hari-ini',
+    path: '/transaksi-hari-ini',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedStatusNotifikasiRoute =
   AuthenticatedStatusNotifikasiRouteImport.update({
     id: '/status-notifikasi',
@@ -1008,6 +1015,7 @@ export interface FileRoutesByFullPath {
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
   '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
+  '/transaksi-hari-ini': typeof AuthenticatedTransaksiHariIniRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
@@ -1147,6 +1155,7 @@ export interface FileRoutesByTo {
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
   '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
+  '/transaksi-hari-ini': typeof AuthenticatedTransaksiHariIniRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
@@ -1292,6 +1301,7 @@ export interface FileRoutesById {
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
   '/_authenticated/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
+  '/_authenticated/transaksi-hari-ini': typeof AuthenticatedTransaksiHariIniRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/_authenticated/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
@@ -1438,6 +1448,7 @@ export interface FileRouteTypes {
     | '/request'
     | '/sesi'
     | '/status-notifikasi'
+    | '/transaksi-hari-ini'
     | '/tugas'
     | '/tugas-baru'
     | '/tugas-daftar'
@@ -1577,6 +1588,7 @@ export interface FileRouteTypes {
     | '/request'
     | '/sesi'
     | '/status-notifikasi'
+    | '/transaksi-hari-ini'
     | '/tugas'
     | '/tugas-baru'
     | '/tugas-daftar'
@@ -1721,6 +1733,7 @@ export interface FileRouteTypes {
     | '/_authenticated/request'
     | '/_authenticated/sesi'
     | '/_authenticated/status-notifikasi'
+    | '/_authenticated/transaksi-hari-ini'
     | '/_authenticated/tugas'
     | '/_authenticated/tugas-baru'
     | '/_authenticated/tugas-daftar'
@@ -2048,6 +2061,13 @@ declare module '@tanstack/react-router' {
       path: '/tugas'
       fullPath: '/tugas'
       preLoaderRoute: typeof AuthenticatedTugasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/transaksi-hari-ini': {
+      id: '/_authenticated/transaksi-hari-ini'
+      path: '/transaksi-hari-ini'
+      fullPath: '/transaksi-hari-ini'
+      preLoaderRoute: typeof AuthenticatedTransaksiHariIniRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/status-notifikasi': {
@@ -3000,6 +3020,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
   AuthenticatedStatusNotifikasiRoute: typeof AuthenticatedStatusNotifikasiRoute
+  AuthenticatedTransaksiHariIniRoute: typeof AuthenticatedTransaksiHariIniRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
   AuthenticatedTugasDaftarRoute: typeof AuthenticatedTugasDaftarRoute
@@ -3072,6 +3093,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
   AuthenticatedStatusNotifikasiRoute: AuthenticatedStatusNotifikasiRoute,
+  AuthenticatedTransaksiHariIniRoute: AuthenticatedTransaksiHariIniRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
   AuthenticatedTugasDaftarRoute: AuthenticatedTugasDaftarRoute,
