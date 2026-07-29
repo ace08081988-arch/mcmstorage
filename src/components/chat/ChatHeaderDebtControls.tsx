@@ -364,6 +364,15 @@ export function ChatHeaderDebtControls({
       return;
     }
     const amount = Math.abs(delta);
+    // Jaring pengaman terakhir: jangan pernah menulis pembayaran yang
+    // membuat saldo akhir negatif, dari jalur mana pun.
+    const saldo = kind === "hutang" ? hutang : piutang;
+    if (amount > saldo) {
+      toast.error(
+        `Pembayaran ${rupiah(amount)} melebihi sisa ${kind} ${rupiah(saldo)} — saldo akhir akan negatif.`,
+      );
+      return;
+    }
     const plan = planDebtPayment({
       debts: safeSummary.debts,
       paidByDebt: safeSummary.paidByDebt,
