@@ -552,6 +552,7 @@ export type Database = {
           cleared_at: string | null
           conversation_id: string
           joined_at: string
+          last_delivered_at: string | null
           last_read_at: string | null
           notifications_muted_until: string | null
           pinned_at: string | null
@@ -564,6 +565,7 @@ export type Database = {
           cleared_at?: string | null
           conversation_id: string
           joined_at?: string
+          last_delivered_at?: string | null
           last_read_at?: string | null
           notifications_muted_until?: string | null
           pinned_at?: string | null
@@ -576,6 +578,7 @@ export type Database = {
           cleared_at?: string | null
           conversation_id?: string
           joined_at?: string
+          last_delivered_at?: string | null
           last_read_at?: string | null
           notifications_muted_until?: string | null
           pinned_at?: string | null
@@ -3876,6 +3879,7 @@ export type Database = {
         Args: { _conv: string; _id: string; _kind: string }
         Returns: Json
       }
+      chat_mark_delivered: { Args: { _conv?: string }; Returns: undefined }
       chat_mute: { Args: { _conv: string; _until: string }; Returns: undefined }
       chat_search_messages: {
         Args: { _limit?: number; _q: string }
