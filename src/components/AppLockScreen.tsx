@@ -91,8 +91,16 @@ export function AppLockScreen({ uid, cfg }: Props) {
     navigate({ to: "/auth", replace: true });
   };
 
+  const trapRef = useFocusTrap<HTMLDivElement>();
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur">
+    <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Aplikasi terkunci"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur"
+    >
       <div className="w-full max-w-sm space-ms-5 rounded-xl border bg-card p-ms-6 shadow-lg">
         <div className="text-center">
           <div className="text-ms-3xl">🔒</div>
