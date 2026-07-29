@@ -2801,6 +2801,8 @@ export type Database = {
           payment_method: string
           price_per_base: number
           qty_base: number
+          source: string | null
+          source_id: string | null
           total_revenue: number
           user_id: string
         }
@@ -2814,6 +2816,8 @@ export type Database = {
           payment_method?: string
           price_per_base: number
           qty_base: number
+          source?: string | null
+          source_id?: string | null
           total_revenue: number
           user_id: string
         }
@@ -2827,6 +2831,8 @@ export type Database = {
           payment_method?: string
           price_per_base?: number
           qty_base?: number
+          source?: string | null
+          source_id?: string | null
           total_revenue?: number
           user_id?: string
         }
@@ -4328,6 +4334,7 @@ export type Database = {
         Args: { _max_bytes?: number; _metadata: Json }
         Returns: boolean
       }
+      unsend_request_prep: { Args: { _prep_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
