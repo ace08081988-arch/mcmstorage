@@ -1068,11 +1068,14 @@ function KindRow({
   balance,
   kind,
   onSubmit,
+  otherBalance,
 }: {
   label: string;
   balance: number;
   kind: Kind;
   onSubmit: (delta: number) => Promise<void>;
+  /** Saldo jenis lawan (untuk peringatan catatan yang bertentangan). */
+  otherBalance: number;
 }) {
   const [raw, setRaw] = useState<string>("");
   const [busy, setBusy] = useState(false);
