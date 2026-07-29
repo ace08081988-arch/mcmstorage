@@ -84,7 +84,7 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
       // di kanan atas agar judul panjang tidak menabrak ikon X.
       "flex min-w-0 flex-col gap-1 pr-10 text-left sm:pr-8",
       // Tetap terlihat saat body digulir; bayangan & garis muncul mulus.
-      "sticky top-0 z-10 -mx-4 -mt-4 border-b border-transparent bg-background px-4 pb-2 pt-4 transition-[box-shadow,border-color] duration-200 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pb-3 sm:pt-6",
+      "sticky top-0 z-10 border-b border-transparent bg-background pb-2 transition-[box-shadow,border-color] duration-200",
       "group-data-[scrolled=true]/dialog:border-border group-data-[scrolled=true]/dialog:shadow-sm",
       className,
     )}
