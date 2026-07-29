@@ -953,6 +953,33 @@ export type Database = {
         }
         Relationships: []
       }
+      doc_sequences: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          last_seq: number
+          prefix: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          last_seq?: number
+          prefix: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          last_seq?: number
+          prefix?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ecer_preparations: {
         Row: {
           actual_grams: number
@@ -4040,6 +4067,10 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      next_doc_number: {
+        Args: { _day?: string; _prefix: string }
+        Returns: string
       }
       normalize_phone: { Args: { _p: string }; Returns: string }
       normalize_unit_label: { Args: { _u: string }; Returns: string }
