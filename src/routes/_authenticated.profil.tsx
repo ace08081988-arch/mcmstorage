@@ -42,6 +42,7 @@ import { COUNTRIES, LANGUAGES, DATE_FORMATS, findCountry } from "@/lib/countries
 import { formatCurrency, formatDate } from "@/lib/format";
 import { PushNotificationSettings } from "@/components/chat/PushNotificationSettings";
 import { OrgNameSettings } from "@/components/OrgNameSettings";
+import { PdfLayoutSettings } from "@/components/PdfLayoutSettings";
 import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
 import { AccessStatusCard } from "@/components/AccessStatusCard";
 import { AccessDiagnostics } from "@/components/AccessDiagnostics";
@@ -479,6 +480,8 @@ function ProfilPage() {
       <Separator />
 
       <OrgNameSettings />
+
+      <PdfLayoutSettings />
 
       <Separator />
 
