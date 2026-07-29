@@ -37,6 +37,7 @@ import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedTransaksiHariIniRouteImport } from './routes/_authenticated.transaksi-hari-ini'
 import { Route as AuthenticatedStatusNotifikasiRouteImport } from './routes/_authenticated.status-notifikasi'
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
+import { Route as AuthenticatedRingkasanRouteImport } from './routes/_authenticated.ringkasan'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedRekonsiliasiPiutangRouteImport } from './routes/_authenticated.rekonsiliasi-piutang'
 import { Route as AuthenticatedRekonsiliasiKontakRouteImport } from './routes/_authenticated.rekonsiliasi-kontak'
@@ -294,6 +295,11 @@ const AuthenticatedStatusNotifikasiRoute =
 const AuthenticatedSesiRoute = AuthenticatedSesiRouteImport.update({
   id: '/sesi',
   path: '/sesi',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRingkasanRoute = AuthenticatedRingkasanRouteImport.update({
+  id: '/ringkasan',
+  path: '/ringkasan',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
@@ -1021,6 +1027,7 @@ export interface FileRoutesByFullPath {
   '/rekonsiliasi-kontak': typeof AuthenticatedRekonsiliasiKontakRoute
   '/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/request': typeof AuthenticatedRequestRoute
+  '/ringkasan': typeof AuthenticatedRingkasanRoute
   '/sesi': typeof AuthenticatedSesiRoute
   '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/transaksi-hari-ini': typeof AuthenticatedTransaksiHariIniRoute
@@ -1162,6 +1169,7 @@ export interface FileRoutesByTo {
   '/rekonsiliasi-kontak': typeof AuthenticatedRekonsiliasiKontakRoute
   '/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/request': typeof AuthenticatedRequestRoute
+  '/ringkasan': typeof AuthenticatedRingkasanRoute
   '/sesi': typeof AuthenticatedSesiRoute
   '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/transaksi-hari-ini': typeof AuthenticatedTransaksiHariIniRoute
@@ -1309,6 +1317,7 @@ export interface FileRoutesById {
   '/_authenticated/rekonsiliasi-kontak': typeof AuthenticatedRekonsiliasiKontakRoute
   '/_authenticated/rekonsiliasi-piutang': typeof AuthenticatedRekonsiliasiPiutangRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
+  '/_authenticated/ringkasan': typeof AuthenticatedRingkasanRoute
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
   '/_authenticated/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/_authenticated/transaksi-hari-ini': typeof AuthenticatedTransaksiHariIniRoute
@@ -1457,6 +1466,7 @@ export interface FileRouteTypes {
     | '/rekonsiliasi-kontak'
     | '/rekonsiliasi-piutang'
     | '/request'
+    | '/ringkasan'
     | '/sesi'
     | '/status-notifikasi'
     | '/transaksi-hari-ini'
@@ -1598,6 +1608,7 @@ export interface FileRouteTypes {
     | '/rekonsiliasi-kontak'
     | '/rekonsiliasi-piutang'
     | '/request'
+    | '/ringkasan'
     | '/sesi'
     | '/status-notifikasi'
     | '/transaksi-hari-ini'
@@ -1744,6 +1755,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rekonsiliasi-kontak'
     | '/_authenticated/rekonsiliasi-piutang'
     | '/_authenticated/request'
+    | '/_authenticated/ringkasan'
     | '/_authenticated/sesi'
     | '/_authenticated/status-notifikasi'
     | '/_authenticated/transaksi-hari-ini'
@@ -2095,6 +2107,13 @@ declare module '@tanstack/react-router' {
       path: '/sesi'
       fullPath: '/sesi'
       preLoaderRoute: typeof AuthenticatedSesiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ringkasan': {
+      id: '/_authenticated/ringkasan'
+      path: '/ringkasan'
+      fullPath: '/ringkasan'
+      preLoaderRoute: typeof AuthenticatedRingkasanRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/request': {
@@ -3039,6 +3058,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRekonsiliasiKontakRoute: typeof AuthenticatedRekonsiliasiKontakRoute
   AuthenticatedRekonsiliasiPiutangRoute: typeof AuthenticatedRekonsiliasiPiutangRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
+  AuthenticatedRingkasanRoute: typeof AuthenticatedRingkasanRoute
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
   AuthenticatedStatusNotifikasiRoute: typeof AuthenticatedStatusNotifikasiRoute
   AuthenticatedTransaksiHariIniRoute: typeof AuthenticatedTransaksiHariIniRoute
@@ -3113,6 +3133,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRekonsiliasiKontakRoute: AuthenticatedRekonsiliasiKontakRoute,
   AuthenticatedRekonsiliasiPiutangRoute: AuthenticatedRekonsiliasiPiutangRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
+  AuthenticatedRingkasanRoute: AuthenticatedRingkasanRoute,
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
   AuthenticatedStatusNotifikasiRoute: AuthenticatedStatusNotifikasiRoute,
   AuthenticatedTransaksiHariIniRoute: AuthenticatedTransaksiHariIniRoute,
