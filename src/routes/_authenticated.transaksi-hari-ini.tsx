@@ -7,8 +7,10 @@
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, FileDown, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import type { AnalyticsExportData } from "@/lib/analytics-export";
 
 export const Route = createFileRoute("/_authenticated/transaksi-hari-ini")({
   component: TransaksiHariIniPage,
@@ -52,6 +54,7 @@ function TransaksiHariIniPage() {
   const [rows, setRows] = useState<SaleRow[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -86,9 +89,66 @@ function TransaksiHariIniPage() {
     return { omzet, unit, trx: rows?.length ?? 0 };
   }, [rows]);
 
+  const doExport = useCallback(
+    async (kind: "csv" | "pdf") => {
+      const list = rows ?? [];
+      if (list.length === 0) {
+        toast.error("Belum ada transaksi untuk diekspor");
+        return;
+      }
+      setExporting(kind);
+      try {
+        // Produk terlaris dihitung dari baris yang sama (SSOT penjualan).
+        const byItem = new Map<string, { name: string; qty: number; unit: string }>();
+        for (const r of list) {
+          const cur = byItem.get(r.item_id) ?? {
+            name: r.warehouse_items?.name ?? "Produk",
+            qty: 0,
+            unit: r.warehouse_items?.base_unit || "pcs",
+          };
+          cur.qty += Number(r.qty_base) || 0;
+          byItem.set(r.item_id, cur);
+        }
+        const best = [...byItem.values()].sort((a, b) => b.qty - a.qty)[0] ?? null;
+
+        const data: AnalyticsExportData = {
+          judul: `Transaksi penyumbang unit terjual — ${new Date().toLocaleDateString("id-ID", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          })}`,
+          tanggal: new Date(),
+          omzet: totals.omzet,
+          trx: totals.trx,
+          unit: totals.unit,
+          terlaris: best ? `${best.name} (${num(best.qty)} ${best.unit})` : "—",
+          rows: list.map((r) => ({
+            waktu: new Date(r.created_at).toLocaleTimeString("id-ID"),
+            produk: r.warehouse_items?.name ?? "Produk",
+            qty: Number(r.qty_base) || 0,
+            unit: r.warehouse_items?.base_unit || "pcs",
+            total: Number(r.total_revenue) || 0,
+          })),
+        };
+
+        const mod = await import("@/lib/analytics-export");
+        if (kind === "csv") mod.exportAnalyticsCsv(data);
+        else await mod.exportAnalyticsPdf(data);
+        toast.success(`Daftar transaksi diunduh sebagai ${kind.toUpperCase()}`);
+      } catch (e) {
+        toast.error(`Gagal ekspor ${kind.toUpperCase()}`, {
+          description: e instanceof Error ? e.message : String(e),
+        });
+      } finally {
+        setExporting(null);
+      }
+    },
+    [rows, totals],
+  );
+
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
-      <div className="flex items-start justify-between gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0">
           <Link
             to="/"
@@ -102,15 +162,37 @@ function TransaksiHariIniPage() {
             {rupiah(totals.omzet)} dari {totals.trx} transaksi
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={busy}
-          className="inline-flex shrink-0 items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3 w-3 ${busy ? "animate-spin" : ""}`} />
-          Segarkan
-        </button>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={() => void doExport("csv")}
+            disabled={busy || exporting !== null || !rows?.length}
+            aria-label="Ekspor daftar transaksi ke CSV"
+            className="inline-flex items-center gap-1 rounded-md border bg-card px-2.5 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-50"
+          >
+            <FileDown className="h-3 w-3" />
+            {exporting === "csv" ? "…" : "CSV"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void doExport("pdf")}
+            disabled={busy || exporting !== null || !rows?.length}
+            aria-label="Ekspor daftar transaksi ke PDF"
+            className="inline-flex items-center gap-1 rounded-md border bg-card px-2.5 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-50"
+          >
+            <FileText className="h-3 w-3" />
+            {exporting === "pdf" ? "…" : "PDF"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={busy}
+            className="inline-flex items-center gap-1 rounded-md border bg-card px-2.5 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3 w-3 ${busy ? "animate-spin" : ""}`} />
+            Segarkan
+          </button>
+        </div>
       </div>
 
       {err && (
