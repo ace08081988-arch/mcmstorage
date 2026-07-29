@@ -694,8 +694,8 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
 }
 /* Centang ganda "sampai di perangkat" — abu gelap/hitam, belum hijau. */
 @utility wa-check-delivered {
-  color: currentColor;
-  opacity: 1;
+  color: var(--wa-bubble-out-fg);
+  opacity: 0.9;
 }
 
 /* ==========================================================================
