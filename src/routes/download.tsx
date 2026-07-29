@@ -107,6 +107,22 @@ function QuickCopyBar({
   const [copied, setCopied] = useState<
     "apk" | "loc" | "storage" | "chat" | null
   >(null);
+  const [history, setHistory] = useState<CopyEntry[]>([]);
+
+  // Riwayat dibaca setelah mount agar aman terhadap SSR/hydration.
+  useEffect(() => setHistory(readCopyHistory()), []);
+
+  const remember = useCallback((label: string, text: string) => {
+    if (!text) return;
+    setHistory((prev) => {
+      const next = [
+        { label, text, at: Date.now() },
+        ...prev.filter((e) => e.text !== text),
+      ].slice(0, COPY_HISTORY_MAX);
+      writeCopyHistory(next);
+      return next;
+    });
+  }, []);
 
   const run = async (
     kind: "apk" | "loc" | "storage" | "chat",
@@ -119,6 +135,7 @@ function QuickCopyBar({
       return;
     }
     setCopied(kind);
+    remember(label, text);
     toast.success(`${label} disalin`);
     setTimeout(() => setCopied((c) => (c === kind ? null : c)), 1500);
   };
@@ -146,6 +163,7 @@ function QuickCopyBar({
     // Salin dulu sebagai jaring pengaman: sebagian WhatsApp Android
     // mengabaikan teks prefill saat dibuka dari WebView.
     await copyToClipboard(waText);
+    remember("Pesan WhatsApp (APK + lokasi)", waText);
     const url = `https://wa.me/?text=${encodeURIComponent(waText)}`;
     window.open(url, "_blank", "noopener,noreferrer");
     toast.success("WhatsApp dibuka — pesan juga sudah disalin");
