@@ -6,6 +6,7 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { rememberPin } from "@/lib/prep-pin-memo";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 /**
  * Dialog kecil untuk membagikan link tugas + PIN dalam satu pesan.
@@ -131,9 +132,15 @@ export function SharePinDialog({
     }
   }
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-ms-4" onClick={onClose}>
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Bagikan link dan PIN"
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-t-2xl border bg-card p-ms-4 shadow-lg sm:rounded-2xl"
       >

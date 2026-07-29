@@ -47,6 +47,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { logCall } from "@/lib/call-diagnostics";
 import { CallDiagnosticsSheet } from "@/components/chat/CallDiagnosticsSheet";
 
@@ -732,6 +733,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const rootRef = useRef<HTMLDivElement | null>(null);
   const doneRef = useRef(false);
   const helloReceivedRef = useRef(false);
+  useFocusTrap({ ref: rootRef, autoFocus: false });
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const toggleFullscreen = useCallback(async () => {
@@ -1422,6 +1424,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   return (
     <div
       ref={rootRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Layar panggilan"
       className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
       onPointerDown={resumePlayback}
     >

@@ -32,6 +32,7 @@ import {
   Zap, Heart, Star, ThumbsUp, Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { Button } from "@/components/ui/button";
 import {
   type Scene, type SceneObject, type DrawObj, type ShapeObj, type TextObj, type StickerObj,
@@ -975,8 +976,14 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
   const selectedObj = scene.objects.find((o) => o.id === selectedId) ?? null;
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ autoFocus: false });
+
   return (
     <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Editor foto"
       className="fixed inset-0 z-50 flex flex-col text-foreground"
       style={{
         background:
