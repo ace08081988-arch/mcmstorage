@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import type { AnalyticsExportData } from "@/lib/analytics-export";
+import { toast } from "sonner";
 
 type SaleRow = {
   id: string;
@@ -140,6 +142,7 @@ function Metric({
 
 export function HeroAnalyticsPanel() {
   const { rows, loading, connected, lastSyncAt, refresh } = useTodaySales();
+  const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
 
   const stats = useMemo(() => {
     let omzet = 0;
@@ -164,6 +167,51 @@ export function HeroAnalyticsPanel() {
     const best = [...byItem.values()].sort((a, b) => b.qty - a.qty)[0] ?? null;
     return { omzet, unit, trx: rows.length, best };
   }, [rows]);
+
+  const buildExport = useCallback(
+    (): AnalyticsExportData => ({
+      judul: `Ringkasan penjualan ${new Date().toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      })}`,
+      tanggal: new Date(),
+      omzet: stats.omzet,
+      trx: stats.trx,
+      unit: stats.unit,
+      terlaris: stats.best
+        ? `${stats.best.name} (${stats.best.qty.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${stats.best.unitLabel})`
+        : "—",
+      rows: rows.map((r) => ({
+        waktu: new Date(r.created_at).toLocaleTimeString("id-ID"),
+        produk: r.warehouse_items?.name ?? "Produk",
+        qty: Number(r.qty_base) || 0,
+        unit: r.warehouse_items?.base_unit || "pcs",
+        total: Number(r.total_revenue) || 0,
+      })),
+    }),
+    [rows, stats],
+  );
+
+  const doExport = useCallback(
+    async (kind: "csv" | "pdf") => {
+      setExporting(kind);
+      try {
+        const data = buildExport();
+        const mod = await import("@/lib/analytics-export");
+        if (kind === "csv") mod.exportAnalyticsCsv(data);
+        else await mod.exportAnalyticsPdf(data);
+        toast.success(`Ringkasan diunduh sebagai ${kind.toUpperCase()}`);
+      } catch (e) {
+        toast.error(`Gagal ekspor ${kind.toUpperCase()}`, {
+          description: e instanceof Error ? e.message : String(e),
+        });
+      } finally {
+        setExporting(null);
+      }
+    },
+    [buildExport],
+  );
 
   return (
     <section
@@ -191,6 +239,24 @@ export function HeroAnalyticsPanel() {
             />
             {connected ? "Live" : "Offline"}
           </span>
+          <button
+            type="button"
+            onClick={() => doExport("csv")}
+            disabled={loading || exporting !== null}
+            className="rounded-md border px-2 py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted disabled:opacity-50"
+            aria-label="Ekspor ringkasan ke CSV"
+          >
+            {exporting === "csv" ? "…" : "CSV"}
+          </button>
+          <button
+            type="button"
+            onClick={() => doExport("pdf")}
+            disabled={loading || exporting !== null}
+            className="rounded-md border px-2 py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted disabled:opacity-50"
+            aria-label="Ekspor ringkasan ke PDF"
+          >
+            {exporting === "pdf" ? "…" : "PDF"}
+          </button>
           <button
             type="button"
             onClick={refresh}
