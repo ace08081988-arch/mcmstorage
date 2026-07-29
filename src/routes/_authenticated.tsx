@@ -128,7 +128,7 @@ function AuthLock() {
   const cfg = uid ? getLockConfig(uid) : null;
   return (
     <SidebarProvider>
-      <div className={immersive ? "flex h-[100dvh] w-full overflow-hidden" : "flex min-h-screen w-full"}>
+      <div className={immersive ? "flex h-[100dvh] w-full overflow-hidden" : "flex min-h-[100dvh] w-full"}>
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
           {immersive ? null : <AppHeader />}
