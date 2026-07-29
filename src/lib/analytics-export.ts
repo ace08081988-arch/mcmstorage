@@ -3,6 +3,8 @@
  * Angka diterima apa adanya dari pemanggil (SSOT penjualan) — tidak ada
  * perhitungan ulang di sini.
  */
+import { prepareBrandHeader } from "@/lib/pdf-brand";
+
 export type AnalyticsExportRow = {
   waktu: string;
   produk: string;
@@ -85,12 +87,18 @@ export async function exportAnalyticsPdf(data: AnalyticsExportData) {
   const dense = rowCount > 24 || longestProduct > 28;
   const roomy = rowCount <= 8 && longestProduct <= 18;
   const marginX = dense ? 28 : roomy ? 56 : 40;
-  const marginTop = dense ? 34 : 44;
   const marginBottom = 46;
   const contentW = pageW - marginX * 2;
 
   const bodyFont = dense ? 8 : 9.5;
   const cellPad = dense ? 3.5 : 5;
+
+  // Kop resmi: logo + nama bisnis, digambar di setiap halaman.
+  const { bandH, orgName, brand, draw: drawBrandHeader } = await prepareBrandHeader(doc, {
+    marginX,
+  });
+  const marginTop = (dense ? 34 : 44) + bandH;
+  drawBrandHeader();
 
   // Header dokumen
   let y = marginTop + 8;
@@ -108,8 +116,9 @@ export async function exportAnalyticsPdf(data: AnalyticsExportData) {
   const common = {
     margin: { left: marginX, right: marginX, top: marginTop, bottom: marginBottom },
     tableWidth: contentW,
-    headStyles: { fillColor: [49, 46, 129] as [number, number, number], fontSize: bodyFont },
+    headStyles: { fillColor: brand, fontSize: bodyFont },
     theme: "grid" as const,
+    didDrawPage: () => drawBrandHeader(),
   };
 
   autoTable(doc, {
@@ -149,13 +158,14 @@ export async function exportAnalyticsPdf(data: AnalyticsExportData) {
       4: { cellWidth: contentW * 0.2, halign: "right" },
     },
     didDrawPage: () => {
+      drawBrandHeader();
       const page = doc.getCurrentPageInfo().pageNumber;
       doc.setFontSize(8);
       doc.setTextColor(130);
       doc.text(`Halaman ${page}`, pageW - marginX, pageH - marginBottom / 2, {
         align: "right",
       });
-      doc.text("MCM Storage", marginX, pageH - marginBottom / 2);
+      doc.text(orgName, marginX, pageH - marginBottom / 2);
       doc.setTextColor(0);
     },
   });
