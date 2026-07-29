@@ -1360,3 +1360,40 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   animation: none !important;
   opacity: 1 !important;
 }
+
+/* ==========================================================================
+ * Halaman unduh APK — fokus keyboard, ukuran tap, dan mode gelap
+ * ========================================================================== */
+
+/* Fokus keyboard yang jelas & konsisten (dua lapis agar terlihat di atas
+   tombol berwarna maupun panel transparan). */
+[data-dl-page] :is(a[href], button, [role="button"], summary, input, select):focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 0.65rem;
+  box-shadow: 0 0 0 2px var(--background);
+}
+
+/* Ukuran tap konsisten: minimal 44x44 untuk semua kontrol utama. */
+[data-dl-page] :is(a[href], button, [role="button"]) {
+  min-height: 2.75rem;
+}
+[data-dl-page] :is(a[href], button, [role="button"]).is-inline-link {
+  min-height: 2.25rem;
+}
+
+/* Dark mode: panel & kartu tetap kontras di atas latar apa pun. */
+.dark [data-dl-page] .readable-panel {
+  background-color: color-mix(in oklab, var(--card) 92%, black 8%);
+  border-color: color-mix(in oklab, var(--border) 100%, transparent);
+  box-shadow: 0 20px 48px -26px rgb(0 0 0 / 0.85);
+}
+.dark [data-dl-page] .bg-card {
+  background-color: color-mix(in oklab, var(--card) 88%, white 4%);
+}
+
+@media (prefers-contrast: more) {
+  [data-dl-page] :is(a[href], button, [role="button"]) {
+    border-color: var(--foreground);
+  }
+}
