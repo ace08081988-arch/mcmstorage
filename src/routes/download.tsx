@@ -67,10 +67,11 @@ function DownloadPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PublicHeader />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-ms-4 px-ms-4 py-10">
+      <main className="mx-auto w-full max-w-md flex-1 px-ms-4 py-8">
+        <div className="readable-panel flex flex-col gap-ms-4 p-ms-4">
         <div className="text-center">
-          <h1 className="text-ms-lg font-semibold">Unduh APK</h1>
-          <p className="text-ms-xs text-muted-foreground">
+          <h1 className="text-ms-base font-semibold tracking-tight">Unduh APK</h1>
+          <p className="mt-0.5 text-ms-2xs text-muted-foreground">
             Pilih varian aplikasi Android yang ingin dipasang.
           </p>
         </div>
@@ -117,6 +118,7 @@ function DownloadPage() {
             <InstallDetail onRetry={() => refetch()} />
           </>
         )}
+        </div>
       </main>
     <PublicFooter />
     </div>
