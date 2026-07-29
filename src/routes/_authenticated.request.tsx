@@ -719,13 +719,13 @@ function RequestPage() {
                     </div>
                   )}
                 </div>
-                <div className="mt-1 flex flex-wrap gap-ms-1.5">
+                <div className="mt-1 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
                   <div
                     role="button"
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); setEditingTitle(t); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setEditingTitle(t); } }}
-                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border px-ms-2 py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted"
+                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted"
                   >
                     <Edit3 className="h-3 w-3" /> Edit
                   </div>
@@ -734,7 +734,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
-                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-0.5 text-ms-2xs text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
                     aria-label="Kirim via MCM"
                   >
                     <MessageCircle className="h-3 w-3" /> Kirim via MCM
@@ -744,7 +744,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); setSendLinkTitle(t); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setSendLinkTitle(t); } }}
-                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-primary/40 bg-primary/10 px-ms-2 py-0.5 text-ms-2xs text-primary hover:bg-primary/20"
+                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-primary/40 bg-primary/10 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-primary hover:bg-primary/20"
                     aria-label="Kirim link ke pegawai"
                     title="Buat link + PIN untuk pegawai yang menyiapkan"
                   >
@@ -755,7 +755,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); setHistoryTitle(t); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setHistoryTitle(t); } }}
-                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border px-ms-2 py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted"
+                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-muted-foreground hover:bg-muted"
                     aria-label="Riwayat pengiriman"
                     title="Riwayat pengiriman link ke pegawai untuk judul ini"
                   >
@@ -767,7 +767,7 @@ function RequestPage() {
                       tabIndex={0}
                       onClick={(e) => { e.stopPropagation(); void requestReprep(); }}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void requestReprep(); } }}
-                      className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-warning/40 bg-warning/10 px-ms-2 py-0.5 text-ms-2xs font-medium text-warning hover:bg-warning/20 dark:text-warning"
+                      className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-warning/40 bg-warning/10 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs font-medium text-warning hover:bg-warning/20 dark:text-warning"
                       aria-label="Minta penyiapan ulang"
                       title={`Sudah disiapkan ${activePrepCount}× pada siklus ini. Reset agar bisa disiapkan lagi di task baru tanpa mengubah riwayat.`}
                     >
@@ -779,7 +779,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); void deleteTitle(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void deleteTitle(); } }}
-                    className="inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-destructive/40 bg-destructive/10 px-ms-2 py-0.5 text-ms-2xs text-destructive hover:bg-destructive/20"
+                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-destructive/40 bg-destructive/10 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-destructive hover:bg-destructive/20"
                     aria-label="Hapus judul"
                   >
                     <Trash2 className="h-3 w-3" /> Hapus
@@ -997,8 +997,8 @@ function TitleEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && confirmDiscardIfDirty(saveStatus)) onClose(); }}>
-      <DialogContent ref={scrollRef} className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-ms-6 pt-6 pb-3">
+      <DialogContent ref={scrollRef} className="max-w-lg">
+        <DialogHeader className="sticky top-0 z-10 -mx-4 -mt-4 border-b bg-background px-4 pt-4 pb-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
           <div className="flex items-start justify-between gap-ms-2">
             <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
             <DialogSaveStatus status={saveStatus} className="shrink-0" />
