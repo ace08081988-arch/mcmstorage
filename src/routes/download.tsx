@@ -475,22 +475,24 @@ function CopyLinkButtons({
       : `/download/${variant}`;
 
   return (
-    <div className="mt-3 grid grid-cols-2 gap-ms-2">
+    <div className="mt-ms-3 grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
       <button
         type="button"
         onClick={() => {
           trackApkDownload(variant, "copy_page");
           void doCopy(pageUrl, "page", "Link halaman");
         }}
-        className="flex items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+        className="flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-medium transition-colors hover:bg-muted"
         aria-label={`Salin link halaman ${title}`}
       >
         {copied === "page" ? (
-          <Check className="h-3.5 w-3.5 text-success" />
+          <Check className="h-3.5 w-3.5 shrink-0 text-success" />
         ) : (
-          <Link2 className="h-3.5 w-3.5" />
+          <Link2 className="h-3.5 w-3.5 shrink-0" />
         )}
-        {copied === "page" ? "Tersalin" : "Salin link halaman"}
+        <span className="truncate">
+          {copied === "page" ? "Tersalin" : "Salin link halaman"}
+        </span>
       </button>
       <button
         type="button"
@@ -498,16 +500,18 @@ function CopyLinkButtons({
           trackApkDownload(variant, "copy_file");
           void doCopy(apk.url, "file", "Link unduh langsung");
         }}
-        className="flex items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 py-ms-2 text-ms-xs font-medium hover:bg-muted"
+        className="flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 text-ms-2xs font-medium transition-colors hover:bg-muted"
         aria-label={`Salin link unduh langsung ${title}`}
         title="Berlaku ± 1 jam sebelum kedaluwarsa"
       >
         {copied === "file" ? (
-          <Check className="h-3.5 w-3.5 text-success" />
+          <Check className="h-3.5 w-3.5 shrink-0 text-success" />
         ) : (
-          <Link2 className="h-3.5 w-3.5" />
+          <Link2 className="h-3.5 w-3.5 shrink-0" />
         )}
-        {copied === "file" ? "Tersalin" : "Salin link file"}
+        <span className="truncate">
+          {copied === "file" ? "Tersalin" : "Salin link file"}
+        </span>
       </button>
     </div>
   );
