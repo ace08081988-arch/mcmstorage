@@ -155,7 +155,7 @@ function DownloadPage() {
   });
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div data-dl-page className="flex min-h-dvh flex-col bg-background text-foreground">
       <PublicHeader />
       <main className="mx-auto w-full max-w-md flex-1 px-ms-4 py-8">
         <div className="readable-panel flex flex-col gap-ms-4 p-ms-4">
@@ -177,12 +177,15 @@ function DownloadPage() {
             </div>
           </>
         ) : isError ? (
-          <div className="dl-fade-up rounded-2xl border border-red-300 bg-red-50 p-ms-4 text-ms-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/40 dark:text-red-200">
+          <div
+            role="alert"
+            className="dl-fade-up rounded-2xl border border-destructive/40 bg-destructive/10 p-ms-4 text-ms-sm text-destructive"
+          >
             <p>Tidak dapat memuat link unduhan.</p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="mt-2 text-ms-xs font-semibold underline"
+              className="mt-2 inline-flex min-h-11 items-center text-ms-xs font-semibold underline underline-offset-4"
             >
               Coba lagi
             </button>
