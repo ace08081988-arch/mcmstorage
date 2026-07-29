@@ -2370,6 +2370,8 @@ function PrepCard({
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
+  // Koreksi pencatatan bayar untuk paket yang terlanjur "Terkirim".
+  const [fixOpen, setFixOpen] = useState(false);
   // Kanal aktif untuk dialog verifikasi: default WA (tombol Kirim di kartu),
   // dapat di-override oleh deep-link `send=chat` dari Beranda.
   const [dialogChannel, setDialogChannel] = useState<"whatsapp" | "chat">("whatsapp");
