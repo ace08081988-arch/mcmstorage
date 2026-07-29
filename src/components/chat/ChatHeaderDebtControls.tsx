@@ -759,15 +759,68 @@ export function ChatHeaderDebtControls({
             balance={piutang}
             kind="piutang"
             otherBalance={hutang}
-            onSubmit={(delta) => requestDelta(delta, "piutang")}
+            onSubmit={(delta, via) => requestDelta(delta, "piutang", via)}
           />
           <KindRow
             label="Hutang (Anda berhutang)"
             balance={hutang}
             kind="hutang"
             otherBalance={piutang}
-            onSubmit={(delta) => requestDelta(delta, "hutang")}
+            onSubmit={(delta, via) => requestDelta(delta, "hutang", via)}
           />
+        </div>
+        <div className="mt-2 rounded-lg border">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-ms-2xs font-semibold"
+            onClick={() => setAuditOpen((v) => !v)}
+          >
+            <span>Audit perubahan ({auditQ.data?.length ?? 0})</span>
+            <span className="text-muted-foreground">
+              {auditOpen ? "Tutup" : "Lihat"}
+            </span>
+          </button>
+          {auditOpen ? (
+            <div className="max-h-56 space-y-1.5 overflow-y-auto border-t p-2">
+              {(auditQ.data ?? []).length === 0 ? (
+                <div className="text-ms-2xs text-muted-foreground">
+                  Belum ada perubahan tercatat untuk kontak ini.
+                </div>
+              ) : (
+                (auditQ.data ?? []).map((a) => (
+                  <div key={a.id} className="rounded-md border p-1.5 text-ms-2xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">
+                        {a.action} · {a.kind}
+                      </span>
+                      <span
+                        className={`font-mono font-semibold ${
+                          a.action.includes("pembayaran") ? "text-success" : ""
+                        }`}
+                      >
+                        {a.action.includes("pembayaran") ? "−" : "+"}
+                        {rupiah(Number(a.amount))}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-muted-foreground">
+                      {a.actor_name ?? "—"} · {formatWhen(a.created_at)}
+                    </div>
+                    <div className="text-muted-foreground">
+                      Saldo {rupiah(Number(a.balance_before ?? 0))} →{" "}
+                      {rupiah(Number(a.balance_after ?? 0))}
+                    </div>
+                    {Array.isArray(a.detail) && a.detail.length > 0 ? (
+                      <ul className="mt-0.5 list-disc pl-4 text-muted-foreground">
+                        {(a.detail as string[]).map((d, i) => (
+                          <li key={i}>{d}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+          ) : null}
         </div>
         {conversationId ? (
           <Button
