@@ -1233,6 +1233,12 @@ function KindRow({
                 : `Catat pembayaran ${rupiah(Math.abs(delta))}`
               : "Isi saldo akhir yang benar — selisihnya dicatat otomatis."}
           </p>
+          {targetBlock ? (
+            <p className="mt-1 flex items-start gap-1 text-ms-2xs leading-snug text-destructive">
+              <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+              {targetBlock}
+            </p>
+          ) : null}
         </div>
       ) : null}
       <div className="flex items-center gap-ms-1.5">
@@ -1241,10 +1247,10 @@ function KindRow({
           size="icon"
           variant="outline"
           className="h-8 w-8 shrink-0"
-          disabled={busy || balance <= 0 || !hasAmount}
+          disabled={busy || balance <= 0 || !hasAmount || !!payBlock}
           onClick={() => submit(-1)}
           aria-label="Kurangi (catat pembayaran)"
-          title="Catat pembayaran"
+          title={payBlock ?? "Catat pembayaran"}
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Minus className="h-3.5 w-3.5" />}
         </Button>
@@ -1269,6 +1275,27 @@ function KindRow({
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
         </Button>
       </div>
+      {payBlock ? (
+        <p className="mt-1 flex items-start gap-1 text-ms-2xs leading-snug text-destructive">
+          <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+          {payBlock}
+          {balance > 0 ? (
+            <button
+              type="button"
+              className="ml-1 shrink-0 underline"
+              onClick={() => setRaw(String(balance))}
+            >
+              Pakai {rupiah(balance)}
+            </button>
+          ) : null}
+        </p>
+      ) : warning ? (
+        <p className="mt-1 flex items-start gap-1 text-ms-2xs leading-snug text-warning">
+          <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+          {warning}
+          {ack ? " Tekan sekali lagi untuk tetap menyimpan." : ""}
+        </p>
+      ) : null}
     </div>
   );
 }
