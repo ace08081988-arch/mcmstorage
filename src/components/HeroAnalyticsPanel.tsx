@@ -144,6 +144,7 @@ function Metric({
 export function HeroAnalyticsPanel() {
   const { rows, loading, connected, lastSyncAt, refresh } = useTodaySales();
   const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<PdfPreviewSource>(null);
 
   const stats = useMemo(() => {
     let omzet = 0;
@@ -306,6 +307,13 @@ export function HeroAnalyticsPanel() {
           />
         </div>
       )}
+      <PdfPreviewDialog
+        open={pdfPreview !== null}
+        onOpenChange={(v) => !v && setPdfPreview(null)}
+        source={pdfPreview}
+        title="Pratinjau ringkasan hari ini"
+        onDownloaded={() => toast.success("Ringkasan diunduh sebagai PDF")}
+      />
     </section>
   );
 }
