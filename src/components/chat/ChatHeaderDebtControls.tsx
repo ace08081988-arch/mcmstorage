@@ -624,12 +624,14 @@ export function ChatHeaderDebtControls({
             label="Piutang (dia berhutang)"
             balance={piutang}
             kind="piutang"
+            otherBalance={hutang}
             onSubmit={(delta) => requestDelta(delta, "piutang")}
           />
           <KindRow
             label="Hutang (Anda berhutang)"
             balance={hutang}
             kind="hutang"
+            otherBalance={piutang}
             onSubmit={(delta) => requestDelta(delta, "hutang")}
           />
         </div>
