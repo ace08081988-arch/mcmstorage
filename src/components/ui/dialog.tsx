@@ -65,7 +65,10 @@ const DialogContent = React.forwardRef<
         // tinggi ke `100dvh` dikurangi safe-area, dan menaruh konten dalam
         // flex column sehingga body bisa scroll sedangkan header/footer
         // tetap terlihat. Padding lebih kompak di HP, generous di ≥sm.
-          "group/dialog fixed left-[50%] top-[50%] z-50 flex w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-4 border bg-background p-4 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg overflow-y-auto overscroll-contain [max-height:calc(100dvh-max(env(safe-area-inset-top),1rem)-max(env(safe-area-inset-bottom),1rem))] sm:w-full sm:p-6",
+          // `scroll-pt-*`: saat fokus keyboard berpindah ke input/tombol yang
+          // berada di luar layar, browser menggulirkannya ke bawah header
+          // sticky — bukan tersembunyi di baliknya.
+          "group/dialog fixed left-[50%] top-[50%] z-50 flex w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-4 border bg-background p-4 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg overflow-y-auto overscroll-contain scroll-pt-24 scroll-pb-6 focus:outline-none [max-height:calc(100dvh-max(env(safe-area-inset-top),1rem)-max(env(safe-area-inset-bottom),1rem))] sm:w-full sm:p-6",
           className,
         )}
         {...props}
@@ -73,7 +76,7 @@ const DialogContent = React.forwardRef<
         {children}
         <DialogPrimitive.Close
           aria-label="Tutup"
-          className="absolute right-2 top-2 z-20 grid h-11 w-11 place-items-center rounded-md opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:right-4 sm:top-4 sm:h-8 sm:w-8"
+          className="sticky right-2 top-2 z-20 -mb-11 ml-auto grid h-11 w-11 shrink-0 place-items-center self-end rounded-md opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:right-4 sm:top-4 sm:h-8 sm:w-8 sm:-mb-8"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
