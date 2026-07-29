@@ -57,6 +57,27 @@ export const Route = createFileRoute("/download")({
   ),
 });
 
+/** Salin teks ke clipboard dengan fallback textarea (Android WebView lama). */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function DownloadPage() {
   const fetchApk = useServerFn(getLatestApkVariants);
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
@@ -120,6 +141,10 @@ function DownloadPage() {
               highlight
             />
             <InstallDetail onRetry={() => refetch()} refreshing={isFetching} />
+            <QuickCopyBar
+              storageUrl={data?.storage?.url ?? null}
+              chatUrl={data?.chat?.url ?? null}
+            />
           </>
         )}
         </div>
