@@ -2946,9 +2946,12 @@ function SendPrepToCustomerDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy && confirmDiscardIfDirty(sendStatus)) onClose(); }}>
-      <DialogContent ref={scrollRef} className="sm:max-w-md max-h-[92vh] overflow-y-auto">
-        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-ms-6 pt-6 pb-3">
-          <div className="flex items-start justify-between gap-ms-2">
+      {/* Tinggi dialog dikunci (bukan auto-height yang di-center) supaya
+          header TIDAK ikut naik-turun saat isi berubah (badge simpan,
+          blok bayar sebagian, keyboard muncul). Hanya body yang scroll. */}
+      <DialogContent className="flex h-[min(92dvh,44rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md sm:p-0">
+        <DialogHeader className="shrink-0 border-b bg-background px-ms-4 pb-ms-3 pt-ms-4 sm:px-ms-6 sm:pt-ms-5">
+          <div className="flex min-h-8 items-start justify-between gap-ms-2 pr-10">
             <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
               {channel === "chat" ? <MessageCircle className="h-4 w-4 text-primary" /> : <Send className="h-4 w-4 text-primary" />}
               {channel === "chat" ? "Kirim via MCM Chat" : "Kirim ke pelanggan"}
@@ -2963,7 +2966,10 @@ function SendPrepToCustomerDialog({
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
 
-        <div className="space-ms-3 text-ms-xs">
+        <div
+          ref={scrollRef}
+          className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-4 py-ms-3 text-ms-xs sm:px-ms-6"
+        >
           {/* Ringkasan item */}
           <div id="send-sec-ringkasan" className="rounded-md border bg-muted/30 p-ms-2">
             <div className="mb-1 font-semibold">{titleName}</div>
@@ -3111,7 +3117,7 @@ function SendPrepToCustomerDialog({
           </Field>
         </div>
 
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-ms-2 border-t bg-background px-ms-6 py-ms-3 sm:flex-col">
+        <DialogFooter className="shrink-0 flex-col gap-ms-2 border-t bg-background px-ms-4 py-ms-3 sm:flex-col sm:px-ms-6">
           <div className="flex w-full items-center justify-center">
             <DialogSaveStatus status={sendStatus} compact />
           </div>
