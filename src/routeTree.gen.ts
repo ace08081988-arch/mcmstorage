@@ -71,6 +71,7 @@ import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authen
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedFiturRouteImport } from './routes/_authenticated.fitur'
 import { Route as AuthenticatedEmailQueueRouteImport } from './routes/_authenticated.email-queue'
+import { Route as AuthenticatedEksporPesananRouteImport } from './routes/_authenticated.ekspor-pesanan'
 import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
 import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
@@ -486,6 +487,12 @@ const AuthenticatedEmailQueueRoute = AuthenticatedEmailQueueRouteImport.update({
   path: '/email-queue',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedEksporPesananRoute =
+  AuthenticatedEksporPesananRouteImport.update({
+    id: '/ekspor-pesanan',
+    path: '/ekspor-pesanan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedEcerRoute = AuthenticatedEcerRouteImport.update({
   id: '/ecer',
   path: '/ecer',
@@ -979,6 +986,7 @@ export interface FileRoutesByFullPath {
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
+  '/ekspor-pesanan': typeof AuthenticatedEksporPesananRoute
   '/email-queue': typeof AuthenticatedEmailQueueRoute
   '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
@@ -1120,6 +1128,7 @@ export interface FileRoutesByTo {
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
+  '/ekspor-pesanan': typeof AuthenticatedEksporPesananRoute
   '/email-queue': typeof AuthenticatedEmailQueueRoute
   '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
@@ -1265,6 +1274,7 @@ export interface FileRoutesById {
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/_authenticated/ecer': typeof AuthenticatedEcerRoute
+  '/_authenticated/ekspor-pesanan': typeof AuthenticatedEksporPesananRoute
   '/_authenticated/email-queue': typeof AuthenticatedEmailQueueRoute
   '/_authenticated/fitur': typeof AuthenticatedFiturRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
@@ -1412,6 +1422,7 @@ export interface FileRouteTypes {
     | '/device-verify'
     | '/diagnostics'
     | '/ecer'
+    | '/ekspor-pesanan'
     | '/email-queue'
     | '/fitur'
     | '/gudang'
@@ -1553,6 +1564,7 @@ export interface FileRouteTypes {
     | '/device-verify'
     | '/diagnostics'
     | '/ecer'
+    | '/ekspor-pesanan'
     | '/email-queue'
     | '/fitur'
     | '/gudang'
@@ -1697,6 +1709,7 @@ export interface FileRouteTypes {
     | '/_authenticated/device-verify'
     | '/_authenticated/diagnostics'
     | '/_authenticated/ecer'
+    | '/_authenticated/ekspor-pesanan'
     | '/_authenticated/email-queue'
     | '/_authenticated/fitur'
     | '/_authenticated/gudang'
@@ -2320,6 +2333,13 @@ declare module '@tanstack/react-router' {
       path: '/email-queue'
       fullPath: '/email-queue'
       preLoaderRoute: typeof AuthenticatedEmailQueueRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ekspor-pesanan': {
+      id: '/_authenticated/ekspor-pesanan'
+      path: '/ekspor-pesanan'
+      fullPath: '/ekspor-pesanan'
+      preLoaderRoute: typeof AuthenticatedEksporPesananRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/ecer': {
@@ -2984,6 +3004,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedDiagnosticsRoute: typeof AuthenticatedDiagnosticsRoute
   AuthenticatedEcerRoute: typeof AuthenticatedEcerRoute
+  AuthenticatedEksporPesananRoute: typeof AuthenticatedEksporPesananRoute
   AuthenticatedEmailQueueRoute: typeof AuthenticatedEmailQueueRoute
   AuthenticatedFiturRoute: typeof AuthenticatedFiturRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
@@ -3051,6 +3072,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedDiagnosticsRoute: AuthenticatedDiagnosticsRoute,
   AuthenticatedEcerRoute: AuthenticatedEcerRoute,
+  AuthenticatedEksporPesananRoute: AuthenticatedEksporPesananRoute,
   AuthenticatedEmailQueueRoute: AuthenticatedEmailQueueRoute,
   AuthenticatedFiturRoute: AuthenticatedFiturRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
