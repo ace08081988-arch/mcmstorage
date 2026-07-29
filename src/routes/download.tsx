@@ -325,27 +325,27 @@ function ApkCard({
         </div>
       </div>
       {!apk ? (
-        <div className="rounded-lg border border-dashed bg-muted/40 p-ms-4 text-ms-xs text-muted-foreground">
+        <div className="rounded-lg border border-dashed bg-muted/40 p-ms-3 text-ms-2xs text-muted-foreground">
           <p className="font-semibold text-foreground">Build belum diunggah</p>
           <p className="mt-1 leading-relaxed">
             Varian ini belum punya berkas APK aktif. Sementara menunggu, jalankan{" "}
             {title} lewat versi web di browser — data dan akunnya sama persis.
           </p>
-          <div className="mt-ms-3 flex flex-wrap gap-ms-2">
+          <div className="mt-ms-3 grid grid-cols-1 gap-ms-2 min-[380px]:grid-cols-2">
             <Link
               to="/"
-              className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 font-medium text-foreground hover:bg-muted"
+              className="inline-flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 font-medium text-foreground transition-colors hover:bg-muted"
             >
-              <Globe className="h-3.5 w-3.5" />
-              Buka versi web
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Buka versi web</span>
             </Link>
             <Link
               to="/download/$variant"
               params={{ variant }}
-              className="inline-flex items-center gap-ms-1.5 rounded-lg border bg-background px-ms-3 py-ms-2 font-medium text-foreground hover:bg-muted"
+              className="inline-flex min-h-10 items-center justify-center gap-ms-1.5 rounded-lg border bg-background px-ms-2 font-medium text-foreground transition-colors hover:bg-muted"
             >
-              Riwayat & changelog
-              <ChevronRight className="h-3.5 w-3.5" />
+              <span className="truncate">Riwayat & changelog</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             </Link>
           </div>
         </div>
