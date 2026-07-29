@@ -67,7 +67,14 @@ export function exportAnalyticsCsv(data: AnalyticsExportData) {
   );
 }
 
-export async function exportAnalyticsPdf(data: AnalyticsExportData) {
+export function analyticsPdfFilename(data: AnalyticsExportData) {
+  return `ringkasan-analytics-${stamp(data.tanggal)}.pdf`;
+}
+
+/** Bangun PDF sebagai Blob (dipakai untuk pratinjau sebelum unduh). */
+export async function buildAnalyticsPdfBlob(
+  data: AnalyticsExportData,
+): Promise<{ blob: Blob; filename: string }> {
   const [{ jsPDF }, autoTableMod] = await Promise.all([
     import("jspdf"),
     import("jspdf-autotable"),
@@ -176,5 +183,10 @@ export async function exportAnalyticsPdf(data: AnalyticsExportData) {
     },
   });
 
-  doc.save(`ringkasan-analytics-${stamp(data.tanggal)}.pdf`);
+  return { blob: doc.output("blob") as Blob, filename: analyticsPdfFilename(data) };
+}
+
+export async function exportAnalyticsPdf(data: AnalyticsExportData) {
+  const { blob, filename } = await buildAnalyticsPdfBlob(data);
+  download(blob, filename);
 }
