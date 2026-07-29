@@ -378,25 +378,27 @@ function ApkCard({
               setTimeout(() => setStarting(false), 2500);
             }}
             aria-busy={starting}
-            className={`flex w-full items-center justify-center gap-ms-2 rounded-xl px-ms-4 py-ms-3 text-ms-sm font-semibold text-white shadow transition-all duration-200 active:scale-[0.98] ${btn} ${starting ? "opacity-90" : ""}`}
+            className={`flex min-h-11 w-full items-center justify-center gap-ms-2 rounded-xl px-ms-3 py-ms-2.5 text-center text-ms-xs font-semibold leading-snug text-white shadow transition-all duration-200 active:scale-[0.98] ${btn} ${starting ? "opacity-90" : ""}`}
           >
             {starting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 Menyiapkan unduhan…
               </>
             ) : (
               <>
-                <Download className="h-4 w-4" />
-                Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
+                <Download className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
+                </span>
               </>
             )}
           </a>
-          <dl className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
+          <dl className="mt-ms-3 space-y-1 text-ms-2xs text-muted-foreground">
             {(apk.versionName || apk.versionCode !== null) && (
-              <div className="flex justify-between gap-ms-2">
-                <dt>Versi</dt>
-                <dd className="font-mono">
+              <div className="flex items-baseline justify-between gap-ms-2">
+                <dt className="shrink-0">Versi</dt>
+                <dd className="min-w-0 truncate text-right font-mono">
                   {apk.versionName ?? "?"}
                   {apk.versionCode !== null && (
                     <span className="ml-1 text-muted-foreground/70">
@@ -406,24 +408,26 @@ function ApkCard({
                 </dd>
               </div>
             )}
-            <div className="flex justify-between gap-ms-2">
-              <dt>Nama berkas</dt>
-              <dd className="truncate font-mono">{apk.name}</dd>
+            <div className="flex items-baseline justify-between gap-ms-2">
+              <dt className="shrink-0">Nama berkas</dt>
+              <dd className="min-w-0 truncate text-right font-mono">{apk.name}</dd>
             </div>
             {apk.updatedAt && (
-              <div className="flex justify-between gap-ms-2">
-                <dt>Diperbarui</dt>
-                <dd>{new Date(apk.updatedAt).toLocaleString("id-ID")}</dd>
+              <div className="flex items-baseline justify-between gap-ms-2">
+                <dt className="shrink-0">Diperbarui</dt>
+                <dd className="min-w-0 truncate text-right">
+                  {new Date(apk.updatedAt).toLocaleString("id-ID")}
+                </dd>
               </div>
             )}
           </dl>
           <Link
             to="/download/$variant"
             params={{ variant }}
-            className="mt-3 inline-flex items-center gap-ms-1 text-ms-xs font-semibold text-muted-foreground hover:text-foreground"
+            className="mt-ms-3 inline-flex min-h-9 items-center gap-ms-1 text-ms-xs font-semibold text-muted-foreground hover:text-foreground"
           >
             Detail & changelog
-            <ChevronRight className="h-3 w-3" />
+            <ChevronRight className="h-3 w-3 shrink-0" />
           </Link>
           <CopyLinkButtons apk={apk} variant={variant} title={title} />
         </>
