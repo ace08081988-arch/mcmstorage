@@ -3,6 +3,8 @@
  * Angka diterima apa adanya dari pemanggil (SSOT penjualan) — tidak ada
  * perhitungan ulang di sini.
  */
+import { getOrgName, getOrgLogo, getOrgBrand } from "@/lib/org-name";
+
 export type AnalyticsExportRow = {
   waktu: string;
   produk: string;
@@ -41,6 +43,43 @@ function download(blob: Blob, filename: string) {
 }
 
 const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+
+/** Ambil logo sebagai data URL (aman untuk data URL maupun URL remote). */
+async function loadLogo(src: string): Promise<{ data: string; fmt: "PNG" | "JPEG"; w: number; h: number } | null> {
+  if (!src) return null;
+  try {
+    let dataUrl = src;
+    if (!src.startsWith("data:")) {
+      const res = await fetch(src, { mode: "cors" });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      dataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("read fail"));
+        fr.readAsDataURL(blob);
+      });
+    }
+    const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
+      img.onerror = () => reject(new Error("img fail"));
+      img.src = dataUrl;
+    });
+    const fmt: "PNG" | "JPEG" = /^data:image\/jpe?g/i.test(dataUrl) ? "JPEG" : "PNG";
+    return { data: dataUrl, fmt, w: dims.w, h: dims.h };
+  } catch {
+    return null;
+  }
+}
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
 
 export function exportAnalyticsCsv(data: AnalyticsExportData) {
   const lines: string[] = [];
