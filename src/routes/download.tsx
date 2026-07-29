@@ -288,6 +288,7 @@ function ApkCard({
   min: MinSupported | null;
   highlight?: boolean;
 }) {
+  const [starting, setStarting] = useState(false);
   const badge =
     accent === "emerald"
       ? "bg-success/10 text-success dark:text-success"
@@ -298,7 +299,7 @@ function ApkCard({
       : "bg-sky-600 hover:bg-sky-700";
   return (
     <div
-      className={`relative w-full rounded-2xl border bg-card p-ms-5 shadow-sm ${
+      className={`dl-fade-up relative w-full rounded-2xl border bg-card p-ms-5 shadow-sm transition-shadow ${
         highlight
           ? "border-sky-400/70 ring-2 ring-sky-400/40 shadow-md dark:border-sky-500/50"
           : ""
@@ -367,11 +368,25 @@ function ApkCard({
           )}
           <a
             href={apk.url}
-            onClick={() => trackApkDownload(variant, "button")}
-            className={`flex w-full items-center justify-center gap-ms-2 rounded-xl px-ms-4 py-ms-3 text-ms-sm font-semibold text-white shadow transition ${btn}`}
+            onClick={() => {
+              trackApkDownload(variant, "button");
+              setStarting(true);
+              setTimeout(() => setStarting(false), 2500);
+            }}
+            aria-busy={starting}
+            className={`flex w-full items-center justify-center gap-ms-2 rounded-xl px-ms-4 py-ms-3 text-ms-sm font-semibold text-white shadow transition-all duration-200 active:scale-[0.98] ${btn} ${starting ? "opacity-90" : ""}`}
           >
-            <Download className="h-4 w-4" />
-            Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
+            {starting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Menyiapkan unduhan…
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
+              </>
+            )}
           </a>
           <dl className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
             {(apk.versionName || apk.versionCode !== null) && (
