@@ -998,16 +998,19 @@ function TitleEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && confirmDiscardIfDirty(saveStatus)) onClose(); }}>
-      <DialogContent ref={scrollRef} className="max-w-lg">
-        <DialogHeader className="sticky top-0 z-10 -mx-4 -mt-4 border-b bg-background px-4 pt-4 pb-3 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
-          <div className="flex items-start justify-between gap-ms-2">
+      <DialogContent className="flex h-[min(92dvh,44rem)] max-w-lg flex-col gap-0 overflow-hidden p-0 sm:p-0">
+        <DialogHeader className="shrink-0 border-b bg-background px-ms-4 pb-ms-3 pt-ms-4 sm:px-ms-6 sm:pt-ms-5">
+          <div className="flex min-h-8 items-start justify-between gap-ms-2 pr-10">
             <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
             <DialogSaveStatus status={saveStatus} className="shrink-0" />
           </div>
           <DialogDescription>Tambahkan beberapa produk dalam 1 paket. Saat penyiapan, stok semua produk akan otomatis berkurang.</DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
-        <div className="space-ms-3">
+        <div
+          ref={scrollRef}
+          className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-4 py-ms-3 sm:px-ms-6"
+        >
           <Field id="title-sec-nama" label="Nama judul">
             <div className="relative">
               <Input
@@ -1143,7 +1146,7 @@ function TitleEditorDialog({
             </div>
           </div>
         </div>
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-ms-2.5 border-t bg-background px-ms-6 py-ms-3 sm:flex-row sm:justify-between sm:gap-ms-2">
+        <DialogFooter className="shrink-0 flex-col gap-ms-2.5 border-t bg-background px-ms-4 py-ms-3 sm:flex-row sm:justify-between sm:gap-ms-2 sm:px-ms-6">
           <div className="flex w-full items-center justify-center sm:hidden">
             <DialogSaveStatus status={saveStatus} compact />
           </div>
@@ -3520,21 +3523,23 @@ function PrepEditorDialog({
     <>
     <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen && confirmDiscardIfDirty(prepStatus)) onClose(); }}>
       <DialogContent
-        ref={scrollRef}
-        className="max-h-[90vh] max-w-md overflow-y-auto"
+        className="flex h-[min(92dvh,44rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:p-0"
         onInteractOutside={(event) => {
           if (editorOpen) event.preventDefault();
         }}
       >
-        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-ms-6 pt-6 pb-3">
-          <div className="flex items-start justify-between gap-ms-2">
+        <DialogHeader className="shrink-0 border-b bg-background px-ms-4 pb-ms-3 pt-ms-4 sm:px-ms-6 sm:pt-ms-5">
+          <div className="flex min-h-8 items-start justify-between gap-ms-2 pr-10">
             <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
             <DialogSaveStatus status={prepStatus} className="shrink-0" />
           </div>
           <DialogDescription>Atur jumlah aktual tiap produk, lampirkan 1 foto bukti + lokasi.</DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
-        <div className="space-ms-3">
+        <div
+          ref={scrollRef}
+          className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-4 py-ms-3 sm:px-ms-6"
+        >
           <div id="prep-sec-produk">
             <Label>Produk &amp; jumlah aktual</Label>
             <div className="space-y-1.5">
@@ -3733,7 +3738,7 @@ function PrepEditorDialog({
             </label>
           </div>
         </div>
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-ms-2 border-t bg-background px-ms-6 py-ms-3 sm:flex-col">
+        <DialogFooter className="shrink-0 flex-col gap-ms-2 border-t bg-background px-ms-4 py-ms-3 sm:flex-col sm:px-ms-6">
           <div className="flex w-full items-center justify-center">
             <DialogSaveStatus status={prepStatus} compact />
           </div>
