@@ -9,7 +9,7 @@ import { useEffect, useState, type RefObject } from "react";
  * Return: `{ topShadow, bottomShadow }` — dua boolean yang dipetakan ke
  * `data-scroll-shadow="top|bottom|both|none"` di elemen host.
  */
-export function useScrollShadow(ref: RefObject<HTMLElement | null>) {
+export function useScrollShadow(ref: RefObject<HTMLElement | null>, deps?: unknown) {
   const [state, setState] = useState({ topShadow: false, bottomShadow: false });
 
   useEffect(() => {
@@ -36,7 +36,8 @@ export function useScrollShadow(ref: RefObject<HTMLElement | null>) {
       ro.disconnect();
       mo.disconnect();
     };
-  }, [ref]);
+    // `deps` memungkinkan pemanggil memicu ulang saat elemen baru ter-mount.
+  }, [ref, deps]);
 
   return state;
 }

@@ -36,16 +36,23 @@ const DialogContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   // Deteksi apakah body dialog sudah tergulir → dipakai untuk memunculkan
   // bayangan halus di bawah header secara konsisten di semua dialog.
+  const [node, setNode] = React.useState<HTMLDivElement | null>(null);
   const innerRef = React.useRef<HTMLDivElement | null>(null);
   const setRefs = React.useCallback(
     (node: HTMLDivElement | null) => {
       innerRef.current = node;
+      setNode(node);
       if (typeof ref === "function") ref(node);
       else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
     },
     [ref],
   );
-  const { topShadow } = useScrollShadow(innerRef);
+  // `node` dipakai agar efek pemantau scroll berjalan ulang setelah elemen
+  // benar-benar ter-mount (ref saja tidak memicu efek).
+  React.useEffect(() => {
+    innerRef.current = node;
+  }, [node]);
+  const { topShadow } = useScrollShadow(innerRef, node);
 
   return (
     <DialogPortal>
@@ -85,6 +92,9 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
       "flex min-w-0 flex-col gap-1 pr-10 text-left sm:pr-8",
       // Tetap terlihat saat body digulir; bayangan & garis muncul mulus.
       "sticky top-0 z-10 border-b border-transparent bg-background pb-2 transition-[box-shadow,border-color] duration-200",
+      // Tutup celah padding di atas & samping header agar konten yang digulir
+      // tidak "mengintip" di sela-sela saat header menempel.
+      "before:pointer-events-none before:absolute before:-left-4 before:-right-4 before:bottom-full before:h-4 before:bg-background sm:before:-left-6 sm:before:-right-6 sm:before:h-6",
       "group-data-[scrolled=true]/dialog:border-border group-data-[scrolled=true]/dialog:shadow-sm",
       className,
     )}
