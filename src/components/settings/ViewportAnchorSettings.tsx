@@ -155,6 +155,7 @@ export function ViewportAnchorSettings() {
   const [autoOn, setAutoOn] = useState(false);
   const [history, setHistory] = useState<AutotuneAdjustment[]>([]);
   const [autoStats, setAutoStats] = useState<AutotuneStats | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     setCfg(getViewportAnchorConfig());
