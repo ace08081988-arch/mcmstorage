@@ -1669,6 +1669,10 @@ type SessionChange = {
   type: "tagihan" | "pembayaran";
   amount: number;
   detail: string[];
+  /** Id lokal langkah — dipakai daftar riwayat untuk rollback per langkah. */
+  id?: string;
+  /** Kontrol yang dipakai: pensil (edit cepat) atau tombol −/+. */
+  via?: AuditVia;
   /** Baris yang benar-benar tertulis — dipakai tombol Undo untuk menghapusnya. */
   rows?: { table: "debts" | "debt_payments"; ids: string[] };
 };
