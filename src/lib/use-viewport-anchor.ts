@@ -159,7 +159,12 @@ function startEngine() {
   vv.addEventListener("resize", schedule);
   vv.addEventListener("scroll", onScroll);
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("orientationchange", schedule);
+  const onOrientation = () => {
+    // Rotasi mengubah tinggi layar → baseline lama tidak valid lagi.
+    baselineHeight = 0;
+    schedule();
+  };
+  window.addEventListener("orientationchange", onOrientation);
 
   // Perubahan tinggi dokumen (VirtualizedList menambah/mengurangi spacer,
   // tinggi baris terukur ulang) bisa menggeser layout viewport tanpa event
@@ -176,7 +181,7 @@ function startEngine() {
     vv.removeEventListener("resize", schedule);
     vv.removeEventListener("scroll", onScroll);
     window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("orientationchange", schedule);
+    window.removeEventListener("orientationchange", onOrientation);
     document.documentElement.style.removeProperty(VIEWPORT_ANCHOR_VAR);
     document.documentElement.style.removeProperty(VIEWPORT_ANCHOR_LOCK_VAR);
   };
