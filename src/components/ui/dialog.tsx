@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useScrollShadow } from "@/hooks/use-scroll-shadow";
+import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -54,12 +55,28 @@ const DialogContent = React.forwardRef<
   }, [node]);
   const { topShadow } = useScrollShadow(innerRef, node);
 
+  // Saat soft-keyboard Android/iOS terbuka, layout viewport TIDAK mengecil di
+  // banyak WebView. Dialog yang dipusatkan di `top-50%` karena itu bisa jatuh
+  // persis di balik keyboard → layar hanya menampilkan overlay gelap/blur dan
+  // fiturnya "hilang". Kita geser pusat dialog ke tengah area yang benar-benar
+  // terlihat dan batasi tingginya ke sisa ruang tersebut.
+  const kb = useVisualViewportKeyboardInset();
+
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={setRefs}
         data-scrolled={topShadow ? "true" : "false"}
+        style={
+          kb > 0
+            ? {
+                top: `calc(50% - ${Math.round(kb / 2)}px)`,
+                maxHeight: `calc(100dvh - ${kb}px - max(env(safe-area-inset-top), 0.5rem) - 0.5rem)`,
+                ...(props.style ?? {}),
+              }
+            : props.style
+        }
         className={cn(
         // Mobile: hindari dialog "melompat keluar" viewport dengan membatasi
         // tinggi ke `100dvh` dikurangi safe-area, dan menaruh konten dalam
