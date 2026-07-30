@@ -63,6 +63,52 @@ const ANCHOR_TRANSFORM_LOCKED = `translate3d(0, calc(var(${VIEWPORT_ANCHOR_LOCK_
  */
 type Listener = (keyboardOpen: boolean) => void;
 const listeners = new Set<Listener>();
+
+/** Sumber penyusutan viewport yang sedang terdeteksi. */
+export type ViewportAnchorMode = "idle" | "chrome" | "keyboard";
+
+export type ViewportAnchorState = {
+  /** idle = viewport penuh, chrome = address bar, keyboard = keyboard terbuka. */
+  mode: ViewportAnchorMode;
+  /** Penyusutan (px) relatif tinggi viewport terbesar yang pernah terlihat. */
+  shrinkPx: number;
+  /** Offset kompensasi (px) yang sedang diterapkan ke bar. */
+  offsetPx: number;
+  /** Tinggi viewport penuh (baseline) dan tinggi visual viewport saat ini. */
+  baselinePx: number;
+  viewportPx: number;
+  /** True bila scroll baru saja terjadi (dalam jendela grace). */
+  recentlyScrolled: boolean;
+};
+
+const INITIAL_STATE: ViewportAnchorState = {
+  mode: "idle",
+  shrinkPx: 0,
+  offsetPx: 0,
+  baselinePx: 0,
+  viewportPx: 0,
+  recentlyScrolled: false,
+};
+
+let currentState: ViewportAnchorState = INITIAL_STATE;
+type StateListener = (s: ViewportAnchorState) => void;
+const stateListeners = new Set<StateListener>();
+
+function publishState(next: ViewportAnchorState) {
+  const prev = currentState;
+  // Hanya siarkan bila ada perubahan yang terlihat mata (hindari re-render tiap frame).
+  if (
+    prev.mode === next.mode &&
+    Math.abs(prev.shrinkPx - next.shrinkPx) < 2 &&
+    Math.abs(prev.offsetPx - next.offsetPx) < 2 &&
+    prev.recentlyScrolled === next.recentlyScrolled
+  ) {
+    return;
+  }
+  currentState = next;
+  stateListeners.forEach((fn) => fn(next));
+}
+
 let started = false;
 let currentOffset = 0;
 let currentLockOffset = 0;
@@ -127,6 +173,19 @@ function startEngine() {
       currentKeyboardOpen = keyboardOpen;
       listeners.forEach((fn) => fn(keyboardOpen));
     }
+
+    publishState({
+      mode: keyboardOpen
+        ? "keyboard"
+        : shrink > cfg.hysteresisPx
+          ? "chrome"
+          : "idle",
+      shrinkPx: shrink,
+      offsetPx: currentOffset,
+      baselinePx: Math.round(baselineHeight),
+      viewportPx: Math.round(vv.height),
+      recentlyScrolled,
+    });
   };
 
   const tick = () => {
@@ -211,6 +270,7 @@ export function useViewportAnchor(options: ViewportAnchorOptions = {}): Viewport
         currentKeyboardOpen = false;
         baselineHeight = 0;
         lastScrollAt = 0;
+        currentState = INITIAL_STATE;
       }
     };
   }, []);
@@ -223,4 +283,23 @@ export function useViewportAnchor(options: ViewportAnchorOptions = {}): Viewport
     },
     keyboardOpen,
   };
+}
+
+/**
+ * Status pengukuran viewport secara real-time (untuk panel diagnosa).
+ * Mengembalikan mode aktif beserta angka mentah pengukuran terakhir.
+ */
+export function useViewportAnchorState(): ViewportAnchorState {
+  const [state, setState] = useState<ViewportAnchorState>(currentState);
+
+  useEffect(() => {
+    const listener: StateListener = (s) => setState(s);
+    stateListeners.add(listener);
+    setState(currentState);
+    return () => {
+      stateListeners.delete(listener);
+    };
+  }, []);
+
+  return state;
 }
