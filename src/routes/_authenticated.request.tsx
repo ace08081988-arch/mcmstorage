@@ -59,6 +59,7 @@ import { emitDebtTx } from "@/lib/debt-tx-event";
 import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
 import { debounce } from "@/lib/realtime-debounce";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { PaintDeferred } from "@/components/PaintDeferred";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
@@ -2303,7 +2304,11 @@ function PrepSections({
           </div>
         ) : (
           <div className={gridClass}>
-            {active.map((p, idx) => renderCard(p, idx, active.length, false))}
+            {active.map((p, idx) => (
+              <PaintDeferred key={p.id} minHeight={260}>
+                {renderCard(p, idx, active.length, false)}
+              </PaintDeferred>
+            ))}
           </div>
         )}
       </div>
@@ -2367,7 +2372,11 @@ function PrepSections({
                 </div>
               ) : (
                 <div className={gridClass}>
-                  {filteredSent.map((p, idx) => renderCard(p, idx, filteredSent.length, true))}
+                  {filteredSent.map((p, idx) => (
+                    <PaintDeferred key={p.id} minHeight={260}>
+                      {renderCard(p, idx, filteredSent.length, true)}
+                    </PaintDeferred>
+                  ))}
                 </div>
               )}
             </>
