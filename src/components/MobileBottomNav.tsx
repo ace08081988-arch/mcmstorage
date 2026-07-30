@@ -81,8 +81,8 @@ export function MobileBottomNav() {
       )}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
-        transform: `translate3d(0, ${-offset}px, 0)`,
-        willChange: "transform",
+        transform: offset ? `translate3d(0, ${-offset}px, 0)` : undefined,
+        willChange: offset ? "transform" : undefined,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
