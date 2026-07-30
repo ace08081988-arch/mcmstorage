@@ -165,7 +165,7 @@ function AuditPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-ms-3 py-ms-4">
+    <div className="mx-auto w-full max-w-4xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
       <SecurityFindingsBanner compact />
       <div className="mb-3 flex flex-wrap items-center gap-ms-2">
         <Link to="/" className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs text-muted-foreground hover:bg-muted">

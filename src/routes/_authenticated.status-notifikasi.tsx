@@ -619,7 +619,7 @@ function StatusNotifikasiPage() {
   };
 
   return (
-    <div className="p-ms-4 space-ms-4 max-w-2xl mx-auto">
+    <div className="mx-auto w-full max-w-2xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
       <h1 className="text-ms-xl font-semibold">Status Notifikasi</h1>
 
       <Card>

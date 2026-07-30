@@ -43,7 +43,7 @@ function PengaturanScrollGuardPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl p-ms-4 space-ms-4">
+    <div className="mx-auto w-full max-w-2xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
       <div>
         <h1 className="text-ms-lg font-semibold tracking-tight">Pengaturan Scroll-Guard</h1>
         <p className="text-ms-sm text-muted-foreground leading-snug">

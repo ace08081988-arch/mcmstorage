@@ -258,7 +258,7 @@ function KiosPage() {
   return (
     <div className="min-h-screen bg-background text-foreground" data-press-scope="on">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-3">
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
           <Link
             to="/"
             className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
@@ -281,7 +281,7 @@ function KiosPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 p-3 pb-24">
+      <main className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5 pb-24">
         {loading ? (
           <div className="text-sm text-muted-foreground">Memuat…</div>
         ) : items.length === 0 ? (

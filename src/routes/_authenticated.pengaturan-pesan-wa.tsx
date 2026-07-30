@@ -119,7 +119,7 @@ function PesanWaPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-ms-3 p-ms-3">
+    <div className="mx-auto w-full max-w-5xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
       <SettingsHeader
         title="Template Pesan WA"
         subtitle="Atur sendiri format caption WhatsApp yang dikirim ke pembeli (judul, harga, status pembayaran, lokasi, catatan, penutup)."
