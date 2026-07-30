@@ -1496,7 +1496,7 @@ function CompatibilityBanner({ info }: { info: CompatibilityInfo }) {
   );
 }
 
-function _MigrationDiffViewImpl({
+function MigrationDiffViewImpl({
   before,
   after,
 }: {
