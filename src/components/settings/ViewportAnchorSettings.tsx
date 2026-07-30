@@ -19,9 +19,37 @@ import {
   setViewportAnchorConfig,
   type ViewportAnchorConfig,
 } from "@/lib/viewport-anchor-config";
-import { useViewportAnchor } from "@/lib/use-viewport-anchor";
+import {
+  useViewportAnchor,
+  useViewportAnchorState,
+  type ViewportAnchorMode,
+} from "@/lib/use-viewport-anchor";
 
 type NumKey = Exclude<keyof ViewportAnchorConfig, "enabled">;
+
+const MODE_META: Record<
+  ViewportAnchorMode,
+  { label: string; hint: string; dot: string; badge: string }
+> = {
+  idle: {
+    label: "Idle",
+    hint: "Viewport penuh — tidak ada kompensasi.",
+    dot: "bg-muted-foreground",
+    badge: "border-border text-muted-foreground",
+  },
+  chrome: {
+    label: "Address bar",
+    hint: "Penyusutan dari toolbar browser — bar dibiarkan menempel di dasar layar.",
+    dot: "bg-amber-500",
+    badge: "border-amber-500/40 text-amber-600 dark:text-amber-400",
+  },
+  keyboard: {
+    label: "Keyboard terbuka",
+    hint: "Kompensasi transform aktif agar bar tetap di atas keyboard.",
+    dot: "bg-emerald-500",
+    badge: "border-emerald-500/40 text-emerald-600 dark:text-emerald-400",
+  },
+};
 
 const FIELDS: {
   key: NumKey;
@@ -91,6 +119,8 @@ const FIELDS: {
 export function ViewportAnchorSettings() {
   const [cfg, setCfg] = useState<ViewportAnchorConfig>(DEFAULT_VIEWPORT_ANCHOR_CONFIG);
   const { keyboardOpen } = useViewportAnchor({ lock: true });
+  const live = useViewportAnchorState();
+  const mode = MODE_META[live.mode];
 
   useEffect(() => {
     setCfg(getViewportAnchorConfig());
@@ -114,6 +144,63 @@ export function ViewportAnchorSettings() {
       </CardHeader>
 
       <CardContent className="space-y-ms-4">
+        <div className="rounded-lg border bg-muted/30 p-ms-3 space-y-ms-2">
+          <div className="flex items-center justify-between gap-ms-2">
+            <div className="flex items-center gap-ms-2">
+              <span
+                className={`h-2 w-2 shrink-0 rounded-full ${mode.dot} ${
+                  live.mode === "idle" ? "" : "animate-pulse"
+                }`}
+                aria-hidden
+              />
+              <span className="text-ms-sm font-medium">Status langsung</span>
+            </div>
+            <Badge variant="outline" className={`tabular-nums ${mode.badge}`}>
+              {mode.label}
+            </Badge>
+          </div>
+          <p className="text-ms-xs text-muted-foreground">{mode.hint}</p>
+          <dl className="grid grid-cols-2 gap-x-ms-3 gap-y-1 text-[11px] tabular-nums sm:grid-cols-4">
+            {[
+              { k: "Penyusutan", v: `${live.shrinkPx}px` },
+              { k: "Offset aktif", v: `${live.offsetPx}px` },
+              { k: "Viewport", v: `${live.viewportPx}px` },
+              { k: "Baseline", v: `${live.baselinePx}px` },
+            ].map((it) => (
+              <div key={it.k} className="flex justify-between gap-2 sm:block">
+                <dt className="text-muted-foreground">{it.k}</dt>
+                <dd className="font-medium text-foreground">{it.v}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="flex flex-wrap gap-1.5 border-t pt-ms-2 text-[11px] tabular-nums">
+            <span className="text-muted-foreground">Ambang aktif:</span>
+            <span
+              className={
+                live.shrinkPx > cfg.keyboardOpenPx ? "font-semibold text-foreground" : ""
+              }
+            >
+              buka &gt;{cfg.keyboardOpenPx}px
+            </span>
+            <span aria-hidden className="text-muted-foreground">·</span>
+            <span
+              className={
+                live.shrinkPx < cfg.keyboardClosePx ? "font-semibold text-foreground" : ""
+              }
+            >
+              tutup &lt;{cfg.keyboardClosePx}px
+            </span>
+            <span aria-hidden className="text-muted-foreground">·</span>
+            <span className={live.recentlyScrolled ? "font-semibold text-foreground" : ""}>
+              grace {cfg.scrollGraceMs}ms {live.recentlyScrolled ? "(aktif)" : ""}
+            </span>
+            <span aria-hidden className="text-muted-foreground">·</span>
+            <span>max chrome {cfg.maxChromePx}px</span>
+            <span aria-hidden className="text-muted-foreground">·</span>
+            <span>toleransi {cfg.hysteresisPx}px</span>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between gap-ms-3">
           <div>
             <p className="text-ms-sm font-medium">Aktifkan kompensasi</p>
