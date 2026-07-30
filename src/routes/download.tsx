@@ -83,7 +83,9 @@ export const Route = createFileRoute("/download")({
         content:
           "Unduh APK Android MCM Storage (fitur lengkap) atau MCM Chat (khusus komunikasi).",
       },
+      { property: "og:url", content: "https://mcmstorage.biz/download" },
     ],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/download" }],
   }),
   component: DownloadPage,
   errorComponent: () => (
