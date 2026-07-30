@@ -33,11 +33,15 @@ export async function fetchSalesTotalForSource(
   return data.reduce((s, r) => s + Number(r.total_revenue ?? 0), 0);
 }
 
+export type SoldTotalSource = "sold_total" | "sales" | "none";
+
 export type ResolvedSoldTotal = {
   /** Angka yang harus ditampilkan / dijumlahkan. */
   total: number;
   /** true bila angka diambil dari catatan penjualan (fallback). */
   fromSales: boolean;
+  /** Dari mana angka berasal. */
+  source: SoldTotalSource;
   /** Teks siap tampil, format seragam. */
   label: string;
 };
@@ -50,7 +54,8 @@ export function resolveSoldTotal(
   const fallback = Number(salesTotal ?? 0) || 0;
   const fromSales = raw <= 0 && fallback > 0;
   const total = raw > 0 ? raw : fallback;
-  return { total, fromSales, label: rupiah(total) };
+  const source: SoldTotalSource = raw > 0 ? "sold_total" : fallback > 0 ? "sales" : "none";
+  return { total, fromSales, source, label: rupiah(total) };
 }
 
 /**
