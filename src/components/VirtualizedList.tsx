@@ -184,6 +184,13 @@ export function VirtualizedList<T>({
     [virtualizer, keys, cache],
   );
 
+  const virtualItems = enabled ? virtualizer.getVirtualItems() : [];
+  useListRenderMetrics(
+    cacheKey,
+    items.length,
+    enabled ? virtualItems.length : items.length,
+  );
+
   if (!enabled) {
     return (
       <div className={className} style={{ display: "grid", rowGap: gap }}>
@@ -203,8 +210,6 @@ export function VirtualizedList<T>({
       </div>
     );
   }
-
-  const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <div ref={parentRef} className={className}>
