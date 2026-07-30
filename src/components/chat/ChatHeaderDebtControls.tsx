@@ -923,59 +923,11 @@ export function ChatHeaderDebtControls({
             </div>
           </div>
         ) : null}
-        <div className="mt-2 overflow-hidden rounded-lg border">
-          <button
-            type="button"
-            className="sticky top-0 z-10 flex w-full items-center justify-between gap-2 bg-card/95 px-2 py-1.5 text-ms-2xs font-semibold backdrop-blur supports-[backdrop-filter]:bg-card/80"
-            onClick={() => setAuditOpen((v) => !v)}
-          >
-            <span className="min-w-0 truncate">Audit perubahan ({auditQ.data?.length ?? 0})</span>
-            <span className="shrink-0 text-muted-foreground">
-              {auditOpen ? "Tutup" : "Lihat"}
-            </span>
-          </button>
-          {auditOpen ? (
-            <div className="max-h-56 space-y-1.5 overflow-x-auto overflow-y-auto overscroll-contain scroll-smooth border-t p-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
-              {(auditQ.data ?? []).length === 0 ? (
-                <div className="text-ms-2xs text-muted-foreground">
-                  Belum ada perubahan tercatat untuk kontak ini.
-                </div>
-              ) : (
-                (auditQ.data ?? []).map((a) => (
-                  <div key={a.id} className="rounded-md border p-1.5 text-ms-2xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold">
-                        {a.action} · {a.kind}
-                      </span>
-                      <span
-                        className={`font-mono font-semibold ${
-                          a.action.includes("pembayaran") ? "text-success" : ""
-                        }`}
-                      >
-                        {a.action.includes("pembayaran") ? "−" : "+"}
-                        {rupiah(Number(a.amount))}
-                      </span>
-                    </div>
-                    <div className="mt-0.5 text-muted-foreground">
-                      {a.actor_name ?? "—"} · {formatWhen(a.created_at)}
-                    </div>
-                    <div className="text-muted-foreground">
-                      Saldo {rupiah(Number(a.balance_before ?? 0))} →{" "}
-                      {rupiah(Number(a.balance_after ?? 0))}
-                    </div>
-                    {Array.isArray(a.detail) && a.detail.length > 0 ? (
-                      <ul className="mt-0.5 list-disc pl-4 text-muted-foreground">
-                        {(a.detail as string[]).map((d, i) => (
-                          <li key={i}>{d}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                ))
-              )}
-            </div>
-          ) : null}
-        </div>
+        <AuditPanel
+          rows={auditQ.data ?? []}
+          open={auditOpen}
+          onToggle={() => setAuditOpen((v) => !v)}
+        />
         {conversationId ? (
           <Button
             type="button"
@@ -1984,4 +1936,167 @@ async function applyDelta({
       (e as { message?: string })?.message ?? "Gagal menyimpan perubahan.",
     );
   }
+}
+
+/* ---------------------------------------------------------------------- */
+
+type AuditRowData = {
+  id: string;
+  action: string;
+  kind: string;
+  amount: number | string | null;
+  balance_before?: number | string | null;
+  balance_after?: number | string | null;
+  actor_name?: string | null;
+  created_at: string;
+  detail?: unknown;
+};
+
+/** Pembayaran menurunkan saldo, sisanya menaikkan. */
+function isPayment(action: string) {
+  return action.includes("pembayaran");
+}
+
+/**
+ * Panel "Audit perubahan": ringkasan angka di atas (mudah discan), lalu
+ * baris-baris ringkas dua kolom — kiri konteks (aksi, pelaku, waktu),
+ * kanan nominal + pergerakan saldo yang di-highlight.
+ */
+function AuditPanel({
+  rows,
+  open,
+  onToggle,
+}: {
+  rows: AuditRowData[];
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const stats = useMemo(() => {
+    let plus = 0;
+    let minus = 0;
+    for (const r of rows) {
+      const amt = Number(r.amount ?? 0);
+      if (isPayment(r.action)) minus += amt;
+      else plus += amt;
+    }
+    return { plus, minus, net: plus - minus, count: rows.length };
+  }, [rows]);
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-lg border">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-ms-2xs font-semibold transition-colors hover:bg-muted/50"
+        onClick={onToggle}
+        aria-expanded={open}
+      >
+        <span className="min-w-0 truncate">Audit perubahan ({stats.count})</span>
+        <span className="shrink-0 text-muted-foreground">{open ? "Tutup" : "Lihat"}</span>
+      </button>
+
+      {open ? (
+        <div className="border-t">
+          {/* Ringkasan cepat */}
+          <div className="grid grid-cols-3 divide-x border-b bg-muted/30 text-center">
+            <AuditStat label="Tagihan" value={`+${rupiah(stats.plus)}`} tone="up" />
+            <AuditStat label="Pembayaran" value={`−${rupiah(stats.minus)}`} tone="down" />
+            <AuditStat
+              label="Neto"
+              value={`${stats.net < 0 ? "−" : "+"}${rupiah(Math.abs(stats.net))}`}
+              tone={stats.net < 0 ? "down" : "up"}
+            />
+          </div>
+
+          <div className="max-h-56 divide-y overflow-y-auto overscroll-contain scroll-smooth [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
+            {rows.length === 0 ? (
+              <div className="p-2 text-ms-2xs text-muted-foreground">
+                Belum ada perubahan tercatat untuk kontak ini.
+              </div>
+            ) : (
+              rows.map((a) => {
+                const pay = isPayment(a.action);
+                const before = Number(a.balance_before ?? 0);
+                const after = Number(a.balance_after ?? 0);
+                const details = Array.isArray(a.detail) ? (a.detail as string[]) : [];
+                return (
+                  <div
+                    key={a.id}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 px-2 py-1.5 text-ms-2xs transition-colors hover:bg-muted/40"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span
+                          className={`grid size-4 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
+                            pay ? "status-success" : "status-warning"
+                          }`}
+                          aria-hidden
+                        >
+                          {pay ? "−" : "+"}
+                        </span>
+                        <span className="truncate font-semibold">{a.action}</span>
+                        <span className="shrink-0 rounded bg-muted px-1 py-px text-[10px] uppercase tracking-wide text-muted-foreground">
+                          {a.kind}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 truncate text-muted-foreground">
+                        {a.actor_name ?? "—"} · {formatWhen(a.created_at)}
+                      </div>
+                      {details.length > 0 ? (
+                        <ul className="mt-0.5 list-disc pl-4 text-muted-foreground">
+                          {details.map((d, i) => (
+                            <li key={i} className="truncate">
+                              {d}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <div
+                        className={`font-mono font-semibold [font-variant-numeric:tabular-nums] ${
+                          pay ? "text-success" : "text-foreground"
+                        }`}
+                      >
+                        {pay ? "−" : "+"}
+                        {rupiah(Number(a.amount ?? 0))}
+                      </div>
+                      <div className="mt-0.5 flex items-center justify-end gap-1 font-mono text-[10px] text-muted-foreground [font-variant-numeric:tabular-nums]">
+                        <span>{rupiah(before)}</span>
+                        <ArrowRight className="size-2.5 shrink-0" />
+                        <span className="font-semibold text-foreground">{rupiah(after)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function AuditStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "up" | "down";
+}) {
+  return (
+    <div className="px-1.5 py-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div
+        className={`font-mono text-ms-2xs font-semibold [font-variant-numeric:tabular-nums] ${
+          tone === "down" ? "text-success" : "text-foreground"
+        }`}
+      >
+        {value}
+      </div>
+    </div>
+  );
 }
