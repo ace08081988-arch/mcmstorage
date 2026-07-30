@@ -28,7 +28,9 @@ export function MobileBottomNav() {
   const { toggleSidebar } = useSidebar();
   // Kunci bar ke dasar visual viewport supaya tidak "naik-turun" saat
   // address bar mobile mengecil/membesar, dan sembunyi saat keyboard buka.
-  const { anchorStyle, keyboardOpen } = useViewportAnchor();
+  // lock: true → posisi bar hanya dikompensasi terhadap address bar, tidak
+  // ikut bergerak saat keyboard buka/tutup (bar memang disembunyikan saat itu).
+  const { anchorStyle, keyboardOpen } = useViewportAnchor({ lock: true });
 
   // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
