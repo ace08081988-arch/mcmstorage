@@ -69,6 +69,7 @@ import { Route as AuthenticatedKontakMappingRouteImport } from './routes/_authen
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
 import { Route as AuthenticatedKiosRouteImport } from './routes/_authenticated.kios'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
+import { Route as AuthenticatedHubungkanAgenRouteImport } from './routes/_authenticated.hubungkan-agen'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedFiturRouteImport } from './routes/_authenticated.fitur'
 import { Route as AuthenticatedEmailQueueRouteImport } from './routes/_authenticated.email-queue'
@@ -478,6 +479,12 @@ const AuthenticatedHutangPiutangRoute =
   AuthenticatedHutangPiutangRouteImport.update({
     id: '/hutang-piutang',
     path: '/hutang-piutang',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedHubungkanAgenRoute =
+  AuthenticatedHubungkanAgenRouteImport.update({
+    id: '/hubungkan-agen',
+    path: '/hubungkan-agen',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedGudangRoute = AuthenticatedGudangRouteImport.update({
@@ -1012,6 +1019,7 @@ export interface FileRoutesByFullPath {
   '/email-queue': typeof AuthenticatedEmailQueueRoute
   '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
+  '/hubungkan-agen': typeof AuthenticatedHubungkanAgenRoute
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
@@ -1157,6 +1165,7 @@ export interface FileRoutesByTo {
   '/email-queue': typeof AuthenticatedEmailQueueRoute
   '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
+  '/hubungkan-agen': typeof AuthenticatedHubungkanAgenRoute
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
@@ -1306,6 +1315,7 @@ export interface FileRoutesById {
   '/_authenticated/email-queue': typeof AuthenticatedEmailQueueRoute
   '/_authenticated/fitur': typeof AuthenticatedFiturRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
+  '/_authenticated/hubungkan-agen': typeof AuthenticatedHubungkanAgenRoute
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/_authenticated/kios': typeof AuthenticatedKiosRouteWithChildren
   '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
@@ -1457,6 +1467,7 @@ export interface FileRouteTypes {
     | '/email-queue'
     | '/fitur'
     | '/gudang'
+    | '/hubungkan-agen'
     | '/hutang-piutang'
     | '/kios'
     | '/kontak'
@@ -1602,6 +1613,7 @@ export interface FileRouteTypes {
     | '/email-queue'
     | '/fitur'
     | '/gudang'
+    | '/hubungkan-agen'
     | '/hutang-piutang'
     | '/kios'
     | '/kontak-mapping'
@@ -1750,6 +1762,7 @@ export interface FileRouteTypes {
     | '/_authenticated/email-queue'
     | '/_authenticated/fitur'
     | '/_authenticated/gudang'
+    | '/_authenticated/hubungkan-agen'
     | '/_authenticated/hutang-piutang'
     | '/_authenticated/kios'
     | '/_authenticated/kontak'
@@ -2357,6 +2370,13 @@ declare module '@tanstack/react-router' {
       path: '/hutang-piutang'
       fullPath: '/hutang-piutang'
       preLoaderRoute: typeof AuthenticatedHutangPiutangRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/hubungkan-agen': {
+      id: '/_authenticated/hubungkan-agen'
+      path: '/hubungkan-agen'
+      fullPath: '/hubungkan-agen'
+      preLoaderRoute: typeof AuthenticatedHubungkanAgenRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/gudang': {
@@ -3069,6 +3089,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEmailQueueRoute: typeof AuthenticatedEmailQueueRoute
   AuthenticatedFiturRoute: typeof AuthenticatedFiturRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
+  AuthenticatedHubungkanAgenRoute: typeof AuthenticatedHubungkanAgenRoute
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
   AuthenticatedKiosRoute: typeof AuthenticatedKiosRouteWithChildren
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
@@ -3140,6 +3161,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEmailQueueRoute: AuthenticatedEmailQueueRoute,
   AuthenticatedFiturRoute: AuthenticatedFiturRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
+  AuthenticatedHubungkanAgenRoute: AuthenticatedHubungkanAgenRoute,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
   AuthenticatedKiosRoute: AuthenticatedKiosRouteWithChildren,
   AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
