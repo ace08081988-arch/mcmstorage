@@ -2042,6 +2042,9 @@ function PrepSections({
   const [showHistory, setShowHistory] = useState(true);
   const [layout, setLayout] = useLayoutMode("requestPrep", "grid");
   const gridClass = layoutGridClass(layout);
+  // Hanya layout satu kolom yang bisa divirtualisasi (VirtualizedList
+  // berbasis baris). Untuk grid multi-kolom tetap pakai PaintDeferred.
+  const singleColumn = layout === "list" || layout === "compact";
   const active = filterActivePreps(preps);
   const sent = filterSentPreps(preps);
   const [justSentId, setJustSentId] = useState<string | null>(null);
