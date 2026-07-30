@@ -75,6 +75,8 @@ import { renderWaCaption } from "@/lib/wa-template";
 import { useWaTemplate } from "@/lib/wa-template-store";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { withPlainTimeout, withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
+import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -87,8 +89,33 @@ export const Route = createFileRoute("/_authenticated/ecer")({
     // supaya seluruh jalur "Kirim WA" wajib melewati verifikasi pembayaran.
     send: typeof s.send === "string" ? s.send : undefined,
   }),
-  component: EcerPage,
+  component: EcerRoute,
 });
+
+/**
+ * Sama seperti Gudang: Ecer merender grid kartu besar berisi foto + portal
+ * dialog, kombinasi yang paling sering memicu `NotFoundError: removeChild`
+ * di Android WebView. Boundary ini retry diam-diam dulu, baru menampilkan
+ * panel pemulihan bila benar-benar gagal — jadi tidak perlu reload penuh
+ * yang membuang state pilih/dialog.
+ */
+function EcerRoute() {
+  return (
+    <DomRaceBoundary
+      label="ecer"
+      renderFallback={(error, reset, info) => (
+        <DomRaceRecoveryPanel
+          error={error}
+          reset={reset}
+          info={info}
+          title="Halaman Ecer gagal ditampilkan"
+        />
+      )}
+    >
+      <EcerPage />
+    </DomRaceBoundary>
+  );
+}
 
 type WarehouseItem = {
   id: string; name: string; category: string | null; base_unit: string;
