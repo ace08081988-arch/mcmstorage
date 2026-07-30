@@ -2305,6 +2305,15 @@ function PrepSections({
           <div className="rounded-xl border border-dashed bg-card p-ms-4 text-center text-ms-2xs text-muted-foreground">
             Tidak ada penyiapan yang menunggu dikirim.
           </div>
+        ) : singleColumn ? (
+          <VirtualizedList
+            items={active}
+            getKey={(p) => p.id}
+            estimateSize={260}
+            threshold={12}
+            gap={8}
+            renderItem={(p, idx) => renderCard(p, idx, active.length, false)}
+          />
         ) : (
           <div className={gridClass}>
             {active.map((p, idx) => (
@@ -2373,6 +2382,15 @@ function PrepSections({
                 <div className="rounded-xl border border-dashed bg-card p-ms-4 text-center text-ms-2xs text-muted-foreground">
                   Tidak ada paket terkirim yang cocok dengan filter.
                 </div>
+              ) : singleColumn ? (
+                <VirtualizedList
+                  items={filteredSent}
+                  getKey={(p) => p.id}
+                  estimateSize={260}
+                  threshold={12}
+                  gap={8}
+                  renderItem={(p, idx) => renderCard(p, idx, filteredSent.length, true)}
+                />
               ) : (
                 <div className={gridClass}>
                   {filteredSent.map((p, idx) => (
