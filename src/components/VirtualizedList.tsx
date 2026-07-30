@@ -33,6 +33,42 @@ const Row = React.memo(
 );
 
 /**
+ * Overscan adaptif: jumlah baris ekstra dihitung dari tinggi viewport
+ * dibagi tinggi baris, bukan angka tetap. Di Android WebView (memori &
+ * GPU terbatas) buffer besar bikin scroll tersendat karena terlalu banyak
+ * node dipaint sekaligus; buffer terlalu kecil bikin baris blank saat
+ * fling. Kompromi: ~0.6 layar buffer di perangkat low-end, ~1 layar di
+ * desktop, dan selalu dibatasi 2–8 baris.
+ */
+function useAdaptiveOverscan(rowHeight: number): number {
+  const compute = React.useCallback(() => {
+    if (typeof window === "undefined") return 4;
+    const nav = navigator as Navigator & {
+      deviceMemory?: number;
+      hardwareConcurrency?: number;
+    };
+    const lowEnd =
+      (nav.deviceMemory ?? 8) <= 4 ||
+      (nav.hardwareConcurrency ?? 8) <= 4 ||
+      window.innerWidth < 768;
+    const screens = lowEnd ? 0.6 : 1;
+    const rows = Math.ceil((window.innerHeight * screens) / Math.max(40, rowHeight));
+    return Math.min(8, Math.max(2, rows));
+  }, [rowHeight]);
+
+  const [value, setValue] = React.useState(compute);
+
+  React.useEffect(() => {
+    const update = () => setValue(compute());
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [compute]);
+
+  return value;
+}
+
+/**
  * Daftar virtual berbasis window scroll.
  *
  * Di bawah `threshold` item, daftar dirender biasa (hindari overhead virtualisasi
@@ -47,7 +83,7 @@ export function VirtualizedList<T>({
   getKey,
   renderItem,
   estimateSize = 88,
-  overscan = 6,
+  overscan,
   threshold = 8,
   gap = 8,
   className,
