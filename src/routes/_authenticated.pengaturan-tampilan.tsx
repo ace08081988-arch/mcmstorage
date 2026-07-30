@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle, ClipboardPaste, ClipboardCopy, Link2, CloudUpload, CloudDownload, CloudOff, Loader2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
+import { ViewportAnchorSettings } from "@/components/settings/ViewportAnchorSettings";
 import {
   applyAppearance,
   ACCENTS,
