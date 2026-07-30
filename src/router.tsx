@@ -3,7 +3,20 @@ import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  // Sane defaults untuk mengurangi re-fetch berlebihan saat balik ke tab
+  // atau reconnect network. Query yang butuh live update (chat realtime,
+  // notifikasi, dsb.) opt-in per-query via `refetchOnWindowFocus: true`.
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 30_000,
+        gcTime: 5 * 60_000,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: "always",
+        retry: 1,
+      },
+    },
+  });
 
   const router = createRouter({
     routeTree,

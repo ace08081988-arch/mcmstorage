@@ -1,9 +1,11 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { autoLockKey, isAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 import {
   getClientDeviceFingerprint,
+  isDeviceTrustedLocal,
+  markDeviceTrustedLocal,
 } from "@/lib/device-fingerprint";
 import { isDeviceTrusted } from "@/lib/device.functions";
 import {
@@ -13,17 +15,35 @@ import {
   hydrateLockConfig,
   isLocked,
   setLocked,
+  isLockSuppressed,
 } from "@/lib/app-lock";
 import { AppLockScreen } from "@/components/AppLockScreen";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { AppHeader } from "@/components/AppHeader";
+import { CallHost } from "@/components/chat/CallHost";
+import { LiveNotificationHost } from "@/components/LiveNotificationHost";
+import { ChatPresenceHost } from "@/components/chat/ChatPresenceHost";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { withPlainTimeout } from "@/lib/supabase-timeout";
 
 function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Halaman percakapan chat tampil "immersive" (layar penuh, header
+  // sendiri): tanpa AppHeader agar tidak ada header ganda, dan tanpa
+  // padding bottom nav supaya dokumen tidak ikut men-scroll — inilah
+  // penyebab header percakapan terlihat naik-turun saat menggulir.
+  const immersive = /^\/chat\/[^/]+/.test(pathname);
   const [locked, setLockedState] = useState(false);
   const [cfgVer, setCfgVer] = useState(0);
+  // H23: keep an always-current uid in a ref so pagehide/beforeunload
+  // never sees a stale (or null) captured value and never removes tokens
+  // that don't belong to the currently signed-in user.
+  const uidRef = useRef<string | null>(null);
+  useEffect(() => { uidRef.current = uid; }, [uid]);
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
+    void import("@/lib/current-user").then(({ getCurrentUser }) => getCurrentUser()).then((u) => setUid(u?.id ?? null));
   }, []);
   // Hydrate persisted lock config from Capacitor Preferences into localStorage
   // so settings survive app kill on native devices.
@@ -52,6 +72,8 @@ function AuthLock() {
     const cfg = getLockConfig(uid);
     const lockNow = () => {
       if (!getLockConfig(uid)) return;
+      // Grace period saat user membuka native picker (kamera/galeri/file).
+      if (isLockSuppressed()) return;
       setLocked(uid, true);
     };
     const onReq = () => lockNow();
@@ -84,14 +106,12 @@ function AuthLock() {
   useEffect(() => {
     if (!uid) return;
     const lock = () => {
-      if (!isAutoLockEnabled(uid)) return;
-      try {
-        for (const k of Object.keys(localStorage)) {
-          if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
-            localStorage.removeItem(k);
-          }
-        }
-      } catch {}
+      const currentUid = uidRef.current;
+      if (!currentUid) return;
+      if (!isAutoLockEnabled(currentUid)) return;
+      if (!getLockConfig(currentUid)) return;
+      if (isLockSuppressed()) return;
+      setLocked(currentUid, true);
     };
     const onStorage = (e: StorageEvent) => {
       if (e.key === autoLockKey(uid)) {/* re-read on next event */}
@@ -109,19 +129,28 @@ function AuthLock() {
   const cfg = uid ? getLockConfig(uid) : null;
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className={immersive ? "flex h-[100dvh] w-full overflow-hidden" : "flex min-h-[100dvh] w-full"}>
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-10 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur">
-            <SidebarTrigger />
-            <span className="text-xs text-muted-foreground">Menu</span>
-          </header>
-          <div className="min-w-0 flex-1">
+          {immersive ? null : <AppHeader />}
+          <div
+            id="konten-utama"
+            tabIndex={-1}
+            className={
+              immersive
+                ? "min-h-0 min-w-0 flex-1 overflow-hidden"
+                : "min-w-0 flex-1 scroll-mt-16 pb-[calc(env(safe-area-inset-bottom)+64px)] focus:outline-none md:pb-0"
+            }
+          >
             <Outlet />
           </div>
         </SidebarInset>
       </div>
       {uid && cfg && locked && <AppLockScreen uid={uid} cfg={cfg} />}
+      <CallHost />
+      <LiveNotificationHost />
+      <ChatPresenceHost />
+      <MobileBottomNav />
     </SidebarProvider>
   );
 }
@@ -129,7 +158,21 @@ function AuthLock() {
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const { data } = await supabase.auth.getSession();
+    if (typeof window !== "undefined") {
+      const hasAuthCallback =
+        window.location.hash.includes("access_token=") ||
+        window.location.hash.includes("error=") ||
+        window.location.search.includes("code=");
+      if (hasAuthCallback) {
+        window.location.replace(`/auth-callback${window.location.search}${window.location.hash}`);
+        return;
+      }
+    }
+    const { data } = await withPlainTimeout(
+      supabase.auth.getSession(),
+      "authenticated-session",
+      3_000,
+    );
     if (!data.session) {
       throw redirect({
         to: "/auth",
@@ -139,10 +182,16 @@ export const Route = createFileRoute("/_authenticated")({
     // Lewati pengecekan device pada halaman verifikasi itu sendiri
     if (location.pathname.startsWith("/device-verify")) return;
     const hash = await getClientDeviceFingerprint();
+    if (isDeviceTrustedLocal(data.session.user.id, hash)) return;
     let trusted = false;
     try {
-      const res = await isDeviceTrusted({ data: { deviceHash: hash } });
+      const res = await withPlainTimeout(
+        isDeviceTrusted({ data: { deviceHash: hash } }),
+        "device-trust-check",
+        6_000,
+      );
       trusted = !!res?.trusted;
+      if (trusted) markDeviceTrustedLocal(data.session.user.id, hash);
     } catch {
       trusted = false;
     }

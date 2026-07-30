@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getEmailQueueStatus, resendDeviceOtpByMessage } from "@/lib/email-queue.functions";
 import { toast } from "sonner";
+import { useAdminStatus } from "@/hooks/use-is-admin";
 
 export const Route = createFileRoute("/_authenticated/email-queue")({
   head: () => ({
@@ -53,9 +54,9 @@ function fmtAgo(iso: string | null | undefined) {
 function statusBadge(status: string) {
   const s = status.toLowerCase();
   if (s === "sent")
-    return <Badge className="bg-emerald-600 hover:bg-emerald-600">Terkirim</Badge>;
+    return <Badge className="bg-success hover:bg-success">Terkirim</Badge>;
   if (s === "pending")
-    return <Badge className="bg-amber-500 hover:bg-amber-500">Antrian</Badge>;
+    return <Badge className="bg-warning hover:bg-warning">Antrian</Badge>;
   if (s === "dlq")
     return <Badge variant="destructive">Gagal (DLQ)</Badge>;
   if (s === "suppressed")
@@ -69,9 +70,14 @@ function EmailQueuePage() {
   const fetchStatus = useServerFn(getEmailQueueStatus);
   const resendOtp = useServerFn(resendDeviceOtpByMessage);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Route-level guard: jangan panggil server fn admin sama sekali kalau
+  // user belum terbukti admin. Non-admin melihat fallback statis; status
+  // pending menampilkan skeleton ringan tanpa memicu request.
+  const { isAdmin, isCheckingAdmin } = useAdminStatus();
   const q = useQuery({
     queryKey: ["email-queue-status"],
     queryFn: () => fetchStatus(),
+    enabled: isAdmin,
     refetchInterval: 10_000,
     refetchIntervalInBackground: false,
     staleTime: 5_000,
@@ -110,11 +116,11 @@ function EmailQueuePage() {
   const cronHealthy = minutesSinceSent !== null && minutesSinceSent <= 30;
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-4 p-4">
-      <div className="flex items-center justify-between gap-2">
+    <div className="mx-auto w-full max-w-4xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
+      <div className="flex items-center justify-between gap-ms-2">
         <Link
           to="/diagnostics"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-ms-1 text-ms-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" /> Diagnostik
         </Link>
@@ -130,20 +136,43 @@ function EmailQueuePage() {
       </div>
 
       <div>
-        <h1 className="text-2xl font-semibold">Status Antrian Email & OTP</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-ms-2xl font-semibold">Status Antrian Email & OTP</h1>
+        <p className="text-ms-sm text-muted-foreground">
           Pantau apakah OTP perangkat sedang diproses, masuk antrian, atau gagal terkirim.
           Halaman ini menyegarkan otomatis setiap 10 detik.
         </p>
       </div>
 
-      {q.isLoading ? (
+      {isCheckingAdmin ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">Memuat status…</CardContent>
+          <CardContent className="p-ms-6 text-ms-sm text-muted-foreground">
+            Memeriksa akses…
+          </CardContent>
+        </Card>
+      ) : !isAdmin ? (
+        <Card>
+          <CardContent className="space-ms-2 p-ms-6 text-ms-sm">
+            <div className="font-medium">Halaman ini hanya untuk admin.</div>
+            <p className="text-muted-foreground">
+              Anda tidak memiliki akses ke antrian email. Kembali ke{" "}
+              <Link to="/diagnostics" className="underline">
+                Diagnostik
+              </Link>{" "}
+              atau{" "}
+              <Link to="/" className="underline">
+                halaman utama
+              </Link>
+              .
+            </p>
+          </CardContent>
+        </Card>
+      ) : q.isLoading ? (
+        <Card>
+          <CardContent className="p-ms-6 text-ms-sm text-muted-foreground">Memuat status…</CardContent>
         </Card>
       ) : !data?.isAdmin ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
+          <CardContent className="p-ms-6 text-ms-sm text-muted-foreground">
             Halaman ini hanya untuk admin.
           </CardContent>
         </Card>
@@ -152,32 +181,32 @@ function EmailQueuePage() {
           <Card
             className={
               cronHealthy
-                ? "border-emerald-500/40 bg-emerald-500/5"
-                : "border-amber-500/40 bg-amber-500/5"
+                ? "border-success/40 bg-success/5"
+                : "border-warning/40 bg-warning/5"
             }
           >
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex items-center gap-ms-2 text-ms-base">
                 {cronHealthy ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  <CheckCircle2 className="h-5 w-5 text-success" />
                 ) : (
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  <AlertTriangle className="h-5 w-5 text-warning" />
                 )}
                 Pemroses antrian {cronHealthy ? "berjalan normal" : "perlu diperiksa"}
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-1 text-sm">
-              <div className="flex items-center gap-2">
+            <CardContent className="grid gap-ms-1 text-ms-sm">
+              <div className="flex items-center gap-ms-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Terakhir memproses email:</span>
                 <span className="font-medium">{fmtAgo(lastSent)}</span>
                 <span className="text-muted-foreground">({fmtAbs(lastSent)})</span>
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-ms-xs text-muted-foreground">
                 Diperbarui {fmtAgo(data.fetchedAt)} · {fmtAbs(data.fetchedAt)}
               </div>
               {!cronHealthy && (
-                <div className="mt-2 rounded-md bg-amber-500/10 p-2 text-xs text-amber-900 dark:text-amber-200">
+                <div className="mt-2 rounded-md bg-warning/10 p-ms-2 text-ms-xs text-warning dark:text-warning">
                   Tidak ada email terkirim &gt;30 menit terakhir. Cek apakah cron pemroses
                   antrian aktif atau apakah ada error provider.
                 </div>
@@ -185,7 +214,7 @@ function EmailQueuePage() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-4">
             <StatCard
               icon={<Mail className="h-4 w-4" />}
               label="Antrian aktif"
@@ -216,44 +245,44 @@ function EmailQueuePage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">25 OTP perangkat terbaru</CardTitle>
+              <CardTitle className="text-ms-base">25 OTP perangkat terbaru</CardTitle>
             </CardHeader>
             <CardContent className="px-0">
               {data.recentOtp.length === 0 ? (
-                <div className="px-6 pb-4 text-sm text-muted-foreground">
+                <div className="px-ms-6 pb-4 text-ms-sm text-muted-foreground">
                   Belum ada permintaan OTP.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                  <table className="w-full text-ms-sm">
+                    <thead className="bg-muted/50 text-ms-xs uppercase text-muted-foreground">
                       <tr>
-                        <th className="px-4 py-2 text-left">Waktu</th>
-                        <th className="px-4 py-2 text-left">Penerima</th>
-                        <th className="px-4 py-2 text-left">Status</th>
-                        <th className="px-4 py-2 text-left">Catatan</th>
-                        <th className="px-4 py-2 text-left">Aksi</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Waktu</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Penerima</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Status</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Catatan</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.recentOtp.map((r) => (
                         <tr key={r.id} className="border-t border-border/60">
-                          <td className="px-4 py-2 align-top">
+                          <td className="px-ms-4 py-ms-2 align-top">
                             <div className="font-medium">{fmtAgo(r.created_at)}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-ms-xs text-muted-foreground">
                               {fmtAbs(r.created_at)}
                             </div>
                           </td>
-                          <td className="px-4 py-2 align-top">{r.recipient_email}</td>
-                          <td className="px-4 py-2 align-top">{statusBadge(r.status)}</td>
-                          <td className="px-4 py-2 align-top text-xs text-muted-foreground">
+                          <td className="px-ms-4 py-ms-2 align-top">{r.recipient_email}</td>
+                          <td className="px-ms-4 py-ms-2 align-top">{statusBadge(r.status)}</td>
+                          <td className="px-ms-4 py-ms-2 align-top text-ms-xs text-muted-foreground">
                             {r.error_message || "—"}
                           </td>
-                          <td className="px-4 py-2 align-top">
+                          <td className="px-ms-4 py-ms-2 align-top">
                             {(() => {
                               const s = r.status.toLowerCase();
                               const canResend = s === "pending" || s === "dlq" || s === "failed" || s === "bounced";
-                              if (!canResend) return <span className="text-xs text-muted-foreground">—</span>;
+                              if (!canResend) return <span className="text-ms-xs text-muted-foreground">—</span>;
                               return (
                                 <Button
                                   size="sm"
@@ -298,17 +327,17 @@ function StatCard({
     tone === "danger"
       ? "border-destructive/40 bg-destructive/5"
       : tone === "warn"
-      ? "border-amber-500/40 bg-amber-500/5"
+      ? "border-warning/40 bg-warning/5"
       : "border-border/60";
   return (
     <Card className={toneClass}>
-      <CardContent className="p-3">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <CardContent className="p-ms-3">
+        <div className="flex items-center gap-ms-2 text-ms-xs text-muted-foreground">
           {icon}
           <span>{label}</span>
         </div>
-        <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
-        {hint ? <div className="text-[11px] text-muted-foreground">{hint}</div> : null}
+        <div className="mt-1 text-ms-2xl font-semibold tabular-nums">{value}</div>
+        {hint ? <div className="text-ms-2xs text-muted-foreground">{hint}</div> : null}
       </CardContent>
     </Card>
   );

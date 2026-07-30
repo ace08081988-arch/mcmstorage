@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { previewText } from "@/lib/chat-cards";
 
 const sendSchema = z.object({
   conversationId: z.string().uuid(),
@@ -54,7 +55,7 @@ export const sendMessage = createServerFn({ method: "POST" })
           .single(),
         supabaseAdmin
           .from("profiles")
-          .select("display_name, email, avatar_url")
+          .select("display_name, avatar_url")
           .eq("id", userId)
           .single(),
       ]);
@@ -67,13 +68,18 @@ export const sendMessage = createServerFn({ method: "POST" })
         })
         .map((m) => m.user_id)
         .filter(Boolean) as string[];
-      const senderName = prof?.display_name || prof?.email || "Pengguna";
+      const senderName = prof?.display_name || "Pengguna";
       const isGroup = conv?.kind === "group" || conv?.kind === "order";
       const title = isGroup
         ? `${conv?.title ?? "Grup"} · ${senderName}`
         : senderName;
-      const preview = data.body
-        ? data.body.slice(0, 140)
+      // Notifikasi push tidak boleh menampilkan sentinel/JSON mentah dari
+      // payload card MCM. `previewText` menerjemahkan card jadi label
+      // ramah pengguna (mis. "🛒 Keranjang · 3 item"); fallback ke teks
+      // biasa untuk pesan non-card.
+      const rawPreview = data.body ? (previewText(data.body) ?? data.body) : null;
+      const preview = rawPreview
+        ? rawPreview.slice(0, 140)
         : data.attachmentName
           ? `📎 ${data.attachmentName}`
           : "Lampiran";

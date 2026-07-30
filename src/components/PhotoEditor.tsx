@@ -5,6 +5,7 @@ import {
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
   X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut, Maximize2, Minimize2,
   Loader2, AlertTriangle, RefreshCw, ClipboardCopy, ClipboardCheck,
+  Download, HelpCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -17,10 +18,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { editorFeedback } from "@/lib/editor-feedback";
+import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
+import { useScrollShadow } from "@/hooks/use-scroll-shadow";
 
-type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string };
-type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
-type Layer =
+export type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
+export type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
+export type Layer =
   | ({ kind: "text"; text: string; size: number; bold: boolean } & LayerBase)
   | ({ kind: "emoji"; emoji: string; size: number } & LayerBase)
   | ({ kind: "arrow"; dir: ArrowDir; size: number; thickness: number } & LayerBase)
@@ -37,6 +41,90 @@ const EMOJIS = ["⭐", "✅", "❗", "❌", "🔴", "🟢", "🟡", "🔵", "�
 const COLORS = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#a855f7", "#ec4899", "#000000", "#ffffff"];
 
 type Tool = "select" | "draw" | "text" | "emoji" | "arrow" | "rect" | "circle";
+
+const TOOL_LABELS: Record<Tool, string> = {
+  select: "Pilih",
+  draw: "Coret",
+  text: "Teks",
+  emoji: "Stiker",
+  arrow: "Panah",
+  rect: "Kotak",
+  circle: "Lingkaran",
+};
+
+const TOOL_HINTS: Record<Tool, string> = {
+  select: "Ketuk objek untuk memilih, seret untuk memindahkan",
+  draw: "Seret jari di kanvas untuk menggambar bebas",
+  text: "Ketuk kanvas atau tombol Tambah teks untuk menulis",
+  emoji: "Pilih emoji lalu ketuk untuk menempelkan di tengah",
+  arrow: "Pilih arah panah, otomatis tempel di tengah kanvas",
+  rect: "Seret untuk ukuran bebas, atau ketuk untuk kotak default",
+  circle: "Seret dari pusat ke tepi, atau ketuk untuk ukuran default",
+};
+
+const TOOL_SHORTCUTS: Record<Tool, string | null> = {
+  select: "P",
+  draw: "C",
+  text: "T",
+  emoji: "S",
+  arrow: "A",
+  rect: "K",
+  circle: "L",
+};
+
+const KEY_TO_TOOL: Record<string, Tool> = Object.fromEntries(
+  Object.entries(TOOL_SHORTCUTS)
+    .filter(([, k]) => k !== null)
+    .map(([t, k]) => [k!.toLowerCase(), t as Tool])
+);
+
+// Tools that show a detailed guide modal on first use or after a long absence.
+const GUIDED_TOOLS: Tool[] = ["text", "emoji", "draw"];
+// Consider a tool "new / returning" if it hasn't been used in this many days.
+const GUIDE_RETURN_DAYS = 7;
+const GUIDE_STORAGE_KEY = "photo-editor-tool-guide";
+
+type GuideSeenMap = Partial<Record<Tool, number>>;
+
+const TOOL_GUIDES: Record<Tool, { title: string; steps: string[]; tip: string } | null> = {
+  select: null,
+  draw: {
+    title: "Panduan Coret",
+    steps: [
+      "Pilih tool Coret (C) di toolbar.",
+      "Seret jari / mouse di kanvas untuk menggambar garis bebas.",
+      "Ketuk sekali bila hanya ingin membuat titik coretan.",
+      "Gunakan slider Ukuran di bawah untuk mengatur ketebalan coretan.",
+    ],
+    tip: "Coretan langsung tersimpan sebagai lapisan; gunakan Undo bila ingin membatalkan.",
+  },
+  text: {
+    title: "Panduan Teks",
+    steps: [
+      "Pilih tool Teks (T) di toolbar.",
+      "Ketuk kanvas di posisi yang diinginkan, atau tekan tombol Tambah teks di tengah.",
+      "Ketik teks di jendela yang muncul, lalu tekan OK.",
+      "Setelah teks muncul, ketuk untuk memilih lalu seret untuk memindahkan.",
+    ],
+    tip: "Slider Ukuran mengubah font; tombol B membuat teks menjadi tebal.",
+  },
+  emoji: {
+    title: "Panduan Stiker",
+    steps: [
+      "Pilih tool Stiker (S) di toolbar.",
+      "Pilih emoji di deretan emoji di bawah toolbar.",
+      "Emoji akan menempel di tengah kanvas secara otomatis.",
+      "Ketuk emoji untuk memilih, seret untuk memindahkan, atau gunakan tombol Ukuran untuk memperbesar.",
+    ],
+    tip: "Stiker tetap bisa dipindah dan dihapus seperti objek lain.",
+  },
+  arrow: null,
+  rect: null,
+  circle: null,
+};
+
+
+
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
@@ -67,6 +155,43 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [canvasReady, setCanvasReady] = useState(false);
   // True while exportImage is composing the final JPEG.
   const [exporting, setExporting] = useState(false);
+  // Panel panduan singkat tiap tool. Disembunyikan by default agar toolbar
+  // tetap padat; pengguna baru bisa tap ikon "?" untuk membacanya.
+  const [helpOpen, setHelpOpen] = useState(false);
+  // Modal panduan detail untuk tool Teks/Stiker/Coret saat pertama kali dipilih
+  // atau setelah tidak dipakai dalam beberapa hari.
+  const [guideTool, setGuideTool] = useState<Tool | null>(null);
+  // Strip hint aktif bisa ditutup pengguna; akan muncul kembali saat tool berubah.
+  const [hintClosedForTool, setHintClosedForTool] = useState<Tool | null>(null);
+
+  function readGuideSeenMap(): GuideSeenMap {
+    if (typeof localStorage === "undefined") return {};
+    try {
+      const raw = localStorage.getItem(GUIDE_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as GuideSeenMap) : {};
+    } catch {
+      return {};
+    }
+  }
+  function writeGuideSeenMap(map: GuideSeenMap) {
+    if (typeof localStorage === "undefined") return;
+    try { localStorage.setItem(GUIDE_STORAGE_KEY, JSON.stringify(map)); } catch { /* noop */ }
+  }
+  function shouldShowGuide(t: Tool): boolean {
+    if (!GUIDED_TOOLS.includes(t)) return false;
+    const lastSeen = readGuideSeenMap()[t];
+    if (!lastSeen) return true;
+    return Date.now() - lastSeen > GUIDE_RETURN_DAYS * 24 * 60 * 60 * 1000;
+  }
+  function markGuideSeen(t: Tool) {
+    const map = readGuideSeenMap();
+    map[t] = Date.now();
+    writeGuideSeenMap(map);
+  }
+  function closeGuide(t: Tool) {
+    markGuideSeen(t);
+    setGuideTool(null);
+  }
   // Set to true when the user presses "Batal" while exportImage is running so
   // we can skip onSave once the async toBlob resolves.
   const exportCancelledRef = useRef(false);
@@ -123,6 +248,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [tool, setTool] = useState<Tool>("select");
   const [color, setColor] = useState("#ef4444");
   const [thickness, setThickness] = useState(6);
+  const [opacity, setOpacity] = useState(1);
+  const [shapeFill, setShapeFill] = useState(false);
   const [textSize, setTextSize] = useState(32);
   const [arrowDir, setArrowDir] = useState<ArrowDir>("right");
   const [emoji, setEmoji] = useState("⭐");
@@ -145,6 +272,43 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   useEffect(() => { stateRef.current = state; }, [state]);
   useEffect(() => { viewRef.current = view; }, [view]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  // Feedback halus (getar + bunyi) saat berganti tool. Skip pemuatan awal.
+  const prevToolRef = useRef<Tool>(tool);
+  useEffect(() => {
+    if (prevToolRef.current !== tool) {
+      editorFeedback.toolSwitch();
+      prevToolRef.current = tool;
+      // Strip hint muncul lagi untuk tool yang baru dipilih.
+      setHintClosedForTool((closed) => (closed === tool ? closed : null));
+      if (shouldShowGuide(tool)) {
+        setGuideTool(tool);
+      }
+    }
+  }, [tool]);
+  // Keyboard shortcuts: single letter tanpa modifier, hanya bila fokus tidak
+  // berada di input/textarea/select/contenteditable (mis. saat mengetik teks).
+  useEffect(() => {
+    const isTyping = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      return (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      );
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+      if (isTyping(e.target)) return;
+      const next = KEY_TO_TOOL[e.key.toLowerCase()];
+      if (!next) return;
+      e.preventDefault();
+      setTool(next);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [setTool]);
+
   const [textPrompt, setTextPrompt] = useState<{ open: boolean; x: number; y: number; value: string }>(
     { open: false, x: 0, y: 0, value: "" },
   );
@@ -450,6 +614,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setHistory((h) => [...h.slice(-29), state]);
     setFuture([]);
     setState(next);
+    editorFeedback.commit();
   }
   // Push an explicit baseline into history and set a new state.
   // Use when the "before" state isn't the current React state (e.g. after a live drag).
@@ -457,6 +622,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setHistory((h) => [...h.slice(-29), baseline]);
     setFuture([]);
     setState(next);
+    editorFeedback.commit();
   }
   function undo() {
     setHistory((h) => {
@@ -481,6 +647,21 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const r = canvasRef.current!.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
+  function pointFromClient(clientX: number, clientY: number) {
+    const r = canvasRef.current!.getBoundingClientRect();
+    return { x: clientX - r.left, y: clientY - r.top };
+  }
+
+  // Pada sebagian Android WebView / Chromium mobile emulation, `pointerdown`
+  // di-supress oleh browser saat `touch-action:none` + touchstart mendahului.
+  // Kalau kita hanya andalkan onPointerDown, semua tool "tidak jalan" karena
+  // drawingRef tidak pernah diinisialisasi (hanya pointermove/pointerup yang
+  // sampai). Solusinya: dukung Touch Events juga sebagai jalur alternatif.
+  //
+  // Aturan agar tidak double-fire dengan pointer events pada perangkat yang
+  // MEMANG mengirim keduanya: sekali touch session aktif, blokir handler
+  // pointer sampai touchend/touchcancel.
+  const touchDrivingRef = useRef(false);
 
   function hitTest(p: { x: number; y: number }): Layer | null {
     // iterate top-most first
@@ -492,8 +673,16 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (touchDrivingRef.current) return; // touchstart already handled it
     const p = pointAt(e);
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // Beberapa Android WebView / event yang tidak sepenuhnya trusted bisa
+    // melempar InvalidStateError di sini. Jangan biarkan itu membatalkan
+    // pemilihan tool — capture pointer adalah optimasi, bukan syarat.
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* noop */ }
+    handleDown(p);
+  }
+
+  function handleDown(p: { x: number; y: number }) {
     if (tool === "select") {
       const hit = hitTest(p);
       setSelectedId(hit?.id ?? null);
@@ -505,17 +694,19 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       return;
     }
     if (tool === "draw") {
-      drawingRef.current = { id: uid(), kind: "stroke", x: 0, y: 0, rotation: 0, scale: 1, color, thickness, points: [p] };
+      drawingRef.current = { id: uid(), kind: "stroke", x: 0, y: 0, rotation: 0, scale: 1, color, opacity, thickness, points: [p] };
       scheduleRedraw();
       return;
     }
     if (tool === "rect") {
-      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: shapeFill };
+      lastPointRef.current = p; // used to detect tap-vs-drag on release
       scheduleRedraw();
       return;
     }
     if (tool === "circle") {
-      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: shapeFill };
+      lastPointRef.current = p;
       scheduleRedraw();
       return;
     }
@@ -524,13 +715,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       return;
     }
     if (tool === "emoji") {
-      const l: Layer = { id: uid(), kind: "emoji", x: p.x, y: p.y, rotation: 0, scale: 1, color, emoji, size: textSize + 8 };
+      const l: Layer = { id: uid(), kind: "emoji", x: p.x, y: p.y, rotation: 0, scale: 1, color, opacity, emoji, size: textSize + 8 };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
       return;
     }
     if (tool === "arrow") {
-      const l: Layer = { id: uid(), kind: "arrow", x: p.x, y: p.y, rotation: 0, scale: 1, color, dir: arrowDir, size: 80, thickness };
+      const l: Layer = { id: uid(), kind: "arrow", x: p.x, y: p.y, rotation: 0, scale: 1, color, opacity, dir: arrowDir, size: 80, thickness };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
       return;
@@ -538,7 +729,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (touchDrivingRef.current) return;
     const p = pointAt(e);
+    handleMove(p);
+  }
+
+  function handleMove(p: { x: number; y: number }) {
     const drag = dragLiveRef.current;
     if (drag && tool === "select") {
       const last = lastPointRef.current; if (!last) return;
@@ -563,6 +759,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   function onPointerUp() {
+    if (touchDrivingRef.current) return;
+    handleUp();
+  }
+
+  function handleUp() {
     const drag = dragLiveRef.current;
     if (drag) {
       // Apply the accumulated drag delta to state once, with the pre-drag snapshot in history.
@@ -594,17 +795,74 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         const x = Math.min(final.x, final.x + final.w);
         const y = Math.min(final.y, final.y + final.h);
         final = { ...final, x, y, w: Math.abs(final.w), h: Math.abs(final.h) };
-        // skip zero-size shapes
-        if (final.w < 2 && final.h < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        // Tap-to-place fallback: user tapped without dragging → drop a
+        // sensible default-sized rectangle at the tap so the tool doesn't
+        // feel broken. 96px matches typical annotation size.
+        if (final.w < 4 && final.h < 4) {
+          const size = 96;
+          final = { ...final, x: final.x - size / 2, y: final.y - size / 2, w: size, h: size };
+        }
       } else if (final.kind === "circle") {
-        if (final.r < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        if (final.r < 4) final = { ...final, r: 48 };
       } else if (final.kind === "stroke") {
-        if (final.points.length < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        // Single-tap fallback: render a small dot so the pen tool always
+        // leaves a mark, then the user knows it worked.
+        if (final.points.length < 2) {
+          const p = final.points[0];
+          final = { ...final, points: [p, { x: p.x + 0.5, y: p.y + 0.5 }] };
+        }
       }
       pushHistory({ ...state, layers: [...state.layers, final] });
       setSelectedId(final.id);
       drawingRef.current = null;
+      lastPointRef.current = null;
     }
+  }
+
+  // Android/webview fires pointercancel when the OS intercepts the gesture
+  // (scroll, palm rejection, multi-finger, keyboard opening). Without this,
+  // dragLiveRef / drawingRef stay set forever and the editor feels frozen.
+  function onPointerCancel() {
+    if (touchDrivingRef.current) return;
+    handleCancel();
+  }
+
+  function handleCancel() {
+    dragLiveRef.current = null;
+    drawingRef.current = null;
+    commitBaselineRef.current = null;
+    lastPointRef.current = null;
+    scheduleRedraw();
+  }
+
+  // Touch fallback — needed on Android WebView / mobile Chrome where
+  // pointerdown is sometimes suppressed by the browser even though
+  // touchstart fires normally. See probe log in Playwright harness.
+  function onTouchStart(e: React.TouchEvent<HTMLCanvasElement>) {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touchDrivingRef.current = true;
+    // Note: React 18 touch listeners are passive; preventDefault() would
+    // no-op with a console warning. CSS `touch-action: none` on the canvas
+    // already blocks browser gestures, so no preventDefault is needed.
+    handleDown(pointFromClient(t.clientX, t.clientY));
+  }
+  function onTouchMove(e: React.TouchEvent<HTMLCanvasElement>) {
+    if (!touchDrivingRef.current) return;
+    const t = e.touches[0]; if (!t) return;
+    handleMove(pointFromClient(t.clientX, t.clientY));
+  }
+  function onTouchEnd(e: React.TouchEvent<HTMLCanvasElement>) {
+    if (!touchDrivingRef.current) return;
+    handleUp();
+    // release after the microtask so pointer events fired by browser as
+    // a compat shim are ignored (they would double-commit otherwise).
+    setTimeout(() => { touchDrivingRef.current = false; }, 0);
+  }
+  function onTouchCancel() {
+    if (!touchDrivingRef.current) return;
+    handleCancel();
+    setTimeout(() => { touchDrivingRef.current = false; }, 0);
   }
 
   function patchSelected(patch: Partial<Layer>) {
@@ -660,7 +918,21 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     exportCancelledRef.current = false;
     setExporting(true);
     try {
-    // render at original resolution
+      const result = await composeExport(0.88);
+      if (!result || exportCancelledRef.current) return;
+      onSave(result.blob, result.dataUrl);
+    } finally {
+      setExporting(false);
+      exportCancelledRef.current = false;
+    }
+  }
+
+  // Kompos ulang JPEG hasil edit di resolusi asli foto. Dipakai bersama oleh
+  // "Simpan" (menyerahkan blob ke aplikasi) dan "Simpan ke galeri" (menulis
+  // file ke Documents di Android / mengunduh di web). Kualitas 0.92 dipakai
+  // untuk galeri agar hasil cetak/lihat ulang lebih tajam.
+  async function composeExport(quality: number): Promise<{ blob: Blob; dataUrl: string } | null> {
+    if (!img) return null;
     const rotated = state.rotation === 90 || state.rotation === 270;
     const outW = rotated ? img.height : img.width;
     const outH = rotated ? img.width : img.height;
@@ -672,20 +944,76 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.rotate((state.rotation * Math.PI) / 180);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
-    // scale layers from view → output
     const sx = outW / view.w, sy = outH / view.h;
     ctx.save();
     ctx.scale(sx, sy);
     for (const layer of state.layers) drawLayer(ctx, layer, false);
     ctx.restore();
-    if (exportCancelledRef.current) return;
-    const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
-    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
-    if (exportCancelledRef.current) return;
-    if (blob) onSave(blob, dataUrl);
+    const dataUrl = cvs.toDataURL("image/jpeg", quality);
+    const blob = await new Promise<Blob | null>((r) => cvs.toBlob(r, "image/jpeg", quality));
+    if (!blob) return null;
+    return { blob, dataUrl };
+  }
+
+  // Simpan hasil edit ke galeri/berkas perangkat. Di Android (Capacitor) file
+  // ditulis ke folder Documents/MCM Storage supaya mudah ditemukan lewat
+  // aplikasi Files bawaan; di web men-trigger unduhan browser.
+  async function saveToGallery() {
+    if (!img || exporting) return;
+    setExporting(true);
+    try {
+      const result = await composeExport(0.92);
+      if (!result) {
+        toast.error("Gagal menyiapkan gambar untuk disimpan.");
+        return;
+      }
+      const ts = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`;
+      const filename = `mcm-foto-${stamp}.jpg`;
+
+      const { Capacitor } = await import("@capacitor/core");
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { Filesystem, Directory } = await import("@capacitor/filesystem");
+          const buf = await result.blob.arrayBuffer();
+          // base64 encode via chunks (menghindari stack overflow di file besar)
+          const bytes = new Uint8Array(buf);
+          let bin = "";
+          const CHUNK = 0x8000;
+          for (let i = 0; i < bytes.length; i += CHUNK) {
+            bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK)));
+          }
+          const b64 = btoa(bin);
+          await Filesystem.writeFile({
+            path: `MCM Storage/${filename}`,
+            data: b64,
+            directory: Directory.Documents,
+            recursive: true,
+          });
+          toast.success("Foto tersimpan", {
+            description: `Documents › MCM Storage › ${filename}`,
+          });
+          return;
+        } catch (err) {
+          console.error("saveToGallery native failed", err);
+          toast.error("Gagal menyimpan ke galeri perangkat.");
+          return;
+        }
+      }
+
+      // Web: unduh via <a download>.
+      const url = URL.createObjectURL(result.blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Foto diunduh", { description: filename });
     } finally {
       setExporting(false);
-      exportCancelledRef.current = false;
     }
   }
 
@@ -696,7 +1024,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (text) {
       const l: Layer = {
         id: uid(), kind: "text", x: textPrompt.x, y: textPrompt.y,
-        rotation: 0, scale: 1, color, text, size: textSize, bold: true,
+        rotation: 0, scale: 1, color, opacity, text, size: textSize, bold: true,
       };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
@@ -704,33 +1032,68 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setTextPrompt((s) => ({ ...s, open: false, value: "" }));
   }
 
+  // Sisi bawah editor bisa tertutup soft-keyboard (dialog Teks) atau
+  // ter-clip saat toolbar browser Android muncul. Hook ini melacak
+  // selisih visualViewport vs layoutViewport dan diaplikasikan ke:
+  //   - `bottom` root (`fixed inset-x-0 top-0` + `bottom: kbInset`) →
+  //     seluruh editor terangkat di atas keyboard, jadi tombol
+  //     Batal/Simpan/Coret dst. tetap dalam viewport
+  //   - `paddingBottom` panel tool options → agar env(safe-area-inset)
+  //     tetap dihormati saat kbInset = 0 (safe area device fisik).
+  const kbInset = useVisualViewportKeyboardInset();
+  // Ref + hook untuk indikator scroll pada panel opsi bawah. Panel ini
+  // dibatasi `max-h-[55vh]` sehingga tombol tool dapat ter-scroll ke luar
+  // pandangan pada layar sempit; user perlu tahu ke arah mana harus
+  // menggulir untuk mencapai tombol.
+  const toolPanelRef = useRef<HTMLDivElement | null>(null);
+  const { topShadow, bottomShadow } = useScrollShadow(toolPanelRef);
+
+  // Early-return SETELAH semua hook (React error #310 kalau sebaliknya).
   if (typeof document === "undefined") return null;
+
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
-      onPointerDownCapture={(e) => e.stopPropagation()}
+      className="fixed inset-x-0 top-0 z-[100] flex flex-col bg-background text-foreground"
+      style={{ bottom: kbInset }}
+      // Stop the editor's pointerdown from reaching parent overlays (Sheet /
+      // Dialog dismissal, drag-to-close sheets in the shell). MUST be the
+      // bubble phase — capture-phase stopPropagation prevents pointerdown
+      // from ever reaching the canvas, so tap-once tools (coret/kotak/
+      // lingkaran/stiker/panah) can't init `drawingRef` and `handleUp`
+      // no-ops, which broke undo/redo for single-tap actions.
+      onPointerDown={(e) => e.stopPropagation()}
       aria-busy={activeOverlay !== null && activeOverlay !== "error"}
     >
-      <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2 shadow-sm">
-        <button onClick={onCancel} className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-sm transition hover:bg-muted">
+      <div className="flex items-center justify-between gap-ms-2 border-b bg-card px-ms-3 py-ms-2 shadow-sm">
+        <button onClick={onCancel} className="inline-flex h-9 items-center gap-ms-1 rounded-md border bg-background px-ms-3 text-ms-sm transition hover:bg-muted">
           <X className="h-4 w-4" /> Batal
         </button>
-        <div className="flex items-center gap-1">
-          <button onClick={undo} disabled={!history.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Undo2 className="h-4 w-4" /></button>
-          <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
-          <button onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted"><RotateCw className="h-4 w-4" /></button>
+        <div className="flex items-center gap-ms-1">
+          <button onClick={undo} aria-label="Undo" disabled={!history.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Undo2 className="h-4 w-4" /></button>
+          <button onClick={redo} aria-label="Redo" disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
+          <button aria-label="Putar 90°" onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted"><RotateCw className="h-4 w-4" /></button>
         </div>
         <button
           onClick={exportImage}
           disabled={exporting || !canvasReady}
-          className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground transition disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           {exporting ? "Menyimpan…" : "Simpan"}
         </button>
+        <button
+          onClick={saveToGallery}
+          disabled={exporting || !canvasReady}
+          title="Simpan salinan ke galeri / unduhan perangkat"
+          aria-label="Simpan ke galeri"
+          className="inline-flex h-9 items-center gap-ms-1 rounded-md border border-primary/40 bg-primary/10 px-ms-3 text-ms-sm font-semibold text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">Ke galeri</span>
+        </button>
       </div>
 
-      <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-muted p-2">
+      <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-muted p-ms-2">
         {img && view.w > 0 && loadStatus === "ready" && (
           <div
             className="relative overflow-hidden rounded shadow-lg"
@@ -747,6 +1110,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              onTouchCancel={onTouchCancel}
               className="absolute inset-0 touch-none"
               style={{ width: `${view.w}px`, height: `${view.h}px` }}
             />
@@ -758,11 +1126,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 aria-atomic="true"
                 aria-label="Menyiapkan kanvas"
                 tabIndex={-1}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-ms-2 bg-background/70 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Loader2 className="h-7 w-7 animate-spin" />
-                <div className="text-xs font-medium">Menyiapkan kanvas…</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-xs font-medium">Menyiapkan kanvas…</div>
+                <div className="text-ms-2xs text-muted-foreground">
                   Foto sudah dimuat. Sedang dirasterisasi ke kanvas.
                 </div>
                 <Button
@@ -775,6 +1143,24 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 </Button>
               </div>
             )}
+            {canvasReady && tool !== "select" && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 items-center gap-ms-1.5 rounded-full border border-primary/40 bg-primary/90 px-ms-2.5 py-1 text-ms-2xs font-medium text-primary-foreground shadow-md"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground/70 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-foreground" />
+                </span>
+                {tool === "draw" && <span>Coret aktif — seret jari di kanvas</span>}
+                {tool === "text" && <span>Teks aktif — ketuk kanvas untuk menempel</span>}
+                {tool === "emoji" && <span>Stiker aktif — pilih emoji atau ketuk kanvas</span>}
+                {tool === "arrow" && <span>Panah aktif — pilih arah atau ketuk kanvas</span>}
+                {tool === "rect" && <span>Kotak aktif — seret atau ketuk kanvas</span>}
+                {tool === "circle" && <span>Lingkaran aktif — seret atau ketuk kanvas</span>}
+              </div>
+            )}
             {exporting && (
               <div
                 ref={exportingOverlayRef}
@@ -783,11 +1169,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 aria-atomic="true"
                 aria-label="Menyimpan foto"
                 tabIndex={-1}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-ms-2 bg-background/80 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Loader2 className="h-7 w-7 animate-spin text-primary" />
-                <div className="text-xs font-medium">Menyimpan foto…</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-ms-xs font-medium">Menyimpan foto…</div>
+                <div className="text-ms-2xs text-muted-foreground">
                   Menggabungkan coretan ke resolusi asli.
                 </div>
                 <Button
@@ -814,11 +1200,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             aria-atomic="true"
             aria-label="Memuat foto"
             tabIndex={-1}
-            className="flex flex-col items-center gap-3 text-center text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md p-2"
+            className="flex flex-col items-center gap-ms-3 text-center text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md p-ms-2"
           >
             <Loader2 className="h-8 w-8 animate-spin" />
-            <div className="text-sm font-medium">Memuat foto…</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-ms-sm font-medium">Memuat foto…</div>
+            <div className="text-ms-xs text-muted-foreground">
               {srcKind(src) === "http"
                 ? "Mengunduh dari server. Periksa koneksi bila terasa lama."
                 : srcKind(src) === "blob"
@@ -842,23 +1228,23 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             aria-live="assertive"
             aria-atomic="true"
             tabIndex={-1}
-            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-left shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-ms-4 text-left shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <div className="mb-2 flex items-start gap-2">
+            <div className="mb-2 flex items-start gap-ms-2">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
-              <div className="text-sm font-semibold text-foreground">
+              <div className="text-ms-sm font-semibold text-foreground">
                 {loadError?.title ?? "Foto gagal ditampilkan"}
               </div>
             </div>
-            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+            <p className="mb-3 text-ms-xs leading-relaxed text-muted-foreground">
               {loadError?.reason ?? "Terjadi kesalahan saat memuat foto."}
             </p>
             {loadError?.nextSteps && loadError.nextSteps.length > 0 && (
               <div className="mb-3">
-                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
+                <div className="mb-1 text-ms-2xs font-semibold uppercase tracking-wide text-foreground/80">
                   Langkah berikutnya
                 </div>
-                <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                <ul className="list-disc space-y-0.5 pl-4 text-ms-xs text-muted-foreground">
                   {loadError.nextSteps.map((step, idx) => (
                     <li key={idx}>{step}</li>
                   ))}
@@ -866,16 +1252,16 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               </div>
             )}
             {loadError?.technical && (
-              <details className="mb-3 rounded border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+              <details className="mb-3 rounded border bg-muted/40 px-ms-2 py-1 text-ms-2xs text-muted-foreground">
                 <summary className="cursor-pointer select-none font-medium">
                   Detail teknis
                 </summary>
-                <code className="mt-1 block break-all font-mono text-[10px]">
+                <code className="mt-1 block break-all font-mono text-ms-2xs">
                   {loadError.technical}
                 </code>
               </details>
             )}
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-ms-2">
               <Button
                 size="sm"
                 variant="secondary"
@@ -933,20 +1319,79 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       {/* Tool options bar */}
-      <div className="border-t bg-card px-2 py-2 text-xs shadow-sm">
+      {/*
+        Panel opsi tool. Dilengkapi:
+          - gradient fade atas/bawah yang muncul otomatis saat masih ada
+            tombol di luar pandangan → user tahu perlu men-scroll.
+          - `aria-busy` + spinner kecil saat kanvas belum siap → tombol
+            tool dinonaktifkan sampai kanvas mount, tidak silent-fail.
+      */}
+      <div className="relative">
+        {topShadow && (
+          <div
+            aria-hidden
+            data-testid="tool-panel-shadow-top"
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-card to-transparent"
+          />
+        )}
+        {bottomShadow && (
+          <div
+            aria-hidden
+            data-testid="tool-panel-shadow-bottom"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-card to-transparent"
+          />
+        )}
+      <div
+        ref={toolPanelRef}
+        data-scroll-shadow={
+          topShadow && bottomShadow ? "both" : topShadow ? "top" : bottomShadow ? "bottom" : "none"
+        }
+        aria-busy={!canvasReady && loadStatus === "ready"}
+        className="max-h-[55vh] overflow-y-auto border-t bg-card px-ms-2 py-ms-2 text-ms-xs shadow-sm"
+        style={{
+          paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        }}
+      >
+        {!canvasReady && loadStatus === "ready" && (
+          <div
+            role="status"
+            aria-live="polite"
+            data-testid="tool-panel-loading"
+            className="mb-2 flex items-center gap-ms-2 rounded-md border border-muted-foreground/20 bg-muted/40 px-ms-2 py-1 text-ms-2xs text-muted-foreground"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Menyiapkan kanvas — tombol siap sebentar lagi.</span>
+          </div>
+        )}
         {/* Color + thickness row */}
-        <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="mb-2 flex flex-wrap items-center gap-ms-2">
+          <span className="text-muted-foreground">Warna:</span>
           {COLORS.map((c) => (
-            <button key={c} onClick={() => {
+            <button
+              key={c}
+              type="button"
+              onClick={() => {
                 setColor(c);
                 if (selected) { liveBeginIfNeeded(); livePatchSelected({ color: c } as Partial<Layer>); commitLivePatch(); }
               }}
+              title={`Pilih warna ${c}`}
+              aria-label={`Pilih warna ${c}`}
               style={{ background: c }}
-              className={`h-6 w-6 rounded-full border-2 ${color === c ? "border-primary" : "border-transparent"}`} />
+              className={`h-6 w-6 rounded-full border-2 transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${color === c ? "border-primary" : "border-transparent"}`}
+            />
           ))}
-          <label className="ml-auto flex items-center gap-1">Ukuran
+          <label
+            className="ml-auto flex items-center gap-ms-1"
+            title="Ketebalan garis untuk coret, panah, kotak, dan lingkaran"
+          >
+            <span>Ketebalan</span>
             <input
-              type="range" min={2} max={30} value={thickness}
+              type="range"
+              min={2}
+              max={30}
+              value={thickness}
+              title="Ketebalan garis (2–30 px)"
+              aria-label="Ketebalan garis dari 2 sampai 30 piksel"
               onPointerDown={() => { if (selected && "thickness" in (selected as object)) liveBeginIfNeeded(); }}
               onChange={(e) => {
                 const v = Number(e.target.value); setThickness(v);
@@ -957,15 +1402,69 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             />
             <span className="w-6 text-right tabular-nums">{thickness}</span>
           </label>
+          <label
+            className="flex items-center gap-ms-1"
+            title="Transparansi lapisan (10%–100%)"
+          >
+            <span>Opacity</span>
+            <input
+              type="range"
+              min={10}
+              max={100}
+              value={Math.round(opacity * 100)}
+              title="Transparansi lapisan (10%–100%)"
+              aria-label="Transparansi lapisan dari 10 sampai 100 persen"
+              onPointerDown={() => { if (selected) liveBeginIfNeeded(); }}
+              onChange={(e) => {
+                const v = Number(e.target.value) / 100; setOpacity(v);
+                if (selected) livePatchSelected({ opacity: v } as Partial<Layer>);
+              }}
+              onPointerUp={commitLivePatch}
+              onBlur={commitLivePatch}
+            />
+            <span className="w-8 text-right tabular-nums">{Math.round(opacity * 100)}%</span>
+          </label>
         </div>
 
+        {(tool === "rect" || tool === "circle") && (
+          <div className="mb-2 flex flex-wrap items-center gap-ms-2">
+            <span className="text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !shapeFill;
+                setShapeFill(next);
+                if (selected && (selected.kind === "rect" || selected.kind === "circle")) {
+                  liveBeginIfNeeded();
+                  livePatchSelected({ fill: next } as Partial<Layer>);
+                  commitLivePatch();
+                }
+              }}
+              title={shapeFill ? "Mode isi: bentuk akan diisi penuh" : "Mode garis: hanya tepi bentuk yang terlihat"}
+              aria-label={shapeFill ? "Mode isi aktif, ketuk untuk beralih ke mode garis" : "Mode garis aktif, ketuk untuk beralih ke mode isi"}
+              className={`inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${shapeFill ? "border-primary bg-primary/10 text-primary" : "border-input bg-background"}`}
+            >
+              {shapeFill ? "Isi" : "Garis"}
+            </button>
+            <span className="text-muted-foreground">
+              {shapeFill ? "Bentuk diisi penuh" : "Hanya tepi bentuk"}
+            </span>
+          </div>
+        )}
+
         {tool === "arrow" && (
-          <div className="mb-2 flex flex-wrap gap-1">
+          <div className="mb-2 flex flex-wrap items-center gap-ms-2">
+            <span className="text-muted-foreground">Arah:</span>
             {([
-              ["up", ArrowUp], ["down", ArrowDown], ["left", ArrowLeft], ["right", ArrowRight],
-              ["upleft", ArrowUpLeft], ["upright", ArrowUpRight], ["downleft", ArrowDownLeft], ["downright", ArrowDownRight],
-            ] as const).map(([d, Ico]) => (
-              <button key={d} type="button" onClick={() => {
+              ["up", ArrowUp, "Atas"], ["down", ArrowDown, "Bawah"], ["left", ArrowLeft, "Kiri"], ["right", ArrowRight, "Kanan"],
+              ["upleft", ArrowUpLeft, "Kiri atas"], ["upright", ArrowUpRight, "Kanan atas"], ["downleft", ArrowDownLeft, "Kiri bawah"], ["downright", ArrowDownRight, "Kanan bawah"],
+            ] as const).map(([d, Ico, label]) => (
+              <button
+                key={d}
+                type="button"
+                title={`Arah panah ${label}`}
+                aria-label={`Pilih arah panah ${label}`}
+                onClick={() => {
                   setArrowDir(d);
                   if (selected?.kind === "arrow") {
                     // Sedang ada panah terpilih → cukup ubah arahnya.
@@ -979,34 +1478,82 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                     const cy = v.h ? v.h / 2 : 100;
                     const l: Layer = {
                       id: uid(), kind: "arrow", x: cx, y: cy,
-                      rotation: 0, scale: 1, color, dir: d, size: 80, thickness,
+                      rotation: 0, scale: 1, color, opacity, dir: d, size: 80, thickness,
                     };
                     pushHistory({ ...state, layers: [...state.layers, l] });
                     setSelectedId(l.id);
                   }
                 }}
-                className={`inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
+                className={`inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
                 <Ico className="h-4 w-4" />
               </button>
             ))}
           </div>
         )}
         {tool === "emoji" && (
-          <div className="mb-2 flex flex-wrap gap-1">
-            {EMOJIS.map((em) => (
-              <button key={em} onClick={() => {
-                  setEmoji(em);
-                  if (selected?.kind === "emoji") { liveBeginIfNeeded(); livePatchSelected({ emoji: em } as Partial<Layer>); commitLivePatch(); }
-                }}
-                className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
-            ))}
+          <div className="mb-2 flex flex-wrap items-center gap-ms-2">
+            <span className="text-muted-foreground">Stiker:</span>
+            <div className="flex flex-wrap gap-ms-1">
+              {EMOJIS.map((em) => (
+                <button
+                  key={em}
+                  type="button"
+                  title={`Stiker ${em}`}
+                  aria-label={`Pilih stiker ${em}`}
+                  onClick={() => {
+                    setEmoji(em);
+                    if (selected?.kind === "emoji") {
+                      liveBeginIfNeeded();
+                      livePatchSelected({ emoji: em } as Partial<Layer>);
+                      commitLivePatch();
+                    } else {
+                      // Konsisten dengan tombol Panah: langsung tempelkan
+                      // stiker di tengah kanvas — user tidak perlu menebak
+                      // bahwa harus tap kanvas dulu.
+                      const v = viewRef.current;
+                      const cx = v.w ? v.w / 2 : 100;
+                      const cy = v.h ? v.h / 2 : 100;
+                      const l: Layer = {
+                        id: uid(), kind: "emoji", x: cx, y: cy,
+                        rotation: 0, scale: 1, color, opacity, emoji: em, size: textSize + 8,
+                      };
+                      pushHistory({ ...state, layers: [...state.layers, l] });
+                      setSelectedId(l.id);
+                    }
+                  }}
+                  className={`h-9 w-9 rounded border bg-background text-ms-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
+              ))}
+            </div>
           </div>
         )}
         {tool === "text" && (
-          <div className="mb-2 flex items-center gap-2">
-            <label className="flex items-center gap-1">Font
+          <div className="mb-2 flex flex-wrap items-center gap-ms-2">
+            <button
+              type="button"
+              title="Tambahkan teks baru di tengah kanvas"
+              aria-label="Tambahkan teks baru di tengah kanvas"
+              onClick={() => {
+                const v = viewRef.current;
+                const cx = v.w ? v.w / 2 : 100;
+                const cy = v.h ? v.h / 2 : 100;
+                setTextPrompt({ open: true, x: cx, y: cy, value: "" });
+              }}
+              className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-primary bg-primary/10 px-ms-2 text-ms-2xs font-medium transition hover:bg-primary/20"
+            >
+              <Type className="h-3.5 w-3.5" /> Tambah teks di tengah
+            </button>
+            <label
+              className="flex items-center gap-ms-1"
+              title="Ukuran font teks (14–96 px)"
+            >
+              <span>Ukuran font</span>
               <input
-                type="range" min={14} max={96} value={textSize}
+                type="range"
+                min={14}
+                max={96}
+                value={textSize}
+                title="Ukuran font teks (14–96 px)"
+                aria-label="Ukuran font teks dari 14 sampai 96 piksel"
                 onPointerDown={() => { if (selected?.kind === "text") liveBeginIfNeeded(); }}
                 onChange={(e) => {
                   const v = Number(e.target.value); setTextSize(v);
@@ -1020,25 +1567,136 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </div>
         )}
 
+        {/* Screen-reader-only active tool status */}
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          {TOOL_LABELS[tool]} aktif. {TOOL_HINTS[tool]}
+        </div>
+
+        {/* Active tool hint */}
+        {hintClosedForTool !== tool && (
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="mb-2 flex items-center gap-ms-2 rounded-md border border-primary/30 bg-primary/5 px-ms-2.5 py-1.5 text-ms-2xs pr-1"
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
+              <span className="relative inline-flex h-full w-2 rounded-full bg-primary" />
+            </span>
+            <span className="font-medium text-primary">
+              {TOOL_SHORTCUTS[tool] ? `${TOOL_LABELS[tool]} (${TOOL_SHORTCUTS[tool]})` : TOOL_LABELS[tool]} aktif
+            </span>
+            <span className="text-muted-foreground">— {TOOL_HINTS[tool]}</span>
+            <button
+              type="button"
+              onClick={() => setHintClosedForTool(tool)}
+              title="Tutup petunjuk sampai tool berubah"
+              aria-label="Tutup petunjuk sampai tool berubah"
+              className="ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Tools bar */}
-        <div className="flex flex-wrap items-center gap-1">
-          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" />
-          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" />
-          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" />
-          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" />
-          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" />
-          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" />
-          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" />
+        <div
+          role="toolbar"
+          aria-label="Toolbar editor foto"
+          className="flex flex-wrap items-center gap-ms-1"
+        >
+          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" shortcut={TOOL_SHORTCUTS.select} disabled={!canvasReady} />
+          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" shortcut={TOOL_SHORTCUTS.draw} disabled={!canvasReady} />
+          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" shortcut={TOOL_SHORTCUTS.text} disabled={!canvasReady} />
+          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" hint="Pilih emoji lalu ketuk untuk menempelkan di tengah" shortcut={TOOL_SHORTCUTS.emoji} disabled={!canvasReady} />
+          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" hint="Pilih arah panah, otomatis tempel di tengah kanvas" shortcut={TOOL_SHORTCUTS.arrow} disabled={!canvasReady} />
+          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" hint="Seret untuk ukuran bebas, atau ketuk untuk kotak default" shortcut={TOOL_SHORTCUTS.rect} disabled={!canvasReady} />
+          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" hint="Seret dari pusat ke tepi, atau ketuk untuk ukuran default" shortcut={TOOL_SHORTCUTS.circle} disabled={!canvasReady} />
+          <button
+            type="button"
+            onClick={() => setHelpOpen((v) => !v)}
+            title="Panduan singkat tiap tool"
+            aria-label="Panduan singkat tiap tool"
+            aria-expanded={helpOpen}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${helpOpen ? "border-primary bg-primary/10 text-primary" : ""}`}
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
           {selected && (
-            <div className="ml-auto flex items-center gap-1">
-              <button onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveDown className="h-4 w-4" /></button>
-              <button onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveUp className="h-4 w-4" /></button>
-              <button onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><CopyIcon className="h-4 w-4" /></button>
-              <button onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background text-destructive transition hover:bg-muted"><Trash2 className="h-4 w-4" /></button>
+            <div className="ml-auto flex items-center gap-ms-1">
+              <button aria-label="Turunkan lapisan" type="button" onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><MoveDown className="h-4 w-4" /></button>
+              <button aria-label="Naikkan lapisan" type="button" onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><MoveUp className="h-4 w-4" /></button>
+              <button aria-label="Duplikat" type="button" onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><CopyIcon className="h-4 w-4" /></button>
+              <button aria-label="Hapus" type="button" onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background text-destructive transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><Trash2 className="h-4 w-4" /></button>
             </div>
           )}
         </div>
+        {helpOpen && (
+          <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-2xs leading-snug">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="font-semibold text-primary">Panduan singkat</span>
+              <button
+                type="button"
+                onClick={() => setHelpOpen(false)}
+                className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              >
+                tutup
+              </button>
+            </div>
+            <ul className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-2">
+              <li><b>Pilih:</b> ketuk objek untuk memilih, seret untuk memindahkan.</li>
+              <li><b>Coret:</b> seret jari di kanvas — ketuk saja menghasilkan titik.</li>
+              <li><b>Teks:</b> ketuk kanvas / tombol “Tambah teks di tengah”, tulis, lalu OK.</li>
+              <li><b>Stiker:</b> pilih emoji di panel — otomatis menempel di tengah.</li>
+              <li><b>Panah:</b> pilih arah 8 mata angin — otomatis tempel; ubah arah lagi untuk yang terpilih.</li>
+              <li><b>Kotak / Lingkaran:</b> seret di kanvas untuk ukuran bebas, atau ketuk sekali untuk ukuran standar.</li>
+            </ul>
+            <div className="mt-1 text-muted-foreground">
+              Pintasan keyboard: {Object.entries(TOOL_SHORTCUTS).map(([t, k]) => k && `${k} ${TOOL_LABELS[t as Tool]}`).filter(Boolean).join(", ")}.
+            </div>
+            <div className="mt-1 text-muted-foreground">Semua objek bisa dipilih ulang → geser, duplikat, atau hapus lewat ikon di kanan.</div>
+          </div>
+        )}
       </div>
+      </div>
+
+      {/* Detailed first-use / returning guide modal for Teks/Stiker/Coret */}
+      {guideTool && TOOL_GUIDES[guideTool] && (
+        <Dialog
+          open
+          onOpenChange={(o) => {
+            if (!o) closeGuide(guideTool);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{TOOL_GUIDES[guideTool]!.title}</DialogTitle>
+              <DialogDescription>
+                Panduan muncul saat pertama kali memilih tool ini atau setelah tidak dipakai {GUIDE_RETURN_DAYS} hari.
+              </DialogDescription>
+            </DialogHeader>
+            <ol className="my-2 list-decimal space-y-1.5 pl-5 text-ms-sm text-foreground">
+              {TOOL_GUIDES[guideTool]!.steps.map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ol>
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-xs text-primary">
+              <span className="font-semibold">Tip:</span>{" "}
+              {TOOL_GUIDES[guideTool]!.tip}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => closeGuide(guideTool)}>
+                <Check className="mr-1 h-4 w-4" /> Mengerti
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Dialog open={textPrompt.open} onOpenChange={(o) => !o && setTextPrompt((s) => ({ ...s, open: false }))}>
         <DialogContent className="sm:max-w-sm">
@@ -1049,14 +1707,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <button
             type="button"
             onClick={() => { setZoomLevel(1); setPreviewZoom(true); }}
-            className="flex w-full items-center gap-3 rounded-md border bg-muted/40 p-2 text-left transition hover:bg-muted"
+            className="flex w-full items-center gap-ms-3 rounded-md border bg-muted/40 p-ms-2 text-left transition hover:bg-muted"
           >
             <img
               src={src}
               alt="Pratinjau foto"
               className="h-14 w-14 flex-shrink-0 rounded object-cover"
             />
-            <div className="min-w-0 flex-1 text-xs text-muted-foreground">
+            <div className="min-w-0 flex-1 text-ms-xs text-muted-foreground">
               <div className="font-medium text-foreground">Pratinjau foto</div>
               <div className="truncate">Ketuk untuk memperbesar pratinjau.</div>
             </div>
@@ -1083,12 +1741,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         <DialogContent
           className={
             previewFullscreen
-              ? "h-screen w-screen max-w-none rounded-none border-0 p-3 sm:max-w-none"
-              : "max-w-[95vw] p-3 sm:max-w-2xl"
+              ? "h-screen w-screen max-w-none rounded-none border-0 p-ms-3 sm:max-w-none"
+              : "max-w-[95vw] p-ms-3 sm:max-w-2xl"
           }
         >
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+            <DialogTitle className="flex items-center justify-between gap-ms-2 pr-6">
               <span>Pratinjau Foto</span>
               <Button
                 variant="outline"
@@ -1122,8 +1780,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               draggable={false}
             />
           </div>
-          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
-            <div className="flex items-center gap-1">
+          <DialogFooter className="flex-row items-center justify-between gap-ms-2 sm:justify-between">
+            <div className="flex items-center gap-ms-1">
               <Button
                 variant="outline"
                 size="icon"
@@ -1133,7 +1791,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
-              <span className="w-12 text-center text-xs tabular-nums">{Math.round(zoomLevel * 100)}%</span>
+              <span className="w-12 text-center text-ms-xs tabular-nums">{Math.round(zoomLevel * 100)}%</span>
               <Button
                 variant="outline"
                 size="icon"
@@ -1153,41 +1811,138 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   );
 }
 
-function ToolBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+function ToolBtn({
+  active, onClick, icon, label, hint, shortcut, disabled = false,
+}: {
+  active: boolean; onClick: () => void; icon: React.ReactNode; label: string; hint?: string; shortcut?: string | null; disabled?: boolean;
+}) {
+  // `title` memberi tooltip native saat hover (desktop) dan long-press (Android/iOS).
+  // `aria-label` menambahkan konteks untuk pembaca layar, termasuk pintasan keyboard.
+  const suffix = shortcut ? ` (${shortcut})` : "";
+  const display = `${label}${suffix}`;
+  const ariaBase = hint ? `${display} — ${hint}` : display;
+  const aria = disabled ? `${ariaBase} (belum siap)` : active ? `${ariaBase} (aktif)` : ariaBase;
   return (
-    <button onClick={onClick} className={`inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted ${active ? "border-primary bg-primary/10" : ""}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={hint ? `${display}: ${hint}` : display}
+      aria-label={aria}
+      aria-keyshortcuts={shortcut ?? undefined}
+      aria-pressed={active}
+      data-testid={`photo-editor-tool-${label.toLowerCase()}`}
+      data-photo-editor-tool={label}
+      data-state={disabled ? "loading" : active ? "active" : "ready"}
+      className={`relative inline-flex h-8 min-w-11 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-background ${active ? "border-primary bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--tw-shadow-color)] shadow-primary/40 ring-1 ring-primary/40" : ""}`}
+    >
       {icon}<span>{label}</span>
+      {active && !disabled && (
+        <span
+          aria-hidden
+          data-testid={`photo-editor-tool-${label.toLowerCase()}-active-dot`}
+          className="relative ml-0.5 flex h-1.5 w-1.5 shrink-0"
+        >
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+        </span>
+      )}
+      {disabled && (
+        <Loader2
+          aria-hidden
+          data-testid={`photo-editor-tool-${label.toLowerCase()}-loading`}
+          className="ml-0.5 h-3 w-3 animate-spin text-muted-foreground"
+        />
+      )}
     </button>
   );
 }
 
-function insideLayer(l: Layer, p: { x: number; y: number }): boolean {
+// Ambang tap yang MURAH-HATI di jari mobile. Angka ini adalah radius ekstra
+// (CSS px, sama dengan koordinat kanvas di komponen ini) di sekitar geometri
+// nyata setiap layer. Tanpa ambang ini, objek tipis seperti panah 6 px atau
+// coretan hampir mustahil di-select di ponsel — pengguna melapor "tidak
+// bisa disentuh semua".
+const HIT_PAD = 14;
+
+// Jarak titik ke segmen garis A–B. Dipakai untuk uji-tap panah & coretan
+// supaya tidak perlu tap tepat di titik pusat.
+function pointSegDist(
+  p: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): number {
+  const abx = b.x - a.x, aby = b.y - a.y;
+  const apx = p.x - a.x, apy = p.y - a.y;
+  const len2 = abx * abx + aby * aby;
+  if (len2 === 0) return Math.hypot(apx, apy);
+  let t = (apx * abx + apy * aby) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const cx = a.x + t * abx, cy = a.y + t * aby;
+  return Math.hypot(p.x - cx, p.y - cy);
+}
+
+function arrowEndpoints(l: Extract<Layer, { kind: "arrow" }>): {
+  tail: { x: number; y: number }; tip: { x: number; y: number };
+} {
+  const angles: Record<ArrowDir, number> = {
+    right: 0, downright: 45, down: 90, downleft: 135,
+    left: 180, upleft: 225, up: 270, upright: 315,
+  };
+  const a = (angles[l.dir] * Math.PI) / 180;
+  const half = l.size / 2;
+  return {
+    tail: { x: l.x - Math.cos(a) * half, y: l.y - Math.sin(a) * half },
+    tip:  { x: l.x + Math.cos(a) * half, y: l.y + Math.sin(a) * half },
+  };
+}
+
+export function insideLayer(l: Layer, p: { x: number; y: number }): boolean {
   if (l.kind === "text") {
+    // Perkiraan lebar teks: font system-ui rata-rata ~0.6em per karakter.
+    // Tinggi mengikuti baseline ke atas + sedikit descender.
     const w = (l.text.length * l.size) * 0.6, h = l.size * 1.2;
-    return p.x >= l.x - 6 && p.x <= l.x + w + 6 && p.y >= l.y - h && p.y <= l.y + 6;
+    return p.x >= l.x - HIT_PAD && p.x <= l.x + w + HIT_PAD
+        && p.y >= l.y - h - HIT_PAD && p.y <= l.y + HIT_PAD;
   }
   if (l.kind === "emoji") {
-    return p.x >= l.x - l.size / 2 && p.x <= l.x + l.size / 2 && p.y >= l.y - l.size / 2 && p.y <= l.y + l.size / 2;
+    const s = l.size / 2 + HIT_PAD;
+    return p.x >= l.x - s && p.x <= l.x + s && p.y >= l.y - s && p.y <= l.y + s;
   }
   if (l.kind === "arrow") {
-    const s = l.size; return p.x >= l.x - s / 2 && p.x <= l.x + s / 2 && p.y >= l.y - s / 2 && p.y <= l.y + s / 2;
+    // Uji jarak ke SEGMEN panah (ekor→ujung), bukan bounding-box centered.
+    // Tanpa ini, tap di tengah shaft panah tipis sering meleset karena
+    // bbox hanya `size × size` di sekitar (l.x, l.y).
+    const { tail, tip } = arrowEndpoints(l as Extract<Layer, { kind: "arrow" }>);
+    return pointSegDist(p, tail, tip) <= (l.thickness / 2) + HIT_PAD;
   }
   if (l.kind === "rect") {
-    const x1 = Math.min(l.x, l.x + l.w), x2 = Math.max(l.x, l.x + l.w);
-    const y1 = Math.min(l.y, l.y + l.h), y2 = Math.max(l.y, l.y + l.h);
+    const x1 = Math.min(l.x, l.x + l.w) - HIT_PAD;
+    const x2 = Math.max(l.x, l.x + l.w) + HIT_PAD;
+    const y1 = Math.min(l.y, l.y + l.h) - HIT_PAD;
+    const y2 = Math.max(l.y, l.y + l.h) + HIT_PAD;
     return p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2;
   }
   if (l.kind === "circle") {
-    return Math.hypot(p.x - l.x, p.y - l.y) <= l.r + 6;
+    return Math.hypot(p.x - l.x, p.y - l.y) <= l.r + HIT_PAD;
   }
   if (l.kind === "stroke") {
-    for (const pt of l.points) if (Math.hypot(pt.x - p.x, pt.y - p.y) < l.thickness + 6) return true;
+    // Uji jarak ke setiap segmen coretan — bukan hanya titik-titik sampel.
+    // Ambang = setengah ketebalan + HIT_PAD supaya coretan tipis pun
+    // bisa di-tap tanpa harus tepat di atas garis.
+    const tol = l.thickness / 2 + HIT_PAD;
+    const pts = l.points;
+    if (pts.length === 1) return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) <= tol;
+    for (let i = 1; i < pts.length; i++) {
+      if (pointSegDist(p, pts[i - 1], pts[i]) <= tol) return true;
+    }
   }
   return false;
 }
 
 function drawLayer(ctx: CanvasRenderingContext2D, l: Layer, selected: boolean) {
   ctx.save();
+  ctx.globalAlpha = l.opacity ?? 1;
   ctx.strokeStyle = l.color; ctx.fillStyle = l.color;
   ctx.lineCap = "round"; ctx.lineJoin = "round";
   if (l.kind === "stroke") {

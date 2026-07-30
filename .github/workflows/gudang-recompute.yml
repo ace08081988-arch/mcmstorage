@@ -1,0 +1,274 @@
+name: Gudang Recompute Counts Guard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.gudang*.ts"
+      - "src/routes/_authenticated.gudang*.tsx"
+      - "src/lib/beli-derived.ts"
+      - "src/lib/beli-warnings.ts"
+      - "src/lib/beli-compute.ts"
+      - "src/lib/beli-reset-key.ts"
+      - "src/lib/beli-fixtures.ts"
+      - "src/lib/stress-diagnostic.ts"
+      - "src/lib/bench-baseline.ts"
+      - "src/lib/bench-stats.ts"
+      - "src/lib/bench-profile.ts"
+      - "src/lib/bench-trend.ts"
+      - "benchmarks/**"
+      - "package.json"
+      - "bun.lock*"
+      - "vitest.config.ts"
+      - ".github/workflows/gudang-recompute.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.gudang*.ts"
+      - "src/routes/_authenticated.gudang*.tsx"
+      - "src/lib/beli-derived.ts"
+      - "src/lib/beli-warnings.ts"
+      - "src/lib/beli-compute.ts"
+      - "src/lib/beli-reset-key.ts"
+      - "src/lib/beli-fixtures.ts"
+      - "src/lib/stress-diagnostic.ts"
+      - "src/lib/bench-baseline.ts"
+      - "src/lib/bench-stats.ts"
+      - "src/lib/bench-profile.ts"
+      - "src/lib/bench-trend.ts"
+      - "benchmarks/**"
+      - "package.json"
+      - "bun.lock*"
+      - "vitest.config.ts"
+      - ".github/workflows/gudang-recompute.yml"
+  workflow_dispatch:
+    inputs:
+      regression_pct:
+        description: "Ambang regresi (%) vs baseline"
+        required: false
+        default: "50"
+      skip_baseline:
+        description: "Set true untuk skip perbandingan baseline"
+        required: false
+        default: "false"
+      p95_pct:
+        description: "Ambang tambahan p95 (%) untuk flakiness"
+        required: false
+        default: "100"
+      max_cv:
+        description: "Batas coefficient-of-variation (0-∞)"
+        required: false
+        default: "2.0"
+      profile:
+        description: "Aktifkan profiling per-fungsi (BENCH_PROFILE=1)"
+        required: false
+        default: "false"
+
+concurrency:
+  group: gudang-recompute-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  recompute-counts:
+    name: computeBeliDerived / computeBeliWarnings counts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Aktifkan enforce baseline di CI (juga default lewat CI=true).
+      BENCH_STRICT: "1"
+      BENCH_REGRESSION_PCT: ${{ github.event.inputs.regression_pct || '50' }}
+      SKIP_BENCH_BASELINE: ${{ github.event.inputs.skip_baseline == 'true' && '1' || '' }}
+      BENCH_P95_PCT: ${{ github.event.inputs.p95_pct || '100' }}
+      BENCH_MAX_CV: ${{ github.event.inputs.max_cv || '2.0' }}
+      BENCH_PROFILE: ${{ github.event.inputs.profile == 'true' && '1' || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Restore benchmark trend history
+        id: trend-cache
+        uses: actions/cache@v4
+        with:
+          path: benchmarks/conflict-wide-fields.trend.jsonl
+          key: bench-trend-conflict-wide-fields-${{ github.ref }}-${{ github.run_id }}
+          restore-keys: |
+            bench-trend-conflict-wide-fields-${{ github.ref }}-
+            bench-trend-conflict-wide-fields-refs/heads/main-
+            bench-trend-conflict-wide-fields-
+
+      - name: Run gudang recompute suite
+        run: bun run test:gudang-recompute
+
+      - name: Strict-compute-spy guard (matcher tak boleh hitung panggilan tak relevan)
+        run: |
+          set -e
+          bunx vitest run "src/routes/_authenticated.gudang.strict-compute-spy.test.ts" --reporter=verbose
+
+      - name: Benchmark summary (conflict-wide fields)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-benchmark.md ]; then
+            cat test-artifacts/conflict-wide-fields-benchmark.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ⏱️ Conflict-wide fields benchmark" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "_Artefak durasi tidak tersedia — benchmark tidak berjalan._" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Benchmark trend summary (arah membaik / memburuk)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-trend.md ]; then
+            cat test-artifacts/conflict-wide-fields-trend.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Flakiness breakdown (p95 / CV / floor guard)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-flakiness.md ]; then
+            cat test-artifacts/conflict-wide-fields-flakiness.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Histogram distribusi sampel durasi
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-histogram.md ]; then
+            cat test-artifacts/conflict-wide-fields-histogram.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Baseline vs build terbaru (compare p50/p95/CV)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-compare.md ]; then
+            cat test-artifacts/conflict-wide-fields-compare.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload compare artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-compare-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-compare.md
+            test-artifacts/conflict-wide-fields-compare.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload histogram artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-histogram-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-histogram.md
+            test-artifacts/conflict-wide-fields-histogram.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload benchmark trend artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-benchmark-trend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            benchmarks/conflict-wide-fields.trend.jsonl
+            test-artifacts/conflict-wide-fields-trend.json
+            test-artifacts/conflict-wide-fields-trend.md
+          if-no-files-found: ignore
+          retention-days: 60
+
+      - name: Upload flakiness breakdown artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-flakiness-breakdown-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-flakiness.md
+            test-artifacts/conflict-wide-fields-flakiness.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload benchmark artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-benchmark-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-benchmark.json
+            test-artifacts/conflict-wide-fields-benchmark.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Profile summary (bottleneck per-fungsi)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-profile.md ]; then
+            cat test-artifacts/conflict-wide-fields-profile.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload profile artifact (only when profile emitted)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-profile-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-profile.json
+            test-artifacts/conflict-wide-fields-profile.md
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload stress diagnostic artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-stress-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-artifacts/**
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Job summary on failure
+        if: failure()
+        run: |
+          {
+            echo "## ❌ Gudang recompute counts regressed";
+            echo "";
+            echo "Salah satu tes menegaskan jumlah panggilan \`computeBeliDerived\` / \`computeBeliWarnings\` yang tepat pada pipeline memo (deps minimal: \`[mode, itemId, packageType, ...scalar]\`).";
+            echo "";
+            echo "Kemungkinan penyebab:";
+            echo "- Deps \`useMemo\` di \`src/routes/_authenticated.gudang.tsx\` bertambah/berkurang atau memasukkan identitas objek (mis. \`selectedItem\` langsung).";
+            echo "- Signature/memo internal di \`src/lib/beli-derived.ts\` atau \`src/lib/beli-warnings.ts\` berubah.";
+            echo "- Pipeline consumer baru ditambahkan tanpa mengikuti kontrak (lihat \`_authenticated.gudang.pipeline-consumers-audit.test.ts\`).";
+            echo "- Matcher \`strict-compute-spy\` menghitung panggilan yang bukan dari pipeline (lihat \`_authenticated.gudang.strict-compute-spy.test.ts\`).";
+            echo "";
+            echo "Jalankan lokal: \`bun run test:gudang-recompute\`.";
+            echo "";
+            echo "### Artefak diagnostik";
+            echo "Bila stress test gagal, file JSON per-seed berisi \`finalDerived\`, \`finalWarnings\`, snapshot \`item\`/\`form\`, dan diff antar-mode diunggah sebagai artifact \`gudang-stress-diagnostics-*\` (tab **Artifacts** pada run ini).";
+            if [ -d test-artifacts ]; then
+              echo "";
+              echo "File yang ditulis pada run ini:";
+              echo '```';
+              ls -1 test-artifacts || true;
+              echo '```';
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

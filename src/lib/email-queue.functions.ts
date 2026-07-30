@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
+import { logAdminDenial } from './admin-denial-telemetry'
 import { createHash, randomInt, randomUUID } from 'crypto'
 
 export type EmailQueueHealth = {
@@ -30,43 +31,54 @@ export type EmailQueueStatus = {
   recentOtp: RecentOtpRow[]
 }
 
+/**
+ * Pure builder untuk `getEmailQueueStatus`. Diekspor supaya kontrak
+ * non-admin (harus return `{isAdmin:false,…}` — TIDAK throw
+ * "Forbidden: admin diperlukan") bisa diuji tanpa middleware/HTTP.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function buildEmailQueueStatus(context: any): Promise<EmailQueueStatus> {
+  const { supabase, userId } = context
+  const { data: isAdmin } = await supabase.rpc('has_role', {
+    _user_id: userId,
+    _role: 'admin',
+  })
+  const now = new Date().toISOString()
+  if (!isAdmin) {
+    logAdminDenial({ fn: 'email-queue:getEmailQueueStatus', userId })
+    return {
+      isAdmin: false,
+      fetchedAt: now,
+      health: null,
+      cronProcessLastRun: null,
+      cronProcessNextRun: null,
+      recentOtp: [],
+    }
+  }
+  const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+  const [{ data: healthData }, { data: otpRows }] = await Promise.all([
+    supabaseAdmin.rpc('email_queue_health'),
+    supabaseAdmin
+      .from('email_send_log')
+      .select('id, message_id, recipient_email, status, error_message, created_at')
+      .eq('template_name', 'device_otp')
+      .order('created_at', { ascending: false })
+      .limit(25),
+  ])
+  return {
+    isAdmin: true,
+    fetchedAt: now,
+    health: (healthData ?? null) as EmailQueueHealth | null,
+    cronProcessLastRun: null,
+    cronProcessNextRun: null,
+    recentOtp: (otpRows ?? []) as RecentOtpRow[],
+  }
+}
+
 export const getEmailQueueStatus = createServerFn({ method: 'GET' })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<EmailQueueStatus> => {
-    const { supabase, userId } = context
-    const { data: isAdmin } = await supabase.rpc('has_role', {
-      _user_id: userId,
-      _role: 'admin',
-    })
-    const now = new Date().toISOString()
-    if (!isAdmin) {
-      return {
-        isAdmin: false,
-        fetchedAt: now,
-        health: null,
-        cronProcessLastRun: null,
-        cronProcessNextRun: null,
-        recentOtp: [],
-      }
-    }
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
-    const [{ data: healthData }, { data: otpRows }] = await Promise.all([
-      supabaseAdmin.rpc('email_queue_health'),
-      supabaseAdmin
-        .from('email_send_log')
-        .select('id, message_id, recipient_email, status, error_message, created_at')
-        .eq('template_name', 'device_otp')
-        .order('created_at', { ascending: false })
-        .limit(25),
-    ])
-    return {
-      isAdmin: true,
-      fetchedAt: now,
-      health: (healthData ?? null) as EmailQueueHealth | null,
-      cronProcessLastRun: null,
-      cronProcessNextRun: null,
-      recentOtp: (otpRows ?? []) as RecentOtpRow[],
-    }
+    return buildEmailQueueStatus(context)
   })
 
 const SENDER_DOMAIN = 'notify.mcmstorage.biz'
@@ -121,7 +133,10 @@ export const resendDeviceOtpByMessage = createServerFn({ method: 'POST' })
       _user_id: userId,
       _role: 'admin',
     })
-    if (!isAdmin) return { ok: false, error: 'Bukan admin' }
+    if (!isAdmin) {
+      logAdminDenial({ fn: 'email-queue:resendDeviceOtpByMessage', userId })
+      return { ok: false, error: 'Bukan admin' }
+    }
 
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
 

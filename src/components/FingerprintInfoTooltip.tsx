@@ -43,7 +43,7 @@ export function FingerprintInfoTooltip({
             <Info className="h-3.5 w-3.5" />
           </button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[280px] space-y-1.5 text-[11px] leading-relaxed">
+        <TooltipContent side="top" className="max-w-[280px] space-y-1.5 text-ms-2xs leading-relaxed">
           <div className="font-semibold">
             Sidik jari payload {matches ? "cocok" : "tidak cocok"}
           </div>

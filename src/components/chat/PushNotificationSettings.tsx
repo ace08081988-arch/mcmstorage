@@ -71,39 +71,39 @@ export function PushNotificationSettings() {
   };
 
   return (
-    <section className="space-y-3 rounded-lg border p-4">
-      <div className="flex items-center gap-2">
+    <section className="space-ms-3 rounded-lg border p-ms-4">
+      <div className="flex items-center gap-ms-2">
         <Bell className="h-5 w-5 text-primary" aria-hidden="true" />
-        <h2 className="text-sm font-semibold">Notifikasi chat</h2>
+        <h2 className="text-ms-sm font-semibold">Notifikasi chat</h2>
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-ms-xs text-muted-foreground">
         Terima notifikasi pesan baru di perangkat ini, bahkan saat aplikasi tertutup.
         Pengaturan berlaku per perangkat/browser.
       </p>
 
       {!supported ? (
-        <p className="text-xs text-destructive">
+        <p className="text-ms-xs text-destructive">
           Browser ini tidak mendukung Web Push. Coba Chrome/Edge/Firefox/Safari versi terbaru.
         </p>
       ) : perm === "denied" ? (
-        <p className="text-xs text-destructive">
+        <p className="text-ms-xs text-destructive">
           Izin notifikasi diblokir. Aktifkan kembali dari ikon gembok di address bar.
         </p>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-ms-2">
         {!subscribed ? (
-          <Button onClick={onEnable} disabled={!supported || busy !== null || perm === "denied"} className="gap-2">
+          <Button onClick={onEnable} disabled={!supported || busy !== null || perm === "denied"} className="gap-ms-2">
             {busy === "enable" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
             Aktifkan notifikasi
           </Button>
         ) : (
           <>
-            <Button onClick={onTest} disabled={busy !== null} variant="default" className="gap-2">
+            <Button onClick={onTest} disabled={busy !== null} variant="default" className="gap-ms-2">
               {busy === "test" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Kirim notifikasi uji
             </Button>
-            <Button onClick={onDisable} disabled={busy !== null} variant="outline" className="gap-2">
+            <Button onClick={onDisable} disabled={busy !== null} variant="outline" className="gap-ms-2">
               {busy === "disable" ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4" />}
               Matikan notifikasi
             </Button>
@@ -112,7 +112,7 @@ export function PushNotificationSettings() {
       </div>
 
       {subscribed ? (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-ms-2xs text-muted-foreground">
           Status: <span className="font-medium text-foreground">Aktif</span> di perangkat ini.
         </p>
       ) : null}

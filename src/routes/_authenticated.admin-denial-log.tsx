@@ -1,0 +1,434 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ChevronLeft, RefreshCw, Search, ShieldAlert, X } from "lucide-react";
+import { listAdminDenialEvents } from "@/lib/admin-denial-log.functions";
+import { useAdminStatus } from "@/hooks/use-is-admin";
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/_authenticated/admin-denial-log")({
+  head: () => ({
+    meta: [
+      { title: "Log Penolakan Admin · MCM Storage" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
+  component: AdminDenialLogPage,
+});
+
+const ANY_FN = "__any__";
+
+function fmtAbs(iso: string | null | undefined) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString("id-ID", { hour12: false });
+  } catch {
+    return iso;
+  }
+}
+
+function fmtAgo(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms)) return "—";
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s} dtk lalu`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} mnt lalu`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} jam lalu`;
+  return `${Math.round(h / 24)} hari lalu`;
+}
+
+function AdminDenialLogPage() {
+  const { isAdmin, isCheckingAdmin } = useAdminStatus();
+  const fetchLog = useServerFn(listAdminDenialEvents);
+  const queryClient = useQueryClient();
+  const [liveOn, setLiveOn] = useState(false);
+  const lastLiveAtRef = useRef<number | null>(null);
+  const [liveTick, setLiveTick] = useState(0);
+
+  const [fnFilter, setFnFilter] = useState<string>(ANY_FN);
+  const [userIdFilter, setUserIdFilter] = useState<string>("");
+  const [refererFilter, setRefererFilter] = useState<string>("");
+  const [userIdDraft, setUserIdDraft] = useState<string>("");
+  const [refererDraft, setRefererDraft] = useState<string>("");
+
+  const q = useQuery({
+    queryKey: [
+      "admin-denial-log",
+      { fn: fnFilter, userId: userIdFilter, referer: refererFilter },
+    ],
+    queryFn: () =>
+      fetchLog({
+        data: {
+          fn: fnFilter === ANY_FN ? null : fnFilter,
+          userId: userIdFilter || null,
+          referer: refererFilter || null,
+          limit: 200,
+        },
+      }),
+    enabled: isAdmin,
+    refetchInterval: liveOn ? false : 15_000,
+    staleTime: 5_000,
+  });
+
+  // Real-time: subscribe ke INSERT admin_denial_events dan invalidasi
+  // seluruh query dashboard sehingga baris baru langsung muncul tanpa
+  // refresh manual (RLS admin-only tetap yang menjamin akses).
+  useEffect(() => {
+    if (!isAdmin) return;
+    // StrictMode-safe mounted guard: cegah setState (liveOn / liveTick) setelah
+    // unmount atau setelah cleanup effect berjalan. Tanpa ini, callback
+    // subscribe/postgres_changes yang terlambat bisa memicu warning
+    // "Can't perform state update on unmounted component" dan menahan
+    // referensi komponen di memory (leak).
+    let mounted = true;
+    const channel = supabase
+      .channel("admin-denial-events")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "admin_denial_events" },
+        () => {
+          if (!mounted) return;
+          lastLiveAtRef.current = Date.now();
+          setLiveTick((n) => n + 1);
+          queryClient.invalidateQueries({ queryKey: ["admin-denial-log"] });
+        },
+      )
+      .subscribe((status) => {
+        if (!mounted) return;
+        setLiveOn(status === "SUBSCRIBED");
+      });
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin, queryClient]);
+
+  const rows = q.data?.rows ?? [];
+  const total = q.data?.total ?? 0;
+  const fnOptions = q.data?.fnOptions ?? [];
+
+  const byReferer = useMemo(() => {
+    const map = new Map<string, number>();
+    rows.forEach((r) => {
+      const key = r.referer ?? "(tanpa referer)";
+      map.set(key, (map.get(key) ?? 0) + 1);
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [rows]);
+
+  const activeFilters =
+    (fnFilter !== ANY_FN ? 1 : 0) +
+    (userIdFilter ? 1 : 0) +
+    (refererFilter ? 1 : 0);
+
+  function applyFilters() {
+    setUserIdFilter(userIdDraft.trim());
+    setRefererFilter(refererDraft.trim());
+  }
+
+  function clearFilters() {
+    setFnFilter(ANY_FN);
+    setUserIdFilter("");
+    setRefererFilter("");
+    setUserIdDraft("");
+    setRefererDraft("");
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-5xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
+      <div className="flex items-center justify-between gap-ms-2">
+        <Link
+          to="/diagnostics"
+          className="inline-flex items-center gap-ms-1 text-ms-sm text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" /> Diagnostik
+        </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => q.refetch()}
+          disabled={q.isFetching || !isAdmin}
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${q.isFetching ? "animate-spin" : ""}`}
+          />
+          <span className="ml-2">Refresh</span>
+        </Button>
+      </div>
+
+      <div>
+        <h1 className="text-ms-2xl font-semibold flex items-center gap-ms-2">
+          <ShieldAlert className="h-6 w-6 text-warning" />
+          Log Penolakan Admin
+        </h1>
+        <p className="text-ms-sm text-muted-foreground">
+          Menampilkan pemanggilan server fn admin yang ditolak (non-admin
+          mencoba akses). Gunakan untuk melacak route/halaman yang masih
+          memanggil fn admin.
+        </p>
+      </div>
+
+      {isCheckingAdmin ? (
+        <Card>
+          <CardContent className="p-ms-6 text-ms-sm text-muted-foreground">
+            Memeriksa akses…
+          </CardContent>
+        </Card>
+      ) : !isAdmin ? (
+        <Card>
+          <CardContent className="space-ms-2 p-ms-6 text-ms-sm">
+            <div className="font-medium">Halaman ini hanya untuk admin.</div>
+            <p className="text-muted-foreground">
+              Kembali ke{" "}
+              <Link to="/diagnostics" className="underline">
+                Diagnostik
+              </Link>{" "}
+              atau{" "}
+              <Link to="/" className="underline">
+                halaman utama
+              </Link>
+              .
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-ms-base">Filter</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-ms-3 sm:grid-cols-3">
+              <div className="space-y-1">
+                <label className="text-ms-xs text-muted-foreground">Fungsi (fn)</label>
+                <Select value={fnFilter} onValueChange={setFnFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Semua fn" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ANY_FN}>Semua fn</SelectItem>
+                    {fnOptions.map((fn) => (
+                      <SelectItem key={fn} value={fn}>
+                        {fn}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-ms-xs text-muted-foreground">User ID</label>
+                <Input
+                  value={userIdDraft}
+                  placeholder="uuid persis"
+                  onChange={(e) => setUserIdDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyFilters();
+                  }}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-ms-xs text-muted-foreground">
+                  Referer mengandung
+                </label>
+                <Input
+                  value={refererDraft}
+                  placeholder="/pengaturan-apk"
+                  onChange={(e) => setRefererDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") applyFilters();
+                  }}
+                />
+              </div>
+              <div className="sm:col-span-3 flex flex-wrap items-center gap-ms-2 pt-1">
+                <Button size="sm" onClick={applyFilters}>
+                  <Search className="h-4 w-4" />
+                  <span className="ml-2">Terapkan</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={clearFilters}
+                  disabled={activeFilters === 0}
+                >
+                  <X className="h-4 w-4" />
+                  <span className="ml-2">Bersihkan</span>
+                </Button>
+                <div className="ml-auto text-ms-xs text-muted-foreground">
+                  <span
+                    className={`mr-2 inline-flex items-center gap-ms-1 rounded-full px-ms-2 py-0.5 text-ms-2xs leading-snug ${
+                      liveOn
+                        ? "bg-success/10 text-success dark:text-success"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                    title={
+                      liveOn
+                        ? "Menerima update real-time"
+                        : "Real-time nonaktif — polling 15 dtk"
+                    }
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        liveOn ? "bg-success animate-pulse" : "bg-muted-foreground/60"
+                      }`}
+                    />
+                    {liveOn ? "Live" : "Polling"}
+                  </span>
+                  {total} baris · diperbarui{" "}
+                  {lastLiveAtRef.current && liveTick > 0
+                    ? fmtAgo(new Date(lastLiveAtRef.current).toISOString())
+                    : fmtAgo(q.data?.fetchedAt)}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {byReferer.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-ms-base">
+                  Referer teratas (hasil saat ini)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-ms-2">
+                {byReferer.map(([ref, count]) => (
+                  <button aria-label="Klik untuk filter referer ini"
+                    key={ref}
+                    type="button"
+                    className="inline-flex items-center gap-ms-2 rounded-md border border-border/60 bg-muted/40 px-ms-2 py-1 text-ms-xs hover:bg-muted"
+                    onClick={() => {
+                      const v = ref === "(tanpa referer)" ? "" : ref;
+                      setRefererDraft(v);
+                      setRefererFilter(v);
+                    }}
+                    title="Klik untuk filter referer ini"
+                  >
+                    <span className="max-w-[280px] truncate text-left">
+                      {ref}
+                    </span>
+                    <Badge variant="secondary" className="tabular-nums">
+                      {count}
+                    </Badge>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-ms-base">
+                {rows.length} kejadian terbaru
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-0">
+              {q.isLoading ? (
+                <div className="px-ms-6 pb-4 text-ms-sm text-muted-foreground">
+                  Memuat…
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="px-ms-6 pb-4 text-ms-sm text-muted-foreground">
+                  Tidak ada penolakan admin yang cocok dengan filter.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-ms-sm">
+                    <thead className="bg-muted/50 text-ms-xs uppercase text-muted-foreground">
+                      <tr>
+                        <th className="px-ms-4 py-ms-2 text-left">Waktu</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Fungsi</th>
+                        <th className="px-ms-4 py-ms-2 text-left">User ID</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Referer</th>
+                        <th className="px-ms-4 py-ms-2 text-left">Alasan</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r) => (
+                        <tr key={r.id} className="border-t border-border/60 align-top">
+                          <td className="px-ms-4 py-ms-2">
+                            <div className="font-medium">
+                              {fmtAgo(r.created_at)}
+                            </div>
+                            <div className="text-ms-xs text-muted-foreground">
+                              {fmtAbs(r.created_at)}
+                            </div>
+                          </td>
+                          <td className="px-ms-4 py-ms-2">
+                            <button aria-label="Filter fn ini"
+                              type="button"
+                              className="font-mono text-ms-xs hover:underline"
+                              onClick={() => setFnFilter(r.fn)}
+                              title="Filter fn ini"
+                            >
+                              {r.fn}
+                            </button>
+                          </td>
+                          <td className="px-ms-4 py-ms-2">
+                            {r.user_id ? (
+                              <button
+                                type="button"
+                                className="font-mono text-ms-xs hover:underline"
+                                onClick={() => {
+                                  setUserIdDraft(r.user_id!);
+                                  setUserIdFilter(r.user_id!);
+                                }}
+                                title="Filter user id ini"
+                              >
+                                {r.user_id.slice(0, 8)}…
+                              </button>
+                            ) : (
+                              <span className="text-ms-xs text-muted-foreground">
+                                —
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-ms-4 py-ms-2">
+                            {r.referer ? (
+                              <button
+                                type="button"
+                                className="max-w-[320px] truncate text-left text-ms-xs hover:underline"
+                                onClick={() => {
+                                  setRefererDraft(r.referer!);
+                                  setRefererFilter(r.referer!);
+                                }}
+                                title={r.referer}
+                              >
+                                {r.referer}
+                              </button>
+                            ) : (
+                              <span className="text-ms-xs text-muted-foreground">
+                                —
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-ms-4 py-ms-2 text-ms-xs text-muted-foreground">
+                            {r.reason}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}

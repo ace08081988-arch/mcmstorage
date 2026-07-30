@@ -3,6 +3,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 
 const AlertDialog = AlertDialogPrimitive.Root;
 
@@ -28,23 +29,39 @@ AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <AlertDialogPortal>
-    <AlertDialogOverlay />
-    <AlertDialogPrimitive.Content
-      ref={ref}
-      className={cn(
+>(({ className, style, ...props }, ref) => {
+  // Lihat catatan di `dialog.tsx`: keyboard bisa menutupi dialog yang
+  // dipusatkan pada layout viewport. Geser & batasi tinggi ke area terlihat.
+  const kb = useVisualViewportKeyboardInset();
+  return (
+    <AlertDialogPortal>
+      <AlertDialogOverlay />
+      <AlertDialogPrimitive.Content
+        ref={ref}
+        style={
+          kb > 0
+            ? {
+                top: `calc(50% - ${Math.round(kb / 2)}px)`,
+                maxHeight: `calc(100dvh - ${kb}px - 1rem)`,
+                ...(style ?? {}),
+              }
+            : style
+        }
+        className={cn(
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
+        // Bisa digulir saat keyboard muncul; fokus tidak tersembunyi di balik tepi.
+        "max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain scroll-pt-6 scroll-pb-6 focus:outline-none",
         className,
-      )}
-      {...props}
-    />
-  </AlertDialogPortal>
-));
+        )}
+        {...props}
+      />
+    </AlertDialogPortal>
+  );
+});
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-2 text-center sm:text-left", className)} {...props} />
+  <div className={cn("flex min-w-0 flex-col gap-1 text-left", className)} {...props} />
 );
 AlertDialogHeader.displayName = "AlertDialogHeader";
 
@@ -62,7 +79,7 @@ const AlertDialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-semibold", className)}
+    className={cn("min-w-0 text-base font-semibold leading-tight tracking-tight sm:text-lg", className)}
     {...props}
   />
 ));
@@ -74,7 +91,7 @@ const AlertDialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-sm leading-relaxed text-muted-foreground", className)}
     {...props}
   />
 ));

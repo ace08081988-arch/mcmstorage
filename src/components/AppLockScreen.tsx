@@ -11,6 +11,8 @@ import {
 } from "@/lib/app-lock";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
+import { confirm } from "@/lib/confirm";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 type Props = {
   uid: string;
@@ -75,18 +77,35 @@ export function AppLockScreen({ uid, cfg }: Props) {
   };
 
   const signOut = async () => {
+    const ok = await confirm({
+      title: "Keluar & masuk ulang?",
+      description:
+        "Sesi login di perangkat ini akan diakhiri. Anda perlu memasukkan email & password lagi untuk masuk.",
+      confirmText: "Ya, keluar",
+      cancelText: "Batal",
+      destructive: true,
+    });
+    if (!ok) return;
     setLocked(uid, false);
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
 
+  const trapRef = useFocusTrap<HTMLDivElement>();
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur">
-      <div className="w-full max-w-sm space-y-5 rounded-xl border bg-card p-6 shadow-lg">
+    <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Aplikasi terkunci"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur"
+    >
+      <div className="w-full max-w-sm space-ms-5 rounded-xl border bg-card p-ms-6 shadow-lg">
         <div className="text-center">
-          <div className="text-3xl">🔒</div>
-          <h2 className="mt-2 text-lg font-semibold">Aplikasi Terkunci</h2>
-          <p className="text-[12px] text-muted-foreground">
+          <div className="text-ms-3xl">🔒</div>
+          <h2 className="mt-2 text-ms-lg font-semibold">Aplikasi Terkunci</h2>
+          <p className="text-ms-xs text-muted-foreground">
             {cfg.method === "pin"
               ? "Masukkan PIN untuk membuka"
               : "Gambar pola untuk membuka"}
@@ -94,7 +113,7 @@ export function AppLockScreen({ uid, cfg }: Props) {
         </div>
 
         {cfg.method === "pin" ? (
-          <div className="space-y-3">
+          <div className="space-ms-3">
             <Input
               type="password"
               inputMode="numeric"
@@ -106,7 +125,7 @@ export function AppLockScreen({ uid, cfg }: Props) {
                 if (e.key === "Enter") tryPin();
               }}
               placeholder="••••"
-              className="text-center text-2xl tracking-[0.5em]"
+              className="text-center text-ms-2xl tracking-[0.5em]"
               disabled={busy}
             />
             <Button className="w-full" onClick={tryPin} disabled={busy || pin.length < 4}>
@@ -123,7 +142,7 @@ export function AppLockScreen({ uid, cfg }: Props) {
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-ms-2">
           {cfg.biometric && (
             <Button variant="outline" onClick={tryBiometric} disabled={busy}>
               👆 Gunakan Sidik Jari

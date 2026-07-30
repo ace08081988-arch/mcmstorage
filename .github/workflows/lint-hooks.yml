@@ -1,0 +1,33 @@
+name: lint-hooks
+
+# Gerbang Rules of Hooks. Pelanggaran urutan hook hanya muncul saat runtime
+# (halaman putih di Android WebView) — build & typecheck tetap hijau — jadi
+# gerbang ini wajib jalan untuk setiap perubahan di src/.
+on:
+  push:
+    paths:
+      - "src/**"
+      - "eslint.config.js"
+      - "scripts/lint-hooks-ci.mjs"
+      - ".github/workflows/lint-hooks.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "eslint.config.js"
+      - "scripts/lint-hooks-ci.mjs"
+      - ".github/workflows/lint-hooks.yml"
+  workflow_dispatch:
+
+jobs:
+  lint-hooks:
+    name: Rules of Hooks guard (fail on any violation)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install deps
+        run: bun install --frozen-lockfile
+      - name: Enforce Rules of Hooks
+        run: bun run lint:hooks

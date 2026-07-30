@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Bell, BellOff, Moon, Vibrate, MessageCircle, ClipboardList, PackagePlus, Settings2, BellRing, RefreshCw, Inbox } from "lucide-react";
+import { Bell, BellOff, Moon, Vibrate, MessageCircle, ClipboardList, PackagePlus, Settings2, BellRing, RefreshCw, Inbox, Mail, Smartphone, Radio, Send } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -35,6 +35,7 @@ import {
   getLastSyncedAt,
   type NotifKind,
   type NotifPrefs,
+  type NotifChannel,
 } from "@/lib/notif-prefs";
 import {
   enablePushNotifications,
@@ -244,15 +245,15 @@ function NotifikasiPage() {
   }
 
   return (
-    <div className="container max-w-3xl space-y-6 px-4 py-6">
+    <div className="container max-w-3xl space-ms-6 px-ms-4 py-ms-6">
       <header className="space-y-1">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold">
+        <h1 className="flex items-center gap-ms-2 text-ms-2xl font-semibold">
           <BellRing className="size-6 text-primary" /> Pengaturan Notifikasi
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-ms-sm text-muted-foreground">
           Pilih jenis notifikasi yang ingin Anda terima, atur getaran, dan jadwalkan jangan ganggu.
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-ms-xs text-muted-foreground">
           {syncing
             ? "Menyinkronkan preferensi…"
             : syncedAt
@@ -264,19 +265,19 @@ function NotifikasiPage() {
       <RecentNotificationsCard enabledKinds={prefs.enabledKinds} />
 
       <Card>
-        <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+        <CardHeader className="flex-row items-start justify-between gap-ms-3 space-y-0">
           <div>
-            <CardTitle className="text-base">Izin & langganan</CardTitle>
+            <CardTitle className="text-ms-base">Izin & langganan</CardTitle>
             <CardDescription className="space-y-0.5">
               <div>
                 Izin:{" "}
                 <span
                   className={
                     permission === "granted"
-                      ? "font-medium text-emerald-600"
+                      ? "font-medium text-success"
                       : permission === "denied"
                         ? "font-medium text-destructive"
-                        : "font-medium text-amber-600"
+                        : "font-medium text-warning"
                   }
                 >
                   {permission === "granted" ? "Diizinkan" : permission === "denied" ? "Diblokir" : "Belum diatur"}
@@ -287,9 +288,9 @@ function NotifikasiPage() {
                 <span
                   className={
                     subscribed === true
-                      ? "font-medium text-emerald-600"
+                      ? "font-medium text-success"
                       : subscribed === false
-                        ? "font-medium text-amber-600"
+                        ? "font-medium text-warning"
                         : "font-medium text-muted-foreground"
                   }
                 >
@@ -297,13 +298,13 @@ function NotifikasiPage() {
                 </span>
               </div>
               {permission === "denied" && (
-                <div className="text-[11px] text-destructive">
+                <div className="text-ms-2xs text-destructive">
                   Buka Pengaturan situs/aplikasi di HP, izinkan Notifikasi untuk MCM Storage, lalu kembali.
                 </div>
               )}
             </CardDescription>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 gap-ms-2">
             {subscribed !== true ? (
               <Button size="sm" onClick={requestPermission} disabled={busy}>
                 Aktifkan
@@ -322,9 +323,9 @@ function NotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-ms-3">
             <div className="min-w-0">
-              <CardTitle className="text-base">Jenis Notifikasi</CardTitle>
+              <CardTitle className="text-ms-base">Jenis Notifikasi</CardTitle>
               <CardDescription>Pilih kategori mana saja yang boleh muncul.</CardDescription>
             </div>
             <Button
@@ -344,21 +345,21 @@ function NotifikasiPage() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-ms-2">
           {KINDS.map(({ key, label, desc, Icon }, idx) => (
             <div key={key}>
               {idx > 0 && <Separator className="my-2" />}
               <label
                 htmlFor={`kind-${key}`}
-                className="flex cursor-pointer items-center justify-between gap-3 py-1"
+                className="flex cursor-pointer items-center justify-between gap-ms-3 py-1"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-ms-3">
                   <span className="grid size-9 place-items-center rounded-md bg-muted text-foreground">
                     <Icon className="size-4" />
                   </span>
                   <div className="min-w-0">
-                    <div className="text-sm font-medium">{label}</div>
-                    <div className="text-xs text-muted-foreground">{desc}</div>
+                    <div className="text-ms-sm font-medium">{label}</div>
+                    <div className="text-ms-xs text-muted-foreground">{desc}</div>
                   </div>
                 </div>
                 <Switch
@@ -374,18 +375,91 @@ function NotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Getaran</CardTitle>
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
+            <Radio className="size-4" /> Channel Pengingat
+          </CardTitle>
+          <CardDescription>
+            Pilih lewat mana Anda ingin menerima setiap jenis notifikasi. Toast tampil di dalam aplikasi, push muncul di layar HP,
+            email & WA dikirim lewat webhook yang sudah dikonfigurasi di Pengaturan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-ms-3">
+          {KINDS.map(({ key, label, Icon }, idx) => {
+            const ch = prefs.channels[key];
+            const disabled = !prefs.enabledKinds[key];
+            const setCh = (c: NotifChannel, v: boolean) => {
+              const nextChannels = {
+                ...prefs.channels,
+                [key]: { ...ch, [c]: v },
+              };
+              update({ channels: nextChannels });
+            };
+            const chip = (c: NotifChannel, ChIcon: typeof MessageCircle, name: string) => (
+              <label
+                key={c}
+                className={
+                  "flex items-center gap-ms-2 rounded-md border px-ms-2 py-1 text-ms-xs cursor-pointer transition-colors " +
+                  (ch[c] && !disabled
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/60 bg-background text-muted-foreground")
+                }
+              >
+                <ChIcon className="size-3.5" />
+                <span>{name}</span>
+                <Switch
+                  className="ml-1 scale-75"
+                  checked={!!ch[c]}
+                  disabled={disabled}
+                  onCheckedChange={(v) => setCh(c, v)}
+                  aria-label={`${name} untuk ${label}`}
+                />
+              </label>
+            );
+            return (
+              <div key={key}>
+                {idx > 0 && <Separator className="my-2" />}
+                <div className="flex items-center gap-ms-2">
+                  <span className="grid size-8 place-items-center rounded-md bg-muted">
+                    <Icon className="size-4" />
+                  </span>
+                  <div className="text-ms-sm font-medium">{label}</div>
+                  {disabled && (
+                    <span className="text-ms-2xs text-muted-foreground">(jenis dimatikan)</span>
+                  )}
+                </div>
+                <div className="mt-ms-2 flex flex-wrap gap-ms-2">
+                  {chip("toast", Bell, "Toast")}
+                  {chip("push", Smartphone, "Push")}
+                  {chip("email", Mail, "Email")}
+                  {chip("wa", Send, "WhatsApp")}
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-ms-2xs text-muted-foreground">
+            Butuh webhook email/WA?{" "}
+            <Link to="/pengaturan-notifikasi-wa" className="text-primary underline">
+              Atur di Notifikasi WA Penyiapan
+            </Link>
+            .
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-ms-base">Getaran</CardTitle>
           <CardDescription>Hanya berfungsi di perangkat yang mendukung getaran.</CardDescription>
         </CardHeader>
         <CardContent>
-          <label htmlFor="vibrate" className="flex cursor-pointer items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <label htmlFor="vibrate" className="flex cursor-pointer items-center justify-between gap-ms-3">
+            <div className="flex items-center gap-ms-3">
               <span className="grid size-9 place-items-center rounded-md bg-muted">
                 <Vibrate className="size-4" />
               </span>
               <div>
-                <div className="text-sm font-medium">Aktifkan getaran</div>
-                <div className="text-xs text-muted-foreground">Getaran singkat saat notifikasi datang.</div>
+                <div className="text-ms-sm font-medium">Aktifkan getaran</div>
+                <div className="text-ms-xs text-muted-foreground">Getaran singkat saat notifikasi datang.</div>
               </div>
             </div>
             <Switch
@@ -399,7 +473,7 @@ function NotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
             <Moon className="size-4" /> Jangan Ganggu
             {dndActive && (
               <StatusBadge size="xs" variant="menunggu" className="ml-1">
@@ -411,15 +485,15 @@ function NotifikasiPage() {
             Selama jam DND notifikasi akan disenyapkan. Anda tetap melihatnya di daftar saat aplikasi dibuka.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <label htmlFor="dnd" className="flex cursor-pointer items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+        <CardContent className="space-ms-4">
+          <label htmlFor="dnd" className="flex cursor-pointer items-center justify-between gap-ms-3">
+            <div className="flex items-center gap-ms-3">
               <span className="grid size-9 place-items-center rounded-md bg-muted">
                 {prefs.dnd.enabled ? <BellOff className="size-4" /> : <Bell className="size-4" />}
               </span>
               <div>
-                <div className="text-sm font-medium">Aktifkan jangan ganggu</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-ms-sm font-medium">Aktifkan jangan ganggu</div>
+                <div className="text-ms-xs text-muted-foreground">
                   Jadwal harian. Lintas tengah malam didukung (mis. 22:00–06:00).
                 </div>
               </div>
@@ -431,7 +505,7 @@ function NotifikasiPage() {
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-ms-3">
             <div className="space-y-1">
               <Label htmlFor="dnd-start">Mulai</Label>
               <Input
@@ -458,11 +532,11 @@ function NotifikasiPage() {
 
           <label
             htmlFor="dnd-urgent"
-            className="flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border/60 p-3"
+            className="flex cursor-pointer items-center justify-between gap-ms-3 rounded-md border border-border/60 p-ms-3"
           >
             <div>
-              <div className="text-sm font-medium">Izinkan notifikasi penting</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-ms-sm font-medium">Izinkan notifikasi penting</div>
+              <div className="text-ms-xs text-muted-foreground">
                 OTP & peringatan keamanan tetap berbunyi meski DND aktif.
               </div>
             </div>
@@ -489,8 +563,8 @@ function NotifikasiPage() {
 
 const KIND_META: Record<FeedItem["kind"], { label: string; Icon: typeof MessageCircle; tone: string }> = {
   chat: { label: "Chat", Icon: MessageCircle, tone: "bg-blue-500/10 text-blue-600" },
-  tugas: { label: "Tugas", Icon: ClipboardList, tone: "bg-emerald-500/10 text-emerald-600" },
-  order: { label: "Pesanan", Icon: PackagePlus, tone: "bg-amber-500/10 text-amber-700" },
+  tugas: { label: "Tugas", Icon: ClipboardList, tone: "bg-success/10 text-success" },
+  order: { label: "Pesanan", Icon: PackagePlus, tone: "bg-warning/10 text-warning" },
   system: { label: "Sistem", Icon: Settings2, tone: "bg-destructive/10 text-destructive" },
 };
 
@@ -701,9 +775,9 @@ function RecentNotificationsCard({
 
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+      <CardHeader className="flex-row items-start justify-between gap-ms-3 space-y-0">
         <div className="min-w-0">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-ms-2 text-ms-base">
             <Inbox className="size-4 text-primary" />
             Notifikasi terkini
             {unreadCount > 0 && (
@@ -716,7 +790,7 @@ function RecentNotificationsCard({
             Diambil langsung dari chat, tugas pegawai, pesanan, dan peringatan sistem milik akun ini.
           </CardDescription>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-ms-1">
           {unreadCount > 0 && (
             <Button
               size="sm"
@@ -724,7 +798,7 @@ function RecentNotificationsCard({
               onClick={() => setConfirmOpen(true)}
               disabled={markingAll}
               title={markingAll ? "Sedang menandai…" : `Tandai ${unreadCount} notifikasi sesuai filter aktif sebagai dibaca`}
-              className="h-8 px-2 text-xs"
+              className="h-8 px-ms-2 text-ms-xs"
             >
               {markingAll ? (
                 <RefreshCw className="mr-1 size-3.5 animate-spin" />
@@ -749,13 +823,13 @@ function RecentNotificationsCard({
         {isLoading ? (
           <FeedSkeletonList count={4} />
         ) : error ? (
-          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-ms-3 text-ms-xs text-destructive">
             <div className="font-medium">Gagal memuat notifikasi</div>
             <div className="mt-0.5 break-words">{(error as Error).message}</div>
             <Button
               size="sm"
               variant="outline"
-              className="mt-2 h-7 text-xs"
+              className="mt-2 h-7 text-ms-xs"
               onClick={() => refetch()}
             >
               <RefreshCw className="mr-1 size-3.5" /> Coba lagi
@@ -773,24 +847,24 @@ function RecentNotificationsCard({
             const meta = KIND_META[it.kind];
             const Icon = meta.Icon;
             const row = (
-              <div className="flex items-start gap-3 py-2">
+              <div className="flex items-start gap-ms-3 py-ms-2">
                 <span className={`grid size-9 shrink-0 place-items-center rounded-md ${meta.tone}`}>
                   <Icon className="size-4" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="truncate text-sm font-medium" title={it.title}>
+                  <div className="flex items-center gap-ms-2">
+                    <div className="truncate text-ms-sm font-medium" title={it.title}>
                       {it.title}
                     </div>
                     {it.unread && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" />}
-                    <span className="ml-auto shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                    <span className="ml-auto shrink-0 text-ms-2xs text-muted-foreground tabular-nums">
                       {formatRelative(it.createdAt)}
                     </span>
                   </div>
-                  <div className="truncate text-xs text-muted-foreground" title={it.body}>
+                  <div className="truncate text-ms-xs text-muted-foreground" title={it.body}>
                     {it.body}
                   </div>
-                  <div className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                  <div className="mt-0.5 text-ms-2xs uppercase tracking-wider text-muted-foreground/70">
                     {meta.label}
                   </div>
                 </div>
@@ -830,7 +904,7 @@ function RecentNotificationsCard({
                 loading={isFetchingNextPage}
               />
             ) : (
-              <div className="py-2 text-center text-[11px] text-muted-foreground">
+              <div className="py-ms-2 text-center text-ms-2xs text-muted-foreground">
                 Sudah sampai ujung daftar
               </div>
             )}
@@ -843,7 +917,7 @@ function RecentNotificationsCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Tandai semua dibaca?</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm">
+              <div className="space-ms-2 text-ms-sm">
                 <div>
                   {pendingAffected > 0 ? (
                     <>
@@ -854,7 +928,7 @@ function RecentNotificationsCard({
                     <>Tidak ada notifikasi belum dibaca yang lolos filter aktif.</>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-ms-xs text-muted-foreground">
                   Filter aktif:{" "}
                   {activeKindLabels.length > 0 ? activeKindLabels.join(", ") : "tidak ada kategori"}
                 </div>
@@ -942,11 +1016,11 @@ function InfiniteScrollSentinel({
   return (
     <div
       ref={ref}
-      className="flex items-center justify-center py-2 text-[11px] text-muted-foreground"
+      className="flex items-center justify-center py-ms-2 text-ms-2xs text-muted-foreground"
       aria-live="polite"
     >
       {loading ? (
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-ms-1.5">
           <RefreshCw className="size-3.5 animate-spin" />
           Memuat…
         </span>
@@ -963,10 +1037,10 @@ function FeedSkeletonList({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div key={i}>
           {i > 0 && <Separator />}
-          <div className="flex items-start gap-3 px-1 py-2">
+          <div className="flex items-start gap-ms-3 px-1 py-ms-2">
             <Skeleton className="size-9 shrink-0 rounded-md" />
             <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-ms-2">
                 <Skeleton className="h-3.5 w-32" />
                 <Skeleton className="ml-auto h-3 w-12" />
               </div>
@@ -1000,12 +1074,12 @@ function FeedEmptyState({
 
   if (allKindsOff) {
     return (
-      <div className="grid place-items-center gap-2 py-8 text-center">
+      <div className="grid place-items-center gap-ms-2 py-8 text-center">
         <span className="grid size-10 place-items-center rounded-full bg-destructive/10 text-destructive">
           <BellOff className="size-5" />
         </span>
-        <div className="text-sm font-medium">Semua jenis notifikasi dimatikan</div>
-        <div className="max-w-xs text-xs text-muted-foreground">
+        <div className="text-ms-sm font-medium">Semua jenis notifikasi dimatikan</div>
+        <div className="max-w-xs text-ms-xs text-muted-foreground">
           Aktifkan minimal satu kategori di bagian “Jenis Notifikasi” di bawah untuk melihat daftar.
         </div>
       </div>
@@ -1014,12 +1088,12 @@ function FeedEmptyState({
 
   if (filteredOut) {
     return (
-      <div className="grid place-items-center gap-2 py-8 text-center">
-        <span className="grid size-10 place-items-center rounded-full bg-amber-500/10 text-amber-700">
+      <div className="grid place-items-center gap-ms-2 py-8 text-center">
+        <span className="grid size-10 place-items-center rounded-full bg-warning/10 text-warning">
           <FilterX className="size-5" />
         </span>
-        <div className="text-sm font-medium">Tidak ada yang cocok dengan filter</div>
-        <div className="max-w-xs text-xs text-muted-foreground">
+        <div className="text-ms-sm font-medium">Tidak ada yang cocok dengan filter</div>
+        <div className="max-w-xs text-ms-xs text-muted-foreground">
           Notifikasi tersedia, tetapi semuanya berada di kategori yang sedang dimatikan
           ({activeKinds.length}/{totalKinds} kategori aktif).
         </div>
@@ -1028,18 +1102,18 @@ function FeedEmptyState({
   }
 
   return (
-    <div className="grid place-items-center gap-2 py-8 text-center">
+    <div className="grid place-items-center gap-ms-2 py-8 text-center">
       <span className="grid size-10 place-items-center rounded-full bg-muted text-muted-foreground">
         <Inbox className="size-5" />
       </span>
-      <div className="text-sm font-medium">Tidak ada notifikasi baru</div>
-      <div className="max-w-xs text-xs text-muted-foreground">
+      <div className="text-ms-sm font-medium">Tidak ada notifikasi baru</div>
+      <div className="max-w-xs text-ms-xs text-muted-foreground">
         Belum ada pesan, kiriman pegawai, pesanan baru, atau peringatan sistem yang perlu Anda lihat.
       </div>
       <Button
         size="sm"
         variant="outline"
-        className="mt-1 h-7 text-xs"
+        className="mt-1 h-7 text-ms-xs"
         onClick={onRefresh}
         disabled={isRefreshing}
       >

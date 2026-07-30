@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Download, QrCode as QrIcon } from "lucide-react";
+import { Download, QrCode as QrIcon, Camera } from "lucide-react";
+import { QrScannerDialog, handleScannedText } from "@/components/QrScannerDialog";
 
 /**
  * Tampilkan QR code untuk link tugas (opsional ditempel PIN sebagai teks).
@@ -11,6 +12,7 @@ export function TaskQrCode({ url, pin, title }: { url: string; pin?: string; tit
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [dataUrl, setDataUrl] = useState<string>("");
   const [err, setErr] = useState<string>("");
+  const [scanOpen, setScanOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,27 +57,42 @@ export function TaskQrCode({ url, pin, title }: { url: string; pin?: string; tit
   }
 
   return (
-    <div className="space-y-2 rounded-md border bg-background p-3 text-center">
-      <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+    <div className="space-ms-2 rounded-md border bg-background p-ms-3 text-center">
+      <div className="flex items-center justify-center gap-ms-1 text-ms-2xs text-muted-foreground">
         <QrIcon className="h-3.5 w-3.5" /> QR code link pegawai
       </div>
       <div className="flex justify-center">
-        <canvas ref={canvasRef} className="rounded bg-white p-1" aria-label="QR code link tugas" />
+        <canvas ref={canvasRef} className="rounded bg-white p-ms-1" aria-label="QR code link tugas" />
       </div>
       {pin ? (
-        <div className="text-[11px] text-muted-foreground">
+        <div className="text-ms-2xs text-muted-foreground">
           PIN: <span className="font-mono tracking-widest text-foreground">{pin}</span>
         </div>
       ) : null}
-      {err ? <div className="text-[11px] text-destructive">Gagal membuat QR: {err}</div> : null}
+      {err ? <div className="text-ms-2xs text-destructive">Gagal membuat QR: {err}</div> : null}
       <button
         type="button"
         onClick={download}
         disabled={!dataUrl}
-        className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+        className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent disabled:opacity-50"
       >
         <Download className="h-3.5 w-3.5" /> Unduh PNG
       </button>
+      <button
+        type="button"
+        onClick={() => setScanOpen(true)}
+        className="ml-1 inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-1 text-ms-xs hover:bg-accent"
+        aria-label="Pindai QR dengan kamera"
+      >
+        <Camera className="h-3.5 w-3.5" /> Pindai QR
+      </button>
+      <QrScannerDialog
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onResult={(text) => void handleScannedText(text)}
+        title="Pindai QR tugas"
+        description="Arahkan kamera ke QR link pegawai untuk membukanya."
+      />
     </div>
   );
 }

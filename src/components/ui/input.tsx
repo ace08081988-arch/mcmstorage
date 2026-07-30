@@ -26,7 +26,13 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          // Mobile: tinggi 44px absolut agar tap area & thumb-reach nyaman
+          // dan iOS Safari tidak auto-zoom saat fokus (butuh font ≥16px).
+          // Pakai `text-ms-md` (1rem = 16px, memakai `--ms-text-md` yang
+          // TIDAK diskalakan oleh app-font-scale) — bukan `text-ms-base`
+          // (15px) — agar batas anti-zoom iOS tetap terjaga. ≥sm & md
+          // turun ke `text-ms-sm` untuk kepadatan desktop.
+          "flex h-11 w-full rounded-md border border-input bg-transparent px-ms-3 py-1 text-ms-md shadow-sm transition-colors file:border-0 file:bg-transparent file:text-ms-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 md:text-ms-sm",
           className,
         )}
         ref={ref}

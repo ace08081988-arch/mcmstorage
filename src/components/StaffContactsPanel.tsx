@@ -1,20 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageCircle, Copy, Users } from "lucide-react";
+import { Plus, Trash2, MessageCircle, Copy, Users, Search, X, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Contact = {
   id: string;
   user_id: string;
   name: string;
   wa_phone: string;
+  pin_chat_mcm: string | null;
   created_at: string;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const table = (): any => (supabase.from as any)("staff_contacts");
+
+/**
+ * Cache modul-level per-uid untuk daftar kontak pegawai. Tujuan:
+ *   - Remount panel (mis. navigasi bolak-balik) TIDAK memicu flicker /
+ *     re-fetch: render langsung pakai snapshot terakhir, lalu revalidate
+ *     di background (stale-while-revalidate).
+ *   - Search terhadap kontak jalan di-memori atas snapshot ini, jadi
+ *     tidak ada network round-trip per ketikan.
+ */
+const contactsCache = new Map<string, { rows: Contact[]; ts: number }>();
+const CACHE_TTL_MS = 60_000;
 
 function normalizePhone(input: string): string {
   let s = input.replace(/\D/g, "");
@@ -22,33 +35,102 @@ function normalizePhone(input: string): string {
   return s;
 }
 
+function SkeletonRow() {
+  return (
+    <div className="flex items-center gap-ms-2 rounded-md border bg-background/50 p-ms-2">
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+    </div>
+  );
+}
+
 export function StaffContactsPanel({ uid }: { uid: string | null }) {
-  const [rows, setRows] = useState<Contact[]>([]);
+  const [rows, setRows] = useState<Contact[]>(() =>
+    uid ? (contactsCache.get(uid)?.rows ?? []) : [],
+  );
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [pinChatMcm, setPinChatMcm] = useState("");
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  // Search: `query` = input mentah (responsif), `debounced` = versi yang
+  // dipakai filter (delay 200ms) supaya render list tidak dihitung ulang
+  // tiap keystroke pada koleksi besar.
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (!uid) return;
-    const { data, error } = await table().select("*").order("created_at", { ascending: false });
-    if (error) { toast.error(error.message); return; }
-    setRows((data ?? []) as Contact[]);
+    const cached = contactsCache.get(uid);
+    const fresh = !force && cached && Date.now() - cached.ts < CACHE_TTL_MS;
+    if (fresh) return; // masih fresh dan bukan refresh manual → skip network.
+    try {
+      setRefreshing(true);
+      const { data, error } = await table().select("*").order("created_at", { ascending: false });
+      if (error) { toast.error(error.message); return; }
+      const next = (data ?? []) as Contact[];
+      contactsCache.set(uid, { rows: next, ts: Date.now() });
+      setRows(next);
+    } finally {
+      setRefreshing(false);
+    }
   }, [uid]);
   useEffect(() => { void load(); }, [load]);
+
+  // Debounce pencarian: hanya update `debounced` setelah 200ms idle.
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebounced(query.trim()), 200);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [query]);
+
+  // Filter in-memory berdasarkan snapshot yang sudah di-cache. Nol network.
+  const filteredRows = useMemo(() => {
+    const q = debounced.toLowerCase();
+    if (!q) return rows;
+    const digits = q.replace(/\D/g, "");
+    return rows.filter((c) => {
+      if (c.name.toLowerCase().includes(q)) return true;
+      if (digits && c.wa_phone.includes(digits)) return true;
+      if (c.pin_chat_mcm && c.pin_chat_mcm.toLowerCase().includes(q)) return true;
+      return false;
+    });
+  }, [rows, debounced]);
+
+  // Mutasi lokal + invalidasi cache supaya delete/insert langsung
+  // tercermin tanpa menunggu refetch berikutnya.
+  const invalidateCache = useCallback(() => {
+    if (uid) contactsCache.delete(uid);
+  }, [uid]);
 
   async function onAdd() {
     if (!uid) return;
     const nm = name.trim();
     const ph = normalizePhone(phone);
+    const pin = pinChatMcm.trim().toUpperCase();
     if (!nm) return toast.error("Nama wajib diisi.");
     if (ph.length < 8) return toast.error("Nomor WA tidak valid.");
     setBusy(true);
-    const { error } = await table().insert({ user_id: uid, name: nm, wa_phone: ph });
+    const { error } = await table().insert({
+      user_id: uid,
+      name: nm,
+      wa_phone: ph,
+      pin_chat_mcm: pin || null,
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Kontak pegawai ditambahkan.");
-    setName(""); setPhone(""); setOpen(false);
+    setName(""); setPhone(""); setPinChatMcm(""); setOpen(false);
+    invalidateCache();
     void load();
   }
 
@@ -61,6 +143,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
     const { error } = await table().delete().eq("id", c.id);
     if (error) return toast.error(error.message);
     toast.success("Kontak dihapus.");
+    invalidateCache();
     void load();
   }
 
@@ -70,57 +153,117 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
   }
 
   return (
-    <div className="rounded-xl border bg-card p-3 shadow-sm">
-      <div className="flex items-center gap-2">
+    <div className="rounded-xl border bg-card p-ms-3 shadow-sm">
+      <div className="flex items-center gap-ms-2">
         <Users className="h-4 w-4" />
-        <div className="text-sm font-semibold">Kontak Pegawai</div>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs"
-        >
-          <Plus className="h-3.5 w-3.5" /> {open ? "Batal" : "Tambah"}
-        </button>
+        <div className="text-ms-sm font-semibold">Kontak Pegawai</div>
+        <div className="ml-auto flex items-center gap-ms-1.5">
+          <button
+            onClick={() => { invalidateCache(); void load(true); }}
+            disabled={refreshing}
+            title="Muat ulang data"
+            aria-label="Muat ulang kontak pegawai"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+          <button aria-label="Tambah"
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs"
+          >
+            <Plus className="h-3.5 w-3.5" /> {open ? "Batal" : "Tambah"}
+          </button>
+        </div>
       </div>
 
       {open && (
-        <div className="mt-3 grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="mt-3 grid grid-cols-1 gap-ms-2 rounded-md border bg-muted/30 p-ms-2 sm:grid-cols-[1fr_1fr_auto] sm:grid-rows-2">
           <input
             value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama pegawai"
-            className="h-9 rounded-md border bg-background px-2 text-sm"
+            className="h-9 rounded-md border bg-background px-ms-2 text-ms-sm"
           />
           <input
             value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Nomor WA (08… / 628…)"
-            inputMode="tel" className="h-9 rounded-md border bg-background px-2 text-sm"
+            inputMode="tel" className="h-9 rounded-md border bg-background px-ms-2 text-ms-sm"
           />
           <button
             onClick={onAdd} disabled={busy}
-            className="h-9 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+            className="h-9 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50 sm:row-span-2"
           >Simpan</button>
+          <input
+            value={pinChatMcm} onChange={(e) => setPinChatMcm(e.target.value)} placeholder="PIN chat MCM (opsional)"
+            inputMode="text" autoCapitalize="characters" maxLength={10}
+            className="col-span-1 sm:col-span-2 h-9 rounded-md border bg-background px-ms-2 text-ms-sm font-mono tracking-widest"
+          />
         </div>
       )}
 
-      <div className="mt-3 space-y-2">
-        {rows.length === 0 ? (
-          <div className="rounded-md border border-dashed p-3 text-center text-[11px] text-muted-foreground">
+      {rows.length > 0 && (
+        <div className="mt-3 relative">
+          <Search
+            className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari nama, nomor, atau PIN…"
+            aria-label="Cari kontak pegawai"
+            className="h-9 w-full rounded-md border bg-background pl-7 pr-8 text-ms-sm"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Bersihkan pencarian"
+              className="absolute right-1.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="mt-3 space-ms-2">
+        {refreshing && rows.length > 0 && (
+          <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-1/3 animate-[shimmer_1.2s_infinite] bg-primary/60" />
+          </div>
+        )}
+        {refreshing && rows.length === 0 ? (
+          <>
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </>
+        ) : rows.length === 0 ? (
+          <div className="rounded-md border border-dashed p-ms-3 text-center text-ms-2xs text-muted-foreground">
             Belum ada kontak pegawai. Tambah dulu agar mudah kirim link tugas via WA.
           </div>
+        ) : filteredRows.length === 0 ? (
+          <div className="rounded-md border border-dashed p-ms-3 text-center text-ms-2xs text-muted-foreground">
+            Tidak ada kontak yang cocok dengan “{debounced}”.
+          </div>
         ) : (
-          rows.map((c) => (
-            <div key={c.id} className="flex items-center gap-2 rounded-md border bg-background p-2">
+          filteredRows.map((c) => (
+            <div key={c.id} className="flex items-center gap-ms-2 rounded-md border bg-background p-ms-2">
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold">{c.name}</div>
-                <div className="text-[11px] text-muted-foreground">+{c.wa_phone}</div>
+                <div className="truncate text-ms-sm font-semibold">{c.name}</div>
+                <div className="text-ms-2xs text-muted-foreground">WA: +{c.wa_phone}</div>
+                {c.pin_chat_mcm ? (
+                  <div className="text-ms-2xs font-mono text-primary">PIN MCM: {c.pin_chat_mcm}</div>
+                ) : null}
               </div>
               <a
                 href={buildWhatsAppUrl("", c.wa_phone)} target="_blank" rel="noreferrer"
-                title="Buka chat WhatsApp"
+                title="Kirim via WA"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]"
               ><MessageCircle className="h-4 w-4" /></a>
-              <button
+              <button aria-label="Salin nomor"
                 onClick={() => copyPhone(c)} title="Salin nomor"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border"
               ><Copy className="h-4 w-4" /></button>
-              <button
+              <button aria-label="Hapus"
                 onClick={() => onDelete(c)} title="Hapus"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive"
               ><Trash2 className="h-4 w-4" /></button>

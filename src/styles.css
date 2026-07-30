@@ -42,6 +42,15 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -59,10 +68,57 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* Premium++ typography tokens (Slice 0 — opt-in via `font-display`/`font-body`).
+     Terhubung ke class utility Tailwind: `font-display`, `font-body`.
+     Tidak mengubah default `font-sans` app; komponen harus opt-in. */
+  --font-display: "Instrument Serif", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-body: "Work Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
   --radius: 0.625rem;
+  /* ==========================================================================
+     Mobile design tokens — typography & spacing scale.
+     SATU sumber kebenaran untuk semua halaman (411/390px sebagai anchor).
+     Pakai utility `text-ms-*`, `p-ms-*`, `gap-ms-*`, `space-ms-*` (di bawah)
+     alih-alih hardcode `text-ms-sm` / `p-ms-3.5`. Skala mengikuti `--app-font-size`
+     sehingga preset "sm/md/lg/xl" di /pengaturan-tampilan tetap konsisten.
+     ========================================================================== */
+  /* Type scale (line-height dipasangkan agar tidak drift). */
+  --ms-text-2xs: 0.6875rem;  /* 11px */
+  --ms-text-ms-xs:  0.75rem;    /* 12px */
+  --ms-text-ms-sm:  0.8125rem;  /* 13px */
+  --ms-text-ms-base:0.9375rem;  /* 15px — body mobile */
+  --ms-text-md:  1rem;       /* 16px */
+  --ms-text-ms-lg:  1.125rem;   /* 18px */
+  --ms-text-ms-xl:  1.25rem;    /* 20px */
+  --ms-text-ms-2xl: 1.5rem;     /* 24px — heading kartu */
+  --ms-text-ms-3xl: 1.75rem;    /* 28px — heading halaman */
+  --ms-text-ms-4xl: 2.125rem;   /* 34px — hero */
+  --ms-leading-tight:  1.15;
+  --ms-leading-snug:   1.3;
+  --ms-leading-normal: 1.5;
+  --ms-leading-relaxed:1.65;
+  --ms-tracking-tight: -0.015em;
+  --ms-tracking-normal: 0;
+  --ms-tracking-wide:  0.02em;
+  /* Spacing scale — kelipatan 4px dengan step semantik. */
+  --ms-space-0:  0;
+  --ms-space-1:  0.25rem;   /* 4  */
+  --ms-space-2:  0.5rem;    /* 8  */
+  --ms-space-3:  0.75rem;   /* 12 — padding kartu ringkas */
+  --ms-space-4:  1rem;      /* 16 — padding kartu default */
+  --ms-space-5:  1.25rem;   /* 20 */
+  --ms-space-6:  1.5rem;    /* 24 — gap antar section */
+  --ms-space-8:  2rem;      /* 32 */
+  --ms-space-10: 2.5rem;    /* 40 */
+  --ms-space-12: 3rem;      /* 48 */
+  /* Target sentuh & radius kartu — jaga aksesibilitas mobile.
+     `max()` memastikan tap target tetap ≥44px meski user memilih
+     font-size "sm" (rem menyusut). Ketika user memperbesar font,
+     tap target ikut membesar. */
+  --ms-tap:      max(2.75rem, 44px);
+  --ms-radius-card: calc(var(--radius) + 4px);
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
@@ -95,6 +151,22 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  /* Semantik status — dipakai lintas modul (Gudang, Ecer, Tugas, Chat). */
+  --success: oklch(0.62 0.15 152);
+  --success-foreground: oklch(0.985 0.02 152);
+  --success-soft: color-mix(in oklab, var(--success) 15%, var(--background));
+  --warning: oklch(0.75 0.16 75);
+  --warning-foreground: oklch(0.22 0.08 75);
+  --warning-soft: color-mix(in oklab, var(--warning) 18%, var(--background));
+  --info: oklch(0.68 0.14 235);
+  --info-foreground: oklch(0.985 0.02 235);
+  --info-soft: color-mix(in oklab, var(--info) 15%, var(--background));
+  /* Elevation — konsisten light/dark. */
+  --shadow-color: 220 40% 12%;
+  --shadow-xs: 0 1px 2px 0 hsl(var(--shadow-color) / 0.05);
+  --shadow-sm: 0 1px 3px 0 hsl(var(--shadow-color) / 0.08), 0 1px 2px -1px hsl(var(--shadow-color) / 0.05);
+  --shadow-md: 0 4px 10px -3px hsl(var(--shadow-color) / 0.10), 0 2px 4px -2px hsl(var(--shadow-color) / 0.06);
+  --shadow-lg: 0 12px 24px -8px hsl(var(--shadow-color) / 0.14), 0 4px 8px -4px hsl(var(--shadow-color) / 0.08);
 }
 
 .dark {
@@ -130,7 +202,288 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --success: oklch(0.72 0.17 152);
+  --success-foreground: oklch(0.15 0.05 152);
+  --success-soft: color-mix(in oklab, var(--success) 22%, var(--background));
+  --warning: oklch(0.82 0.16 80);
+  --warning-foreground: oklch(0.18 0.08 75);
+  --warning-soft: color-mix(in oklab, var(--warning) 22%, var(--background));
+  --info: oklch(0.75 0.14 235);
+  --info-foreground: oklch(0.15 0.05 235);
+  --info-soft: color-mix(in oklab, var(--info) 22%, var(--background));
+  --shadow-color: 220 60% 2%;
+  --shadow-xs: 0 1px 2px 0 hsl(var(--shadow-color) / 0.40);
+  --shadow-sm: 0 1px 3px 0 hsl(var(--shadow-color) / 0.55), 0 1px 2px -1px hsl(var(--shadow-color) / 0.40);
+  --shadow-md: 0 4px 10px -3px hsl(var(--shadow-color) / 0.60), 0 2px 4px -2px hsl(var(--shadow-color) / 0.45);
+  --shadow-lg: 0 12px 24px -8px hsl(var(--shadow-color) / 0.70), 0 4px 8px -4px hsl(var(--shadow-color) / 0.50);
 }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+/*
+ * Utility elevation — konsisten light/dark (token --shadow-* diselaraskan
+ * per mode di :root & .dark). Pakai `elev-sm`, `elev-md`, `elev-lg` alih-alih
+ * `shadow-*` bawaan untuk permukaan berlapis (card, sheet, popover) agar
+ * dark mode tidak flat.
+ */
+@utility elev-xs { box-shadow: var(--shadow-xs); }
+@utility elev-sm { box-shadow: var(--shadow-sm); }
+@utility elev-md { box-shadow: var(--shadow-md); }
+@utility elev-lg { box-shadow: var(--shadow-lg); }
+
+/* ==========================================================================
+   Premium++ utilities (Slice 0 — opt-in, tidak mengubah default apa pun).
+   Dipakai bertahap per rute operasional. Warna tetap mengikuti preset user
+   (`--primary`, `--card`, dst.); utility ini hanya menambah lapisan presentasi
+   (tipografi display, elevasi halus, permukaan berlapis).
+
+   Reduce-motion: transform hanya aktif bila user tidak meminta reduce-motion.
+   ========================================================================== */
+@utility font-display {
+  font-family: var(--font-display);
+  font-feature-settings: "ss01", "liga";
+}
+@utility font-body {
+  font-family: var(--font-body);
+}
+@utility text-premium-heading {
+  font-family: var(--font-display);
+  letter-spacing: var(--ms-tracking-tight);
+  line-height: var(--ms-leading-tight);
+  font-weight: 400;
+}
+@utility surface-elevated {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--ms-radius-card);
+}
+@utility surface-elevated-lg {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  box-shadow: var(--shadow-lg);
+  border-radius: calc(var(--ms-radius-card) + 4px);
+}
+@utility shadow-elevate {
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--foreground) 6%, transparent) inset,
+    0 8px 24px -12px color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+@utility ring-premium {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent),
+    0 0 0 4px color-mix(in oklab, var(--primary) 12%, transparent);
+}
+@utility lift-on-hover {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover { transform: translateY(-1px); }
+    &:active { transform: translateY(0); }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Editorial × Midnight Indigo — utility presentasi untuk Beranda.
+   Semua nilai diturunkan dari token tema aktif (`--primary`, `--card`,
+   `--border`) sehingga preset warna pilihan user tetap dihormati.
+   -------------------------------------------------------------------------- */
+
+/* Label kecil di atas judul (kapital, tracking lebar) — penanda seksi editorial. */
+@utility eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: color-mix(in oklab, var(--primary) 82%, var(--foreground));
+}
+
+/* Garis rambut horizontal untuk memisah blok tanpa border tebal. */
+@utility hairline {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    color-mix(in oklab, var(--primary) 45%, transparent),
+    transparent
+  );
+}
+
+/* Permukaan utama Beranda: kartu berlapis + cahaya aksen dari sudut atas. */
+@utility surface-editorial {
+  position: relative;
+  border-radius: calc(var(--ms-radius-card) + 6px);
+  border: 1px solid color-mix(in oklab, var(--primary) 18%, var(--border));
+  background:
+    radial-gradient(
+      120% 100% at 0% 0%,
+      color-mix(in oklab, var(--primary) 10%, transparent) 0%,
+      transparent 58%
+    ),
+    var(--card);
+  color: var(--card-foreground);
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--foreground) 5%, transparent) inset,
+    0 24px 60px -34px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+
+/* Baris/kartu sekunder — lebih tenang dari surface-editorial. */
+@utility surface-quiet {
+  border-radius: var(--ms-radius-card);
+  border: 1px solid color-mix(in oklab, var(--primary) 12%, var(--border));
+  background: color-mix(in oklab, var(--card) 92%, var(--background));
+  color: var(--card-foreground);
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover { transform: translateY(-1px); }
+  }
+  &:hover {
+    border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+    background: color-mix(in oklab, var(--card) 78%, var(--primary) 6%);
+  }
+}
+
+/* Angka urut / inisial bergaya editorial (serif, ring aksen tipis). */
+@utility numeral-editorial {
+  font-family: var(--font-display);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: 0.04em;
+  color: color-mix(in oklab, var(--primary) 90%, var(--foreground));
+}
+
+/*
+ * Utility soft-status — pengganti hardcoded `bg-warning/15 text-warning`
+ * agar konsisten light/dark & mengikuti aksen aksesibilitas kontras tinggi.
+ */
+@utility status-success { background-color: var(--success-soft); color: var(--success); }
+@utility status-warning { background-color: var(--warning-soft); color: var(--warning); }
+@utility status-info    { background-color: var(--info-soft);    color: var(--info); }
+@utility status-danger  { background-color: color-mix(in oklab, var(--destructive) 15%, var(--background)); color: var(--destructive); }
+
+/* ==========================================================================
+   Noir & Gold audit contract — Slice 1 foundation.
+
+   Utility yang di-share antara sidebar baru dan seluruh permukaan operasional
+   agar tipografi, spacing, dan warna konsisten mengikuti preset user (tidak
+   hardcode gold). Digunakan sebagai target codemod & CI guard
+   (scripts/check-noir-gold.mjs, scripts/codemod-noir-gold.mjs).
+
+   1. `text-section-label` — label uppercase (SIDEBAR group label / kartu
+      section header). Sepasang dengan `dot-accent` untuk prefix titik 3px.
+   2. `dot-accent` — span 3px berwarna primary sebagai penanda kolom/section.
+   3. `nav-active` — gradient tipis + rail 3px kiri untuk elemen navigasi
+      / tab aktif. Meniru pola `SidebarMenuButton[data-active=true]`.
+   4. `nav-hover` — hover state konsisten (translate + tint) untuk item
+      navigasi non-aktif.
+   5. `status-dot-*` — titik status kecil di header/pill (online/menyinkron/
+      offline/idle). Mengganti hardcoded `bg-emerald-*` / `bg-amber-*`.
+   ========================================================================== */
+@utility text-section-label {
+  font-size: var(--ms-text-2xs);
+  line-height: 1;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: color-mix(in oklab, var(--muted-foreground) 78%, transparent);
+}
+@utility dot-accent {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--primary) 65%, transparent);
+  flex-shrink: 0;
+}
+@utility nav-active {
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklab, var(--primary) 20%, transparent),
+    color-mix(in oklab, var(--primary) 8%, transparent),
+    transparent
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary) 22%, transparent);
+  color: var(--sidebar-accent-foreground, var(--foreground));
+  font-weight: 600;
+  position: relative;
+}
+@utility nav-hover {
+  transition: transform 180ms ease, background-color 180ms ease, color 180ms ease;
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover { transform: translateX(2px); }
+  }
+  &:hover {
+    background-color: color-mix(in oklab, var(--accent) 60%, transparent);
+    color: var(--foreground);
+  }
+}
+@utility status-dot-primary { background-color: var(--primary); }
+@utility status-dot-success { background-color: var(--success); }
+@utility status-dot-warning { background-color: var(--warning); }
+@utility status-dot-danger  { background-color: var(--destructive); }
+@utility status-dot-muted   { background-color: color-mix(in oklab, var(--muted-foreground) 60%, transparent); }
+
+/* ==========================================================================
+   Mobile scale utilities — pakai ini alih-alih nilai literal.
+   Contoh:  <p className="text-ms-sm leading-ms-snug"/>
+            <div className="p-ms-4 gap-ms-3"/>
+   ========================================================================== */
+@utility text-ms-2xs  { font-size: var(--ms-text-2xs);  line-height: var(--ms-leading-snug); }
+@utility text-ms-xs   { font-size: var(--ms-text-ms-xs);   line-height: var(--ms-leading-snug); }
+@utility text-ms-sm   { font-size: var(--ms-text-ms-sm);   line-height: var(--ms-leading-normal); }
+@utility text-ms-base { font-size: var(--ms-text-ms-base); line-height: var(--ms-leading-normal); }
+@utility text-ms-md   { font-size: var(--ms-text-md);   line-height: var(--ms-leading-normal); }
+@utility text-ms-lg   { font-size: var(--ms-text-ms-lg);   line-height: var(--ms-leading-snug); }
+@utility text-ms-xl   { font-size: var(--ms-text-ms-xl);   line-height: var(--ms-leading-snug); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-2xl  { font-size: var(--ms-text-ms-2xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-3xl  { font-size: var(--ms-text-ms-3xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility text-ms-4xl  { font-size: var(--ms-text-ms-4xl);  line-height: var(--ms-leading-tight); letter-spacing: var(--ms-tracking-tight); }
+@utility leading-ms-tight   { line-height: var(--ms-leading-tight); }
+@utility leading-ms-snug    { line-height: var(--ms-leading-snug); }
+@utility leading-ms-normal  { line-height: var(--ms-leading-normal); }
+@utility leading-ms-relaxed { line-height: var(--ms-leading-relaxed); }
+@utility tracking-ms-tight  { letter-spacing: var(--ms-tracking-tight); }
+@utility tracking-ms-wide   { letter-spacing: var(--ms-tracking-wide); }
+/* Padding all sides */
+@utility p-ms-1  { padding: var(--ms-space-1); }
+@utility p-ms-2  { padding: var(--ms-space-2); }
+@utility p-ms-3  { padding: var(--ms-space-3); }
+@utility p-ms-4  { padding: var(--ms-space-4); }
+@utility p-ms-5  { padding: var(--ms-space-5); }
+@utility p-ms-6  { padding: var(--ms-space-6); }
+/* Padding block/inline */
+@utility px-ms-2 { padding-inline: var(--ms-space-2); }
+@utility px-ms-3 { padding-inline: var(--ms-space-3); }
+@utility px-ms-4 { padding-inline: var(--ms-space-4); }
+@utility px-ms-5 { padding-inline: var(--ms-space-5); }
+@utility px-ms-6 { padding-inline: var(--ms-space-6); }
+@utility py-ms-2 { padding-block: var(--ms-space-2); }
+@utility py-ms-3 { padding-block: var(--ms-space-3); }
+@utility py-ms-4 { padding-block: var(--ms-space-4); }
+@utility py-ms-5 { padding-block: var(--ms-space-5); }
+@utility py-ms-6 { padding-block: var(--ms-space-6); }
+/* Gap */
+@utility gap-ms-1 { gap: var(--ms-space-1); }
+@utility gap-ms-2 { gap: var(--ms-space-2); }
+@utility gap-ms-3 { gap: var(--ms-space-3); }
+@utility gap-ms-4 { gap: var(--ms-space-4); }
+@utility gap-ms-5 { gap: var(--ms-space-5); }
+@utility gap-ms-6 { gap: var(--ms-space-6); }
+/* Vertical stack — pengganti space-y literal. */
+@utility space-ms-2 { & > * + * { margin-top: var(--ms-space-2); } }
+@utility space-ms-3 { & > * + * { margin-top: var(--ms-space-3); } }
+@utility space-ms-4 { & > * + * { margin-top: var(--ms-space-4); } }
+@utility space-ms-5 { & > * + * { margin-top: var(--ms-space-5); } }
+@utility space-ms-6 { & > * + * { margin-top: var(--ms-space-6); } }
+/* Target sentuh min — dipakai untuk tombol/tab utility di bottom nav & kartu. */
+@utility min-tap { min-height: var(--ms-tap); min-width: var(--ms-tap); }
+@utility rounded-ms-card { border-radius: var(--ms-radius-card); }
 
 @layer base {
   * {
@@ -139,13 +492,23 @@
 
   html {
     background-color: var(--color-background);
+    /* Aksesibilitas: font-size preferensi user (sm/md/lg/xl di
+       /pengaturan-tampilan) diterapkan pada <html> supaya semua utility
+       berbasis `rem` (termasuk token `--ms-*`) ikut menyusut/membesar.
+       Nilai literal `text-[Npx]` tidak ikut karena px adalah absolut —
+       gunakan token `text-ms-*` atau nilai `rem`/`em` di komponen. */
+    font-size: var(--app-font-size, 16px);
+    /* Cegah auto-zoom Safari iOS yang membuat body membengkak saat
+       user memiringkan device (menjaga skala tetap sesuai preferensi). */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
     background-color: transparent;
     color: var(--color-foreground);
     font-family: var(--app-font-family, "Inter", system-ui, sans-serif);
-    font-size: var(--app-font-size, 16px);
+    /* Warisi dari <html> — biar preferensi font-size cascade lewat rem. */
     position: relative;
     min-height: 100vh;
   }
@@ -194,10 +557,205 @@ html[data-has-bg="1"] .min-h-screen.bg-gradient-to-bl {
   background-color: transparent !important;
 }
 
-html[data-font="sans"]    { --app-font-family: "Inter", system-ui, sans-serif; }
+html[data-font="sans"]    { --app-font-family: "Work Sans", system-ui, sans-serif; }
+
+/* Panel bacaan: dipakai halaman publik (mis. /download) supaya teks tetap
+   terbaca walau pengguna memasang gambar latar + transparansi tinggi. */
+.readable-panel {
+  background-color: color-mix(in oklab, var(--color-card) 94%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-border) 90%, transparent);
+  border-radius: 1.5rem;
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.55);
+}
+
+/* Transisi halus untuk konten yang baru muncul (mis. kartu APK setelah load). */
+@keyframes dl-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dl-fade-up {
+  animation: dl-fade-up .32s cubic-bezier(.22,.61,.36,1) both;
+}
+html.reduce-motion .dl-fade-up { animation: none; }
+html[data-has-bg="1"] .readable-panel {
+  background-color: color-mix(in oklab, var(--color-card) 97%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+}
 html[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
 html[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
 html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }
+
+/* Editorial: body Work Sans, judul Instrument Serif — pasangan tipografi
+   premium yang dipakai preset "Editorial × Midnight Indigo". */
+html[data-font="editorial"] { --app-font-family: var(--font-body); }
+html[data-font="editorial"] :is(h1, h2, h3),
+html[data-font="editorial"] [data-slot="card-title"],
+html[data-font="editorial"] [data-slot="dialog-title"] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   MCM chat surface (dark-first, light fallback).
+   Dipakai di halaman /chat, /chat/$conversationId, /profil-chat.
+   Palet aksen memakai warna brand MCM (teal) supaya konsisten dengan label
+   "MCM" — token --wa-* dipertahankan sebagai alias agar file lain tetap kompatibel.
+   ========================================================================== */
+:root {
+  /* Brand MCM mengikuti aksen aktif (--primary) supaya preset & pilihan
+     aksen di /pengaturan-tampilan juga mewarnai halaman chat & profil-chat. */
+  --mcm-brand: var(--primary, #0f766e);
+  --mcm-brand-strong: color-mix(in oklab, var(--primary, #0f766e) 80%, black 20%);
+  --wa-surface: #ffffff;
+  --wa-surface-2: #f0f2f5;
+  --wa-header: #ffffff;
+  --wa-text: #111b21;
+  --wa-text-muted: #667781;
+  --wa-border: #e9edef;
+  --wa-green: var(--mcm-brand);
+  --wa-green-strong: var(--mcm-brand-strong);
+  --wa-bubble-out: color-mix(in oklab, var(--mcm-brand) 22%, #ffffff);
+  --wa-bubble-out-fg: #111b21;
+  --wa-bubble-in: #ffffff;
+  --wa-bubble-in-fg: #111b21;
+  --wa-chat-bg: #efeae2;
+  --wa-check: #25d366;
+}
+.dark {
+  --mcm-brand: var(--primary, #14b8a6);
+  --mcm-brand-strong: color-mix(in oklab, var(--primary, #14b8a6) 70%, white 30%);
+  --wa-surface: #0b141a;
+  --wa-surface-2: #111b21;
+  --wa-header: #1f2c34;
+  --wa-text: #e9edef;
+  --wa-text-muted: #8696a0;
+  --wa-border: rgba(134,150,160,0.15);
+  --wa-green: var(--mcm-brand);
+  --wa-green-strong: var(--mcm-brand-strong);
+  --wa-bubble-out: color-mix(in oklab, var(--mcm-brand) 45%, black 55%);
+  --wa-bubble-out-fg: #e9edef;
+  --wa-bubble-in: #1f2c34;
+  --wa-bubble-in-fg: #e9edef;
+  --wa-chat-bg: #0b141a;
+  --wa-check: #25d366;
+}
+
+@utility wa-surface {
+  background-color: var(--wa-surface);
+  color: var(--wa-text);
+}
+@utility wa-header {
+  background-color: var(--wa-header);
+  color: var(--wa-text);
+  border-color: var(--wa-border);
+}
+@utility wa-muted {
+  color: var(--wa-text-muted);
+}
+@utility wa-chat-bg {
+  background-color: var(--wa-chat-bg);
+  background-image:
+    radial-gradient(circle at 20% 30%, color-mix(in oklab, var(--wa-text) 6%, transparent) 0 1px, transparent 2px),
+    radial-gradient(circle at 70% 60%, color-mix(in oklab, var(--wa-text) 5%, transparent) 0 1px, transparent 2px),
+    radial-gradient(circle at 40% 85%, color-mix(in oklab, var(--wa-text) 4%, transparent) 0 1.5px, transparent 3px),
+    radial-gradient(circle at 85% 15%, color-mix(in oklab, var(--wa-text) 5%, transparent) 0 1px, transparent 2px);
+  background-size: 180px 180px, 220px 220px, 260px 260px, 200px 200px;
+  color: var(--wa-text);
+}
+@utility wa-search {
+  background-color: var(--wa-surface-2);
+  color: var(--wa-text);
+  border-color: transparent;
+  border-radius: 9999px;
+}
+@utility wa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 1.2;
+  background-color: var(--wa-surface-2);
+  color: var(--wa-text);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+@utility wa-chip-active {
+  background-color: color-mix(in oklab, var(--wa-green) 22%, var(--wa-surface-2));
+  color: var(--wa-text);
+  border-color: color-mix(in oklab, var(--wa-green) 55%, transparent);
+}
+@utility wa-bubble-out {
+  background-color: var(--wa-bubble-out);
+  color: var(--wa-bubble-out-fg);
+  border: 1px solid color-mix(in oklab, var(--wa-bubble-out-fg) 8%, transparent);
+  box-shadow: 0 1px 1.5px color-mix(in oklab, #000 12%, transparent);
+}
+@utility wa-bubble-in {
+  background-color: var(--wa-bubble-in);
+  color: var(--wa-bubble-in-fg);
+  border: 1px solid color-mix(in oklab, var(--wa-bubble-in-fg) 8%, transparent);
+  box-shadow: 0 1px 1.5px color-mix(in oklab, #000 12%, transparent);
+}
+/* Meta baris waktu/centang di dalam bubble: selalu turunan warna teks
+   bubble-nya sendiri supaya kontras benar di light & dark, dan tidak
+   memakai token halaman (primary-foreground) yang bisa salah warna. */
+@utility wa-meta-out {
+  color: color-mix(in oklab, var(--wa-bubble-out-fg) 62%, transparent);
+}
+@utility wa-meta-in {
+  color: color-mix(in oklab, var(--wa-bubble-in-fg) 55%, transparent);
+}
+@utility wa-badge {
+  background-color: var(--wa-green);
+  color: #0b141a;
+}
+@utility wa-check {
+  color: var(--wa-check);
+}
+/* Centang ganda "sampai di perangkat" — abu gelap/hitam, belum hijau. */
+@utility wa-check-delivered {
+  color: var(--wa-bubble-out-fg);
+  opacity: 0.9;
+}
+
+/* ==========================================================================
+   Industrial Precision (chat surface only)
+   Diaktifkan lewat `data-industrial="chat"` pada container halaman chat.
+   Override token --wa-* lokal + tipografi Space Grotesk / DM Sans SUPAYA
+   sistem appearance-preset di halaman lain tetap utuh. Palet: Slate+Steel.
+   ========================================================================== */
+[data-industrial="chat"] {
+  /* Slate+Steel — dark-first (chat memang default dark di app ini). */
+  --wa-surface: #0C1116;
+  --wa-surface-2: #131A22;
+  --wa-header: #0F1620;
+  --wa-text: #E4E9EF;
+  --wa-text-muted: #7C8B9E;
+  --wa-border: rgba(148, 163, 184, 0.14);
+  --wa-green: #7BA6D9;
+  --wa-green-strong: #A8C4E4;
+  --wa-check: #25d366;
+  --wa-chat-bg: #0C1116;
+
+  /* Tipografi: DM Sans body, Space Grotesk untuk heading/label. */
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.005em;
+}
+[data-industrial="chat"] h1,
+[data-industrial="chat"] h2,
+[data-industrial="chat"] h3,
+[data-industrial="chat"] [data-display] {
+  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+/* Elevated surface untuk row aktif / hover — precision, no glow. */
+[data-industrial="chat"] [data-elevated] {
+  background-color: #1E2732;
+}
 
 html[data-font-size="sm"] { --app-font-size: 14px; }
 html[data-font-size="md"] { --app-font-size: 16px; }
@@ -208,17 +766,19 @@ html[data-font-size="xl"] { --app-font-size: 20px; }
 /* Mode ringkas — fokus pada density tinggi tanpa memutus layout.
    Aman: hanya skala font + padding/gap halus + sembunyikan elemen yang
    sengaja ditandai data-compact-hide. */
-html.compact { font-size: 92%; }
+/* Compact mengalikan preferensi font-size, bukan menggantinya —
+   jadi user "lg" + compact tetap mengikuti skala lg × 0.92. */
+html.compact { font-size: calc(var(--app-font-size, 16px) * 0.92); }
 html.compact [data-compact-hide] { display: none !important; }
-html.compact .p-6 { padding: 0.875rem; }
-html.compact .p-5 { padding: 0.75rem; }
-html.compact .p-4 { padding: 0.625rem; }
-html.compact .py-6 { padding-top: 0.875rem; padding-bottom: 0.875rem; }
-html.compact .py-4 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-html.compact .gap-6 { gap: 0.75rem; }
-html.compact .gap-4 { gap: 0.5rem; }
-html.compact .space-y-6 > * + * { margin-top: 0.75rem; }
-html.compact .space-y-4 > * + * { margin-top: 0.5rem; }
+html.compact .p-ms-6 { padding: 0.875rem; }
+html.compact .p-ms-5 { padding: 0.75rem; }
+html.compact .p-ms-4 { padding: 0.625rem; }
+html.compact .py-ms-6 { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+html.compact .py-ms-4 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+html.compact .gap-ms-6 { gap: 0.75rem; }
+html.compact .gap-ms-4 { gap: 0.5rem; }
+html.compact .space-ms-6 > * + * { margin-top: 0.75rem; }
+html.compact .space-ms-4 > * + * { margin-top: 0.5rem; }
 
 /* === Kurangi animasi (manual override prefers-reduced-motion) ===
    Diaktifkan via class `reduce-motion` di <html>, ditulis oleh
@@ -288,4 +848,599 @@ html.reduce-motion set {
 @utility ecer-detail {
   line-height: 1.375;
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Preferensi aplikasi (Aksesibilitas):
+ * - --app-font-scale mengalikan ukuran font root (memengaruhi seluruh rem).
+ * - data-high-contrast="on" memperkuat border & ring fokus.
+ * - data-reduce-motion="on" menetralkan transisi/animasi non-esensial.
+ */
+:root {
+  --app-font-scale: 1;
+}
+html {
+  font-size: calc(16px * var(--app-font-scale));
+}
+/*
+ * High contrast: perkuat border (light: hampir hitam, dark: hampir putih)
+ * dan buat ring fokus lebih jelas. Nilai memakai OKLCH agar konsisten dengan
+ * token proyek. Berlaku ke seluruh dokumen — termasuk portal Radix (dialog,
+ * dropdown, popover) dan toast Sonner yang di-mount di <body>.
+ */
+html[data-high-contrast="on"] {
+  --border: oklch(0.25 0 0);
+  --input: oklch(0.35 0 0);
+  --ring: var(--primary);
+  --muted-foreground: oklch(0.35 0 0);
+}
+html[data-high-contrast="on"].dark {
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.75 0 0);
+  --ring: var(--primary);
+  --muted-foreground: oklch(0.85 0 0);
+}
+html[data-high-contrast="on"] *:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+/* Perkuat border pada permukaan berlapis (dialog, popover, card, sheet). */
+html[data-high-contrast="on"] [role="dialog"],
+html[data-high-contrast="on"] [role="alertdialog"],
+html[data-high-contrast="on"] [data-sonner-toast],
+html[data-high-contrast="on"] [data-radix-popper-content-wrapper] > * {
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--border);
+}
+html[data-reduce-motion="on"] *,
+html[data-reduce-motion="on"] *::before,
+html[data-reduce-motion="on"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/*
+ * Reaksi sentuh terpadu — dipakai di halaman Pembaruan, Beranda, dan daftar
+ * produk. Satu token = konsistensi visual + mudah dihormati oleh
+ * `data-reduce-motion="on"` di atas.
+ *
+ *   .press       → default (ikon, chip, tombol kecil): skala 0.95
+ *   .press-card  → kartu / tile besar: skala 0.97
+ *   .press-row   → baris list panjang: skala 0.98
+ *   .press-fab   → floating action button: skala 0.95 + shadow lebih rapat
+ *
+ * Semua varian pakai durasi 150ms ease-out dan focus-visible ring dari
+ * design token `--ring`.
+ */
+@utility press {
+  transition-property: transform, background-color, filter, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  will-change: transform;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+  }
+  &:active {
+    transform: scale(0.95);
+  }
+}
+@utility press-card {
+  transition-property: transform, background-color, filter, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  will-change: transform;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+  &:active:not(:has(input, textarea)) {
+    filter: brightness(0.97);
+  }
+}
+@utility press-row {
+  transition-property: transform, background-color, filter, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  will-change: transform;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+  }
+  &:active {
+    transform: scale(0.98);
+    background-color: hsl(var(--muted) / 0.6);
+  }
+}
+@utility press-fab {
+  transition-property: transform, background-color, filter, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  will-change: transform;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+  }
+  &:active {
+    transform: scale(0.95);
+    box-shadow: 0 4px 10px -4px hsl(var(--foreground) / 0.25);
+  }
+}
+
+/*
+ * Scoped auto-press: setiap elemen dengan atribut `data-press-scope="on"`
+ * akan otomatis memberi reaksi sentuh pada elemen interaktif di dalamnya —
+ * tanpa perlu menambah kelas satu-per-satu di halaman besar (Beranda,
+ * daftar produk, dsb).
+ *
+ * Cakupan role/tag interaktif:
+ *   - button, a[href], summary, label[for]
+ *   - input[type="button"|"submit"|"reset"|"checkbox"|"radio"|"file"|"image"|"color"|"range"]
+ *   - select
+ *   - [role="button"|"menuitem"|"menuitemcheckbox"|"menuitemradio"
+ *          |"tab"|"option"|"switch"|"checkbox"|"radio"|"link"
+ *          |"treeitem"|"gridcell"|"combobox"]
+ *
+ * Sengaja TIDAK termasuk: input teks (text/email/password/number/search/tel/url/
+ * date/time/datetime-local/month/week) dan textarea — mengaktifkan scale pada
+ * saat mengetik terasa mengganggu dan bisa memicu shift caret.
+ *
+ * Opt-out per elemen dengan `data-no-press`; berguna untuk drag handle,
+ * tombol di dalam dialog Radix yang punya animasi sendiri, atau tombol
+ * yang harus tetap statis (mis. label toggle di form multi-langkah).
+ */
+[data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+  transition-property: transform, background-color, filter, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  will-change: transform;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+  transform: scale(0.97);
+  filter: brightness(0.96);
+}
+[data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+}
+
+/*
+ * Hormati preferensi sistem `prefers-reduced-motion: reduce` maupun override
+ * manual (`html.reduce-motion`, `html[data-reduce-motion="on"]`): nonaktifkan
+ * skala + shading pada semua utility press dan pada scope auto-press, tanpa
+ * menghapus focus-ring aksesibilitas. Transisi juga dinolkan agar tidak ada
+ * "loncat" saat state :active dilepas.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .press,
+  .press-card,
+  .press-row,
+  .press-fab,
+  [data-press-scope="on"] :is(
+    button, a[href], summary, label[for], select,
+    input[type="button"], input[type="submit"], input[type="reset"],
+    input[type="checkbox"], input[type="radio"], input[type="file"],
+    input[type="image"], input[type="color"], input[type="range"],
+    [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+    [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+    [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+    [role="combobox"]
+  ):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+    transition-duration: 0.001ms;
+    will-change: auto;
+  }
+  .press:active,
+  .press-card:active,
+  .press-row:active,
+  .press-fab:active,
+  [data-press-scope="on"] :is(
+    button, a[href], summary, label[for], select,
+    input[type="button"], input[type="submit"], input[type="reset"],
+    input[type="checkbox"], input[type="radio"], input[type="file"],
+    input[type="image"], input[type="color"], input[type="range"],
+    [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+    [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+    [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+    [role="combobox"]
+  ):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+    transform: none;
+    filter: none;
+    background-color: inherit;
+    box-shadow: none;
+  }
+}
+
+html.reduce-motion .press,
+html.reduce-motion .press-card,
+html.reduce-motion .press-row,
+html.reduce-motion .press-fab,
+html[data-reduce-motion="on"] .press,
+html[data-reduce-motion="on"] .press-card,
+html[data-reduce-motion="on"] .press-row,
+html[data-reduce-motion="on"] .press-fab,
+html.reduce-motion [data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]),
+html[data-reduce-motion="on"] [data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+  will-change: auto;
+}
+html.reduce-motion .press:active,
+html.reduce-motion .press-card:active,
+html.reduce-motion .press-row:active,
+html.reduce-motion .press-fab:active,
+html[data-reduce-motion="on"] .press:active,
+html[data-reduce-motion="on"] .press-card:active,
+html[data-reduce-motion="on"] .press-row:active,
+html[data-reduce-motion="on"] .press-fab:active,
+html.reduce-motion [data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active,
+html[data-reduce-motion="on"] [data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+  transform: none !important;
+  filter: none !important;
+  background-color: inherit !important;
+}
+
+/* Sonner toaster: pastikan container `<ol>` tidak overflow di viewport
+ * sempit (411/390px). Sonner default menaruh offset 16px yang membuat
+ * lebar melampaui viewport sedikit. Clamp lebar + geser posisi supaya
+ * pas dalam gutter 12px. */
+[data-sonner-toaster] {
+  max-width: calc(100vw - 24px) !important;
+  box-sizing: border-box;
+}
+@media (max-width: 640px) {
+  [data-sonner-toaster] {
+    left: 12px !important;
+    right: 12px !important;
+    width: calc(100vw - 24px) !important;
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   Efek permukaan modern: kaca (glass), transparansi, bayangan, saturasi.
+   Variabel diset dari Pengaturan → Tampilan (applySurfaceFx).
+   ========================================================================== */
+html[data-glass="1"] [data-slot="card"],
+html[data-glass="1"] [data-slot="popover-content"],
+html[data-glass="1"] [data-slot="dropdown-menu-content"],
+html[data-glass="1"] [data-slot="dialog-content"],
+html[data-glass="1"] [data-slot="sheet-content"] {
+  background-color: color-mix(in oklab, var(--card) calc(var(--app-surface-opacity, 1) * 100%), transparent);
+  backdrop-filter: blur(var(--app-surface-blur, 12px)) saturate(140%);
+  border-color: color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+
+html[data-glass="1"] [data-slot="sidebar-container"],
+html[data-glass="1"] [data-slot="sidebar-inner"],
+html[data-glass="1"] .app-sidebar-surface {
+  background-color: color-mix(in oklab, var(--sidebar, var(--card)) calc(var(--app-sidebar-opacity, 1) * 100%), transparent);
+  backdrop-filter: blur(var(--app-surface-blur, 12px)) saturate(140%);
+}
+
+/* Kedalaman bayangan (0 = datar, 3 = dramatis) */
+html [data-slot="card"] {
+  box-shadow:
+    0 calc(var(--app-shadow, 1) * 1px) calc(var(--app-shadow, 1) * 2px)
+      color-mix(in oklab, var(--foreground) calc(var(--app-shadow, 1) * 4%), transparent),
+    0 calc(var(--app-shadow, 1) * 6px) calc(var(--app-shadow, 1) * 16px)
+      color-mix(in oklab, var(--foreground) calc(var(--app-shadow, 1) * 5%), transparent);
+}
+
+/* Saturasi warna antarmuka */
+html {
+  --app-saturation: 1;
+}
+body {
+  filter: saturate(var(--app-saturation, 1));
+}
+
+/* Gradien pada elemen beraksen */
+html[data-accent-gradient="1"] [data-slot="button"].bg-primary,
+html[data-accent-gradient="1"] button.bg-primary,
+html[data-accent-gradient="1"] .bg-primary {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--primary) 100%, transparent),
+    color-mix(in oklab, var(--primary) 62%, white)
+  );
+}
+
+/* ==========================================================================
+   Midnight Indigo — mode pratinjau (opt-in via Pengaturan Tampilan).
+
+   Aktif hanya ketika flag global menyala DAN halaman memasang
+   <MidnightScope /> (Beranda & Gudang), sehingga preset user di halaman lain
+   tidak ikut berubah. Semua nilai memakai token, bukan warna hardcode, agar
+   tetap tunduk pada radius/font/efek permukaan pilihan user.
+   ========================================================================== */
+html[data-midnight="1"][data-theme-variant="indigo"]:is([data-midnight-page="1"], [data-midnight-scope="all"]) {
+  color-scheme: dark;
+
+  --background: oklch(0.17 0.045 275);
+  --foreground: oklch(0.95 0.012 275);
+
+  --card: oklch(0.215 0.05 275);
+  --card-foreground: oklch(0.95 0.012 275);
+  --popover: oklch(0.215 0.05 275);
+  --popover-foreground: oklch(0.95 0.012 275);
+
+  /* !important: preset user menulis --primary/--ring sebagai inline style di
+     <html>, jadi tanpa ini aksen preview tidak pernah jadi indigo. */
+  --primary: oklch(0.66 0.19 278) !important;
+  --primary-foreground: oklch(0.16 0.05 275) !important;
+  --ring: oklch(0.66 0.19 278) !important;
+
+  --secondary: oklch(0.26 0.05 275);
+  --secondary-foreground: oklch(0.94 0.012 275);
+  --muted: oklch(0.25 0.045 275);
+  --muted-foreground: oklch(0.74 0.03 275);
+  --accent: oklch(0.29 0.06 278);
+  --accent-foreground: oklch(0.96 0.012 275);
+
+  --border: oklch(0.33 0.05 275);
+  --input: oklch(0.33 0.05 275);
+
+  --sidebar: oklch(0.155 0.045 275);
+  --sidebar-foreground: oklch(0.93 0.012 275);
+  --sidebar-primary: oklch(0.66 0.19 278);
+  --sidebar-primary-foreground: oklch(0.16 0.05 275);
+  --sidebar-accent: oklch(0.26 0.055 277);
+  --sidebar-accent-foreground: oklch(0.96 0.012 275);
+  --sidebar-border: oklch(0.30 0.05 275);
+  --sidebar-ring: oklch(0.66 0.19 278);
+}
+
+/* ==========================================================================
+   Noir & Gold — varian default tema gelap.
+
+   Hitam pekat + aksen emas hangat, kontras tinggi, tanpa warna hardcode di
+   komponen (semua lewat token semantic). Selector-nya sengaja mengikuti
+   mekanisme scope yang sama dengan Midnight Indigo.
+   ========================================================================== */
+html[data-midnight="1"]:not([data-theme-variant="indigo"]):is(
+    [data-midnight-page="1"],
+    [data-midnight-scope="all"]
+  ) {
+  color-scheme: dark;
+
+  --background: oklch(0.145 0.004 80);
+  --foreground: oklch(0.938 0.012 85);
+
+  --card: oklch(0.188 0.005 80);
+  --card-foreground: oklch(0.938 0.012 85);
+  --popover: oklch(0.188 0.005 80);
+  --popover-foreground: oklch(0.938 0.012 85);
+
+  /* !important: preset user menulis --primary/--ring sebagai inline style
+     di <html>, jadi tanpa ini aksen emas tidak pernah menang. */
+  --primary: oklch(0.762 0.122 86) !important;
+  --primary-foreground: oklch(0.16 0.012 80) !important;
+  --ring: oklch(0.762 0.122 86) !important;
+
+  --secondary: oklch(0.235 0.006 80);
+  --secondary-foreground: oklch(0.93 0.012 85);
+  --muted: oklch(0.225 0.005 80);
+  --muted-foreground: oklch(0.715 0.017 85);
+  --accent: oklch(0.262 0.021 84);
+  --accent-foreground: oklch(0.955 0.014 85);
+
+  --border: oklch(0.288 0.009 82);
+  --input: oklch(0.288 0.009 82);
+
+  --sidebar: oklch(0.128 0.004 80);
+  --sidebar-foreground: oklch(0.922 0.012 85);
+  --sidebar-primary: oklch(0.762 0.122 86);
+  --sidebar-primary-foreground: oklch(0.16 0.012 80);
+  --sidebar-accent: oklch(0.242 0.018 84);
+  --sidebar-accent-foreground: oklch(0.955 0.014 85);
+  --sidebar-border: oklch(0.272 0.009 82);
+  --sidebar-ring: oklch(0.762 0.122 86);
+}
+
+/* Sentuhan editorial: gradasi indigo lembut di latar halaman target. */
+html[data-midnight="1"]:is([data-midnight-page="1"], [data-midnight-scope="all"]) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      90% 60% at 10% -10%,
+      color-mix(in oklab, var(--primary) 20%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      70% 50% at 100% 0%,
+      color-mix(in oklab, var(--primary) 12%, transparent) 0%,
+      transparent 58%
+    );
+}
+
+/* ==========================================================================
+ * Aksesibilitas: skeleton & animasi
+ * - Kontras skeleton dinaikkan (dari primary/10 yang nyaris tak terlihat)
+ *   memakai token semantik agar tetap ikut tema terang/gelap.
+ * - Semua animasi/transisi dihormati terhadap `prefers-reduced-motion: reduce`
+ *   maupun override manual (`html.reduce-motion` / `[data-reduce-motion="on"]`).
+ * ========================================================================== */
+
+.skeleton-a11y {
+  background-color: color-mix(in oklab, var(--muted-foreground) 22%, var(--muted));
+  border: 1px solid color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+}
+
+/* Kontras lebih tinggi lagi bila OS meminta more-contrast. */
+@media (prefers-contrast: more) {
+  .skeleton-a11y {
+    background-color: color-mix(in oklab, var(--muted-foreground) 38%, var(--muted));
+    border-color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  }
+}
+
+/* Denyut skeleton yang lebih lembut namun tetap terbaca. */
+@keyframes skeleton-a11y-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.reduce-motion):not([data-reduce-motion="on"]) .skeleton-a11y {
+    animation: skeleton-a11y-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+/* Reduced motion global: hentikan animasi dekoratif, sisakan state statis. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton-a11y,
+  .animate-pulse {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
+
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after,
+html[data-reduce-motion="on"] *,
+html[data-reduce-motion="on"] *::before,
+html[data-reduce-motion="on"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html.reduce-motion .animate-pulse,
+html[data-reduce-motion="on"] .animate-pulse,
+html.reduce-motion .skeleton-a11y,
+html[data-reduce-motion="on"] .skeleton-a11y {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+/* ==========================================================================
+ * Halaman unduh APK — fokus keyboard, ukuran tap, dan mode gelap
+ * ========================================================================== */
+
+/* Fokus keyboard yang jelas & konsisten (dua lapis agar terlihat di atas
+   tombol berwarna maupun panel transparan). */
+[data-dl-page] :is(a[href], button, [role="button"], summary, input, select):focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 0.65rem;
+  box-shadow: 0 0 0 2px var(--background);
+}
+
+/* Ukuran tap konsisten: minimal 44x44 untuk semua kontrol utama. */
+[data-dl-page] :is(a[href], button, [role="button"]) {
+  min-height: 2.75rem;
+}
+[data-dl-page] :is(a[href], button, [role="button"]).is-inline-link {
+  min-height: 2.25rem;
+}
+
+/* Dark mode: panel & kartu tetap kontras di atas latar apa pun. */
+.dark [data-dl-page] .readable-panel {
+  background-color: color-mix(in oklab, var(--card) 92%, black 8%);
+  border-color: color-mix(in oklab, var(--border) 100%, transparent);
+  box-shadow: 0 20px 48px -26px rgb(0 0 0 / 0.85);
+}
+.dark [data-dl-page] .bg-card {
+  background-color: color-mix(in oklab, var(--card) 88%, white 4%);
+}
+
+@media (prefers-contrast: more) {
+  [data-dl-page] :is(a[href], button, [role="button"]) {
+    border-color: var(--foreground);
+  }
 }

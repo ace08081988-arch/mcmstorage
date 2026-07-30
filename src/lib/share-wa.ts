@@ -42,15 +42,31 @@ export type ShareInput = {
   previousLog?: import("./send-log").SendLogEntry[];
   /** Daftar shot ID (sorted, koma) untuk sinkronisasi idempotency lintas channel. */
   idemIdsKey?: string;
+  /** Info lawan (pelanggan / supplier) untuk tombol Hutang/Bayar/Lunas
+   *  di pratinjau. Bila dikosongkan tetapi `phone` terisi, `phone` dipakai
+   *  sebagai fallback pencarian pelanggan/supplier milik user. */
+  peer?: { name?: string; phone?: string; accountUserId?: string } | null;
 };
 
 import { toast } from "sonner";
 import { Capacitor } from "@capacitor/core";
 import { pickWhatsAppTarget, type WaTarget } from "./wa-target";
 import { confirmWaShare } from "./wa-preview";
+import { normalizeWaNumber } from "./phone";
 
-export function buildWhatsAppUrl(text: string, phone?: string) {
-  const base = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : "https://wa.me/";
+/**
+ * Bangun URL wa.me. Bila `countryCode` diisi, nomor dinormalisasi via
+ * `normalizeWaNumber` (buang "00", pasang kode negara, ganti trunk lokal).
+ * Tanpa `countryCode` fallback ke perilaku lama (buang non-digit) demi
+ * backward compatibility dengan pemanggil yang sudah menyimpan digit E.164.
+ */
+export function buildWhatsAppUrl(text: string, phone?: string, countryCode?: string | null) {
+  const digits = phone
+    ? countryCode
+      ? normalizeWaNumber(phone, countryCode) ?? phone.replace(/\D/g, "")
+      : phone.replace(/\D/g, "")
+    : "";
+  const base = digits ? `https://wa.me/${digits}` : "https://wa.me/";
   return `${base}?text=${encodeURIComponent(text)}`;
 }
 
@@ -60,9 +76,17 @@ export function buildWhatsAppUrl(text: string, phone?: string) {
  * falls back to the `S.browser_fallback_url` (wa.me) which then opens regular
  * WhatsApp or the browser.
  */
-export function buildWhatsAppBusinessIntentUrl(text: string, phone?: string) {
-  const digits = (phone ?? "").replace(/\D/g, "");
-  const fallback = buildWhatsAppUrl(text, phone);
+export function buildWhatsAppBusinessIntentUrl(
+  text: string,
+  phone?: string,
+  countryCode?: string | null,
+) {
+  const digits = phone
+    ? countryCode
+      ? normalizeWaNumber(phone, countryCode) ?? phone.replace(/\D/g, "")
+      : phone.replace(/\D/g, "")
+    : "";
+  const fallback = buildWhatsAppUrl(text, phone, countryCode);
   const encodedText = encodeURIComponent(text);
   const phonePart = digits ? `phone=${digits}&` : "";
   return (
@@ -87,6 +111,7 @@ export function openWhatsAppPreferBusiness(
   text: string,
   phone?: string,
   target: WaTarget | "auto" = "auto",
+  countryCode?: string | null,
 ): Window | null {
   let url: string;
   let isIntent = false;
@@ -94,19 +119,19 @@ export function openWhatsAppPreferBusiness(
     // Pakai intent:// di Android; di luar Android tidak ada cara memaksa,
     // jadi fallback ke wa.me (browser/iOS akan pakai WA terpasang).
     if (isAndroidWeb()) {
-      url = buildWhatsAppBusinessIntentUrl(text, phone);
+      url = buildWhatsAppBusinessIntentUrl(text, phone, countryCode);
       isIntent = true;
     } else {
-      url = buildWhatsAppUrl(text, phone);
+      url = buildWhatsAppUrl(text, phone, countryCode);
     }
   } else if (target === "regular") {
-    url = buildWhatsAppUrl(text, phone);
+    url = buildWhatsAppUrl(text, phone, countryCode);
   } else {
     if (isAndroidWeb()) {
-      url = buildWhatsAppBusinessIntentUrl(text, phone);
+      url = buildWhatsAppBusinessIntentUrl(text, phone, countryCode);
       isIntent = true;
     } else {
-      url = buildWhatsAppUrl(text, phone);
+      url = buildWhatsAppUrl(text, phone, countryCode);
     }
   }
   // Chrome Android hanya memproses `intent://` kalau navigasi terjadi di tab
@@ -138,13 +163,20 @@ export type ShareResult =
 
 export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let { text } = input;
-  const { title, url, files, phone, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey } = input;
+  const { title, url, files, phone, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey, peer } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
   // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA. Pratinjau
   // dapat menambah file via retryMissing (memutasi array `files`), jadi cek
   // `hasFiles` SETELAH konfirmasi.
-  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey });
+  // Auto-derive peer dari `phone` + `title` bila caller tidak memberikan peer
+  // eksplisit — nomor sudah cukup untuk mencocokkan pelanggan/supplier.
+  const effectivePeer =
+    peer ??
+    (phone
+      ? { phone, name: title }
+      : null);
+  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey, peer: effectivePeer });
   if (!approved.ok) return { status: "cancelled" };
   if (typeof approved.text === "string") text = approved.text;
   const hasFiles = !!(files && files.length > 0);
@@ -172,12 +204,30 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
       }
       const { Share } = await import("@capacitor/share");
       const fullText = url ? `${text}\n${url}` : text;
+      // WhatsApp Android sering MEMBUANG EXTRA_TEXT saat share disertai
+      // files (khususnya ACTION_SEND_MULTIPLE / >=1 gambar). Akibatnya
+      // caption + link lokasi hilang meski foto sampai. Sebagai jaring
+      // pengaman: salin `fullText` ke clipboard SEBELUM share sheet
+      // dibuka, sehingga user tinggal tempel di WA jika caption drop.
+      let captionCopied = false;
+      if (hasFiles && fullText.trim()) {
+        try {
+          const { Clipboard } = await import("@capacitor/clipboard");
+          await Clipboard.write({ string: fullText });
+          captionCopied = true;
+        } catch {
+          try { await navigator.clipboard?.writeText(fullText); captionCopied = true; } catch { /* ignore */ }
+        }
+      }
       await Share.share({
         title,
         text: fullText,
         files: fileUris.length ? fileUris : undefined,
         dialogTitle: "Kirim ke WhatsApp",
       });
+      if (captionCopied) {
+        toast.message("Foto terkirim. Keterangan + lokasi sudah disalin — tempel di kolom pesan WhatsApp bila caption tidak muncul.", { duration: 9000 });
+      }
       return { status: "shared", withFiles: fileUris.length > 0 };
     } catch (err) {
       const name = (err as { message?: string })?.message ?? "";
@@ -198,15 +248,23 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let shareError = "";
   let filesPayload: File[] | undefined;
   if (hasFiles && nav && typeof nav.share === "function") {
-    const probe: ShareData = { files, text, title };
+    const fullText = url ? `${text}\n${url}` : text;
+    const probe: ShareData = { files, text: fullText, title };
     if (typeof nav.canShare === "function" && nav.canShare(probe)) {
       filesPayload = files;
     } else if (typeof nav.canShare === "function" && nav.canShare({ files })) {
       filesPayload = files;
     }
     if (filesPayload) {
+      // Backup caption ke clipboard karena WA Android/WebView Web Share
+      // kerap menjatuhkan `text` saat files ikut dilampirkan.
+      let captionCopied = false;
+      try { await navigator.clipboard?.writeText(fullText); captionCopied = true; } catch { /* ignore */ }
       try {
-        await nav.share({ files: filesPayload, text, title });
+        await nav.share({ files: filesPayload, text: fullText, title });
+        if (captionCopied) {
+          toast.message("Foto terkirim. Keterangan + lokasi sudah disalin — tempel di kolom pesan WhatsApp bila caption tidak muncul.", { duration: 9000 });
+        }
         return { status: "shared", withFiles: true };
       } catch (err) {
         const name = (err as DOMException)?.name;
@@ -353,6 +411,76 @@ function legacyCopy(text: string): boolean {
     return ok;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Fallback terakhir kalau `navigator.clipboard` diblokir DAN
+ * `document.execCommand("copy")` tidak didukung (mis. Safari iOS baru yang
+ * sudah drop execCommand, atau WebView APK dengan clipboard mati):
+ * pasang textarea tersembunyi berisi `text`, lalu paksa Selection + Range
+ * agar teks tampil ter-select di viewport. User tinggal menekan Ctrl/⌘+C
+ * atau tap "Copy" pada bubble sistem — jauh lebih andal daripada
+ * mengandalkan `.select()` pada input read-only yang di beberapa WebView
+ * tidak menghasilkan selection sesungguhnya.
+ *
+ * Return `() => void` untuk membersihkan textarea + selection setelah user
+ * selesai. Caller wajib memanggil cleanup saat modal ditutup.
+ */
+export function selectTextForManualCopy(text: string): (() => void) | null {
+  try {
+    if (typeof document === "undefined") return null;
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.setAttribute("aria-hidden", "true");
+    // Tetap perlu di layout supaya bisa di-focus & select di iOS Safari.
+    ta.style.position = "fixed";
+    ta.style.top = "50%";
+    ta.style.left = "50%";
+    ta.style.width = "1px";
+    ta.style.height = "1px";
+    ta.style.padding = "0";
+    ta.style.border = "0";
+    ta.style.opacity = "0";
+    ta.style.pointerEvents = "none";
+    // iOS: kontenteditable-like agar `.select()` benar-benar men-select.
+    ta.contentEditable = "true";
+    document.body.appendChild(ta);
+
+    // 1) Coba jalur textarea klasik.
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(0, text.length);
+
+    // 2) Perkuat dengan Selection + Range — di beberapa WebView jalur (1)
+    //    tidak menghasilkan `window.getSelection()` yang non-kosong.
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(ta);
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    } catch {
+      /* ignore — jalur (1) mungkin sudah cukup */
+    }
+
+    return () => {
+      try {
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+      } catch {
+        /* ignore */
+      }
+      try {
+        ta.remove();
+      } catch {
+        /* ignore */
+      }
+    };
+  } catch {
+    return null;
   }
 }
 

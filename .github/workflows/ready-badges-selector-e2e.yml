@@ -1,0 +1,77 @@
+name: Ready Badges Selector E2E
+
+# Regresi guard: badge Aktif/Terkirim di surface Request + Ecer WAJIB
+# match angka helper selector setelah tiap transisi Tandai/Batalkan
+# Terkirim. Spec dijalankan pada tiap PR yang menyentuh selector,
+# harness, komponen badge, atau konfigurasi Playwright.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/prep-active-selector.ts"
+      - "src/lib/prep-readonly-guard.ts"
+      - "src/components/ReadyRequestSection.tsx"
+      - "src/components/ReadyEcerSection.tsx"
+      - "src/routes/lovable.visual.ready-badges-selector.tsx"
+      - "tests/e2e/ready-badges-selector.spec.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/ready-badges-selector-e2e.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ready-badges-selector-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BASE_URL: http://localhost:4173
+      # Simpan trace + video untuk tiap kegagalan sehingga artifact
+      # Playwright cukup untuk mereplay tanpa re-run lokal.
+      PWTEST_VIDEO: retain-on-failure
+      CI: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: bunx vite preview --port 4173 --host 127.0.0.1 &
+
+      - name: Wait for server
+        run: |
+          until curl -sf http://localhost:4173 > /dev/null; do
+            sleep 1
+          done
+
+      - name: Run ready-badges selector suite
+        run: bunx playwright test --project=ready-badges-selector-e2e --reporter=list,html
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-ready-badges-selector
+          path: playwright-report
+          retention-days: 14
+
+      - name: Upload Playwright traces, screenshots, videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-ready-badges-selector
+          path: test-results
+          retention-days: 14
+          if-no-files-found: ignore

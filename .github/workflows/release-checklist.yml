@@ -1,0 +1,138 @@
+name: Release Checklist (strict AAB validate)
+
+# Menjalankan `bun run release:checklist -- --strict-aab` setelah setiap
+# "Build & Release AAB" selesai. Kalau versionCode/versionName di AAB tidak
+# cocok dengan build.gradle, workflow ini GAGAL — jadi release build yang
+# tidak lolos validasi tidak akan mengisi RELEASE_CHECKLIST.md.
+#
+# Juga bisa dijalankan manual dari tab Actions untuk regen checklist dari
+# artifact AAB yang sudah ada.
+
+on:
+  workflow_run:
+    workflows: ["Build & Release AAB"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID Build & Release AAB (opsional; default: run terakhir yang sukses)"
+        type: string
+        default: ""
+      variant:
+        description: "Varian AAB yang mau divalidasi"
+        type: choice
+        default: full
+        options: [full, chat]
+
+concurrency:
+  group: release-checklist-${{ github.event.workflow_run.id || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  checklist:
+    name: release:checklist --strict-aab
+    runs-on: ubuntu-latest
+    # workflow_run: hanya jalan kalau build AAB sukses. Manual: selalu jalan.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout (ref yang di-build)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup JDK 17 (untuk bundletool.jar)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download bundletool
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/tools"
+          # Versi pinned biar hasil deterministik.
+          curl -fsSL -o "$RUNNER_TEMP/tools/bundletool.jar" \
+            https://github.com/google/bundletool/releases/download/1.17.2/bundletool-all-1.17.2.jar
+          ls -la "$RUNNER_TEMP/tools/bundletool.jar"
+          echo "BUNDLETOOL=$RUNNER_TEMP/tools/bundletool.jar" >> "$GITHUB_ENV"
+
+      - name: Download AAB artifact dari run Build & Release AAB
+        id: dl
+        uses: actions/download-artifact@v4
+        with:
+          # Nama artifact mengikuti pola di aab-release.yml:
+          #   aab-<variant>-<run_number>
+          pattern: aab-${{ github.event.inputs.variant || 'full' }}-*
+          path: downloaded-aab
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.inputs.run_id || github.event.workflow_run.id }}
+
+      - name: Locate AAB file
+        id: findaab
+        run: |
+          set -euo pipefail
+          # Prefer arsip dist/aab (nama sudah mengandung versionCode). Fallback
+          # ke app-release.aab bawaan gradle.
+          AAB=$(find downloaded-aab -type f -name "*.aab" | sort | head -1)
+          if [ -z "$AAB" ]; then
+            echo "::error::Tidak ada file .aab di artifact yang diunduh."
+            ls -R downloaded-aab || true
+            exit 1
+          fi
+          echo "✓ AAB target: $AAB"
+          echo "aab=$AAB" >> "$GITHUB_OUTPUT"
+
+      - name: Run release:checklist (strict)
+        id: checklist
+        env:
+          AAB_PATH: ${{ steps.findaab.outputs.aab }}
+        run: |
+          set -euo pipefail
+          echo "▶ bun run release:checklist -- --aab \"$AAB_PATH\" --strict-aab --in-place"
+          bun run release:checklist -- --aab "$AAB_PATH" --strict-aab --in-place
+
+      - name: Upload filled checklist
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-checklist-${{ github.event.workflow_run.id || github.run_id }}
+          path: RELEASE_CHECKLIST*.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Job summary
+        if: always()
+        env:
+          OUTCOME: ${{ steps.checklist.outcome }}
+          AAB_PATH: ${{ steps.findaab.outputs.aab }}
+        run: |
+          {
+            if [ "$OUTCOME" = "success" ]; then
+              echo "## ✅ Release checklist tervalidasi"
+              echo ""
+              echo "AAB **$AAB_PATH** lolos \`--strict-aab\` (versionCode & versionName di AAB cocok dengan \`build.gradle\`)."
+              echo ""
+              echo "\`RELEASE_CHECKLIST.md\` terisi otomatis dan tersedia di artifact di bawah."
+            else
+              echo "## ❌ Validasi AAB gagal"
+              echo ""
+              echo "\`bun run release:checklist -- --strict-aab\` menolak AAB **\`$AAB_PATH\`**."
+              echo "Cek log step **Run release:checklist (strict)** untuk pesan mismatch versionCode/versionName."
+              echo ""
+              echo "> Rebuild AAB atau perbaiki \`android/app/build.gradle\`, lalu ulangi Build & Release AAB."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -13,6 +13,9 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        // Sengaja TIDAK diindeks (robots.txt Disallow + meta robots noindex,nofollow):
+        // /auth-callback, /error, /reset-password, /admin-denial-log, /audit,
+        // dan seluruh rute yang butuh login (/gudang, /chat, /request, dst).
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
           { path: "/refund", changefreq: "yearly", priority: "0.5" },

@@ -1,0 +1,454 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { Bell, BellOff, BellRing, ChevronRight, MessageCircle, ClipboardCheck, Package, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  getRecentNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  type FeedItem,
+} from "@/lib/notif-feed.functions";
+
+const REFRESH_MS = 60_000; // fallback polling — realtime yang utama
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const s = Math.max(1, Math.floor(diff / 1000));
+  if (s < 60) return `${s}d`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}j`;
+  const d = Math.floor(h / 24);
+  return `${d}h`;
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  if (sameDay) return `Hari ini · ${time}`;
+  const yest = new Date(now);
+  yest.setDate(now.getDate() - 1);
+  const isYest =
+    d.getFullYear() === yest.getFullYear() &&
+    d.getMonth() === yest.getMonth() &&
+    d.getDate() === yest.getDate();
+  if (isYest) return `Kemarin · ${time}`;
+  const date = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  return `${date} · ${time}`;
+}
+
+function iconFor(kind: FeedItem["kind"]) {
+  switch (kind) {
+    case "chat":
+      return MessageCircle;
+    case "tugas":
+      return ClipboardCheck;
+    case "order":
+      return Package;
+    case "system":
+    default:
+      return ShieldAlert;
+  }
+}
+
+export function NotificationBell() {
+  const fetchFeed = useServerFn(getRecentNotifications);
+  const markOne = useServerFn(markNotificationRead);
+  const markAll = useServerFn(markAllNotificationsRead);
+
+  const [items, setItems] = useState<FeedItem[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState<null | "one" | "all">(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
+    () =>
+      typeof window !== "undefined" && "Notification" in window
+        ? Notification.permission
+        : "unsupported",
+  );
+  const [requesting, setRequesting] = useState(false);
+
+  const refreshPerm = () => {
+    if (typeof window === "undefined") return;
+    if (!("Notification" in window)) {
+      setPerm("unsupported");
+      return;
+    }
+    setPerm(Notification.permission);
+  };
+
+  const askPermission = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission === "denied") return;
+    setRequesting(true);
+    try {
+      const res = await Notification.requestPermission();
+      setPerm(res);
+    } catch {
+      /* ignore */
+    } finally {
+      setRequesting(false);
+    }
+  };
+
+  const unreadCount = useMemo(
+    () => items.filter((i) => i.unread).length,
+    [items],
+  );
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const res = await fetchFeed({ data: { pageSize: 20 } });
+      setItems(res.items);
+    } catch {
+      /* keep last snapshot on transient failure */
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial + polling. Pause polling while tab hidden to save battery.
+  useEffect(() => {
+    let alive = true;
+    let timer: number | null = null;
+    const tick = async () => {
+      if (!alive) return;
+      if (document.visibilityState === "visible") await refresh();
+      timer = window.setTimeout(tick, REFRESH_MS);
+    };
+    void tick();
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        void refresh();
+        refreshPerm();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      alive = false;
+      if (timer) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Realtime: refresh instan saat ada event notifikasi baru pada sumber
+  // data yang di-agregasi feed (chat/tugas/order/sistem). RLS memastikan
+  // hanya event yang boleh dilihat user yang akan diterima klien.
+  useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let debounce: number | null = null;
+    const bump = () => {
+      if (debounce) return;
+      debounce = window.setTimeout(() => {
+        debounce = null;
+        if (document.visibilityState === "visible") void refresh();
+      }, 400);
+    };
+    // H15: only subscribe once the current user is known, and scope postgres_changes
+    // filters to columns owned by the user so we don't process every insert globally.
+    // RLS already gates row visibility; the filter cuts wire traffic + wakeups.
+    void import("@/lib/current-user").then(({ getCurrentUser }) => getCurrentUser()).then((user) => {
+      if (cancelled) return;
+      const uid = user?.id;
+      if (!uid) return;
+      // Suffix unik per-mount agar StrictMode / remount cepat tidak
+      // mengambil kembali channel lama yang sudah `.subscribe()` — kalau
+      // itu terjadi, chaining `.on()` berikutnya melempar
+      // "cannot add postgres_changes callbacks after subscribe()".
+      const topic = `notif-bell:${uid}:${Math.random().toString(36).slice(2, 10)}`;
+      channel = supabase
+        .channel(topic)
+        // messages has no per-recipient column; keep global insert but rely on RLS.
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages" },
+          bump,
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "friend_requests", filter: `to_user=eq.${uid}` },
+          bump,
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "prep_submissions" },
+          bump,
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "order_request_events", filter: `user_id=eq.${uid}` },
+          bump,
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "prep_pin_alerts", filter: `owner_user_id=eq.${uid}` },
+          bump,
+        )
+        .subscribe();
+    });
+    return () => {
+      cancelled = true;
+      if (debounce) window.clearTimeout(debounce);
+      if (channel) void supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onItemClick = async (it: FeedItem) => {
+    const snapshot = items;
+    setItems((prev) =>
+      prev.map((x) => (x.id === it.id ? { ...x, unread: false } : x)),
+    );
+    setSyncing("one");
+    setSyncError(null);
+    try {
+      await markOne({ data: { id: it.id } });
+      // Konfirmasi backend: refresh daftar dari server agar status sinkron.
+      await refresh();
+    } catch {
+      // Rollback optimistik dan tandai gagal sinkron.
+      setItems(snapshot);
+      setSyncError("Gagal menandai dibaca. Coba lagi.");
+    } finally {
+      setSyncing(null);
+    }
+    setOpen(false);
+  };
+
+  const onMarkAll = async () => {
+    const snapshot = items;
+    setItems((prev) => prev.map((x) => ({ ...x, unread: false })));
+    setSyncing("all");
+    setSyncError(null);
+    try {
+      await markAll({ data: {} });
+      await refresh();
+    } catch {
+      setItems(snapshot);
+      setSyncError("Gagal menandai semua dibaca.");
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-8 w-8"
+          aria-label={
+            unreadCount > 0
+              ? `Notifikasi (${unreadCount} belum dibaca)`
+              : "Notifikasi"
+          }
+        >
+          <Bell className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <Badge
+              variant="destructive"
+              className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[0.625rem] leading-none"
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-[calc(100vw-1rem)] max-w-sm p-0"
+      >
+        <div className="flex items-center justify-between border-b px-ms-3 py-ms-2">
+          <div className="text-ms-sm font-semibold">Notifikasi</div>
+          <div className="flex items-center gap-ms-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-ms-2 text-ms-xs"
+                onClick={onMarkAll}
+                disabled={syncing !== null}
+              >
+                {syncing === "all" ? "Menyinkron…" : "Tandai dibaca"}
+              </Button>
+            )}
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="h-7 px-ms-2 text-ms-xs"
+              onClick={() => setOpen(false)}
+            >
+              <Link to="/notifikasi">Semua</Link>
+            </Button>
+          </div>
+        </div>
+
+        {syncError && (
+          <div className="flex items-center justify-between gap-ms-2 border-b bg-destructive/10 px-ms-3 py-1.5 text-[0.6875rem] text-destructive">
+            <span>{syncError}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-ms-2 text-[0.6875rem]"
+              onClick={() => {
+                setSyncError(null);
+                void refresh();
+              }}
+            >
+              Muat ulang
+            </Button>
+          </div>
+        )}
+
+        {perm !== "granted" && (
+          <div className="flex items-start gap-ms-2 border-b bg-muted/40 px-ms-3 py-ms-2 text-ms-xs">
+            {perm === "denied" ? (
+              <BellOff className="mt-0.5 h-3.5 w-3.5 flex-none text-destructive" />
+            ) : (
+              <BellRing className="mt-0.5 h-3.5 w-3.5 flex-none text-primary" />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="font-medium">
+                {perm === "unsupported"
+                  ? "Notification API tidak tersedia"
+                  : perm === "denied"
+                    ? "Izin notifikasi diblokir"
+                    : "Aktifkan banner notifikasi"}
+              </div>
+              <p className="leading-snug text-muted-foreground">
+                {perm === "unsupported"
+                  ? "Browser/WebView ini tidak mendukung banner sistem."
+                  : perm === "denied"
+                    ? "Browser tidak akan menampilkan prompt lagi. Reset dari site settings atau buka diagnostik."
+                    : "Izinkan browser menampilkan banner walau aplikasi ditutup."}
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-ms-1">
+                {perm === "default" && (
+                  <Button
+                    size="sm"
+                    className="h-7 text-ms-xs"
+                    onClick={askPermission}
+                    disabled={requesting}
+                  >
+                    {requesting ? "Meminta…" : "Izinkan notifikasi"}
+                  </Button>
+                )}
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-ms-xs"
+                  onClick={() => setOpen(false)}
+                >
+                  <Link to="/status-notifikasi">Diagnostik</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="max-h-[70vh] overflow-y-auto">
+          {items.length === 0 ? (
+            <div className="px-ms-3 py-8 text-center text-ms-xs text-muted-foreground">
+              {loading ? "Memuat…" : "Belum ada notifikasi."}
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {items.map((it) => {
+                const Icon = iconFor(it.kind);
+                const content = (
+                  <div className="flex gap-ms-2 px-ms-3 py-ms-2">
+                    <div className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-muted">
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-ms-2">
+                        <div className="truncate text-ms-xs font-medium">
+                          {it.title}
+                        </div>
+                        <div
+                          className="flex-none text-[0.6875rem] text-muted-foreground"
+                          title={new Date(it.createdAt).toLocaleString("id-ID")}
+                        >
+                          {timeAgo(it.createdAt)}
+                        </div>
+                      </div>
+                      <div className="mt-0.5 line-clamp-2 text-ms-xs leading-snug text-muted-foreground">
+                        {it.body}
+                      </div>
+                      <div className="mt-1 flex items-center gap-ms-2 text-[0.6875rem]">
+                        <span className="text-muted-foreground">
+                          {formatDate(it.createdAt)}
+                        </span>
+                        <span
+                          className={
+                            it.unread
+                              ? "rounded-full bg-primary/10 px-1.5 py-0.5 text-primary"
+                              : "rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground"
+                          }
+                        >
+                          {it.unread ? "Belum dibaca" : "Dibaca"}
+                        </span>
+                        {it.href && (
+                          <span className="ml-auto inline-flex items-center gap-0.5 text-primary">
+                            Buka <ChevronRight className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+                return (
+                  <li key={it.id}>
+                    {it.href ? (
+                      <Link
+                        to={it.href}
+                        className="block hover:bg-muted/60"
+                        onClick={() => onItemClick(it)}
+                      >
+                        {content}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className="w-full text-left hover:bg-muted/60"
+                        onClick={() => onItemClick(it)}
+                      >
+                        {content}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <div className="border-t px-ms-3 py-ms-2 text-[0.6875rem] text-muted-foreground">
+          Fallback in-app — muncul walau banner sistem diblokir preview.
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

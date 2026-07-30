@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_ecer_prep_active_per_title ON public.ecer_preparations (title_id, created_at DESC) WHERE sold_at IS NULL;

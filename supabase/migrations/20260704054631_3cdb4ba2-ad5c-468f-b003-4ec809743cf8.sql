@@ -1,0 +1,1 @@
+ALTER TABLE public.staff_contacts ADD COLUMN IF NOT EXISTS pin_chat_mcm text;

@@ -1,39 +1,162 @@
 {
-  "_comment": "Intentional Supabase linter findings. Each entry suppresses ONE finding by (name, level, metadata.name). Update only when you intentionally accept a new finding; document why in 'reason'.",
+  "$schema": "./supabase-lint-allowlist.schema.json",
+  "schemaVersion": 1,
+  "_comment": "Intentional Supabase linter findings. Multiple entries per rule are supported so we can group functions by architectural role with an explicit justification for each bucket. Add a NEW entry (not a new function to an existing bucket) whenever you accept a finding for a new architectural reason. See docs/supabase-lint-allowlist.md for the taxonomy.",
   "allow": [
     {
       "name": "anon_security_definer_function_executable",
       "level": "WARN",
+      "category": "worker-portal-share-token",
       "functions": [
-        "public.prep_get_task",
-        "public.prep_submit",
-        "public.prep_upload_allowed",
-        "public.prep_worker_upload_allowed",
         "public.ecer_list_titles_via_task",
         "public.ecer_submit_via_task",
+        "public.get_worker_portal_public_config",
+        "public.prep_get_task",
+        "public.prep_peek_task",
+        "public.prep_read_allowed",
+        "public.prep_share_token_exists",
+        "public.prep_submission_verify",
+        "public.prep_submissions_mark_sent",
+        "public.prep_submissions_unmark_sent",
+        "public.prep_submit",
+        "public.prep_task_items_resolve_ecer_title",
+        "public.prep_upload_allowed",
+        "public.prep_worker_upload_allowed",
         "public.request_list_titles_via_task",
-        "public.request_submit_via_task"
+        "public.request_submit_via_task",
+        "public.send_ecer_preps_to_customer",
+        "public.send_request_prep_to_customer"
       ],
-      "reason": "Share-token + bcrypt-PIN worker RPCs. Anon access is the auth mechanism for offline warehouse workers; each call re-validates token + PIN and rate-limits failures via prep_pin_failures/prep_pin_alerts."
+      "reason": "Worker portal RPCs. Field workers scan a share link (no Supabase account) and authenticate per call with share_token + bcrypt PIN; anon EXECUTE IS the auth surface. Each function re-validates token + PIN, scopes to prep_tasks.owner_id, and rate-limits via prep_pin_failures/prep_pin_alerts. Covered by supabase/tests/security_definer_authz.sql (worker-portal group)."
+    },
+    {
+      "name": "anon_security_definer_function_executable",
+      "level": "WARN",
+      "category": "trigger-only",
+      "functions": [
+        "public.enforce_free_devices_cap",
+        "public.enforce_free_sales_cap",
+        "public.enforce_free_staff_cap",
+        "public.enforce_free_warehouse_cap",
+        "public.handle_new_user_subscription",
+        "public.prevent_debt_amount_below_paid",
+        "public.prevent_debt_overpayment"
+      ],
+      "reason": "Trigger bodies, not RPCs. Postgres executes triggers with the invoker's session role regardless of EXECUTE grants — the grant on the function is architecturally irrelevant. SECURITY DEFINER is required to read the plan/subscription tables that RLS hides from the writing user. Not directly callable in any meaningful sense; PostgREST invocation returns early because the required TG_OP context is null."
+    },
+    {
+      "name": "anon_security_definer_function_executable",
+      "level": "WARN",
+      "category": "cron-and-queue",
+      "functions": [
+        "public.email_queue_dispatch",
+        "public.email_queue_wake"
+      ],
+      "reason": "pg_cron / pgmq worker entry points. Scheduled by the database, not the client; anon EXECUTE exists so pg_cron's `postgres`-role scheduler can enumerate them without extra grants. Functions themselves only read pgmq queues and dispatch — no user-scoped writes and no PII exposure."
+    },
+    {
+      "name": "anon_security_definer_function_executable",
+      "level": "WARN",
+      "category": "signup-transition",
+      "functions": [
+        "public.gen_invite_code",
+        "public.has_active_pro",
+        "public.is_chat_only",
+        "public.match_address_book_profiles"
+      ],
+      "reason": "Invoked during the signup handshake before Supabase has issued the authenticated JWT (auth trigger context runs as anon). Each function either derives a value from auth.uid() with an explicit `IF auth.uid() IS NULL THEN RETURN` guard, or looks up a public/plan flag with no PII."
+    },
+    {
+      "name": "anon_security_definer_function_executable",
+      "level": "WARN",
+      "category": "authuid-guarded-user-rpc",
+      "functions": [
+        "public.chat_clear_conversation_for_me",
+        "public.chat_heartbeat",
+        "public.chat_link_business",
+        "public.chat_mute",
+        "public.chat_search_messages",
+        "public.chat_set_archive",
+        "public.chat_set_pin",
+        "public.create_chat_cart",
+        "public.message_delete_all_mine",
+        "public.message_delete_for_all",
+        "public.message_edit",
+        "public.message_hide_for_me",
+        "public.message_react",
+        "public.pos_commit_sale"
+      ],
+      "reason": "User RPCs that grant EXECUTE to PUBLIC (so anon inherits) but internally do `IF auth.uid() IS NULL THEN RAISE EXCEPTION 'unauthenticated'` and then scope every read/write to auth.uid() via is_conversation_member / has_role / owner_id checks. Kept on PUBLIC grant historically because these predate the split anon/authenticated grant convention; tightening to `TO authenticated` is tracked as a cleanup but does not change security posture. Covered by supabase/tests/security_definer_authz.sql."
     },
     {
       "name": "authenticated_security_definer_function_executable",
       "level": "WARN",
+      "category": "authuid-guarded-user-rpc",
       "functions": [
-        "public.prep_create_task",
-        "public.start_dm",
-        "public.create_group",
+        "public.add_contact_by_invite_code",
         "public.add_group_member",
+        "public.are_friends",
+        "public.cancel_friend_request",
+        "public.chat_clear_conversation_for_me",
+        "public.chat_heartbeat",
+        "public.chat_link_business",
+        "public.chat_mute",
+        "public.chat_search_messages",
+        "public.chat_set_archive",
+        "public.chat_set_pin",
+        "public.create_chat_cart",
+        "public.create_group",
         "public.ensure_order_conversation",
-        "public.has_role",
-        "public.can_chat",
-        "public.is_conversation_member",
-        "public.is_conversation_owner",
+        "public.get_chat_member_profiles",
+        "public.list_friend_requests",
+        "public.message_delete_all_mine",
+        "public.message_delete_for_all",
+        "public.message_edit",
+        "public.message_hide_for_me",
+        "public.message_pin",
+        "public.message_react",
+        "public.message_star",
+        "public.pos_commit_sale",
+        "public.prep_create_task",
+        "public.prep_pin_reset",
+        "public.prep_reset_pin",
+        "public.resolve_invite_code",
+        "public.respond_friend_request",
         "public.search_chat_contacts",
+        "public.search_profiles_for_link",
+        "public.send_friend_request",
+        "public.start_dm",
+        "public.start_pro_trial"
+      ],
+      "reason": "First-party user RPCs. SECURITY DEFINER is required because they write to tables (conversations, conversation_members, prep_tasks, friend_requests, subscriptions) whose RLS scopes reads/writes to auth.uid() but need cross-user visibility (e.g. start_dm inserts a row visible to the other party). Each function derives the caller from auth.uid() at the top and rejects null; ownership/membership is validated via is_conversation_member/is_conversation_owner/has_role. Covered by supabase/tests/security_definer_authz.sql."
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "level": "WARN",
+      "category": "rls-predicate",
+      "functions": [
+        "public.can_chat",
+        "public.has_role",
+        "public.is_conversation_member",
+        "public.is_conversation_owner"
+      ],
+      "reason": "Authorisation predicates used inside RLS policies and other SECURITY DEFINER bodies. They MUST be SECURITY DEFINER to break the RLS recursion loop (see docs/security-definer-inventory.md § predicates). Zero side effects, read-only, return boolean; direct EXECUTE by an authenticated user is equivalent to `SELECT has_role(auth.uid(), 'admin')` which they can already learn from any UI check."
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "level": "WARN",
+      "category": "admin-role-gated",
+      "functions": [
+        "public.admin_approve_payment",
+        "public.admin_list_users",
+        "public.admin_reject_payment",
+        "public.admin_set_admin_role",
+        "public.check_acknowledge_rate_limit",
+        "public.expire_subscriptions",
         "public.run_internal_security_scan",
         "public.security_findings_acknowledge"
       ],
-      "reason": "User-facing RPCs that enforce auth.uid() ownership/membership internally. Covered by supabase/tests/security_definer_authz.sql."
+      "reason": "Admin-only RPCs. First statement is `IF NOT has_role(auth.uid(), 'admin') THEN RAISE EXCEPTION 'forbidden'`. SECURITY DEFINER is required to bypass RLS on auth.users / subscriptions / security_findings tables that the admin's own JWT cannot see. Every function in this bucket is exercised by supabase/tests/security_definer_authz.sql (admin-gated group) which asserts a non-admin caller receives `forbidden`."
     }
   ]
 }

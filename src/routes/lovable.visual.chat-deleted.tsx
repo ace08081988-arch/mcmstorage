@@ -229,8 +229,8 @@ const conversationRows: Row[] = [
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <section data-visual-section={id} className="space-y-2">
-      <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
+    <section data-visual-section={id} className="space-ms-2">
+      <h2 className="text-ms-sm font-semibold text-muted-foreground">{title}</h2>
       <div className="rounded-lg border bg-card">{children}</div>
     </section>
   );
@@ -242,8 +242,8 @@ function VisualHarness() {
   const show = (p: Part) => part === "all" || part === p;
   return (
     <QueryClientProvider client={qc}>
-      <div className="mx-auto max-w-md space-y-6 p-4">
-        <h1 className="text-lg font-semibold">Visual harness — chat deleted</h1>
+      <div className="mx-auto max-w-md space-ms-6 p-ms-4">
+        <h1 className="text-ms-lg font-semibold">Visual harness — chat deleted</h1>
 
         {show("pinned") ? (
           <>
@@ -361,14 +361,14 @@ function VisualHarness() {
           <Section id="conversation-list" title="Conversation list — mixed states">
           <ul className="divide-y">
             {conversationRows.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+              <li key={r.id} className="flex items-center gap-ms-3 px-ms-3 py-ms-2 text-ms-sm">
                 <div className="h-9 w-9 shrink-0 rounded-full bg-muted" />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-ms-2">
                     <span className="truncate font-medium">{r.title}</span>
-                    <span className="text-[11px] text-muted-foreground">{r.time}</span>
+                    <span className="text-ms-2xs text-muted-foreground">{r.time}</span>
                   </div>
-                  <div className="truncate text-xs text-muted-foreground">{r.preview}</div>
+                  <div className="truncate text-ms-xs text-muted-foreground">{r.preview}</div>
                 </div>
               </li>
             ))}

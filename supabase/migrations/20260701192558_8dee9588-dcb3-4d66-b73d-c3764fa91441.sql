@@ -1,0 +1,4 @@
+ALTER TABLE public.request_title_items DROP CONSTRAINT request_title_items_warehouse_item_id_fkey;
+ALTER TABLE public.request_title_items ADD CONSTRAINT request_title_items_warehouse_item_id_fkey FOREIGN KEY (warehouse_item_id) REFERENCES public.warehouse_items(id) ON DELETE CASCADE;
+ALTER TABLE public.request_preparation_items DROP CONSTRAINT request_preparation_items_warehouse_item_id_fkey;
+ALTER TABLE public.request_preparation_items ADD CONSTRAINT request_preparation_items_warehouse_item_id_fkey FOREIGN KEY (warehouse_item_id) REFERENCES public.warehouse_items(id) ON DELETE CASCADE;
