@@ -858,8 +858,13 @@ function HutangPiutangPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-ms-4">
-                  {groupedByParty.map((group) => {
+                <VirtualizedList
+                  items={groupedByParty}
+                  getKey={(group) => group.key}
+                  estimateSize={260}
+                  threshold={6}
+                  gap={16}
+                  renderItem={(group) => {
                     let gTotal = 0;
                     let gPaid = 0;
                     for (const it of group.items) {
@@ -1068,8 +1073,8 @@ function HutangPiutangPage() {
                         </ul>
                       </section>
                     );
-                  })}
-                </div>
+                  }}
+                />
               )}
 
               <TxOnlyPartyCards
