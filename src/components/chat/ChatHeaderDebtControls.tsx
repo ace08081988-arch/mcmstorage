@@ -1971,7 +1971,7 @@ function AuditPanel({
   open: boolean;
   onToggle: () => void;
 }) {
-  const stats = React.useMemo(() => {
+  const stats = useMemo(() => {
     let plus = 0;
     let minus = 0;
     for (const r of rows) {
