@@ -543,6 +543,9 @@ export function ChatHeaderDebtControls({
   const rollbackStep = async (step: SessionChange) => {
     if (!step.rows?.ids?.length) return;
     setUndoing(step.id ?? String(step.at));
+    const tid = toast.loading(
+      `Membatalkan ${step.type} ${rupiah(step.amount)}…`,
+    );
     try {
       const before = step.kind === "hutang" ? hutang : piutang;
       const { error } = await supabase
@@ -582,10 +585,12 @@ export function ChatHeaderDebtControls({
       await afterChange();
       toast.success(
         `Dibatalkan: ${step.type} ${rupiah(step.amount)} (${step.kind}).`,
+        { id: tid },
       );
     } catch (e) {
       toast.error(
         (e as { message?: string })?.message ?? "Gagal membatalkan perubahan.",
+        { id: tid },
       );
     } finally {
       setUndoing(null);
@@ -596,6 +601,9 @@ export function ChatHeaderDebtControls({
   const [redoing, setRedoing] = useState<string | null>(null);
   const redoStep = async (step: SessionChange) => {
     setRedoing(step.id ?? String(step.at));
+    const tid = toast.loading(
+      `Menerapkan ulang ${step.type} ${rupiah(step.amount)}…`,
+    );
     try {
       const before = step.kind === "hutang" ? hutang : piutang;
       markBaseline();
@@ -614,6 +622,15 @@ export function ChatHeaderDebtControls({
       });
       setRedoStack((prev) =>
         prev.filter((c) => (c.id ?? c.at) !== (step.id ?? step.at)),
+      );
+      toast.success(
+        `Diterapkan ulang: ${step.type} ${rupiah(step.amount)} (${step.kind}).`,
+        { id: tid },
+      );
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal menerapkan ulang langkah.",
+        { id: tid },
       );
     } finally {
       setRedoing(null);
@@ -683,6 +700,7 @@ export function ChatHeaderDebtControls({
   const sendReport = async () => {
     if (!conversationId) return;
     setSendingReport(true);
+    const tid = toast.loading("Mengirim laporan ke chat…");
     try {
       const body = previewBody || reportBody();
       await sendMessage({ data: { conversationId, body } });
@@ -691,10 +709,11 @@ export function ChatHeaderDebtControls({
       setBaseline(null);
       setConfirmSend(false);
       setPreviewOpen(false);
-      toast.success("Laporan hutang/piutang terkirim ke chat.");
+      toast.success("Laporan hutang/piutang terkirim ke chat.", { id: tid });
     } catch (e) {
       toast.error(
         (e as { message?: string })?.message ?? "Gagal mengirim laporan.",
+        { id: tid },
       );
     } finally {
       setSendingReport(false);
@@ -1557,10 +1576,21 @@ function KindRow({
     }
     if (!guard()) return;
     setBusy(true);
+    const tid = toast.loading(
+      sign === 1
+        ? `Menambah tagihan ${rupiah(parsed)}…`
+        : `Mencatat pembayaran ${rupiah(parsed)}…`,
+    );
     try {
       await onSubmit(sign * parsed, "button");
       setRaw("");
       setAck(false);
+      toast.dismiss(tid);
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal menyimpan perubahan.",
+        { id: tid },
+      );
     } finally {
       setBusy(false);
     }
@@ -1581,10 +1611,19 @@ function KindRow({
     }
     if (!guard()) return;
     setBusy(true);
+    const tid = toast.loading(
+      `Menyesuaikan saldo ke ${rupiah(targetParsed)}…`,
+    );
     try {
       await onSubmit(delta, "quick");
       setTarget("");
       setAck(false);
+      toast.dismiss(tid);
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal menyesuaikan saldo.",
+        { id: tid },
+      );
     } finally {
       setBusy(false);
     }
