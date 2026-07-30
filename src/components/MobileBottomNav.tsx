@@ -28,7 +28,7 @@ export function MobileBottomNav() {
   const { toggleSidebar } = useSidebar();
   // Kunci bar ke dasar visual viewport supaya tidak "naik-turun" saat
   // address bar mobile mengecil/membesar, dan sembunyi saat keyboard buka.
-  const { offset, keyboardOpen } = useViewportAnchor();
+  const { anchorStyle, keyboardOpen } = useViewportAnchor();
 
   // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
@@ -81,8 +81,7 @@ export function MobileBottomNav() {
       )}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
-        transform: offset ? `translate3d(0, ${-offset}px, 0)` : undefined,
-        willChange: offset ? "transform" : undefined,
+        ...anchorStyle,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
