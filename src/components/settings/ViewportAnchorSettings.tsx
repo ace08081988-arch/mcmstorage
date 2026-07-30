@@ -414,15 +414,16 @@ export function ViewportAnchorSettings() {
             </Link>
           </Button>
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onClick={() => {
               apply(DEFAULT_VIEWPORT_ANCHOR_CONFIG);
-              toast.success("Sensitivitas viewport kembali ke bawaan");
+              clearAutotuneHistory();
+              toast.success("Semua ambang kembali ke nilai bawaan");
             }}
           >
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-            Bawaan
+            Reset ke bawaan
           </Button>
           </div>
         </div>
