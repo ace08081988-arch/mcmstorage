@@ -543,6 +543,9 @@ export function ChatHeaderDebtControls({
   const rollbackStep = async (step: SessionChange) => {
     if (!step.rows?.ids?.length) return;
     setUndoing(step.id ?? String(step.at));
+    const tid = toast.loading(
+      `Membatalkan ${step.type} ${rupiah(step.amount)}…`,
+    );
     try {
       const before = step.kind === "hutang" ? hutang : piutang;
       const { error } = await supabase
@@ -582,10 +585,12 @@ export function ChatHeaderDebtControls({
       await afterChange();
       toast.success(
         `Dibatalkan: ${step.type} ${rupiah(step.amount)} (${step.kind}).`,
+        { id: tid },
       );
     } catch (e) {
       toast.error(
         (e as { message?: string })?.message ?? "Gagal membatalkan perubahan.",
+        { id: tid },
       );
     } finally {
       setUndoing(null);
@@ -596,6 +601,9 @@ export function ChatHeaderDebtControls({
   const [redoing, setRedoing] = useState<string | null>(null);
   const redoStep = async (step: SessionChange) => {
     setRedoing(step.id ?? String(step.at));
+    const tid = toast.loading(
+      `Menerapkan ulang ${step.type} ${rupiah(step.amount)}…`,
+    );
     try {
       const before = step.kind === "hutang" ? hutang : piutang;
       markBaseline();
@@ -614,6 +622,15 @@ export function ChatHeaderDebtControls({
       });
       setRedoStack((prev) =>
         prev.filter((c) => (c.id ?? c.at) !== (step.id ?? step.at)),
+      );
+      toast.success(
+        `Diterapkan ulang: ${step.type} ${rupiah(step.amount)} (${step.kind}).`,
+        { id: tid },
+      );
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal menerapkan ulang langkah.",
+        { id: tid },
       );
     } finally {
       setRedoing(null);
