@@ -683,6 +683,7 @@ export function ChatHeaderDebtControls({
   const sendReport = async () => {
     if (!conversationId) return;
     setSendingReport(true);
+    const tid = toast.loading("Mengirim laporan ke chat…");
     try {
       const body = previewBody || reportBody();
       await sendMessage({ data: { conversationId, body } });
@@ -691,10 +692,11 @@ export function ChatHeaderDebtControls({
       setBaseline(null);
       setConfirmSend(false);
       setPreviewOpen(false);
-      toast.success("Laporan hutang/piutang terkirim ke chat.");
+      toast.success("Laporan hutang/piutang terkirim ke chat.", { id: tid });
     } catch (e) {
       toast.error(
         (e as { message?: string })?.message ?? "Gagal mengirim laporan.",
+        { id: tid },
       );
     } finally {
       setSendingReport(false);
