@@ -1876,19 +1876,20 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               {active.length > 0 ? (
                 <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
                   {active.map((p, idx) => (
-                    <PrepBox
-                      key={p.id}
-                      prep={p}
-                      index={active.length - idx}
-                      title={title}
-                      itemName={item.name}
-                      onChanged={load}
-                      onTitleUpdated={onTitleUpdated}
-                      selectionMode={selectionMode}
-                      selected={selected.has(p.id)}
-                      onToggleSelect={() => toggleSelect(p.id)}
-                      onQuickSend={() => setQuickSendPrep(p)}
-                    />
+                    <PaintDeferred key={p.id} minHeight={240}>
+                      <PrepBox
+                        prep={p}
+                        index={active.length - idx}
+                        title={title}
+                        itemName={item.name}
+                        onChanged={load}
+                        onTitleUpdated={onTitleUpdated}
+                        selectionMode={selectionMode}
+                        selected={selected.has(p.id)}
+                        onToggleSelect={() => toggleSelect(p.id)}
+                        onQuickSend={() => setQuickSendPrep(p)}
+                      />
+                    </PaintDeferred>
                   ))}
                 </div>
               ) : (
@@ -1969,15 +1970,16 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   )}
                   <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
                     {sent.map((p, idx) => (
-                      <PrepBox
-                        key={p.id}
-                        prep={p}
-                        index={sent.length - idx}
-                        title={title}
-                        itemName={item.name}
-                        onChanged={load}
-                        onTitleUpdated={onTitleUpdated}
-                      />
+                      <PaintDeferred key={p.id} minHeight={240}>
+                        <PrepBox
+                          prep={p}
+                          index={sent.length - idx}
+                          title={title}
+                          itemName={item.name}
+                          onChanged={load}
+                          onTitleUpdated={onTitleUpdated}
+                        />
+                      </PaintDeferred>
                     ))}
                   </div>
                 </div>
