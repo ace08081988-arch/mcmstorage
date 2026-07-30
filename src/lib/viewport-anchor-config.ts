@@ -7,6 +7,7 @@
  * disimpan lokal (per user) supaya perilakunya pas.
  */
 import { peekUserIdSync, scopedKey } from "@/lib/user-scoped-storage";
+import { peekDeviceKeySync } from "@/lib/device-key";
 
 export type ViewportAnchorConfig = {
   /** Matikan seluruh kompensasi transform (bar murni `bottom: 0`). */
@@ -77,6 +78,13 @@ export const VIEWPORT_ANCHOR_CONFIG_EVENT = "mcm:viewport-anchor-config";
 const BASE_KEY = "mcm:viewportAnchorConfig";
 
 function storageKey() {
+  // Setelan disimpan per user DAN per perangkat: HP low-end dan tablet milik
+  // user yang sama otomatis memakai ambang yang berbeda.
+  return scopedKey(BASE_KEY, peekUserIdSync(), `d:${peekDeviceKeySync()}`);
+}
+
+/** Key lama (per user saja) — dipakai sekali untuk migrasi. */
+function legacyStorageKey() {
   return scopedKey(BASE_KEY, peekUserIdSync());
 }
 
@@ -112,7 +120,20 @@ export function getViewportAnchorConfig(): ViewportAnchorConfig {
   if (cached) return cached;
   if (typeof window === "undefined") return DEFAULT_VIEWPORT_ANCHOR_CONFIG;
   try {
-    const raw = window.localStorage.getItem(storageKey());
+    let raw = window.localStorage.getItem(storageKey());
+    if (raw == null) {
+      // Migrasi satu kali dari setelan lama (belum ter-scope perangkat).
+      const legacy = window.localStorage.getItem(legacyStorageKey());
+      if (legacy != null) {
+        raw = legacy;
+        try {
+          window.localStorage.setItem(storageKey(), legacy);
+          window.localStorage.removeItem(legacyStorageKey());
+        } catch {
+          /* abaikan */
+        }
+      }
+    }
     cached = normalizeViewportAnchorConfig(raw ? JSON.parse(raw) : null);
   } catch {
     cached = DEFAULT_VIEWPORT_ANCHOR_CONFIG;
