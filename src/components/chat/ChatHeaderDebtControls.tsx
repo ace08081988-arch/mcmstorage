@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy, Bookmark, Trash2, RotateCcw } from "lucide-react";
+import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy, Bookmark, Trash2, RotateCcw, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -325,6 +325,12 @@ export function ChatHeaderDebtControls({
   };
   const recordChange = (entry: SessionChange) =>
     setChangeLog((prev) => [...prev, entry]);
+  /** Langkah yang sudah di-rollback — bisa dikembalikan lagi lewat Redo. */
+  const [redoStack, setRedoStack] = useState<SessionChange[]>([]);
+  const newStepId = () =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `step-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   /** Nama pelaku (untuk kolom "siapa yang mengubah") di audit log. */
   const actorQ = useQuery({
@@ -468,8 +474,10 @@ export function ChatHeaderDebtControls({
         peerName,
         onDone: () => void afterChange(),
         onRecord: (e) => {
-          recordChange(e);
-          void writeAudit(e, { via, before });
+          const entry = { ...e, id: newStepId(), via };
+          recordChange(entry);
+          setRedoStack([]);
+          void writeAudit(entry, { via, before });
         },
       });
       return;
@@ -510,8 +518,10 @@ export function ChatHeaderDebtControls({
         peerName,
         onDone: () => void afterChange(),
         onRecord: (e) => {
-          recordChange(e);
-          void writeAudit(e, {
+          const entry = { ...e, id: newStepId(), via: payPlan.via };
+          recordChange(entry);
+          setRedoStack([]);
+          void writeAudit(entry, {
             via: payPlan.via,
             before: payPlan.kind === "hutang" ? hutang : piutang,
           });
@@ -524,22 +534,21 @@ export function ChatHeaderDebtControls({
   };
 
   /**
-   * Batalkan perubahan terakhir (pensil / − / +) selama laporan belum
-   * dikirim: baris yang tadi ditulis dihapus lagi, lalu audit dicatat.
+   * Rollback per langkah (pensil / − / +) selama laporan belum dikirim:
+   * baris yang tadi ditulis dihapus lagi, audit dicatat, dan langkahnya
+   * pindah ke tumpukan Redo supaya bisa dikembalikan.
    */
-  const lastChange = changeLog[changeLog.length - 1] ?? null;
-  const canUndo = !!lastChange?.rows?.ids?.length;
-  const [undoing, setUndoing] = useState(false);
+  const [undoing, setUndoing] = useState<string | null>(null);
 
-  const undoLast = async () => {
-    if (!lastChange?.rows?.ids?.length) return;
-    setUndoing(true);
+  const rollbackStep = async (step: SessionChange) => {
+    if (!step.rows?.ids?.length) return;
+    setUndoing(step.id ?? String(step.at));
     try {
-      const before = lastChange.kind === "hutang" ? hutang : piutang;
+      const before = step.kind === "hutang" ? hutang : piutang;
       const { error } = await supabase
-        .from(lastChange.rows.table)
+        .from(step.rows.table)
         .delete()
-        .in("id", lastChange.rows.ids)
+        .in("id", step.rows.ids)
         .eq("user_id", myId);
       if (error) throw error;
       // Undo membalik arah: tagihan yang dibatalkan = saldo turun, dan sebaliknya.
@@ -549,34 +558,65 @@ export function ChatHeaderDebtControls({
           actor_name: actorName,
           conversation_id: conversationId ?? null,
           party_name: peerName,
-          kind: lastChange.kind,
+          kind: step.kind,
           action:
-            lastChange.type === "pembayaran"
+            step.type === "pembayaran"
               ? "batal (undo pembayaran)"
               : "batal (undo tagihan)",
-          amount: lastChange.amount,
+          amount: step.amount,
           balance_before: before,
           balance_after:
-            lastChange.type === "pembayaran"
-              ? before + lastChange.amount
-              : before - lastChange.amount,
-          detail: lastChange.detail,
+            step.type === "pembayaran"
+              ? before + step.amount
+              : before - step.amount,
+          detail: step.detail,
         });
         await qc.invalidateQueries({ queryKey: auditKey });
       } catch {
         /* audit bersifat pelengkap */
       }
-      setChangeLog((prev) => prev.slice(0, -1));
+      setChangeLog((prev) =>
+        prev.filter((c) => (c.id ?? c.at) !== (step.id ?? step.at)),
+      );
+      setRedoStack((prev) => [...prev, step]);
       await afterChange();
       toast.success(
-        `Dibatalkan: ${lastChange.type} ${rupiah(lastChange.amount)} (${lastChange.kind}).`,
+        `Dibatalkan: ${step.type} ${rupiah(step.amount)} (${step.kind}).`,
       );
     } catch (e) {
       toast.error(
         (e as { message?: string })?.message ?? "Gagal membatalkan perubahan.",
       );
     } finally {
-      setUndoing(false);
+      setUndoing(null);
+    }
+  };
+
+  /** Terapkan ulang langkah yang barusan di-rollback. */
+  const [redoing, setRedoing] = useState<string | null>(null);
+  const redoStep = async (step: SessionChange) => {
+    setRedoing(step.id ?? String(step.at));
+    try {
+      const before = step.kind === "hutang" ? hutang : piutang;
+      markBaseline();
+      await applyDelta({
+        delta: step.type === "pembayaran" ? -step.amount : step.amount,
+        kind: step.kind,
+        summary: safeSummary,
+        myId,
+        peerName,
+        onDone: () => void afterChange(),
+        onRecord: (e) => {
+          const entry = { ...e, id: newStepId(), via: step.via ?? "button" };
+          recordChange(entry);
+          void writeAudit(entry, { via: entry.via, before });
+        },
+      });
+      setRedoStack((prev) =>
+        prev.filter((c) => (c.id ?? c.at) !== (step.id ?? step.at)),
+      );
+    } finally {
+      setRedoing(null);
     }
   };
 
@@ -826,29 +866,42 @@ export function ChatHeaderDebtControls({
             onSubmit={(delta, via) => requestDelta(delta, "hutang", via)}
           />
         </div>
-        {canUndo ? (
-          <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-dashed p-2">
-            <div className="min-w-0 text-ms-2xs">
-              <div className="font-semibold">Perubahan terakhir</div>
-              <div className="truncate text-muted-foreground">
-                {lastChange!.type === "pembayaran" ? "Pembayaran" : "Tagihan"}{" "}
-                {rupiah(lastChange!.amount)} · {lastChange!.kind}
-              </div>
+        {changeLog.length > 0 || redoStack.length > 0 ? (
+          <div className="mt-2 rounded-lg border border-dashed p-2">
+            <div className="mb-1.5 flex items-center justify-between gap-2 text-ms-2xs font-semibold">
+              <span>Riwayat langkah (sesi ini)</span>
+              <span className="text-muted-foreground">
+                {changeLog.length} aktif · {redoStack.length} dibatalkan
+              </span>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 shrink-0 text-ms-2xs"
-              disabled={undoing}
-              onClick={undoLast}
-            >
-              {undoing ? (
-                <Loader2 className="mr-1 size-3.5 animate-spin" />
-              ) : (
-                <RotateCcw className="mr-1 size-3.5" />
-              )}
-              Undo
-            </Button>
+            <div className="max-h-56 space-y-1.5 overflow-y-auto">
+              {[...changeLog]
+                .slice()
+                .reverse()
+                .map((c) => (
+                  <StepRow
+                    key={c.id ?? c.at}
+                    step={c}
+                    rolledBack={false}
+                    busy={undoing === (c.id ?? String(c.at))}
+                    disabled={!c.rows?.ids?.length || !!undoing || !!redoing}
+                    onAction={() => void rollbackStep(c)}
+                  />
+                ))}
+              {[...redoStack]
+                .slice()
+                .reverse()
+                .map((c) => (
+                  <StepRow
+                    key={`redo-${c.id ?? c.at}`}
+                    step={c}
+                    rolledBack
+                    busy={redoing === (c.id ?? String(c.at))}
+                    disabled={!!undoing || !!redoing}
+                    onAction={() => void redoStep(c)}
+                  />
+                ))}
+            </div>
           </div>
         ) : null}
         <div className="mt-2 rounded-lg border">
@@ -1669,9 +1722,89 @@ type SessionChange = {
   type: "tagihan" | "pembayaran";
   amount: number;
   detail: string[];
+  /** Id lokal langkah — dipakai daftar riwayat untuk rollback per langkah. */
+  id?: string;
+  /** Kontrol yang dipakai: pensil (edit cepat) atau tombol −/+. */
+  via?: AuditVia;
   /** Baris yang benar-benar tertulis — dipakai tombol Undo untuk menghapusnya. */
   rows?: { table: "debts" | "debt_payments"; ids: string[] };
 };
+
+/**
+ * Satu baris pada daftar "Riwayat langkah": menampilkan ikon kontrol yang
+ * dipakai (pensil untuk edit cepat, − untuk pembayaran, + untuk tagihan),
+ * jam kejadian, nominal, rincian alokasi, dan tombol rollback/redo.
+ */
+function StepRow({
+  step,
+  rolledBack,
+  busy,
+  disabled,
+  onAction,
+}: {
+  step: SessionChange;
+  rolledBack: boolean;
+  busy: boolean;
+  disabled: boolean;
+  onAction: () => void;
+}) {
+  const isPay = step.type === "pembayaran";
+  const ControlIcon = step.via === "quick" ? Pencil : isPay ? Minus : Plus;
+  const controlLabel =
+    step.via === "quick" ? "Pensil (edit saldo)" : isPay ? "Tombol −" : "Tombol +";
+  const time = new Date(step.at).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  return (
+    <div
+      className={`rounded-md border p-1.5 text-ms-2xs ${rolledBack ? "border-dashed opacity-70" : ""}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 font-semibold">
+          <ControlIcon className="size-3.5 shrink-0" aria-hidden />
+          <span className="truncate">
+            {isPay ? "Pembayaran" : "Tagihan"} · {step.kind}
+          </span>
+        </span>
+        <span className={`shrink-0 font-mono font-semibold ${isPay ? "text-success" : ""}`}>
+          {isPay ? "−" : "+"}
+          {rupiah(step.amount)}
+        </span>
+      </div>
+      <div className="mt-0.5 text-muted-foreground">
+        {time} · {controlLabel}
+        {rolledBack ? " · sudah dibatalkan" : ""}
+      </div>
+      {step.detail.length > 0 ? (
+        <ul className="mt-0.5 list-disc pl-4 text-muted-foreground">
+          {step.detail.map((d, i) => (
+            <li key={i}>{d}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="mt-1 flex justify-end">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-ms-2xs"
+          disabled={disabled || busy}
+          onClick={onAction}
+        >
+          {busy ? (
+            <Loader2 className="mr-1 size-3.5 animate-spin" />
+          ) : rolledBack ? (
+            <RotateCw className="mr-1 size-3.5" />
+          ) : (
+            <RotateCcw className="mr-1 size-3.5" />
+          )}
+          {rolledBack ? "Redo" : "Rollback"}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 async function applyDelta({
   delta,
