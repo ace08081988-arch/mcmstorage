@@ -7,10 +7,12 @@
  * berubah tetapi visual viewport berubah — akibatnya bar bawah terlihat
  * "ikut naik-turun" / lag saat menggulir.
  *
- * Hook ini menghitung selisih antara dasar layout viewport dan dasar
- * visual viewport, lalu mengembalikan offset (px) untuk dipakai sebagai
- * `translateY(-offset)` sehingga bar selalu menempel di tepi bawah layar.
- * Juga mendeteksi keyboard terbuka supaya bar bisa disembunyikan.
+ * Penting: perubahan visual viewport yang terjadi *saat menggulir* (address
+ * bar Android menyusut / muncul kembali) TIDAK boleh dikompensasi, karena
+ * translate yang menyusul satu frame di belakang justru membuat bar terlihat
+ * "naik-turun"/bergetar. Jadi hook hanya melaporkan offset ketika perubahan
+ * cukup besar untuk berarti keyboard virtual terbuka; selain itu offset = 0
+ * dan bar cukup mengandalkan `position: fixed; bottom: 0`.
  */
 import { useEffect, useState } from "react";
 
@@ -36,9 +38,12 @@ export function useViewportAnchor(): ViewportAnchor {
       const layoutH = document.documentElement.clientHeight;
       // Dasar visual viewport relatif terhadap layout viewport.
       const raw = layoutH - (vv.height + vv.offsetTop);
-      const offset = Math.max(0, Math.round(raw));
+      const delta = Math.max(0, Math.round(raw));
+      const keyboardOpen = delta > KEYBOARD_THRESHOLD;
+      // Hanya kompensasi saat keyboard terbuka. Selisih kecil (address bar
+      // auto-hide saat scroll) sengaja diabaikan agar bar diam total.
+      const offset = keyboardOpen ? delta : 0;
       setState((prev) => {
-        const keyboardOpen = offset > KEYBOARD_THRESHOLD;
         if (prev.offset === offset && prev.keyboardOpen === keyboardOpen) return prev;
         return { offset, keyboardOpen };
       });
@@ -50,12 +55,10 @@ export function useViewportAnchor(): ViewportAnchor {
 
     measure();
     vv.addEventListener("resize", schedule);
-    vv.addEventListener("scroll", schedule);
     window.addEventListener("orientationchange", schedule);
     return () => {
       if (frame) cancelAnimationFrame(frame);
       vv.removeEventListener("resize", schedule);
-      vv.removeEventListener("scroll", schedule);
       window.removeEventListener("orientationchange", schedule);
     };
   }, []);
