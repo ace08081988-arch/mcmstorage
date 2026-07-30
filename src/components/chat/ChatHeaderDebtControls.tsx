@@ -534,22 +534,21 @@ export function ChatHeaderDebtControls({
   };
 
   /**
-   * Batalkan perubahan terakhir (pensil / − / +) selama laporan belum
-   * dikirim: baris yang tadi ditulis dihapus lagi, lalu audit dicatat.
+   * Rollback per langkah (pensil / − / +) selama laporan belum dikirim:
+   * baris yang tadi ditulis dihapus lagi, audit dicatat, dan langkahnya
+   * pindah ke tumpukan Redo supaya bisa dikembalikan.
    */
-  const lastChange = changeLog[changeLog.length - 1] ?? null;
-  const canUndo = !!lastChange?.rows?.ids?.length;
-  const [undoing, setUndoing] = useState(false);
+  const [undoing, setUndoing] = useState<string | null>(null);
 
-  const undoLast = async () => {
-    if (!lastChange?.rows?.ids?.length) return;
-    setUndoing(true);
+  const rollbackStep = async (step: SessionChange) => {
+    if (!step.rows?.ids?.length) return;
+    setUndoing(step.id ?? String(step.at));
     try {
-      const before = lastChange.kind === "hutang" ? hutang : piutang;
+      const before = step.kind === "hutang" ? hutang : piutang;
       const { error } = await supabase
-        .from(lastChange.rows.table)
+        .from(step.rows.table)
         .delete()
-        .in("id", lastChange.rows.ids)
+        .in("id", step.rows.ids)
         .eq("user_id", myId);
       if (error) throw error;
       // Undo membalik arah: tagihan yang dibatalkan = saldo turun, dan sebaliknya.
@@ -559,34 +558,65 @@ export function ChatHeaderDebtControls({
           actor_name: actorName,
           conversation_id: conversationId ?? null,
           party_name: peerName,
-          kind: lastChange.kind,
+          kind: step.kind,
           action:
-            lastChange.type === "pembayaran"
+            step.type === "pembayaran"
               ? "batal (undo pembayaran)"
               : "batal (undo tagihan)",
-          amount: lastChange.amount,
+          amount: step.amount,
           balance_before: before,
           balance_after:
-            lastChange.type === "pembayaran"
-              ? before + lastChange.amount
-              : before - lastChange.amount,
-          detail: lastChange.detail,
+            step.type === "pembayaran"
+              ? before + step.amount
+              : before - step.amount,
+          detail: step.detail,
         });
         await qc.invalidateQueries({ queryKey: auditKey });
       } catch {
         /* audit bersifat pelengkap */
       }
-      setChangeLog((prev) => prev.slice(0, -1));
+      setChangeLog((prev) =>
+        prev.filter((c) => (c.id ?? c.at) !== (step.id ?? step.at)),
+      );
+      setRedoStack((prev) => [...prev, step]);
       await afterChange();
       toast.success(
-        `Dibatalkan: ${lastChange.type} ${rupiah(lastChange.amount)} (${lastChange.kind}).`,
+        `Dibatalkan: ${step.type} ${rupiah(step.amount)} (${step.kind}).`,
       );
     } catch (e) {
       toast.error(
         (e as { message?: string })?.message ?? "Gagal membatalkan perubahan.",
       );
     } finally {
-      setUndoing(false);
+      setUndoing(null);
+    }
+  };
+
+  /** Terapkan ulang langkah yang barusan di-rollback. */
+  const [redoing, setRedoing] = useState<string | null>(null);
+  const redoStep = async (step: SessionChange) => {
+    setRedoing(step.id ?? String(step.at));
+    try {
+      const before = step.kind === "hutang" ? hutang : piutang;
+      markBaseline();
+      await applyDelta({
+        delta: step.type === "pembayaran" ? -step.amount : step.amount,
+        kind: step.kind,
+        summary: safeSummary,
+        myId,
+        peerName,
+        onDone: () => void afterChange(),
+        onRecord: (e) => {
+          const entry = { ...e, id: newStepId(), via: step.via ?? "button" };
+          recordChange(entry);
+          void writeAudit(entry, { via: entry.via, before });
+        },
+      });
+      setRedoStack((prev) =>
+        prev.filter((c) => (c.id ?? c.at) !== (step.id ?? step.at)),
+      );
+    } finally {
+      setRedoing(null);
     }
   };
 
