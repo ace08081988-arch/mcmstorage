@@ -137,7 +137,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     el.style.transition = "opacity 0ms, transform 0ms";
   }
 }
-import { Bot, Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, Users, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard, ChevronDown, MoreHorizontal, Settings, Gauge } from "lucide-react";
+import { Bot, Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, Users, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard, ChevronDown, MoreHorizontal, Settings, Gauge, Store, History, FileSpreadsheet, Link2, UserPlus, Palette, Accessibility, Languages, ShieldCheck, HardDrive, Share2, Globe, SlidersHorizontal, ListChecks, Smartphone, Scroll, CalendarClock, GitCompareArrows, Receipt } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -312,6 +312,10 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
       { title: "POS Kasir", url: "/pos-kasir", icon: Calculator },
       { title: "Tugas Pegawai", url: "/tugas", icon: ClipboardList },
+      { title: "Daftar Tugas", url: "/tugas-daftar", icon: ListChecks },
+      { title: "Link Pegawai", url: "/link-pegawai", icon: Link2 },
+      { title: "Kios", url: "/kios", icon: Store },
+      { title: "Riwayat Kios", url: "/kios/riwayat", icon: History },
     ],
   },
   {
@@ -322,6 +326,8 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Catatan", url: "/catatan", icon: NotebookPen },
       { title: "Balas Cepat", url: "/balas-cepat", icon: MessageSquarePlus },
       { title: "Buku Alamat", url: "/buku-alamat", icon: ContactRound },
+      { title: "Kontak", url: "/kontak", icon: Users },
+      { title: "Undang Teman", url: "/undang", icon: UserPlus },
       { title: "Notifikasi", url: "/notifikasi", icon: BellRing },
     ],
   },
@@ -330,6 +336,12 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
     mobilePrimary: true,
     items: [
       { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
+      { title: "Ringkasan Penjualan", url: "/ringkasan", icon: BarChart3 },
+      { title: "Transaksi Hari Ini", url: "/transaksi-hari-ini", icon: CalendarClock },
+      { title: "Ekspor Pesanan", url: "/ekspor-pesanan", icon: FileSpreadsheet },
+      { title: "Rekonsiliasi Piutang", url: "/rekonsiliasi-piutang", icon: GitCompareArrows },
+      { title: "Audit Saldo", url: "/audit-saldo", icon: Receipt },
+      { title: "Kontak Mapping", url: "/kontak-mapping", icon: ContactRound },
       { title: "Rekonsiliasi Kontak", url: "/rekonsiliasi-kontak", icon: Users },
     ],
   },
@@ -339,6 +351,10 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
       { title: "Diagnostik", url: "/diagnostics", icon: Activity },
       { title: "Monitor Performa", url: "/perf", icon: Gauge },
+      { title: "Diagnostik List", url: "/diagnostik-list", icon: ListChecks },
+      { title: "Diagnostik Viewport", url: "/diagnostik-viewport", icon: Smartphone },
+      { title: "Metrik Query", url: "/metrik-query", icon: Activity },
+      { title: "Audit Chat", url: "/chat-audit", icon: ClipboardCheck },
     ],
   },
   {
@@ -347,6 +363,16 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Beranda", url: "/", icon: Home },
       { title: "Profil Akun", url: "/profil", icon: User },
       { title: "Pengaturan", url: "/pengaturan", icon: Settings },
+      { title: "Pengaturan Tampilan", url: "/pengaturan-tampilan", icon: Palette },
+      { title: "Aksesibilitas", url: "/pengaturan-aksesibilitas", icon: Accessibility },
+      { title: "Bahasa", url: "/pengaturan-bahasa", icon: Languages },
+      { title: "Privasi", url: "/pengaturan-privasi", icon: ShieldCheck },
+      { title: "Penyimpanan", url: "/pengaturan-penyimpanan", icon: HardDrive },
+      { title: "Notifikasi WA", url: "/pengaturan-notifikasi-wa", icon: BellRing },
+      { title: "Integrasi Sosial", url: "/pengaturan-integrasi-sosial", icon: Share2 },
+      { title: "Domain", url: "/pengaturan-domain", icon: Globe },
+      { title: "Mode Aplikasi", url: "/pengaturan-app-mode", icon: SlidersHorizontal },
+      { title: "Scroll Guard", url: "/pengaturan-scroll-guard", icon: Scroll },
       { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
       { title: "Template Pesan WA", url: "/pengaturan-pesan-wa", icon: MessageCircle },
       { title: "Sesi & Perangkat", url: "/sesi", icon: MonitorSmartphone },
@@ -356,6 +382,10 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
     label: "Sistem",
     items: [
       { title: "Antrian Email", url: "/email-queue", icon: Mail },
+      { title: "Status Email", url: "/admin/email-status", icon: Mail },
+      { title: "Log Error Portal", url: "/admin/portal-error-log", icon: ShieldAlert },
+      { title: "Percobaan Daftar", url: "/admin/signup-attempts", icon: Users },
+      { title: "Portal Pegawai", url: "/admin/worker-portal", icon: MonitorSmartphone },
       { title: "Rilis APK", url: "/pengaturan-apk", icon: Package },
       { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
       { title: "Log Penolakan Admin", url: "/admin-denial-log", icon: ShieldAlert },

@@ -21,6 +21,14 @@ export const ADMIN_ONLY_URLS: ReadonlySet<string> = new Set<string>([
   "/audit",
   "/diagnostics",
   "/label-preview",
+  "/diagnostik-list",
+  "/diagnostik-viewport",
+  "/metrik-query",
+  "/chat-audit",
+  "/admin/email-status",
+  "/admin/portal-error-log",
+  "/admin/signup-attempts",
+  "/admin/worker-portal",
 ]);
 
 export function isAdminOnlyUrl(url: string): boolean {
