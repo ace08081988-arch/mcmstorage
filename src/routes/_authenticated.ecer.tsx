@@ -76,6 +76,7 @@ import { useWaTemplate } from "@/lib/wa-template-store";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { withPlainTimeout, withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { PaintDeferred } from "@/components/PaintDeferred";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
