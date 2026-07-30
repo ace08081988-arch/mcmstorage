@@ -106,8 +106,30 @@ export const Route = createFileRoute("/_authenticated/request")({
           ? ("wa" as const)
           : undefined,
   }),
-  component: RequestPage,
+  component: RequestRoute,
 });
+
+/**
+ * Boundary anti race DOM (Android WebView) — lihat catatan yang sama di
+ * halaman Gudang/Ecer. Request juga merender grid kartu + portal dialog.
+ */
+function RequestRoute() {
+  return (
+    <DomRaceBoundary
+      label="request"
+      renderFallback={(error, reset, info) => (
+        <DomRaceRecoveryPanel
+          error={error}
+          reset={reset}
+          info={info}
+          title="Halaman Request gagal ditampilkan"
+        />
+      )}
+    >
+      <RequestPage />
+    </DomRaceBoundary>
+  );
+}
 
 type WarehouseItem = {
   id: string; name: string; category: string | null; base_unit: string;
