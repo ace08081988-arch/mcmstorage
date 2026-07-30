@@ -325,6 +325,12 @@ export function ChatHeaderDebtControls({
   };
   const recordChange = (entry: SessionChange) =>
     setChangeLog((prev) => [...prev, entry]);
+  /** Langkah yang sudah di-rollback — bisa dikembalikan lagi lewat Redo. */
+  const [redoStack, setRedoStack] = useState<SessionChange[]>([]);
+  const newStepId = () =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `step-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   /** Nama pelaku (untuk kolom "siapa yang mengubah") di audit log. */
   const actorQ = useQuery({
@@ -468,8 +474,10 @@ export function ChatHeaderDebtControls({
         peerName,
         onDone: () => void afterChange(),
         onRecord: (e) => {
-          recordChange(e);
-          void writeAudit(e, { via, before });
+          const entry = { ...e, id: newStepId(), via };
+          recordChange(entry);
+          setRedoStack([]);
+          void writeAudit(entry, { via, before });
         },
       });
       return;
@@ -510,8 +518,10 @@ export function ChatHeaderDebtControls({
         peerName,
         onDone: () => void afterChange(),
         onRecord: (e) => {
-          recordChange(e);
-          void writeAudit(e, {
+          const entry = { ...e, id: newStepId(), via: payPlan.via };
+          recordChange(entry);
+          setRedoStack([]);
+          void writeAudit(entry, {
             via: payPlan.via,
             before: payPlan.kind === "hutang" ? hutang : piutang,
           });
