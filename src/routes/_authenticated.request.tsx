@@ -58,6 +58,8 @@ import { useWaTemplate } from "@/lib/wa-template-store";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
 import { debounce } from "@/lib/realtime-debounce";
+import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
