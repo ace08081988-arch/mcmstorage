@@ -60,6 +60,7 @@ import { PendingVerificationSection } from "@/components/prep/PendingVerificatio
 import { debounce } from "@/lib/realtime-debounce";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
 import { PaintDeferred } from "@/components/PaintDeferred";
+import { VirtualizedList } from "@/components/VirtualizedList";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
