@@ -7,12 +7,12 @@
  * berubah tetapi visual viewport berubah — akibatnya bar bawah terlihat
  * "ikut naik-turun" / lag saat menggulir.
  *
- * Penting: perubahan visual viewport yang terjadi *saat menggulir* (address
- * bar Android menyusut / muncul kembali) TIDAK boleh dikompensasi, karena
- * translate yang menyusul satu frame di belakang justru membuat bar terlihat
- * "naik-turun"/bergetar. Jadi hook hanya melaporkan offset ketika perubahan
- * cukup besar untuk berarti keyboard virtual terbuka; selain itu offset = 0
- * dan bar cukup mengandalkan `position: fixed; bottom: 0`.
+ * Kompensasi WAJIB dilakukan setiap saat: ketika address bar Android tampil,
+ * layout viewport lebih tinggi daripada visual viewport, sehingga bar yang
+ * `fixed; bottom: 0` terdorong ke bawah layar dan HILANG dari pandangan saat
+ * menggulir. Supaya tidak terlihat "lag"/naik-turun, pengukuran dijalankan
+ * dalam loop rAF selama viewport masih bergerak (scroll / resize), bukan
+ * hanya sekali per event, dan transform di-render tanpa transition.
  */
 import { useEffect, useState } from "react";
 
@@ -24,6 +24,8 @@ export type ViewportAnchor = {
 };
 
 const KEYBOARD_THRESHOLD = 140;
+/** Berapa lama loop rAF tetap hidup setelah viewport berhenti bergerak. */
+const SETTLE_MS = 350;
 
 export function useViewportAnchor(): ViewportAnchor {
   const [state, setState] = useState<ViewportAnchor>({ offset: 0, keyboardOpen: false });
@@ -33,32 +35,47 @@ export function useViewportAnchor(): ViewportAnchor {
     if (!vv) return;
 
     let frame = 0;
+    let stopAt = 0;
+
     const measure = () => {
-      frame = 0;
       const layoutH = document.documentElement.clientHeight;
       // Dasar visual viewport relatif terhadap layout viewport.
       const raw = layoutH - (vv.height + vv.offsetTop);
       const delta = Math.max(0, Math.round(raw));
       const keyboardOpen = delta > KEYBOARD_THRESHOLD;
-      // Hanya kompensasi saat keyboard terbuka. Selisih kecil (address bar
-      // auto-hide saat scroll) sengaja diabaikan agar bar diam total.
-      const offset = keyboardOpen ? delta : 0;
       setState((prev) => {
-        if (prev.offset === offset && prev.keyboardOpen === keyboardOpen) return prev;
-        return { offset, keyboardOpen };
+        if (prev.offset === delta && prev.keyboardOpen === keyboardOpen) return prev;
+        return { offset: delta, keyboardOpen };
       });
     };
+
+    const tick = () => {
+      measure();
+      if (performance.now() < stopAt) {
+        frame = requestAnimationFrame(tick);
+      } else {
+        frame = 0;
+      }
+    };
+
     const schedule = () => {
+      // Jaga loop tetap hidup selama viewport masih bergerak supaya posisi
+      // bar mengikuti address bar per-frame (bukan tertinggal satu event).
+      stopAt = performance.now() + SETTLE_MS;
       if (frame) return;
-      frame = requestAnimationFrame(measure);
+      frame = requestAnimationFrame(tick);
     };
 
     measure();
     vv.addEventListener("resize", schedule);
+    vv.addEventListener("scroll", schedule);
+    window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("orientationchange", schedule);
     return () => {
       if (frame) cancelAnimationFrame(frame);
       vv.removeEventListener("resize", schedule);
+      vv.removeEventListener("scroll", schedule);
+      window.removeEventListener("scroll", schedule);
       window.removeEventListener("orientationchange", schedule);
     };
   }, []);
