@@ -193,7 +193,11 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   useEffect(() => {
     if (!img || initedRef.current) return;
     initedRef.current = true;
-    const base = emptyScene(...cappedSceneSize(img.naturalWidth || img.width, img.naturalHeight || img.height));
+    const capped = cappedSceneSize(
+      img.naturalWidth || img.width,
+      img.naturalHeight || img.height,
+    );
+    const base = emptyScene(capped.w, capped.h);
     (async () => {
       let restored: Scene | null = null;
       if (initialSceneJson) restored = deserializeScene(initialSceneJson, base);
