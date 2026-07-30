@@ -904,19 +904,19 @@ export function ChatHeaderDebtControls({
             </div>
           </div>
         ) : null}
-        <div className="mt-2 rounded-lg border">
+        <div className="mt-2 overflow-hidden rounded-lg border">
           <button
             type="button"
-            className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-ms-2xs font-semibold"
+            className="sticky top-0 z-10 flex w-full items-center justify-between gap-2 bg-card/95 px-2 py-1.5 text-ms-2xs font-semibold backdrop-blur supports-[backdrop-filter]:bg-card/80"
             onClick={() => setAuditOpen((v) => !v)}
           >
-            <span>Audit perubahan ({auditQ.data?.length ?? 0})</span>
-            <span className="text-muted-foreground">
+            <span className="min-w-0 truncate">Audit perubahan ({auditQ.data?.length ?? 0})</span>
+            <span className="shrink-0 text-muted-foreground">
               {auditOpen ? "Tutup" : "Lihat"}
             </span>
           </button>
           {auditOpen ? (
-            <div className="max-h-56 space-y-1.5 overflow-y-auto border-t p-2">
+            <div className="max-h-56 space-y-1.5 overflow-x-auto overflow-y-auto overscroll-contain scroll-smooth border-t p-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
               {(auditQ.data ?? []).length === 0 ? (
                 <div className="text-ms-2xs text-muted-foreground">
                   Belum ada perubahan tercatat untuk kontak ini.
