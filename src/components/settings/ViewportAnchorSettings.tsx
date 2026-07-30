@@ -14,6 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { Smartphone, RotateCcw, Wand2, Trash2, Activity } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   DEFAULT_VIEWPORT_ANCHOR_CONFIG,
   VIEWPORT_ANCHOR_PRESETS,
   getViewportAnchorConfig,
