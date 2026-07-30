@@ -166,36 +166,15 @@ function RingkasanPage() {
           <section className="rounded-xl border bg-card p-3">
             <h2 className="mb-2 text-sm font-medium">Jumlah pesanan per status</h2>
             <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={data.perStatus}
-                  margin={{ top: 4, right: 8, left: -20, bottom: 4 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 10 }}
-                    interval={0}
-                    angle={-18}
-                    textAnchor="end"
-                    height={54}
-                  />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-                  <Tooltip
-                    formatter={(v: number, _n, p) =>
-                      [`${v} pesanan · ${rupiah(Number(p?.payload?.total) || 0)}`, "Jumlah"] as [
-                        string,
-                        string,
-                      ]
-                    }
-                  />
-                  <Bar dataKey="jumlah" radius={[6, 6, 0, 0]}>
-                    {data.perStatus.map((row, i) => (
-                      <Cell key={row.label} fill={BAR_COLORS[i % BAR_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense
+                fallback={
+                  <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">
+                    Menyiapkan grafik…
+                  </div>
+                }
+              >
+                <StatusBarChart data={data.perStatus} />
+              </Suspense>
             </div>
           </section>
 
