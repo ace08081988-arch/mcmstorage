@@ -866,29 +866,42 @@ export function ChatHeaderDebtControls({
             onSubmit={(delta, via) => requestDelta(delta, "hutang", via)}
           />
         </div>
-        {canUndo ? (
-          <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-dashed p-2">
-            <div className="min-w-0 text-ms-2xs">
-              <div className="font-semibold">Perubahan terakhir</div>
-              <div className="truncate text-muted-foreground">
-                {lastChange!.type === "pembayaran" ? "Pembayaran" : "Tagihan"}{" "}
-                {rupiah(lastChange!.amount)} · {lastChange!.kind}
-              </div>
+        {changeLog.length > 0 || redoStack.length > 0 ? (
+          <div className="mt-2 rounded-lg border border-dashed p-2">
+            <div className="mb-1.5 flex items-center justify-between gap-2 text-ms-2xs font-semibold">
+              <span>Riwayat langkah (sesi ini)</span>
+              <span className="text-muted-foreground">
+                {changeLog.length} aktif · {redoStack.length} dibatalkan
+              </span>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 shrink-0 text-ms-2xs"
-              disabled={undoing}
-              onClick={undoLast}
-            >
-              {undoing ? (
-                <Loader2 className="mr-1 size-3.5 animate-spin" />
-              ) : (
-                <RotateCcw className="mr-1 size-3.5" />
-              )}
-              Undo
-            </Button>
+            <div className="max-h-56 space-y-1.5 overflow-y-auto">
+              {[...changeLog]
+                .slice()
+                .reverse()
+                .map((c) => (
+                  <StepRow
+                    key={c.id ?? c.at}
+                    step={c}
+                    rolledBack={false}
+                    busy={undoing === (c.id ?? String(c.at))}
+                    disabled={!c.rows?.ids?.length || !!undoing || !!redoing}
+                    onAction={() => void rollbackStep(c)}
+                  />
+                ))}
+              {[...redoStack]
+                .slice()
+                .reverse()
+                .map((c) => (
+                  <StepRow
+                    key={`redo-${c.id ?? c.at}`}
+                    step={c}
+                    rolledBack
+                    busy={redoing === (c.id ?? String(c.at))}
+                    disabled={!!undoing || !!redoing}
+                    onAction={() => void redoStep(c)}
+                  />
+                ))}
+            </div>
           </div>
         ) : null}
         <div className="mt-2 rounded-lg border">
