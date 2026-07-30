@@ -923,59 +923,11 @@ export function ChatHeaderDebtControls({
             </div>
           </div>
         ) : null}
-        <div className="mt-2 overflow-hidden rounded-lg border">
-          <button
-            type="button"
-            className="sticky top-0 z-10 flex w-full items-center justify-between gap-2 bg-card/95 px-2 py-1.5 text-ms-2xs font-semibold backdrop-blur supports-[backdrop-filter]:bg-card/80"
-            onClick={() => setAuditOpen((v) => !v)}
-          >
-            <span className="min-w-0 truncate">Audit perubahan ({auditQ.data?.length ?? 0})</span>
-            <span className="shrink-0 text-muted-foreground">
-              {auditOpen ? "Tutup" : "Lihat"}
-            </span>
-          </button>
-          {auditOpen ? (
-            <div className="max-h-56 space-y-1.5 overflow-x-auto overflow-y-auto overscroll-contain scroll-smooth border-t p-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
-              {(auditQ.data ?? []).length === 0 ? (
-                <div className="text-ms-2xs text-muted-foreground">
-                  Belum ada perubahan tercatat untuk kontak ini.
-                </div>
-              ) : (
-                (auditQ.data ?? []).map((a) => (
-                  <div key={a.id} className="rounded-md border p-1.5 text-ms-2xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold">
-                        {a.action} · {a.kind}
-                      </span>
-                      <span
-                        className={`font-mono font-semibold ${
-                          a.action.includes("pembayaran") ? "text-success" : ""
-                        }`}
-                      >
-                        {a.action.includes("pembayaran") ? "−" : "+"}
-                        {rupiah(Number(a.amount))}
-                      </span>
-                    </div>
-                    <div className="mt-0.5 text-muted-foreground">
-                      {a.actor_name ?? "—"} · {formatWhen(a.created_at)}
-                    </div>
-                    <div className="text-muted-foreground">
-                      Saldo {rupiah(Number(a.balance_before ?? 0))} →{" "}
-                      {rupiah(Number(a.balance_after ?? 0))}
-                    </div>
-                    {Array.isArray(a.detail) && a.detail.length > 0 ? (
-                      <ul className="mt-0.5 list-disc pl-4 text-muted-foreground">
-                        {(a.detail as string[]).map((d, i) => (
-                          <li key={i}>{d}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                ))
-              )}
-            </div>
-          ) : null}
-        </div>
+        <AuditPanel
+          rows={auditQ.data ?? []}
+          open={auditOpen}
+          onToggle={() => setAuditOpen((v) => !v)}
+        />
         {conversationId ? (
           <Button
             type="button"
