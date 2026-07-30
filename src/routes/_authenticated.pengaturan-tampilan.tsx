@@ -1844,6 +1844,8 @@ function PengaturanTampilanPage() {
           </CardContent>
         </Card>
 
+        <ViewportAnchorSettings />
+
         <div className="flex flex-wrap justify-end gap-ms-2">
           <Button variant="outline" size="sm" onClick={resetAll}>
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
