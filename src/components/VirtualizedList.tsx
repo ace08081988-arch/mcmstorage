@@ -57,6 +57,10 @@ export function VirtualizedList<T>({
   getKey: (item: T, index: number) => string;
   renderItem: (item: T, index: number) => React.ReactNode;
   estimateSize?: number;
+  /**
+   * Jumlah baris ekstra di luar viewport. Default: dihitung otomatis dari
+   * tinggi viewport & tinggi baris (lihat `useAdaptiveOverscan`).
+   */
   overscan?: number;
   threshold?: number;
   /** jarak antar baris (px) */
@@ -69,6 +73,8 @@ export function VirtualizedList<T>({
   const [offset, setOffset] = React.useState(0);
   const enabled = items.length > threshold;
   const cache = React.useMemo(() => getCache(cacheKey), [cacheKey]);
+  const autoOverscan = useAdaptiveOverscan(estimateSize + gap);
+  const effectiveOverscan = overscan ?? autoOverscan;
 
   React.useLayoutEffect(() => {
     if (!enabled) return;
@@ -94,7 +100,7 @@ export function VirtualizedList<T>({
       const cached = cache.get(keys[index]);
       return cached != null ? cached : estimateSize + gap;
     },
-    overscan,
+    overscan: effectiveOverscan,
     scrollMargin: offset,
   });
 
