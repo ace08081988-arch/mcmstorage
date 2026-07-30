@@ -75,6 +75,9 @@ import { renderWaCaption } from "@/lib/wa-template";
 import { useWaTemplate } from "@/lib/wa-template-store";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { withPlainTimeout, withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
+import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { PaintDeferred } from "@/components/PaintDeferred";
+import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -87,8 +90,33 @@ export const Route = createFileRoute("/_authenticated/ecer")({
     // supaya seluruh jalur "Kirim WA" wajib melewati verifikasi pembayaran.
     send: typeof s.send === "string" ? s.send : undefined,
   }),
-  component: EcerPage,
+  component: EcerRoute,
 });
+
+/**
+ * Sama seperti Gudang: Ecer merender grid kartu besar berisi foto + portal
+ * dialog, kombinasi yang paling sering memicu `NotFoundError: removeChild`
+ * di Android WebView. Boundary ini retry diam-diam dulu, baru menampilkan
+ * panel pemulihan bila benar-benar gagal — jadi tidak perlu reload penuh
+ * yang membuang state pilih/dialog.
+ */
+function EcerRoute() {
+  return (
+    <DomRaceBoundary
+      label="ecer"
+      renderFallback={(error, reset, info) => (
+        <DomRaceRecoveryPanel
+          error={error}
+          reset={reset}
+          info={info}
+          title="Halaman Ecer gagal ditampilkan"
+        />
+      )}
+    >
+      <EcerPage />
+    </DomRaceBoundary>
+  );
+}
 
 type WarehouseItem = {
   id: string; name: string; category: string | null; base_unit: string;
@@ -1849,19 +1877,20 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               {active.length > 0 ? (
                 <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
                   {active.map((p, idx) => (
-                    <PrepBox
-                      key={p.id}
-                      prep={p}
-                      index={active.length - idx}
-                      title={title}
-                      itemName={item.name}
-                      onChanged={load}
-                      onTitleUpdated={onTitleUpdated}
-                      selectionMode={selectionMode}
-                      selected={selected.has(p.id)}
-                      onToggleSelect={() => toggleSelect(p.id)}
-                      onQuickSend={() => setQuickSendPrep(p)}
-                    />
+                    <PaintDeferred key={p.id} minHeight={240}>
+                      <PrepBox
+                        prep={p}
+                        index={active.length - idx}
+                        title={title}
+                        itemName={item.name}
+                        onChanged={load}
+                        onTitleUpdated={onTitleUpdated}
+                        selectionMode={selectionMode}
+                        selected={selected.has(p.id)}
+                        onToggleSelect={() => toggleSelect(p.id)}
+                        onQuickSend={() => setQuickSendPrep(p)}
+                      />
+                    </PaintDeferred>
                   ))}
                 </div>
               ) : (
@@ -1942,15 +1971,16 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                   )}
                   <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
                     {sent.map((p, idx) => (
-                      <PrepBox
-                        key={p.id}
-                        prep={p}
-                        index={sent.length - idx}
-                        title={title}
-                        itemName={item.name}
-                        onChanged={load}
-                        onTitleUpdated={onTitleUpdated}
-                      />
+                      <PaintDeferred key={p.id} minHeight={240}>
+                        <PrepBox
+                          prep={p}
+                          index={sent.length - idx}
+                          title={title}
+                          itemName={item.name}
+                          onChanged={load}
+                          onTitleUpdated={onTitleUpdated}
+                        />
+                      </PaintDeferred>
                     ))}
                   </div>
                 </div>

@@ -38,6 +38,8 @@ import { DebtSyncBadge } from "@/components/chat/DebtSyncBadge";
 import { goBackOr } from "@/lib/back-nav";
 import { ChatListSkeleton } from "@/components/chat/ChatSkeletons";
 import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
+import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   // Terima query `?filter=unread` sebagai deep-link dari tab Chat di bottom
@@ -49,8 +51,32 @@ export const Route = createFileRoute("/_authenticated/chat/")({
     if (raw === "unread") out.filter = "unread";
     return out;
   },
-  component: ChatListPage,
+  component: ChatListRoute,
 });
+
+/**
+ * Daftar chat = list virtual + avatar + badge realtime yang sering
+ * di-commit ulang; ini salah satu layar tersering memunculkan
+ * `NotFoundError: removeChild` di Android WebView. Boundary retry
+ * diam-diam supaya daftar percakapan tidak berubah jadi layar putih.
+ */
+function ChatListRoute() {
+  return (
+    <DomRaceBoundary
+      label="chat-list"
+      renderFallback={(error, reset, info) => (
+        <DomRaceRecoveryPanel
+          error={error}
+          reset={reset}
+          info={info}
+          title="Daftar chat gagal ditampilkan"
+        />
+      )}
+    >
+      <ChatListPage />
+    </DomRaceBoundary>
+  );
+}
 
 function timeShort(iso: string | null): string {
   if (!iso) return "";

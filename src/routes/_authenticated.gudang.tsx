@@ -506,13 +506,30 @@ function GudangPage() {
   const reloadInFlightRef = useRef(false);
   const reloadPendingRef = useRef(false);
 
-  // Optimasi performa (2026-07-19): fetch dibagi dua gelombang supaya paint
-  // awal Gudang tidak menunggu 9 query paralel selesai. Gelombang 1 =
-  // data yang dipakai ringkasan (Stok/summary cards). Gelombang 2 =
-  // data tab lain (Beli/Jual/Pelanggan/Piutang/Pesanan) yang di-fetch
-  // di background segera setelah paint pertama, jadi UX tab-switch
-  // tetap instan tanpa memblokir tampilan awal.
+  // Optimasi performa (2026-07-19, direvisi 2026-07-30): fetch dibagi dua
+  // gelombang supaya paint awal Gudang tidak menunggu 9 query selesai.
+  // Gelombang 1 = data ringkasan (Stok/summary cards). Gelombang 2 = data
+  // tab lain (Beli/Jual/Pelanggan/Piutang/Pesanan).
+  //
+  // Revisi: kedua gelombang DIMULAI bersamaan (bukan wave-2 menunggu
+  // wave-1 selesai). Yang bertahap hanya *penerapan* hasilnya — skeleton
+  // utama lepas begitu wave-1 selesai. Sebelumnya total waktu = wave1 +
+  // wave2 (berurutan); di jaringan seluler ini menambah 1-2 detik sebelum
+  // tab Beli/Hutang bisa dipakai.
   async function reloadAllNow() {
+    // Wave-2 di-fire duluan (tanpa await) agar RTT-nya tumpang tindih
+    // dengan wave-1. `.catch` dipasang segera supaya tidak ada
+    // unhandled rejection kalau wave-1 keburu gagal & return lebih awal.
+    const wave2 = Promise.all([
+      withSupabaseQueryTimeout((signal) => supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200).abortSignal(signal), "purchases"),
+      withSupabaseQueryTimeout((signal) => supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500).abortSignal(signal), "supplier_payments"),
+      withSupabaseQueryTimeout((signal) => supabase.from("customers").select("*").order("created_at", { ascending: false }).abortSignal(signal), "customers"),
+      withSupabaseQueryTimeout((signal) => supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500).abortSignal(signal), "customer_payments"),
+      withSupabaseQueryTimeout((signal) => supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200).abortSignal(signal), "order_requests"),
+    ]).catch((err) => {
+      console.warn("[gudang] wave-2 gagal", err);
+      return null;
+    });
     // Safety: query manapun yang menggantung (mis. WebView kehilangan
     // konektivitas saat berpindah tab) TIDAK boleh membekukan skeleton.
     // Pakai `abortSignal` asli agar fetch diputus, bukan hanya Promise.race.
@@ -553,23 +570,15 @@ function GudangPage() {
     if (wc.data) setCategoryOrder(new Map(nextCatOrder));
     setLoading(false);
 
-    // Gelombang 2 — non-blocking. Sama-sama pakai timeout + finally
-    // supaya tab dependen (Hutang/Jual/Pesanan/…) tidak menampilkan
-    // skeleton selamanya bila jaringan bermasalah.
-    let p, py, c, cp, or;
-    try {
-      [p, py, c, cp, or] = await Promise.all([
-        withSupabaseQueryTimeout((signal) => supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200).abortSignal(signal), "purchases"),
-        withSupabaseQueryTimeout((signal) => supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500).abortSignal(signal), "supplier_payments"),
-        withSupabaseQueryTimeout((signal) => supabase.from("customers").select("*").order("created_at", { ascending: false }).abortSignal(signal), "customers"),
-        withSupabaseQueryTimeout((signal) => supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500).abortSignal(signal), "customer_payments"),
-        withSupabaseQueryTimeout((signal) => supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200).abortSignal(signal), "order_requests"),
-      ]);
-    } catch (err) {
-      console.warn("[gudang] wave-2 gagal, lepas skeleton", err);
+    // Gelombang 2 — sudah berjalan sejak awal, tinggal ditunggu hasilnya.
+    const wave2Result = await wave2;
+    if (!wave2Result) {
+      // Gagal/timeout — jangan biarkan tab dependen (Hutang/Jual/Pesanan)
+      // menampilkan skeleton selamanya.
       setSecondaryLoading(false);
       return;
     }
+    const [p, py, c, cp, or] = wave2Result;
     const nextPurchases = (p.data as Purchase[] | null) ?? [];
     const nextPayments = (py.data as Payment[] | null) ?? [];
     const nextCustomers = (c.data as Customer[] | null) ?? [];

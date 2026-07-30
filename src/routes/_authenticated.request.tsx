@@ -58,6 +58,9 @@ import { useWaTemplate } from "@/lib/wa-template-store";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
 import { debounce } from "@/lib/realtime-debounce";
+import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { PaintDeferred } from "@/components/PaintDeferred";
+import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -106,8 +109,30 @@ export const Route = createFileRoute("/_authenticated/request")({
           ? ("wa" as const)
           : undefined,
   }),
-  component: RequestPage,
+  component: RequestRoute,
 });
+
+/**
+ * Boundary anti race DOM (Android WebView) — lihat catatan yang sama di
+ * halaman Gudang/Ecer. Request juga merender grid kartu + portal dialog.
+ */
+function RequestRoute() {
+  return (
+    <DomRaceBoundary
+      label="request"
+      renderFallback={(error, reset, info) => (
+        <DomRaceRecoveryPanel
+          error={error}
+          reset={reset}
+          info={info}
+          title="Halaman Request gagal ditampilkan"
+        />
+      )}
+    >
+      <RequestPage />
+    </DomRaceBoundary>
+  );
+}
 
 type WarehouseItem = {
   id: string; name: string; category: string | null; base_unit: string;
@@ -2279,7 +2304,11 @@ function PrepSections({
           </div>
         ) : (
           <div className={gridClass}>
-            {active.map((p, idx) => renderCard(p, idx, active.length, false))}
+            {active.map((p, idx) => (
+              <PaintDeferred key={p.id} minHeight={260}>
+                {renderCard(p, idx, active.length, false)}
+              </PaintDeferred>
+            ))}
           </div>
         )}
       </div>
@@ -2343,7 +2372,11 @@ function PrepSections({
                 </div>
               ) : (
                 <div className={gridClass}>
-                  {filteredSent.map((p, idx) => renderCard(p, idx, filteredSent.length, true))}
+                  {filteredSent.map((p, idx) => (
+                    <PaintDeferred key={p.id} minHeight={260}>
+                      {renderCard(p, idx, filteredSent.length, true)}
+                    </PaintDeferred>
+                  ))}
                 </div>
               )}
             </>

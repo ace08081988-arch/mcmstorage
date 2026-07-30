@@ -146,6 +146,28 @@ function shadeHex(hex: string, amount: number): string {
   return `#${rr}${gg}${bb}`;
 }
 
+/**
+ * Batas sisi terpanjang kanvas editor.
+ *
+ * Foto kamera HP sekarang lazim 4000×3000 (12 MP). Konva mengalokasikan
+ * beberapa buffer seukuran stage (layer utama + hit canvas + buffer saat
+ * `toDataURL`), jadi memakai resolusi asli bisa >200 MB dan membuat
+ * Android WebView dibunuh OS ("tab crash") saat menyimpan.
+ *
+ * 2560 px sudah jauh di atas kebutuhan foto yang dikirim lewat WhatsApp
+ * (WA sendiri menurunkan ke ~1600 px), sementara pemakaian memorinya
+ * turun ~2,5×. Foto yang lebih kecil tidak pernah diperbesar.
+ */
+const MAX_SCENE_DIM = 2560;
+
+export function cappedSceneSize(w: number, h: number): { w: number; h: number } {
+  if (!(w > 0) || !(h > 0)) return { w, h };
+  const longest = Math.max(w, h);
+  if (longest <= MAX_SCENE_DIM) return { w, h };
+  const scale = MAX_SCENE_DIM / longest;
+  return { w: Math.max(1, Math.round(w * scale)), h: Math.max(1, Math.round(h * scale)) };
+}
+
 export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosaveKey }: PhotoEditorV2Props) {
   // Jangan paksa crossOrigin untuk blob:/data: URL dari kamera/galeri lokal.
   // Android WebView bisa menolak decode diam-diam jika blob lokal diberi CORS.
@@ -193,7 +215,11 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
   useEffect(() => {
     if (!img || initedRef.current) return;
     initedRef.current = true;
-    const base = emptyScene(img.naturalWidth || img.width, img.naturalHeight || img.height);
+    const capped = cappedSceneSize(
+      img.naturalWidth || img.width,
+      img.naturalHeight || img.height,
+    );
+    const base = emptyScene(capped.w, capped.h);
     (async () => {
       let restored: Scene | null = null;
       if (initialSceneJson) restored = deserializeScene(initialSceneJson, base);

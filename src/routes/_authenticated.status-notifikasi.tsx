@@ -1432,7 +1432,10 @@ function MigrationDiffView({
   before: Record<string, unknown>;
   after: Record<string, unknown>;
 }) {
-  return _MigrationDiffViewImpl({ before, after });
+  // Dirender sebagai elemen, bukan dipanggil sebagai fungsi biasa: memanggil
+  // `Impl({...})` langsung membuat hook di dalamnya menempel pada komponen
+  // pemanggil, sehingga state-nya ikut hilang bila pemanggil di-remount.
+  return <MigrationDiffViewImpl before={before} after={after} />;
 }
 
 function CompatibilityBanner({ info }: { info: CompatibilityInfo }) {
@@ -1493,7 +1496,7 @@ function CompatibilityBanner({ info }: { info: CompatibilityInfo }) {
   );
 }
 
-function _MigrationDiffViewImpl({
+function MigrationDiffViewImpl({
   before,
   after,
 }: {
