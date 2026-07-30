@@ -61,8 +61,8 @@ export function ChatBottomNav() {
       className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
-        transform: `translate3d(0, ${-offset}px, 0)`,
-        willChange: "transform",
+        transform: offset ? `translate3d(0, ${-offset}px, 0)` : undefined,
+        willChange: offset ? "transform" : undefined,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
