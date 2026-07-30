@@ -1576,10 +1576,21 @@ function KindRow({
     }
     if (!guard()) return;
     setBusy(true);
+    const tid = toast.loading(
+      sign === 1
+        ? `Menambah tagihan ${rupiah(parsed)}…`
+        : `Mencatat pembayaran ${rupiah(parsed)}…`,
+    );
     try {
       await onSubmit(sign * parsed, "button");
       setRaw("");
       setAck(false);
+      toast.dismiss(tid);
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal menyimpan perubahan.",
+        { id: tid },
+      );
     } finally {
       setBusy(false);
     }
@@ -1600,10 +1611,19 @@ function KindRow({
     }
     if (!guard()) return;
     setBusy(true);
+    const tid = toast.loading(
+      `Menyesuaikan saldo ke ${rupiah(parseNum(target))}…`,
+    );
     try {
       await onSubmit(delta, "quick");
       setTarget("");
       setAck(false);
+      toast.dismiss(tid);
+    } catch (e) {
+      toast.error(
+        (e as { message?: string })?.message ?? "Gagal menyesuaikan saldo.",
+        { id: tid },
+      );
     } finally {
       setBusy(false);
     }
