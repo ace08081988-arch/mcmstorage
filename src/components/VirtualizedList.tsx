@@ -1,5 +1,34 @@
 import * as React from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import {
+  armListPerfFlush,
+  recordListMount,
+  recordListRender,
+} from "@/lib/list-perf";
+
+/**
+ * Ukur durasi commit render daftar + hitung jumlah re-render, lalu
+ * setorkan ke registry `list-perf`. Biayanya dua `performance.now()`
+ * per render — cukup murah untuk dibiarkan aktif di produksi.
+ */
+function useListRenderMetrics(list: string, items: number, rendered: number) {
+  const startedAt =
+    typeof performance !== "undefined" ? performance.now() : 0;
+  const route =
+    typeof window !== "undefined" ? window.location.pathname : "ssr";
+
+  React.useEffect(() => {
+    armListPerfFlush();
+    recordListMount(route, list);
+    // hanya saat mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof performance === "undefined") return;
+    recordListRender(route, list, performance.now() - startedAt, items, rendered);
+  });
+}
 
 /**
  * Cache tinggi baris per key, bertahan antar mount/unmount (dan antar
@@ -155,6 +184,13 @@ export function VirtualizedList<T>({
     [virtualizer, keys, cache],
   );
 
+  const virtualItems = enabled ? virtualizer.getVirtualItems() : [];
+  useListRenderMetrics(
+    cacheKey,
+    items.length,
+    enabled ? virtualItems.length : items.length,
+  );
+
   if (!enabled) {
     return (
       <div className={className} style={{ display: "grid", rowGap: gap }}>
@@ -174,8 +210,6 @@ export function VirtualizedList<T>({
       </div>
     );
   }
-
-  const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <div ref={parentRef} className={className}>

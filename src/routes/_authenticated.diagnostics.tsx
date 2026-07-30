@@ -249,7 +249,10 @@ function DiagnosticsPage() {
           <Link to="/"><ChevronLeft className="h-4 w-4" /> Kembali</Link>
         </Button>
         <h1 className="text-ms-lg font-semibold">Diagnostik Aplikasi</h1>
-        <Button size="sm" variant="outline" className="ml-auto" onClick={copySummary}>
+        <Button asChild size="sm" variant="ghost" className="ml-auto">
+          <Link to="/diagnostik-list">Performa daftar</Link>
+        </Button>
+        <Button size="sm" variant="outline" onClick={copySummary}>
           <Copy className="h-4 w-4" /> Salin ringkasan
         </Button>
       </div>
