@@ -74,6 +74,7 @@ import { Route as AuthenticatedFiturRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedEmailQueueRouteImport } from './routes/_authenticated.email-queue'
 import { Route as AuthenticatedEksporPesananRouteImport } from './routes/_authenticated.ekspor-pesanan'
 import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
+import { Route as AuthenticatedDiagnostikViewportRouteImport } from './routes/_authenticated.diagnostik-viewport'
 import { Route as AuthenticatedDiagnostikListRouteImport } from './routes/_authenticated.diagnostik-list'
 import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
@@ -505,6 +506,12 @@ const AuthenticatedEcerRoute = AuthenticatedEcerRouteImport.update({
   path: '/ecer',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDiagnostikViewportRoute =
+  AuthenticatedDiagnostikViewportRouteImport.update({
+    id: '/diagnostik-viewport',
+    path: '/diagnostik-viewport',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDiagnostikListRoute =
   AuthenticatedDiagnostikListRouteImport.update({
     id: '/diagnostik-list',
@@ -999,6 +1006,7 @@ export interface FileRoutesByFullPath {
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/diagnostik-list': typeof AuthenticatedDiagnostikListRoute
+  '/diagnostik-viewport': typeof AuthenticatedDiagnostikViewportRoute
   '/ecer': typeof AuthenticatedEcerRoute
   '/ekspor-pesanan': typeof AuthenticatedEksporPesananRoute
   '/email-queue': typeof AuthenticatedEmailQueueRoute
@@ -1143,6 +1151,7 @@ export interface FileRoutesByTo {
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/diagnostik-list': typeof AuthenticatedDiagnostikListRoute
+  '/diagnostik-viewport': typeof AuthenticatedDiagnostikViewportRoute
   '/ecer': typeof AuthenticatedEcerRoute
   '/ekspor-pesanan': typeof AuthenticatedEksporPesananRoute
   '/email-queue': typeof AuthenticatedEmailQueueRoute
@@ -1291,6 +1300,7 @@ export interface FileRoutesById {
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/_authenticated/diagnostik-list': typeof AuthenticatedDiagnostikListRoute
+  '/_authenticated/diagnostik-viewport': typeof AuthenticatedDiagnostikViewportRoute
   '/_authenticated/ecer': typeof AuthenticatedEcerRoute
   '/_authenticated/ekspor-pesanan': typeof AuthenticatedEksporPesananRoute
   '/_authenticated/email-queue': typeof AuthenticatedEmailQueueRoute
@@ -1441,6 +1451,7 @@ export interface FileRouteTypes {
     | '/device-verify'
     | '/diagnostics'
     | '/diagnostik-list'
+    | '/diagnostik-viewport'
     | '/ecer'
     | '/ekspor-pesanan'
     | '/email-queue'
@@ -1585,6 +1596,7 @@ export interface FileRouteTypes {
     | '/device-verify'
     | '/diagnostics'
     | '/diagnostik-list'
+    | '/diagnostik-viewport'
     | '/ecer'
     | '/ekspor-pesanan'
     | '/email-queue'
@@ -1732,6 +1744,7 @@ export interface FileRouteTypes {
     | '/_authenticated/device-verify'
     | '/_authenticated/diagnostics'
     | '/_authenticated/diagnostik-list'
+    | '/_authenticated/diagnostik-viewport'
     | '/_authenticated/ecer'
     | '/_authenticated/ekspor-pesanan'
     | '/_authenticated/email-queue'
@@ -2379,6 +2392,13 @@ declare module '@tanstack/react-router' {
       path: '/ecer'
       fullPath: '/ecer'
       preLoaderRoute: typeof AuthenticatedEcerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/diagnostik-viewport': {
+      id: '/_authenticated/diagnostik-viewport'
+      path: '/diagnostik-viewport'
+      fullPath: '/diagnostik-viewport'
+      preLoaderRoute: typeof AuthenticatedDiagnostikViewportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/diagnostik-list': {
@@ -3043,6 +3063,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedDiagnosticsRoute: typeof AuthenticatedDiagnosticsRoute
   AuthenticatedDiagnostikListRoute: typeof AuthenticatedDiagnostikListRoute
+  AuthenticatedDiagnostikViewportRoute: typeof AuthenticatedDiagnostikViewportRoute
   AuthenticatedEcerRoute: typeof AuthenticatedEcerRoute
   AuthenticatedEksporPesananRoute: typeof AuthenticatedEksporPesananRoute
   AuthenticatedEmailQueueRoute: typeof AuthenticatedEmailQueueRoute
@@ -3113,6 +3134,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedDiagnosticsRoute: AuthenticatedDiagnosticsRoute,
   AuthenticatedDiagnostikListRoute: AuthenticatedDiagnostikListRoute,
+  AuthenticatedDiagnostikViewportRoute: AuthenticatedDiagnostikViewportRoute,
   AuthenticatedEcerRoute: AuthenticatedEcerRoute,
   AuthenticatedEksporPesananRoute: AuthenticatedEksporPesananRoute,
   AuthenticatedEmailQueueRoute: AuthenticatedEmailQueueRoute,

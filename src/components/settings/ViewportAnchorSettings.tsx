@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Smartphone, RotateCcw, Wand2, Trash2 } from "lucide-react";
+import { Smartphone, RotateCcw, Wand2, Trash2, Activity } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   DEFAULT_VIEWPORT_ANCHOR_CONFIG,
   VIEWPORT_ANCHOR_PRESETS,
@@ -405,6 +406,13 @@ export function ViewportAnchorSettings() {
               {keyboardOpen ? "terbuka" : "tertutup"}
             </span>
           </p>
+          <div className="flex items-center gap-1">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/diagnostik-viewport">
+              <Activity className="mr-1.5 h-3.5 w-3.5" />
+              Diagnostik
+            </Link>
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -416,6 +424,7 @@ export function ViewportAnchorSettings() {
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
             Bawaan
           </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
