@@ -2308,6 +2308,7 @@ function PrepSections({
           </div>
         ) : singleColumn ? (
           <VirtualizedList
+            cacheKey="request-active"
             items={active}
             getKey={(p) => p.id}
             estimateSize={260}
@@ -2385,6 +2386,7 @@ function PrepSections({
                 </div>
               ) : singleColumn ? (
                 <VirtualizedList
+                  cacheKey="request-sent"
                   items={filteredSent}
                   getKey={(p) => p.id}
                   estimateSize={260}

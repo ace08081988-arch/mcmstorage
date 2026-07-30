@@ -859,6 +859,7 @@ function HutangPiutangPage() {
                 </div>
               ) : (
                 <VirtualizedList
+                  cacheKey="hutang-parties"
                   items={groupedByParty}
                   getKey={(group) => group.key}
                   estimateSize={260}
@@ -1352,6 +1353,7 @@ function PaymentsReport({
         </div>
       ) : (
         <VirtualizedList
+          cacheKey="hutang-days"
           items={grouped}
           getKey={([day]) => day}
           estimateSize={180}
