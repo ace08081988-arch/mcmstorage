@@ -867,14 +867,14 @@ export function ChatHeaderDebtControls({
           />
         </div>
         {changeLog.length > 0 || redoStack.length > 0 ? (
-          <div className="mt-2 rounded-lg border border-dashed p-2">
-            <div className="mb-1.5 flex items-center justify-between gap-2 text-ms-2xs font-semibold">
-              <span>Riwayat langkah (sesi ini)</span>
-              <span className="text-muted-foreground">
+          <div className="mt-2 overflow-hidden rounded-lg border border-dashed">
+            <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b bg-card/95 px-2 py-1.5 text-ms-2xs font-semibold backdrop-blur supports-[backdrop-filter]:bg-card/80">
+              <span className="min-w-0 truncate">Riwayat langkah (sesi ini)</span>
+              <span className="shrink-0 text-muted-foreground">
                 {changeLog.length} aktif · {redoStack.length} dibatalkan
               </span>
             </div>
-            <div className="max-h-56 space-y-1.5 overflow-y-auto">
+            <div className="max-h-56 space-y-1.5 overflow-x-auto overflow-y-auto overscroll-contain scroll-smooth p-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
               {[...changeLog]
                 .slice()
                 .reverse()
