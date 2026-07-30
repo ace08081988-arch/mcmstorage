@@ -79,7 +79,7 @@ function NotesPage() {
           {filtered.map((n: ChatNote) => (
             <li key={n.id}>
               <Card>
-                <CardContent className="space-y-1 p-ms-3">
+                <CardContent className="space-ms-2 px-ms-4 py-ms-4 sm:px-ms-6">
                   <div className="flex items-start gap-ms-2">
                     <h3 className="flex-1 font-semibold text-ms-sm">{n.title}</h3>
                     <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Salin catatan" onClick={() => navigator.clipboard?.writeText(n.body).then(() => toast.success("Disalin"))}>

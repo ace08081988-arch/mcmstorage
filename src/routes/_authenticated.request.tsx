@@ -394,7 +394,7 @@ function RequestPage() {
 
   if (loadError) {
     return (
-      <div className="mx-auto max-w-2xl space-ms-3 p-ms-4">
+      <div className="mx-auto w-full max-w-2xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
         <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-ms-4 text-ms-sm">
           <div className="mb-2 flex items-center gap-ms-2 font-semibold text-destructive">
             <AlertTriangle className="h-4 w-4" /> Gagal memuat Penyiapan Request
@@ -439,7 +439,7 @@ function RequestPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
+    <div className="mx-auto w-full max-w-4xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
       {/* Hero header — konsisten dengan halaman Penyiapan Ecer */}
       <section
         aria-labelledby="request-heading"

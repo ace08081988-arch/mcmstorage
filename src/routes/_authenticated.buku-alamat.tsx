@@ -310,7 +310,7 @@ function BukuAlamatPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
       <header className="sticky top-0 z-10 border-b bg-card/85 backdrop-blur-md">
-        <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-4 py-ms-3 sm:px-ms-6">
           <Link
             to="/"
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border bg-background/60 hover:bg-accent"
@@ -339,7 +339,7 @@ function BukuAlamatPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-ms-4 px-ms-3 py-ms-4 sm:px-ms-6">
+      <main className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
         <section
           aria-label="Ringkasan kontak"
           className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-ms-4 shadow-sm"

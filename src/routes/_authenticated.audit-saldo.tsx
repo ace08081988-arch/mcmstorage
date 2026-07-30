@@ -176,7 +176,7 @@ function AuditSaldoPage() {
   const totalEvents = groups.reduce((n, g) => n + g.events.length, 0);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4 pb-24">
+    <div className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5 pb-24">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">Audit Saldo Kontak</h1>
         <p className="text-xs text-muted-foreground">

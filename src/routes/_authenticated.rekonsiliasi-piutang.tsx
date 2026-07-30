@@ -168,7 +168,7 @@ function RekonsiliasiPiutangPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4">
+    <div className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
       <div className="flex items-start justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold">Rekonsiliasi Piutang</h1>
