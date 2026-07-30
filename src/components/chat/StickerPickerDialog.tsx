@@ -319,7 +319,7 @@ function Grid({
         const isFav = fav.has(s.id);
         return (
           <div key={s.id} className="group relative">
-            <button type="button" disabled={busy}
+            <button type="button" disabled={busy} aria-label="Kirim stiker"
               onClick={() => onSend(s)}
               className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted/30 p-ms-1 transition active:scale-95 disabled:opacity-50">
               <div className="pointer-events-none scale-[0.55] origin-center">
