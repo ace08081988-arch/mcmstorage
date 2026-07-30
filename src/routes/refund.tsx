@@ -17,8 +17,9 @@ export const Route = createFileRoute("/refund")({
         content:
           "Jaminan uang kembali 30 hari untuk pembelian MCM Storage, diproses oleh Paddle.",
       },
+      { property: "og:url", content: "https://mcmstorage.biz/refund" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/refund" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/refund" }],
   }),
   component: RefundPage,
 });

@@ -249,24 +249,46 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "MCM Storage — Kelola Pesanan & Kirim WhatsApp" },
-      { name: "description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { name: "author", content: "MCM Storage" },
       { name: "theme-color", content: "#0a7a4a" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "MCM Storage" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { property: "og:title", content: "MCM Storage — Kelola Pesanan & Kirim WhatsApp" },
-      { property: "og:description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "MCM Storage" },
-      { property: "og:url", content: "https://mcmstorage.lovable.app/" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "MCM Storage — Kelola Pesanan & Kirim WhatsApp" },
-      { name: "twitter:description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/0e65ec20-f1cf-4ebc-b8bb-47ce714b9953" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/0e65ec20-f1cf-4ebc-b8bb-47ce714b9953" },
       { name: "google-site-verification", content: "U9gNbUi1Ly1ya2k-cTFj2H05IsYp3K9gIB6TQsCzOLg" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://mcmstorage.biz/#organization",
+              name: "MCM Storage",
+              url: "https://mcmstorage.biz/",
+              logo: "https://mcmstorage.biz/icon-512.png",
+              description:
+                "MCM Storage — aplikasi pengelola pesanan, stok, dan piutang toko yang terhubung langsung ke WhatsApp pelanggan.",
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://mcmstorage.biz/#website",
+              name: "MCM Storage",
+              url: "https://mcmstorage.biz/",
+              inLanguage: "id-ID",
+              publisher: { "@id": "https://mcmstorage.biz/#organization" },
+              description:
+                "Catat pesanan harian, kelola stok gudang, pantau hutang piutang, dan kirim detail pesanan ke pelanggan lewat WhatsApp.",
+            },
+          ],
+        }),
+      },
     ],
     links: [
       {
