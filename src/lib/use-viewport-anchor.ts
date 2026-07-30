@@ -20,6 +20,7 @@ import {
   VIEWPORT_ANCHOR_CONFIG_EVENT,
 } from "@/lib/viewport-anchor-config";
 import { observeAnchorFrame } from "@/lib/viewport-anchor-autotune";
+import { recordAnchorEvent } from "@/lib/viewport-anchor-log";
 
 export type ViewportAnchor = {
   /**
@@ -108,6 +109,17 @@ function publishState(next: ViewportAnchorState) {
   }
   currentState = next;
   stateListeners.forEach((fn) => fn(next));
+  // Rekam hanya perubahan yang lolos filter di atas (bukan tiap frame).
+  recordAnchorEvent({
+    kind: prev.mode === next.mode ? "offset" : "mode",
+    mode: next.mode,
+    shrinkPx: next.shrinkPx,
+    offsetPx: next.offsetPx,
+    viewportPx: next.viewportPx,
+    baselinePx: next.baselinePx,
+    recentlyScrolled: next.recentlyScrolled,
+    detail: prev.mode === next.mode ? undefined : `${prev.mode} → ${next.mode}`,
+  });
 }
 
 let started = false;
@@ -233,7 +245,20 @@ function startEngine() {
   };
   window.addEventListener("orientationchange", onOrientation);
   // Perubahan pengaturan sensitivitas berlaku langsung, tanpa reload.
-  const onConfig = () => schedule();
+  const onConfig = () => {
+    const c = getViewportAnchorConfig();
+    recordAnchorEvent({
+      kind: "autotune",
+      mode: currentState.mode,
+      shrinkPx: currentState.shrinkPx,
+      offsetPx: currentState.offsetPx,
+      viewportPx: currentState.viewportPx,
+      baselinePx: currentState.baselinePx,
+      recentlyScrolled: currentState.recentlyScrolled,
+      detail: `config: buka>${c.keyboardOpenPx} tutup<${c.keyboardClosePx} grace ${c.scrollGraceMs} settle ${c.settleMs} hyst ${c.hysteresisPx}`,
+    });
+    schedule();
+  };
   window.addEventListener(VIEWPORT_ANCHOR_CONFIG_EVENT, onConfig);
 
   // Perubahan tinggi dokumen (VirtualizedList menambah/mengurangi spacer,
