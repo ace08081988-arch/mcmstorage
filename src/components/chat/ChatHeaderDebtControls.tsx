@@ -1612,7 +1612,7 @@ function KindRow({
     if (!guard()) return;
     setBusy(true);
     const tid = toast.loading(
-      `Menyesuaikan saldo ke ${rupiah(parseNum(target))}…`,
+      `Menyesuaikan saldo ke ${rupiah(targetParsed)}…`,
     );
     try {
       await onSubmit(delta, "quick");
