@@ -1441,7 +1441,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         <div className="absolute inset-x-0 bottom-20 z-30 max-h-[55vh] overflow-y-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Stiker</div>
-            <button onClick={() => setShowStickers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
+            <button aria-label="Tutup panel stiker" onClick={() => setShowStickers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
           </div>
           {/* Kontrol gaya 3D global — mempengaruhi semua stiker di kanvas
               maupun preview thumbnail di sheet ini. */}
@@ -1539,7 +1539,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           <div className="absolute inset-x-0 bottom-0 z-40 rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in">
             <div className="mb-2 flex items-center justify-between">
               <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Ubah Teks</div>
-              <button onClick={() => setShowText(null)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
+              <button aria-label="Tutup editor teks" onClick={() => setShowText(null)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
             </div>
             <textarea
               className="w-full rounded-lg border border-[#c9a84c]/25 bg-white/[0.03] p-ms-2 text-ms-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#c9a84c]/50"
@@ -1569,7 +1569,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         <div className="absolute inset-x-0 bottom-20 z-30 max-h-[50vh] overflow-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Layer ({scene.objects.length})</div>
-            <button onClick={() => setShowLayers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
+            <button aria-label="Tutup panel layer" onClick={() => setShowLayers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
           </div>
           <ul className="space-y-1">
             {[...scene.objects].reverse().map((o) => (
