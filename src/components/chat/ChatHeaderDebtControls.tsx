@@ -1730,6 +1730,82 @@ type SessionChange = {
   rows?: { table: "debts" | "debt_payments"; ids: string[] };
 };
 
+/**
+ * Satu baris pada daftar "Riwayat langkah": menampilkan ikon kontrol yang
+ * dipakai (pensil untuk edit cepat, − untuk pembayaran, + untuk tagihan),
+ * jam kejadian, nominal, rincian alokasi, dan tombol rollback/redo.
+ */
+function StepRow({
+  step,
+  rolledBack,
+  busy,
+  disabled,
+  onAction,
+}: {
+  step: SessionChange;
+  rolledBack: boolean;
+  busy: boolean;
+  disabled: boolean;
+  onAction: () => void;
+}) {
+  const isPay = step.type === "pembayaran";
+  const ControlIcon = step.via === "quick" ? Pencil : isPay ? Minus : Plus;
+  const controlLabel =
+    step.via === "quick" ? "Pensil (edit saldo)" : isPay ? "Tombol −" : "Tombol +";
+  const time = new Date(step.at).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  return (
+    <div
+      className={`rounded-md border p-1.5 text-ms-2xs ${rolledBack ? "border-dashed opacity-70" : ""}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 font-semibold">
+          <ControlIcon className="size-3.5 shrink-0" aria-hidden />
+          <span className="truncate">
+            {isPay ? "Pembayaran" : "Tagihan"} · {step.kind}
+          </span>
+        </span>
+        <span className={`shrink-0 font-mono font-semibold ${isPay ? "text-success" : ""}`}>
+          {isPay ? "−" : "+"}
+          {rupiah(step.amount)}
+        </span>
+      </div>
+      <div className="mt-0.5 text-muted-foreground">
+        {time} · {controlLabel}
+        {rolledBack ? " · sudah dibatalkan" : ""}
+      </div>
+      {step.detail.length > 0 ? (
+        <ul className="mt-0.5 list-disc pl-4 text-muted-foreground">
+          {step.detail.map((d, i) => (
+            <li key={i}>{d}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="mt-1 flex justify-end">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-ms-2xs"
+          disabled={disabled || busy}
+          onClick={onAction}
+        >
+          {busy ? (
+            <Loader2 className="mr-1 size-3.5 animate-spin" />
+          ) : rolledBack ? (
+            <RotateCw className="mr-1 size-3.5" />
+          ) : (
+            <RotateCcw className="mr-1 size-3.5" />
+          )}
+          {rolledBack ? "Redo" : "Rollback"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 async function applyDelta({
   delta,
   kind,
