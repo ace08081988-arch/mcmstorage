@@ -7,16 +7,7 @@
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { lazy, Suspense } from "react";
 import { RefreshCw, Wallet, ShoppingBag, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +15,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { fetchPiutangSummary } from "@/lib/piutang";
 import { fetchOrdersExportData } from "@/lib/orders-export";
+
+// recharts hanya diunduh saat kartu chart benar-benar dirender.
+const StatusBarChart = lazy(() =>
+  import("@/components/ringkasan/StatusBarChart").then((m) => ({ default: m.StatusBarChart })),
+);
 
 export const Route = createFileRoute("/_authenticated/ringkasan")({
   head: () => ({
@@ -52,8 +48,6 @@ function startOfTodayISO() {
   d.setHours(0, 0, 0, 0);
   return d.toISOString();
 }
-
-const BAR_COLORS = ["hsl(var(--primary))", "hsl(var(--chart-2, var(--primary)))"];
 
 function useRingkasan() {
   return useQuery({
