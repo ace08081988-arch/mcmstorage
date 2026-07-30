@@ -14,6 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { Smartphone, RotateCcw, Wand2, Trash2, Activity } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   DEFAULT_VIEWPORT_ANCHOR_CONFIG,
   VIEWPORT_ANCHOR_PRESETS,
   getViewportAnchorConfig,
@@ -144,6 +155,7 @@ export function ViewportAnchorSettings() {
   const [autoOn, setAutoOn] = useState(false);
   const [history, setHistory] = useState<AutotuneAdjustment[]>([]);
   const [autoStats, setAutoStats] = useState<AutotuneStats | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     setCfg(getViewportAnchorConfig());
@@ -413,18 +425,39 @@ export function ViewportAnchorSettings() {
               Diagnostik
             </Link>
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              apply(DEFAULT_VIEWPORT_ANCHOR_CONFIG);
-              clearAutotuneHistory();
-              toast.success("Semua ambang kembali ke nilai bawaan");
-            }}
-          >
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-            Reset ke bawaan
-          </Button>
+          <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+            <AlertDialogTrigger asChild>
+              <Button variant="secondary" size="sm">
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                Reset ke bawaan
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset sensitivitas viewport?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Semua ambang (buka/tutup keyboard, grace scroll, toleransi getar,
+                  dll.) akan kembali ke nilai bawaan. Riwayat auto-tuning juga akan
+                  dihapus. Tindakan ini tidak bisa dibatalkan.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setResetOpen(false)}>
+                  Batal
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    apply(DEFAULT_VIEWPORT_ANCHOR_CONFIG);
+                    clearAutotuneHistory();
+                    setResetOpen(false);
+                    toast.success("Semua ambang kembali ke nilai bawaan");
+                  }}
+                >
+                  Ya, reset
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           </div>
         </div>
       </CardContent>
