@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
+import { VirtualizedList } from "@/components/VirtualizedList";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Popover,
@@ -857,8 +858,13 @@ function HutangPiutangPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-ms-4">
-                  {groupedByParty.map((group) => {
+                <VirtualizedList
+                  items={groupedByParty}
+                  getKey={(group) => group.key}
+                  estimateSize={260}
+                  threshold={6}
+                  gap={16}
+                  renderItem={(group) => {
                     let gTotal = 0;
                     let gPaid = 0;
                     for (const it of group.items) {
@@ -1067,8 +1073,8 @@ function HutangPiutangPage() {
                         </ul>
                       </section>
                     );
-                  })}
-                </div>
+                  }}
+                />
               )}
 
               <TxOnlyPartyCards
@@ -1345,9 +1351,14 @@ function PaymentsReport({
           Belum ada pembayaran pada periode ini.
         </div>
       ) : (
-        <div className="space-ms-3">
-          {grouped.map(([day, list]) => (
-            <section key={day} className="rounded-lg border bg-card">
+        <VirtualizedList
+          items={grouped}
+          getKey={([day]) => day}
+          estimateSize={180}
+          threshold={5}
+          gap={12}
+          renderItem={([day, list]) => (
+            <section className="rounded-lg border bg-card">
               <header className="border-b px-ms-3 py-ms-2 text-ms-xs font-medium text-muted-foreground">
                 {new Date(day + "T00:00:00").toLocaleDateString("id-ID", {
                   weekday: "long",
@@ -1400,8 +1411,8 @@ function PaymentsReport({
                 })}
               </ul>
             </section>
-          ))}
-        </div>
+          )}
+        />
       )}
     </div>
   );

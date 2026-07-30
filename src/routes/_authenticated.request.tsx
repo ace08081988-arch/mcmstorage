@@ -60,6 +60,7 @@ import { PendingVerificationSection } from "@/components/prep/PendingVerificatio
 import { debounce } from "@/lib/realtime-debounce";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
 import { PaintDeferred } from "@/components/PaintDeferred";
+import { VirtualizedList } from "@/components/VirtualizedList";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
@@ -2042,6 +2043,9 @@ function PrepSections({
   const [showHistory, setShowHistory] = useState(true);
   const [layout, setLayout] = useLayoutMode("requestPrep", "grid");
   const gridClass = layoutGridClass(layout);
+  // Hanya layout satu kolom yang bisa divirtualisasi (VirtualizedList
+  // berbasis baris). Untuk grid multi-kolom tetap pakai PaintDeferred.
+  const singleColumn = layout === "list" || layout === "compact";
   const active = filterActivePreps(preps);
   const sent = filterSentPreps(preps);
   const [justSentId, setJustSentId] = useState<string | null>(null);
@@ -2302,6 +2306,15 @@ function PrepSections({
           <div className="rounded-xl border border-dashed bg-card p-ms-4 text-center text-ms-2xs text-muted-foreground">
             Tidak ada penyiapan yang menunggu dikirim.
           </div>
+        ) : singleColumn ? (
+          <VirtualizedList
+            items={active}
+            getKey={(p) => p.id}
+            estimateSize={260}
+            threshold={12}
+            gap={8}
+            renderItem={(p, idx) => renderCard(p, idx, active.length, false)}
+          />
         ) : (
           <div className={gridClass}>
             {active.map((p, idx) => (
@@ -2370,6 +2383,15 @@ function PrepSections({
                 <div className="rounded-xl border border-dashed bg-card p-ms-4 text-center text-ms-2xs text-muted-foreground">
                   Tidak ada paket terkirim yang cocok dengan filter.
                 </div>
+              ) : singleColumn ? (
+                <VirtualizedList
+                  items={filteredSent}
+                  getKey={(p) => p.id}
+                  estimateSize={260}
+                  threshold={12}
+                  gap={8}
+                  renderItem={(p, idx) => renderCard(p, idx, filteredSent.length, true)}
+                />
               ) : (
                 <div className={gridClass}>
                   {filteredSent.map((p, idx) => (
