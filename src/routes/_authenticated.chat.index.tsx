@@ -943,6 +943,7 @@ function ConvList({
   return (
     <div className="-mx-3 divide-y divide-[var(--wa-border)]/60">
       <VirtualizedList
+        cacheKey="chat-list"
         items={list}
         getKey={(c) => c.id}
         estimateSize={76}

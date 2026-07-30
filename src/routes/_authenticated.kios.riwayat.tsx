@@ -325,6 +325,7 @@ function RiwayatKiosPage() {
           </div>
         ) : (
           <VirtualizedList
+            cacheKey="kios-riwayat"
             items={filtered}
             getKey={(r) => `${r.kind}:${r.id}`}
             estimateSize={96}

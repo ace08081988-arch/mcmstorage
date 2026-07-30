@@ -2,11 +2,45 @@ import * as React from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
 /**
+ * Cache tinggi baris per key, bertahan antar mount/unmount (dan antar
+ * kunjungan halaman) sehingga estimasi awal langsung akurat: scrollbar
+ * tidak melompat dan virtualizer tidak perlu re-measure → re-render
+ * berulang saat isi daftar berubah.
+ */
+const measureCaches = new Map<string, Map<string, number>>();
+
+function getCache(namespace: string): Map<string, number> {
+  let c = measureCaches.get(namespace);
+  if (!c) {
+    c = new Map();
+    measureCaches.set(namespace, c);
+  }
+  return c;
+}
+
+/** Buang cache tinggi baris (mis. saat sumber data diganti total). */
+export function clearRowHeightCache(namespace?: string) {
+  if (namespace) measureCaches.delete(namespace);
+  else measureCaches.clear();
+}
+
+/** Baris yang hanya re-render saat key/konten baris itu sendiri berubah. */
+const Row = React.memo(
+  function Row({ children }: { children: React.ReactNode; deps?: unknown }) {
+    return <>{children}</>;
+  },
+  (prev, next) => prev.deps === next.deps,
+);
+
+/**
  * Daftar virtual berbasis window scroll.
  *
  * Di bawah `threshold` item, daftar dirender biasa (hindari overhead virtualisasi
  * untuk data sedikit). Di atas itu, hanya baris yang terlihat yang dirender
  * sehingga UI tetap responsif walau data ratusan/ribuan baris.
+ *
+ * Tinggi tiap baris diukur otomatis (`measureElement`) lalu disimpan di cache
+ * per-key, jadi baris yang pernah terlihat langsung memakai tinggi aslinya.
  */
 export function VirtualizedList<T>({
   items,
@@ -17,6 +51,7 @@ export function VirtualizedList<T>({
   threshold = 8,
   gap = 8,
   className,
+  cacheKey = "default",
 }: {
   items: readonly T[];
   getKey: (item: T, index: number) => string;
@@ -27,10 +62,13 @@ export function VirtualizedList<T>({
   /** jarak antar baris (px) */
   gap?: number;
   className?: string;
+  /** Namespace cache tinggi baris; pakai nilai unik per daftar. */
+  cacheKey?: string;
 }) {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const [offset, setOffset] = React.useState(0);
   const enabled = items.length > threshold;
+  const cache = React.useMemo(() => getCache(cacheKey), [cacheKey]);
 
   React.useLayoutEffect(() => {
     if (!enabled) return;
@@ -43,24 +81,52 @@ export function VirtualizedList<T>({
     return () => window.removeEventListener("resize", update);
   }, [enabled]);
 
+  const keys = React.useMemo(
+    () => items.map((item, i) => getKey(item, i)),
+    // getKey diasumsikan murni; ikut items saja supaya identitas stabil.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items],
+  );
+
   const virtualizer = useWindowVirtualizer({
     count: enabled ? items.length : 0,
-    estimateSize: () => estimateSize + gap,
+    estimateSize: (index) => {
+      const cached = cache.get(keys[index]);
+      return cached != null ? cached : estimateSize + gap;
+    },
     overscan,
     scrollMargin: offset,
   });
+
+  // Simpan hasil pengukuran nyata ke cache agar mount berikutnya akurat.
+  const measure = React.useCallback(
+    (el: HTMLElement | null) => {
+      if (!el) return;
+      virtualizer.measureElement(el);
+      const idx = Number(el.getAttribute("data-index"));
+      const h = el.getBoundingClientRect().height;
+      if (Number.isFinite(idx) && h > 0) {
+        const key = keys[idx];
+        if (key && cache.get(key) !== h) cache.set(key, h);
+      }
+    },
+    [virtualizer, keys, cache],
+  );
 
   if (!enabled) {
     return (
       <div className={className} style={{ display: "grid", rowGap: gap }}>
         {items.map((item, i) => (
           <div
-            key={getKey(item, i)}
+            key={keys[i]}
             // Lewati paint/layout untuk baris di luar viewport — hemat CPU saat
             // scroll di HP tanpa mengubah tinggi/urutan konten.
-            style={{ contentVisibility: "auto", containIntrinsicSize: `auto ${estimateSize}px` }}
+            style={{
+              contentVisibility: "auto",
+              containIntrinsicSize: `auto ${cache.get(keys[i]) ?? estimateSize}px`,
+            }}
           >
-            {renderItem(item, i)}
+            <Row deps={item}>{renderItem(item, i)}</Row>
           </div>
         ))}
       </div>
@@ -82,9 +148,9 @@ export function VirtualizedList<T>({
           const item = items[v.index];
           return (
             <div
-              key={getKey(item, v.index)}
+              key={keys[v.index]}
               data-index={v.index}
-              ref={virtualizer.measureElement}
+              ref={measure}
               style={{
                 position: "absolute",
                 top: 0,
@@ -94,7 +160,7 @@ export function VirtualizedList<T>({
                 paddingBottom: gap,
               }}
             >
-              {renderItem(item, v.index)}
+              <Row deps={item}>{renderItem(item, v.index)}</Row>
             </div>
           );
         })}
