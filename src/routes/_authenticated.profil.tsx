@@ -181,7 +181,7 @@ function ProfilPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-ms-6 p-ms-4 pb-12">
+    <main className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5 pb-24">
       {/* Hero header */}
       <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/15 via-primary/5 to-background p-ms-5 sm:p-ms-6">
         <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />

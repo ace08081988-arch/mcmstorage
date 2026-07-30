@@ -584,7 +584,7 @@ function DashboardPage() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-ms-6 p-ms-4 pb-24 sm:space-y-8 sm:p-ms-6 lg:p-8">
+    <main className="mx-auto w-full max-w-6xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5 pb-24">
       {/* Header */}
       <header className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/12 via-background to-background p-ms-5 shadow-sm sm:p-8">
         <div
