@@ -19,6 +19,7 @@ import {
   getViewportAnchorConfig,
   VIEWPORT_ANCHOR_CONFIG_EVENT,
 } from "@/lib/viewport-anchor-config";
+import { observeAnchorFrame } from "@/lib/viewport-anchor-autotune";
 
 export type ViewportAnchor = {
   /**
@@ -185,6 +186,16 @@ function startEngine() {
       baselinePx: Math.round(baselineHeight),
       viewportPx: Math.round(vv.height),
       recentlyScrolled,
+    });
+
+    // Auto-tuning: belajar dari stabilitas posisi bar di perangkat ini.
+    observeAnchorFrame({
+      now: performance.now(),
+      shrinkPx: shrink,
+      offsetPx: currentOffset,
+      keyboardOpen,
+      recentlyScrolled,
+      config: cfg,
     });
   };
 

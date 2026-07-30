@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Smartphone, RotateCcw } from "lucide-react";
+import { Smartphone, RotateCcw, Wand2, Trash2 } from "lucide-react";
 import {
   DEFAULT_VIEWPORT_ANCHOR_CONFIG,
   VIEWPORT_ANCHOR_PRESETS,
@@ -24,6 +24,25 @@ import {
   useViewportAnchorState,
   type ViewportAnchorMode,
 } from "@/lib/use-viewport-anchor";
+import {
+  VIEWPORT_AUTOTUNE_EVENT,
+  clearAutotuneHistory,
+  getAutotuneHistory,
+  getAutotuneStats,
+  isAutotuneEnabled,
+  setAutotuneEnabled,
+  type AutotuneAdjustment,
+  type AutotuneStats,
+} from "@/lib/viewport-anchor-autotune";
+
+const FIELD_LABEL: Record<string, string> = {
+  keyboardOpenPx: "Ambang buka",
+  keyboardClosePx: "Ambang tutup",
+  scrollGraceMs: "Grace scroll",
+  maxChromePx: "Max address bar",
+  settleMs: "Durasi ukur",
+  hysteresisPx: "Toleransi getar",
+};
 
 type NumKey = Exclude<keyof ViewportAnchorConfig, "enabled">;
 
@@ -121,9 +140,24 @@ export function ViewportAnchorSettings() {
   const { keyboardOpen } = useViewportAnchor({ lock: true });
   const live = useViewportAnchorState();
   const mode = MODE_META[live.mode];
+  const [autoOn, setAutoOn] = useState(false);
+  const [history, setHistory] = useState<AutotuneAdjustment[]>([]);
+  const [autoStats, setAutoStats] = useState<AutotuneStats | null>(null);
 
   useEffect(() => {
     setCfg(getViewportAnchorConfig());
+  }, []);
+
+  useEffect(() => {
+    const sync = () => {
+      setAutoOn(isAutotuneEnabled());
+      setHistory([...getAutotuneHistory()]);
+      setAutoStats({ ...getAutotuneStats() });
+      setCfg(getViewportAnchorConfig());
+    };
+    sync();
+    window.addEventListener(VIEWPORT_AUTOTUNE_EVENT, sync);
+    return () => window.removeEventListener(VIEWPORT_AUTOTUNE_EVENT, sync);
   }, []);
 
   const apply = (patch: Partial<ViewportAnchorConfig>) => {
@@ -213,6 +247,108 @@ export function ViewportAnchorSettings() {
             onCheckedChange={(v) => apply({ enabled: v })}
             aria-label="Aktifkan kompensasi viewport"
           />
+        </div>
+
+        <div className="space-y-ms-3 rounded-lg border border-primary/25 bg-primary/5 p-ms-3">
+          <div className="flex items-start justify-between gap-ms-3">
+            <div>
+              <p className="flex items-center gap-ms-2 text-ms-sm font-medium">
+                <Wand2 className="h-4 w-4" />
+                Auto-tuning ambang
+              </p>
+              <p className="text-ms-xs text-muted-foreground">
+                Sistem memantau kestabilan posisi bar bawah di perangkat ini lalu
+                menyesuaikan ambang sedikit demi sedikit (maks. satu langkah tiap
+                ±15 detik). Slider di bawah tetap bisa diubah manual kapan saja.
+              </p>
+            </div>
+            <Switch
+              checked={autoOn}
+              onCheckedChange={(v) => {
+                setAutotuneEnabled(v);
+                setAutoOn(v);
+                toast.success(v ? "Auto-tuning aktif" : "Auto-tuning dimatikan");
+              }}
+              aria-label="Aktifkan auto-tuning ambang viewport"
+            />
+          </div>
+
+          {autoOn && autoStats && (
+            <dl className="grid grid-cols-2 gap-x-ms-3 gap-y-1 text-[11px] tabular-nums sm:grid-cols-4">
+              {[
+                { k: "Skor stabilitas", v: `${autoStats.score}/100` },
+                { k: "Jendela dianalisis", v: `${autoStats.windows}` },
+                { k: "Stabil beruntun", v: `${autoStats.stableStreak}` },
+                {
+                  k: "Sampel terakhir",
+                  v: `${autoStats.lastWindow.samples}`,
+                },
+              ].map((it) => (
+                <div key={it.k} className="flex justify-between gap-2 sm:block">
+                  <dt className="text-muted-foreground">{it.k}</dt>
+                  <dd className="font-medium text-foreground">{it.v}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
+          {autoOn && (
+            <div className="space-y-1.5 border-t border-primary/20 pt-ms-2">
+              <div className="flex items-center justify-between gap-ms-2">
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Penyesuaian terakhir
+                </p>
+                {history.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={() => {
+                      clearAutotuneHistory();
+                      toast.success("Riwayat auto-tuning dibersihkan");
+                    }}
+                  >
+                    <Trash2 className="mr-1 h-3 w-3" />
+                    Bersihkan
+                  </Button>
+                )}
+              </div>
+              {history.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground">
+                  Belum ada penyesuaian — pakai aplikasi seperti biasa, sistem akan
+                  belajar sendiri.
+                </p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {history.slice(0, 5).map((h) => (
+                    <li key={h.at} className="rounded-md bg-background/70 p-ms-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-[11px] leading-snug">{h.label}</span>
+                        <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                          {new Date(h.at).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {h.changes.map((c) => (
+                          <Badge
+                            key={String(c.key)}
+                            variant="secondary"
+                            className="text-[10px] tabular-nums"
+                          >
+                            {FIELD_LABEL[String(c.key)] ?? String(c.key)}: {c.from} →{" "}
+                            {c.to}
+                          </Badge>
+                        ))}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-ms-2 border-t pt-ms-3">
