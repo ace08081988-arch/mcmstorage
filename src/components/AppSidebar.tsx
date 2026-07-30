@@ -360,6 +360,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
       { title: "Log Penolakan Admin", url: "/admin-denial-log", icon: ShieldAlert },
       { title: "OAuth Google (BYOK)", url: "/pengaturan-oauth-google", icon: KeyRound },
+      { title: "Hubungkan Asisten AI", url: "/hubungkan-agen", icon: Bot },
     ],
   },
 ];
