@@ -208,6 +208,8 @@ export function useViewportAnchor(options: ViewportAnchorOptions = {}): Viewport
         currentOffset = 0;
         currentLockOffset = 0;
         currentKeyboardOpen = false;
+        baselineHeight = 0;
+        lastScrollAt = 0;
       }
     };
   }, []);
