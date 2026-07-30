@@ -15,6 +15,10 @@
  * hanya sekali per event, dan transform di-render tanpa transition.
  */
 import { useEffect, useState } from "react";
+import {
+  getViewportAnchorConfig,
+  VIEWPORT_ANCHOR_CONFIG_EVENT,
+} from "@/lib/viewport-anchor-config";
 
 export type ViewportAnchor = {
   /**
@@ -40,22 +44,11 @@ export type ViewportAnchorOptions = {
   lock?: boolean;
 };
 
-/** Ambang shrink untuk MULAI dianggap keyboard. */
-const KEYBOARD_OPEN_PX = 140;
-/** Ambang shrink untuk dianggap keyboard sudah TERTUTUP (hysteresis). */
-const KEYBOARD_CLOSE_PX = 100;
 /**
- * Shrink yang terjadi < 300ms setelah scroll hampir pasti address bar
- * (Chrome Android menyembunyikan/menampilkan chrome saat menggulir),
- * bukan keyboard — keyboard tidak pernah muncul karena scroll.
+ * Semua ambang bersifat dapat disetel per perangkat (lihat
+ * `src/lib/viewport-anchor-config.ts`) supaya perangkat low-end dengan rAF
+ * lambat / pengukuran berisik bisa dilonggarkan tanpa mengubah kode.
  */
-const SCROLL_GRACE_MS = 300;
-/** Batas wajar tinggi address bar / toolbar mobile. */
-const MAX_BROWSER_CHROME_PX = 180;
-/** Berapa lama loop rAF tetap hidup setelah viewport berhenti bergerak. */
-const SETTLE_MS = 350;
-/** Abaikan getaran sub-pixel supaya bar tidak "bergetar" saat list re-render. */
-const HYSTERESIS_PX = 1;
 
 export const VIEWPORT_ANCHOR_VAR = "--vv-anchor-offset";
 /** Offset "terkunci": hanya address bar, tidak terpengaruh keyboard. */
