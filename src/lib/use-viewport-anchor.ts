@@ -30,6 +30,16 @@ export type ViewportAnchor = {
   keyboardOpen: boolean;
 };
 
+export type ViewportAnchorOptions = {
+  /**
+   * Mode pengunci posisi. Bar hanya mengikuti pergerakan address bar
+   * (chrome browser) dan MENGABAIKAN perubahan viewport akibat keyboard —
+   * posisi terakhir sebelum keyboard muncul dipertahankan, jadi bar tidak
+   * pernah melompat saat keyboard buka/tutup.
+   */
+  lock?: boolean;
+};
+
 const KEYBOARD_THRESHOLD = 140;
 /** Berapa lama loop rAF tetap hidup setelah viewport berhenti bergerak. */
 const SETTLE_MS = 350;
@@ -37,7 +47,10 @@ const SETTLE_MS = 350;
 const HYSTERESIS_PX = 1;
 
 export const VIEWPORT_ANCHOR_VAR = "--vv-anchor-offset";
+/** Offset "terkunci": hanya address bar, tidak terpengaruh keyboard. */
+export const VIEWPORT_ANCHOR_LOCK_VAR = "--vv-anchor-offset-lock";
 const ANCHOR_TRANSFORM = `translate3d(0, calc(var(${VIEWPORT_ANCHOR_VAR}, 0px) * -1), 0)`;
+const ANCHOR_TRANSFORM_LOCKED = `translate3d(0, calc(var(${VIEWPORT_ANCHOR_LOCK_VAR}, 0px) * -1), 0)`;
 
 /**
  * Satu subscriber global: semua bar memakai pengukuran yang sama sehingga
@@ -48,6 +61,7 @@ type Listener = (keyboardOpen: boolean) => void;
 const listeners = new Set<Listener>();
 let started = false;
 let currentOffset = 0;
+let currentLockOffset = 0;
 let currentKeyboardOpen = false;
 let stopEngine: (() => void) | null = null;
 
@@ -70,6 +84,14 @@ function startEngine() {
       currentOffset = next;
       document.documentElement.style.setProperty(VIEWPORT_ANCHOR_VAR, `${next}px`);
     }
+
+    // Mode terkunci: hanya diperbarui ketika keyboard tertutup, sehingga
+    // nilainya murni kompensasi address bar dan tetap stabil saat mengetik.
+    if (!keyboardOpen && Math.abs(next - currentLockOffset) > HYSTERESIS_PX) {
+      currentLockOffset = next;
+      document.documentElement.style.setProperty(VIEWPORT_ANCHOR_LOCK_VAR, `${next}px`);
+    }
+
     if (keyboardOpen !== currentKeyboardOpen) {
       currentKeyboardOpen = keyboardOpen;
       listeners.forEach((fn) => fn(keyboardOpen));
@@ -93,6 +115,7 @@ function startEngine() {
 
   measure();
   document.documentElement.style.setProperty(VIEWPORT_ANCHOR_VAR, `${currentOffset}px`);
+  document.documentElement.style.setProperty(VIEWPORT_ANCHOR_LOCK_VAR, `${currentLockOffset}px`);
 
   vv.addEventListener("resize", schedule);
   vv.addEventListener("scroll", schedule);
@@ -116,10 +139,12 @@ function startEngine() {
     window.removeEventListener("scroll", schedule);
     window.removeEventListener("orientationchange", schedule);
     document.documentElement.style.removeProperty(VIEWPORT_ANCHOR_VAR);
+    document.documentElement.style.removeProperty(VIEWPORT_ANCHOR_LOCK_VAR);
   };
 }
 
-export function useViewportAnchor(): ViewportAnchor {
+export function useViewportAnchor(options: ViewportAnchorOptions = {}): ViewportAnchor {
+  const lock = options.lock ?? false;
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
@@ -137,14 +162,18 @@ export function useViewportAnchor(): ViewportAnchor {
         stopEngine = null;
         started = false;
         currentOffset = 0;
+        currentLockOffset = 0;
         currentKeyboardOpen = false;
       }
     };
   }, []);
 
   return {
-    offsetVar: VIEWPORT_ANCHOR_VAR,
-    anchorStyle: { transform: ANCHOR_TRANSFORM, willChange: "transform" },
+    offsetVar: lock ? VIEWPORT_ANCHOR_LOCK_VAR : VIEWPORT_ANCHOR_VAR,
+    anchorStyle: {
+      transform: lock ? ANCHOR_TRANSFORM_LOCKED : ANCHOR_TRANSFORM,
+      willChange: "transform",
+    },
     keyboardOpen,
   };
 }
