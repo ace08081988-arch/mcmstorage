@@ -80,6 +80,7 @@ function startEngine() {
   let stopAt = 0;
 
   const measure = () => {
+    const cfg = getViewportAnchorConfig();
     const layoutH = document.documentElement.clientHeight;
     const raw = layoutH - (vv.height + vv.offsetTop);
     const next = Math.max(0, Math.round(raw));
@@ -88,33 +89,36 @@ function startEngine() {
     // Baseline = tinggi visual viewport saat tidak ada apa pun yang menutup.
     if (vv.height > baselineHeight) baselineHeight = vv.height;
     const shrink = Math.max(0, Math.round(baselineHeight - vv.height));
-    const recentlyScrolled = performance.now() - lastScrollAt < SCROLL_GRACE_MS;
+    const recentlyScrolled = performance.now() - lastScrollAt < cfg.scrollGraceMs;
 
     let keyboardOpen = currentKeyboardOpen;
     if (currentKeyboardOpen) {
       // Tetap "terbuka" sampai shrink benar-benar mengecil (hysteresis),
       // supaya animasi keyboard tidak bikin status berkedip.
-      if (shrink < KEYBOARD_CLOSE_PX) keyboardOpen = false;
+      if (shrink < cfg.keyboardClosePx) keyboardOpen = false;
     } else {
-      const looksLikeChrome = shrink <= MAX_BROWSER_CHROME_PX && recentlyScrolled;
-      keyboardOpen = shrink > KEYBOARD_OPEN_PX && !looksLikeChrome;
+      const looksLikeChrome = shrink <= cfg.maxChromePx && recentlyScrolled;
+      keyboardOpen = shrink > cfg.keyboardOpenPx && !looksLikeChrome;
     }
 
     // Kompensasi HANYA saat keyboard terbuka. Shrink akibat address bar
     // dibiarkan (bar tetap menempel di dasar layar oleh `bottom: 0`), jadi
     // tidak ada transform yang bergerak-gerak saat menggulir.
-    const target = keyboardOpen ? next : 0;
+    const target = cfg.enabled && keyboardOpen ? next : 0;
 
     // Hysteresis: perubahan <= 1px diabaikan (reflow dari list virtual sering
     // menghasilkan beda pecahan pixel yang bikin bar terlihat bergeser).
-    if (Math.abs(target - currentOffset) > HYSTERESIS_PX || keyboardOpen !== currentKeyboardOpen) {
+    if (
+      Math.abs(target - currentOffset) > cfg.hysteresisPx ||
+      keyboardOpen !== currentKeyboardOpen
+    ) {
       currentOffset = target;
       document.documentElement.style.setProperty(VIEWPORT_ANCHOR_VAR, `${target}px`);
     }
 
     // Mode terkunci: hanya diperbarui ketika keyboard tertutup, sehingga
     // posisinya benar-benar diam apa pun yang terjadi pada address bar.
-    if (!keyboardOpen && Math.abs(currentLockOffset) > HYSTERESIS_PX) {
+    if (!keyboardOpen && Math.abs(currentLockOffset) > cfg.hysteresisPx) {
       currentLockOffset = 0;
       document.documentElement.style.setProperty(VIEWPORT_ANCHOR_LOCK_VAR, "0px");
     }
@@ -135,7 +139,7 @@ function startEngine() {
   };
 
   const schedule = () => {
-    stopAt = performance.now() + SETTLE_MS;
+    stopAt = performance.now() + getViewportAnchorConfig().settleMs;
     if (frame) return;
     frame = requestAnimationFrame(tick);
   };
@@ -158,6 +162,9 @@ function startEngine() {
     schedule();
   };
   window.addEventListener("orientationchange", onOrientation);
+  // Perubahan pengaturan sensitivitas berlaku langsung, tanpa reload.
+  const onConfig = () => schedule();
+  window.addEventListener(VIEWPORT_ANCHOR_CONFIG_EVENT, onConfig);
 
   // Perubahan tinggi dokumen (VirtualizedList menambah/mengurangi spacer,
   // tinggi baris terukur ulang) bisa menggeser layout viewport tanpa event
@@ -175,6 +182,7 @@ function startEngine() {
     vv.removeEventListener("scroll", onScroll);
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("orientationchange", onOrientation);
+    window.removeEventListener(VIEWPORT_ANCHOR_CONFIG_EVENT, onConfig);
     document.documentElement.style.removeProperty(VIEWPORT_ANCHOR_VAR);
     document.documentElement.style.removeProperty(VIEWPORT_ANCHOR_LOCK_VAR);
   };
