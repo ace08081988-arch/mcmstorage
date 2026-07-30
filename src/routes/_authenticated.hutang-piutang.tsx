@@ -1351,9 +1351,14 @@ function PaymentsReport({
           Belum ada pembayaran pada periode ini.
         </div>
       ) : (
-        <div className="space-ms-3">
-          {grouped.map(([day, list]) => (
-            <section key={day} className="rounded-lg border bg-card">
+        <VirtualizedList
+          items={grouped}
+          getKey={([day]) => day}
+          estimateSize={180}
+          threshold={5}
+          gap={12}
+          renderItem={([day, list]) => (
+            <section className="rounded-lg border bg-card">
               <header className="border-b px-ms-3 py-ms-2 text-ms-xs font-medium text-muted-foreground">
                 {new Date(day + "T00:00:00").toLocaleDateString("id-ID", {
                   weekday: "long",
@@ -1406,8 +1411,8 @@ function PaymentsReport({
                 })}
               </ul>
             </section>
-          ))}
-        </div>
+          )}
+        />
       )}
     </div>
   );
