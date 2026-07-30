@@ -1717,7 +1717,6 @@ function KindRow({
 
 /** Satu perubahan saldo yang dibuat dari panel chat pada sesi berjalan. */
 type SessionChange = {
-*** placeholder ***
   at: number;
   kind: Kind;
   type: "tagihan" | "pembayaran";
