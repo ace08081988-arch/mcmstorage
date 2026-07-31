@@ -40,3 +40,6 @@ test-results/
 .env
 .env.*
 !.env.example
+test-artifacts/
+
+bundle-report/stats.html

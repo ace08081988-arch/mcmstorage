@@ -80,50 +80,50 @@ function ErrorPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="mx-auto flex max-w-md flex-col gap-4 p-6">
-        <div className="text-4xl">⚠️</div>
-        <h1 className="text-xl font-bold">{heading}</h1>
+      <main className="mx-auto flex max-w-md flex-col gap-ms-4 p-ms-6">
+        <div className="text-ms-4xl">⚠️</div>
+        <h1 className="text-ms-xl font-bold">{heading}</h1>
 
-        <div className="rounded-lg border bg-card p-3 text-sm">
-          <div className="text-muted-foreground text-xs">Pesan</div>
+        <div className="rounded-lg border bg-card p-ms-3 text-ms-sm">
+          <div className="text-muted-foreground text-ms-xs">Pesan</div>
           <div className="font-medium">{friendly}</div>
           {code && (
-            <div className="mt-1 text-[10px] text-muted-foreground">
+            <div className="mt-1 text-ms-2xs text-muted-foreground">
               Kode referensi: <code>{code}</code>
             </div>
           )}
         </div>
 
-        <div className="rounded-lg border bg-card p-3">
-          <div className="mb-2 text-xs font-semibold">Langkah berikutnya</div>
-          <ol className="list-decimal space-y-1 pl-5 text-sm">
+        <div className="rounded-lg border bg-card p-ms-3">
+          <div className="mb-2 text-ms-xs font-semibold">Langkah berikutnya</div>
+          <ol className="list-decimal space-y-1 pl-5 text-ms-sm">
             {steps.map((s, i) => <li key={i}>{s}</li>)}
           </ol>
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap gap-ms-2 pt-1">
           <button
             onClick={handleRetry}
             disabled={retrying}
             aria-busy={retrying}
-            className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            className="flex-1 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {retrying ? "⏳ Mencoba ulang…" : "🔄 Coba lagi"}
           </button>
           <Link
             to="/"
-            className="rounded-md border px-3 py-2 text-sm hover:bg-accent"
+            className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent"
           >
             🏠 Beranda
           </Link>
           {kind === "auth" && (
-            <Link to="/auth" className="rounded-md border px-3 py-2 text-sm hover:bg-accent">
+            <Link to="/auth" className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">
               🔐 Masuk
             </Link>
           )}
         </div>
 
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-ms-2xs text-muted-foreground">
           Detail teknis tidak ditampilkan untuk menjaga keamanan. Tim teknis dapat melihatnya di log.
         </p>
       </main>

@@ -1,11 +1,75 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
+import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { MailCheck, MailX } from "lucide-react";
 import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 import { PublicFooter } from "@/components/PublicFooter";
+import { PublicHeader } from "@/components/PublicHeader";
+import { useOrgName } from "@/lib/org-name";
+import { secureSignUp } from "@/lib/auth.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { logAuthDebug } from "@/lib/auth-debug";
+import { readPendingInvitePath, clearPendingInvite } from "@/lib/pending-invite";
+
+const SAFE_POST_AUTH_PATH = /^\/(?!\/)[^\s\\]*$/;
+const FORBIDDEN_POST_AUTH_TARGETS = new Set(["/auth", "/auth-callback"]);
+
+function safePostAuthTarget(value: string | null | undefined): string {
+  if (!value || value.length > 512 || !SAFE_POST_AUTH_PATH.test(value) || /[\r\n]/.test(value)) {
+    return "/";
+  }
+  const pathOnly = value.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+  if (FORBIDDEN_POST_AUTH_TARGETS.has(pathOnly)) return "/";
+  return value;
+}
+
+function readPostAuthTarget(): string {
+  if (typeof window === "undefined") return "/";
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = safePostAuthTarget(params.get("redirect") ?? params.get("next"));
+  if (fromUrl !== "/") return fromUrl;
+  // Fallback: kalau user membuka /auth langsung (bookmark/refresh), tapi
+  // sebelumnya sempat mendarat di /i/<code>, bawa balik ke undangan itu.
+  const pending = readPendingInvitePath();
+  return pending ? safePostAuthTarget(pending) : "/";
+}
+
+function AuthBrand() {
+  const { full, logo } = useOrgName();
+  return (
+    <>
+      {logo ? (
+        <img
+          src={logo}
+          alt={full}
+          width={64}
+          height={64}
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+          className="mx-auto h-16 w-16 rounded-2xl object-cover"
+        />
+      ) : (
+        <img
+          src="/icon-192.png"
+          alt={full}
+          width={64}
+          height={64}
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+          className="mx-auto h-16 w-16 rounded-2xl"
+        />
+      )}
+      <h1 className="mt-3 text-ms-lg font-semibold tracking-tight">
+        Masuk ke {full}
+      </h1>
+    </>
+  );
+}
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -16,11 +80,11 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: "Masuk atau Daftar — MCM Storage" },
       { property: "og:description", content: "Masuk ke akun MCM Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.lovable.app/auth" },
+      { property: "og:url", content: "https://mcmstorage.biz/auth" },
     ],
     links: [
-      { rel: "canonical", href: "https://mcmstorage.lovable.app/auth" },
-      { rel: "preload", as: "image", href: "/icon-512.png", fetchpriority: "high" },
+      { rel: "canonical", href: "https://mcmstorage.biz/auth" },
+      { rel: "preload", as: "image", href: "/icon-192.png", fetchPriority: "high" },
     ],
   }),
   component: AuthPage,
@@ -28,13 +92,83 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
+  const [postAuthTarget] = useState(readPostAuthTarget);
+  // Simpan pilihan intent/mode/email supaya konsisten saat user reload
+  // aplikasi atau berpindah tab Masuk/Daftar. Password TIDAK disimpan.
+  const LS_KEY = "mcm.authPrefs";
+  type AuthPrefs = {
+    intent: "storage" | "chat" | null;
+    mode: "login" | "signup";
+    email: string;
+  };
+  const readPrefs = (): AuthPrefs => {
+    if (typeof window === "undefined") return { intent: null, mode: "login", email: "" };
+    try {
+      const raw = window.localStorage.getItem(LS_KEY);
+      if (!raw) return { intent: null, mode: "login", email: "" };
+      const p = JSON.parse(raw) as Partial<AuthPrefs>;
+      return {
+        intent: p.intent === "storage" || p.intent === "chat" ? p.intent : null,
+        mode: p.mode === "signup" ? "signup" : "login",
+        email: typeof p.email === "string" ? p.email : "",
+      };
+    } catch {
+      return { intent: null, mode: "login", email: "" };
+    }
+  };
+  // Route ini `ssr: false`, jadi aman membaca localStorage saat init —
+  // preferensi langsung terisi tanpa kedipan field kosong.
+  const initial = readPrefs();
+  const [mode, setMode] = useState<"login" | "signup">(initial.mode);
+  const [intent, setIntent] = useState<"storage" | "chat" | null>(initial.intent);
+  const [email, setEmail] = useState(initial.email);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [verifyStatus, setVerifyStatus] = useState<
+    "unknown" | "unverified" | "awaiting-signup-verification"
+  >("unknown");
+  const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
+  const secureSignUpFn = useServerFn(secureSignUp);
+
+  // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        LS_KEY,
+        JSON.stringify({ intent, mode, email } satisfies AuthPrefs),
+      );
+    } catch {
+      /* storage penuh / diblokir — abaikan */
+    }
+  }, [intent, mode, email]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== LS_KEY || !e.newValue) return;
+      try {
+        const p = JSON.parse(e.newValue) as Partial<AuthPrefs>;
+        if (p.intent === "storage" || p.intent === "chat" || p.intent === null) {
+          setIntent(p.intent);
+        }
+        if (p.mode === "login" || p.mode === "signup") setMode(p.mode);
+        if (typeof p.email === "string") setEmail(p.email);
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const clearPrefs = () => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -43,10 +177,20 @@ function AuthPage() {
   }, [resendCooldown]);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hasAuthCallback =
+        window.location.hash.includes("access_token=") ||
+        window.location.hash.includes("error=") ||
+        window.location.search.includes("code=");
+      if (hasAuthCallback) {
+        window.location.replace(`/auth-callback${window.location.search}${window.location.hash}`);
+        return;
+      }
+    }
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/", replace: true });
+      if (data.session) navigate({ to: postAuthTarget, replace: true });
     });
-  }, [navigate]);
+  }, [navigate, postAuthTarget]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,35 +204,79 @@ function AuthPage() {
         toast.error("Konfirmasi kata sandi tidak cocok");
         return;
       }
-      setLoading(true);
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: window.location.origin },
-      });
-      setLoading(false);
-      if (error) {
-        const msg = /already registered|already exists|user.*exists/i.test(error.message)
-          ? "Email sudah terdaftar. Silakan Masuk."
-          : /pwned|breach|compromised/i.test(error.message)
-            ? "Kata sandi ini pernah bocor. Pakai kata sandi lain."
-            : friendlyError(error);
-        toast.error(msg, {
-          action: {
-            label: "Bantuan",
-            onClick: () =>
-              navigate({
-                to: "/error",
-                search: { kind: "auth", title: "Pendaftaran gagal", message: error.message, from: "/auth" },
-              }),
-          },
-        });
+      if (rateLimitedUntil > Date.now()) {
+        const mins = Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000));
+        toast.error(`Masih dalam periode limit. Coba lagi ~${mins} menit.`);
         return;
       }
-      toast.success(
-        "Pendaftaran berhasil. Cek email Anda untuk verifikasi sebelum masuk.",
-        { duration: 8000 },
-      );
+      setLoading(true);
+      let result;
+      try {
+        result = await secureSignUpFn({
+          data: {
+            email,
+            password,
+            chatOnly: intent === "chat",
+          },
+        });
+      } catch (err) {
+        setLoading(false);
+        toast.error(
+          "Gagal menghubungi server. Periksa koneksi lalu coba lagi. " +
+            (err instanceof Error ? `(${err.message})` : ""),
+        );
+        return;
+      }
+      setLoading(false);
+
+      if (!result.ok) {
+        switch (result.code) {
+          case "rate_limited": {
+            const until = Date.now() + (result.retryAfterSeconds ?? 0) * 1000;
+            setRateLimitedUntil(until);
+            toast.error(result.message, {
+              description:
+                "Batas ini melindungi dari spam. Coba dari jaringan lain bila mendesak.",
+              duration: 10000,
+            });
+            break;
+          }
+          case "email_exists":
+            toast.error(result.message, {
+              action: { label: "Masuk", onClick: () => setMode("login") },
+            });
+            break;
+          case "weak_password":
+            toast.error(result.message);
+            break;
+          case "server_misconfigured":
+            toast.error(result.message);
+            break;
+          case "invalid_input":
+            toast.error("Data tidak valid. Periksa email dan kata sandi.");
+            break;
+          default:
+            toast.error(result.message, {
+              action: {
+                label: "Bantuan",
+                onClick: () =>
+                  navigate({
+                    to: "/error",
+                    search: {
+                      kind: "auth",
+                      title: "Pendaftaran gagal",
+                      message: result.message,
+                      from: "/auth",
+                    },
+                  }),
+              },
+            });
+        }
+        return;
+      }
+
+      toast.success("Pendaftaran berhasil. Silakan masuk.", { duration: 6000 });
+      setVerifyStatus("awaiting-signup-verification");
       setMode("login");
       setPassword("");
       setConfirmPassword("");
@@ -97,8 +285,15 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
+    logAuthDebug("signin", "signInWithPassword", {
+      email,
+      ok: !error,
+      error: error?.message ?? null,
+    }, error ? "error" : "info");
     if (error) {
-      const msg = /email not confirmed|not.*confirmed/i.test(error.message)
+      const notConfirmed = /email not confirmed|not.*confirmed/i.test(error.message);
+      if (notConfirmed) setVerifyStatus("unverified");
+      const msg = notConfirmed
         ? "Email belum diverifikasi. Cek inbox untuk link verifikasi."
         : /invalid login credentials/i.test(error.message)
         ? "Email atau kata sandi salah (atau belum daftar)"
@@ -116,7 +311,9 @@ function AuthPage() {
       return;
     }
     toast.success("Berhasil masuk");
-    navigate({ to: "/", replace: true });
+    clearPrefs();
+    logAuthDebug("signin", "navigating after sign-in", { target: postAuthTarget });
+    navigate({ to: postAuthTarget, replace: true });
   };
 
   const sendReset = async () => {
@@ -130,7 +327,7 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Tautan reset dikirim ke email");
@@ -146,11 +343,17 @@ function AuthPage() {
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: `${window.location.origin}/auth-callback` },
     });
     setLoading(false);
+    logAuthDebug("resend", "resend signup verification", {
+      email,
+      redirectTo: `${window.location.origin}/auth-callback`,
+      ok: !error,
+      error: error?.message ?? null,
+    }, error ? "error" : "info");
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Email verifikasi dikirim ulang. Cek inbox Anda.");
@@ -159,68 +362,103 @@ function AuthPage() {
 
   const signInWithApple = async () => {
     setLoading(true);
+    try { window.sessionStorage.setItem("mcm.postAuthRedirect", postAuthTarget); } catch { /* ignore */ }
     const result = await lovable.auth.signInWithOAuth("apple", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/auth-callback?redirect=${encodeURIComponent(postAuthTarget)}`,
     });
     if (result.error) {
       setLoading(false);
-      toast.error(friendlyError(result.error));
+      notifyError(result.error);
       return;
     }
     if (result.redirected) return;
     toast.success("Berhasil masuk");
-    navigate({ to: "/", replace: true });
+    clearPrefs();
+    navigate({ to: postAuthTarget, replace: true });
   };
 
   const signInWithGoogle = async () => {
     setLoading(true);
+    try { window.sessionStorage.setItem("mcm.postAuthRedirect", postAuthTarget); } catch { /* ignore */ }
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/auth-callback?redirect=${encodeURIComponent(postAuthTarget)}`,
     });
     if (result.error) {
       setLoading(false);
-      toast.error(friendlyError(result.error));
+      notifyError(result.error);
       return;
     }
     if (result.redirected) return;
     toast.success("Berhasil masuk");
-    navigate({ to: "/", replace: true });
+    clearPrefs();
+    navigate({ to: postAuthTarget, replace: true });
   };
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <main className="flex flex-1 items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+      <PublicHeader />
+      <main className="flex flex-1 items-center justify-center px-ms-4 py-10">
+      <div className="w-full max-w-sm space-ms-6 rounded-2xl border bg-card p-ms-6 shadow-sm">
         <ApkDownloadBanner />
         <div className="text-center">
-          <img
-            src="/icon-512.png"
-            alt="MCM Storage"
-            width={64}
-            height={64}
-            fetchPriority="high"
-            className="mx-auto h-16 w-16 rounded-2xl"
-          />
-          <h1 className="mt-3 text-lg font-semibold tracking-tight">Masuk ke MCM Storage</h1>
-          <p className="text-xs text-muted-foreground">
-            {mode === "signup"
+          <AuthBrand />
+          <p className="text-ms-xs text-muted-foreground">
+            {intent === null
+              ? "Pilih jenis akun untuk lanjut"
+              : mode === "signup"
               ? "Buat akun baru dengan email & kata sandi"
               : "Masuk dengan email & kata sandi Anda"}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-1 rounded-md border bg-muted/40 p-1 text-xs">
+        {intent === null ? (
+          <div className="space-ms-2">
+            <button
+              type="button"
+              onClick={() => { setIntent("storage"); setMode("login"); }}
+              className="w-full rounded-md border bg-background p-ms-3 text-left hover:bg-accent"
+            >
+              <div className="text-ms-sm font-semibold">Saya sudah pakai MCM Storage</div>
+              <div className="text-ms-2xs text-muted-foreground">
+                Masuk dengan akun MCM Storage Anda — semua fitur (gudang, ecer, chat) aktif.
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIntent("chat"); setMode("signup"); }}
+              className="w-full rounded-md border bg-background p-ms-3 text-left hover:bg-accent"
+            >
+              <div className="text-ms-sm font-semibold">Daftar akun chat baru</div>
+              <div className="text-ms-2xs text-muted-foreground">
+                Buat akun untuk MCM Chat saja. Bisa upgrade ke Storage kapan pun tanpa daftar ulang.
+              </div>
+            </button>
+            <p className="text-center text-ms-2xs text-muted-foreground">
+              Satu akun berlaku di MCM Storage & MCM Chat.
+            </p>
+          </div>
+        ) : (
+        <>
+        <button
+          type="button"
+          onClick={() => setIntent(null)}
+          className="w-full text-left text-ms-2xs text-muted-foreground hover:underline"
+        >
+          ← Ubah pilihan {intent === "chat" ? "(Akun chat baru)" : "(MCM Storage)"}
+        </button>
+
+        <div className="grid grid-cols-2 gap-ms-1 rounded-md border bg-muted/40 p-ms-1 text-ms-xs">
           <button
             type="button"
             onClick={() => setMode("login")}
-            className={`rounded px-2 py-1.5 font-medium ${mode === "login" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+            className={`rounded px-ms-2 py-1.5 font-medium ${mode === "login" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
           >
             Masuk
           </button>
           <button
             type="button"
             onClick={() => setMode("signup")}
-            className={`rounded px-2 py-1.5 font-medium ${mode === "signup" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+            className={`rounded px-ms-2 py-1.5 font-medium ${mode === "signup" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
           >
             Daftar
           </button>
@@ -230,7 +468,7 @@ function AuthPage() {
           type="button"
           onClick={signInWithGoogle}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-ms-2 rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm font-medium hover:bg-accent disabled:opacity-50"
         >
           <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/>
@@ -245,7 +483,7 @@ function AuthPage() {
           type="button"
           onClick={signInWithApple}
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-md border bg-black px-3 py-2 text-sm font-medium text-white hover:bg-black/90 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-ms-2 rounded-md border bg-black px-ms-3 py-ms-2 text-ms-sm font-medium text-white hover:bg-black/90 disabled:opacity-50"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M16.365 1.43c0 1.14-.43 2.23-1.2 3.04-.81.86-2.13 1.52-3.21 1.43-.13-1.12.43-2.29 1.16-3.04.83-.86 2.25-1.49 3.25-1.43zM20.5 17.27c-.58 1.33-.86 1.93-1.61 3.1-1.05 1.64-2.53 3.69-4.37 3.7-1.63.02-2.05-1.06-4.27-1.05-2.22.01-2.68 1.07-4.31 1.05-1.84-.02-3.24-1.86-4.29-3.5C-.83 17.18-1.13 12.46.5 9.74c1.16-1.93 2.99-3.06 4.71-3.06 1.76 0 2.86 1.06 4.31 1.06 1.41 0 2.27-1.06 4.3-1.06 1.53 0 3.15.83 4.31 2.27-3.78 2.07-3.17 7.47-1.63 8.32z"/>
@@ -253,22 +491,56 @@ function AuthPage() {
           Lanjutkan dengan Apple
         </button>
 
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+        <div className="flex items-center gap-ms-2 text-ms-2xs uppercase tracking-wider text-muted-foreground">
           <div className="h-px flex-1 bg-border" />
           atau
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="space-ms-3">
+          {mode === "login" && verifyStatus !== "unknown" && email.trim() ? (
+            verifyStatus === "unverified" ? (
+              <div className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2.5 text-ms-xs text-warning dark:text-warning">
+                <MailX className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div>
+                    <b>Belum terverifikasi.</b> Cek inbox <b>{email}</b> untuk
+                    tautan verifikasi.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={resendVerification}
+                    disabled={loading || resendCooldown > 0}
+                    className="rounded-md border border-warning/40 bg-background/60 px-ms-2 py-1 text-ms-2xs font-medium hover:bg-background disabled:opacity-50"
+                  >
+                    {resendCooldown > 0
+                      ? `Kirim ulang (${resendCooldown}s)`
+                      : "Kirim ulang email verifikasi"}
+                  </button>
+                </div>
+              </div>
+            ) : verifyStatus === "awaiting-signup-verification" ? (
+              <div className="flex items-start gap-ms-2 rounded-md border border-sky-500/40 bg-sky-500/10 p-ms-2.5 text-ms-xs text-sky-800 dark:text-sky-100">
+                <MailCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <div>
+                  Pendaftaran berhasil. <b>Verifikasi email dulu</b> lewat
+                  tautan yang dikirim ke <b>{email}</b>, lalu masuk di sini.
+                </div>
+              </div>
+            ) : null
+          ) : null}
           <input
             type="email"
             required
             autoFocus
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setVerifyStatus("unknown");
+            }}
             placeholder="alamat@email.com"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
           />
           <div className="relative">
             <input
@@ -279,12 +551,12 @@ function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={mode === "signup" ? "Kata sandi (min. 8 karakter)" : "Kata sandi"}
-              className="w-full rounded-md border bg-background px-3 py-2 pr-16 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border bg-background px-ms-3 py-ms-2 pr-16 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
             />
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-accent"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-ms-2 py-0.5 text-ms-2xs text-muted-foreground hover:bg-accent"
               aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
             >
               {showPassword ? "Sembunyi" : "Lihat"}
@@ -299,13 +571,22 @@ function AuthPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Konfirmasi kata sandi"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
             />
+          )}
+          {mode === "signup" && rateLimitedUntil > Date.now() && (
+            <p className="text-center text-ms-2xs text-destructive">
+              Terlalu banyak percobaan. Coba lagi ~
+              {Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000))} menit.
+            </p>
           )}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            disabled={
+              loading ||
+              (mode === "signup" && rateLimitedUntil > Date.now())
+            }
+            className="w-full rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Memproses…" : mode === "signup" ? "Daftar" : "Masuk"}
           </button>
@@ -314,27 +595,30 @@ function AuthPage() {
               type="button"
               onClick={sendReset}
               disabled={loading}
-              className="w-full text-center text-[11px] text-muted-foreground hover:underline disabled:opacity-50"
+              className="w-full text-center text-ms-2xs text-muted-foreground hover:underline disabled:opacity-50"
             >
               Lupa kata sandi?
             </button>
           )}
-          <button
-            type="button"
-            onClick={resendVerification}
-            disabled={loading || resendCooldown > 0}
-            className="w-full text-center text-[11px] text-muted-foreground hover:underline disabled:opacity-50"
-          >
-            {resendCooldown > 0
-              ? `Kirim ulang email verifikasi (${resendCooldown}s)`
-              : "Kirim ulang email verifikasi"}
-          </button>
-          <p className="text-center text-[11px] text-muted-foreground">
+          <div className="flex items-center justify-center gap-ms-1 text-ms-xs">
+            <span className="text-muted-foreground">Belum terima email verifikasi?</span>
+            <button
+              type="button"
+              onClick={resendVerification}
+              disabled={loading || resendCooldown > 0}
+              className="font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              {resendCooldown > 0 ? `Kirim ulang (${resendCooldown}s)` : "Kirim ulang"}
+            </button>
+          </div>
+          <p className="text-center text-ms-2xs text-muted-foreground">
             {mode === "login"
               ? "Belum punya akun? Pilih tab Daftar di atas."
               : "Sudah punya akun? Pilih tab Masuk di atas."}
           </p>
         </form>
+        </>
+        )}
       </div>
       </main>
       <PublicFooter />

@@ -1,0 +1,1462 @@
+{
+  "$comment": "Snapshot pelanggaran Noir & Gold yang di-grandfather. Diperbarui per slice audit; jangan edit tangan. Regenerasi: `node scripts/check-noir-gold.mjs --update-baseline`.",
+  "generatedAt": "2026-07-15T05:58:51.823Z",
+  "count": 291,
+  "entries": [
+    {
+      "label": "hex color",
+      "file": "src/components/ApkQrDialog.tsx",
+      "content": "color: { dark: \"#000000\", light: \"#ffffff\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"amber\",   label: \"Kuning\", value: \"oklch(0.78 0.16 80)\",  swatch: \"#f59e0b\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"blue\",    label: \"Biru\",   value: \"oklch(0.60 0.18 250)\", swatch: \"#3b82f6\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"emerald\", label: \"Hijau\",  value: \"oklch(0.62 0.17 155)\", swatch: \"#10b981\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"rose\",    label: \"Merah\",  value: \"oklch(0.63 0.22 20)\",  swatch: \"#f43f5e\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"slate\",   label: \"Netral\", value: \"oklch(0.30 0.04 260)\", swatch: \"#475569\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"violet\",  label: \"Ungu\",   value: \"oklch(0.58 0.22 295)\", swatch: \"#8b5cf6\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/ProfileQrDialog.tsx",
+      "content": "color: { dark: \"#0f172a\", light: \"#ffffff\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/ProfileQrDialog.tsx",
+      "content": "color: { dark: \"#0f172a\", light: \"#ffffff\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "<ColorRow label=\"Latar kartu\" value={card.bg ?? \"#0f172a\"} onChange={(c) => onChange({ ...card, bg: c })} presets={BG_PRESETS} />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "<ColorRow label=\"Latar\" value={card.bg ?? \"#dc2626\"} onChange={(c) => onChange({ ...card, bg: c })} presets={COLOR_PRESETS} />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "<ColorRow label=\"Warna panah\" value={card.color ?? \"#ef4444\"} onChange={(c) => onChange({ ...card, color: c })} presets={COLOR_PRESETS} />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "<ColorRow label=\"Warna teks\" value={card.color ?? \"#fafafa\"} onChange={(c) => onChange({ ...card, color: c })} presets={COLOR_PRESETS} />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "<ColorRow label=\"Warna teks\" value={card.color ?? \"#fefce8\"} onChange={(c) => onChange({ ...card, color: c })} presets={COLOR_PRESETS} />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "const BG_PRESETS = [\"transparent\", \"#fef3c7\", \"#dcfce7\", \"#dbeafe\", \"#fce7f3\", \"#0f172a\"];"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "const COLOR_PRESETS = [\"#ef4444\", \"#f59e0b\", \"#10b981\", \"#3b82f6\", \"#a855f7\", \"#0f172a\", \"#fafafa\"];"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "function defaultArrow(): StickerCard { return { type: \"sticker\", kind: \"arrow\", direction: \"right\", color: \"#ef4444\", bg: \"transparent\", rotation: 0, scale: 1, caption: \"\" }; }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "function defaultBank(): StickerCard { return { type: \"sticker\", kind: \"bank\", bank: \"BCA\", account_number: \"\", account_name: \"\", color: \"#fafafa\", bg: \"#0f172a\", rotation: 0, scale: 1, caption: \"\" }; }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "function defaultText(): StickerCard { return { type: \"sticker\", kind: \"text\", text: \"PROMO!\", color: \"#fefce8\", bg: \"#dc2626\", rotation: 0, scale: 1, caption: \"\" }; }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerPickerDialog.tsx",
+      "content": "style={{ background: p === \"transparent\" ? \"repeating-conic-gradient(#cbd5e1 0 25%, #fff 0 50%) 50%/8px 8px\" : p }}"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerView.tsx",
+      "content": "const bg = c.bg ?? \"#0f172a\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerView.tsx",
+      "content": "const bg = c.bg ?? \"#dc2626\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerView.tsx",
+      "content": "const color = c.color ?? \"#ef4444\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerView.tsx",
+      "content": "const color = c.color ?? \"#fafafa\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/chat/StickerView.tsx",
+      "content": "const color = c.color ?? \"#fefce8\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/ChatModeSplash.tsx",
+      "content": "\"radial-gradient(circle at 50% 35%, #0a7a4a 0%, #064e3b 55%, #022c22 100%)\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/OrgNameSettings.tsx",
+      "content": "const [hex, setHex] = useState(savedBrand.startsWith(\"#\") ? savedBrand : \"#10b981\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/OrgNameSettings.tsx",
+      "content": "setHex(\"#10b981\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button className={cn(\"h-9 rounded-full border border-white/10 px-ms-3 text-ms-sm text-white transition\", obj.outline ? \"bg-white text-neutral-900\" : \"hover:bg-white/10\")} onClick={() => updateObject(obj.id, { outline: obj.outline ? undefined : \"#000000\" })}>Outline</button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "anchorFill=\"#ffffff\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "anchorStroke=\"#3b82f6\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "borderStroke=\"#3b82f6\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "check: { label: \"Checklist\", Icon: Check, defaultColor: \"#22c55e\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"grid h-8 w-8 place-items-center rounded-full border-2 border-white/20 bg-[conic-gradient(from_0deg,#ef4444,#eab308,#22c55e,#06b6d4,#3b82f6,#8b5cf6,#ec4899,#ef4444)]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "const [color, setColor] = useState<string>(\"#ef4444\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "const MCM_PALETTE = [\"#ef4444\", \"#f97316\", \"#eab308\", \"#22c55e\", \"#06b6d4\", \"#3b82f6\", \"#8b5cf6\", \"#ec4899\", \"#111827\", \"#ffffff\"];"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "fill=\"#ffffff\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "location: { label: \"Lokasi\", Icon: MapPin, defaultColor: \"#3b82f6\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "package: { label: \"Paket\", Icon: Package, defaultColor: \"#8b5cf6\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "paid: { label: \"Paid\", Icon: DollarSign, defaultColor: \"#22c55e\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "pending: { label: \"Pending\", Icon: Clock, defaultColor: \"#eab308\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "shadowColor={o.shadow ? \"#000\" : undefined}"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "verified: { label: \"Verified\", Icon: BadgeCheck, defaultColor: \"#06b6d4\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "warning: { label: \"Warning\", Icon: AlertTriangle, defaultColor: \"#f59e0b\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "x: { label: \"Silang\", Icon: X, defaultColor: \"#ef4444\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/PhotoEditor.hittest.test.ts",
+      "content": "const base = { id: \"1\", rotation: 0, scale: 1, color: \"#000\", opacity: 1 } as const;"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/PhotoEditor.tsx",
+      "content": "const [color, setColor] = useState(\"#ef4444\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/PhotoEditor.tsx",
+      "content": "const COLORS = [\"#ef4444\", \"#f59e0b\", \"#10b981\", \"#3b82f6\", \"#a855f7\", \"#ec4899\", \"#000000\", \"#ffffff\"];"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/PhotoEditor.tsx",
+      "content": "ctx.lineWidth = Math.max(3, l.size / 12); ctx.strokeStyle = l.color === \"#ffffff\" ? \"#000\" : \"#fff\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/PhotoEditor.tsx",
+      "content": "ctx.strokeStyle = \"#3b82f6\"; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/ProductEditDrawer.tsx",
+      "content": "className=\"inline-flex h-11 items-center justify-center rounded-md bg-[#25D366] px-ms-3 text-ms-sm font-semibold text-white hover:opacity-90\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/ProductEditDrawer.tsx",
+      "content": "className={`h-10 rounded-md border text-ms-xs font-medium ${sent ? \"border-[#128C7E] bg-[#25D366] text-white\" : \"hover:bg-accent\"}`}"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/ReadyEcerSection.tsx",
+      "content": "<AlertDialogAction onClick={confirmSendWA} className=\"bg-[#25D366] text-white hover:bg-[#1ebe57]\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/ReadyEcerSection.tsx",
+      "content": "className=\"inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/ReadyPackagesPanel.tsx",
+      "content": "className=\"flex-1 rounded-md bg-[#25D366] px-ms-3 py-ms-2 text-ms-xs font-semibold text-white hover:opacity-90\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/ReadyRequestSection.tsx",
+      "content": "className=\"inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#7ee2a8]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/share/SaleShareButtons.tsx",
+      "content": "\"bg-[#25D366] text-white shadow-sm hover:bg-[#1ebe57] disabled:hover:bg-[#25D366]\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/share/SaleShareButtons.tsx",
+      "content": "\"border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/SiapkanSendiriSection.tsx",
+      "content": ": \"border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]\")"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/StaffContactsPanel.tsx",
+      "content": "className=\"inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/tugas/SharePinDialog.tsx",
+      "content": "className=\"inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-sm font-semibold text-white disabled:opacity-60\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/ui/chart.tsx",
+      "content": "\"flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/__tests__/chat-mode-branding.test.ts",
+      "content": "<meta name=\"theme-color\" content=\"#0f172a\" />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/__tests__/chat-mode-branding.test.ts",
+      "content": "expect(get(\"theme-color\")).toBe(\"#064e3b\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/chat-lists.ts",
+      "content": "color: input.color ?? \"#22c55e\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/chat-mode-branding.ts",
+      "content": "themeColor: \"#064e3b\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/chat-mode-branding.ts",
+      "content": "themeColor: \"#0f172a\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<div style=\"font-size:34px;font-weight:700;letter-spacing:8px;text-align:center;background:#f1f5f9;border-radius:8px;padding:16px;margin:16px 0\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<div style=\"max-width:520px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<hr style=\"border:none;border-top:1px solid #e2e8f0;margin:16px 0\"/>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<html><body style=\"font-family:system-ui,-apple-system,sans-serif;color:#0f172a;background:#f8fafc;padding:24px\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<p style=\"font-size:11px;color:#64748b;margin:0\">Konteks permintaan:</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<p style=\"font-size:11px;color:#64748b;margin:4px 0\"><strong>Device:</strong> ${escapeHtml(ua)}</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<p style=\"font-size:11px;color:#64748b;margin:4px 0\"><strong>IP:</strong> ${escapeHtml(ip)}</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<p style=\"font-size:12px;color:#64748b;margin:8px 0\">Berlaku 10 menit. Maksimal 5 percobaan.</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<p style=\"font-size:12px;color:#b91c1c;margin:12px 0 0\">Jika bukan Anda, segera ganti kata sandi.</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/device.functions.ts",
+      "content": "<p style=\"font-size:14px;color:#475569;margin:0 0 16px\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<div style=\"font-size:34px;font-weight:700;letter-spacing:8px;text-align:center;background:#f1f5f9;border-radius:8px;padding:16px;margin:16px 0\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<div style=\"max-width:520px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<hr style=\"border:none;border-top:1px solid #e2e8f0;margin:16px 0\"/>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<html><body style=\"font-family:system-ui,-apple-system,sans-serif;color:#0f172a;background:#f8fafc;padding:24px\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<p style=\"font-size:11px;color:#64748b;margin:0\">Konteks permintaan terakhir:</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<p style=\"font-size:11px;color:#64748b;margin:4px 0\"><strong>Device:</strong> ${escapeHtml(ua)}</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<p style=\"font-size:11px;color:#64748b;margin:4px 0\"><strong>IP:</strong> ${escapeHtml(ip)}</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<p style=\"font-size:12px;color:#64748b;margin:8px 0\">Berlaku 10 menit. Maksimal 5 percobaan.</p>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-queue.functions.ts",
+      "content": "<p style=\"font-size:14px;color:#475569;margin:0 0 16px\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/email-change.tsx",
+      "content": "backgroundColor: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/email-change.tsx",
+      "content": "color: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/email-change.tsx",
+      "content": "color: '#55575d',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/email-change.tsx",
+      "content": "color: '#ffffff',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/email-change.tsx",
+      "content": "const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/email-change.tsx",
+      "content": "const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/invite.tsx",
+      "content": "backgroundColor: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/invite.tsx",
+      "content": "color: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/invite.tsx",
+      "content": "color: '#55575d',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/invite.tsx",
+      "content": "color: '#ffffff',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/invite.tsx",
+      "content": "const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/invite.tsx",
+      "content": "const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/magic-link.tsx",
+      "content": "backgroundColor: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/magic-link.tsx",
+      "content": "color: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/magic-link.tsx",
+      "content": "color: '#55575d',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/magic-link.tsx",
+      "content": "color: '#ffffff',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/magic-link.tsx",
+      "content": "const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/magic-link.tsx",
+      "content": "const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/reauthentication.tsx",
+      "content": "color: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/reauthentication.tsx",
+      "content": "color: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/reauthentication.tsx",
+      "content": "color: '#55575d',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/reauthentication.tsx",
+      "content": "const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/reauthentication.tsx",
+      "content": "const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/recovery.tsx",
+      "content": "backgroundColor: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/recovery.tsx",
+      "content": "color: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/recovery.tsx",
+      "content": "color: '#55575d',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/recovery.tsx",
+      "content": "color: '#ffffff',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/recovery.tsx",
+      "content": "const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/recovery.tsx",
+      "content": "const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/shipment-status-update.tsx",
+      "content": "backgroundColor: \"#ffffff\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/shipment-status-update.tsx",
+      "content": "const detailCard: React.CSSProperties = { backgroundColor: \"#f8fafc\", border: \"1px solid #e2e8f0\", borderRadius: \"8px\", padding: \"16px\", margin: \"16px 0\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/shipment-status-update.tsx",
+      "content": "const detailLine: React.CSSProperties = { color: \"#0f172a\", fontSize: \"14px\", margin: \"4px 0\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/shipment-status-update.tsx",
+      "content": "const footer: React.CSSProperties = { color: \"#64748b\", fontSize: \"13px\", marginTop: \"24px\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/shipment-status-update.tsx",
+      "content": "const heading: React.CSSProperties = { color: \"#0f172a\", fontSize: \"22px\", margin: \"0 0 16px\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/shipment-status-update.tsx",
+      "content": "const paragraph: React.CSSProperties = { color: \"#334155\", fontSize: \"15px\", lineHeight: \"22px\", margin: \"0 0 12px\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/signup.tsx",
+      "content": "backgroundColor: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/signup.tsx",
+      "content": "color: '#000000',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/signup.tsx",
+      "content": "color: '#55575d',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/signup.tsx",
+      "content": "color: '#ffffff',"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/signup.tsx",
+      "content": "const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/email-templates/signup.tsx",
+      "content": "const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/error-page.ts",
+      "content": ".primary { background: #111; color: #fff; }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/error-page.ts",
+      "content": ".secondary { background: #fff; color: #111; border-color: #d1d5db; }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/error-page.ts",
+      "content": "body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa; color: #111; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/error-page.ts",
+      "content": "p { color: #4b5563; margin: 0 0 1.5rem; }"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/org-name.ts",
+      "content": "/** Set brand color hex (e.g. \"#10b981\") or empty to fall back to theme. */"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/prep-photo-merge.ts",
+      "content": "ctx.fillStyle = \"#f3f4f6\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/prep-photo-merge.ts",
+      "content": "ctx.fillStyle = \"#ffffff\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/press-audit.ts",
+      "content": "\"color:#0ea5e9;font-weight:600\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/press-audit.ts",
+      "content": "\"color:#f59e0b;font-weight:600\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#0f172a\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#0f172a\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#0f172a\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#0f172a\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#334155\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#334155\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#334155\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#64748b\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#64748b\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#94a3b8\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#dc2626\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.fillStyle = \"#ffffff\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.strokeStyle = \"#e2e8f0\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.strokeStyle = \"#e2e8f0\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "ctx.strokeStyle = \"#e2e8f0\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "return { text: \"HUTANG\", color: \"#dc2626\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "return { text: \"LUNAS\", color: \"#16a34a\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "return { text: \"SEBAGIAN\", color: \"#d97706\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/sale-receipt.ts",
+      "content": "return { text: (m ?? \"—\").toUpperCase(), color: \"#64748b\" };"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/storage-log.ts",
+      "content": "\"color:#0ea5e9;font-weight:600\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/storage-log.ts",
+      "content": "\"color:#a855f7;font-weight:600\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/storage-log.ts",
+      "content": "\"color:#ef4444;font-weight:600\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/__root.tsx",
+      "content": "{ name: \"theme-color\", content: \"#0a7a4a\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.buku-alamat.tsx",
+      "content": "className=\"h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.daftar.tsx",
+      "content": "color=\"#22c55e\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.daftar.tsx",
+      "content": "color=\"#3b82f6\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.daftar.tsx",
+      "content": "color=\"#f59e0b\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className=\"inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-ms-1 rounded bg-[#25D366] px-1.5 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.hutang-piutang.tsx",
+      "content": "className=\"bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.hutang-piutang.tsx",
+      "content": "className=\"h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.hutang-piutang.tsx",
+      "content": "className=\"h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.hutang-piutang.tsx",
+      "content": "className=\"w-full bg-[#25D366] text-white hover:bg-[#1ea952] sm:w-auto\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.index.tsx",
+      "content": "? \"border-[#25D366] bg-[#25D366]/10 text-[#128C7E]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.index.tsx",
+      "content": "<span className=\"inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-[#25D366]/15 px-1.5 text-[0.6875rem] font-medium leading-none text-[#128C7E]\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.index.tsx",
+      "content": "className=\"col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-ms-2 sm:col-span-4\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.index.tsx",
+      "content": "className=\"inline-flex items-center rounded-md bg-[#25D366] px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.index.tsx",
+      "content": "className=\"shrink-0 rounded-md bg-[#25D366] px-ms-2 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.index.tsx",
+      "content": "className={`inline-flex items-center rounded-md bg-[#25D366] px-ms-3 py-1 text-[0.6875rem] font-semibold text-white ${"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.index.tsx",
+      "content": "flashId === p.id ? \"bg-[#25D366] animate-pulse\" : \"bg-[#25D366]/60\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.kontak.index.tsx",
+      "content": "className=\"bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.pembaruan.tsx",
+      "content": "style={{ background: status.bg_color || \"#0f172a\" }}"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "className=\"bg-[#25D366] text-white hover:bg-[#20b959]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "className=\"inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-0.5 text-ms-2xs text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "className=\"inline-flex items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-1 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "ctx.fillStyle = \"#0f172a\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "ctx.fillStyle = \"#0f172a\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "ctx.fillStyle = \"#0f172a\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "ctx.fillStyle = \"#475569\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "ctx.fillStyle = \"#475569\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "ctx.fillStyle = \"#ffffff\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "ctx.strokeStyle = \"#e2e8f0\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.status.$id.tsx",
+      "content": "style={{ background: status.bg_color || \"#0f172a\" }}"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.status.baru.tsx",
+      "content": "const [bg, setBg] = useState(\"#0f172a\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.tugas-baru.tsx",
+      "content": "<pre className=\"max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg border bg-[#dcf8c6] p-ms-3 text-ms-2xs leading-relaxed text-[#111] dark:bg-success/40 dark:text-success\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.tugas.tsx",
+      "content": "<button onClick={() => setSharePinOpen(true)} className=\"inline-flex h-9 items-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-xs font-semibold text-white\"><MessageCircle className=\"h-4 w-4\" /> Bagikan link + PIN</button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.tugas.tsx",
+      "content": "<button onClick={shareWA} className=\"inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-[#25D366] text-ms-2xs font-semibold text-white\"><MessageCircle className=\"h-3 w-3\" /> MCM</button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.tugas.tsx",
+      "content": "className=\"inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] text-ms-sm font-semibold text-white\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.tugas.tsx",
+      "content": "className=\"inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-[#25D366]/40 bg-[#25D366]/10 px-1.5 text-ms-2xs font-medium text-[#1ea952] hover:bg-[#25D366]/20\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.tugas.tsx",
+      "content": "className=\"inline-flex h-7 items-center gap-ms-1 rounded-md border border-[#25D366]/50 bg-[#25D366]/10 px-ms-2 text-ms-2xs font-medium text-[#1ea952] hover:bg-[#25D366]/20\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.tugas.tsx",
+      "content": "className=\"inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.tugas.tsx",
+      "content": "className=\"inline-flex h-9 items-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-xs font-semibold text-white hover:opacity-90\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/_authenticated.undang.tsx",
+      "content": "color: { dark: \"#0f172a\", light: \"#ffffff\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/api/public/hooks/email-queue-monitor.ts",
+      "content": "html: `<h2>Peringatan sistem email</h2><p>${a.message}</p><pre style=\"background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px\">${JSON.stringify(a.metadata, null, 2)}</pre><p style=\"color:#888;font-size:12px\">Dikirim oleh email-queue-monitor • ${new Date().toISOString()}</p>`,"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/api/public/hooks/security-scan-daily.ts",
+      "content": "`<li><strong>[${f.severity}]</strong> ${f.title} <code style=\"color:#888\">${f.code}</code></li>`,"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/api/public/hooks/security-scan-daily.ts",
+      "content": "html: `<h2>Scan keamanan harian</h2><p>Ditemukan ${findings.length} temuan terbuka:</p><ul>${list}</ul><p style=\"color:#888;font-size:12px\">Buka aplikasi → Audit untuk detail. Dikirim ${new Date().toISOString()}</p>`,"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/auth.tsx",
+      "content": "<path fill=\"#1976D2\" d=\"M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.1 5.6l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.3-.1-2.3-.4-3.5z\"/>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/auth.tsx",
+      "content": "<path fill=\"#4CAF50\" d=\"M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z\"/>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/auth.tsx",
+      "content": "<path fill=\"#FF3D00\" d=\"M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z\"/>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/auth.tsx",
+      "content": "<path fill=\"#FFC107\" d=\"M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z\"/>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/pos-kasir.ringkasan.tsx",
+      "content": "<Bar yAxisId=\"left\" dataKey=\"omzet\" name=\"Omzet\" fill=\"#10b981\" radius={[4, 4, 0, 0]} />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/pos-kasir.ringkasan.tsx",
+      "content": "<CartesianGrid strokeDasharray=\"3 3\" stroke=\"#334155\" />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/pos-kasir.ringkasan.tsx",
+      "content": "<XAxis dataKey=\"label\" stroke=\"#94a3b8\" tick={{ fontSize: 10 }} interval=\"preserveStartEnd\" minTickGap={16} />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/pos-kasir.ringkasan.tsx",
+      "content": "border: \"1px solid #334155\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/pos-kasir.ringkasan.tsx",
+      "content": "labelStyle={{ color: \"#e2e8f0\" }}"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/pos-kasir.ringkasan.tsx",
+      "content": "stroke=\"#34d399\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/pos-kasir.ringkasan.tsx",
+      "content": "stroke=\"#60a5fa\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/pos-kasir.ringkasan.tsx",
+      "content": "stroke=\"#60a5fa\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/t.$token.tsx",
+      "content": "className=\"mt-3 inline-flex h-10 w-full items-center justify-center gap-ms-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 px-ms-3 text-ms-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366]/20 dark:text-[#25D366]\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/AccessDiagnostics.tsx",
+      "content": "<code className=\"mt-0.5 block break-words rounded bg-background/60 px-1.5 py-1 text-[10.5px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/AccessDiagnostics.tsx",
+      "content": "<div className=\"mt-2 space-y-1 pl-6 text-[11.5px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/AccessStatusCard.tsx",
+      "content": "<code className=\"mt-0.5 block break-words rounded bg-background px-1.5 py-1 text-[10.5px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/AccessStatusCard.tsx",
+      "content": "className=\"rounded bg-background px-1.5 py-0.5 text-[10.5px]\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/AppSidebar.tsx",
+      "content": "<div className=\"mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/80\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/AttachMenu.tsx",
+      "content": "<span className=\"absolute -top-1 right-0 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold leading-none text-primary-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/AttachMenu.tsx",
+      "content": "<span className={`rounded-full border px-1.5 py-0 text-[9px] font-medium uppercase tracking-wide ${tone}`}>{label}</span>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/ProductSharePopover.tsx",
+      "content": "<div className=\"flex h-10 w-10 shrink-0 items-center justify-center rounded border border-dashed text-[9px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/ChatSharePreviewDialog.tsx",
+      "content": "<dl className=\"mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/ChatSharePreviewDialog.tsx",
+      "content": "<pre className=\"max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-ms-2 font-sans text-[12.5px] leading-snug\">{data.caption || \"(kosong)\"}</pre>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/ChatSharePreviewDialog.tsx",
+      "content": "className=\"mt-2 rounded-md border border-warning bg-warning p-ms-2 text-[11.5px] leading-snug text-warning\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/InflightStepProgress.tsx",
+      "content": "<div className=\"break-words text-[10.5px] text-muted-foreground\">{e.detail}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/InflightStepProgress.tsx",
+      "content": "<div className=\"mb-1.5 flex items-start gap-ms-1.5 rounded-md border border-warning/40 bg-warning/10 px-ms-2 py-1.5 text-[10.5px] text-warning dark:text-warning\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/InflightStepProgress.tsx",
+      "content": "<div className=\"text-[10.5px] font-mono text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/OrgNameSettings.tsx",
+      "content": "<div className=\"truncate text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/OrgNameSettings.tsx",
+      "content": "className=\"absolute inset-x-0 bottom-0 bg-warning/90 text-center text-[9px] font-semibold uppercase tracking-wider text-white\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/SendLogViewer.tsx",
+      "content": "<ol className=\"max-h-56 space-y-1 overflow-auto border-t bg-background/40 px-ms-2.5 py-ms-2 text-[11.5px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/SendLogViewer.tsx",
+      "content": "<pre className=\"mt-0.5 whitespace-pre-wrap break-words rounded bg-muted/60 p-ms-1 font-mono text-[10.5px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/SendPayloadDiff.tsx",
+      "content": "\"rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold \" +"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/SendPayloadDiff.tsx",
+      "content": "<div className=\"text-[9.5px] font-semibold uppercase tracking-wide text-muted-foreground\">{label}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/SendPayloadDiff.tsx",
+      "content": "<dt className=\"text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-preview.tsx",
+      "content": "<Button type=\"button\" variant=\"ghost\" size=\"sm\" className=\"h-6 px-ms-2 text-[10.5px]\" onClick={() => setDraft(original)}>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-preview.tsx",
+      "content": "<Button type=\"button\" variant=\"ghost\" size=\"sm\" className=\"h-6 px-ms-2 text-[10.5px]\" onClick={() => setEditing((v) => !v)}>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-preview.tsx",
+      "content": "<div className=\"flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-preview.tsx",
+      "content": "<div className=\"flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-preview.tsx",
+      "content": "<div className=\"mb-1.5 flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-preview.tsx",
+      "content": "<div className=\"text-[9.5px] text-muted-foreground\">{fmtSize(p.size)}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-preview.tsx",
+      "content": "<dl className=\"mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-target.tsx",
+      "content": "<code className=\"block max-h-32 overflow-auto break-all rounded-md bg-background p-ms-2 font-mono text-[10.5px] leading-snug text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-target.tsx",
+      "content": "<code className=\"mt-1 block truncate font-mono text-[10.5px] text-muted-foreground/70\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-target.tsx",
+      "content": "<code className=\"mt-2 block max-h-28 overflow-auto break-all rounded-md bg-background/80 p-ms-2 font-mono text-[10.5px] leading-snug text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/lib/wa-target.tsx",
+      "content": "<div className=\"text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.buku-alamat.tsx",
+      "content": "{hint && <div className=\"mt-0.5 truncate text-[10.5px] text-muted-foreground\" title={hint}>{hint}</div>}"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.buku-alamat.tsx",
+      "content": "<div className=\"truncate text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground\" title={label}>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.buku-alamat.tsx",
+      "content": "<p className=\"mt-2 max-w-md text-[12.5px] leading-relaxed text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.buku-alamat.tsx",
+      "content": "<span className=\"inline-flex items-center gap-ms-1 rounded-full bg-primary/12 px-ms-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.chat.$conversationId.tsx",
+      "content": "<span className=\"inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/70 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.chat.$conversationId.tsx",
+      "content": "<span className=\"inline-flex shrink-0 items-center rounded bg-success/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-success dark:text-success\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.chat.$conversationId.tsx",
+      "content": "<span className=\"shrink-0 rounded bg-primary/10 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-primary\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.chat.$conversationId.tsx",
+      "content": "className=\"inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-primary\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.chat.$conversationId.tsx",
+      "content": "className=\"shrink-0 rounded bg-destructive/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-destructive\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.chat.$conversationId.tsx",
+      "content": "className=\"shrink-0 rounded bg-warning/15 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-warning dark:text-warning\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<div className=\"inline-flex items-center gap-ms-1.5 rounded-full border bg-background/80 px-ms-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm backdrop-blur\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<div className=\"inline-flex items-center gap-ms-1.5 rounded-full border bg-background/80 px-ms-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<div className=\"text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<div className=\"text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<div className=\"text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<h2 className=\"text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<span className=\"min-w-0 flex-1 truncate text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground\" title={label}>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<span className=\"text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<tr className=\"border-b bg-muted/20 text-left text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.diagnostics.tsx",
+      "content": "<ul className=\"space-y-1 font-mono text-[10.5px] leading-snug\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<div className=\"text-[9px] font-semibold uppercase tracking-wide text-muted-foreground\">{label}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.hutang-piutang.tsx",
+      "content": "<div className=\"mt-0.5 truncate text-[10.5px] text-muted-foreground\">{hint}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.hutang-piutang.tsx",
+      "content": "<div className=\"text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.hutang-piutang.tsx",
+      "content": "<span className=\"inline-flex items-center gap-ms-1 rounded-full bg-primary/12 px-ms-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-app-mode.tsx",
+      "content": "<code className=\"rounded bg-background px-1 py-0.5 text-[10.5px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-app-mode.tsx",
+      "content": "<code className=\"rounded bg-background px-1 py-0.5 text-[10.5px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-app-mode.tsx",
+      "content": "<code className=\"rounded bg-muted px-1 py-0.5 text-[10.5px]\">VITE_APP_MODE</code>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-privasi.tsx",
+      "content": "<p className=\"mt-0.5 text-[11.5px] leading-snug text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-privasi.tsx",
+      "content": "<p className=\"text-[11.5px] leading-snug text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan.tsx",
+      "content": "<span className=\"ml-1.5 rounded bg-warning/15 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide text-warning dark:text-warning\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "<div className=\"shrink-0 text-[9px] uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.tugas-baru.tsx",
+      "content": "<span className=\"ml-1 rounded-sm bg-muted px-1 py-px text-[9px] font-medium text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.tugas-baru.tsx",
+      "content": "<span className=\"ml-1 rounded-sm bg-success/15 px-1 py-px text-[9px] font-medium text-success dark:bg-success/25 dark:text-success\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.tugas.tsx",
+      "content": "className=\"inline-flex shrink-0 items-center gap-0.5 rounded bg-destructive/10 px-1 py-0.5 text-[9px] font-medium text-destructive\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/auth-callback.tsx",
+      "content": "<ul className=\"space-y-1 font-mono text-[10.5px] leading-snug\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<div className=\"absolute left-1 top-1 z-10 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white shadow\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<div className=\"line-clamp-2 break-all text-[9px] font-medium\">{p.name}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<div className=\"line-clamp-2 break-all text-[9px] opacity-80\">{p.name}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<div className=\"line-clamp-2 text-[9px] opacity-80\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<div className=\"line-clamp-2 text-[9px] opacity-90\">{upErr}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<div className=\"text-[9px] font-medium\">Memuat…</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<span className=\"absolute inset-x-0 bottom-0 truncate bg-background/80 px-1 py-0.5 text-center text-[9px] font-medium tabular-nums text-foreground backdrop-blur\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<span className=\"ml-1 hidden text-[9px] opacity-60 sm:inline\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "className=\"inline-flex h-5 items-center gap-0.5 rounded bg-destructive/80 px-1.5 text-[9px] font-medium text-white\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "className=\"mt-0.5 inline-flex h-5 items-center gap-0.5 rounded bg-white/90 px-1.5 text-[9px] font-semibold text-destructive\""
+    }
+  ]
+}

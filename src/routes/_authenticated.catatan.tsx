@@ -26,11 +26,11 @@ function NotesPage() {
   );
 
   return (
-    <div className="container mx-auto max-w-3xl space-y-4 p-3">
-      <header className="flex items-center gap-2">
+    <div className="container mx-auto max-w-3xl space-ms-4 p-ms-3">
+      <header className="flex items-center gap-ms-2">
         <NotebookPen className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-semibold">Catatan</h1>
-        <div className="ml-auto flex items-center gap-2">
+        <h1 className="text-ms-lg font-semibold">Catatan</h1>
+        <div className="ml-auto flex items-center gap-ms-2">
           <Input placeholder="Cari…" value={filter} onChange={(e) => setFilter(e.target.value)} className="w-40" />
           <Button size="sm" onClick={() => setDraft({ title: "", body: "" })}>
             <Plus className="mr-1 h-4 w-4" /> Baru
@@ -41,12 +41,12 @@ function NotesPage() {
       {draft ? (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{draft.id ? "Edit catatan" : "Catatan baru"}</CardTitle>
+            <CardTitle className="text-ms-sm">{draft.id ? "Edit catatan" : "Catatan baru"}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-ms-2">
             <Input placeholder="Judul" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
             <Textarea rows={5} placeholder="Isi catatan" value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-ms-2">
               <Button variant="ghost" onClick={() => setDraft(null)}>Batal</Button>
               <Button
                 disabled={save.isPending || !draft.body.trim()}
@@ -71,29 +71,29 @@ function NotesPage() {
       ) : null}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Memuat…</p>
+        <p className="text-ms-sm text-muted-foreground">Memuat…</p>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Belum ada catatan. Tambahkan dari sini atau pilih pesan di chat lalu pilih “Tambah ke Catatan”.</p>
+        <p className="text-ms-sm text-muted-foreground">Belum ada catatan. Tambahkan dari sini atau pilih pesan di chat lalu pilih “Tambah ke Catatan”.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-ms-2">
           {filtered.map((n: ChatNote) => (
             <li key={n.id}>
               <Card>
-                <CardContent className="space-y-1 p-3">
-                  <div className="flex items-start gap-2">
-                    <h3 className="flex-1 font-semibold text-sm">{n.title}</h3>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigator.clipboard?.writeText(n.body).then(() => toast.success("Disalin"))}>
+                <CardContent className="space-ms-2 px-ms-4 py-ms-4 sm:px-ms-6">
+                  <div className="flex items-start gap-ms-2">
+                    <h3 className="flex-1 font-semibold text-ms-sm">{n.title}</h3>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Salin catatan" onClick={() => navigator.clipboard?.writeText(n.body).then(() => toast.success("Disalin"))}>
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDraft({ id: n.id, title: n.title, body: n.body })}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit catatan" onClick={() => setDraft({ id: n.id, title: n.title, body: n.body })}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => del.mutate(n.id)}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label="Hapus catatan" onClick={() => del.mutate(n.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                  <p className="whitespace-pre-wrap text-sm text-muted-foreground">{n.body}</p>
-                  <p className="text-[10px] text-muted-foreground">{new Date(n.updated_at).toLocaleString("id-ID")}</p>
+                  <p className="whitespace-pre-wrap text-ms-sm text-muted-foreground">{n.body}</p>
+                  <p className="text-ms-2xs text-muted-foreground">{new Date(n.updated_at).toLocaleString("id-ID")}</p>
                 </CardContent>
               </Card>
             </li>

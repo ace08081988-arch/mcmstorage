@@ -247,3 +247,114 @@ export function stableStringify(value: unknown): string {
   const keys = Object.keys(obj).sort();
   return "{" + keys.map((k) => JSON.stringify(k) + ":" + stableStringify(obj[k])).join(",") + "}";
 }
+
+/**
+ * Snapshot payload kirim — dipakai untuk menjamin *idempotensi output*:
+ * pengiriman kedua dengan `key` yang sama harus menghasilkan urutan &
+ * konten teks yang persis sama seperti pengiriman pertama, meskipun
+ * state upstream (mis. daftar `shots`) sudah berubah antara dua klik.
+ *
+ * Disimpan terpisah dari `IdemRecord` supaya volume record utama tetap
+ * kecil; snapshot memiliki TTL yang sama.
+ */
+export type SendSnapshot = {
+  key: string;
+  at: number;
+  fingerprint: string;
+  orderedIds: string[];
+  text: string;
+  locationUrl: string | null;
+  slotFileNames: string[];
+  slotPaths: string[];
+  expectedCount: number;
+  /** Ruang bebas untuk metadata channel-spesifik (mis. label tujuan). */
+  meta?: Record<string, string | number | boolean | null>;
+};
+
+const SNAP_KEY = "send-idempotency-snapshot:v1";
+
+function readAllSnapshots(): Map<string, SendSnapshot> {
+  if (typeof window === "undefined") return new Map();
+  try {
+    const raw = window.localStorage.getItem(SNAP_KEY);
+    if (!raw) return new Map();
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Map();
+    const m = new Map<string, SendSnapshot>();
+    const now = Date.now();
+    for (const s of arr) {
+      if (!s || typeof s.key !== "string" || typeof s.at !== "number") continue;
+      if (now - s.at > TTL_MS) continue;
+      if (!Array.isArray(s.orderedIds) || !Array.isArray(s.slotFileNames) || !Array.isArray(s.slotPaths)) continue;
+      m.set(s.key, {
+        key: s.key,
+        at: s.at,
+        fingerprint: typeof s.fingerprint === "string" ? s.fingerprint : "",
+        orderedIds: s.orderedIds.map(String),
+        text: typeof s.text === "string" ? s.text : "",
+        locationUrl: typeof s.locationUrl === "string" ? s.locationUrl : null,
+        slotFileNames: s.slotFileNames.map(String),
+        slotPaths: s.slotPaths.map(String),
+        expectedCount: Number(s.expectedCount) || 0,
+        meta: s.meta && typeof s.meta === "object" ? (s.meta as SendSnapshot["meta"]) : undefined,
+      });
+    }
+    return m;
+  } catch { return new Map(); }
+}
+
+function writeAllSnapshots(map: Map<string, SendSnapshot>): void {
+  const now = Date.now();
+  for (const [k, v] of map) if (now - v.at > TTL_MS) map.delete(k);
+  if (map.size > MAX_ENTRIES) {
+    const sorted = [...map.entries()].sort((a, b) => b[1].at - a[1].at).slice(0, MAX_ENTRIES);
+    map = new Map(sorted);
+  }
+  try {
+    window.localStorage.setItem(SNAP_KEY, JSON.stringify([...map.values()]));
+  } catch { /* quota */ }
+}
+
+export function getSendSnapshot(key: string): SendSnapshot | null {
+  return readAllSnapshots().get(key) ?? null;
+}
+
+export function saveSendSnapshot(input: Omit<SendSnapshot, "at">): SendSnapshot {
+  const m = readAllSnapshots();
+  const snap: SendSnapshot = { ...input, at: Date.now() };
+  m.set(input.key, snap);
+  writeAllSnapshots(m);
+  return snap;
+}
+
+export function clearSendSnapshot(key: string): void {
+  const m = readAllSnapshots();
+  if (m.delete(key)) writeAllSnapshots(m);
+}
+
+/**
+ * Ambil snapshot lama (bila ada & TTL belum lewat) atau bangun snapshot baru
+ * dari `build()` lalu simpan. Kembalian dijamin STABIL untuk `key` yang sama
+ * selama TTL — pengiriman kedua/ketiga menghasilkan urutan dan teks yang
+ * identik.
+ *
+ * `expectedFingerprint` (opsional) memaksa pembentukan ulang bila sidik
+ * jari payload berubah — dipakai saat operator memilih "Kirim ulang (paksa)"
+ * dengan konten berbeda.
+ */
+export async function getOrCreateSendSnapshot(
+  key: string,
+  build: () => Promise<Omit<SendSnapshot, "at" | "key">>,
+  opts?: { forceRebuild?: boolean; expectedFingerprint?: string },
+): Promise<SendSnapshot> {
+  if (!opts?.forceRebuild) {
+    const existing = getSendSnapshot(key);
+    if (existing) {
+      if (!opts?.expectedFingerprint || existing.fingerprint === opts.expectedFingerprint) {
+        return existing;
+      }
+    }
+  }
+  const built = await build();
+  return saveSendSnapshot({ key, ...built });
+}

@@ -1,0 +1,23 @@
+{
+  "$comment": "Allowlist untuk pola yang diizinkan meskipun bertentangan dengan kontrak Noir & Gold. Dibaca oleh scripts/check-noir-gold.mjs. Setiap entri wajib punya 'reason' (>= 20 karakter) dan 'path' relatif dari root repo.",
+  "textPxAllow": [
+    {
+      "path": "src/components/BuildVersionBadge.tsx",
+      "reason": "Badge versi build super-kecil (10px) yang sengaja di bawah skala ms; dikunci untuk konsistensi footer chrome."
+    },
+    {
+      "path": "src/components/ui/sidebar.tsx",
+      "reason": "Komponen shadcn upstream, ukuran ikonik terkunci; ubah lewat utility 'text-ms-*' pada consumer, bukan file library."
+    }
+  ],
+  "hexColorAllow": [
+    {
+      "path": "src/routes/lovable.visual.",
+      "reason": "Harness visual regression menggunakan warna fixture eksplisit supaya snapshot deterministik."
+    },
+    {
+      "path": "src/lib/__snapshots__/",
+      "reason": "File snapshot Vitest membekukan HTML rendering; diedit oleh update-snapshot, bukan tangan."
+    }
+  ]
+}

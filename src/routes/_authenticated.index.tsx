@@ -1,8 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { isChatOnly } from "@/lib/app-mode";
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
+import { MidnightScope } from "@/lib/midnight-preview";
+const LiveProductGallery = lazy(() =>
+  import("@/components/LiveProductGallery").then((m) => ({ default: m.LiveProductGallery })),
+);
+const HeroAnalyticsPanel = lazy(() =>
+  import("@/components/HeroAnalyticsPanel").then((m) => ({ default: m.HeroAnalyticsPanel })),
+);
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 import {
@@ -11,8 +19,7 @@ import {
   APP_LOCK_EVENT,
   type LockConfig,
 } from "@/lib/app-lock";
-import { AppLockSetup } from "@/components/AppLockSetup";
-import { CategoryManagerDialog } from "@/components/CategoryManagerDialog";
+import { perfMark, perfMeasure } from "@/lib/perf-log";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,25 +27,230 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AppearanceSettings } from "@/components/appearance-settings";
-import { ProductEditDrawer } from "@/components/ProductEditDrawer";
+// AppLockSetup / AppearanceSettings / ProductEditDrawer di-lazy-load agar
+// tidak masuk chunk initial Beranda. Ketiganya hanya benar-benar dibutuhkan
+// setelah user membuka dialog/drawer masing-masing. Sebelum optimisasi:
+// chunk _authenticated.index ≈ 508KB gzip 123KB karena ikut membawa
+// pengaturan tampilan, editor produk lengkap, dan setup PIN/pola.
+const AppLockSetup = lazy(() =>
+  import("@/components/AppLockSetup").then((m) => ({ default: m.AppLockSetup })),
+);
+const AppearanceSettings = lazy(() =>
+  import("@/components/appearance-settings").then((m) => ({ default: m.AppearanceSettings })),
+);
+const ProductEditDrawer = lazy(() =>
+  import("@/components/ProductEditDrawer").then((m) => ({ default: m.ProductEditDrawer })),
+);
 import { confirm } from "@/lib/confirm";
-import { SecurityScanReminder } from "@/components/SecurityScanReminder";
-import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
-import { ReadyEcerSection } from "@/components/ReadyEcerSection";
-import { ReadyRequestSection } from "@/components/ReadyRequestSection";
+const SecurityScanReminder = lazy(() =>
+  import("@/components/SecurityScanReminder").then((m) => ({ default: m.SecurityScanReminder })),
+);
+const SecurityFindingsBanner = lazy(() =>
+  import("@/components/SecurityFindingsBanner").then((m) => ({ default: m.SecurityFindingsBanner })),
+);
+import { NumericDraftInput } from "@/components/NumericDraftInput";
+import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+// Bagian "Lainnya" hanya dipakai setelah user membuka <details>.
+// Dipecah jadi chunk terpisah lewat React.lazy agar landing inti (hero
+// stepper + form kategori) tidak menyeret JS ini di initial bundle.
+const ReadyEcerSection = lazy(() =>
+  import("@/components/ReadyEcerSection").then((m) => ({ default: m.ReadyEcerSection })),
+);
+const ReadyRequestSection = lazy(() =>
+  import("@/components/ReadyRequestSection").then((m) => ({ default: m.ReadyRequestSection })),
+);
+const ReadySelfPrepSection = lazy(() =>
+  import("@/components/ReadySelfPrepSection").then((m) => ({ default: m.ReadySelfPrepSection })),
+);
+const DownloadStorageApkShortcut = lazy(() =>
+  import("@/components/DownloadStorageApkShortcut").then((m) => ({ default: m.DownloadStorageApkShortcut })),
+);
+const DownloadChatApkShortcut = lazy(() =>
+  import("@/components/DownloadChatApkShortcut").then((m) => ({ default: m.DownloadChatApkShortcut })),
+);
+const CopyChatApkLinksButton = lazy(() =>
+  import("@/components/CopyChatApkLinksButton").then((m) => ({ default: m.CopyChatApkLinksButton })),
+);
+
+// Mark saat modul landing pertama kali dievaluasi (proxy untuk "nav start").
+// Dipakai sebagai anchor untuk mengukur waktu sampai konten inti terlihat.
+perfMark("landing:module-eval");
+
+/**
+ * Sentinel kecil yang di-render di dalam Suspense children.
+ * Effect-nya hanya jalan setelah semua lazy child selesai resolve,
+ * jadi kita bisa memanggilnya sebagai "chunk Lainnya selesai mount".
+ */
+function LainnyaMountSentinel() {
+  useEffect(() => {
+    perfMark("landing:lainnya-mount-end");
+    perfMeasure(
+      "landing:lainnya-mount",
+      "landing:lainnya-mount-start",
+      "landing:lainnya-mount-end",
+    );
+  }, []);
+  return null;
+}
+
+/**
+ * Baris kategori yang bisa di-drag-reorder. Handle drag (grip) dipisah
+ * dari tombol pilih kategori supaya tap-untuk-buka tetap responsif —
+ * di HP, drag hanya aktif kalau user menekan area handle. `useSortable`
+ * memberi transform untuk animasi geser saat item lain menyusul.
+ */
+function SortableCategoryRow({
+  name,
+  count,
+  tag,
+  onOpen,
+  onDelete,
+  onRename,
+}: {
+  name: string;
+  count: number;
+  tag: string;
+  onOpen: () => void;
+  onDelete: () => void;
+  onRename: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: name });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`surface-quiet flex items-center gap-ms-2 px-ms-2 py-ms-3 ${
+        isDragging ? "shadow-lg !border-primary/60" : ""
+      }`}
+    >
+      <button
+        type="button"
+        aria-label={`Geser untuk ubah urutan kategori ${name}`}
+        title="Tahan lalu geser untuk ubah urutan"
+        className="shrink-0 touch-none cursor-grab rounded-md p-1.5 text-muted-foreground/70 hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        {/* GripVertical (inline SVG — hindari import lucide baru) */}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="9" cy="5" r="1" />
+          <circle cx="9" cy="12" r="1" />
+          <circle cx="9" cy="19" r="1" />
+          <circle cx="15" cy="5" r="1" />
+          <circle cx="15" cy="12" r="1" />
+          <circle cx="15" cy="19" r="1" />
+        </svg>
+      </button>
+      <button
+        onClick={onOpen}
+        className="flex min-w-0 flex-1 items-center gap-ms-3 text-left"
+      >
+        <span className="inline-flex shrink-0 items-center rounded-md border border-primary/40 bg-background px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.08em] text-primary">
+          {tag}
+        </span>
+        <span className="text-premium-heading truncate text-[1rem] text-foreground">
+          {name}
+        </span>
+        <span className="ml-auto shrink-0 text-[0.65625rem] text-muted-foreground">
+          {count} pesanan
+        </span>
+      </button>
+      <button
+        onClick={onRename}
+        className="shrink-0 rounded-md border border-primary/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-primary transition-colors hover:bg-primary/10"
+        title={`Ubah nama kategori ${name}`}
+        aria-label={`Ubah nama kategori ${name}`}
+        data-testid={`rename-cat-${name}`}
+      >
+        Ubah
+      </button>
+      <button
+        onClick={onDelete}
+        className="shrink-0 rounded-md border border-destructive/30 px-ms-2 py-1 text-[0.65625rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
+        title={`Hapus kategori ${name}`}
+        aria-label={`Hapus kategori ${name}`}
+        data-testid={`delete-cat-${name}`}
+      >
+        Hapus
+      </button>
+    </li>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/")({
+  beforeLoad: async () => {
+    // Mode chat-only via build flag / localStorage override.
+    if (isChatOnly()) throw redirect({ to: "/chat" });
+    // Akun yang ditandai chat_only di database juga selalu diarahkan ke /chat,
+    // walau saat ini berjalan di APK full — supaya tidak mendarat di halaman
+    // storage yang sudah diblokir RLS.
+    try {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (uid) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("chat_only")
+          .eq("id", uid)
+          .maybeSingle();
+        if (prof?.chat_only) throw redirect({ to: "/chat" });
+      }
+    } catch (e) {
+      // rethrow redirect; abaikan error lain agar halaman tetap termuat.
+      if (e && typeof e === "object" && "to" in (e as Record<string, unknown>)) throw e;
+    }
+  },
   head: () => ({
     meta: [
-      { title: "Beranda — Kelola Pesanan & Kirim WhatsApp · MCM Storage" },
-      { name: "description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke WhatsApp pelanggan dalam satu halaman." },
-      { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim WhatsApp · MCM Storage" },
-      { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke WhatsApp pelanggan dalam satu halaman." },
+      { title: "Beranda — Kelola Pesanan & Kirim via MCM" },
+      { name: "description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via MCM dalam satu halaman." },
+      { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim via MCM" },
+      { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via MCM dalam satu halaman." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.lovable.app/" },
+      { property: "og:url", content: "https://mcmstorage.biz/" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/" }],
   }),
   component: Index,
 });
@@ -46,7 +258,24 @@ export const Route = createFileRoute("/_authenticated/")({
 type Status = "Belum Dikirim" | "Sudah Dikirim";
 type Kategori = string;
 
-type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
+export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
+
+/**
+ * H2: Batas SSOT — Beranda vs Gudang.
+ *
+ * `user_storage.items` (JSON di baris ini) HANYA jurnal pesanan harian
+ * yang dicatat manual dari halaman Beranda (kirim WA, kelola status
+ * "Belum Dikirim" / "Sudah Dikirim"). Ini BUKAN inventaris.
+ *
+ * Inventaris (stok, harga jual, modal, penjualan) SSOT-nya di tabel
+ * relasional: `warehouse_items`, `sales`, `customer_payments`, dll —
+ * dikelola dari halaman Gudang & POS Kasir. Jangan mem-fork data stok
+ * ke `user_storage`; jangan pakai `Produk.jumlah` di sini untuk
+ * mendorong stok gudang.
+ *
+ * Bila di masa depan Beranda perlu menampilkan barang gudang, ambil
+ * langsung dari `warehouse_items` (bukan copy ke `user_storage`).
+ */
 
 const SATUAN_LIST: Satuan[] = ["gram", "kg", "botol", "sachet", "pcs", "lusin", "pak", "dus"];
 
@@ -61,14 +290,18 @@ function satuanBounds(s: Satuan): { min: number; max: number; step: number } {
   }
 }
 
-function formatJumlah(j: number, s: Satuan): string {
+export function formatJumlah(j: number, s: Satuan): string {
   const n = Number.isFinite(j) ? j : 0;
   if (s === "gram") return `${n.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
   if (s === "kg") return `${n.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`;
   return `${n.toLocaleString("id-ID")} ${s}`;
 }
 
-type Produk = {
+// NumericDraftInput sekarang di-import dari @/components/NumericDraftInput
+// (lihat baris import di atas). Definisi lokal lama dihapus sebagai bagian
+// dari SSOT sweep — jangan re-add di sini.
+
+export type Produk = {
   id: number;
   kategori: Kategori;
   nama: string;
@@ -112,10 +345,17 @@ function isToday(ts: number | undefined): boolean {
   );
 }
 
-function buildPesan(p: Produk) {
+export function buildPesan(p: Produk) {
   const s = p.satuan ?? "pcs";
   const j = p.jumlah ?? 1;
-  return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n⚖️ ${formatJumlah(j, s)}\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
+  // Defensif: nama/lokasi/keterangan bisa `null` / `undefined` di jalur data
+  // cacat (row lama, import mentah). Jangan biarkan literal "null" /
+  // "undefined" muncul ke user; jangan pula throw di `.toLocaleString`.
+  const nama = p.nama ?? "";
+  const lokasi = p.lokasi ?? "";
+  const ket = p.keterangan ?? "";
+  const harga = Number.isFinite(p.harga as number) ? (p.harga as number) : 0;
+  return `📦 [${tagFor(p.kategori)}] *${nama}*\n⚖️ ${formatJumlah(j, s)}\n💰 Harga: Rp ${harga.toLocaleString("id-ID")}\n📍 ${lokasi}\nKet: ${ket}`;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -154,6 +394,15 @@ async function compressImage(file: File, maxSize = 1280, quality = 0.75): Promis
 function Index() {
   const navigate = useNavigate();
   const signOut = async () => {
+    const ok = await confirm({
+      title: "Keluar dari akun?",
+      description:
+        "Sesi login di perangkat ini akan diakhiri dan Anda perlu masuk kembali.",
+      confirmText: "Ya, keluar",
+      cancelText: "Batal",
+      destructive: true,
+    });
+    if (!ok) return;
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
@@ -207,7 +456,7 @@ function Index() {
           <button
             className={
               triggerClassName ??
-              `inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${
+              `inline-flex h-8 items-center justify-center rounded-md border px-ms-2 text-[0.6875rem] font-medium hover:bg-accent ${
                 lockCfg ? "bg-accent" : ""
               }`
             }
@@ -231,7 +480,7 @@ function Index() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
-                {autoLock ? "✓ " : ""}Hapus sesi saat tutup tab
+                {autoLock ? "✓ " : ""}Kunci saat keluar aplikasi
               </DropdownMenuItem>
             </>
           ) : (
@@ -244,7 +493,7 @@ function Index() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
-                {autoLock ? "✓ " : ""}Hapus sesi saat tutup tab
+                {autoLock ? "✓ " : ""}Kunci saat keluar aplikasi
               </DropdownMenuItem>
             </>
           )}
@@ -275,6 +524,36 @@ function Index() {
   };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  // Deferred mount: bagian "Lainnya" baru dimount saat user pertama kali
+  // membuka <details>. Chunk lazy di atas juga baru di-fetch pada momen
+  // ini, sehingga landing inti tidak terkena biaya JS-nya.
+  const [lainnyaMounted, setLainnyaMounted] = useState(false);
+  // Perf: catat momen user pertama kali men-trigger mount "Lainnya"
+  // (hover/focus/toggle). Pasangannya di-mark oleh <LainnyaMountSentinel/>
+  // di dalam Suspense children, sehingga durasinya = fetch chunk + render.
+  useEffect(() => {
+    if (!lainnyaMounted) return;
+    perfMark("landing:lainnya-mount-start");
+  }, [lainnyaMounted]);
+  // H11: skip the first save after hydration so mounting the page
+  // doesn't upsert identical data back to user_storage.
+  const skipNextSaveRef = useRef(false);
+  /**
+   * Guard konkurensi reorder ↔ realtime/refresh:
+   * - `reorderInFlightRef`: true selama batch UPDATE posisi berjalan.
+   *   Realtime/refresh yang datang di window ini di-drop supaya urutan
+   *   optimistic lokal (yang lebih baru) tidak tertimpa snapshot lama.
+   * - `reorderSeqRef`: nomor urut monotonik per reorder. Setelah reorder
+   *   selesai, hanya reorder ter-baru yang boleh memicu reconcile —
+   *   kalau user cepat drag berkali-kali, reorder yang lebih tua
+   *   berhenti diam-diam tanpa mengembalikan urutan lama.
+   */
+  const reorderInFlightRef = useRef(false);
+  const reorderSeqRef = useRef(0);
+  // Perf: hero (bagian inti) dianggap "visible" saat data ter-hydrate
+  // dan branch landing (tanpa activeCat) selesai render pertama kali.
+  // Effect memastikan browser sudah commit DOM-nya sebelum mengukur.
+  const heroMeasuredRef = useRef(false);
   const [filter, setFilter] = useState<"semua" | Status>(() => {
     if (typeof window === "undefined") return "semua";
     const v = window.localStorage.getItem("mcm_filter");
@@ -288,14 +567,43 @@ function Index() {
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [categories, setCategories] = useState<string[]>([]);
+  // Sensor DnD:
+  // - PointerSensor dengan distance 6px → tap di area handle tetap
+   //   terasa seperti klik biasa; drag baru aktif setelah geser sedikit.
+  // - TouchSensor delay 180ms → di HP, tap cepat tidak memicu drag
+  //   supaya tombol Hapus / pilih kategori tetap responsif.
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  // M19: SATU sumber kebenaran untuk kategori aktif. Sebelumnya ada dua
+  // key localStorage (`mcm_active_cat` dan `ACTIVE_CAT_KEY`) yang keduanya
+  // ditulis pada setiap perubahan → 2× I/O per klik chip kategori dan
+  // rawan divergen bila salah satu path gagal. Konsolidasi ke
+  // `ACTIVE_CAT_KEY` (konstanta bernama) untuk baca dan tulis.
   const [activeCat, setActiveCat] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
-    return window.localStorage.getItem("mcm_active_cat");
+    try {
+      return window.localStorage.getItem(ACTIVE_CAT_KEY);
+    } catch {
+      return null;
+    }
   });
   const [newCatName, setNewCatName] = useState("");
-  const [catManagerOpen, setCatManagerOpen] = useState(false);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (heroMeasuredRef.current) return;
+    if (!hydrated || activeCat) return;
+    heroMeasuredRef.current = true;
+    perfMark("landing:hero-visible");
+    perfMeasure(
+      "landing:time-to-hero",
+      "landing:module-eval",
+      "landing:hero-visible",
+    );
+  }, [hydrated, activeCat]);
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     const saved = window.localStorage.getItem("mcm_rail_open");
@@ -319,14 +627,8 @@ function Index() {
     }
   }, [filter]);
 
-  useEffect(() => {
-    try {
-      if (activeCat) window.localStorage.setItem("mcm_active_cat", activeCat);
-      else window.localStorage.removeItem("mcm_active_cat");
-    } catch {
-      /* ignore */
-    }
-  }, [activeCat]);
+  // Persistensi ditangani effect tunggal di bawah (setelah `hydrated`).
+  // Effect di sini dihapus untuk menghilangkan double-write ke localStorage.
 
   useEffect(() => {
     try {
@@ -342,24 +644,26 @@ function Index() {
       }
       const { data, error } = await supabase
         .from("user_storage")
-        .select("items, categories")
+        .select("items")
         .eq("user_id", uid)
         .maybeSingle();
       if (error) {
-        toast.error("Gagal memuat data: " + friendlyError(error), {
-          action: {
-            label: "Lihat detail",
-            onClick: () =>
-              navigate({
-                to: "/error",
-                search: { kind: "data", title: "Gagal memuat data", message: (error as any).message, code: (error as any).code, from: "/" },
-              }),
-          },
-        });
+        notifyError(error, { prefix: "Gagal memuat data: " });
       } else {
         const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
-        const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
+        skipNextSaveRef.current = true;
         setItems(loadedItems);
+      }
+      // Kategori dibaca dari master `warehouse_categories` (SSOT dengan Gudang).
+      const { data: catRows, error: catErr } = await supabase
+        .from("warehouse_categories")
+        .select("name, position")
+        .order("position", { ascending: true })
+        .order("name", { ascending: true });
+      if (catErr) {
+        notifyError(catErr, { prefix: "Gagal memuat kategori: " });
+      } else {
+        const loadedCats = (catRows ?? []).map((r) => r.name);
         setCategories(loadedCats);
         try {
           const saved = localStorage.getItem(ACTIVE_CAT_KEY);
@@ -372,33 +676,107 @@ function Index() {
 
   useEffect(() => {
     if (!hydrated) return;
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
     let cancelled = false;
     const t = setTimeout(async () => {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
       if (!uid || cancelled) return;
-      setSaveState("saving");
       const { error } = await supabase
         .from("user_storage")
-        .upsert({ user_id: uid, items: items as any, categories: categories as any });
-      if (cancelled) return;
-      if (error) {
-        setSaveState("error");
-        toast.error("Gagal menyimpan: " + friendlyError(error));
-      } else {
-        setSaveState("saved");
-        setLastSavedAt(Date.now());
-      }
+        .upsert({ user_id: uid, items: items as any });
+      if (error && !cancelled) notifyError(error, { prefix: "Gagal menyimpan: " });
     }, 600);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [items, categories, hydrated]);
+  }, [items, hydrated]);
 
   useEffect(() => {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
   }, [viewMode, hydrated]);
+
+  /**
+   * Ambil ulang urutan kategori dari server (SSOT `warehouse_categories`).
+   * Dipakai oleh realtime channel, listener focus/visibilitychange, dan
+   * reconcile pasca-reorder. Guard: bila reorder sedang jalan, drop
+   * snapshot supaya urutan optimistic lokal tidak dilibas snapshot
+   * server yang lebih lama. Kalau hasil fetch identik dengan state
+   * sekarang, tidak re-render.
+   */
+  const refreshCategories = useCallback(async () => {
+    if (reorderInFlightRef.current) return;
+    const { data, error } = await supabase
+      .from("warehouse_categories")
+      .select("name, position")
+      .order("position", { ascending: true })
+      .order("name", { ascending: true });
+    if (error || !data) return;
+    if (reorderInFlightRef.current) return;
+    const next = data.map((r) => r.name);
+    setCategories((prev) =>
+      prev.length === next.length && prev.every((v, i) => v === next[i]) ? prev : next,
+    );
+  }, []);
+
+  /**
+   * Sinkron realtime `warehouse_categories`:
+   * - subscribe INSERT/UPDATE/DELETE untuk uid saat ini,
+   * - juga refresh saat tab kembali fokus / visibility berubah,
+   *   supaya user yang balik dari tab lain langsung lihat urutan
+   *   terkini.
+   * Guard reorder ada di dalam `refreshCategories` supaya event yang
+   * datang tepat di tengah drag tidak menimpa urutan optimistic.
+   */
+  useEffect(() => {
+    if (!hydrated) return;
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (!uid || cancelled) return;
+      channel = supabase
+        .channel(`warehouse_categories:${uid}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "warehouse_categories",
+            filter: `user_id=eq.${uid}`,
+          },
+          () => {
+            void refreshCategories();
+          },
+        )
+        .subscribe();
+    })();
+    const onFocus = () => {
+      void refreshCategories();
+    };
+    const onVisibility = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void refreshCategories();
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
+      document.addEventListener("visibilitychange", onVisibility);
+    }
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", onFocus);
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
+    };
+  }, [hydrated, refreshCategories]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -420,38 +798,49 @@ function Index() {
   const update = (id: number, patch: Partial<Produk>) =>
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
 
+  // Editor mandatory step untuk semua upload foto Beranda (setFoto & addGaleri).
+  const photoFlow = usePhotoEditorFlow();
+
   const setFoto = async (id: number, files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const dataUrl = await compressImage(files[0]);
-    update(id, { foto: dataUrl });
-    setOpenId(id);
-    toast.success("Foto tersimpan");
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      const tId = toast.loading("Mengambil lokasi…");
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
-          update(id, { lokasi: link });
-          toast.success("Lokasi otomatis terisi", { id: tId });
+    await photoFlow.open(
+      [files[0]],
+      async ({ dataUrl }) => {
+        update(id, { foto: dataUrl });
+        setOpenId(id);
+        toast.success("Foto tersimpan");
+      },
+      {
+        onDone: () => {
+          if (typeof navigator !== "undefined" && navigator.geolocation) {
+            const tId = toast.loading("Mengambil lokasi…");
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                const { latitude, longitude } = pos.coords;
+                const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                update(id, { lokasi: link });
+                toast.success("Lokasi otomatis terisi", { id: tId });
+              },
+              (err) => {
+                notifyError(err, { prefix: "Gagal ambil lokasi: " });
+              },
+              { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+            );
+          }
         },
-        (err) => {
-          toast.error("Gagal ambil lokasi: " + friendlyError(err), { id: tId });
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-      );
-    }
+      },
+    );
   };
 
   const addGaleri = async (id: number, files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const arr: string[] = [];
-    for (const f of Array.from(files)) arr.push(await compressImage(f));
-    setItems((items) =>
-      items.map((i) =>
-        i.id === id ? { ...i, galeri: [...(i.galeri ?? []), ...arr] } : i,
-      ),
-    );
+    await photoFlow.open(files, async ({ dataUrl }) => {
+      setItems((items) =>
+        items.map((i) =>
+          i.id === id ? { ...i, galeri: [...(i.galeri ?? []), dataUrl] } : i,
+        ),
+      );
+    });
   };
 
   const removeFoto = (id: number) => update(id, { foto: undefined });
@@ -475,11 +864,31 @@ function Index() {
     if (ok) setItems((arr) => arr.filter((i) => i.kategori !== activeCat));
   };
 
-  const addCategory = (name: string) => {
+  const addCategory = async (name: string) => {
     const v = name.trim();
     if (!v) return;
-    if (categories.includes(v)) {
+    // Case-insensitive dedupe (mirror unique index di DB).
+    if (categories.some((c) => c.toLowerCase() === v.toLowerCase())) {
       toast.error("Kategori sudah ada");
+      return;
+    }
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    if (!uid) {
+      toast.error("Harus login untuk membuat kategori");
+      return;
+    }
+    const nextPos = categories.length;
+    const { error } = await supabase
+      .from("warehouse_categories")
+      .insert({ user_id: uid, name: v, position: nextPos });
+    if (error) {
+      // Unique-violation → race dengan tab lain / Gudang.
+      if ((error as { code?: string }).code === "23505") {
+        toast.error("Kategori sudah ada");
+      } else {
+        notifyError(error, { prefix: "Gagal membuat kategori: " });
+      }
       return;
     }
     setCategories((c) => [...c, v]);
@@ -489,59 +898,176 @@ function Index() {
   };
 
   const deleteCategory = async (name: string) => {
-    if (categories.length <= 1) {
-      toast.error("Tidak bisa menghapus kategori terakhir. Buat kategori lain dulu.");
+    const { data: userRes } = await supabase.auth.getUser();
+    const uid = userRes.user?.id;
+    if (!uid) {
+      toast.error("Harus login untuk menghapus kategori");
+      return;
+    }
+    // Guard: jangan hapus kategori yang masih dipakai di Gudang.
+    // Filter case-insensitive supaya cocok dengan aturan unik di DB
+    // (`unique (user_id, lower(btrim(name)))`).
+    const { count, error: countErr } = await supabase
+      .from("warehouse_items")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", uid)
+      .ilike("category", name);
+    if (countErr) {
+      notifyError(countErr, { prefix: "Gagal memeriksa pemakaian kategori: " });
+      return;
+    }
+    if ((count ?? 0) > 0) {
+      toast.error(
+        `Kategori "${name}" masih dipakai ${count} produk di Gudang. Pindahkan atau hapus produknya dulu di halaman Gudang, baru kategori bisa dihapus.`,
+        { duration: 6000 },
+      );
       return;
     }
     const ok = await confirm({
       title: `Hapus kategori "${name}"?`,
-      description: "Kategori beserta seluruh pesanannya akan dihapus.",
+      description:
+        "Kategori akan dihapus dari Beranda dan Gudang. Pesanan lama di kategori ini ikut dihapus dari Beranda.",
       confirmText: "Hapus",
       destructive: true,
     });
     if (!ok) return;
+    const { error } = await supabase
+      .from("warehouse_categories")
+      .delete()
+      .eq("user_id", uid)
+      .eq("name", name);
+    if (error) {
+      notifyError(error, { prefix: "Gagal menghapus kategori: " });
+      return;
+    }
     setCategories((c) => c.filter((x) => x !== name));
     setItems((arr) => arr.filter((i) => i.kategori !== name));
     if (activeCat === name) setActiveCat(null);
+    toast.success(`Kategori "${name}" dihapus`);
   };
 
-  // — Kelola kategori (ubah nama, urutan, pulihkan kategori yatim) —
-  const categoryUsage = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const c of categories) m.set(c, 0);
-    for (const i of items) m.set(i.kategori, (m.get(i.kategori) ?? 0) + 1);
-    return Array.from(m, ([name, count]) => ({ name, count }));
-  }, [categories, items]);
-
-  const orphanCategories = useMemo(
-    () => categoryUsage.filter((u) => u.count > 0 && !categories.includes(u.name)),
-    [categoryUsage, categories],
-  );
-
-  const renameCategory = (from: string, to: string) => {
-    setCategories((c) => c.map((x) => (x === from ? to : x)));
-    setItems((arr) =>
-      arr.map((i) => (i.kategori === from ? { ...i, kategori: to as Kategori } : i)),
-    );
-    if (activeCat === from) setActiveCat(to);
-    toast.success(`Kategori diubah jadi "${to}"`);
-  };
-
-  const reorderCategory = (name: string, dir: -1 | 1) => {
-    setCategories((c) => {
-      const idx = c.indexOf(name);
-      const next = idx + dir;
-      if (idx < 0 || next < 0 || next >= c.length) return c;
-      const copy = [...c];
-      [copy[idx], copy[next]] = [copy[next], copy[idx]];
-      return copy;
+  /**
+   * Rename kategori atomik lewat RPC `rename_warehouse_category`:
+   * server-side validasi collision case-insensitive + kaskade
+   * `warehouse_items.category` di dalam satu transaksi supaya tidak
+   * ada window di mana kategori sudah berpindah nama tapi produk
+   * masih menempel di nama lama. `renameTarget` menahan nama lama
+   * dan input baru untuk dialog inline; loading state dipakai supaya
+   * tombol Simpan tidak bisa di-double-tap saat request berjalan.
+   */
+  const [renameTarget, setRenameTarget] = useState<{ old: string; input: string } | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const submitRename = async () => {
+    if (!renameTarget) return;
+    const oldName = renameTarget.old;
+    const rawNew = renameTarget.input;
+    const newName = rawNew.trim().replace(/\s+/g, " ");
+    if (!newName) {
+      toast.error("Nama kategori tidak boleh kosong");
+      return;
+    }
+    if (newName === oldName) {
+      setRenameTarget(null);
+      return;
+    }
+    if (
+      newName.toLowerCase() !== oldName.toLowerCase() &&
+      categories.some((c) => c.toLowerCase() === newName.toLowerCase())
+    ) {
+      toast.error(`Kategori "${newName}" sudah ada`);
+      return;
+    }
+    setRenaming(true);
+    const { data, error } = await supabase.rpc("rename_warehouse_category", {
+      _old_name: oldName,
+      _new_name: newName,
     });
+    setRenaming(false);
+    if (error) {
+      if ((error as { code?: string }).code === "23505") {
+        toast.error(`Kategori "${newName}" sudah ada`);
+      } else {
+        notifyError(error, { prefix: "Gagal mengubah nama kategori: " });
+      }
+      return;
+    }
+    const renamedItems = Number(data ?? 0);
+    setCategories((c) => c.map((x) => (x === oldName ? newName : x)));
+    setItems((arr) =>
+      arr.map((i) =>
+        i.kategori.toLowerCase() === oldName.toLowerCase() ? { ...i, kategori: newName } : i,
+      ),
+    );
+    if (activeCat === oldName) setActiveCat(newName);
+    setRenameTarget(null);
+    toast.success(
+      renamedItems > 0
+        ? `Kategori diubah ke "${newName}" (${renamedItems} produk ikut diperbarui)`
+        : `Kategori diubah ke "${newName}"`,
+    );
   };
 
-  const adoptOrphanCategories = (names: string[]) => {
-    if (names.length === 0) return;
-    setCategories((c) => [...c, ...names.filter((n) => !c.includes(n))]);
-    toast.success(`${names.length} kategori didaftarkan ulang`);
+  /**
+   * Drag-and-drop reorder kategori.
+   * - Optimistic: susun ulang UI dulu supaya feel-nya instan di HP.
+   * - Persist: kirim `position` baru per kategori ke `warehouse_categories`
+   *   (RLS `auth.uid() = user_id` sudah mengunci scope per pemilik).
+   * - Rollback: kalau salah satu UPDATE gagal, kembalikan urutan lama +
+   *   toast error supaya state UI dan DB tidak divergen.
+   * - Konkurensi: `reorderInFlightRef` mem-block realtime/refresh selama
+   *   batch UPDATE berjalan supaya urutan optimistic lokal tidak dilibas
+   *   snapshot lama dari server. Setelah selesai, `reorderSeqRef` memakai
+   *   token monotonik supaya hanya reorder ter-baru yang memicu
+   *   `refreshCategories` — mencegah reconcile urutan lama menimpa
+   *   urutan yang lebih baru dari user atau tab lain.
+   */
+  const reorderCategories = async (fromName: string, toName: string) => {
+    if (fromName === toName) return;
+    const prev = categories;
+    const fromIdx = prev.indexOf(fromName);
+    const toIdx = prev.indexOf(toName);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = arrayMove(prev, fromIdx, toIdx);
+    const mySeq = ++reorderSeqRef.current;
+    reorderInFlightRef.current = true;
+    setCategories(next);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const uid = user?.id;
+    if (!uid) {
+      setCategories(prev);
+      reorderInFlightRef.current = false;
+      toast.error("Sesi berakhir. Silakan masuk ulang.");
+      return;
+    }
+
+    // Batch update posisi. `warehouse_categories` punya unique
+    // `(user_id, lower(btrim(name)))` — position bebas diubah tanpa
+    // menabrak constraint. Kirim parallel supaya cepat.
+    const results = await Promise.all(
+      next.map((name, idx) =>
+        supabase
+          .from("warehouse_categories")
+          .update({ position: idx })
+          .eq("user_id", uid)
+          .eq("name", name),
+      ),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      setCategories(prev);
+      reorderInFlightRef.current = false;
+      notifyError(failed.error, { prefix: "Gagal menyimpan urutan kategori: " });
+      return;
+    }
+    reorderInFlightRef.current = false;
+    // Hanya reorder ter-baru yang boleh reconcile — reorder lain yang
+    // sudah keburu selesai duluan tidak boleh menimpa urutan yang baru.
+    if (mySeq === reorderSeqRef.current) {
+      void refreshCategories();
+    }
   };
 
   const addProduk = () => {
@@ -682,7 +1208,7 @@ function Index() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+      <div className="flex min-h-screen items-center justify-center bg-background text-ms-sm text-muted-foreground">
         Memuat…
       </div>
     );
@@ -690,188 +1216,318 @@ function Index() {
 
   if (!activeCat) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card/95">
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-3 sm:px-6">
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold tracking-tight">
-                Pilih Kategori — MCM Storage
-              </h1>
-              <p className="text-[11px] text-muted-foreground">
-                Buat atau pilih kategori dulu sebelum masuk ke penyimpanan.
-              </p>
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Ambient accent glow — mengikuti warna primary tema aktif */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 top-0 -z-0 h-64 opacity-70"
+          style={{
+            background:
+              "radial-gradient(60% 100% at 50% 0%, color-mix(in oklab, var(--primary) 18%, transparent) 0%, color-mix(in oklab, var(--primary) 6%, transparent) 40%, transparent 75%)",
+          }}
+        />
+
+        <header className="sticky top-0 z-20 border-b border-primary/12 bg-background/72 backdrop-blur-xl">
+          <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
+            <div className="flex min-w-0 items-center gap-ms-2.5">
+              <span
+                aria-hidden
+                className="numeral-editorial grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/45 bg-card text-[0.9375rem] shadow-[0_0_22px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              >
+                M
+              </span>
+              <div className="min-w-0 leading-tight">
+                <p className="text-premium-heading truncate text-[1.0625rem] text-foreground">
+                  MCM Storage
+                </p>
+                <p className="truncate text-[0.5625rem] font-semibold uppercase tracking-[0.26em] text-primary/65">
+                  Retail Operations
+                </p>
+              </div>
             </div>
-            {lockMenu(false)}
-            <AppearanceSettings />
+            <div className="flex shrink-0 items-center gap-ms-2">
+            {lockMenu(true, "inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/25 bg-card text-foreground hover:border-primary/60")}
             <button
               onClick={signOut}
-              className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+              className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-ms-3 text-[0.6875rem] font-medium tracking-wide text-foreground transition-colors hover:border-primary/60 hover:bg-accent"
             >
               Keluar
             </button>
+            </div>
           </div>
         </header>
 
-        <main className="mx-auto max-w-md space-y-4 px-3 py-6 sm:px-6">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              addCategory(newCatName);
-            }}
-            className="space-y-2 rounded-lg border bg-card p-3"
-          >
-            <label className="block text-xs font-medium text-foreground">
-              {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori baru"}
-            </label>
-            <div className="flex gap-2">
-              <input
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                placeholder="Contoh: Sembako, Pakaian, 1 gram"
-                className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
-              >
-                Buat
-              </button>
-            </div>
-          </form>
+        <main className="relative mx-auto w-full max-w-md space-y-8 px-ms-4 pt-7 pb-14 sm:max-w-2xl sm:px-ms-6 sm:pt-10">
+          {/* Hero: alur kerja aplikasi */}
+          <section className="surface-editorial overflow-hidden p-ms-5 sm:p-ms-6">
+            <h2 className="sr-only">Alur Kerja</h2>
+            <span className="eyebrow">
+              <span className="hairline w-6" />
+              Alur Kerja
+            </span>
+            <h1 className="text-premium-heading mt-3.5 text-[1.75rem] leading-[1.12] text-foreground sm:text-[2.125rem]">
+              Dari <em className="not-italic text-primary">stok</em> ke tangan
+              pelanggan — satu alur, tanpa kebocoran.
+            </h1>
+            <p className="mt-3 max-w-prose text-[0.84375rem] leading-relaxed text-muted-foreground">
+              Empat langkah inti yang menjalankan MCM Storage setiap hari.
+            </p>
+            <div className="hairline mt-5" />
 
-          {categories.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Kategori kamu
-                </p>
+            <ol className="mt-5 space-ms-2.5">
+              {[
+                { n: "01", to: "/gudang", t: "Gudang", d: "Kelola stok, pembelian, dan harga modal." },
+                { n: "02", to: "/ecer", t: "Siapkan Pesanan", d: "Ecer & request — timbang, kemas, verifikasi." },
+                { n: "03", to: "/tugas", t: "Tugas Pegawai", d: "Bagikan link + PIN untuk penyiapan lapangan." },
+                { n: "04", to: "/chat", t: "Kirim via MCM Chat", d: "Rangkuman order otomatis ke pelanggan." },
+              ].map((step) => (
+                <li key={step.n}>
+                  <Link
+                    to={step.to}
+                    preload="intent"
+                    className="surface-quiet group flex items-center gap-ms-3 px-ms-3.5 py-ms-3"
+                  >
+                    <span className="numeral-editorial grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary/35 bg-background text-[0.9375rem]">
+                      {step.n}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="text-premium-heading block text-[1.0625rem] text-foreground">
+                        {step.t}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[0.71875rem] leading-snug text-muted-foreground">
+                        {step.d}
+                      </span>
+                    </span>
+                    <span
+                      aria-hidden
+                      className="shrink-0 text-primary/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                    >
+                      →
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* CTA inti: kategori */}
+          <section className="space-ms-3">
+            <h2 className="sr-only">Kategori</h2>
+            <span className="eyebrow">
+              <span className="hairline w-6" />
+              {categories.length === 0 ? "Mulai" : "Kategori"}
+            </span>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                addCategory(newCatName);
+              }}
+              className="surface-editorial p-ms-4"
+            >
+              <label className="text-premium-heading mb-2.5 block text-[1.0625rem] text-foreground">
+                {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori"}
+              </label>
+              <div className="flex gap-ms-2">
+                <input
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="Sembako, Pakaian, 1 gram…"
+                  className="h-11 w-full min-w-0 rounded-xl border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                />
                 <button
-                  onClick={() => setCatManagerOpen(true)}
-                  className="rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                  type="submit"
+                  className="h-11 shrink-0 rounded-xl bg-primary px-ms-4 text-[0.78125rem] font-semibold tracking-tight text-primary-foreground shadow-[0_10px_24px_-10px_color-mix(in_oklab,var(--primary)_75%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
                 >
-                  Kelola kategori
+                  Buat
                 </button>
               </div>
-              <p className="text-[10px] text-muted-foreground">
-                {saveState === "saving"
-                  ? "Menyimpan…"
-                  : saveState === "error"
-                    ? "Gagal menyimpan kategori"
-                    : lastSavedAt
-                      ? `Tersimpan ${new Date(lastSavedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
-                      : "Tersinkron dengan akunmu"}
-              </p>
-              {orphanCategories.length > 0 && (
-                <button
-                  onClick={() => setCatManagerOpen(true)}
-                  className="w-full rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-left text-[11px] font-medium"
+            </form>
+
+            {categories.length > 0 && (
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e: DragEndEvent) => {
+                  const { active, over } = e;
+                  if (!over || active.id === over.id) return;
+                  void reorderCategories(String(active.id), String(over.id));
+                }}
+              >
+                <SortableContext items={categories} strategy={verticalListSortingStrategy}>
+                  <ul className="grid gap-ms-2">
+                    {categories.map((c) => (
+                      <SortableCategoryRow
+                        key={c}
+                        name={c}
+                        tag={tagFor(c)}
+                        count={items.filter((i) => i.kategori === c).length}
+                        onOpen={() => setActiveCat(c)}
+                        onDelete={() => deleteCategory(c)}
+                        onRename={() => setRenameTarget({ old: c, input: c })}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
+            )}
+            {renameTarget && (
+              <div
+                role="dialog"
+                aria-label="Ubah nama kategori"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-ms-4"
+                onClick={() => (!renaming ? setRenameTarget(null) : undefined)}
+              >
+                <div
+                  className="w-full max-w-sm rounded-xl border border-primary/30 bg-card p-ms-4 shadow-xl"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  ⚠ {orphanCategories.length} kategori produk belum terdaftar — ketuk untuk memulihkan
+                  <div className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                    Ubah nama kategori
+                  </div>
+                  <div className="mb-3 text-[0.78125rem] text-foreground/80">
+                    Kategori lama: <span className="font-medium">{renameTarget.old}</span>
+                  </div>
+                  <input
+                    autoFocus
+                    value={renameTarget.input}
+                    onChange={(e) =>
+                      setRenameTarget((t) => (t ? { ...t, input: e.target.value } : t))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !renaming) void submitRename();
+                      if (e.key === "Escape" && !renaming) setRenameTarget(null);
+                    }}
+                    data-testid="rename-cat-input"
+                    className="h-10 w-full rounded-lg border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                    placeholder="Nama baru…"
+                  />
+                  <div className="mt-3 flex justify-end gap-ms-2">
+                    <button
+                      type="button"
+                      disabled={renaming}
+                      onClick={() => setRenameTarget(null)}
+                      className="h-9 rounded-lg border border-primary/20 bg-background px-ms-3 text-[0.78125rem] text-foreground/80 hover:bg-primary/5 disabled:opacity-60"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      disabled={renaming}
+                      onClick={() => void submitRename()}
+                      data-testid="rename-cat-submit"
+                      className="h-9 rounded-lg bg-primary px-ms-4 text-[0.78125rem] font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                    >
+                      {renaming ? "Menyimpan…" : "Simpan"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Lainnya — dilipat agar tampilan awal hanya inti.
+              onToggle memicu mount pertama kali sehingga chunk lazy baru
+              diunduh saat user benar-benar ingin melihat isinya. */}
+          <details
+            className="surface-editorial group overflow-hidden"
+            onToggle={(e) => {
+              if ((e.currentTarget as HTMLDetailsElement).open && !lainnyaMounted) {
+                setLainnyaMounted(true);
+              }
+            }}
+          >
+            <summary
+              className="flex cursor-pointer list-none items-center justify-between gap-ms-2 px-ms-4 py-ms-4 text-[0.78125rem] font-medium tracking-tight text-foreground/80 [&::-webkit-details-marker]:hidden"
+              onPointerEnter={() => setLainnyaMounted(true)}
+              onFocus={() => setLainnyaMounted(true)}
+            >
+              <span className="eyebrow">
+                <span className="hairline w-5" />
+                Lainnya
+              </span>
+              <span className="text-primary/70 transition-transform group-open:rotate-180">
+                ⌄
+              </span>
+            </summary>
+            <div className="space-ms-4 border-t border-primary/10 p-ms-4">
+              <div className="grid grid-cols-2 gap-ms-2.5">
+                {[
+                  { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
+                  { to: "/kontak", label: "Pelanggan & Supplier", emoji: "👥", desc: "Tautkan akun pengguna" },
+                  { to: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
+                  { to: "/label-preview", label: "Pratinjau Label", emoji: "🏷️", desc: "Cetak label produk" },
+                  { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
+                  { to: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font" },
+                ].map((s) => (
+                  <Link
+                    key={s.to}
+                    to={s.to}
+                    preload="intent"
+                    className="surface-quiet flex flex-col gap-0.5 px-ms-3 py-ms-3 text-left"
+                  >
+                    <span className="text-[1.0625rem] leading-none">{s.emoji}</span>
+                    <span className="text-premium-heading mt-1.5 text-[0.9375rem] leading-tight text-foreground">
+                      {s.label}
+                    </span>
+                    <span className="mt-0.5 text-[0.65625rem] leading-snug text-muted-foreground">
+                      {s.desc}
+                    </span>
+                  </Link>
+                ))}
+                {lainnyaMounted && (
+                  <Suspense fallback={null}>
+                    <DownloadStorageApkShortcut />
+                    <DownloadChatApkShortcut />
+                    <CopyChatApkLinksButton />
+                  </Suspense>
+                )}
+              </div>
+
+              {lainnyaMounted && (
+                <Suspense
+                  fallback={
+                    <div className="rounded-lg border border-primary/10 bg-card px-ms-3 py-ms-4 text-center text-[0.6875rem] text-muted-foreground">
+                      Memuat…
+                    </div>
+                  }
+                >
+                  <ReadyEcerSection />
+                  <ReadyRequestSection />
+                  <ReadySelfPrepSection />
+                  <LainnyaMountSentinel />
+                </Suspense>
+              )}
+
+              {(categories.length > 0 || items.length > 0) && (
+                <button
+                  onClick={resetAllData}
+                  className="w-full rounded-lg border border-destructive/30 bg-destructive/5 px-ms-3 py-ms-2.5 text-[0.71875rem] font-semibold tracking-tight text-destructive transition-colors hover:bg-destructive/10"
+                >
+                  🗑 Reset semua data saya
                 </button>
               )}
-              <ul className="grid gap-1.5">
-                {categories.map((c) => {
-                  const count = items.filter((i) => i.kategori === c).length;
-                  return (
-                    <li
-                      key={c}
-                      className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2"
-                    >
-                      <button
-                        onClick={() => setActiveCat(c)}
-                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                      >
-                        <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
-                          {tagFor(c)}
-                        </span>
-                        <span className="truncate text-sm font-medium">{c}</span>
-                        <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
-                          {count} pesanan
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => deleteCategory(c)}
-                        disabled={categories.length <= 1}
-                        className="shrink-0 rounded-md border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-                        title={categories.length <= 1 ? "Minimal harus ada 1 kategori" : `Hapus kategori ${c}`}
-                        aria-label={`Hapus kategori ${c}`}
-                      >
-                        Hapus
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
             </div>
-          )}
+          </details>
 
-          {(categories.length > 0 || items.length > 0) && (
-            <button
-              onClick={resetAllData}
-              className="w-full rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/20"
-            >
-              🗑 Reset semua data saya
-            </button>
-          )}
-
-          <div className="space-y-1.5">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Pintasan
+          <div className="pt-4 text-center">
+            <div className="mx-auto mb-3 h-px w-16 bg-primary/25" />
+            <p className="text-[0.625rem] font-medium uppercase tracking-[0.3em] text-primary/45">
+              MCM · Barokah Rizki
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { to: "/gudang", label: "Gudang & Supplier", emoji: "📦", desc: "Stok, pembelian, penjualan" },
-                { to: "/ecer", label: "Penyiapan Ecer", emoji: "⚖️", desc: "Judul & kotak penyiapan" },
-                { to: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
-                { to: "/tugas", label: "Tugas Pegawai", emoji: "📋", desc: "Buat & pantau penyiapan" },
-                { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
-                { to: "/kontak", label: "Pelanggan & Pemasok", emoji: "👥", desc: "Tautkan akun pengguna" },
-                { to: "/label-preview", label: "Pratinjau Label", emoji: "🏷️", desc: "Cetak label produk" },
-                { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
-              ].map((s) => (
-                <Link
-                  key={s.to}
-                  to={s.to}
-                  preload="intent"
-                  className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
-                >
-                  <span className="text-base leading-none">{s.emoji}</span>
-                  <span className="mt-1 text-xs font-semibold leading-tight">{s.label}</span>
-                  <span className="text-[10px] leading-tight text-muted-foreground">{s.desc}</span>
-                </Link>
-              ))}
-            </div>
           </div>
-
-          <ReadyEcerSection />
-          <ReadyRequestSection />
         </main>
-        <CategoryManagerDialog
-          open={catManagerOpen}
-          onOpenChange={setCatManagerOpen}
-          categories={categories}
-          usage={categoryUsage}
-          orphans={orphanCategories}
-          onAdd={addCategory}
-          onRename={renameCategory}
-          onDelete={deleteCategory}
-          onReorder={reorderCategory}
-          onAdoptOrphans={adoptOrphanCategories}
-          onSelect={(c) => {
-            setActiveCat(c);
-            setCatManagerOpen(false);
-          }}
-          saveState={saveState}
-          lastSavedAt={lastSavedAt}
-        />
-        {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
+        {uid && setupOpen && (
+          <Suspense fallback={null}>
+            <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />
+          </Suspense>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background" data-press-scope="on">
+      <MidnightScope />
       {/* Mobile drawer backdrop */}
       {railOpen && (
         <button
@@ -882,7 +1538,7 @@ function Index() {
       )}
       {/* Vertical action rail */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-14 flex-col items-center gap-1.5 border-r bg-card/95 px-1 py-3 backdrop-blur transition-transform duration-200 sm:sticky sm:top-0 sm:z-20 sm:transition-[width,transform] ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-14 flex-col items-center gap-ms-1.5 border-r bg-card/95 px-1 py-ms-3 backdrop-blur transition-transform duration-200 sm:sticky sm:top-0 sm:z-20 sm:transition-[width,transform] ${
           railOpen
             ? "translate-x-0 sm:w-14"
             : "-translate-x-full sm:translate-x-0 sm:w-0 sm:overflow-hidden sm:border-r-0 sm:px-0"
@@ -895,7 +1551,7 @@ function Index() {
             setSelected(new Set());
             setOpenId(null);
           }}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Ganti kategori"
           title="Ganti kategori"
         >
@@ -908,7 +1564,7 @@ function Index() {
           onClick={addProduk}
           title="Tambah produk"
           aria-label="Tambah produk"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-ms-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
         >
           +
         </button>
@@ -919,7 +1575,7 @@ function Index() {
           }}
           title={selectMode ? "Selesai memilih" : "Pilih beberapa"}
           aria-label={selectMode ? "Selesai memilih" : "Pilih beberapa"}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             selectMode
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -931,7 +1587,7 @@ function Index() {
           onClick={resetStatus}
           title="Reset status terkirim"
           aria-label="Reset status terkirim"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
         >
           ↺
         </button>
@@ -939,7 +1595,7 @@ function Index() {
           onClick={reset}
           title="Hapus semua"
           aria-label="Hapus semua"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base text-destructive transition-colors hover:bg-destructive/10"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base text-destructive transition-colors hover:bg-destructive/10"
         >
           🗑
         </button>
@@ -948,7 +1604,7 @@ function Index() {
 
         <button
           onClick={() => setViewMode("list")}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             viewMode === "list"
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -960,7 +1616,7 @@ function Index() {
         </button>
         <button
           onClick={() => setViewMode("grid")}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             viewMode === "grid"
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -973,10 +1629,21 @@ function Index() {
 
         <div className="flex-1" />
 
-        <AppearanceSettings
-          compact
-          triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base leading-none transition-colors hover:bg-accent"
-        />
+        <Suspense
+          fallback={
+            <span
+              aria-hidden
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none text-muted-foreground/40"
+            >
+              ⚙
+            </span>
+          }
+        >
+          <AppearanceSettings
+            compact
+            triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none transition-colors hover:bg-accent"
+          />
+        </Suspense>
         <button
           onClick={() => {
             try {
@@ -989,7 +1656,7 @@ function Index() {
             );
             toast.success("Tampilan menu dikembalikan ke default");
           }}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Reset tampilan menu"
           title="Reset tampilan menu"
         >
@@ -997,13 +1664,13 @@ function Index() {
         </button>
         {lockMenu(
           true,
-          `inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent ${
+          `inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent ${
             lockCfg ? "bg-accent" : ""
           }`,
         )}
         <button
           onClick={signOut}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Keluar"
           title="Keluar"
         >
@@ -1014,21 +1681,21 @@ function Index() {
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-          <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
-            <div className="flex items-center gap-3">
+          <div className="mx-auto max-w-6xl px-ms-3 py-ms-3 sm:px-ms-6">
+            <div className="flex items-center gap-ms-3">
               <button
                 onClick={() => setRailOpen((v) => !v)}
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-card text-base transition-colors hover:bg-accent"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-card text-ms-base transition-colors hover:bg-accent"
                 aria-label={railOpen ? "Sembunyikan menu" : "Tampilkan menu"}
                 title={railOpen ? "Sembunyikan menu" : "Tampilkan menu"}
               >
                 ☰
               </button>
               <div className="min-w-0 flex-1">
-                <h1 className="truncate text-base font-semibold tracking-tight">
+                <h1 className="truncate text-ms-base font-semibold tracking-tight">
                   {activeCat} · MCM Storage
                 </h1>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[0.6875rem] text-muted-foreground">
                   {scopedItems.length} pesanan · {rupiah(total)}
                 </p>
               </div>
@@ -1045,7 +1712,7 @@ function Index() {
                           ? "Belum dikirim"
                           : "Sudah dikirim"
                       }
-                      className={`inline-flex shrink-0 items-center justify-center px-3 text-[11px] font-medium transition-colors ${
+                      className={`inline-flex shrink-0 items-center justify-center px-ms-3 text-[0.6875rem] font-medium transition-colors ${
                         i > 0 ? "border-l" : ""
                       } ${
                         filter === f
@@ -1071,7 +1738,7 @@ function Index() {
                   setOpenId(null);
                   toast.success("Filter dikembalikan ke default");
                 }}
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-base transition-colors hover:bg-accent"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-ms-base transition-colors hover:bg-accent"
                 aria-label="Reset filter"
                 title="Reset filter"
               >
@@ -1081,9 +1748,21 @@ function Index() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-6">
-        <SecurityScanReminder />
-        <SecurityFindingsBanner />
+        <main className="mx-auto w-full max-w-6xl px-ms-3 py-ms-3 sm:px-ms-6">
+        <Suspense fallback={null}>
+          <SecurityScanReminder />
+          <SecurityFindingsBanner />
+        </Suspense>
+        <Suspense fallback={null}>
+          <div className="mb-ms-3">
+            <HeroAnalyticsPanel />
+          </div>
+        </Suspense>
+        <Suspense fallback={null}>
+          <div className="mb-ms-3">
+            <LiveProductGallery />
+          </div>
+        </Suspense>
         {(() => {
           const total = scopedItems.length;
           const terkirim = scopedItems.filter((i) => i.status === "Sudah Dikirim");
@@ -1097,46 +1776,46 @@ function Index() {
             byUnit.set(s, (byUnit.get(s) ?? 0) + (it.jumlah ?? 0));
           }
           return (
-            <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-card p-2.5 text-[11px] sm:grid-cols-4">
+            <div className="mb-3 grid grid-cols-2 gap-ms-2 rounded-lg border bg-card p-ms-2.5 text-[0.6875rem] sm:grid-cols-4">
               <div
-                className="col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-2 sm:col-span-4"
+                className="col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-ms-2 sm:col-span-4"
                 role="status"
                 aria-live="polite"
                 title="Penjualan hari ini = jumlah harga semua pesanan yang ditandai Sudah Dikirim pada tanggal kalender lokal hari ini."
               >
-                <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#0F7A6C]">
+                <p className="text-[0.65625rem] font-medium uppercase tracking-wide text-[#0F7A6C]">
                   Total penjualan hari ini
                 </p>
-                <p className="mt-0.5 text-lg font-bold tabular-nums text-[#0F7A6C]">
+                <p className="mt-0.5 text-ms-lg font-bold tabular-nums text-[#0F7A6C]">
                   {rupiah(omzetHariIni)}
                 </p>
-                <p className="text-[10.5px] text-[#0F7A6C]/80">
+                <p className="text-[0.65625rem] text-[#0F7A6C]/80">
                   {terkirimHariIni.length} pesanan terkirim hari ini
                   {activeCat ? ` · kategori ${activeCat}` : ""}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Total pesanan</p>
-                <p className="text-sm font-semibold tabular-nums">{total}</p>
+                <p className="text-ms-sm font-semibold tabular-nums">{total}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Belum dikirim</p>
-                <p className="text-sm font-semibold tabular-nums">{belum}</p>
+                <p className="text-ms-sm font-semibold tabular-nums">{belum}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Terjual</p>
-                <p className="text-sm font-semibold tabular-nums text-[#128C7E]">
+                <p className="text-ms-sm font-semibold tabular-nums text-[#128C7E]">
                   {terkirim.length}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Omzet total</p>
-                <p className="text-sm font-semibold tabular-nums">{rupiah(omzet)}</p>
+                <p className="text-ms-sm font-semibold tabular-nums">{rupiah(omzet)}</p>
               </div>
               {byUnit.size > 0 && (
                 <div className="col-span-2 sm:col-span-4">
                   <p className="text-muted-foreground">Terjual per satuan</p>
-                  <p className="text-xs font-medium tabular-nums">
+                  <p className="text-ms-xs font-medium tabular-nums">
                     {Array.from(byUnit.entries())
                       .map(([s, j]) => formatJumlah(j, s))
                       .join(" · ")}
@@ -1150,8 +1829,8 @@ function Index() {
         <ul
           className={
             viewMode === "grid"
-              ? "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
-              : "grid gap-1.5"
+              ? "grid grid-cols-2 gap-ms-2 sm:grid-cols-3 lg:grid-cols-4"
+              : "grid gap-ms-1.5"
           }
         >
           {filtered.map((p) => {
@@ -1163,6 +1842,17 @@ function Index() {
             return (
               <li
                 key={p.id}
+                // Lewati render/paint kartu di luar viewport (hemat CPU saat daftar panjang).
+                // Kartu yang sedang dibuka dikecualikan agar tinggi dinamisnya akurat.
+                style={
+                  open
+                    ? undefined
+                    : {
+                        contentVisibility: "auto",
+                        containIntrinsicSize:
+                          viewMode === "grid" ? "auto 180px" : "auto 76px",
+                      }
+                }
                 className={`overflow-hidden rounded-lg border bg-card transition-opacity ${sent ? "opacity-60" : ""} ${
                   viewMode === "grid" && open ? "col-span-full" : ""
                 }`}
@@ -1178,21 +1868,21 @@ function Index() {
                     {thumb ? (
                       <img src={thumb} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-2xl text-muted-foreground">
+                      <div className="flex h-full w-full items-center justify-center text-ms-2xl text-muted-foreground">
                         📦
                       </div>
                     )}
-                    <span className="absolute left-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
+                    <span className="absolute left-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[0.625rem] font-medium">
                       {tagFor(p.kategori)}
                     </span>
                     {fotoCount > 0 && (
-                      <span className="absolute right-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px]">
+                      <span className="absolute right-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[0.625rem]">
                         📷{fotoCount}
                       </span>
                     )}
                     {selectMode && (
                       <span
-                        className={`absolute bottom-1.5 right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border-2 text-[10px] ${
+                        className={`absolute bottom-1.5 right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border-2 text-[0.625rem] ${
                           selected.has(p.id)
                             ? "border-primary bg-primary text-primary-foreground"
                             : "border-background bg-background/80"
@@ -1203,7 +1893,7 @@ function Index() {
                     )}
                   </button>
                 )}
-                <div className="flex min-h-[44px] items-center gap-2 px-2.5 py-2 leading-snug">
+                <div className="flex min-h-[44px] items-center gap-ms-2 px-ms-2.5 py-ms-2 leading-snug">
                   {selectMode && viewMode === "list" ? (
                     <input
                       type="checkbox"
@@ -1236,28 +1926,28 @@ function Index() {
                     onClick={() =>
                       selectMode ? toggleSelect(p.id) : setOpenId(open ? null : p.id)
                     }
-                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    className="flex min-w-0 flex-1 items-center gap-ms-2 text-left"
                   >
                     {viewMode === "list" && (
-                      <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                      <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[0.625rem] font-medium text-secondary-foreground">
                         {tagFor(p.kategori)}
                       </span>
                     )}
-                     <span className="truncate text-sm font-medium leading-snug">{p.nama}</span>
+                     <span className="truncate text-ms-sm font-medium leading-snug">{p.nama}</span>
                     {viewMode === "list" && p.satuan && (
-                      <span className="shrink-0 whitespace-nowrap text-[11px] leading-snug text-muted-foreground">
+                      <span className="shrink-0 whitespace-nowrap text-[0.6875rem] leading-snug text-muted-foreground">
                         · {formatJumlah(p.jumlah ?? 0, p.satuan)}
                       </span>
                     )}
                     {viewMode === "list" && sent && (
-                      <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-[#25D366]/15 px-1.5 text-[11px] font-medium leading-none text-[#128C7E]">
+                      <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-[#25D366]/15 px-1.5 text-[0.6875rem] font-medium leading-none text-[#128C7E]">
                         ✓
                       </span>
                     )}
                     {viewMode === "list" && fotoCount > 0 && (
-                      <span className="shrink-0 whitespace-nowrap text-[11px] leading-snug text-muted-foreground">📷{fotoCount}</span>
+                      <span className="shrink-0 whitespace-nowrap text-[0.6875rem] leading-snug text-muted-foreground">📷{fotoCount}</span>
                     )}
-                    <span className="ml-auto shrink-0 whitespace-nowrap text-xs leading-snug tabular-nums text-muted-foreground">
+                    <span className="ml-auto shrink-0 whitespace-nowrap text-ms-xs leading-snug tabular-nums text-muted-foreground">
                       {rupiah(p.harga)}
                     </span>
                   </button>
@@ -1266,16 +1956,16 @@ function Index() {
                       href={waUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 rounded-md bg-[#25D366] px-2 py-1 text-[11px] font-semibold text-white hover:opacity-90"
+                      className="shrink-0 rounded-md bg-[#25D366] px-ms-2 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      WA
+                      MCM
                     </a>
                   )}
                   {!selectMode && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
-                      className="shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                      className="shrink-0 rounded-md border px-ms-2 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       aria-label="Edit lengkap"
                       title="Edit lengkap"
                     >
@@ -1284,8 +1974,8 @@ function Index() {
                   )}
                 </div>
                 {viewMode === "grid" && (
-                  <div className="flex min-h-[40px] items-center gap-2 border-t px-2.5 py-1.5 leading-snug">
-                    <label className="flex items-center gap-1.5 text-[11px]">
+                  <div className="flex min-h-[40px] items-center gap-ms-2 border-t px-ms-2.5 py-1.5 leading-snug">
+                    <label className="flex items-center gap-ms-1.5 text-[0.6875rem]">
                       <input
                         type="checkbox"
                         checked={sent}
@@ -1306,7 +1996,7 @@ function Index() {
                     </label>
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
-                      className="ml-auto rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                      className="ml-auto rounded-md border px-ms-2 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                     >
                       ✎ Edit
                     </button>
@@ -1314,14 +2004,14 @@ function Index() {
                 )}
 
                 {open && (
-                  <div className="space-y-2 border-t px-2.5 py-2.5">
-                    <div className="flex gap-2">
+                  <div className="space-ms-2 border-t px-ms-2.5 py-ms-2.5">
+                    <div className="flex gap-ms-2">
                       <select
                         value={p.kategori}
                         onChange={(e) =>
                           update(p.id, { kategori: e.target.value as Kategori })
                         }
-                        className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                         aria-label="Kategori"
                       >
                         {categories.map((k) => (
@@ -1334,38 +2024,38 @@ function Index() {
                         value={p.nama}
                         onChange={(e) => update(p.id, { nama: e.target.value })}
                         placeholder="Nama produk"
-                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
-                    <label className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
+                    <label className="flex items-center gap-ms-2 rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm">
                       <span className="text-muted-foreground">Rp</span>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
+                      <NumericDraftInput
                         value={p.harga}
-                        aria-label="Harga produk"
+                        min={0}
+                        max={Number.MAX_SAFE_INTEGER}
+                        step={1}
+                        inputMode="numeric"
+                        emptyCommitsTo={0}
                         onFocus={() => setFlashId(p.id)}
                         onBlur={() =>
                           setFlashId((cur) => (cur === p.id ? null : cur))
                         }
-                        onChange={(e) =>
-                          {
-                            update(p.id, { harga: Math.max(0, Number(e.target.value) || 0) });
-                            setFlashId(p.id);
-                            window.setTimeout(() => {
-                              setFlashId((cur) => (cur === p.id ? null : cur));
-                            }, 900);
-                          }
-                        }
+                        onCommit={(n) => {
+                          update(p.id, { harga: n });
+                          setFlashId(p.id);
+                          window.setTimeout(() => {
+                            setFlashId((cur) => (cur === p.id ? null : cur));
+                          }, 900);
+                        }}
+                        ariaLabel="Harga produk"
                         className="w-full bg-transparent tabular-nums outline-none"
                         placeholder="Harga"
                       />
-                      <span className="text-xs text-muted-foreground tabular-nums">
+                      <span className="text-ms-xs text-muted-foreground tabular-nums">
                         {rupiah(p.harga)}
                       </span>
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-ms-2">
                       <select
                         value={p.satuan ?? "pcs"}
                         onChange={(e) => {
@@ -1375,7 +2065,7 @@ function Index() {
                           const clamped = Math.min(b.max, Math.max(b.min, cur));
                           update(p.id, { satuan: next, jumlah: clamped });
                         }}
-                        className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                         aria-label="Satuan"
                       >
                         {SATUAN_LIST.map((s) => (
@@ -1388,43 +2078,38 @@ function Index() {
                         const s = p.satuan ?? "pcs";
                         const b = satuanBounds(s);
                         return (
-                          <label className="flex w-full items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
+                          <label className="flex w-full items-center gap-ms-2 rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm">
                             <span className="text-muted-foreground">Jumlah</span>
-                            <input
-                              type="number"
-                              inputMode="decimal"
+                            <NumericDraftInput
+                              value={p.jumlah ?? b.min}
                               min={b.min}
                               max={b.max}
                               step={b.step}
-                              value={p.jumlah ?? b.min}
-                              onChange={(e) => {
-                                const raw = Number(e.target.value);
-                                if (!Number.isFinite(raw)) return;
-                                const clamped = Math.min(b.max, Math.max(b.min, raw));
-                                update(p.id, { jumlah: clamped });
-                              }}
+                              inputMode="decimal"
+                              onCommit={(n) => update(p.id, { jumlah: n })}
                               className="w-full bg-transparent tabular-nums outline-none"
                               placeholder="Jumlah"
+                              ariaLabel="Jumlah"
                             />
-                            <span className="shrink-0 text-xs text-muted-foreground">
+                            <span className="shrink-0 text-ms-xs text-muted-foreground">
                               {formatJumlah(p.jumlah ?? b.min, s)}
                             </span>
                           </label>
                         );
                       })()}
                     </div>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[0.625rem] text-muted-foreground">
                       Gram: 0.01 – 5000 · Kg: 0.001 – 5 · lainnya pakai bilangan bulat.
                     </p>
                     <div
-                      className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-[11px] transition-colors ${
+                      className={`flex items-center justify-between gap-ms-2 rounded-md border px-ms-2.5 py-1.5 text-[0.6875rem] transition-colors ${
                         flashId === p.id
                           ? "border-[#25D366] bg-[#25D366]/10 text-[#128C7E]"
                           : "bg-background text-muted-foreground"
                       }`}
                       aria-live="polite"
                     >
-                      <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-ms-1.5">
                         <span
                           className={`inline-block h-1.5 w-1.5 rounded-full ${
                             flashId === p.id ? "bg-[#25D366] animate-pulse" : "bg-[#25D366]/60"
@@ -1438,21 +2123,21 @@ function Index() {
                         {flashId === p.id ? "memperbarui…" : "live"}
                       </span>
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="grid gap-ms-2 sm:grid-cols-2">
                       <input
                         value={p.keterangan}
                         onChange={(e) => update(p.id, { keterangan: e.target.value })}
                         placeholder="Keterangan"
-                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                       />
                       <input
                         value={p.lokasi}
                         onChange={(e) => update(p.id, { lokasi: e.target.value })}
                         placeholder="Link Lokasi"
-                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border bg-background px-ms-2.5 py-1.5 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-ms-1.5">
                       <button
                         onClick={() => {
                           if (!navigator.geolocation) {
@@ -1469,11 +2154,11 @@ function Index() {
                               toast.success("Lokasi diperbarui", { id: tId });
                             },
                             (err) =>
-                              toast.error("Gagal: " + friendlyError(err), { id: tId }),
+                              notifyError(err, { prefix: "Gagal: " }),
                             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
                           );
                         }}
-                        className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                        className="rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         📍 Ambil lokasi sekarang
                       </button>
@@ -1484,13 +2169,13 @@ function Index() {
                             .then(() => toast.success("Link lokasi disalin"))
                             .catch(() => toast.error("Gagal menyalin"));
                         }}
-                        className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                        className="rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         Salin link
                       </button>
                     </div>
 
-                    <div className="flex flex-wrap items-start gap-1.5">
+                    <div className="flex flex-wrap items-start gap-ms-1.5">
                       {p.foto && (
                         <div className="relative">
                           <img src={p.foto} alt="" className="h-16 w-16 rounded-md border object-cover" />
@@ -1498,7 +2183,7 @@ function Index() {
                             onClick={() => removeFoto(p.id)}
                             aria-label="Hapus foto utama"
                             title="Hapus foto utama"
-                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow"
+                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[0.625rem] shadow"
                           >
                             ×
                           </button>
@@ -1511,13 +2196,13 @@ function Index() {
                             onClick={() => removeGaleri(p.id, idx)}
                             aria-label="Hapus foto galeri"
                             title="Hapus foto galeri"
-                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow"
+                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[0.625rem] shadow"
                           >
                             ×
                           </button>
                         </div>
                       ))}
-                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[10px] hover:bg-accent">
+                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[0.625rem] hover:bg-accent">
                         📷
                         <span>{p.foto ? "Ganti" : "Foto"}</span>
                         <input
@@ -1528,7 +2213,7 @@ function Index() {
                           onChange={(e) => setFoto(p.id, e.target.files)}
                         />
                       </label>
-                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[10px] hover:bg-accent">
+                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[0.625rem] hover:bg-accent">
                         🖼️
                         <span>Galeri</span>
                         <input
@@ -1541,12 +2226,12 @@ function Index() {
                       </label>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5 pt-1">
+                    <div className="flex flex-wrap gap-ms-1.5 pt-1">
                       <a
                         href={p.lokasi}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                        className="inline-flex items-center rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
                       >
                         📍 Lokasi
                       </a>
@@ -1555,9 +2240,9 @@ function Index() {
                           href={waUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center rounded-md bg-[#25D366] px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90"
+                          className="inline-flex items-center rounded-md bg-[#25D366] px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
                         >
-                          KIRIM WA
+                          KIRIM MCM
                         </a>
                       )}
                       <button
@@ -1565,13 +2250,13 @@ function Index() {
                           setOpenId(null);
                           toast.success("Tersimpan");
                         }}
-                        className="inline-flex items-center rounded-md border border-primary bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+                        className="inline-flex items-center rounded-md border border-primary bg-primary px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground hover:opacity-90"
                       >
                         💾 Simpan
                       </button>
                       <button
                         onClick={() => removeItem(p.id)}
-                        className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                        className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-ms-2.5 py-1 text-[0.6875rem] font-medium text-destructive hover:bg-destructive/10"
                       >
                         🗑 Hapus
                       </button>
@@ -1585,15 +2270,15 @@ function Index() {
 
         {filtered.length === 0 && (
           <div className="rounded-xl border border-dashed p-8 text-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-ms-sm text-muted-foreground">
               {scopedItems.length === 0
                 ? `Belum ada pesanan di kategori "${activeCat}".`
                 : "Tidak ada pesanan untuk filter ini."}
             </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <div className="mt-4 flex flex-wrap justify-center gap-ms-2">
               <button
                 onClick={addProduk}
-                className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                className="rounded-md bg-primary px-ms-3 py-1.5 text-ms-xs font-semibold text-primary-foreground hover:opacity-90"
               >
                 + Tambah produk
               </button>
@@ -1604,7 +2289,7 @@ function Index() {
                   setSelected(new Set());
                   setOpenId(null);
                 }}
-                className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                className="rounded-md border px-ms-3 py-1.5 text-ms-xs font-medium hover:bg-accent"
               >
                 Kelola kategori
               </button>
@@ -1617,23 +2302,23 @@ function Index() {
 
       {selectMode && (
         <div className="sticky bottom-0 z-10 border-t bg-card/95 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-3 py-2 sm:px-6">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-ms-2 px-ms-3 py-ms-2 sm:px-ms-6">
             <button
               onClick={selectAllVisible}
-              className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+              className="rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent"
             >
               {filtered.every((i) => selected.has(i.id)) && filtered.length > 0
                 ? "Batal semua"
                 : "Pilih semua"}
             </button>
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-[0.6875rem] text-muted-foreground">
               {selected.size} dipilih · {rupiah(bulkTotal)}
             </span>
-            <div className="ml-auto flex gap-1.5">
+            <div className="ml-auto flex gap-ms-1.5">
               <button
                 onClick={bulkMarkSent}
                 disabled={selected.size === 0}
-                className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent disabled:opacity-40"
+                className="rounded-md border px-ms-2.5 py-1 text-[0.6875rem] font-medium hover:bg-accent disabled:opacity-40"
               >
                 Tandai terkirim
               </button>
@@ -1645,53 +2330,44 @@ function Index() {
                 onClick={(e) => {
                   if (selected.size === 0) e.preventDefault();
                 }}
-                className={`inline-flex items-center rounded-md bg-[#25D366] px-3 py-1 text-[11px] font-semibold text-white ${
+                className={`inline-flex items-center rounded-md bg-[#25D366] px-ms-3 py-1 text-[0.6875rem] font-semibold text-white ${
                   selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
                 }`}
               >
-                KIRIM WA MASSAL ({selected.size})
+                KIRIM MCM MASSAL ({selected.size})
               </a>
             </div>
           </div>
         </div>
       )}
-      {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
-      <CategoryManagerDialog
-        open={catManagerOpen}
-        onOpenChange={setCatManagerOpen}
-        categories={categories}
-        usage={categoryUsage}
-        orphans={orphanCategories}
-        onAdd={addCategory}
-        onRename={renameCategory}
-        onDelete={deleteCategory}
-        onReorder={reorderCategory}
-        onAdoptOrphans={adoptOrphanCategories}
-        onSelect={(c: string) => {
-          setActiveCat(c);
-          setCatManagerOpen(false);
-        }}
-        saveState={saveState}
-        lastSavedAt={lastSavedAt}
-      />
-      <ProductEditDrawer
-        open={editId !== null}
-        onOpenChange={(v) => { if (!v) setEditId(null); }}
-        produk={items.find((i) => i.id === editId) ?? null}
-        categories={categories}
-        satuanList={SATUAN_LIST}
-        satuanBounds={satuanBounds}
-        formatJumlah={formatJumlah}
-        rupiah={rupiah}
-        update={update}
-        setFoto={setFoto}
-        addGaleri={addGaleri}
-        removeFoto={removeFoto}
-        removeGaleri={removeGaleri}
-        removeItem={removeItem}
-        markSent={markSent}
-        buildPesan={buildPesan}
-      />
+      {uid && setupOpen && (
+        <Suspense fallback={null}>
+          <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />
+        </Suspense>
+      )}
+      {editId !== null && (
+        <Suspense fallback={null}>
+          <ProductEditDrawer
+            open={editId !== null}
+            onOpenChange={(v) => { if (!v) setEditId(null); }}
+            produk={items.find((i) => i.id === editId) ?? null}
+            categories={categories}
+            satuanList={SATUAN_LIST}
+            satuanBounds={satuanBounds}
+            formatJumlah={formatJumlah}
+            rupiah={rupiah}
+            update={update}
+            setFoto={setFoto}
+            addGaleri={addGaleri}
+            removeFoto={removeFoto}
+            removeGaleri={removeGaleri}
+            removeItem={removeItem}
+            markSent={markSent}
+            buildPesan={buildPesan}
+          />
+        </Suspense>
+      )}
+      {photoFlow.element}
     </div>
   );
 }

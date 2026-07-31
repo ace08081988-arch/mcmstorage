@@ -51,6 +51,36 @@ meminta empat izin sekaligus: **Notifikasi, Kamera, Lokasi, dan
 Galeri/Foto**. User bisa menolak, dan dialog akan muncul lagi saat fitur
 terkait dipakai.
 
+### Izin tambahan untuk panggilan (Mikrofon + Overlay)
+
+Fitur MCM Chat butuh dua izin ekstra yang **wajib dideklarasi manual** di
+`android/app/src/main/AndroidManifest.xml` setelah `bunx cap add android`
+atau `bunx cap sync android` (Capacitor tidak menambahkannya sendiri).
+
+Tambahkan di dalam `<manifest>` sejajar dengan `<uses-permission>` yang
+sudah ada:
+
+```xml
+<!-- Mikrofon untuk panggilan audio/video (WebRTC getUserMedia) -->
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+<!-- Tampilkan di atas aplikasi lain — dipakai untuk floating incoming call
+     dan notifikasi panggilan saat aplikasi di background -->
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+```
+
+> `SYSTEM_ALERT_WINDOW` di Android 6+ adalah **special permission**: user
+> harus meng-approve manual lewat Setelan → Aplikasi → MCM Storage →
+> "Tampilkan di atas aplikasi lain". Deklarasi manifest saja tidak cukup —
+> aplikasi harus mengarahkan user ke halaman itu dengan intent
+> `Settings.ACTION_MANAGE_OVERLAY_PERMISSION` saat pertama kali fitur
+> incoming-call overlay dipakai.
+
+`RECORD_AUDIO` akan diminta otomatis oleh WebView saat `getUserMedia`
+dipanggil pertama kali (di dalam layar panggilan).
+
 ## Catatan
 
 - `appId` saat ini: `biz.mcmstorage.app` (ubah di `capacitor.config.ts`

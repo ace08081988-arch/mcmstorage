@@ -1,0 +1,240 @@
+name: Package Switch Matrix (Jenis kemasan gram ↔ botol/pcs/sachet)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.gudang*.ts"
+      - "src/routes/_authenticated.gudang*.tsx"
+      - "src/routes/_authenticated.index.tsx"
+      - "src/routes/_authenticated.index.wa-message-package-switch.test.ts"
+      - "src/lib/beli-derived.ts"
+      - "src/lib/beli-derived-gram-switch.test.ts"
+      - "src/lib/stock-format.ts"
+      - "src/lib/weight-parse.ts"
+      - "package.json"
+      - "bun.lock*"
+      - "vitest.config.ts"
+      - ".github/workflows/package-switch-matrix.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.gudang*.ts"
+      - "src/routes/_authenticated.gudang*.tsx"
+      - "src/routes/_authenticated.index.tsx"
+      - "src/routes/_authenticated.index.wa-message-package-switch.test.ts"
+      - "src/lib/beli-derived.ts"
+      - "src/lib/beli-derived-gram-switch.test.ts"
+      - "src/lib/stock-format.ts"
+      - "src/lib/weight-parse.ts"
+      - "package.json"
+      - "bun.lock*"
+      - "vitest.config.ts"
+      - ".github/workflows/package-switch-matrix.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: package-switch-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package-switch-matrix:
+    name: Package switch matrix (node ${{ matrix.node }} · ${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # Uji lintas versi Node.js LTS aktif + current, plus runtime alternatif
+        # (Bun) untuk memastikan output package-switch identik di setiap runtime.
+        include:
+          - node: "18"
+            runtime: "node"
+          - node: "20"
+            runtime: "node"
+          - node: "22"
+            runtime: "node"
+          - node: "24"
+            runtime: "node"
+          # Baseline lama tetap: eksekusi via Bun (runtime yang dipakai dev).
+          - node: "20"
+            runtime: "bun"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Compute cache keys
+        id: cachekeys
+        # Key di-scope per runtime (bun vs node) DAN per versi Node — cache
+        # `node_modules` yang di-build dengan Node 18 tidak boleh dipakai
+        # ulang di Node 24 (bindings native / prebuilt bisa mismatch).
+        # Bun cache dipisahkan sendiri agar tidak tercampur dengan artifact
+        # npm install ala Node.
+        run: |
+          echo "os=${{ runner.os }}" >> "$GITHUB_OUTPUT"
+          echo "scope=${{ matrix.runtime }}-node${{ matrix.node }}" >> "$GITHUB_OUTPUT"
+          echo "lockhash=${{ hashFiles('bun.lock', 'bun.lockb', 'package.json') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Bun global store
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-store-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-${{ steps.cachekeys.outputs.lockhash }}
+          restore-keys: |
+            bun-store-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-
+            bun-store-${{ steps.cachekeys.outputs.os }}-${{ matrix.runtime }}-
+
+      - name: Cache node_modules (per runtime × node)
+        id: nm-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          # Jangan share antar runtime/versi Node: prebuilt binaries (esbuild,
+          # lightningcss, rollup, sharp, dsl) bisa berbeda ABI. Kunci meliputi
+          # runtime, versi Node, dan hash lockfile+package.json.
+          key: node_modules-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-${{ steps.cachekeys.outputs.lockhash }}
+          # TIDAK ada `restore-keys` cross-scope — mismatch native binding
+          # antar versi Node adalah penyebab flakiness yang justru ingin
+          # dihindari. Jika miss → install ulang bersih (cache miss ≠ error).
+
+      - name: Cache Vitest transform (per runtime × node)
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.vite
+            node_modules/.cache/vitest
+          key: vitest-cache-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-${{ steps.cachekeys.outputs.lockhash }}
+          restore-keys: |
+            vitest-cache-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-
+
+      - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Verify cached install (no-op fast path)
+        if: steps.nm-cache.outputs.cache-hit == 'true'
+        # Cache-hit: `node_modules` sudah lengkap. Jalankan `--dry-run` untuk
+        # memastikan lockfile & node_modules masih konsisten (mendeteksi
+        # cache stale) tanpa mengunduh ulang.
+        run: bun install --frozen-lockfile --dry-run || bun install --frozen-lockfile
+
+      - name: Print runtime versions
+        run: |
+          echo "node:  $(node -v)"
+          echo "bun:   $(bun -v)"
+          echo "matrix.runtime = ${{ matrix.runtime }}"
+
+      - name: Run full package-switch matrix (${{ matrix.runtime }})
+        env:
+          # Paksa vitest memakai runtime Node yang di-setup di step atas
+          # kecuali job Bun-baseline.
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        run: |
+          mkdir -p .ci-reports
+          bun run test:package-switch \
+            --reporter=default --reporter=json \
+            --outputFile.json=.ci-reports/vitest-report.json
+        if: matrix.runtime == 'bun'
+
+      - name: Run full package-switch matrix (node)
+        if: matrix.runtime == 'node'
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        # `npx vitest` menjalankan test lewat Node runtime yang aktif
+        # (bukan Bun), sehingga variasi versi Node benar-benar teruji.
+        run: |
+          mkdir -p .ci-reports
+          npx --yes vitest@$(node -p "require('./package.json').devDependencies.vitest || require('./package.json').dependencies.vitest || 'latest'") run \
+            --reporter=default --reporter=json \
+            --outputFile.json=.ci-reports/vitest-report.json \
+            "src/routes/_authenticated.gudang.package-switch-matrix.test.ts" \
+            "src/routes/_authenticated.gudang.new-mode-gram-labels.test.ts" \
+            "src/routes/_authenticated.gudang.package-switch-snapshots.test.ts" \
+            "src/routes/_authenticated.gudang.qty-price-mutation-snapshots.test.ts" \
+            "src/routes/_authenticated.gudang.viewport-snapshots.test.ts" \
+            "src/lib/beli-derived-gram-switch.test.ts" \
+            "src/lib/beli-derived-memo-freshness.test.ts" \
+            "src/lib/wa-url-encode-package-switch.test.ts" \
+            "src/lib/wa-bulk-package-switch.test.ts" \
+            "src/lib/wa-special-chars-package-switch.test.ts" \
+            "src/routes/_authenticated.index.wa-message-package-switch.test.ts"
+
+      - name: Collect snapshot diffs (on failure)
+        if: failure()
+        run: |
+          mkdir -p .ci-reports/snapshot-diffs
+          node scripts/collect-snapshot-diffs.mjs \
+            .ci-reports/vitest-report.json \
+            .ci-reports/snapshot-diffs || true
+          if [ -f .ci-reports/snapshot-diffs/SUMMARY.md ]; then
+            {
+              echo "";
+              echo "---";
+              echo "";
+              cat .ci-reports/snapshot-diffs/SUMMARY.md;
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload snapshot diff artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-diffs-node${{ matrix.node }}-${{ matrix.runtime }}
+          path: |
+            .ci-reports/snapshot-diffs/**
+            .ci-reports/vitest-report.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Job summary on failure
+        if: failure()
+        run: |
+          {
+            echo "## ❌ Package switch matrix failed (node ${{ matrix.node }} · ${{ matrix.runtime }})";
+            echo "";
+            echo "Salah satu skenario pergantian **Jenis kemasan** (gram ↔ botol/pcs/sachet) menghasilkan label/output yang tidak konsisten.";
+            echo "";
+            echo "Runtime: **${{ matrix.runtime }}**, Node.js **${{ matrix.node }}**.";
+            echo "Jika hanya versi Node tertentu yang gagal, curigai perbedaan `Intl` / `toLocaleString` / regex look-behind / atau perilaku formatter antar versi.";
+            echo "";
+            echo "🔍 **Snapshot diff artifact:** unduh \`snapshot-diffs-node${{ matrix.node }}-${{ matrix.runtime }}\` di panel _Artifacts_ untuk melihat \`expected.txt\` / \`received.txt\` / \`diff.patch\` per snapshot yang gagal.";
+            echo "";
+            echo "Cakupan suite:";
+            echo "- \`src/routes/_authenticated.gudang.package-switch-matrix.test.ts\` — matrix penuh (30 test) new/existing/round-trip";
+            echo "- \`src/routes/_authenticated.gudang.new-mode-gram-labels.test.ts\` — label form 'Barang baru' saat pindah ke gram";
+            echo "- \`src/routes/_authenticated.gudang.package-switch-snapshots.test.ts\` — snapshot label & ringkasan";
+            echo "- \`src/routes/_authenticated.gudang.qty-price-mutation-snapshots.test.ts\` — snapshot ringkasan setelah mutasi Jumlah/Harga/Karton";
+            echo "- \`src/routes/_authenticated.gudang.viewport-snapshots.test.ts\` — snapshot desktop vs mobile";
+            echo "- \`src/lib/beli-derived-gram-switch.test.ts\` — invalidasi memo \`computeBeliDerived\` lintas satuan";
+            echo "- \`src/lib/beli-derived-memo-freshness.test.ts\` — memoisasi single-slot menghormati input terbaru";
+            echo "- \`src/lib/wa-url-encode-package-switch.test.ts\` — encoding URL wa.me";
+            echo "- \`src/lib/wa-bulk-package-switch.test.ts\` — bulk WA multi-item";
+            echo "- \`src/lib/wa-special-chars-package-switch.test.ts\` — nama/lokasi karakter khusus";
+            echo "- \`src/routes/_authenticated.index.wa-message-package-switch.test.ts\` — teks WA (Nama produk, jumlah, harga, lokasi) ikut satuan terbaru";
+            echo "";
+            echo "Jalankan lokal: \`bun run test:package-switch\`.";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  package-switch-matrix-summary:
+    name: Package switch matrix summary
+    if: always()
+    needs: package-switch-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any matrix job failed
+        run: |
+          if [ "${{ needs.package-switch-matrix.result }}" != "success" ]; then
+            echo "One or more runtime jobs failed: ${{ needs.package-switch-matrix.result }}"
+            exit 1
+          fi
+          echo "All runtimes green."

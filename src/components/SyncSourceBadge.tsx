@@ -23,13 +23,13 @@ export function SyncSourceBadge({
     ? "Update sinkron terakhir berasal dari tab/sesi lain (storage event)."
     : "Update sinkron terakhir berasal dari tab ini.";
   const tone = isExternal
-    ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-    : "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+    ? "border-warning/40 bg-warning/10 text-warning dark:text-warning"
+    : "border-success/40 bg-success/10 text-success dark:text-success";
   return (
     <span
       title={title}
       aria-label={title}
-      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none ${tone} ${className}`}
+      className={`inline-flex items-center gap-ms-1 rounded-full border px-1.5 py-0.5 text-ms-2xs font-medium leading-none ${tone} ${className}`}
     >
       <Icon className="h-3 w-3" aria-hidden />
       <span>{label}</span>

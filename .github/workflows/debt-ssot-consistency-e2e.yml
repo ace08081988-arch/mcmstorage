@@ -1,0 +1,112 @@
+name: Debt SSOT Consistency E2E
+
+# Gate rilis: angka hutang/piutang satu kontak ("Dompeng") WAJIB identik
+# di semua permukaan layar — chip daftar chat, chip header percakapan,
+# kartu ringkas Hutang & Piutang, dan kartu per-kontak di halaman
+# Hutang & Piutang. Semua membaca satu SSOT (`party_balance_v1`).
+#
+# Harness publik `/lovable/visual/debt-ssot-consistency` selalu jalan
+# tanpa login. Blok "halaman asli" auto-skip bila secrets login belum
+# tersedia, jadi workflow ini aman untuk PR eksternal.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/chat-debt-sync.ts"
+      - "src/lib/piutang.ts"
+      - "src/components/chat/DebtChip.tsx"
+      - "src/components/chat/ChatHeaderDebtControls.tsx"
+      - "src/components/chat/DebtSyncBadge.tsx"
+      - "src/components/hutang/**"
+      - "src/routes/_authenticated.hutang-piutang.tsx"
+      - "src/routes/lovable.visual.debt-ssot-consistency.tsx"
+      - "tests/e2e/debt-ssot-dompeng-consistency.spec.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/debt-ssot-consistency-e2e.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: debt-ssot-consistency-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  debt-ssot-consistency:
+    name: SSOT hutang & piutang konsisten
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: http://localhost:4173
+      # Kredensial opsional: bila kosong, blok halaman asli self-skip.
+      TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.PLAYWRIGHT_TEST_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Unit regresi SSOT (cepat, gagal duluan bila logika berubah)
+        run: bunx vitest run src/lib/chat-debt-sync.ssot-consistency.test.ts
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: bunx vite preview --port 4173 --host 127.0.0.1 &
+
+      - name: Wait for server
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://localhost:4173 > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo "Preview server tidak siap dalam 60s" >&2
+          exit 1
+
+      - name: Run debt SSOT E2E (fail-fast)
+        # Selisih nominal antar permukaan = data keuangan salah di layar,
+        # jadi tidak ada retry yang boleh menyembunyikannya.
+        run: |
+          bunx playwright test \
+            --reporter=list,html \
+            --max-failures=1 \
+            --retries=0 \
+            --project=debt-ssot-dompeng-consistency-e2e
+
+      - name: Run debt chip responsive E2E
+        # Chip yang tumpah keluar border membuat nominal tidak terbaca
+        # di HP, jadi lebar 320–1280px ikut diuji sebelum rilis.
+        run: |
+          bunx playwright test \
+            --reporter=list,html \
+            --max-failures=1 \
+            --retries=0 \
+            --project=debt-chip-responsive-e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-debt-ssot
+          path: playwright-report
+          retention-days: 14
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## Debt SSOT consistency";
+            echo "";
+            echo "Permukaan diuji: chip daftar chat, chip header chat, ringkasan Hutang & Piutang, kartu per-kontak.";
+            echo "Status: ${{ job.status }}";
+          } >> "$GITHUB_STEP_SUMMARY"

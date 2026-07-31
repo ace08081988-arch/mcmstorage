@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { messagePreviewText } from "@/lib/chat-deleted";
+import { describeChatError } from "@/lib/chat-error";
+import { debounce } from "@/lib/realtime-debounce";
 
 export type ConversationRow = {
   id: string;
@@ -17,6 +20,7 @@ export type ConversationListItem = ConversationRow & {
   last_body: string | null;
   last_at: string | null;
   last_sender_id: string | null;
+  last_mine: boolean;
   last_delivered: boolean;
   last_read: boolean;
   unread: number;
@@ -24,6 +28,19 @@ export type ConversationListItem = ConversationRow & {
   pinned_at: string | null;
   archived_at: string | null;
   muted_until: string | null;
+  cleared_at: string | null;
+  /**
+   * Kategori workflow SSOT (Slice A) — 'customer' | 'employee' | 'internal' | 'archived'.
+   * Berbeda dari `archived_at` yang berasal dari `conversation_members` (arsip per-user manual).
+   */
+  workflow_category: string | null;
+  /** Tanggal auto-archive workflow (Slice C). NULL bila belum diarsipkan otomatis. */
+  workflow_archived_at: string | null;
+  /** Tautan business object (Slice A) — untuk grouping "per Order" di Slice D. */
+  linked_customer_id: string | null;
+  linked_request_prep_id: string | null;
+  linked_ecer_prep_id: string | null;
+  linked_task_id: string | null;
 };
 
 export type MessageRow = {
@@ -61,10 +78,10 @@ export function useChatContacts(q: string) {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("search_chat_contacts", { _q: q || "" });
       if (error) throw error;
-      return (data ?? []) as unknown as Array<{
+      return (data ?? []) as Array<{
         user_id: string;
         display_name: string | null;
-        phone: string | null;
+        invite_code: string | null;
         kind: string;
         label: string | null;
       }>;
@@ -78,7 +95,17 @@ export function useStartDm() {
   return useMutation({
     mutationFn: async (partnerId: string) => {
       const { data, error } = await supabase.rpc("start_dm", { _partner: partnerId });
-      if (error) throw error;
+      if (error) {
+        // `can_chat` sekarang mengharuskan pertemanan diterima dulu.
+        if (/not_allowed|forbidden|permission/i.test(error.message)) {
+          const err = new Error(
+            "Belum bisa chat — permintaan pertemanan belum diterima. Silakan tunggu konfirmasi teman.",
+          );
+          (err as Error & { code?: string }).code = "friend_gate";
+          throw err;
+        }
+        throw error;
+      }
       return data as string;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
@@ -136,7 +163,7 @@ export function useConversations() {
     queryFn: async (): Promise<ConversationListItem[]> => {
       const { data: members, error: mErr } = await supabase
         .from("conversation_members")
-        .select("conversation_id, last_read_at, pinned_at, archived_at, notifications_muted_until")
+        .select("conversation_id, last_read_at, pinned_at, archived_at, notifications_muted_until, cleared_at")
         .eq("user_id", myId!);
       if (mErr) throw mErr;
       const ids = (members ?? []).map((m) => m.conversation_id);
@@ -149,13 +176,16 @@ export function useConversations() {
             pinned_at: (m as { pinned_at?: string | null }).pinned_at ?? null,
             archived_at: (m as { archived_at?: string | null }).archived_at ?? null,
             muted_until: (m as { notifications_muted_until?: string | null }).notifications_muted_until ?? null,
+            cleared_at: (m as { cleared_at?: string | null }).cleared_at ?? null,
           },
         ]),
       );
 
       const { data: convs, error: cErr } = await supabase
         .from("conversations")
-        .select("id, kind, title, owner_user_id, last_message_at, updated_at")
+        .select(
+          "id, kind, title, owner_user_id, last_message_at, updated_at, category, archived_at, linked_customer_id, linked_request_prep_id, linked_ecer_prep_id, linked_task_id",
+        )
         .in("id", ids)
         .order("last_message_at", { ascending: false, nullsFirst: false });
       if (cErr) throw cErr;
@@ -163,12 +193,14 @@ export function useConversations() {
       // All members + their last_read_at (for DM titles & read receipts)
       const { data: allMembers } = await supabase
         .from("conversation_members")
-        .select("conversation_id, user_id, last_read_at")
+        .select("conversation_id, user_id, last_read_at, last_delivered_at")
         .in("conversation_id", ids);
 
       const memberMap = new Map<string, string[]>();
       // per conversation: min(last_read_at) across other members (for ticks)
       const othersMinReadMap = new Map<string, number | null>();
+      // per conversation: min(last_delivered_at) across other members
+      const othersMinDeliveredMap = new Map<string, number | null>();
       for (const r of allMembers ?? []) {
         const arr = memberMap.get(r.conversation_id) ?? [];
         arr.push(r.user_id);
@@ -178,6 +210,13 @@ export function useConversations() {
           const t = r.last_read_at ? new Date(r.last_read_at).getTime() : 0;
           if (cur === undefined) othersMinReadMap.set(r.conversation_id, t);
           else if (cur !== null && t < cur) othersMinReadMap.set(r.conversation_id, t);
+          const d = Math.max(
+            r.last_delivered_at ? new Date(r.last_delivered_at).getTime() : 0,
+            t,
+          );
+          const curD = othersMinDeliveredMap.get(r.conversation_id);
+          if (curD === undefined) othersMinDeliveredMap.set(r.conversation_id, d);
+          else if (curD !== null && d < curD) othersMinDeliveredMap.set(r.conversation_id, d);
         }
       }
 
@@ -189,7 +228,7 @@ export function useConversations() {
           for (const uid of m) if (uid !== myId) otherIds.add(uid);
         }
       }
-      let profileMap = new Map<string, { display_name: string | null; phone: string | null; email: string | null }>();
+      let profileMap = new Map<string, { display_name: string | null; phone: string | null }>();
       if (otherIds.size > 0) {
         try {
           const { data: profs, error: pErr } = await supabase.rpc("get_chat_member_profiles", {
@@ -197,13 +236,39 @@ export function useConversations() {
           });
           if (pErr) throw pErr;
           profileMap = new Map(
-            ((profs ?? []) as unknown as Array<{ id: string; display_name: string | null; phone: string | null; email: string | null }>).map(
-              (p) => [p.id, { display_name: p.display_name, phone: p.phone, email: p.email }],
+            ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null }>).map(
+              (p) => [p.id, { display_name: p.display_name, phone: p.phone }],
             ),
           );
         } catch (err) {
           // Non-fatal: fall back to generic DM titles so the list still renders.
           console.warn("[chat] get_chat_member_profiles failed:", err);
+        }
+      }
+
+      // Contact aliases from address_book (nama kontak lokal) — prefer over profile display_name.
+      const aliasByUser = new Map<string, string>();
+      const aliasByPhone = new Map<string, string>();
+      if (otherIds.size > 0) {
+        try {
+          const idsArr = Array.from(otherIds);
+          const phones = idsArr
+            .map((u) => profileMap.get(u)?.phone)
+            .filter((p): p is string => !!p);
+          const orParts: string[] = [];
+          orParts.push(`linked_user_id.in.(${idsArr.join(",")})`);
+          if (phones.length) orParts.push(`phone_norm.in.(${phones.map((p) => p.replace(/[^\d+]/g, "")).join(",")})`);
+          const { data: aliases } = await supabase
+            .from("address_book")
+            .select("name, linked_user_id, phone_norm, email_norm")
+            .or(orParts.join(","));
+          for (const a of (aliases ?? []) as Array<{ name: string | null; linked_user_id: string | null; phone_norm: string | null; email_norm: string | null }>) {
+            if (!a.name) continue;
+            if (a.linked_user_id) aliasByUser.set(a.linked_user_id, a.name);
+            if (a.phone_norm) aliasByPhone.set(a.phone_norm, a.name);
+          }
+        } catch (err) {
+          console.warn("[chat] address_book alias lookup failed:", err);
         }
       }
 
@@ -214,9 +279,28 @@ export function useConversations() {
         .in("conversation_id", ids)
         .order("created_at", { ascending: false })
         .limit(500);
+      // Hidden-for-me: exclude these messages from unread counts AND from the
+      // "last message" preview so deleting a message immediately shrinks the
+      // badge and refreshes the row snippet.
+      const { data: hiddenRows } = await supabase
+        .from("message_hidden")
+        .select("message_id")
+        .eq("user_id", myId!);
+      const hiddenSet = new Set((hiddenRows ?? []).map((r) => r.message_id as string));
+      const clearedAtMap = new Map<string, number>(
+        Array.from(mineMemberMap.entries()).map(([cid, m]) => [
+          cid,
+          m.cleared_at ? new Date(m.cleared_at).getTime() : 0,
+        ]),
+      );
       const lastByConv = new Map<string, { body: string | null; created_at: string; sender_id: string }>();
       const unreadByConv = new Map<string, number>();
       for (const m of lastMsgs ?? []) {
+        if (hiddenSet.has(m.id)) continue;
+        // Skip messages older-or-equal to the caller's cleared_at watermark —
+        // "Bersihkan percakapan" hides the entire history for the caller.
+        const cAt = clearedAtMap.get(m.conversation_id) ?? 0;
+        if (cAt && new Date(m.created_at).getTime() <= cAt) continue;
         if (!lastByConv.has(m.conversation_id)) {
           lastByConv.set(m.conversation_id, {
             body: messagePreviewText(m) || "Lampiran",
@@ -231,13 +315,17 @@ export function useConversations() {
         }
       }
 
-      return (convs ?? []).map((c) => {
+      const items = (convs ?? []).map((c) => {
         let display = c.title ?? "";
         if (c.kind === "dm") {
           const m = memberMap.get(c.id) ?? [];
           const other = m.find((u) => u !== myId);
           const p = other ? profileMap.get(other) : null;
-          display = p?.display_name || p?.phone || p?.email || "Kontak";
+          const alias =
+            (other && aliasByUser.get(other)) ||
+            (p?.phone && aliasByPhone.get(p.phone.replace(/[^\d+]/g, ""))) ||
+            null;
+          display = alias || p?.display_name || p?.phone || "Kontak";
         } else if (!display) {
           display = c.kind === "order" ? "Diskusi pesanan" : "Grup";
         }
@@ -245,7 +333,12 @@ export function useConversations() {
         const othersMinRead = othersMinReadMap.get(c.id);
         const lastSentMs = last ? new Date(last.created_at).getTime() : 0;
         const isMine = !!last && last.sender_id === myId;
-        const delivered = isMine; // inserted in DB
+        const othersMinDelivered = othersMinDeliveredMap.get(c.id);
+        const delivered =
+          isMine &&
+          othersMinDelivered !== undefined &&
+          othersMinDelivered !== null &&
+          othersMinDelivered >= lastSentMs;
         const read =
           isMine &&
           othersMinRead !== undefined &&
@@ -258,6 +351,7 @@ export function useConversations() {
           last_body: last?.body ?? null,
           last_at: last?.created_at ?? c.last_message_at,
           last_sender_id: last?.sender_id ?? null,
+          last_mine: isMine,
           last_delivered: delivered,
           last_read: read,
           unread: unreadByConv.get(c.id) ?? 0,
@@ -265,8 +359,58 @@ export function useConversations() {
           pinned_at: mine?.pinned_at ?? null,
           archived_at: mine?.archived_at ?? null,
           muted_until: mine?.muted_until ?? null,
+          cleared_at: mine?.cleared_at ?? null,
+          workflow_category:
+            (c as { category?: string | null }).category ?? null,
+          workflow_archived_at:
+            (c as { archived_at?: string | null }).archived_at ?? null,
+          linked_customer_id:
+            (c as { linked_customer_id?: string | null }).linked_customer_id ?? null,
+          linked_request_prep_id:
+            (c as { linked_request_prep_id?: string | null }).linked_request_prep_id ?? null,
+          linked_ecer_prep_id:
+            (c as { linked_ecer_prep_id?: string | null }).linked_ecer_prep_id ?? null,
+          linked_task_id:
+            (c as { linked_task_id?: string | null }).linked_task_id ?? null,
         };
       });
+      // Hide conversations the user cleared that have no newer activity.
+      // As soon as a peer sends a fresh message (or the user starts chatting
+      // again), lastByConv gets an entry and the row reappears automatically.
+      const visible = items.filter((c) => {
+        if (!c.cleared_at) return true;
+        if (c.pinned_at) return true; // keep pinned rows visible
+        if (lastByConv.has(c.id)) return true;
+        return false;
+      });
+
+      // Dedupe DM rows ke kontak yang sama (bisa terbentuk kalau DM
+      // dibuat dari beberapa jalur: dari kontak, dari order, dsb).
+      // Kelompokkan per peer user_id (fallback ke display_title lower-case),
+      // simpan baris dengan aktivitas terbaru / pesan terbaru / pinned.
+      const dmScore = (c: (typeof visible)[number]) => {
+        const lastMs = c.last_at ? new Date(c.last_at).getTime() : 0;
+        const hasMsg = lastByConv.has(c.id) ? 1 : 0;
+        const pinned = c.pinned_at ? 1 : 0;
+        return pinned * 1e15 + hasMsg * 1e13 + lastMs;
+      };
+      const bestDm = new Map<string, (typeof visible)[number]>();
+      const nonDm: typeof visible = [];
+      for (const c of visible) {
+        if (c.kind !== "dm") {
+          nonDm.push(c);
+          continue;
+        }
+        const other = (c.member_ids ?? []).find((u) => u !== myId);
+        const key = other ?? `title:${(c.display_title ?? "").trim().toLowerCase()}`;
+        const prev = bestDm.get(key);
+        if (!prev || dmScore(c) > dmScore(prev)) bestDm.set(key, c);
+      }
+      const dedup = [...nonDm, ...bestDm.values()];
+      // Preserve original ordering (already sorted by last_message_at desc).
+      const orderIndex = new Map(visible.map((c, i) => [c.id, i] as const));
+      dedup.sort((a, b) => (orderIndex.get(a.id)! - orderIndex.get(b.id)!));
+      return dedup;
     },
   });
 
@@ -285,13 +429,33 @@ export function useConversations() {
     }
   }, [cacheKey, query.isSuccess, query.data, query.dataUpdatedAt]);
 
+  // C7: Sinkronisasi daftar chat yang di-mute ke Service Worker supaya
+  // notifikasi push tidak muncul walau server sempat mengirim.
+  useEffect(() => {
+    if (!query.isSuccess || !query.data) return;
+    const nowMs = Date.now();
+    const muted: Record<string, number> = {};
+    for (const c of query.data) {
+      if (!c.muted_until) continue;
+      const t = new Date(c.muted_until).getTime();
+      if (t > nowMs) muted[c.id] = t;
+    }
+    void import("@/lib/notif-prefs").then(({ broadcastMutedConversations }) => {
+      broadcastMutedConversations(muted);
+    }).catch(() => {});
+  }, [query.isSuccess, query.data, query.dataUpdatedAt]);
+
   // Realtime: refresh on any message or membership change
   useEffect(() => {
     if (!myId) return;
-    const refreshChat = () => {
+    // Debounce 250ms — burst UPDATE pada messages (read receipts,
+    // reactions batch) tidak boleh memicu invalidate + refetch per event
+    // pada daftar percakapan. Delay 250ms cukup halus untuk mata tapi
+    // memotong 90%+ refetch berlebih saat gelombang event.
+    const refreshChat = debounce(() => {
       qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
       qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
-    };
+    }, 250);
     const topic = `chat-list:${myId}:${channelInstanceRef.current}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
     let ch: ReturnType<typeof supabase.channel> | null = null;
     try {
@@ -307,6 +471,7 @@ export function useConversations() {
       return;
     }
     return () => {
+      refreshChat.cancel();
       if (ch) void supabase.removeChannel(ch);
     };
   }, [myId, qc]);
@@ -338,6 +503,25 @@ export function useConversations() {
 export function useUnreadTotal() {
   const { data } = useConversations();
   return useMemo(() => (data ?? []).reduce((acc, c) => acc + c.unread, 0), [data]);
+}
+
+/**
+ * Varian dari {@link useUnreadTotal} yang juga membocorkan status loading
+ * awal — dipakai bottom nav untuk merender badge placeholder (skeleton)
+ * saat cache percakapan belum sempat terisi, jadi ikon Chat tidak
+ * "berkedip kosong lalu tiba-tiba muncul angka".
+ *
+ * `isLoading` di sini artinya query pertama masih jalan DAN belum ada
+ * data cache sama sekali — bukan refetch background. Refetch tidak
+ * memicu placeholder supaya badge yang sudah ada tidak flicker.
+ */
+export function useUnreadStatus(): { count: number; isLoading: boolean } {
+  const { data, isPending } = useConversations();
+  const count = useMemo(
+    () => (data ?? []).reduce((acc, c) => acc + c.unread, 0),
+    [data],
+  );
+  return { count, isLoading: isPending && !data };
 }
 
 export function useConversationMessages(conversationId: string | undefined) {
@@ -408,7 +592,9 @@ export function useConversationMessages(conversationId: string | undefined) {
 export async function getConversationMeta(conversationId: string) {
   const { data, error } = await supabase
     .from("conversations")
-    .select("id, kind, title, owner_user_id, last_message_at")
+    .select(
+      "id, kind, title, owner_user_id, last_message_at, category, linked_customer_id, linked_request_prep_id, linked_ecer_prep_id, linked_task_id, linked_product_id, archived_at",
+    )
     .eq("id", conversationId)
     .single();
   if (error) throw error;
@@ -601,33 +787,151 @@ export function useEditMessage(conversationId: string) {
 
 export function useHideMessageForMe(conversationId: string) {
   const qc = useQueryClient();
+  const { data: myId } = useMyUserId();
   return useMutation({
     mutationFn: async (messageId: string) => {
       const { error } = await supabase.rpc("message_hide_for_me", { _msg: messageId });
       if (error) throw error;
     },
     onMutate: async (messageId: string) => {
-      // Optimistically add to the hidden set so the message disappears
-      // immediately, even before the RPC round-trip or the SELECT refetch.
-      await qc.cancelQueries({ queryKey: ["chat", "hidden"] });
-      const prev = qc.getQueryData<Set<string>>(["chat", "hidden"]);
-      const next = new Set(prev ?? []);
-      next.add(messageId);
-      qc.setQueryData<Set<string>>(["chat", "hidden"], next);
-      return { prev };
+      // Wrap in try/catch: any unexpected exception here would flip the
+      // mutation to error and surface a false "Gagal menghapus pesan" toast
+      // even though the RPC hasn't run yet.
+      try {
+        await qc.cancelQueries({ queryKey: ["chat", "hidden"] });
+        const prev = qc.getQueryData<Set<string>>(["chat", "hidden"]);
+        const next = new Set(prev ?? []);
+        next.add(messageId);
+        qc.setQueryData<Set<string>>(["chat", "hidden"], next);
+
+        const prevConvs = qc.getQueriesData<ConversationListItem[]>({ queryKey: ["chat", "conversations"] });
+        const msgs = qc.getQueryData<MessageRow[]>(["chat", "messages", conversationId]);
+        const hidden = msgs?.find((m) => m.id === messageId);
+        if (hidden && myId && hidden.sender_id !== myId) {
+          for (const [key, list] of prevConvs) {
+            if (!Array.isArray(list)) continue;
+            const patched = list.map((c) => {
+              if (c.id !== conversationId) return c;
+              const nextUnread = Math.max(0, (c.unread ?? 0) - 1);
+              const isLastPreview = hidden.created_at === c.last_at;
+              return {
+                ...c,
+                unread: nextUnread,
+                last_body: isLastPreview ? null : c.last_body,
+              };
+            });
+            qc.setQueryData(key, patched);
+          }
+        }
+        return { prev, prevConvs };
+      } catch (err) {
+        console.warn("[useHideMessageForMe] onMutate optimistic patch failed:", err);
+        return { prev: undefined, prevConvs: [] as ReturnType<typeof qc.getQueriesData<ConversationListItem[]>> };
+      }
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["chat", "hidden"], ctx.prev);
+    onError: (e, messageId, ctx) => {
+      console.error("[useHideMessageForMe] RPC failed", { messageId, error: e });
+      // Rollback: restore previous set, or remove the optimistic entry if there
+      // was no prior cache to snapshot.
+      if (ctx && "prev" in ctx) {
+        if (ctx.prev) {
+          qc.setQueryData(["chat", "hidden"], ctx.prev);
+        } else {
+          const current = qc.getQueryData<Set<string>>(["chat", "hidden"]);
+          if (current) {
+            const rolled = new Set(current);
+            rolled.delete(messageId);
+            qc.setQueryData<Set<string>>(["chat", "hidden"], rolled);
+          }
+        }
+      }
+      // Roll back conversation badge patches
+      if (ctx && "prevConvs" in ctx && ctx.prevConvs) {
+        for (const [key, list] of ctx.prevConvs) {
+          qc.setQueryData(key, list);
+        }
+      }
+      const info = describeChatError(e, "menyembunyikan pesan");
+      toast.error(info.title, { description: info.description, duration: 8000 });
     },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
-      qc.invalidateQueries({ queryKey: ["chat", "hidden"] });
+    onSuccess: (_data, messageId) => {
+      // Undo: DELETE the message_hidden row for this user. RLS scopes it to
+      // (user_id = auth.uid()) so this only affects our own row, and the
+      // realtime DELETE event fans out to every other logged-in device on
+      // the same account (channel `chat-hidden:{uid}`).
+      let undone = false;
+      toast.success("Pesan dihapus", {
+        description: "Pesan disembunyikan dari perangkat kamu.",
+        duration: 6000,
+        action: {
+          label: "Batalkan",
+          onClick: async () => {
+            if (undone) return;
+            undone = true;
+            const { error } = await supabase
+              .from("message_hidden")
+              .delete()
+              .eq("message_id", messageId);
+            if (error) {
+              toast.error("Gagal membatalkan", { description: error.message });
+              return;
+            }
+            // Local optimistic revert — realtime DELETE will confirm across devices.
+            qc.setQueryData<Set<string>>(["chat", "hidden"], (prev) => {
+              if (!prev || !prev.has(messageId)) return prev;
+              const next = new Set(prev);
+              next.delete(messageId);
+              return next;
+            });
+            await Promise.all([
+              qc.invalidateQueries({ queryKey: ["chat", "hidden"], refetchType: "active" }),
+              qc.invalidateQueries({
+                queryKey: ["chat", "messages", conversationId],
+                refetchType: "active",
+              }),
+              qc.invalidateQueries({
+                queryKey: ["chat", "conversations"],
+                refetchType: "active",
+              }),
+            ]);
+            qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
+            toast.success("Pesan dikembalikan");
+          },
+        },
+      });
+    },
+    onSettled: async () => {
+      // Refetch hidden set immediately so any stale UI (e.g. other tabs of the
+      // same conversation, forwards dialog, media panel) picks up the new id
+      // in the same tick as the toast. `refetchType: "active"` targets only
+      // mounted observers to avoid thrash on backgrounded routes.
+      await Promise.all([
+        qc.invalidateQueries({
+          queryKey: ["chat", "hidden"],
+          refetchType: "active",
+        }),
+        qc.invalidateQueries({
+          queryKey: ["chat", "messages", conversationId],
+          refetchType: "active",
+        }),
+      ]);
+      // Refresh conversation list so unread count + last-message preview
+      // (both derived from message_hidden server-side) resync from source
+      // of truth. `refetchType: "active"` ensures the list badge updates
+      // instantly for the visible chat index.
+      await qc.invalidateQueries({
+        queryKey: ["chat", "conversations"],
+        refetchType: "active",
+      });
+      // Unread total badge (sidebar) also depends on this.
+      qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
     },
   });
 }
 
 export function useHiddenMessageIds() {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["chat", "hidden"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -638,6 +942,68 @@ export function useHiddenMessageIds() {
     },
     staleTime: 30_000,
   });
+
+  // Realtime sync: keep the hidden set consistent across tabs/devices so
+  // that when a realtime UPDATE arrives for a message, the filter already
+  // knows the message is hidden and never lets it reappear.
+  useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      let uid: string | undefined;
+      try {
+        const { data } = await supabase.auth.getUser();
+        uid = data.user?.id;
+      } catch {
+        return;
+      }
+      if (!uid || cancelled) return;
+      const ch = supabase
+        .channel(`chat-hidden:${uid}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "message_hidden", filter: `user_id=eq.${uid}` },
+          (payload) => {
+            const id = (payload.new as { message_id?: string }).message_id;
+            if (!id) return;
+            qc.setQueryData<Set<string>>(["chat", "hidden"], (prev) => {
+              const next = new Set(prev ?? []);
+              next.add(id);
+              return next;
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "DELETE", schema: "public", table: "message_hidden", filter: `user_id=eq.${uid}` },
+          (payload) => {
+            const id = (payload.old as { message_id?: string }).message_id;
+            if (!id) return;
+            qc.setQueryData<Set<string>>(["chat", "hidden"], (prev) => {
+              if (!prev || !prev.has(id)) return prev;
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          },
+        )
+        .subscribe();
+      // Belt-and-braces: jika unmount terjadi tepat setelah subscribe (mis.
+      // race pada React StrictMode double-invoke), langsung teardown agar
+      // channel tidak bocor.
+      if (cancelled) {
+        supabase.removeChannel(ch);
+        return;
+      }
+      channel = ch;
+    })();
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+  return query;
 }
 
 // ---------------- Pin / Archive / Mute ----------------

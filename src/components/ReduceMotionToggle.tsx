@@ -103,11 +103,11 @@ export function ReduceMotionToggle() {
   const Icon = mode === "on" ? Gauge : mode === "off" ? Sparkles : MonitorCog;
 
   return (
-    <div className="flex w-full items-center gap-1">
+    <div className="flex w-full items-center gap-ms-1">
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 flex-1 justify-start gap-2 px-2 text-xs"
+        className="h-7 flex-1 justify-start gap-ms-2 px-ms-2 text-ms-xs"
         onClick={() => setMode((m) => NEXT[m])}
         title={meta.title}
         aria-label={meta.title}

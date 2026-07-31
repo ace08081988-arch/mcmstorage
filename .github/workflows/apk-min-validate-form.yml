@@ -1,0 +1,57 @@
+name: APK MinSupported Form E2E
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/apk-min-validate.ts"
+      - "src/lib/apk.functions.ts"
+      - "src/routes/lovable.visual.min-supported-form.tsx"
+      - "tests/e2e/apk-min-validate-form.spec.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/apk-min-validate-form.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  apk-min-validate-form:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BASE_URL: http://localhost:4173
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: bunx vite preview --port 4173 --host 127.0.0.1 &
+
+      - name: Wait for server
+        run: |
+          until curl -sf http://localhost:4173 > /dev/null; do
+            sleep 1
+          done
+
+      - name: Run min-supported form suite
+        run: bunx playwright test --project=apk-min-validate-form-e2e --reporter=list,html
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-apk-min-validate-form
+          path: playwright-report
+          retention-days: 14

@@ -1,1 +1,0 @@
-ALTER TABLE public.user_storage ADD COLUMN IF NOT EXISTS categories jsonb NOT NULL DEFAULT '[]'::jsonb;

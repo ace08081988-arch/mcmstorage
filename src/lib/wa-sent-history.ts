@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Local-only registry of kiriman pegawai (prep_submissions IDs) yang sudah
@@ -9,6 +10,47 @@ const KEY = "wa-sent-shots:v1";
 const EVENT = "wa-sent-shots:changed";
 const MAX_ENTRIES = 500;
 const RETAIN_MS = 1000 * 60 * 60 * 24 * 30; // 30 hari
+
+/**
+ * Registry terpisah untuk id yang di-"Hapus dari Riwayat" — kartu ini
+ * TIDAK muncul di Aktif maupun Riwayat sampai user meng-unhide. Disimpan
+ * di key sendiri supaya operasi hide tidak mengganggu waktu / metadata
+ * kiriman asli di `wa-sent-shots:v1`.
+ */
+const HIDDEN_KEY = "wa-sent-hidden:v1";
+const HIDDEN_EVENT = "wa-sent-hidden:changed";
+
+// -------------------------------------------------------------------
+// In-memory overlay. localStorage adalah persistence, TAPI sumber
+// kebenaran untuk pembaca (useSentShots / useSentDetails / useHiddenSent)
+// adalah map/set di modul ini. Alasan:
+//   - private mode / quota exceeded → `setItem` throw; tanpa overlay,
+//     entri yang baru saja `markSent` hilang lagi saat subscriber
+//     re-read → kartu tidak pindah ke Riwayat tanpa refresh.
+//   - dispatch event harus SELALU jalan (bukan hanya bila setItem
+//     sukses) supaya subscriber di tab yang sama refetch snapshot.
+// -------------------------------------------------------------------
+let memSent: Map<string, Entry> | null = null;
+let memHidden: Set<string> | null = null;
+
+function ensureMemSent(): Map<string, Entry> {
+  if (memSent) return memSent;
+  const m = new Map<string, Entry>();
+  for (const e of readRawStorage()) m.set(e.id, e);
+  memSent = m;
+  return m;
+}
+
+function ensureMemHidden(): Set<string> {
+  if (memHidden) return memHidden;
+  memHidden = new Set(readHiddenRawStorage());
+  return memHidden;
+}
+
+function safeDispatch(name: string) {
+  if (typeof window === "undefined") return;
+  try { window.dispatchEvent(new CustomEvent(name)); } catch { /* ignore */ }
+}
 
 /** Channel pengiriman yang menghasilkan entri Riwayat. */
 export type SentChannel = "wa" | "chat";
@@ -32,7 +74,7 @@ export type Entry = {
   idemKey?: string;
 };
 
-function readRaw(): Entry[] {
+function readRawStorage(): Entry[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(KEY);
@@ -54,11 +96,21 @@ function readRaw(): Entry[] {
   }
 }
 
-function writeRaw(entries: Entry[]) {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(entries));
-    window.dispatchEvent(new CustomEvent(EVENT));
-  } catch { /* ignore quota */ }
+function persistSent(entries: Entry[]) {
+  // Update overlay dulu — pembaca tidak bergantung pada setItem sukses.
+  const map = new Map<string, Entry>();
+  for (const e of entries) map.set(e.id, e);
+  memSent = map;
+  if (typeof window !== "undefined") {
+    try { window.localStorage.setItem(KEY, JSON.stringify(entries)); }
+    catch { /* quota / private mode: overlay tetap kanonik */ }
+  }
+  safeDispatch(EVENT);
+}
+
+/** @deprecated dipakai internal saja untuk kompat sinyal test lama */
+function readRaw(): Entry[] {
+  return Array.from(ensureMemSent().values());
 }
 
 function prune(entries: Entry[]): Entry[] {
@@ -71,20 +123,18 @@ function prune(entries: Entry[]): Entry[] {
 
 export function getSentMap(): Map<string, number> {
   const m = new Map<string, number>();
-  for (const e of readRaw()) m.set(e.id, e.at);
+  for (const e of ensureMemSent().values()) m.set(e.id, e.at);
   return m;
 }
 
 /** Map id → entri lengkap (channel, mapsUrl, status). */
 export function getSentDetailsMap(): Map<string, Entry> {
-  const m = new Map<string, Entry>();
-  for (const e of readRaw()) m.set(e.id, e);
-  return m;
+  return new Map(ensureMemSent());
 }
 
 export function markSent(ids: string[], meta?: SentMeta) {
   if (!ids || ids.length === 0) return;
-  const map = getSentDetailsMap();
+  const map = new Map(ensureMemSent());
   const at = Date.now();
   for (const id of ids) {
     if (!id) continue;
@@ -98,17 +148,129 @@ export function markSent(ids: string[], meta?: SentMeta) {
     });
   }
   const entries = prune(Array.from(map.values()));
-  writeRaw(entries);
+  persistSent(entries);
+  // H6: write-through ke DB agar status "terkirim" konsisten lintas
+  // perangkat. Fire-and-forget — kegagalan tidak boleh mengganggu UI,
+  // localStorage tetap kanonik untuk perangkat ini.
+  const channel = meta?.channel === "chat" ? "chat" : "wa";
+  const cleanIds = ids.filter((s): s is string => typeof s === "string" && s.length > 0);
+  if (cleanIds.length > 0) {
+    void supabase
+      .rpc("prep_submissions_mark_sent", {
+        _ids: cleanIds,
+        _channel: channel,
+        _maps_url: meta?.mapsUrl ?? undefined,
+      })
+      .then(() => undefined, () => undefined);
+  }
 }
 
 export function unmarkSent(ids: string[]) {
   if (!ids || ids.length === 0) return;
-  const map = getSentDetailsMap();
+  const map = new Map(ensureMemSent());
   for (const id of ids) map.delete(id);
-  writeRaw(Array.from(map.values()));
+  persistSent(Array.from(map.values()));
+  const cleanIds = ids.filter((s): s is string => typeof s === "string" && s.length > 0);
+  if (cleanIds.length > 0) {
+    void supabase
+      .rpc("prep_submissions_unmark_sent", { _ids: cleanIds })
+      .then(() => undefined, () => undefined);
+  }
 }
 
-export function clearSent() { writeRaw([]); }
+export function clearSent() { persistSent([]); }
+
+/**
+ * H6: hydrate registry lokal dari kolom DB `prep_submissions.sent_at`.
+ * Dipanggil sekali per mount komponen konsumen (ReadyEcerSection),
+ * setelah data submission dimuat. Menggabungkan entri DB ke overlay
+ * lokal tanpa mengganti entri lokal yang lebih baru — supaya perangkat
+ * offline yang baru saja markSent tidak kehilangan riwayatnya.
+ */
+export function hydrateSentFromDb(
+  rows: Array<{ id: string; sent_at: string | null; sent_channel?: string | null; sent_maps_url?: string | null }>,
+) {
+  if (!rows || rows.length === 0) return;
+  const map = new Map(ensureMemSent());
+  let dirty = false;
+  for (const r of rows) {
+    if (!r.sent_at) continue;
+    const at = new Date(r.sent_at).getTime();
+    if (!Number.isFinite(at)) continue;
+    const existing = map.get(r.id);
+    if (existing && existing.at >= at) continue;
+    map.set(r.id, {
+      id: r.id,
+      at,
+      channel: r.sent_channel === "chat" ? "chat" : r.sent_channel === "wa" ? "wa" : undefined,
+      mapsUrl: r.sent_maps_url ?? null,
+      status: "success",
+    });
+    dirty = true;
+  }
+  if (dirty) persistSent(prune(Array.from(map.values())));
+}
+
+// ---------------------------------------------------------------------
+// Hidden registry — sembunyikan permanen dari Riwayat terkirim.
+// ---------------------------------------------------------------------
+
+function readHiddenRawStorage(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(HIDDEN_KEY);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return [];
+    return data.filter((v): v is string => typeof v === "string" && v.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function persistHidden(ids: string[]) {
+  const uniq = Array.from(new Set(ids)).slice(-MAX_ENTRIES * 2);
+  memHidden = new Set(uniq);
+  if (typeof window !== "undefined") {
+    try { window.localStorage.setItem(HIDDEN_KEY, JSON.stringify(uniq)); }
+    catch { /* quota / private mode: overlay tetap kanonik */ }
+  }
+  safeDispatch(HIDDEN_EVENT);
+}
+
+export function getHiddenSet(): Set<string> {
+  return new Set(ensureMemHidden());
+}
+
+export function hideSent(ids: string[]) {
+  if (!ids || ids.length === 0) return;
+  const set = new Set(ensureMemHidden());
+  for (const id of ids) if (id) set.add(id);
+  persistHidden(Array.from(set));
+}
+
+export function unhideSent(ids: string[]) {
+  if (!ids || ids.length === 0) return;
+  const set = new Set(ensureMemHidden());
+  for (const id of ids) set.delete(id);
+  persistHidden(Array.from(set));
+}
+
+export function useHiddenSent() {
+  const [set, setSet] = useState<Set<string>>(() => getHiddenSet());
+  const refresh = useCallback(() => setSet(getHiddenSet()), []);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => { if (e.key === HIDDEN_KEY) refresh(); };
+    const onLocal = () => refresh();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(HIDDEN_EVENT, onLocal);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(HIDDEN_EVENT, onLocal);
+    };
+  }, [refresh]);
+  return set;
+}
 
 export function useSentShots() {
   const [map, setMap] = useState<Map<string, number>>(() => getSentMap());

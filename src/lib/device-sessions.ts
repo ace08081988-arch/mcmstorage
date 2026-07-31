@@ -13,10 +13,16 @@
  */
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/lib/current-user";
 
 const DEVICE_ID_KEY = "device-session:device-id:v1";
-const HEARTBEAT_MS = 5 * 60 * 1000; // 5 menit
-const REVOCATION_POLL_MS = 60 * 1000; // 1 menit
+// M20: satu-satunya interval untuk sesi perangkat. `heartbeatOnce` sudah
+// menggabungkan pemeriksaan `revoked_at` DAN penulisan `last_seen_at`;
+// sebelumnya ada dua interval terpisah (`HEARTBEAT_MS` 5 mnt dan
+// `REVOCATION_POLL_MS` 1 mnt) yang keduanya memanggil fungsi yang sama →
+// permintaan ke `device_sessions` menjadi ~2× lipat tanpa manfaat.
+// Interval tunggal 1 menit menjaga latensi deteksi pencabutan tetap sama.
+const SESSION_POLL_MS = 60 * 1000;
 
 export function getOrCreateDeviceId(): string {
   if (typeof window === "undefined") return "ssr";
@@ -103,13 +109,11 @@ async function heartbeatOnce(userId: string): Promise<"ok" | "revoked"> {
 export function useDeviceSessionGuard() {
   useEffect(() => {
     let cancelled = false;
-    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-    let revokeTimer: ReturnType<typeof setInterval> | null = null;
+    let sessionTimer: ReturnType<typeof setInterval> | null = null;
     let activeUserId: string | null = null;
 
     const stopTimers = () => {
-      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
-      if (revokeTimer) { clearInterval(revokeTimer); revokeTimer = null; }
+      if (sessionTimer) { clearInterval(sessionTimer); sessionTimer = null; }
     };
 
     const checkRevocation = async () => {
@@ -130,8 +134,7 @@ export function useDeviceSessionGuard() {
       activeUserId = userId;
       try { await registerDeviceSession(userId); } catch { /* ignore */ }
       stopTimers();
-      heartbeatTimer = setInterval(() => { void checkRevocation(); }, HEARTBEAT_MS);
-      revokeTimer = setInterval(() => { void checkRevocation(); }, REVOCATION_POLL_MS);
+      sessionTimer = setInterval(() => { void checkRevocation(); }, SESSION_POLL_MS);
       // Periksa segera setelah register supaya cabut yang terjadi saat tab
       // offline langsung dieksekusi begitu kembali online.
       void checkRevocation();
@@ -139,9 +142,9 @@ export function useDeviceSessionGuard() {
 
     // Inisialisasi: user mungkin sudah login saat hook mount.
     void (async () => {
-      const { data } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (cancelled) return;
-      if (data.user) void start(data.user.id);
+      if (user) void start(user.id);
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {

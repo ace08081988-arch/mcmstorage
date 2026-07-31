@@ -501,19 +501,19 @@ function LinkPegawaiPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-3 py-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Link to="/" className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground hover:bg-muted">
+    <div className="mx-auto max-w-4xl px-ms-3 py-ms-4">
+      <div className="mb-3 flex items-center gap-ms-2">
+        <Link to="/" className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs text-muted-foreground hover:bg-muted">
           <ChevronLeft className="h-3.5 w-3.5" /> Beranda
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           <Link2 className="h-4 w-4 text-primary" />
-          <h1 className="text-base font-semibold">Link Pegawai</h1>
+          <h1 className="text-ms-base font-semibold">Link Pegawai</h1>
         </div>
         <button
           onClick={() => void reload()}
           disabled={busy}
-          className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted disabled:opacity-50"
+          className="ml-auto inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs hover:bg-muted disabled:opacity-50"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} /> Muat ulang
         </button>
@@ -521,7 +521,7 @@ function LinkPegawaiPage() {
           onClick={() => setTestMode((v) => !v)}
           aria-pressed={testMode}
           title="Tampilkan status token dan hitung mundur kedaluwarsa"
-          className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs transition ${
+          className={`inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs transition ${
             testMode
               ? "border-primary bg-primary/10 text-primary"
               : "text-muted-foreground hover:bg-muted"
@@ -532,21 +532,21 @@ function LinkPegawaiPage() {
       </div>
 
       {testMode && (
-        <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-foreground/80" data-compact-hide>
-          <div className="flex items-center gap-1.5 font-medium text-primary">
+        <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-ms-3 py-ms-2 text-ms-2xs text-foreground/80" data-compact-hide>
+          <div className="flex items-center gap-ms-1.5 font-medium text-primary">
             <FlaskConical className="h-3.5 w-3.5" /> Mode Uji Coba Token
           </div>
           <div className="mt-0.5 leading-relaxed">
             Indikator status token tampil di tiap baris:{" "}
-            <span className="font-medium text-emerald-600 dark:text-emerald-400">Valid</span> ·{" "}
+            <span className="font-medium text-success dark:text-success">Valid</span> ·{" "}
             <span className="font-medium text-sky-600 dark:text-sky-400">Baru dibuat</span> ·{" "}
-            <span className="font-medium text-amber-600 dark:text-amber-400">Invalid</span> ·{" "}
+            <span className="font-medium text-warning dark:text-warning">Invalid</span> ·{" "}
             <span className="font-medium text-destructive">Kosong</span>. Hitung mundur kedaluwarsa diperbarui tiap detik.
           </div>
         </div>
       )}
 
-      <p className="mb-3 text-xs text-muted-foreground" data-compact-hide>
+      <p className="mb-3 text-ms-xs text-muted-foreground" data-compact-hide>
         Semua tugas pegawai yang sudah pernah dibuat — link, status ketersediaan, dan akses langsung untuk pratinjau.
         {total != null && (() => {
           const loaded = tasks?.length ?? 0;
@@ -576,7 +576,7 @@ function LinkPegawaiPage() {
                   Menampilkan <b className="tabular-nums">{shown}</b> dari{" "}
                   <TotalNum value={effectiveTotal} /> sesuai filter
                   {totalLoading && (
-                    <span className="ml-1 inline-flex items-center gap-1 text-[10px] opacity-70">
+                    <span className="ml-1 inline-flex items-center gap-ms-1 text-ms-2xs opacity-70">
                       <Loader2 className="h-3 w-3 animate-spin" /> menghitung…
                     </span>
                   )}
@@ -596,37 +596,37 @@ function LinkPegawaiPage() {
                 <> · <span className="tabular-nums">{remaining}</span> belum tampil</>
               )}
               {sort === "status" && hasMore && (
-                <> · <span className="text-amber-600 dark:text-amber-400">urutan status berdasarkan data yang dimuat</span></>
+                <> · <span className="text-warning dark:text-warning">urutan status berdasarkan data yang dimuat</span></>
               )}
             </>
           );
         })()}
       </p>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-ms-2">
         <div className="relative flex-1 min-w-[180px]">
           <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Cari judul atau token…"
-            className="h-9 w-full rounded-md border bg-background pl-7 pr-2 text-sm focus:border-primary focus:outline-none"
+            className="h-9 w-full rounded-md border bg-background pl-7 pr-2 text-ms-sm focus:border-primary focus:outline-none"
           />
         </div>
-        <label className="inline-flex h-9 items-center gap-1.5 rounded-md border bg-background px-2 text-xs">
+        <label className="inline-flex h-9 items-center gap-ms-1.5 rounded-md border bg-background px-ms-2 text-ms-xs">
           <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-muted-foreground">Urutkan:</span>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="bg-transparent text-xs font-medium focus:outline-none"
+            className="bg-transparent text-ms-xs font-medium focus:outline-none"
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.key} value={o.key}>{o.label}</option>
             ))}
           </select>
         </label>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-ms-1">
           {([
             ["all", "Semua"],
             ["active", "Aktif"],
@@ -637,25 +637,25 @@ function LinkPegawaiPage() {
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] ${
+              className={`inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs ${
                 filter === key ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted"
               }`}
             >
-              {label} <span className="rounded bg-muted px-1 text-[10px] tabular-nums">{counts[key] ?? 0}</span>
+              {label} <span className="rounded bg-muted px-1 text-ms-2xs tabular-nums">{counts[key] ?? 0}</span>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-1">
-        <span className="mr-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+      <div className="mb-3 flex flex-wrap items-center gap-ms-1">
+        <span className="mr-1 inline-flex items-center gap-ms-1 text-ms-2xs text-muted-foreground">
           <ShieldCheck className="h-3.5 w-3.5" /> Token:
         </span>
         {([
           ["all", "Semua", ""],
-          ["valid", "Valid", "data-[active=true]:border-emerald-500/50 data-[active=true]:bg-emerald-500/10 data-[active=true]:text-emerald-700 dark:data-[active=true]:text-emerald-400"],
+          ["valid", "Valid", "data-[active=true]:border-success/50 data-[active=true]:bg-success/10 data-[active=true]:text-success dark:data-[active=true]:text-success"],
           ["fresh", "Baru dibuat", "data-[active=true]:border-sky-500/50 data-[active=true]:bg-sky-500/10 data-[active=true]:text-sky-700 dark:data-[active=true]:text-sky-400"],
-          ["invalid", "Invalid", "data-[active=true]:border-amber-500/50 data-[active=true]:bg-amber-500/10 data-[active=true]:text-amber-700 dark:data-[active=true]:text-amber-400"],
+          ["invalid", "Invalid", "data-[active=true]:border-warning/50 data-[active=true]:bg-warning/10 data-[active=true]:text-warning dark:data-[active=true]:text-warning"],
           ["empty", "Kosong", "data-[active=true]:border-destructive/50 data-[active=true]:bg-destructive/10 data-[active=true]:text-destructive"],
         ] as const).map(([key, label, activeCls]) => {
           const active = tokenFilter === key;
@@ -664,11 +664,11 @@ function LinkPegawaiPage() {
               key={key}
               data-active={active}
               onClick={() => setTokenFilter(key)}
-              className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] hover:bg-muted ${activeCls} ${
+              className={`inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs hover:bg-muted ${activeCls} ${
                 active && !activeCls ? "border-primary bg-primary/10 text-primary" : ""
               }`}
             >
-              {label} <span className="rounded bg-muted px-1 text-[10px] tabular-nums">{tokenCounts[key] ?? 0}</span>
+              {label} <span className="rounded bg-muted px-1 text-ms-2xs tabular-nums">{tokenCounts[key] ?? 0}</span>
             </button>
           );
         })}
@@ -686,7 +686,7 @@ function LinkPegawaiPage() {
                   tokenFilter === "valid" ? "Valid" : tokenFilter === "fresh" ? "Baru dibuat" : tokenFilter === "invalid" ? "Invalid" : "Kosong"
                 }”…`
           }
-          className="h-9 w-full rounded-md border bg-background pl-7 pr-8 text-sm focus:border-primary focus:outline-none"
+          className="h-9 w-full rounded-md border bg-background pl-7 pr-8 text-ms-sm focus:border-primary focus:outline-none"
         />
         {tokenKw && (
           <button
@@ -701,20 +701,20 @@ function LinkPegawaiPage() {
       </div>
 
       {tasks === null ? (
-        <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
+        <div className="rounded-xl border bg-card p-ms-6 text-center text-ms-xs text-muted-foreground">
           <Loader2 className="mx-auto mb-2 h-4 w-4 animate-spin" /> Memuat…
         </div>
       ) : loadError && tasks.length === 0 ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-center">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-ms-5 text-center">
           <AlertTriangle className="mx-auto mb-2 h-5 w-5 text-destructive" />
-          <div className="text-sm font-medium text-destructive">Gagal memuat daftar link</div>
-          <p className="mx-auto mt-1 max-w-sm text-[11px] leading-relaxed text-muted-foreground">
+          <div className="text-ms-sm font-medium text-destructive">Gagal memuat daftar link</div>
+          <p className="mx-auto mt-1 max-w-sm text-ms-2xs leading-relaxed text-muted-foreground">
             {loadError}
           </p>
           <button
             onClick={() => void reload()}
             disabled={busy}
-            className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+            className="mt-3 inline-flex h-9 items-center gap-ms-1.5 rounded-md border bg-background px-ms-3 text-ms-xs font-medium hover:bg-muted disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
             Coba lagi
@@ -722,7 +722,7 @@ function LinkPegawaiPage() {
         </div>
       ) : rows.length === 0 ? (
         <>
-          <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
+          <div className="rounded-xl border bg-card p-ms-6 text-center text-ms-xs text-muted-foreground">
             Tidak ada tugas{filter !== "all" ? ` dengan status “${BADGE[filter as Availability].label}”` : ""} pada {tasks.length} entri yang dimuat.
           </div>
           {hasMore && (
@@ -730,7 +730,7 @@ function LinkPegawaiPage() {
               <button
                 onClick={() => void loadMore()}
                 disabled={loadingMore}
-                className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-xs hover:bg-muted disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-ms-1 rounded-md border bg-background px-ms-3 text-ms-xs hover:bg-muted disabled:opacity-50"
               >
                 {loadingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                 Muat lebih banyak untuk mencari
@@ -740,7 +740,7 @@ function LinkPegawaiPage() {
         </>
       ) : (
         <>
-        <div className="space-y-2">
+        <div className="space-ms-2">
           {rows.map(({ t, avail }) => {
             const tokenValid = isValidShareToken(t.share_token);
             let url = "";
@@ -766,14 +766,14 @@ function LinkPegawaiPage() {
               countdown.tone === "danger"
                 ? "bg-destructive/10 text-destructive ring-destructive/20"
                 : countdown.tone === "warn"
-                ? "bg-amber-500/10 text-amber-700 ring-amber-500/20 dark:text-amber-400"
-                : "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400";
+                ? "bg-warning/10 text-warning ring-warning/20 dark:text-warning"
+                : "bg-success/10 text-success ring-success/20 dark:text-success";
             return (
               <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <div className="flex items-start gap-2 p-3">
+                <div className="flex items-start gap-ms-2 p-ms-3">
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <div className="truncate text-sm font-semibold">{t.title}</div>
+                    <div className="flex flex-wrap items-center gap-ms-1.5">
+                      <div className="truncate text-ms-sm font-semibold">{t.title}</div>
                       <StatusBadge size="xs" variant={badge.variant}>{badge.label}</StatusBadge>
                       {justExtended && (
                         <StatusBadge size="xs" variant="siap" className="animate-fade-in">
@@ -802,29 +802,29 @@ function LinkPegawaiPage() {
                               <CircleSlash className="mr-1 h-3 w-3" /> Kosong
                             </StatusBadge>
                           )}
-                          <span className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 tabular-nums ${countdownTone}`}>
+                          <span className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-ms-2xs font-medium ring-1 tabular-nums ${countdownTone}`}>
                             <Timer className="h-3 w-3" /> {countdown.text}
                           </span>
                         </>
                       )}
                     </div>
                     {t.note && (
-                      <div className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground whitespace-pre-wrap">{t.note}</div>
+                      <div className="mt-0.5 line-clamp-2 text-ms-2xs text-muted-foreground whitespace-pre-wrap">{t.note}</div>
                     )}
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-ms-2xs text-muted-foreground">
                       <span>Dibuat: {new Date(t.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</span>
                       <span>Kedaluwarsa: {expiresAt.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</span>
                     </div>
                     {urlError ? (
-                      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive ring-1 ring-destructive/20">
+                      <div className="mt-1 inline-flex items-center gap-ms-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-ms-2xs font-medium text-destructive ring-1 ring-destructive/20">
                         ⚠ {urlError}
                       </div>
                     ) : (
-                      <div className="mt-1 truncate font-mono text-[10px] text-muted-foreground" title={url}>{url}</div>
+                      <div className="mt-1 truncate font-mono text-ms-2xs text-muted-foreground" title={url}>{url}</div>
                     )}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 border-t bg-muted/30 px-3 py-2">
+                <div className="flex flex-wrap gap-ms-2 border-t bg-muted/30 px-ms-3 py-ms-2">
                   <a
                     href={openable ? url : undefined}
                     onClick={(e) => {
@@ -836,7 +836,7 @@ function LinkPegawaiPage() {
                     target="_blank"
                     rel="noreferrer"
                     aria-disabled={!openable}
-                    className={`inline-flex h-8 items-center gap-1 rounded-md px-2 text-[11px] font-medium ${
+                    className={`inline-flex h-8 items-center gap-ms-1 rounded-md px-ms-2 text-ms-2xs font-medium ${
                       openable
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : "cursor-not-allowed border bg-background text-muted-foreground"
@@ -849,7 +849,7 @@ function LinkPegawaiPage() {
                       if (urlError) { toast.error(urlError); return; }
                       void copyLink(url);
                     }}
-                    className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted"
+                    className="inline-flex h-8 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs hover:bg-muted"
                   >
                     <Copy className="h-3.5 w-3.5" /> Salin Link
                   </button>
@@ -857,7 +857,7 @@ function LinkPegawaiPage() {
                     <button
                       onClick={() => void regenerateToken(t.id)}
                       disabled={regenId === t.id}
-                      className="inline-flex h-8 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 text-[11px] font-medium text-primary hover:bg-primary/20 disabled:opacity-50"
+                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-primary/40 bg-primary/10 px-ms-2 text-ms-2xs font-medium text-primary hover:bg-primary/20 disabled:opacity-50"
                     >
                       {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
                       Buat Ulang Token
@@ -878,7 +878,7 @@ function LinkPegawaiPage() {
                       }}
                       disabled={regenId === t.id}
                       title="Perpanjang masa aktif 7 hari & terbitkan token baru"
-                      className="inline-flex h-8 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-warning/40 bg-warning/10 px-ms-2 text-ms-2xs font-medium text-warning hover:bg-warning/20 disabled:opacity-50 dark:text-warning"
                     >
                       {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
                       Perpanjang &amp; Token Baru (7 hari)
@@ -889,7 +889,7 @@ function LinkPegawaiPage() {
                       onClick={() => void regenerateToken(t.id)}
                       disabled={regenId === t.id}
                       title="Buat token baru untuk pengujian"
-                      className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted disabled:opacity-50"
+                      className="inline-flex h-8 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs hover:bg-muted disabled:opacity-50"
                     >
                       {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
                       Token Baru
@@ -898,13 +898,13 @@ function LinkPegawaiPage() {
                   <button
                     onClick={() => openResetPin(t)}
                     title="Buat PIN baru — PIN lama otomatis tidak berlaku"
-                    className="inline-flex h-8 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
+                    className="inline-flex h-8 items-center gap-ms-1 rounded-md border border-warning/40 bg-warning/10 px-ms-2 text-ms-2xs font-medium text-warning hover:bg-warning/20 dark:text-warning"
                   >
                     <LockKeyhole className="h-3.5 w-3.5" /> Reset PIN
                   </button>
                   <Link
                     to="/tugas"
-                    className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted"
+                    className="ml-auto inline-flex h-8 items-center gap-ms-1 rounded-md border bg-background px-ms-2 text-ms-2xs hover:bg-muted"
                   >
                     Kelola di Tugas Pegawai
                   </Link>
@@ -916,18 +916,18 @@ function LinkPegawaiPage() {
         <div ref={sentinelRef} className="h-1" aria-hidden />
         <div className="mt-3 flex items-center justify-center">
           {loadingMore ? (
-            <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="inline-flex items-center gap-ms-1.5 text-ms-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memuat lebih banyak…
             </div>
           ) : hasMore ? (
             <button
               onClick={() => void loadMore()}
-              className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-3 text-[11px] hover:bg-muted"
+              className="inline-flex h-8 items-center gap-ms-1 rounded-md border bg-background px-ms-3 text-ms-2xs hover:bg-muted"
             >
               Muat lebih banyak
             </button>
           ) : (
-            <div className="text-[11px] text-muted-foreground">Semua tugas sudah ditampilkan.</div>
+            <div className="text-ms-2xs text-muted-foreground">Semua tugas sudah ditampilkan.</div>
           )}
         </div>
         </>
@@ -941,8 +941,8 @@ function LinkPegawaiPage() {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <LockKeyhole className="h-4 w-4 text-amber-600" /> Reset PIN
+            <DialogTitle className="flex items-center gap-ms-2">
+              <LockKeyhole className="h-4 w-4 text-warning" /> Reset PIN
             </DialogTitle>
             <DialogDescription>
               {resetDone
@@ -952,8 +952,8 @@ function LinkPegawaiPage() {
           </DialogHeader>
 
           {!resetDone ? (
-            <div className="space-y-3">
-              <div className="flex gap-2">
+            <div className="space-ms-3">
+              <div className="flex gap-ms-2">
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -962,7 +962,7 @@ function LinkPegawaiPage() {
                   value={resetPin}
                   onChange={(e) => setResetPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
                   placeholder="4–8 digit"
-                  className="tracking-[0.3em] text-center font-mono text-base"
+                  className="tracking-[0.3em] text-center font-mono text-ms-base"
                 />
                 <Button
                   type="button"
@@ -973,7 +973,7 @@ function LinkPegawaiPage() {
                   <Dices className="h-4 w-4" /> Acak
                 </Button>
               </div>
-              <DialogFooter className="gap-2">
+              <DialogFooter className="gap-ms-2">
                 <Button variant="outline" onClick={() => setResetTask(null)}>Batal</Button>
                 <Button onClick={() => void submitResetPin()} disabled={resetBusy}>
                   {resetBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
@@ -982,17 +982,17 @@ function LinkPegawaiPage() {
               </DialogFooter>
             </div>
           ) : (
-            <div className="space-y-3">
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-center">
-                <div className="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400">PIN Baru</div>
-                <div className="mt-1 font-mono text-2xl tracking-[0.4em]">{resetPin}</div>
+            <div className="space-ms-3">
+              <div className="rounded-md border border-warning/40 bg-warning/10 p-ms-3 text-center">
+                <div className="text-ms-2xs uppercase tracking-wider text-warning dark:text-warning">PIN Baru</div>
+                <div className="mt-1 font-mono text-ms-2xl tracking-[0.4em]">{resetPin}</div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-ms-2">
                 <Button variant="outline" className="flex-1" onClick={() => void copyPin()}>
                   <Copy className="h-4 w-4" /> Salin
                 </Button>
-                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-600/90" onClick={() => void sharePinToWa()}>
-                  <MessageCircle className="h-4 w-4" /> Kirim WA
+                <Button className="flex-1 bg-success hover:bg-success/90" onClick={() => void sharePinToWa()}>
+                  <MessageCircle className="h-4 w-4" /> Kirim via MCM
                 </Button>
               </div>
               <DialogFooter>
@@ -1011,20 +1011,20 @@ function LinkPegawaiPage() {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Timer className="h-4 w-4 text-emerald-600" /> Tugas diperpanjang
+            <DialogTitle className="flex items-center gap-ms-2">
+              <Timer className="h-4 w-4 text-success" /> Tugas diperpanjang
             </DialogTitle>
             <DialogDescription>
               Tugas <span className="font-medium">"{extendedInfo?.title}"</span> diperpanjang {extendedInfo?.extendDays} hari & token baru aktif. Link lama tidak bisa lagi dibuka pegawai.
             </DialogDescription>
           </DialogHeader>
-          <div key={extendedInfo?.seq ?? 0} className="space-y-3 animate-fade-in motion-reduce:animate-none">
-            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3">
-              <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Kedaluwarsa baru</div>
-              <div className="mt-1 text-sm font-semibold">
+          <div key={extendedInfo?.seq ?? 0} className="space-ms-3 animate-fade-in motion-reduce:animate-none">
+            <div className="rounded-md border border-success/40 bg-success/10 p-ms-3">
+              <div className="text-ms-2xs uppercase tracking-wider text-success dark:text-success">Kedaluwarsa baru</div>
+              <div className="mt-1 text-ms-sm font-semibold">
                 {extendedInfo?.expiresLabel ?? "—"}
               </div>
-              <div className="mt-0.5 flex items-center justify-between text-[10px] text-muted-foreground">
+              <div className="mt-0.5 flex items-center justify-between text-ms-2xs text-muted-foreground">
                 <span>Zona waktu perangkat</span>
                 {extendedInfo?.updatedAt ? (
                   <span title={new Date(extendedInfo.updatedAt).toLocaleString()}>
@@ -1035,12 +1035,12 @@ function LinkPegawaiPage() {
               </div>
             </div>
             {extendedInfo?.url && (
-              <div className="rounded-md border bg-muted/40 p-2">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Link baru</div>
-                <div className="mt-1 break-all font-mono text-[11px]">{extendedInfo.url}</div>
+              <div className="rounded-md border bg-muted/40 p-ms-2">
+                <div className="text-ms-2xs uppercase tracking-wider text-muted-foreground">Link baru</div>
+                <div className="mt-1 break-all font-mono text-ms-2xs">{extendedInfo.url}</div>
               </div>
             )}
-            <DialogFooter className="gap-2">
+            <DialogFooter className="gap-ms-2">
               <Button variant="outline" onClick={() => setExtendedInfo(null)}>Tutup</Button>
               {extendedInfo?.url && (
                 <Button onClick={() => void copyLink(extendedInfo.url!)}>

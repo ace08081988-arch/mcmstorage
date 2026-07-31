@@ -130,7 +130,7 @@ export function ManageGroupDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-ms-2">
             <Users className="h-4 w-4" /> Kelola grup
           </DialogTitle>
           <DialogDescription>
@@ -140,11 +140,11 @@ export function ManageGroupDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-ms-4">
           {isOwner ? (
             <div className="space-y-1.5">
               <Label htmlFor="group-rename">Nama grup</Label>
-              <div className="flex gap-2">
+              <div className="flex gap-ms-2">
                 <Input
                   id="group-rename"
                   value={title}
@@ -157,7 +157,7 @@ export function ManageGroupDialog({
                   size="sm"
                   disabled={rename.isPending || title.trim() === (currentTitle ?? "").trim() || !title.trim()}
                   onClick={() => void onRename()}
-                  className="gap-1.5"
+                  className="gap-ms-1.5"
                 >
                   {rename.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
                   Simpan
@@ -168,13 +168,13 @@ export function ManageGroupDialog({
 
           <div className="space-y-1.5">
             <Label>Anggota ({members.data?.length ?? 0})</Label>
-            <ul className="max-h-48 space-y-1 overflow-auto rounded-md border p-1">
+            <ul className="max-h-48 space-y-1 overflow-auto rounded-md border p-ms-1">
               {members.isLoading ? (
-                <li className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                <li className="flex items-center justify-center p-ms-4 text-ms-sm text-muted-foreground">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat anggota…
                 </li>
               ) : (members.data ?? []).length === 0 ? (
-                <li className="p-4 text-center text-xs text-muted-foreground">Belum ada anggota.</li>
+                <li className="p-ms-4 text-center text-ms-xs text-muted-foreground">Belum ada anggota.</li>
               ) : (
                 members.data!.map((m) => {
                   const isMe = m.user_id === myId;
@@ -183,7 +183,7 @@ export function ManageGroupDialog({
                   return (
                     <li
                       key={m.user_id}
-                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
+                      className="flex items-center gap-ms-2 rounded-md px-ms-2 py-1.5 text-ms-sm"
                     >
                       <div className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-primary">
                         <UserRound className="h-3.5 w-3.5" />
@@ -191,9 +191,9 @@ export function ManageGroupDialog({
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">
                           {m.display_name || m.phone || "Pengguna"}
-                          {isMe ? <span className="ml-1 text-[10px] text-muted-foreground">(Anda)</span> : null}
+                          {isMe ? <span className="ml-1 text-ms-2xs text-muted-foreground">(Anda)</span> : null}
                         </div>
-                        <div className="truncate text-[11px] text-muted-foreground">
+                        <div className="truncate text-ms-2xs text-muted-foreground">
                           {isMemberOwner ? "Pemilik grup" : m.role || "Anggota"}
                         </div>
                       </div>
@@ -204,7 +204,7 @@ export function ManageGroupDialog({
                           size="sm"
                           disabled={removeMember.isPending}
                           onClick={() => void onRemove(m.user_id)}
-                          className="gap-1 text-destructive hover:text-destructive"
+                          className="gap-ms-1 text-destructive hover:text-destructive"
                         >
                           {isMe ? <LogOut className="h-4 w-4" /> : <X className="h-4 w-4" />}
                           {isMe ? "Keluar" : "Keluarkan"}
@@ -230,13 +230,13 @@ export function ManageGroupDialog({
                   className="pl-8"
                 />
               </div>
-              <ul className="max-h-44 space-y-1 overflow-auto rounded-md border p-1">
+              <ul className="max-h-44 space-y-1 overflow-auto rounded-md border p-ms-1">
                 {contacts.isLoading ? (
-                  <li className="flex items-center justify-center p-3 text-xs text-muted-foreground">
+                  <li className="flex items-center justify-center p-ms-3 text-ms-xs text-muted-foreground">
                     <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Memuat…
                   </li>
                 ) : candidates.length === 0 ? (
-                  <li className="p-3 text-center text-xs text-muted-foreground">
+                  <li className="p-ms-3 text-center text-ms-xs text-muted-foreground">
                     {(contacts.data ?? []).length === 0
                       ? "Belum ada kontak yang bisa diundang. Tautkan akun pelanggan/pemasok dulu."
                       : "Semua kontak yang cocok sudah jadi anggota."}
@@ -248,17 +248,17 @@ export function ManageGroupDialog({
                         type="button"
                         disabled={addMember.isPending}
                         onClick={() => void onInvite(c.user_id)}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50"
+                        className="flex w-full items-center gap-ms-2 rounded-md px-ms-2 py-1.5 text-left text-ms-sm hover:bg-accent disabled:opacity-50"
                       >
                         <div className="grid h-7 w-7 place-items-center rounded-full bg-muted text-muted-foreground">
                           <UserPlus className="h-3.5 w-3.5" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="truncate font-medium">
-                            {c.display_name || c.phone || "Pengguna"}
+                            {c.display_name || c.invite_code || "Pengguna"}
                           </div>
-                          <div className="truncate text-[11px] text-muted-foreground">
-                            {c.phone ? `${c.phone} · ` : ""}{c.label ?? c.kind}
+                          <div className="truncate text-ms-2xs text-muted-foreground">
+                            {c.invite_code ? `${c.invite_code} · ` : ""}{c.label ?? c.kind}
                           </div>
                         </div>
                         <Check className="h-4 w-4 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
@@ -271,8 +271,8 @@ export function ManageGroupDialog({
           ) : null}
 
           {!isOwner ? (
-            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
-              <p className="text-xs text-muted-foreground">
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-ms-3">
+              <p className="text-ms-xs text-muted-foreground">
                 Keluar dari grup ini berarti Anda tidak akan menerima pesan baru.
                 Pesan lama Anda tetap terlihat oleh anggota lain.
               </p>
@@ -280,7 +280,7 @@ export function ManageGroupDialog({
                 type="button"
                 variant="destructive"
                 size="sm"
-                className="mt-2 gap-1.5"
+                className="mt-2 gap-ms-1.5"
                 disabled={!myId || removeMember.isPending}
                 onClick={() => myId && void onRemove(myId)}
               >

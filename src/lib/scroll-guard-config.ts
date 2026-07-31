@@ -1,0 +1,352 @@
+/**
+ * Konfigurasi scroll-guard sidebar yang bisa disesuaikan per-device.
+ *
+ * - `cooldownMs`     — durasi window "scroll baru saja aktif" (default 250ms).
+ *                      Perangkat dengan inertial scroll panjang boleh naik ke 350–500ms.
+ * - `driftPx`        — ambang pergerakan pointer maks. yang masih dianggap tap (default 10px).
+ *                      Layar sensitif / jari besar boleh naik ke 14–16px.
+ * - `longPressMs`    — batas atas durasi tap sebelum dianggap tekan-lama (default 600ms).
+ *
+ * Nilai dibaca sekali per proses lalu di-cache; getter membaca localStorage
+ * pertama kali dan mendengarkan `storage` + custom event agar tab lain juga
+ * ikut update.
+ */
+
+export type ScrollGuardConfig = {
+  cooldownMs: number;
+  driftPx: number;
+  longPressMs: number;
+  hintScrollText: string;
+  hintDriftText: string;
+  hintFadeMs: number;
+  hintHoldMs: number;
+};
+
+export const DEFAULT_SCROLL_GUARD: ScrollGuardConfig = {
+  cooldownMs: 250,
+  driftPx: 10,
+  longPressMs: 600,
+  hintScrollText: "Tunggu scroll selesai…",
+  hintDriftText: "Geser terdeteksi — tap dibatalkan",
+  hintFadeMs: 140,
+  hintHoldMs: 1200,
+};
+
+export const SCROLL_GUARD_BOUNDS = {
+  cooldownMs: { min: 100, max: 800, step: 25 },
+  driftPx: { min: 4, max: 24, step: 1 },
+  longPressMs: { min: 300, max: 1500, step: 50 },
+  hintFadeMs: { min: 0, max: 600, step: 20 },
+  hintHoldMs: { min: 300, max: 4000, step: 100 },
+  hintTextMaxLen: 80,
+} as const;
+
+const STORAGE_KEY = "mcm.scroll-guard.v2";
+const CHANGE_EVENT = "mcm:scroll-guard-changed";
+
+function clamp(n: number, lo: number, hi: number) {
+  return Math.min(hi, Math.max(lo, n));
+}
+
+/**
+ * Konversi input ke integer yang dijamin di dalam batas slider.
+ * - Nilai non-finite / NaN / bukan angka → fallback ke default.
+ * - Nilai desimal dibulatkan.
+ * - Nilai di luar rentang di-clamp (bukan ditolak) supaya penyimpanan
+ *   lintas versi (mis. batas yang dulu lebih longgar) tidak melempar error.
+ */
+function coerceInt(raw: unknown, fallback: number, lo: number, hi: number): number {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return clamp(Math.round(n), lo, hi);
+}
+
+/**
+ * Sanitasi teks hint. Perbedaan penting dari sebelumnya: **string kosong
+ * dipertahankan** (bukan diganti default) supaya user benar-benar bisa
+ * mematikan hint dengan mengosongkan field. Yang di-fallback ke default
+ * hanya nilai bukan-string (mis. `null`, `undefined`, `123`).
+ */
+function sanitizeText(raw: unknown, fallback: string, opts?: { allowEmpty?: boolean }): string {
+  const allowEmpty = opts?.allowEmpty ?? true;
+  if (typeof raw !== "string") return fallback;
+  const collapsed = raw.replace(/\s+/g, " ").trim();
+  if (!collapsed) return allowEmpty ? "" : fallback;
+  return collapsed.slice(0, SCROLL_GUARD_BOUNDS.hintTextMaxLen);
+}
+
+function sanitize(raw: unknown): ScrollGuardConfig {
+  const r = (raw ?? {}) as Partial<ScrollGuardConfig>;
+  return {
+    cooldownMs: coerceInt(
+      r.cooldownMs,
+      DEFAULT_SCROLL_GUARD.cooldownMs,
+      SCROLL_GUARD_BOUNDS.cooldownMs.min,
+      SCROLL_GUARD_BOUNDS.cooldownMs.max,
+    ),
+    driftPx: coerceInt(
+      r.driftPx,
+      DEFAULT_SCROLL_GUARD.driftPx,
+      SCROLL_GUARD_BOUNDS.driftPx.min,
+      SCROLL_GUARD_BOUNDS.driftPx.max,
+    ),
+    longPressMs: coerceInt(
+      r.longPressMs,
+      DEFAULT_SCROLL_GUARD.longPressMs,
+      SCROLL_GUARD_BOUNDS.longPressMs.min,
+      SCROLL_GUARD_BOUNDS.longPressMs.max,
+    ),
+    // Teks: kosong DIPERTAHANKAN → hint dimatikan sesuai niat user.
+    hintScrollText: sanitizeText(r.hintScrollText, DEFAULT_SCROLL_GUARD.hintScrollText),
+    hintDriftText: sanitizeText(r.hintDriftText, DEFAULT_SCROLL_GUARD.hintDriftText),
+    hintFadeMs: coerceInt(
+      r.hintFadeMs,
+      DEFAULT_SCROLL_GUARD.hintFadeMs,
+      SCROLL_GUARD_BOUNDS.hintFadeMs.min,
+      SCROLL_GUARD_BOUNDS.hintFadeMs.max,
+    ),
+    hintHoldMs: coerceInt(
+      r.hintHoldMs,
+      DEFAULT_SCROLL_GUARD.hintHoldMs,
+      SCROLL_GUARD_BOUNDS.hintHoldMs.min,
+      SCROLL_GUARD_BOUNDS.hintHoldMs.max,
+    ),
+  };
+}
+
+let cached: ScrollGuardConfig | null = null;
+
+function loadFromStorage(): ScrollGuardConfig {
+  if (typeof window === "undefined") return DEFAULT_SCROLL_GUARD;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULT_SCROLL_GUARD;
+    return sanitize(JSON.parse(raw));
+  } catch {
+    return DEFAULT_SCROLL_GUARD;
+  }
+}
+
+if (typeof window !== "undefined" && !(window as any).__scrollGuardCfgBind) {
+  (window as any).__scrollGuardCfgBind = true;
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY) cached = null;
+  });
+  window.addEventListener(CHANGE_EVENT, () => {
+    cached = null;
+  });
+}
+
+/** Baca konfigurasi terkini (cache di-invalidate saat diubah). */
+export function getScrollGuardConfig(): ScrollGuardConfig {
+  if (!cached) cached = loadFromStorage();
+  return cached;
+}
+
+/** Simpan konfigurasi baru. Broadcast ke tab lain dan komponen dalam-tab. */
+export function setScrollGuardConfig(next: Partial<ScrollGuardConfig>): ScrollGuardConfig {
+  const merged = sanitize({ ...getScrollGuardConfig(), ...next });
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    } catch {
+      // ignore quota errors
+    }
+    window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
+  }
+  cached = merged;
+  // Fire-and-forget: sinkron ke Lovable Cloud agar bertahan lintas perangkat.
+  void syncToCloud(merged);
+  return merged;
+}
+
+/** Kembalikan ke default pabrik. */
+export function resetScrollGuardConfig(): ScrollGuardConfig {
+  return setScrollGuardConfig(DEFAULT_SCROLL_GUARD);
+}
+
+/** Subscribe perubahan (in-tab + cross-tab). Return unsubscribe. */
+export function subscribeScrollGuard(cb: (cfg: ScrollGuardConfig) => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const handler = () => cb(getScrollGuardConfig());
+  window.addEventListener(CHANGE_EVENT, handler);
+  window.addEventListener("storage", handler);
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, handler);
+    window.removeEventListener("storage", handler);
+  };
+}
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+// ---------------------------------------------------------------------------
+// Sinkronisasi ke Lovable Cloud (tabel public.scroll_guard_config)
+// ---------------------------------------------------------------------------
+// Alur:
+//   1) Saat modul dimuat / user login → hidrasi cache dari server (kalau ada
+//      baris untuk user), timpa localStorage, broadcast CHANGE_EVENT.
+//   2) Saat setScrollGuardConfig dipanggil → upsert baris user (fire-and-forget).
+//   3) Saat user logout / berganti akun → reload dari server berikutnya.
+// Anonymous user (belum login) tetap pakai localStorage saja.
+
+let hydratedForUser: string | null = null;
+let hydrating: Promise<void> | null = null;
+
+async function hydrateFromCloud(userId: string): Promise<void> {
+  if (hydratedForUser === userId) return;
+  try {
+    const { data, error } = await supabase
+      .from("scroll_guard_config")
+      .select("config")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) return;
+    hydratedForUser = userId;
+    if (!data) return;
+    const merged = sanitize(data.config);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      } catch {
+        // ignore
+      }
+      cached = merged;
+      window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
+    }
+  } catch {
+    // offline / RLS → localStorage tetap jadi sumber kebenaran lokal
+  }
+}
+
+async function syncToCloud(cfg: ScrollGuardConfig): Promise<void> {
+  try {
+    const { data: sess } = await supabase.auth.getUser();
+    const userId = sess?.user?.id;
+    if (!userId) return;
+    await supabase
+      .from("scroll_guard_config")
+      .upsert(
+        { user_id: userId, config: cfg, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
+    hydratedForUser = userId;
+  } catch {
+    // best-effort: gagal jaringan tidak mempengaruhi UI
+  }
+}
+
+/** Paksa muat ulang dari server untuk user aktif. Aman dipanggil berulang. */
+export function ensureScrollGuardHydrated(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (hydrating) return hydrating;
+  hydrating = (async () => {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const uid = data?.user?.id;
+      if (uid) await hydrateFromCloud(uid);
+    } finally {
+      hydrating = null;
+    }
+  })();
+  return hydrating;
+}
+
+if (typeof window !== "undefined" && !(window as any).__scrollGuardCloudBind) {
+  (window as any).__scrollGuardCloudBind = true;
+  // Hidrasi pertama (non-blocking).
+  void ensureScrollGuardHydrated();
+  // Re-hidrasi setiap kali sesi berubah (login/logout/refresh).
+  supabase.auth.onAuthStateChange((_evt, session) => {
+    if (!session?.user) {
+      hydratedForUser = null;
+      teardownRealtime();
+      return;
+    }
+    if (hydratedForUser !== session.user.id) {
+      hydratedForUser = null;
+      void hydrateFromCloud(session.user.id);
+    }
+    setupRealtime(session.user.id);
+  });
+  // Setup realtime kalau sudah ada sesi saat modul dimuat.
+  void (async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data?.user?.id) setupRealtime(data.user.id);
+  })();
+}
+
+// ---------------------------------------------------------------------------
+// Realtime cross-device: dengarkan UPDATE/INSERT pada baris user aktif dan
+// terapkan ke cache lokal + broadcast CHANGE_EVENT tanpa reload.
+// ---------------------------------------------------------------------------
+let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+let realtimeUserId: string | null = null;
+
+function applyRemoteConfig(raw: unknown) {
+  const merged = sanitize(raw);
+  if (typeof window === "undefined") return;
+  try {
+    const current = window.localStorage.getItem(STORAGE_KEY);
+    const nextStr = JSON.stringify(merged);
+    if (current === nextStr) return; // no-op
+    window.localStorage.setItem(STORAGE_KEY, nextStr);
+  } catch {
+    // ignore
+  }
+  cached = merged;
+  window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
+}
+
+function setupRealtime(userId: string) {
+  if (realtimeUserId === userId && realtimeChannel) return;
+  teardownRealtime();
+  realtimeUserId = userId;
+  try {
+    realtimeChannel = supabase
+      .channel(`scroll-guard-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "scroll_guard_config",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { config?: unknown } | null;
+          if (row?.config) applyRemoteConfig(row.config);
+        },
+      )
+      .subscribe();
+  } catch {
+    realtimeChannel = null;
+  }
+}
+
+function teardownRealtime() {
+  if (realtimeChannel) {
+    try {
+      supabase.removeChannel(realtimeChannel);
+    } catch {
+      // ignore
+    }
+  }
+  realtimeChannel = null;
+  realtimeUserId = null;
+}
+
+/** Hook React: konfigurasi hidup + setter praktis. */
+export function useScrollGuardConfig() {
+  const [cfg, setCfg] = useState<ScrollGuardConfig>(() => getScrollGuardConfig());
+  useEffect(() => {
+    // Pastikan cache sinkron dengan server saat komponen mount (mis. sehabis reload).
+    void ensureScrollGuardHydrated();
+    return subscribeScrollGuard(setCfg);
+  }, []);
+  return {
+    cfg,
+    set: (patch: Partial<ScrollGuardConfig>) => setCfg(setScrollGuardConfig(patch)),
+    reset: () => setCfg(resetScrollGuardConfig()),
+  };
+}

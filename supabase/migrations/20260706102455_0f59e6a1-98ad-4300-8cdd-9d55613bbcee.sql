@@ -1,0 +1,1 @@
+ALTER VIEW public.prep_submissions_unrouted SET (security_invoker = on);

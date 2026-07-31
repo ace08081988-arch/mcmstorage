@@ -3641,21 +3641,18 @@ export type Database = {
       }
       user_storage: {
         Row: {
-          categories: Json
           created_at: string
           items: Json
           updated_at: string
           user_id: string
         }
         Insert: {
-          categories?: Json
           created_at?: string
           items?: Json
           updated_at?: string
           user_id: string
         }
         Update: {
-          categories?: Json
           created_at?: string
           items?: Json
           updated_at?: string
