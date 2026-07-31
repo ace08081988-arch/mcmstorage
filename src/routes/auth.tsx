@@ -132,9 +132,20 @@ function AuthPage() {
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
   const secureSignUpFn = useServerFn(secureSignUp);
 
+  // Terapkan preferensi tersimpan setelah hydrate (bukan saat render pertama).
+  const prefsRestored = useRef(false);
+  useEffect(() => {
+    const p = readPrefs();
+    setMode(p.mode);
+    setIntent(p.intent);
+    setEmail(p.email);
+    prefsRestored.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !prefsRestored.current) return;
     try {
       window.localStorage.setItem(
         LS_KEY,
