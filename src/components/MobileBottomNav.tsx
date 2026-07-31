@@ -78,6 +78,7 @@ export function MobileBottomNav() {
       aria-label="Navigasi utama"
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 md:hidden",
+        "app-static-bottom-bar",
         "border-t border-primary/15",
         "bg-background/92 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78",
       )}
@@ -137,6 +138,7 @@ export function MobileBottomNav() {
             >
               <span
                 aria-hidden
+                data-nav-icon
                 className={cn(
                   "relative grid h-8 w-14 place-items-center rounded-full transition-transform duration-300 ease-out",
                   active ? "-translate-y-0.5 scale-105" : "scale-100",
@@ -174,6 +176,7 @@ export function MobileBottomNav() {
                 ) : null}
               </span>
               <span
+                data-nav-label
                 className={cn(
                   "transition-all duration-300 ease-out tracking-tight",
                   active ? "font-semibold opacity-100" : "font-normal opacity-80",
@@ -204,6 +207,7 @@ export function MobileBottomNav() {
         >
           <span
             aria-hidden
+            data-nav-icon
             className={cn(
               "grid h-8 w-14 place-items-center rounded-full bg-transparent transition-transform duration-300 ease-out",
               menuActive ? "-translate-y-0.5 scale-105" : "scale-100",
@@ -242,6 +246,7 @@ export function MobileBottomNav() {
             ) : null}
           </span>
           <span
+            data-nav-label
             className={cn(
               "transition-all duration-300 ease-out tracking-tight",
               menuActive ? "font-semibold opacity-100" : "font-normal opacity-80",
