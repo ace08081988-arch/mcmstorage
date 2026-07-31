@@ -3,7 +3,7 @@
  * Pengunjung melihat produk + stok dan memesan langsung lewat WhatsApp.
  */
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { MessageCircle, PackageSearch, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,7 @@ type SortOption = "name" | "price-asc" | "price-desc" | "stock";
 
 function PublicKatalogPage() {
   const data = Route.useLoaderData() as PublicCatalogPayload;
+  const { slug } = Route.useParams();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState(ALL);
   const [onlyReady, setOnlyReady] = useState(false);
@@ -219,9 +220,14 @@ function PublicKatalogPage() {
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold" title={it.name}>
+                  <Link
+                    to="/katalog/$slug/$itemId"
+                    params={{ slug, itemId: it.id }}
+                    className="block truncate text-sm font-semibold hover:underline"
+                    title={it.name}
+                  >
                     {it.name}
-                  </p>
+                  </Link>
                   <p className="truncate text-xs text-muted-foreground">
                     {it.category?.trim() || "Tanpa kategori"}
                   </p>
@@ -255,6 +261,13 @@ function PublicKatalogPage() {
                     </a>
                   </Button>
                 ) : null}
+                <Link
+                  to="/katalog/$slug/$itemId"
+                  params={{ slug, itemId: it.id }}
+                  className="text-center text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  Lihat detail
+                </Link>
               </li>
             );
           })}
