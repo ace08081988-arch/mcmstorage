@@ -169,7 +169,7 @@ function PublicKatalogPage() {
   const shop = data.shop;
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6">
+    <main className="mx-auto w-full max-w-5xl px-4 py-6 pb-28">
       <header className="lux-plate mb-5 rounded-2xl p-5">
         <p className="lux-eyebrow">Katalog produk</p>
         <h1 className="text-2xl font-semibold tracking-tight">{shop.name}</h1>
@@ -251,8 +251,12 @@ function PublicKatalogPage() {
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((it) => {
             const empty = it.stock_base <= 0;
+            const qty = cart[it.id] ?? 0;
             return (
-              <li key={it.id} className="lux-card flex flex-col gap-2 p-2.5">
+              <li
+                key={it.id}
+                className={`lux-card flex flex-col gap-2 p-2.5 ${qty > 0 ? "ring-1 ring-primary" : ""}`}
+              >
                 {it.image_url ? (
                   <Link to="/katalog/$slug/$itemId" params={{ slug, itemId: it.id }}>
                   <img
@@ -299,15 +303,56 @@ function PublicKatalogPage() {
                     : `${it.stock_base.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${it.base_unit || "pcs"}`}
                 </span>
                 {shop.wa ? (
-                  <Button asChild size="sm" className="mt-auto rounded-full">
-                    <a
-                      href={waLink(shop.wa, orderText(shop.name, it))}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Pesan WA
-                    </a>
-                  </Button>
+                  <div className="mt-auto">
+                    {qty > 0 ? (
+                      <div className="flex items-center justify-between rounded-full border p-1">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 rounded-full"
+                          aria-label={`Kurangi ${it.name}`}
+                          onClick={() => setQty(it.id, qty - 1)}
+                        >
+                          <Minus className="h-3.5 w-3.5" aria-hidden />
+                        </Button>
+                        <span className="text-sm font-semibold tabular-nums">{qty}</span>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 rounded-full"
+                          aria-label={`Tambah ${it.name}`}
+                          onClick={() => setQty(it.id, qty + 1)}
+                        >
+                          <Plus className="h-3.5 w-3.5" aria-hidden />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-1.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 rounded-full px-2"
+                          disabled={empty}
+                          onClick={() => setQty(it.id, 1)}
+                        >
+                          <Plus className="mr-1 h-3.5 w-3.5" aria-hidden /> Pilih
+                        </Button>
+                        <Button asChild size="sm" className="rounded-full px-2.5">
+                          <a
+                            href={waLink(shop.wa, orderText(shop.name, it))}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Pesan ${it.name} lewat WhatsApp`}
+                          >
+                            <MessageCircle className="h-4 w-4" aria-hidden />
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ) : null}
                 <Link
                   to="/katalog/$slug/$itemId"
@@ -321,6 +366,39 @@ function PublicKatalogPage() {
           })}
         </ul>
       )}
+
+      {shop.wa && cartLines.length > 0 ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">
+                {cartLines.length} produk dipilih
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {cartTotal > 0 ? `Perkiraan total ${rupiah(cartTotal)}` : "Total dikonfirmasi penjual"}
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="rounded-full"
+              onClick={() => setCart({})}
+            >
+              <X className="mr-1 h-4 w-4" aria-hidden /> Kosongkan
+            </Button>
+            <Button asChild size="sm" className="rounded-full">
+              <a
+                href={waLink(shop.wa, bulkOrderText(shop.name, cartLines))}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Check className="mr-1.5 h-4 w-4" aria-hidden /> Kirim pesanan WA
+              </a>
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
