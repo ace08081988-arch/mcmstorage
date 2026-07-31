@@ -166,6 +166,13 @@
   --info: oklch(0.68 0.14 235);
   --info-foreground: oklch(0.985 0.02 235);
   --info-soft: color-mix(in oklab, var(--info) 15%, var(--background));
+  /* WhatsApp #25D366 dalam oklch; `strong` dipakai untuk TEKS hijau di atas
+     background terang supaya kontrasnya lolos WCAG AA (hex #25D366 mentah
+     terlalu terang untuk teks kecil). */
+  --wa: oklch(0.762 0.191 150.2);
+  --wa-foreground: oklch(0.16 0.04 150);
+  --wa-strong: oklch(0.52 0.14 150.2);
+  --wa-soft: color-mix(in oklab, var(--wa) 16%, var(--background));
   /* Elevation — konsisten light/dark. */
   --shadow-color: 220 40% 12%;
   --shadow-xs: 0 1px 2px 0 hsl(var(--shadow-color) / 0.05);
