@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { MessageCircle, Phone, Bell, LayoutGrid } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useUnreadStatus } from "@/lib/chat";
+import { useBottomNavHeightSync } from "@/lib/use-bottom-nav-height";
 import { useViewportAnchor } from "@/lib/use-viewport-anchor";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,8 @@ export function ChatBottomNav() {
   // Mode lock: bar mengikuti address bar (dihaluskan per-frame), tapi
   // dibekukan saat keyboard virtual terbuka.
   const { keyboardOpen, anchorStyle } = useViewportAnchor({ lock: true });
+  const navRef = useRef<HTMLElement | null>(null);
+  useBottomNavHeightSync(navRef);
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
     { to: "/panggilan", label: "Panggilan", Icon: Phone },
@@ -54,6 +57,7 @@ export function ChatBottomNav() {
 
   return (
     <nav
+      ref={navRef}
       aria-label="Navigasi utama chat"
       // Fixed di viewport bawah supaya tidak "goyang" ikut scroll pada
       // Android WebView dengan dynamic viewport (URL-bar auto-hide).

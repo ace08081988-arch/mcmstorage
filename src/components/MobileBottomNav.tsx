@@ -1,8 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Warehouse, PackageSearch, MessageCircle, Menu } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useUnreadStatus } from "@/lib/chat";
+import { useBottomNavHeightSync } from "@/lib/use-bottom-nav-height";
 import { useViewportAnchor } from "@/lib/use-viewport-anchor";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,9 @@ export function MobileBottomNav() {
   // browser — nilainya dihaluskan per-frame di engine sehingga bar tidak
   // terlihat loncat saat address bar mengembang/menciut.
   const { keyboardOpen, anchorStyle } = useViewportAnchor({ lock: true });
+  // Tinggi bar diukur nyata (badge unread bisa mengubah tinggi) lalu
+  // dipublikasikan ke `--app-bottom-nav-h` yang dipakai padding konten.
+  const navRef = useRef<HTMLElement | null>(null);
 
   // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
@@ -57,6 +61,7 @@ export function MobileBottomNav() {
     path.startsWith("/pembaruan/") ||
     path === "/fitur" ||
     path.startsWith("/fitur/");
+  useBottomNavHeightSync(navRef, !hideOnChatFamily);
   if (hideOnChatFamily) return null;
 
   const items: Item[] = [
@@ -78,6 +83,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
+      ref={navRef}
       aria-label="Navigasi utama"
       className={cn(
         // z-index & padding safe-area diatur lewat `.app-static-bottom-bar`
