@@ -47,7 +47,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-ms-5 shadow-sm">
+    <section className="lux-card p-ms-5">
       <h2 className="text-ms-lg font-semibold text-foreground">{title}</h2>
       <div className="mt-2 space-ms-2 text-ms-sm text-muted-foreground">
         {children}
@@ -62,7 +62,7 @@ function TrustPage() {
     <PublicHeader />
     <main className="mx-auto max-w-3xl px-ms-4 py-10">
       <header className="mb-6">
-        <h1 className="text-ms-3xl font-bold tracking-tight text-foreground">
+        <h1 className="text-ms-3xl font-extrabold tracking-tight text-foreground">
           Trust &amp; Privacy
         </h1>
         <dl className="mt-3 grid gap-ms-2 rounded-md border border-border bg-muted/40 p-ms-3 text-ms-xs text-muted-foreground sm:grid-cols-3">
