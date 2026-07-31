@@ -12,6 +12,7 @@ import {
   type LockConfig,
 } from "@/lib/app-lock";
 import { AppLockSetup } from "@/components/AppLockSetup";
+import { CategoryManagerDialog } from "@/components/CategoryManagerDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -292,6 +293,9 @@ function Index() {
     return window.localStorage.getItem("mcm_active_cat");
   });
   const [newCatName, setNewCatName] = useState("");
+  const [catManagerOpen, setCatManagerOpen] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     const saved = window.localStorage.getItem("mcm_rail_open");
@@ -373,10 +377,18 @@ function Index() {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
       if (!uid || cancelled) return;
+      setSaveState("saving");
       const { error } = await supabase
         .from("user_storage")
         .upsert({ user_id: uid, items: items as any, categories: categories as any });
-      if (error && !cancelled) toast.error("Gagal menyimpan: " + friendlyError(error));
+      if (cancelled) return;
+      if (error) {
+        setSaveState("error");
+        toast.error("Gagal menyimpan: " + friendlyError(error));
+      } else {
+        setSaveState("saved");
+        setLastSavedAt(Date.now());
+      }
     }, 600);
     return () => {
       cancelled = true;
@@ -491,6 +503,45 @@ function Index() {
     setCategories((c) => c.filter((x) => x !== name));
     setItems((arr) => arr.filter((i) => i.kategori !== name));
     if (activeCat === name) setActiveCat(null);
+  };
+
+  // — Kelola kategori (ubah nama, urutan, pulihkan kategori yatim) —
+  const categoryUsage = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of categories) m.set(c, 0);
+    for (const i of items) m.set(i.kategori, (m.get(i.kategori) ?? 0) + 1);
+    return Array.from(m, ([name, count]) => ({ name, count }));
+  }, [categories, items]);
+
+  const orphanCategories = useMemo(
+    () => categoryUsage.filter((u) => u.count > 0 && !categories.includes(u.name)),
+    [categoryUsage, categories],
+  );
+
+  const renameCategory = (from: string, to: string) => {
+    setCategories((c) => c.map((x) => (x === from ? to : x)));
+    setItems((arr) =>
+      arr.map((i) => (i.kategori === from ? { ...i, kategori: to as Kategori } : i)),
+    );
+    if (activeCat === from) setActiveCat(to);
+    toast.success(`Kategori diubah jadi "${to}"`);
+  };
+
+  const reorderCategory = (name: string, dir: -1 | 1) => {
+    setCategories((c) => {
+      const idx = c.indexOf(name);
+      const next = idx + dir;
+      if (idx < 0 || next < 0 || next >= c.length) return c;
+      const copy = [...c];
+      [copy[idx], copy[next]] = [copy[next], copy[idx]];
+      return copy;
+    });
+  };
+
+  const adoptOrphanCategories = (names: string[]) => {
+    if (names.length === 0) return;
+    setCategories((c) => [...c, ...names.filter((n) => !c.includes(n))]);
+    toast.success(`${names.length} kategori didaftarkan ulang`);
   };
 
   const addProduk = () => {
@@ -691,9 +742,34 @@ function Index() {
 
           {categories.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Kategori kamu
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Kategori kamu
+                </p>
+                <button
+                  onClick={() => setCatManagerOpen(true)}
+                  className="rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                >
+                  Kelola kategori
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {saveState === "saving"
+                  ? "Menyimpan…"
+                  : saveState === "error"
+                    ? "Gagal menyimpan kategori"
+                    : lastSavedAt
+                      ? `Tersimpan ${new Date(lastSavedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+                      : "Tersinkron dengan akunmu"}
               </p>
+              {orphanCategories.length > 0 && (
+                <button
+                  onClick={() => setCatManagerOpen(true)}
+                  className="w-full rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-left text-[11px] font-medium"
+                >
+                  ⚠ {orphanCategories.length} kategori produk belum terdaftar — ketuk untuk memulihkan
+                </button>
+              )}
               <ul className="grid gap-1.5">
                 {categories.map((c) => {
                   const count = items.filter((i) => i.kategori === c).length;
@@ -771,6 +847,24 @@ function Index() {
           <ReadyEcerSection />
           <ReadyRequestSection />
         </main>
+        <CategoryManagerDialog
+          open={catManagerOpen}
+          onOpenChange={setCatManagerOpen}
+          categories={categories}
+          usage={categoryUsage}
+          orphans={orphanCategories}
+          onAdd={addCategory}
+          onRename={renameCategory}
+          onDelete={deleteCategory}
+          onReorder={reorderCategory}
+          onAdoptOrphans={adoptOrphanCategories}
+          onSelect={(c) => {
+            setActiveCat(c);
+            setCatManagerOpen(false);
+          }}
+          saveState={saveState}
+          lastSavedAt={lastSavedAt}
+        />
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
     );
@@ -1562,6 +1656,24 @@ function Index() {
         </div>
       )}
       {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
+      <CategoryManagerDialog
+        open={catManagerOpen}
+        onOpenChange={setCatManagerOpen}
+        categories={categories}
+        usage={categoryUsage}
+        orphans={orphanCategories}
+        onAdd={addCategory}
+        onRename={renameCategory}
+        onDelete={deleteCategory}
+        onReorder={reorderCategory}
+        onAdoptOrphans={adoptOrphanCategories}
+        onSelect={(c: string) => {
+          setActiveCat(c);
+          setCatManagerOpen(false);
+        }}
+        saveState={saveState}
+        lastSavedAt={lastSavedAt}
+      />
       <ProductEditDrawer
         open={editId !== null}
         onOpenChange={(v) => { if (!v) setEditId(null); }}
