@@ -128,20 +128,11 @@ function TermsPage() {
 
           <Section title="7. Pembayaran, langganan, dan pajak">
             <p>
-              Untuk paket berbayar, pembayaran, penagihan, perpanjangan
-              langganan, pajak, mata uang, faktur, pembatalan, dan
-              pengembalian dana diproses oleh <strong>Paddle.com</strong>{" "}
-              sebagai <strong>Merchant of Record</strong> kami. Dengan
-              melakukan pembelian, Anda juga menyetujui{" "}
-              <a
-                href="https://www.paddle.com/legal/checkout-buyer-terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Paddle Checkout Buyer Terms
-              </a>
-              . Detail mengenai pengembalian dana ada di{" "}
+              Saat ini Layanan disediakan tanpa biaya dan tidak ada
+              pembayaran daring di dalam aplikasi. Bila paket berbayar
+              diaktifkan kembali di kemudian hari, syarat penagihan, pajak,
+              dan pengembalian dana akan diumumkan lebih dulu di halaman ini
+              serta di{" "}
               <Link to="/refund" className="underline">
                 Kebijakan Pengembalian
               </Link>
