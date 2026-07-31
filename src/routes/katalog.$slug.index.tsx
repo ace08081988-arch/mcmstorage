@@ -114,6 +114,8 @@ function PublicKatalogPage() {
   const [onlyReady, setOnlyReady] = useState(false);
   const [sort, setSort] = useState<SortOption>("name");
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const cartLines = useMemo(
     () =>
