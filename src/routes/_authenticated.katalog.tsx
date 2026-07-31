@@ -8,6 +8,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpDown, MessageCircle, PackageSearch } from "lucide-react";
 
 import { PageContainer, PageHeader, PillsTabs } from "@/components/shell";
+import { PublicCatalogShareCard } from "@/components/PublicCatalogShareCard";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -174,6 +175,7 @@ function KatalogPage() {
       </div>
       <PageContainer ariaLabel="Katalog produk">
         <section className="space-ms-3">
+          <PublicCatalogShareCard />
           <div className="flex flex-wrap items-center gap-ms-2">
             <input
               value={q}
