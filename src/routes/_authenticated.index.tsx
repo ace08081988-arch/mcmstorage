@@ -504,6 +504,45 @@ function Index() {
     if (activeCat === name) setActiveCat(null);
   };
 
+  // — Kelola kategori (ubah nama, urutan, pulihkan kategori yatim) —
+  const categoryUsage = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const c of categories) m.set(c, 0);
+    for (const i of items) m.set(i.kategori, (m.get(i.kategori) ?? 0) + 1);
+    return Array.from(m, ([name, count]) => ({ name, count }));
+  }, [categories, items]);
+
+  const orphanCategories = useMemo(
+    () => categoryUsage.filter((u) => u.count > 0 && !categories.includes(u.name)),
+    [categoryUsage, categories],
+  );
+
+  const renameCategory = (from: string, to: string) => {
+    setCategories((c) => c.map((x) => (x === from ? to : x)));
+    setItems((arr) =>
+      arr.map((i) => (i.kategori === from ? { ...i, kategori: to as Kategori } : i)),
+    );
+    if (activeCat === from) setActiveCat(to);
+    toast.success(`Kategori diubah jadi "${to}"`);
+  };
+
+  const reorderCategory = (name: string, dir: -1 | 1) => {
+    setCategories((c) => {
+      const idx = c.indexOf(name);
+      const next = idx + dir;
+      if (idx < 0 || next < 0 || next >= c.length) return c;
+      const copy = [...c];
+      [copy[idx], copy[next]] = [copy[next], copy[idx]];
+      return copy;
+    });
+  };
+
+  const adoptOrphanCategories = (names: string[]) => {
+    if (names.length === 0) return;
+    setCategories((c) => [...c, ...names.filter((n) => !c.includes(n))]);
+    toast.success(`${names.length} kategori didaftarkan ulang`);
+  };
+
   const addProduk = () => {
     if (!activeCat) return;
     const nextId = items.reduce((m, i) => Math.max(m, i.id), 0) + 1;
