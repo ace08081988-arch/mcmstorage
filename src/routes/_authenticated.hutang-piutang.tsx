@@ -934,8 +934,8 @@ function HutangPiutangPage() {
                           </Button>
                           <Button
                             size="sm"
-                            variant="secondary"
-                            className="h-8 shrink-0 rounded-lg bg-wa/15 text-wa-strong hover:bg-wa/25"
+                            variant="waSoft"
+                            className="h-8 shrink-0 rounded-lg"
                             onClick={() => void sendPartyReportWA(group)}
                             title="Kirim laporan via MCM"
                           >
@@ -1035,8 +1035,8 @@ function HutangPiutangPage() {
                           {!lunas && (
                             <Button
                               size="sm"
-                              variant="secondary"
-                              className="h-8 rounded-lg bg-wa/15 text-wa-strong hover:bg-wa/25"
+                              variant="waSoft"
+                              className="h-8 rounded-lg"
                               onClick={() => setReminderFor(d)}
                               title="Kirim pengingat via MCM"
                             >
@@ -1312,8 +1312,8 @@ function PaymentsReport({
           </div>
           <Button
             size="sm"
-            variant="secondary"
-            className="bg-wa/15 text-wa-strong hover:bg-wa/25"
+            variant="waSoft"
+            className=""
             onClick={onSendWA}
             title="Kirim laporan via MCM"
           >
