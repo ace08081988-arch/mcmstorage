@@ -3899,6 +3899,7 @@ export type Database = {
           base_unit: string
           category: string | null
           created_at: string
+          description: string | null
           id: string
           image_path: string | null
           name: string
@@ -3914,6 +3915,7 @@ export type Database = {
           base_unit: string
           category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           image_path?: string | null
           name: string
@@ -3929,6 +3931,7 @@ export type Database = {
           base_unit?: string
           category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           image_path?: string | null
           name?: string
