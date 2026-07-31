@@ -1656,6 +1656,24 @@ function Index() {
         </div>
       )}
       {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
+      <CategoryManagerDialog
+        open={catManagerOpen}
+        onOpenChange={setCatManagerOpen}
+        categories={categories}
+        usage={categoryUsage}
+        orphans={orphanCategories}
+        onAdd={addCategory}
+        onRename={renameCategory}
+        onDelete={deleteCategory}
+        onReorder={reorderCategory}
+        onAdoptOrphans={adoptOrphanCategories}
+        onSelect={(c: string) => {
+          setActiveCat(c);
+          setCatManagerOpen(false);
+        }}
+        saveState={saveState}
+        lastSavedAt={lastSavedAt}
+      />
       <ProductEditDrawer
         open={editId !== null}
         onOpenChange={(v) => { if (!v) setEditId(null); }}
