@@ -321,6 +321,7 @@ export function useViewportAnchor(options: ViewportAnchorOptions = {}): Viewport
   useEffect(() => {
     const listener: Listener = (open) => setKeyboardOpen(open);
     listeners.add(listener);
+    const stopSafeArea = startSafeAreaRecalc();
     if (!started) {
       started = true;
       startEngine();
@@ -328,6 +329,7 @@ export function useViewportAnchor(options: ViewportAnchorOptions = {}): Viewport
     setKeyboardOpen(currentKeyboardOpen);
     return () => {
       listeners.delete(listener);
+      stopSafeArea();
       if (listeners.size === 0) {
         stopEngine?.();
         stopEngine = null;
