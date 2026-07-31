@@ -1148,74 +1148,75 @@ function DetailHero({
   }, [isAdmin, title.id]);
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-      {/* Brand strip */}
-      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-ms-4 pb-4 pt-4 text-primary-foreground sm:px-ms-5 sm:pb-6 sm:pt-5">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-success via-primary-foreground/40 to-success" />
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-3">
+    <div className="overflow-hidden rounded-3xl border bg-card shadow-[0_18px_40px_-24px_rgba(0,0,0,0.55)]">
+      {/* Brand strip — gold plate */}
+      <div className="relative bg-gradient-to-br from-primary/90 via-primary to-primary/70 px-ms-4 pb-8 pt-4 text-primary-foreground sm:px-ms-5 sm:pt-5">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(255,255,255,0.28),transparent_65%)]" />
+        <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase leading-none tracking-[0.18em] text-primary-foreground/80">
+            <div className="flex items-center gap-ms-1.5 text-ms-2xs font-bold uppercase leading-none tracking-[0.2em] text-primary-foreground/75">
               <Scale className="h-3 w-3 shrink-0" />
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-2 break-words text-ms-base font-bold leading-snug sm:text-ms-xl">{title.name}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs leading-none text-primary-foreground/85">
-              <span
-                className="inline-flex h-6 min-w-0 max-w-full items-center gap-ms-1 rounded-full bg-white/15 px-ms-2 leading-none backdrop-blur-sm"
-                title={item.name}
-              >
-                <Package className="h-3 w-3 shrink-0" />
-                <span className="truncate">{item.name}</span>
-              </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/15 px-ms-2 leading-none backdrop-blur-sm">
-                Target <b className="ml-0.5">{fmtWeight(Number(title.target_grams), unit)}</b>
-              </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/25 px-ms-2 font-semibold leading-none text-success ring-1 ring-success/50 backdrop-blur-sm">
-                <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
-              </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-white/10 px-ms-2 font-mono leading-none text-primary-foreground/90 backdrop-blur-sm sm:hidden">
-                <Hash className="h-3 w-3 shrink-0" /> {ref}
-              </span>
-            </div>
+            <h2 className="mt-1.5 break-words text-ms-lg font-extrabold leading-tight tracking-tight sm:text-ms-xl">{title.name}</h2>
           </div>
-          <div className="hidden shrink-0 text-right sm:block">
-            <div className="text-ms-2xs uppercase leading-snug tracking-wider text-primary-foreground/70">No. Referensi</div>
-            <div className="font-mono text-ms-2xs leading-snug text-primary-foreground/95">{ref}</div>
-          </div>
+          <span className="shrink-0 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-ms-2 py-1 font-mono text-ms-2xs font-semibold leading-none backdrop-blur-sm">
+            #{ref}
+          </span>
+        </div>
+        <div className="relative mt-ms-3 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs leading-none">
+          <span
+            className="inline-flex h-6 min-w-0 max-w-full items-center gap-ms-1 rounded-md bg-primary-foreground/90 px-ms-2 font-bold leading-none text-primary shadow-sm"
+            title={item.name}
+          >
+            <Package className="h-3 w-3 shrink-0" />
+            <span className="truncate">{item.name}</span>
+          </span>
+          <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-md bg-primary-foreground/15 px-ms-2 font-semibold leading-none ring-1 ring-inset ring-primary-foreground/20">
+            Target <b className="ml-0.5">{fmtWeight(Number(title.target_grams), unit)}</b>
+          </span>
+          <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-md bg-success px-ms-2 font-bold uppercase tracking-wider leading-none text-success-foreground shadow-sm">
+            <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
+          </span>
         </div>
       </div>
 
       {/* Detail rows */}
-      <div className="divide-y bg-card px-ms-4 sm:px-ms-5">
-        <DetailRow icon={<Package className="h-3.5 w-3.5" />} label="Produk gudang"
-          value={<span className="font-semibold">{item.name}</span>}
+      <div className="relative z-10 -mt-5 space-y-ms-4 rounded-t-3xl border-t bg-card px-ms-4 pb-ms-4 pt-ms-4 sm:px-ms-5">
+        <DetailRow icon={<Package className="h-4 w-4" />} label="Produk gudang"
+          value={item.name}
           sub={`Stok: ${fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}`}
         />
-        <DetailRow icon={<Scale className="h-3.5 w-3.5" />} label="Target per kotak"
-          value={<span className="font-semibold">{fmtWeight(Number(title.target_grams), unit)}</span>}
-          sub={preps.length > 0 ? `Total target ${fmtWeight(targetTotal, unit)} · aktual ${fmtWeight(totalActual, unit)}` : undefined}
+        <DetailRow icon={<Scale className="h-4 w-4" />} label="Target per kotak"
+          value={fmtWeight(Number(title.target_grams), unit)}
+          accent
+          sub={preps.length > 0 ? `Total ${fmtWeight(targetTotal, unit)} · aktual ${fmtWeight(totalActual, unit)}` : undefined}
         />
         {/* `preps` di header ini sudah difilter aktif (lihat pemanggilan
             `<Header preps={active} />` di komponen induk). Label
             "kotak siap" wajib konsisten dengan badge di ReadyEcerSection
             (juga bersumber `countActiveByTitle`) supaya angka 0 tidak
             bermakna berbeda di list vs detail. */}
-        <DetailRow icon={<Boxes className="h-3.5 w-3.5" />} label="Jumlah penyiapan"
-          value={<span className="font-semibold">{preps.length} kotak siap</span>}
-          sub={preps.length > 0 ? `${progress}% dari target` : "Belum ada kotak siap"}
+        <DetailRow icon={<Boxes className="h-4 w-4" />} label="Jumlah penyiapan"
+          value={`${preps.length} kotak siap`}
+          badge={preps.length > 0 ? `${progress}% dari target` : undefined}
+          sub={preps.length > 0 ? undefined : "Belum ada kotak siap"}
         />
-        {lastDate && (
-          <>
-            <DetailRow icon={<Calendar className="h-3.5 w-3.5" />} label="Tanggal terakhir"
-              value={<span className="font-semibold">{fmtDate(lastDate)}</span>} />
-            <DetailRow icon={<Clock className="h-3.5 w-3.5" />} label="Jam terakhir"
-              value={<span className="font-semibold">{fmtTime(lastDate)}</span>} />
-          </>
-        )}
-        <DetailRow icon={<Hash className="h-3.5 w-3.5" />} label="ID judul"
-          value={<span className="font-mono text-ms-xs">{ref}</span>} />
+
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+        <div className="grid grid-cols-2 gap-ms-3">
+          {lastDate && (
+            <>
+              <MiniStat icon={<Calendar className="h-3.5 w-3.5" />} label="Tanggal terakhir" value={fmtDate(lastDate)} />
+              <MiniStat icon={<Clock className="h-3.5 w-3.5" />} label="Jam terakhir" value={fmtTime(lastDate)} />
+            </>
+          )}
+          <MiniStat icon={<Hash className="h-3.5 w-3.5" />} label="ID judul" value={ref} mono />
+        </div>
+
         {title.note && (
-          <div className="py-ms-2.5">
+          <div className="rounded-2xl border bg-muted/30 p-ms-3">
             <EcerLabel as="div">Catatan</EcerLabel>
             <EcerBody as="div" className="mt-1.5 whitespace-pre-wrap">{title.note}</EcerBody>
           </div>
