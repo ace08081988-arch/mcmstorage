@@ -28,6 +28,7 @@ import { Route as PosKasirIndexRouteImport } from './routes/pos-kasir.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as PosKasirRingkasanRouteImport } from './routes/pos-kasir.ringkasan'
+import { Route as KatalogSlugRouteImport } from './routes/katalog.$slug'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
@@ -255,6 +256,11 @@ const PosKasirRingkasanRoute = PosKasirRingkasanRouteImport.update({
   id: '/ringkasan',
   path: '/ringkasan',
   getParentRoute: () => PosKasirRoute,
+} as any)
+const KatalogSlugRoute = KatalogSlugRouteImport.update({
+  id: '/katalog/$slug',
+  path: '/katalog/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ICodeRoute = ICodeRouteImport.update({
   id: '/i/$code',
@@ -1092,6 +1098,7 @@ export interface FileRoutesByFullPath {
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
+  '/katalog/$slug': typeof KatalogSlugRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/pos-kasir/': typeof PosKasirIndexRoute
@@ -1241,6 +1248,7 @@ export interface FileRoutesByTo {
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
+  '/katalog/$slug': typeof KatalogSlugRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
@@ -1396,6 +1404,7 @@ export interface FileRoutesById {
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
+  '/katalog/$slug': typeof KatalogSlugRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -1552,6 +1561,7 @@ export interface FileRouteTypes {
     | '/download/$variant'
     | '/email/unsubscribe'
     | '/i/$code'
+    | '/katalog/$slug'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/pos-kasir/'
@@ -1701,6 +1711,7 @@ export interface FileRouteTypes {
     | '/download/$variant'
     | '/email/unsubscribe'
     | '/i/$code'
+    | '/katalog/$slug'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/'
@@ -1855,6 +1866,7 @@ export interface FileRouteTypes {
     | '/download/$variant'
     | '/email/unsubscribe'
     | '/i/$code'
+    | '/katalog/$slug'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/_authenticated/'
@@ -1949,6 +1961,7 @@ export interface RootRouteChildren {
   DiagnostikPaketRoute: typeof DiagnostikPaketRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ICodeRoute: typeof ICodeRoute
+  KatalogSlugRoute: typeof KatalogSlugRoute
   TTokenRoute: typeof TTokenRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -2135,6 +2148,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pos-kasir/ringkasan'
       preLoaderRoute: typeof PosKasirRingkasanRouteImport
       parentRoute: typeof PosKasirRoute
+    }
+    '/katalog/$slug': {
+      id: '/katalog/$slug'
+      path: '/katalog/$slug'
+      fullPath: '/katalog/$slug'
+      preLoaderRoute: typeof KatalogSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/i/$code': {
       id: '/i/$code'
@@ -3353,6 +3373,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiagnostikPaketRoute: DiagnostikPaketRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ICodeRoute: ICodeRoute,
+  KatalogSlugRoute: KatalogSlugRoute,
   TTokenRoute: TTokenRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,

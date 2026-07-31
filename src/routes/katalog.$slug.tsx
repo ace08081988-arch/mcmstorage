@@ -1,0 +1,261 @@
+/**
+ * Katalog publik per toko — bisa dibuka tanpa login.
+ * Pengunjung melihat produk + stok dan memesan langsung lewat WhatsApp.
+ */
+import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { MessageCircle, PackageSearch, Search } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getPublicCatalog, type PublicCatalogItem } from "@/lib/public-catalog.functions";
+
+export const Route = createFileRoute("/katalog/$slug")({
+  ssr: true,
+  loader: ({ params }) => getPublicCatalog({ data: { slug: params.slug } }),
+  head: ({ loaderData }) => {
+    const name = loaderData?.shop?.name ?? "Katalog produk";
+    const title = `${name} — Katalog produk`;
+    const desc =
+      loaderData?.shop?.tagline?.trim() ||
+      `Lihat daftar produk ${name} lengkap dengan stok dan harga, lalu pesan langsung lewat WhatsApp.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary" },
+        ...(loaderData?.found ? [] : [{ name: "robots", content: "noindex" }]),
+      ],
+    };
+  },
+  component: PublicKatalogPage,
+});
+
+function rupiah(n: number | null) {
+  if (n == null || Number.isNaN(n)) return null;
+  return `Rp${Math.round(n).toLocaleString("id-ID")}`;
+}
+
+function waLink(wa: string, text: string) {
+  const digits = wa.replace(/\D/g, "").replace(/^0/, "62");
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+
+function orderText(shopName: string, it: PublicCatalogItem) {
+  const price = rupiah(it.selling_price_per_base);
+  return [
+    `Halo ${shopName}, saya mau pesan:`,
+    `• ${it.name}${it.category ? ` (${it.category})` : ""}`,
+    `Jumlah: ___ ${it.base_unit || "pcs"}`,
+    price ? `Harga: ${price}/${it.base_unit || "pcs"}` : "",
+    "",
+    "Mohon info ketersediaan & totalnya. Terima kasih.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+const ALL = "__all__";
+type SortOption = "name" | "price-asc" | "price-desc" | "stock";
+
+function PublicKatalogPage() {
+  const data = Route.useLoaderData();
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState(ALL);
+  const [onlyReady, setOnlyReady] = useState(false);
+  const [sort, setSort] = useState<SortOption>("name");
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of data.items) if (it.category?.trim()) set.add(it.category.trim());
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "id-ID"));
+  }, [data.items]);
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const list = data.items.filter((i) => {
+      if (cat !== ALL && (i.category ?? "").trim() !== cat) return false;
+      if (onlyReady && i.stock_base <= 0) return false;
+      if (!s) return true;
+      return i.name.toLowerCase().includes(s) || (i.category ?? "").toLowerCase().includes(s);
+    });
+    list.sort((a, b) => {
+      switch (sort) {
+        case "price-asc":
+          return (a.selling_price_per_base ?? Infinity) - (b.selling_price_per_base ?? Infinity);
+        case "price-desc":
+          return (b.selling_price_per_base ?? -Infinity) - (a.selling_price_per_base ?? -Infinity);
+        case "stock":
+          return b.stock_base - a.stock_base;
+        default:
+          return a.name.localeCompare(b.name, "id-ID");
+      }
+    });
+    return list;
+  }, [data.items, q, cat, onlyReady, sort]);
+
+  if (!data.found || !data.shop) {
+    return (
+      <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-3 px-4 text-center">
+        <PackageSearch className="h-8 w-8 text-muted-foreground" aria-hidden />
+        <h1 className="text-xl font-semibold">Katalog tidak tersedia</h1>
+        <p className="text-sm text-muted-foreground">
+          Tautan katalog ini tidak ditemukan atau sedang dinonaktifkan pemiliknya.
+        </p>
+      </main>
+    );
+  }
+
+  const shop = data.shop;
+
+  return (
+    <main className="mx-auto w-full max-w-5xl px-4 py-6">
+      <header className="lux-plate mb-5 rounded-2xl p-5">
+        <p className="lux-eyebrow">Katalog produk</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{shop.name}</h1>
+        {shop.tagline?.trim() ? (
+          <p className="mt-1 text-sm text-muted-foreground">{shop.tagline}</p>
+        ) : null}
+        <p className="mt-2 text-xs text-muted-foreground">
+          {data.items.length} produk · stok diperbarui langsung dari gudang
+        </p>
+        {shop.wa ? (
+          <Button asChild size="sm" className="mt-3 rounded-full">
+            <a
+              href={waLink(shop.wa, `Halo ${shop.name}, saya mau tanya produk.`)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Chat penjual
+            </a>
+          </Button>
+        ) : null}
+      </header>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-40 flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Cari produk / kategori…"
+            aria-label="Cari produk"
+            className="h-9 w-full rounded-full border bg-background pl-9 pr-3 text-sm"
+          />
+        </div>
+        {categories.length > 0 && (
+          <Select value={cat} onValueChange={setCat}>
+            <SelectTrigger aria-label="Filter kategori" className="h-9 w-auto min-w-36 rounded-full">
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Semua kategori</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <Select value={sort} onValueChange={(v) => setSort(v as SortOption)}>
+          <SelectTrigger aria-label="Urutkan produk" className="h-9 w-auto min-w-36 rounded-full">
+            <SelectValue placeholder="Urutkan" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Nama (A-Z)</SelectItem>
+            <SelectItem value="price-asc">Harga terendah</SelectItem>
+            <SelectItem value="price-desc">Harga tertinggi</SelectItem>
+            <SelectItem value="stock">Stok tersedia</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          size="sm"
+          variant={onlyReady ? "default" : "outline"}
+          className="rounded-full"
+          onClick={() => setOnlyReady((v) => !v)}
+        >
+          Stok tersedia
+        </Button>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="lux-card p-6 text-center text-sm text-muted-foreground">
+          Tidak ada produk yang cocok dengan filter ini.
+        </div>
+      ) : (
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {filtered.map((it) => {
+            const empty = it.stock_base <= 0;
+            return (
+              <li key={it.id} className="lux-card flex flex-col gap-2 p-2.5">
+                {it.image_url ? (
+                  <img
+                    src={it.image_url}
+                    alt={`Foto produk ${it.name}`}
+                    loading="lazy"
+                    className="aspect-square w-full rounded-lg border border-border/50 object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-muted text-xl font-semibold text-muted-foreground">
+                    {it.name.slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold" title={it.name}>
+                    {it.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {it.category?.trim() || "Tanpa kategori"}
+                  </p>
+                  {it.selling_price_per_base != null && (
+                    <p className="truncate text-sm font-medium">
+                      {rupiah(it.selling_price_per_base)}
+                      <span className="text-xs text-muted-foreground">
+                        {" "}
+                        /{it.base_unit || "pcs"}
+                      </span>
+                    </p>
+                  )}
+                </div>
+                <span
+                  className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[11px] ${
+                    empty ? "text-muted-foreground" : "text-foreground"
+                  }`}
+                >
+                  {empty
+                    ? "Stok habis"
+                    : `${it.stock_base.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${it.base_unit || "pcs"}`}
+                </span>
+                {shop.wa ? (
+                  <Button asChild size="sm" className="mt-auto rounded-full">
+                    <a
+                      href={waLink(shop.wa, orderText(shop.name, it))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Pesan WA
+                    </a>
+                  </Button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </main>
+  );
+}
