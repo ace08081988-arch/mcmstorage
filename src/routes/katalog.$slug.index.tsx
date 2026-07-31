@@ -124,9 +124,16 @@ function PublicKatalogPage() {
         .map((item) => ({ item, qty: cart[item.id] })),
     [data.items, cart],
   );
-  const cartTotal = cartLines.reduce(
-    (s, l) => s + (l.item.selling_price_per_base ?? 0) * l.qty,
-    0,
+  const cartTotal = useMemo(
+    () => cartLines.reduce((s, l) => s + (l.item.selling_price_per_base ?? 0) * l.qty, 0),
+    [cartLines],
+  );
+  // Teks pesanan WA dibangun SEKALI per perubahan keranjang. Sebelumnya
+  // dipanggil 3x per render (textarea, tombol salin, link WA) — pada katalog
+  // besar itu ~50ms per ketukan tombol +/- di perangkat Android kelas menengah.
+  const orderText = useMemo(
+    () => bulkOrderText(data.shop?.name ?? "", cartLines),
+    [data.shop?.name, cartLines],
   );
   const setQty = (id: string, qty: number) =>
     setCart((prev) => {
@@ -142,8 +149,11 @@ function PublicKatalogPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b, "id-ID"));
   }, [data.items]);
 
+  // Pencarian dipisah dari render input supaya mengetik tetap responsif:
+  // filter+sort katalog besar berjalan di prioritas rendah.
+  const deferredQ = useDeferredValue(q);
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
+    const s = deferredQ.trim().toLowerCase();
     const list = data.items.filter((i) => {
       if (cat !== ALL && (i.category ?? "").trim() !== cat) return false;
       if (onlyReady && i.stock_base <= 0) return false;
@@ -163,7 +173,7 @@ function PublicKatalogPage() {
       }
     });
     return list;
-  }, [data.items, q, cat, onlyReady, sort]);
+  }, [data.items, deferredQ, cat, onlyReady, sort]);
 
   if (!data.found || !data.shop) {
     return (
