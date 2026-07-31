@@ -129,10 +129,16 @@ function KatalogPage() {
   return (
     <>
       <PageHeader
+        icon={PackageSearch}
         title="Katalog produk"
-        description="Daftar produk gudang dengan stok langsung. Kirim penawaran ke pelanggan lewat WhatsApp."
-      />
-      <PillsTabs tabs={tabs} value={cat} onChange={setCat} ariaLabel="Filter kategori produk" />
+        subtitle="Stok langsung · pesan lewat WA"
+        stat={{ label: "Produk", value: String(filtered.length) }}
+      >
+        <PillsTabs tabs={tabs} value={cat} onChange={setCat} ariaLabel="Filter kategori produk" />
+      </PageHeader>
+      <div className="hidden md:block">
+        <PillsTabs tabs={tabs} value={cat} onChange={setCat} ariaLabel="Filter kategori produk" />
+      </div>
       <PageContainer ariaLabel="Katalog produk">
         <section className="space-ms-3">
           <div className="flex flex-wrap items-center gap-ms-2">
