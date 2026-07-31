@@ -1,0 +1,1 @@
+UPDATE public.warehouse_items SET selling_price_per_base = NULL WHERE id IN ('8f1cd686-cb79-4ad4-b7ae-796e008de440', 'ca732b46-d768-4e9b-b13c-daa8697364ab', '2c8e540e-15dd-41ab-a09a-91d78834450c');

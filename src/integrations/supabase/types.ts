@@ -3874,6 +3874,7 @@ export type Database = {
           name: string
           package_size: number
           package_type: string
+          selling_price_per_base: number | null
           stock_base: number
           updated_at: string
           user_id: string
@@ -3888,6 +3889,7 @@ export type Database = {
           name: string
           package_size?: number
           package_type: string
+          selling_price_per_base?: number | null
           stock_base?: number
           updated_at?: string
           user_id: string
@@ -3902,6 +3904,7 @@ export type Database = {
           name?: string
           package_size?: number
           package_type?: string
+          selling_price_per_base?: number | null
           stock_base?: number
           updated_at?: string
           user_id?: string

@@ -1,0 +1,2 @@
+UPDATE public.warehouse_items SET selling_price_per_base = 12500 WHERE id = 'ca732b46-d768-4e9b-b13c-daa8697364ab';
+UPDATE public.warehouse_items SET selling_price_per_base = 87500 WHERE id = '2c8e540e-15dd-41ab-a09a-91d78834450c';
