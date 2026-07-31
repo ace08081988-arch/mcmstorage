@@ -2624,7 +2624,7 @@ function WaPreviewDialog({
           </button>
           <button
             onClick={() => void send()}
-            className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-wa px-ms-3 text-ms-xs font-semibold text-white hover:opacity-90"
+            className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-wa px-ms-3 text-ms-xs font-semibold text-wa-foreground hover:opacity-90"
           >
             <MessageCircle className="h-3.5 w-3.5" /> Kirim via MCM
           </button>
@@ -2708,7 +2708,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
         </div>
         <div className="grid grid-cols-1 gap-ms-2.5 pt-2 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11">
           <button type="button" onClick={onShare}
-            className="inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-wa text-ms-sm font-semibold text-white">
+            className="inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-wa text-ms-sm font-semibold text-wa-foreground">
             <MessageCircle className="h-4 w-4" /> Bagikan
           </button>
           <a href={waUrl} target="_blank" rel="noreferrer" onClick={onOpenWa}
@@ -2779,7 +2779,7 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   return (
     <Modal title={task.title} onClose={onClose} wide>
       <div className="mb-3 flex flex-wrap gap-ms-2">
-        <button onClick={() => setSharePinOpen(true)} className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-wa px-ms-3 text-ms-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan link + PIN</button>
+        <button onClick={() => setSharePinOpen(true)} className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-wa px-ms-3 text-ms-xs font-semibold text-wa-foreground"><MessageCircle className="h-4 w-4" /> Bagikan link + PIN</button>
         {task.status === "done" ? (
           <button disabled={busy} onClick={reopenTask} className="inline-flex h-9 items-center gap-ms-1 rounded-md border px-ms-3 text-ms-xs">Aktifkan lagi</button>
         ) : (
@@ -2877,7 +2877,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       {sub.note && <div className="mt-0.5 line-clamp-2 text-ms-2xs">{sub.note}</div>}
       <div className="mt-1 flex gap-ms-1">
         {sub.location_url && /^https:\/\//i.test(sub.location_url) && <a href={sub.location_url} target="_blank" rel="noreferrer" className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded border text-ms-2xs"><MapPin className="h-3 w-3" /> Lokasi</a>}
-        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-wa text-ms-2xs font-semibold text-white"><MessageCircle className="h-3 w-3" /> MCM</button>
+        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-wa text-ms-2xs font-semibold text-wa-foreground"><MessageCircle className="h-3 w-3" /> MCM</button>
       </div>
     </div>
   );

@@ -300,7 +300,7 @@ export function ProductEditDrawer(props: Props) {
               </button>
               <button
                 onClick={() => { markSent(draft.id); patch({ status: "Sudah Dikirim" }); }}
-                className={`h-10 rounded-md border text-ms-xs font-medium ${sent ? "border-wa-strong bg-wa text-white" : "hover:bg-accent"}`}
+                className={`h-10 rounded-md border text-ms-xs font-medium ${sent ? "border-wa-strong bg-wa text-wa-foreground" : "hover:bg-accent"}`}
               >
                 ✓ Terkirim
               </button>
@@ -333,7 +333,7 @@ export function ProductEditDrawer(props: Props) {
           <button
             type="button"
             onClick={kirimWA}
-            className="inline-flex h-11 items-center justify-center rounded-md bg-wa px-ms-3 text-ms-sm font-semibold text-white hover:opacity-90"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-wa px-ms-3 text-ms-sm font-semibold text-wa-foreground hover:opacity-90"
           >
             💬 WA
           </button>

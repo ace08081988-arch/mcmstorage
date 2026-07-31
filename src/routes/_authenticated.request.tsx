@@ -1764,7 +1764,7 @@ function SendPrepLinkDialog({
                 onClick={() => void sendWA()}
                 disabled={!canPrepare || (isPending && pending !== "sendWA")}
                 aria-busy={pending === "sendWA"}
-                className="bg-wa text-white hover:bg-wa/90"
+                className="bg-wa text-wa-foreground hover:bg-wa/90"
               >
                 {pending === "sendWA"
                   ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />

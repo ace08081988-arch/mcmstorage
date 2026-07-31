@@ -49,7 +49,7 @@ const ICON_SIZE: Record<ShareBtnSize, string> = {
 
 const WA_CLS: Record<ShareBtnVariant, string> = {
   solid:
-    "bg-wa text-white shadow-sm hover:bg-wa/90 disabled:hover:bg-wa",
+    "bg-wa text-wa-foreground shadow-sm hover:bg-wa/90 disabled:hover:bg-wa",
   soft:
     "border border-wa/40 bg-wa/10 text-wa-strong hover:bg-wa/20",
 };

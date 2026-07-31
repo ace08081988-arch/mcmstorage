@@ -593,7 +593,7 @@ function WAPicker({
           <button onClick={onClose} className="flex-1 rounded-md border px-ms-3 py-ms-2 text-ms-xs hover:bg-accent">Batal</button>
           <button
             onClick={() => onPick(name.trim(), phone.trim())}
-            className="flex-1 rounded-md bg-wa px-ms-3 py-ms-2 text-ms-xs font-semibold text-white hover:opacity-90"
+            className="flex-1 rounded-md bg-wa px-ms-3 py-ms-2 text-ms-xs font-semibold text-wa-foreground hover:opacity-90"
           >
             💬 Kirim
           </button>

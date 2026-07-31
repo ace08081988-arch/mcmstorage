@@ -1956,7 +1956,7 @@ function Index() {
                       href={waUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 rounded-md bg-wa px-ms-2 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
+                      className="shrink-0 rounded-md bg-wa px-ms-2 py-1 text-[0.6875rem] font-semibold text-wa-foreground hover:opacity-90"
                       onClick={(e) => e.stopPropagation()}
                     >
                       MCM
@@ -2240,7 +2240,7 @@ function Index() {
                           href={waUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center rounded-md bg-wa px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
+                          className="inline-flex items-center rounded-md bg-wa px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-wa-foreground hover:opacity-90"
                         >
                           KIRIM MCM
                         </a>
@@ -2330,7 +2330,7 @@ function Index() {
                 onClick={(e) => {
                   if (selected.size === 0) e.preventDefault();
                 }}
-                className={`inline-flex items-center rounded-md bg-wa px-ms-3 py-1 text-[0.6875rem] font-semibold text-white ${
+                className={`inline-flex items-center rounded-md bg-wa px-ms-3 py-1 text-[0.6875rem] font-semibold text-wa-foreground ${
                   selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
                 }`}
               >

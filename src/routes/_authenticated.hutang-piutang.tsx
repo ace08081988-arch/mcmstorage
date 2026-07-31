@@ -2350,7 +2350,7 @@ function ReminderDialog({
           <Button
             onClick={() => void doSend(true)}
             disabled={busy || !hasAmt}
-            className="w-full bg-wa text-white hover:bg-wa/90 sm:w-auto"
+            className="w-full bg-wa text-wa-foreground hover:bg-wa/90 sm:w-auto"
           >
             {busy ? "Memproses…" : "Simpan & Kirim WA"}
           </Button>

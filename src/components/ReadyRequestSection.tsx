@@ -262,7 +262,7 @@ function RequestCard({
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSendWa(); }}
           aria-label={`Kirim ${r.prep_count} paket ke pembeli untuk ${r.name}`}
           title="Verifikasi bayar dulu → kirim ke pembeli"
-          className="inline-flex h-8 w-full items-center justify-center gap-ms-1 rounded-md bg-wa px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-wa/90"
+          className="inline-flex h-8 w-full items-center justify-center gap-ms-1 rounded-md bg-wa px-ms-2 text-ms-2xs font-semibold text-wa-foreground shadow-sm transition hover:bg-wa/90"
         >
           <Send className="h-3 w-3" /> Kirim ke pembeli
         </button>
