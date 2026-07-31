@@ -3339,6 +3339,54 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_events: {
+        Row: {
+          amount: string | null
+          created_at: string
+          currency_code: string | null
+          detail: Json | null
+          environment: string
+          id: string
+          invoice_url: string | null
+          kind: string
+          occurred_at: string
+          paddle_subscription_id: string | null
+          paddle_transaction_id: string | null
+          price_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: string | null
+          created_at?: string
+          currency_code?: string | null
+          detail?: Json | null
+          environment?: string
+          id?: string
+          invoice_url?: string | null
+          kind: string
+          occurred_at?: string
+          paddle_subscription_id?: string | null
+          paddle_transaction_id?: string | null
+          price_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: string | null
+          created_at?: string
+          currency_code?: string | null
+          detail?: Json | null
+          environment?: string
+          id?: string
+          invoice_url?: string | null
+          kind?: string
+          occurred_at?: string
+          paddle_subscription_id?: string | null
+          paddle_transaction_id?: string | null
+          price_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscription_payments: {
         Row: {
           admin_note: string | null
@@ -3403,6 +3451,7 @@ export type Database = {
           period_start: string | null
           plan: string
           price_id: string | null
+          source: string
           status: string
           trial_used_at: string | null
           updated_at: string
@@ -3420,6 +3469,7 @@ export type Database = {
           period_start?: string | null
           plan?: string
           price_id?: string | null
+          source?: string
           status?: string
           trial_used_at?: string | null
           updated_at?: string
@@ -3437,6 +3487,7 @@ export type Database = {
           period_start?: string | null
           plan?: string
           price_id?: string | null
+          source?: string
           status?: string
           trial_used_at?: string | null
           updated_at?: string
@@ -4072,7 +4123,10 @@ export type Database = {
       }
       get_email_cron_secret: { Args: never; Returns: string }
       get_worker_portal_public_config: { Args: never; Returns: Json }
-      has_active_pro: { Args: { _uid: string }; Returns: boolean }
+      has_active_pro: {
+        Args: { _env?: string; _uid: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
