@@ -308,6 +308,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
     mobilePrimary: true,
     items: [
       { title: "Gudang & Supplier", url: "/gudang", icon: Package },
+      { title: "Katalog Produk", url: "/katalog", icon: PackageSearch },
       { title: "Request Order", url: "/request", icon: PackagePlus },
       { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
       { title: "POS Kasir", url: "/pos-kasir", icon: Calculator },
