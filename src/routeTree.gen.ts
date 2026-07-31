@@ -71,6 +71,7 @@ import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authent
 import { Route as AuthenticatedKontakMappingRouteImport } from './routes/_authenticated.kontak-mapping'
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
 import { Route as AuthenticatedKiosRouteImport } from './routes/_authenticated.kios'
+import { Route as AuthenticatedKatalogRouteImport } from './routes/_authenticated.katalog'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
 import { Route as AuthenticatedHubungkanAgenRouteImport } from './routes/_authenticated.hubungkan-agen'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
@@ -491,6 +492,11 @@ const AuthenticatedKontakRoute = AuthenticatedKontakRouteImport.update({
 const AuthenticatedKiosRoute = AuthenticatedKiosRouteImport.update({
   id: '/kios',
   path: '/kios',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedKatalogRoute = AuthenticatedKatalogRouteImport.update({
+  id: '/katalog',
+  path: '/katalog',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedHutangPiutangRoute =
@@ -1042,6 +1048,7 @@ export interface FileRoutesByFullPath {
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hubungkan-agen': typeof AuthenticatedHubungkanAgenRoute
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
+  '/katalog': typeof AuthenticatedKatalogRoute
   '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
@@ -1191,6 +1198,7 @@ export interface FileRoutesByTo {
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hubungkan-agen': typeof AuthenticatedHubungkanAgenRoute
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
+  '/katalog': typeof AuthenticatedKatalogRoute
   '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
@@ -1344,6 +1352,7 @@ export interface FileRoutesById {
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/hubungkan-agen': typeof AuthenticatedHubungkanAgenRoute
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
+  '/_authenticated/katalog': typeof AuthenticatedKatalogRoute
   '/_authenticated/kios': typeof AuthenticatedKiosRouteWithChildren
   '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/_authenticated/kontak-mapping': typeof AuthenticatedKontakMappingRoute
@@ -1499,6 +1508,7 @@ export interface FileRouteTypes {
     | '/gudang'
     | '/hubungkan-agen'
     | '/hutang-piutang'
+    | '/katalog'
     | '/kios'
     | '/kontak'
     | '/kontak-mapping'
@@ -1648,6 +1658,7 @@ export interface FileRouteTypes {
     | '/gudang'
     | '/hubungkan-agen'
     | '/hutang-piutang'
+    | '/katalog'
     | '/kios'
     | '/kontak-mapping'
     | '/label-preview'
@@ -1800,6 +1811,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gudang'
     | '/_authenticated/hubungkan-agen'
     | '/_authenticated/hutang-piutang'
+    | '/_authenticated/katalog'
     | '/_authenticated/kios'
     | '/_authenticated/kontak'
     | '/_authenticated/kontak-mapping'
@@ -2423,6 +2435,13 @@ declare module '@tanstack/react-router' {
       path: '/kios'
       fullPath: '/kios'
       preLoaderRoute: typeof AuthenticatedKiosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/katalog': {
+      id: '/_authenticated/katalog'
+      path: '/katalog'
+      fullPath: '/katalog'
+      preLoaderRoute: typeof AuthenticatedKatalogRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/hutang-piutang': {
@@ -3151,6 +3170,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedHubungkanAgenRoute: typeof AuthenticatedHubungkanAgenRoute
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
+  AuthenticatedKatalogRoute: typeof AuthenticatedKatalogRoute
   AuthenticatedKiosRoute: typeof AuthenticatedKiosRouteWithChildren
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
   AuthenticatedKontakMappingRoute: typeof AuthenticatedKontakMappingRoute
@@ -3223,6 +3243,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedHubungkanAgenRoute: AuthenticatedHubungkanAgenRoute,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
+  AuthenticatedKatalogRoute: AuthenticatedKatalogRoute,
   AuthenticatedKiosRoute: AuthenticatedKiosRouteWithChildren,
   AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
   AuthenticatedKontakMappingRoute: AuthenticatedKontakMappingRoute,
