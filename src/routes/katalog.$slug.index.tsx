@@ -208,12 +208,14 @@ function PublicKatalogPage() {
             return (
               <li key={it.id} className="lux-card flex flex-col gap-2 p-2.5">
                 {it.image_url ? (
+                  <Link to="/katalog/$slug/$itemId" params={{ slug, itemId: it.id }}>
                   <img
                     src={it.image_url}
                     alt={`Foto produk ${it.name}`}
                     loading="lazy"
                     className="aspect-square w-full rounded-lg border border-border/50 object-cover"
                   />
+                  </Link>
                 ) : (
                   <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-muted text-xl font-semibold text-muted-foreground">
                     {it.name.slice(0, 1).toUpperCase()}
