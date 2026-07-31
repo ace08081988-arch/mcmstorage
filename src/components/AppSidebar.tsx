@@ -137,7 +137,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     el.style.transition = "opacity 0ms, transform 0ms";
   }
 }
-import { Crown, Bot, Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, Users, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard, ChevronDown, MoreHorizontal, Settings, Gauge, Store, History, FileSpreadsheet, Link2, UserPlus, Palette, Accessibility, Languages, ShieldCheck, HardDrive, Share2, Globe, SlidersHorizontal, ListChecks, Smartphone, Scroll, CalendarClock, GitCompareArrows, Receipt } from "lucide-react";
+import { Bot, Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, Users, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard, ChevronDown, MoreHorizontal, Settings, Gauge, Store, History, FileSpreadsheet, Link2, UserPlus, Palette, Accessibility, Languages, ShieldCheck, HardDrive, Share2, Globe, SlidersHorizontal, ListChecks, Smartphone, Scroll, CalendarClock, GitCompareArrows, Receipt } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -343,7 +343,6 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Audit Saldo", url: "/audit-saldo", icon: Receipt },
       { title: "Kontak Mapping", url: "/kontak-mapping", icon: ContactRound },
       { title: "Rekonsiliasi Kontak", url: "/rekonsiliasi-kontak", icon: Users },
-      { title: "Langganan Pro", url: "/langganan", icon: Crown },
     ],
   },
   {
@@ -387,11 +386,6 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Log Error Portal", url: "/admin/portal-error-log", icon: ShieldAlert },
       { title: "Percobaan Daftar", url: "/admin/signup-attempts", icon: Users },
       { title: "Portal Pegawai", url: "/admin/worker-portal", icon: MonitorSmartphone },
-      {
-        title: "Verifikasi Pembayaran",
-        url: "/admin/verifikasi-pembayaran",
-        icon: ShieldAlert,
-      },
       { title: "Rilis APK", url: "/pengaturan-apk", icon: Package },
       { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
       { title: "Log Penolakan Admin", url: "/admin-denial-log", icon: ShieldAlert },

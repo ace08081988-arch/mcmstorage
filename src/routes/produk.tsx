@@ -11,8 +11,6 @@ import {
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { Button } from "@/components/ui/button";
-import { PLANS } from "@/lib/paddle";
-
 const TITLE = "MCM Storage — Aplikasi kasir, stok, & hutang-piutang dari HP";
 const DESC =
   "MCM Storage membantu pemilik toko mencatat penjualan, stok gudang, penyiapan pesanan, dan hutang-piutang pelanggan langsung dari HP, terhubung ke WhatsApp.";
@@ -40,12 +38,6 @@ export const Route = createFileRoute("/produk")({
           operatingSystem: "Android, Web",
           description: DESC,
           publisher: { "@type": "Organization", name: "Mcm" },
-          offers: {
-            "@type": "Offer",
-            price: "6.00",
-            priceCurrency: "USD",
-            url: "https://mcmstorage.biz/harga",
-          },
         }),
       },
     ],
@@ -111,12 +103,9 @@ function ProdukPage() {
             <Button asChild size="lg">
               <Link to="/auth">Coba gratis</Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link to="/harga">Lihat harga</Link>
-            </Button>
           </div>
           <p className="mt-3 text-ms-xs text-muted-foreground">
-            Mulai dari paket gratis. Paket Pro {PLANS[0].amountLabel}/bulan.
+            Semua fitur tersedia gratis untuk saat ini.
           </p>
         </section>
 

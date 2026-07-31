@@ -9,7 +9,7 @@ export const Route = createFileRoute("/terms")({
       {
         name: "description",
         content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh Mcm. Termasuk pengungkapan Paddle sebagai Merchant of Record.",
+          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh Mcm. Aplikasi saat ini gratis tanpa pembayaran daring.",
       },
       { property: "og:title", content: "Syarat & Ketentuan — MCM Storage" },
       {
@@ -128,20 +128,11 @@ function TermsPage() {
 
           <Section title="7. Pembayaran, langganan, dan pajak">
             <p>
-              Untuk paket berbayar, pembayaran, penagihan, perpanjangan
-              langganan, pajak, mata uang, faktur, pembatalan, dan
-              pengembalian dana diproses oleh <strong>Paddle.com</strong>{" "}
-              sebagai <strong>Merchant of Record</strong> kami. Dengan
-              melakukan pembelian, Anda juga menyetujui{" "}
-              <a
-                href="https://www.paddle.com/legal/checkout-buyer-terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Paddle Checkout Buyer Terms
-              </a>
-              . Detail mengenai pengembalian dana ada di{" "}
+              Saat ini Layanan disediakan tanpa biaya dan tidak ada
+              pembayaran daring di dalam aplikasi. Bila paket berbayar
+              diaktifkan kembali di kemudian hari, syarat penagihan, pajak,
+              dan pengembalian dana akan diumumkan lebih dulu di halaman ini
+              serta di{" "}
               <Link to="/refund" className="underline">
                 Kebijakan Pengembalian
               </Link>
@@ -149,24 +140,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="8. Paddle sebagai Merchant of Record">
-            <p>
-              <em>
-                Our order process is conducted by our online reseller
-                Paddle.com. Paddle.com is the Merchant of Record for all our
-                orders. Paddle provides all customer service inquiries and
-                handles returns.
-              </em>
-            </p>
-            <p>
-              Proses pemesanan kami dijalankan oleh reseller daring kami,
-              Paddle.com. Paddle.com adalah Merchant of Record untuk semua
-              pesanan kami. Paddle menangani pertanyaan layanan pelanggan
-              terkait pembayaran serta proses pengembalian dana.
-            </p>
-          </Section>
-
-          <Section title="9. Ketersediaan layanan">
+          <Section title="8. Ketersediaan layanan">
             <p>
               Layanan diberikan "sebagaimana adanya" dan "sebagaimana
               tersedia". Kami berusaha menjaga ketersediaan dan kinerja,
@@ -175,7 +149,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="10. Konten pengguna">
+          <Section title="9. Konten pengguna">
             <p>
               Data operasional yang Anda masukkan (pesanan, stok, pemasok,
               dsb.) tetap milik Anda. Anda memberikan kami lisensi terbatas
@@ -184,7 +158,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="11. Penangguhan dan pemutusan">
+          <Section title="10. Penangguhan dan pemutusan">
             <p>
               Kami dapat menangguhkan atau mengakhiri akses Anda ke Layanan
               bila terjadi:
@@ -205,7 +179,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="12. Batasan tanggung jawab">
+          <Section title="11. Batasan tanggung jawab">
             <p>
               Sepanjang diizinkan hukum, tanggung jawab agregat kami atas
               klaim apa pun terkait Layanan dibatasi sebesar biaya yang Anda
@@ -217,7 +191,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="13. Hukum yang berlaku">
+          <Section title="12. Hukum yang berlaku">
             <p>
               Syarat ini diatur dan ditafsirkan menurut hukum Republik
               Indonesia. Sengketa yang timbul akan diselesaikan terlebih
@@ -226,7 +200,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="14. Perubahan syarat">
+          <Section title="13. Perubahan syarat">
             <p>
               Kami dapat memperbarui Syarat &amp; Ketentuan ini dari waktu
               ke waktu. Versi terbaru selalu tersedia di halaman ini dengan
@@ -234,21 +208,11 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="15. Kontak">
+          <Section title="14. Kontak">
             <p>
               Pertanyaan tentang syarat ini dapat dikirim ke{" "}
               <a href="mailto:admin@mcmstorage.biz" className="underline">
                 admin@mcmstorage.biz
-              </a>
-              . Untuk pertanyaan terkait transaksi atau pengembalian dana,
-              silakan hubungi Paddle melalui{" "}
-              <a
-                href="https://paddle.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                paddle.net
               </a>
               .
             </p>
