@@ -328,7 +328,7 @@ function KontakPage() {
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            className="bg-wa/15 text-wa-strong hover:bg-wa/25"
                             onClick={() => void sendWa(r)}
                             title={`Kirim via MCM ke ${r.contact}`}
                           >

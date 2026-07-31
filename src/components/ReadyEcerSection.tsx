@@ -2431,7 +2431,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSendWA} className="bg-[#25D366] text-white hover:bg-[#1ebe57]">
+            <AlertDialogAction onClick={confirmSendWA} className="bg-wa text-white hover:bg-wa/90">
               <MessageCircle className="mr-1 h-3.5 w-3.5" /> Kirim WA
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -2662,7 +2662,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                   onPointerDown={(e) => e.stopPropagation()}
                   aria-label={`Verifikasi bayar untuk ${r.prep_count} kotak ${r.name}`}
                   title="Buka dialog verifikasi pembayaran — stok & lunas/hutang dicatat sebelum kirim ke pembeli"
-                  className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
+                  className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-wa px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-wa/90"
                 >
                   <Send className="h-3 w-3" /> Verifikasi bayar
                 </button>

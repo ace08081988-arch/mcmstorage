@@ -532,7 +532,7 @@ function BukuAlamatPage() {
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            className="h-8 rounded-lg bg-wa/15 text-wa-strong hover:bg-wa/25"
                             onClick={() => void handleWa(r)}
                             aria-label={`Kirim pesan WA ke ${r.name}`}
                           >

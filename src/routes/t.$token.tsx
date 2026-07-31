@@ -1945,7 +1945,7 @@ function PublicPrepPage() {
                   });
                   notifyShareResult(res);
                 }}
-                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-ms-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 px-ms-3 text-ms-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366]/20 dark:text-[#25D366]"
+                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-ms-1.5 rounded-lg border border-wa/40 bg-wa/10 px-ms-3 text-ms-xs font-semibold text-wa-strong transition hover:bg-wa/20 dark:text-wa"
               >
                 <MessageCircle className="h-4 w-4" /> Minta PIN baru ke pemilik
               </button>

@@ -761,7 +761,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
-                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-wa-strong hover:bg-wa/25 dark:text-wa-strong"
                     aria-label="Kirim via MCM"
                   >
                     <MessageCircle className="h-3 w-3" /> Kirim via MCM
@@ -1764,7 +1764,7 @@ function SendPrepLinkDialog({
                 onClick={() => void sendWA()}
                 disabled={!canPrepare || (isPending && pending !== "sendWA")}
                 aria-busy={pending === "sendWA"}
-                className="bg-[#25D366] text-white hover:bg-[#20b959]"
+                className="bg-wa text-white hover:bg-wa/90"
               >
                 {pending === "sendWA"
                   ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
@@ -2506,7 +2506,7 @@ function PrepCard({
           {!sold ? (
             <button
               onClick={() => { setDialogChannel("whatsapp"); setSendOpen(true); }}
-              className="inline-flex items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-1 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+              className="inline-flex items-center gap-ms-1 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1 text-ms-2xs font-semibold text-wa-strong hover:bg-wa/25 dark:text-wa-strong"
               aria-label="Kirim ke pelanggan"
               title="Kirim foto + tagihan ke pelanggan (potong stok & catat piutang bila hutang)"
             >

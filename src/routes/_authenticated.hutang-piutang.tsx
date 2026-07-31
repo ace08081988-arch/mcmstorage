@@ -935,7 +935,7 @@ function HutangPiutangPage() {
                           <Button
                             size="sm"
                             variant="secondary"
-                            className="h-8 shrink-0 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            className="h-8 shrink-0 rounded-lg bg-wa/15 text-wa-strong hover:bg-wa/25"
                             onClick={() => void sendPartyReportWA(group)}
                             title="Kirim laporan via MCM"
                           >
@@ -1036,7 +1036,7 @@ function HutangPiutangPage() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              className="h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                              className="h-8 rounded-lg bg-wa/15 text-wa-strong hover:bg-wa/25"
                               onClick={() => setReminderFor(d)}
                               title="Kirim pengingat via MCM"
                             >
@@ -1313,7 +1313,7 @@ function PaymentsReport({
           <Button
             size="sm"
             variant="secondary"
-            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+            className="bg-wa/15 text-wa-strong hover:bg-wa/25"
             onClick={onSendWA}
             title="Kirim laporan via MCM"
           >
@@ -2350,7 +2350,7 @@ function ReminderDialog({
           <Button
             onClick={() => void doSend(true)}
             disabled={busy || !hasAmt}
-            className="w-full bg-[#25D366] text-white hover:bg-[#1ea952] sm:w-auto"
+            className="w-full bg-wa text-white hover:bg-wa/90 sm:w-auto"
           >
             {busy ? "Memproses…" : "Simpan & Kirim WA"}
           </Button>
