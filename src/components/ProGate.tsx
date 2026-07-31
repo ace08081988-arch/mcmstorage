@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Crown, Lock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { getPaddleEnvironment } from "@/lib/paddle";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -21,13 +22,18 @@ import {
 
 export function useIsPro() {
   return useQuery({
-    queryKey: ["is-pro"],
+    queryKey: ["is-pro", getPaddleEnvironment()],
     staleTime: 60_000,
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) return false;
-      const { data, error } = await supabase.rpc("has_active_pro", { _uid: uid });
+      // Lingkungan wajib dikirim: langganan kartu mode uji hanya berlaku di
+      // pratinjau, bukan di aplikasi terbit.
+      const { data, error } = await supabase.rpc("has_active_pro", {
+        _uid: uid,
+        _env: getPaddleEnvironment(),
+      });
       if (error) return false;
       return Boolean(data);
     },

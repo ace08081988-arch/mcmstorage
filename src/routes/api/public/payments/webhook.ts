@@ -99,13 +99,70 @@ async function upsertFromSubscription(data: any, env: PaddleEnv) {
         paddle_customer_id: customerId,
         price_id: priceId,
         environment: env,
+        source: "paddle",
         cancel_at_period_end: scheduledChange?.action === "cancel" || status === "canceled",
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "user_id" },
+      // Satu baris per (user, lingkungan): pembelian mode uji di pratinjau
+      // tidak boleh menimpa langganan asli di aplikasi terbit.
+      { onConflict: "user_id,environment" },
     );
   if (error) console.error("upsert subscription gagal", error);
-  return { userId, mapped };
+  return { userId, mapped, priceId, status };
+}
+
+/** Catat riwayat pembayaran agar pelanggan bisa melihat bukti tagihannya. */
+async function recordEvent(row: {
+  userId: string;
+  kind: string;
+  env: PaddleEnv;
+  data: any;
+}) {
+  const d = row.data ?? {};
+  const item = d.items?.[0];
+  const { error } = await getSupabase()
+    .from("subscription_events")
+    .upsert(
+      {
+        user_id: row.userId,
+        kind: row.kind,
+        environment: row.env,
+        paddle_transaction_id: d.id ?? null,
+        paddle_subscription_id: d.subscriptionId ?? null,
+        price_id: item?.price?.importMeta?.externalId ?? null,
+        amount: d.details?.totals?.total ?? null,
+        currency_code: d.currencyCode ?? null,
+        invoice_url: d.invoiceId ? String(d.invoiceId) : null,
+        occurred_at: d.billedAt ?? d.createdAt ?? new Date().toISOString(),
+        detail: { status: d.status ?? null, origin: d.origin ?? null },
+      },
+      { onConflict: "paddle_transaction_id,kind", ignoreDuplicates: true },
+    );
+  if (error) console.error("recordEvent gagal", error);
+}
+
+/**
+ * Transaksi tidak membawa `customData.userId` pada semua kasus, jadi
+ * pengaitan ke pengguna memakai id langganan/pelanggan yang sudah tersimpan.
+ */
+async function resolveUserFromTransaction(d: any, env: PaddleEnv) {
+  const fromCustom = d?.customData?.userId;
+  if (fromCustom) return fromCustom as string;
+  const q = getSupabase().from("subscriptions").select("user_id").eq("environment", env);
+  if (d?.subscriptionId) {
+    const { data } = await q.eq("paddle_subscription_id", d.subscriptionId).maybeSingle();
+    if (data?.user_id) return data.user_id as string;
+  }
+  if (d?.customerId) {
+    const { data } = await getSupabase()
+      .from("subscriptions")
+      .select("user_id")
+      .eq("environment", env)
+      .eq("paddle_customer_id", d.customerId)
+      .maybeSingle();
+    if (data?.user_id) return data.user_id as string;
+  }
+  return null;
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
@@ -115,18 +172,32 @@ async function handleWebhook(req: Request, env: PaddleEnv) {
     case EventName.SubscriptionCreated: {
       const res = await upsertFromSubscription(event.data as any, env);
       if (res?.userId) {
+        const trialing = res.status === "trialing";
         await notifyOwner(res.userId, "Langganan Pro aktif", "Pembayaran berhasil — fitur Pro sudah terbuka.");
         await notifyWa("subscription_started", {
           user_id: res.userId,
-          price_id: (event.data as any)?.items?.[0]?.price?.importMeta?.externalId ?? null,
+          price_id: res.priceId ?? null,
+          trial: trialing,
           environment: env,
         });
       }
       break;
     }
-    case EventName.SubscriptionUpdated:
-      await upsertFromSubscription(event.data as any, env);
+    case EventName.SubscriptionUpdated: {
+      const res = await upsertFromSubscription(event.data as any, env);
+      // `past_due` berarti penagihan ulang gagal dan penyedia sedang mencoba
+      // lagi. Pemilik akun perlu tahu supaya bisa memperbarui kartu sebelum
+      // masa tenggang habis.
+      if (res?.userId && res.status === "past_due") {
+        await notifyOwner(
+          res.userId,
+          "Pembayaran gagal",
+          "Perbarui metode pembayaran agar akses Pro tidak terhenti.",
+        );
+        await notifyWa("subscription_past_due", { user_id: res.userId, environment: env });
+      }
       break;
+    }
     case EventName.SubscriptionCanceled: {
       const res = await upsertFromSubscription(
         { ...(event.data as any), status: "canceled" },
@@ -143,6 +214,34 @@ async function handleWebhook(req: Request, env: PaddleEnv) {
           period_end: (event.data as any)?.currentBillingPeriod?.endsAt ?? null,
           environment: env,
         });
+      }
+      break;
+    }
+    case EventName.TransactionCompleted: {
+      const d = event.data as any;
+      const userId = await resolveUserFromTransaction(d, env);
+      if (userId) {
+        await recordEvent({ userId, kind: "payment_succeeded", env, data: d });
+        await notifyWa("payment_succeeded", {
+          user_id: userId,
+          amount: d?.details?.totals?.total ?? null,
+          currency: d?.currencyCode ?? null,
+          environment: env,
+        });
+      }
+      break;
+    }
+    case EventName.TransactionPaymentFailed: {
+      const d = event.data as any;
+      const userId = await resolveUserFromTransaction(d, env);
+      if (userId) {
+        await recordEvent({ userId, kind: "payment_failed", env, data: d });
+        await notifyOwner(
+          userId,
+          "Pembayaran gagal",
+          "Tagihan langganan tidak berhasil diproses. Perbarui metode pembayaran.",
+        );
+        await notifyWa("payment_failed", { user_id: userId, environment: env });
       }
       break;
     }
