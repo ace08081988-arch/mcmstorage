@@ -1778,7 +1778,7 @@ function Index() {
           return (
             <div className="mb-3 grid grid-cols-2 gap-ms-2 rounded-lg border bg-card p-ms-2.5 text-[0.6875rem] sm:grid-cols-4">
               <div
-                className="col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-ms-2 sm:col-span-4"
+                className="col-span-2 rounded-md border border-wa/30 bg-wa/10 p-ms-2 sm:col-span-4"
                 role="status"
                 aria-live="polite"
                 title="Penjualan hari ini = jumlah harga semua pesanan yang ditandai Sudah Dikirim pada tanggal kalender lokal hari ini."
@@ -1804,7 +1804,7 @@ function Index() {
               </div>
               <div>
                 <p className="text-muted-foreground">Terjual</p>
-                <p className="text-ms-sm font-semibold tabular-nums text-[#128C7E]">
+                <p className="text-ms-sm font-semibold tabular-nums text-wa-strong">
                   {terkirim.length}
                 </p>
               </div>
@@ -1940,7 +1940,7 @@ function Index() {
                       </span>
                     )}
                     {viewMode === "list" && sent && (
-                      <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-[#25D366]/15 px-1.5 text-[0.6875rem] font-medium leading-none text-[#128C7E]">
+                      <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-wa/15 px-1.5 text-[0.6875rem] font-medium leading-none text-wa-strong">
                         ✓
                       </span>
                     )}
@@ -1956,7 +1956,7 @@ function Index() {
                       href={waUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 rounded-md bg-[#25D366] px-ms-2 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
+                      className="shrink-0 rounded-md bg-wa px-ms-2 py-1 text-[0.6875rem] font-semibold text-wa-foreground hover:opacity-90"
                       onClick={(e) => e.stopPropagation()}
                     >
                       MCM
@@ -2104,7 +2104,7 @@ function Index() {
                     <div
                       className={`flex items-center justify-between gap-ms-2 rounded-md border px-ms-2.5 py-1.5 text-[0.6875rem] transition-colors ${
                         flashId === p.id
-                          ? "border-[#25D366] bg-[#25D366]/10 text-[#128C7E]"
+                          ? "border-wa bg-wa/10 text-wa-strong"
                           : "bg-background text-muted-foreground"
                       }`}
                       aria-live="polite"
@@ -2112,7 +2112,7 @@ function Index() {
                       <span className="inline-flex items-center gap-ms-1.5">
                         <span
                           className={`inline-block h-1.5 w-1.5 rounded-full ${
-                            flashId === p.id ? "bg-[#25D366] animate-pulse" : "bg-[#25D366]/60"
+                            flashId === p.id ? "bg-wa animate-pulse" : "bg-wa/60"
                           }`}
                         />
                         {flashId === p.id
@@ -2240,7 +2240,7 @@ function Index() {
                           href={waUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center rounded-md bg-[#25D366] px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90"
+                          className="inline-flex items-center rounded-md bg-wa px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-wa-foreground hover:opacity-90"
                         >
                           KIRIM MCM
                         </a>
@@ -2330,7 +2330,7 @@ function Index() {
                 onClick={(e) => {
                   if (selected.size === 0) e.preventDefault();
                 }}
-                className={`inline-flex items-center rounded-md bg-[#25D366] px-ms-3 py-1 text-[0.6875rem] font-semibold text-white ${
+                className={`inline-flex items-center rounded-md bg-wa px-ms-3 py-1 text-[0.6875rem] font-semibold text-wa-foreground ${
                   selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
                 }`}
               >

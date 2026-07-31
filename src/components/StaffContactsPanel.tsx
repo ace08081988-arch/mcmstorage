@@ -257,7 +257,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
               <a
                 href={buildWhatsAppUrl("", c.wa_phone)} target="_blank" rel="noreferrer"
                 title="Kirim via WA"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-wa/40 bg-wa/10 text-wa-strong"
               ><MessageCircle className="h-4 w-4" /></a>
               <button aria-label="Salin nomor"
                 onClick={() => copyPhone(c)} title="Salin nomor"

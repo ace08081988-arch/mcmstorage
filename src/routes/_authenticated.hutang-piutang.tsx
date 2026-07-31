@@ -891,14 +891,14 @@ function HutangPiutangPage() {
                       <section
                         key={group.key}
                         data-testid={`party-card-${normalizeParty(group.name)}`}
-                        className="overflow-hidden rounded-2xl border bg-card shadow-sm"
+                        className="overflow-hidden rounded-2xl border bg-card shadow-xs"
                       >
-                        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/30 px-ms-3 py-ms-2.5 sm:flex sm:flex-wrap sm:items-center">
+                        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/40 px-ms-3.5 py-ms-3 sm:flex sm:flex-wrap sm:items-center">
                           <div className="min-w-0 sm:flex-1">
-                            <div className="truncate text-ms-sm font-semibold text-foreground">
+                            <div className="truncate text-ms-base font-semibold leading-tight tracking-tight text-foreground">
                               {group.name}
                             </div>
-                            <div className="text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+                            <div className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                               {group.items.length} catatan · sisa{" "}
                               <span
                                 data-testid="party-card-sisa"
@@ -934,8 +934,8 @@ function HutangPiutangPage() {
                           </Button>
                           <Button
                             size="sm"
-                            variant="secondary"
-                            className="h-8 shrink-0 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            variant="waSoft"
+                            className="h-8 shrink-0 rounded-lg"
                             onClick={() => void sendPartyReportWA(group)}
                             title="Kirim laporan via MCM"
                           >
@@ -956,13 +956,13 @@ function HutangPiutangPage() {
                       <li
                         key={d.id}
                         className={
-                          "p-ms-3 text-ms-sm transition-colors " +
+                          "px-ms-3.5 py-ms-3 text-ms-sm transition-colors " +
                           (overdue
                             ? "bg-destructive/[0.04] hover:bg-destructive/[0.07]"
                             : "hover:bg-muted/30")
                         }
                       >
-                        <div className="flex items-start gap-ms-2">
+                        <div className="flex items-start gap-ms-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                               <span className="min-w-0 max-w-full truncate font-medium">
@@ -998,18 +998,18 @@ function HutangPiutangPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="shrink-0 whitespace-nowrap text-right">
-                            <div className="font-semibold tabular-nums">
+                          <div className="shrink-0 whitespace-nowrap text-right leading-tight">
+                            <div className="font-semibold tabular-nums tracking-tight">
                               {rupiah(Number(d.amount))}
                             </div>
                             {paid > 0 && (
-                              <div className="text-ms-2xs tabular-nums text-muted-foreground">
+                              <div className="mt-0.5 text-ms-2xs tabular-nums text-muted-foreground">
                                 terbayar {rupiah(paid)}
                               </div>
                             )}
                             <div
                               className={
-                                "text-ms-2xs font-medium tabular-nums " +
+                                "mt-0.5 text-ms-2xs font-medium tabular-nums " +
                                 (lunas
                                   ? "text-success"
                                   : overdue
@@ -1021,7 +1021,7 @@ function HutangPiutangPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-ms-1.5">
+                        <div className="mt-ms-2.5 flex flex-wrap items-center gap-ms-1.5 border-t border-border/60 pt-ms-2.5">
                           {!lunas && (
                             <Button
                               size="sm"
@@ -1035,8 +1035,8 @@ function HutangPiutangPage() {
                           {!lunas && (
                             <Button
                               size="sm"
-                              variant="secondary"
-                              className="h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                              variant="waSoft"
+                              className="h-8 rounded-lg"
                               onClick={() => setReminderFor(d)}
                               title="Kirim pengingat via MCM"
                             >
@@ -1312,8 +1312,8 @@ function PaymentsReport({
           </div>
           <Button
             size="sm"
-            variant="secondary"
-            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+            variant="waSoft"
+            className=""
             onClick={onSendWA}
             title="Kirim laporan via MCM"
           >
@@ -2350,7 +2350,7 @@ function ReminderDialog({
           <Button
             onClick={() => void doSend(true)}
             disabled={busy || !hasAmt}
-            className="w-full bg-[#25D366] text-white hover:bg-[#1ea952] sm:w-auto"
+            className="w-full bg-wa text-wa-foreground hover:bg-wa/90 sm:w-auto"
           >
             {busy ? "Memproses…" : "Simpan & Kirim WA"}
           </Button>

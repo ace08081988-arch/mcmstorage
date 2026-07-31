@@ -244,7 +244,7 @@ function QuickCopyBar({
       <button
         type="button"
         onClick={() => void openWa()}
-        className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg bg-[#25D366] px-ms-3 text-ms-2xs font-semibold text-black transition-opacity hover:opacity-90"
+        className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg bg-wa px-ms-3 text-ms-2xs font-semibold text-wa-foreground transition-opacity hover:opacity-90"
         aria-label="Buka WhatsApp dengan pesan berisi link unduhan dan link lokasi"
       >
         <MessageCircle className="h-4 w-4 shrink-0" />

@@ -437,7 +437,7 @@ export function ChatSharePreviewDialog({
                         ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                         : "Kirim ulang meski klik ganda terdeteksi"
                   }
-                  className="inline-flex h-9 items-center justify-center gap-ms-1.5 rounded-md border border-warning bg-warning px-ms-3 text-ms-sm font-semibold text-white shadow-sm transition hover:bg-warning disabled:opacity-50"
+                  className="inline-flex h-9 items-center justify-center gap-ms-1.5 rounded-md border border-warning bg-warning px-ms-3 text-ms-sm font-semibold text-warning-foreground shadow-sm transition hover:bg-warning disabled:opacity-50"
                 >
                   <ShieldAlert className="h-4 w-4" />
                   Kirim ulang (paksa)

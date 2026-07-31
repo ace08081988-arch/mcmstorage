@@ -1004,17 +1004,16 @@ const ConvListItem = React.memo(function ConvListItem({
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-sm font-medium text-[var(--wa-text)]">
+                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-sm font-semibold tracking-tight text-[var(--wa-text)]">
                       {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                       <span className="truncate">{c.display_title}</span>
                       {isMuted ? <BellOff className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                     </span>
                     <span className={`shrink-0 text-ms-2xs ${c.unread > 0 ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)]"}`}>{timeShort(c.last_at)}</span>
                   </div>
-                  <div className="mt-0.5 flex items-center gap-1">
-                    <DebtSyncBadge title={c.display_title} />
-                  </div>
-                  <div className="flex items-center justify-between gap-ms-2">
+                  {/* Chip saldo dipindah sebaris dengan preview supaya baris
+                      chat tetap 2 baris (ritme WhatsApp) dan tidak ragged. */}
+                  <div className="mt-0.5 flex items-center justify-between gap-ms-2">
                     <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-xs text-[var(--wa-text-muted)]">
                       {c.last_body ? (
                         <>
@@ -1033,11 +1032,14 @@ const ConvListItem = React.memo(function ConvListItem({
                         <em className="text-[var(--wa-text-muted)]/70">Belum ada pesan</em>
                       )}
                     </span>
-                    {c.unread > 0 ? (
+                    <span className="flex shrink-0 items-center gap-ms-1">
+                      <DebtSyncBadge title={c.display_title} />
+                      {c.unread > 0 ? (
                       <span className="ml-2 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--wa-green)] px-1 text-ms-2xs font-semibold text-[var(--wa-surface)]">
                         {c.unread > 99 ? "99+" : c.unread}
                       </span>
-                    ) : null}
+                      ) : null}
+                    </span>
                   </div>
                 </div>
               </ConvRow>

@@ -913,7 +913,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                             "inline-flex shrink-0 items-center gap-ms-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none " +
                             (r.sent_channel === "chat"
                               ? "border-primary/40 bg-primary/10 text-primary"
-                              : "border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]")
+                              : "border-wa/40 bg-wa/10 text-wa-strong")
                           }
                         >
                           {r.sent_channel === "chat" ? (

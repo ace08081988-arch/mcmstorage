@@ -1004,7 +1004,7 @@ function TugasPage() {
                   onClick={() => setSharePinFor(t)}
                   title="Bagikan link + PIN via MCM"
                   aria-label="Bagikan link dan PIN"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-wa/40 bg-wa/10 text-wa-strong hover:bg-wa/20"
                 >
                   <MessageCircle className="h-4 w-4" />
                 </button>
@@ -2515,7 +2515,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                           <button
                             onClick={() => previewWaForItem(r, p)}
                             title={`Kirim detail item "${p.name}" via MCM`}
-                            className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-[#25D366]/40 bg-[#25D366]/10 px-1.5 text-ms-2xs font-medium text-[#1ea952] hover:bg-[#25D366]/20"
+                            className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-wa/40 bg-wa/10 px-1.5 text-ms-2xs font-medium text-wa-strong hover:bg-wa/20"
                           >
                             <MessageCircle className="h-2.5 w-2.5" /> MCM
                           </button>
@@ -2538,7 +2538,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                     </button>
                     <button
                       onClick={() => void openWaForRow(r)}
-                      className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-[#25D366]/50 bg-[#25D366]/10 px-ms-2 text-ms-2xs font-medium text-[#1ea952] hover:bg-[#25D366]/20"
+                      className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-wa/50 bg-wa/10 px-ms-2 text-ms-2xs font-medium text-wa-strong hover:bg-wa/20"
                       title="Kirim ringkasan lengkap tugas + semua item bermasalah"
                     >
                       <MessageCircle className="h-3 w-3" /> Kirim via MCM
@@ -2624,7 +2624,7 @@ function WaPreviewDialog({
           </button>
           <button
             onClick={() => void send()}
-            className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-xs font-semibold text-white hover:opacity-90"
+            className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-wa px-ms-3 text-ms-xs font-semibold text-wa-foreground hover:opacity-90"
           >
             <MessageCircle className="h-3.5 w-3.5" /> Kirim via MCM
           </button>
@@ -2708,7 +2708,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
         </div>
         <div className="grid grid-cols-1 gap-ms-2.5 pt-2 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11">
           <button type="button" onClick={onShare}
-            className="inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] text-ms-sm font-semibold text-white">
+            className="inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-wa text-ms-sm font-semibold text-wa-foreground">
             <MessageCircle className="h-4 w-4" /> Bagikan
           </button>
           <a href={waUrl} target="_blank" rel="noreferrer" onClick={onOpenWa}
@@ -2779,7 +2779,7 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   return (
     <Modal title={task.title} onClose={onClose} wide>
       <div className="mb-3 flex flex-wrap gap-ms-2">
-        <button onClick={() => setSharePinOpen(true)} className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan link + PIN</button>
+        <button onClick={() => setSharePinOpen(true)} className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-wa px-ms-3 text-ms-xs font-semibold text-wa-foreground"><MessageCircle className="h-4 w-4" /> Bagikan link + PIN</button>
         {task.status === "done" ? (
           <button disabled={busy} onClick={reopenTask} className="inline-flex h-9 items-center gap-ms-1 rounded-md border px-ms-3 text-ms-xs">Aktifkan lagi</button>
         ) : (
@@ -2877,7 +2877,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       {sub.note && <div className="mt-0.5 line-clamp-2 text-ms-2xs">{sub.note}</div>}
       <div className="mt-1 flex gap-ms-1">
         {sub.location_url && /^https:\/\//i.test(sub.location_url) && <a href={sub.location_url} target="_blank" rel="noreferrer" className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded border text-ms-2xs"><MapPin className="h-3 w-3" /> Lokasi</a>}
-        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-[#25D366] text-ms-2xs font-semibold text-white"><MessageCircle className="h-3 w-3" /> MCM</button>
+        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-wa text-ms-2xs font-semibold text-wa-foreground"><MessageCircle className="h-3 w-3" /> MCM</button>
       </div>
     </div>
   );

@@ -377,7 +377,7 @@ export function OrgNameSettings() {
               )}
               {pendingLogo && (
                 <span
-                  className="absolute inset-x-0 bottom-0 bg-warning/90 text-center text-[9px] font-semibold uppercase tracking-wider text-white"
+                  className="absolute inset-x-0 bottom-0 bg-warning/90 text-center text-[9px] font-semibold uppercase tracking-wider text-warning-foreground"
                   aria-hidden="true"
                 >
                   Baru
