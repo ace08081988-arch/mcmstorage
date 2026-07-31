@@ -339,9 +339,9 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="id" className="dark notranslate" translate="no" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <HeadContent />
         <meta name="google" content="notranslate" />
-        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body suppressHydrationWarning>
         {children}
