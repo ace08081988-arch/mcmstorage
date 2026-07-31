@@ -25,17 +25,21 @@ function QuickRepliesPage() {
   const [draft, setDraft] = useState<{ id?: string; shortcut: string; body: string } | null>(null);
 
   return (
-    <div className="container mx-auto max-w-3xl space-ms-4 p-ms-3">
-      <header className="flex items-center gap-ms-2">
-        <MessageSquarePlus className="h-5 w-5 text-primary" />
-        <h1 className="text-ms-lg font-semibold">Balas cepat</h1>
-        <Button size="sm" className="ml-auto" onClick={() => setDraft({ shortcut: "", body: "" })}>
-          <Plus className="mr-1 h-4 w-4" /> Baru
-        </Button>
+    <div className="mx-auto max-w-3xl space-ms-4 px-ms-4 py-ms-5 md:max-w-4xl md:p-ms-6">
+      <header className="rounded-2xl border border-border/60 bg-card/95 p-ms-4 shadow-sm">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-3">
+          <div className="flex min-w-0 items-center gap-ms-2">
+            <MessageSquarePlus className="h-5 w-5 shrink-0 text-primary" />
+            <h1 className="truncate text-ms-lg font-semibold leading-tight">Balas cepat</h1>
+          </div>
+          <Button size="sm" className="shrink-0" onClick={() => setDraft({ shortcut: "", body: "" })}>
+            <Plus className="mr-1 h-4 w-4" /> Baru
+          </Button>
+        </div>
+        <p className="mt-ms-2 text-ms-xs leading-relaxed text-muted-foreground">
+          Ketik <code>/</code> diikuti shortcut di kotak pesan chat untuk menyisipkan balasan ini secara cepat.
+        </p>
       </header>
-      <p className="text-ms-xs text-muted-foreground">
-        Ketik <code>/</code> diikuti shortcut di kotak pesan chat untuk menyisipkan balasan ini secara cepat.
-      </p>
 
       {draft ? (
         <Card>
@@ -71,9 +75,22 @@ function QuickRepliesPage() {
       ) : null}
 
       {isLoading ? (
-        <p className="text-ms-sm text-muted-foreground">Memuat…</p>
+        <Card>
+          <CardContent className="p-ms-4 text-ms-sm text-muted-foreground">Memuat…</CardContent>
+        </Card>
       ) : replies.length === 0 ? (
-        <p className="text-ms-sm text-muted-foreground">Belum ada balas cepat.</p>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center gap-ms-2 p-ms-6 text-center">
+            <MessageSquarePlus className="h-8 w-8 text-primary/70" />
+            <p className="text-ms-sm font-medium">Belum ada balas cepat</p>
+            <p className="max-w-sm text-ms-xs text-muted-foreground">
+              Simpan jawaban yang sering dipakai (mis. ongkir, rekening, jam buka) supaya bisa dikirim satu ketukan.
+            </p>
+            <Button size="sm" className="mt-ms-1" onClick={() => setDraft({ shortcut: "", body: "" })}>
+              <Plus className="mr-1 h-4 w-4" /> Buat balas cepat
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <ul className="space-ms-2">
           {replies.map((r: QuickReply) => (
