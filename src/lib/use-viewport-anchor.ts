@@ -125,6 +125,10 @@ function publishState(next: ViewportAnchorState) {
 let started = false;
 let currentOffset = 0;
 let currentLockOffset = 0;
+/** Target offset "terkunci" sebelum dihaluskan (lihat smoothing di measure). */
+let lockTarget = 0;
+/** True selama offset terkunci masih bergerak menuju target. */
+let lockSettling = false;
 let currentKeyboardOpen = false;
 let stopEngine: (() => void) | null = null;
 /** Tinggi visual viewport terbesar yang pernah terlihat (viewport "penuh"). */
@@ -180,11 +184,30 @@ function startEngine() {
 
     // Mode terkunci: mengikuti address bar, TAPI dibekukan saat keyboard
     // terbuka supaya bar tidak melompat mengikuti animasi keyboard.
-    if (!keyboardOpen && Math.abs(target - currentLockOffset) > cfg.hysteresisPx) {
-      currentLockOffset = target;
+    //
+    // Address bar Chrome/WebView Android mengembang-menciut dengan animasi
+    // ~150–250ms, sementara `visualViewport.resize` hanya dikirim beberapa
+    // kali (kadang sekali di akhir). Kalau offset dipasang mentah, bar
+    // terlihat "loncat" satu langkah besar. Karena itu offset terkunci
+    // dihaluskan: setiap frame bergerak sebagian menuju target sampai
+    // selisihnya < 0.5px, lalu di-snap persis ke target.
+    if (!keyboardOpen) lockTarget = target;
+    const lockDiff = lockTarget - currentLockOffset;
+    if (Math.abs(lockDiff) > 0.5) {
+      // Faktor 0.3 ≈ waktu tempuh ~10 frame (±160ms) — sepadan dengan durasi
+      // animasi address bar, jadi gerakannya terasa menyatu, bukan menyusul.
+      currentLockOffset += lockDiff * 0.3;
+      lockSettling = true;
       document.documentElement.style.setProperty(
         VIEWPORT_ANCHOR_LOCK_VAR,
-        `${target}px`,
+        `${Math.round(currentLockOffset * 100) / 100}px`,
+      );
+    } else if (lockSettling || currentLockOffset !== lockTarget) {
+      currentLockOffset = lockTarget;
+      lockSettling = false;
+      document.documentElement.style.setProperty(
+        VIEWPORT_ANCHOR_LOCK_VAR,
+        `${lockTarget}px`,
       );
     }
 
@@ -219,7 +242,9 @@ function startEngine() {
 
   const tick = () => {
     measure();
-    if (performance.now() < stopAt) {
+    // Loop tetap hidup selama offset terkunci masih menuju target supaya
+    // animasi penghalusan tidak terpotong di tengah jalan.
+    if (performance.now() < stopAt || lockSettling) {
       frame = requestAnimationFrame(tick);
     } else {
       frame = 0;
@@ -309,6 +334,8 @@ export function useViewportAnchor(options: ViewportAnchorOptions = {}): Viewport
         started = false;
         currentOffset = 0;
         currentLockOffset = 0;
+        lockTarget = 0;
+        lockSettling = false;
         currentKeyboardOpen = false;
         baselineHeight = 0;
         lastScrollAt = 0;

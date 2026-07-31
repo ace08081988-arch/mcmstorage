@@ -30,7 +30,9 @@ export function ChatBottomNav() {
   // visual viewport via JS transform dihentikan agar tidak terasa bergerak.
   // Status keyboard tetang dipantau untuk menyembunyikan bar saat keyboard
   // virtual terbuka.
-  const { keyboardOpen } = useViewportAnchor();
+  // Mode lock: bar mengikuti address bar (dihaluskan per-frame), tapi
+  // dibekukan saat keyboard virtual terbuka.
+  const { keyboardOpen, anchorStyle } = useViewportAnchor({ lock: true });
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
     { to: "/panggilan", label: "Panggilan", Icon: Phone },
@@ -62,6 +64,7 @@ export function ChatBottomNav() {
       // `env(safe-area-inset-bottom)` untuk notch/home indicator iOS.
       className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
       style={{
+        ...anchorStyle,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
