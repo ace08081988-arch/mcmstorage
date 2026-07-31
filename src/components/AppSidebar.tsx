@@ -343,7 +343,6 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Audit Saldo", url: "/audit-saldo", icon: Receipt },
       { title: "Kontak Mapping", url: "/kontak-mapping", icon: ContactRound },
       { title: "Rekonsiliasi Kontak", url: "/rekonsiliasi-kontak", icon: Users },
-      { title: "Langganan Pro", url: "/langganan", icon: Crown },
     ],
   },
   {
