@@ -761,7 +761,7 @@ function RequestPage() {
                     tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
-                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-wa-strong hover:bg-wa/25 dark:text-wa-strong"
+                    className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-wa-strong hover:bg-wa/25"
                     aria-label="Kirim via MCM"
                   >
                     <MessageCircle className="h-3 w-3" /> Kirim via MCM
@@ -2506,7 +2506,7 @@ function PrepCard({
           {!sold ? (
             <button
               onClick={() => { setDialogChannel("whatsapp"); setSendOpen(true); }}
-              className="inline-flex items-center gap-ms-1 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1 text-ms-2xs font-semibold text-wa-strong hover:bg-wa/25 dark:text-wa-strong"
+              className="inline-flex items-center gap-ms-1 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1 text-ms-2xs font-semibold text-wa-strong hover:bg-wa/25"
               aria-label="Kirim ke pelanggan"
               title="Kirim foto + tagihan ke pelanggan (potong stok & catat piutang bila hutang)"
             >
