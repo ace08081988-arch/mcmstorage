@@ -17,7 +17,6 @@ import { Route as RefundRouteImport } from './routes/refund'
 import { Route as ProdukRouteImport } from './routes/produk'
 import { Route as PosKasirRouteImport } from './routes/pos-kasir'
 import { Route as McpRouteImport } from './routes/mcp'
-import { Route as HargaRouteImport } from './routes/harga'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
@@ -66,7 +65,6 @@ import { Route as AuthenticatedPanggilanRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
 import { Route as AuthenticatedMetrikQueryRouteImport } from './routes/_authenticated.metrik-query'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
-import { Route as AuthenticatedLanggananRouteImport } from './routes/_authenticated.langganan'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedKontakMappingRouteImport } from './routes/_authenticated.kontak-mapping'
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
@@ -139,7 +137,6 @@ import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_a
 import { Route as AuthenticatedDebugSelectorRouteImport } from './routes/_authenticated.debug.selector'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
-import { Route as AuthenticatedAdminVerifikasiPembayaranRouteImport } from './routes/_authenticated.admin.verifikasi-pembayaran'
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
 import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
 import { Route as AuthenticatedAdminEmailStatusRouteImport } from './routes/_authenticated.admin.email-status'
@@ -150,7 +147,6 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
@@ -201,11 +197,6 @@ const PosKasirRoute = PosKasirRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HargaRoute = HargaRouteImport.update({
-  id: '/harga',
-  path: '/harga',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -468,11 +459,6 @@ const AuthenticatedLinkPegawaiRoute =
     path: '/link-pegawai',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedLanggananRoute = AuthenticatedLanggananRouteImport.update({
-  id: '/langganan',
-  path: '/langganan',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedLabelPreviewRoute =
   AuthenticatedLabelPreviewRouteImport.update({
     id: '/label-preview',
@@ -881,12 +867,6 @@ const AuthenticatedAdminWorkerPortalRoute =
     path: '/admin/worker-portal',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedAdminVerifikasiPembayaranRoute =
-  AuthenticatedAdminVerifikasiPembayaranRouteImport.update({
-    id: '/admin/verifikasi-pembayaran',
-    path: '/admin/verifikasi-pembayaran',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedAdminSignupAttemptsRoute =
   AuthenticatedAdminSignupAttemptsRouteImport.update({
     id: '/admin/signup-attempts',
@@ -944,12 +924,6 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPaymentsWebhookRoute =
-  ApiPublicPaymentsWebhookRouteImport.update({
-    id: '/api/public/payments/webhook',
-    path: '/api/public/payments/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksShipmentStatusChangeRoute =
   ApiPublicHooksShipmentStatusChangeRouteImport.update({
     id: '/api/public/hooks/shipment-status-change',
@@ -1023,7 +997,6 @@ export interface FileRoutesByFullPath {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
-  '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
   '/produk': typeof ProdukRoute
@@ -1059,7 +1032,6 @@ export interface FileRoutesByFullPath {
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
-  '/langganan': typeof AuthenticatedLanggananRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1107,7 +1079,6 @@ export interface FileRoutesByFullPath {
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
-  '/admin/verifikasi-pembayaran': typeof AuthenticatedAdminVerifikasiPembayaranRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -1162,7 +1133,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1176,7 +1146,6 @@ export interface FileRoutesByTo {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
-  '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
   '/produk': typeof ProdukRoute
   '/refund': typeof RefundRoute
@@ -1209,7 +1178,6 @@ export interface FileRoutesByTo {
   '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
-  '/langganan': typeof AuthenticatedLanggananRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1258,7 +1226,6 @@ export interface FileRoutesByTo {
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
-  '/admin/verifikasi-pembayaran': typeof AuthenticatedAdminVerifikasiPembayaranRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -1313,7 +1280,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1329,7 +1295,6 @@ export interface FileRoutesById {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
-  '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
   '/produk': typeof ProdukRoute
@@ -1365,7 +1330,6 @@ export interface FileRoutesById {
   '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/_authenticated/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
-  '/_authenticated/langganan': typeof AuthenticatedLanggananRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1414,7 +1378,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/_authenticated/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
-  '/_authenticated/admin/verifikasi-pembayaran': typeof AuthenticatedAdminVerifikasiPembayaranRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/_authenticated/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -1469,7 +1432,6 @@ export interface FileRoutesById {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1486,7 +1448,6 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
-    | '/harga'
     | '/mcp'
     | '/pos-kasir'
     | '/produk'
@@ -1522,7 +1483,6 @@ export interface FileRouteTypes {
     | '/kontak'
     | '/kontak-mapping'
     | '/label-preview'
-    | '/langganan'
     | '/link-pegawai'
     | '/metrik-query'
     | '/notifikasi'
@@ -1570,7 +1530,6 @@ export interface FileRouteTypes {
     | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
-    | '/admin/verifikasi-pembayaran'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/debug/selector'
@@ -1625,7 +1584,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
-    | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1639,7 +1597,6 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
-    | '/harga'
     | '/mcp'
     | '/produk'
     | '/refund'
@@ -1672,7 +1629,6 @@ export interface FileRouteTypes {
     | '/kios'
     | '/kontak-mapping'
     | '/label-preview'
-    | '/langganan'
     | '/link-pegawai'
     | '/metrik-query'
     | '/notifikasi'
@@ -1721,7 +1677,6 @@ export interface FileRouteTypes {
     | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
-    | '/admin/verifikasi-pembayaran'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/debug/selector'
@@ -1776,7 +1731,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
-    | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1791,7 +1745,6 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
-    | '/harga'
     | '/mcp'
     | '/pos-kasir'
     | '/produk'
@@ -1827,7 +1780,6 @@ export interface FileRouteTypes {
     | '/_authenticated/kontak'
     | '/_authenticated/kontak-mapping'
     | '/_authenticated/label-preview'
-    | '/_authenticated/langganan'
     | '/_authenticated/link-pegawai'
     | '/_authenticated/metrik-query'
     | '/_authenticated/notifikasi'
@@ -1876,7 +1828,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/email-status'
     | '/_authenticated/admin/portal-error-log'
     | '/_authenticated/admin/signup-attempts'
-    | '/_authenticated/admin/verifikasi-pembayaran'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
     | '/_authenticated/debug/selector'
@@ -1931,7 +1882,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
-    | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1947,7 +1897,6 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
-  HargaRoute: typeof HargaRoute
   McpRoute: typeof McpRoute
   PosKasirRoute: typeof PosKasirRouteWithChildren
   ProdukRoute: typeof ProdukRoute
@@ -2007,7 +1956,6 @@ export interface RootRouteChildren {
   ApiPublicHooksPrepTaskNotifyRoute: typeof ApiPublicHooksPrepTaskNotifyRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   ApiPublicHooksShipmentStatusChangeRoute: typeof ApiPublicHooksShipmentStatusChangeRoute
-  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -2071,13 +2019,6 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/harga': {
-      id: '/harga'
-      path: '/harga'
-      fullPath: '/harga'
-      preLoaderRoute: typeof HargaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -2414,13 +2355,6 @@ declare module '@tanstack/react-router' {
       path: '/link-pegawai'
       fullPath: '/link-pegawai'
       preLoaderRoute: typeof AuthenticatedLinkPegawaiRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/langganan': {
-      id: '/_authenticated/langganan'
-      path: '/langganan'
-      fullPath: '/langganan'
-      preLoaderRoute: typeof AuthenticatedLanggananRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/label-preview': {
@@ -2927,13 +2861,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkerPortalRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin/verifikasi-pembayaran': {
-      id: '/_authenticated/admin/verifikasi-pembayaran'
-      path: '/admin/verifikasi-pembayaran'
-      fullPath: '/admin/verifikasi-pembayaran'
-      preLoaderRoute: typeof AuthenticatedAdminVerifikasiPembayaranRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/admin/signup-attempts': {
       id: '/_authenticated/admin/signup-attempts'
       path: '/admin/signup-attempts'
@@ -3002,13 +2929,6 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/auth/preview'
       fullPath: '/lovable/email/auth/preview'
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/payments/webhook': {
-      id: '/api/public/payments/webhook'
-      path: '/api/public/payments/webhook'
-      fullPath: '/api/public/payments/webhook'
-      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/shipment-status-change': {
@@ -3195,7 +3115,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
   AuthenticatedKontakMappingRoute: typeof AuthenticatedKontakMappingRoute
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
-  AuthenticatedLanggananRoute: typeof AuthenticatedLanggananRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedMetrikQueryRoute: typeof AuthenticatedMetrikQueryRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
@@ -3234,7 +3153,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminEmailStatusRoute: typeof AuthenticatedAdminEmailStatusRoute
   AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
   AuthenticatedAdminSignupAttemptsRoute: typeof AuthenticatedAdminSignupAttemptsRoute
-  AuthenticatedAdminVerifikasiPembayaranRoute: typeof AuthenticatedAdminVerifikasiPembayaranRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
   AuthenticatedDebugSelectorRoute: typeof AuthenticatedDebugSelectorRoute
   AuthenticatedDevPressAuditCodesRoute: typeof AuthenticatedDevPressAuditCodesRoute
@@ -3269,7 +3187,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
   AuthenticatedKontakMappingRoute: AuthenticatedKontakMappingRoute,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
-  AuthenticatedLanggananRoute: AuthenticatedLanggananRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedMetrikQueryRoute: AuthenticatedMetrikQueryRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
@@ -3314,8 +3231,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminEmailStatusRoute: AuthenticatedAdminEmailStatusRoute,
   AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
   AuthenticatedAdminSignupAttemptsRoute: AuthenticatedAdminSignupAttemptsRoute,
-  AuthenticatedAdminVerifikasiPembayaranRoute:
-    AuthenticatedAdminVerifikasiPembayaranRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
   AuthenticatedDebugSelectorRoute: AuthenticatedDebugSelectorRoute,
   AuthenticatedDevPressAuditCodesRoute: AuthenticatedDevPressAuditCodesRoute,
@@ -3360,7 +3275,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
-  HargaRoute: HargaRoute,
   McpRoute: McpRoute,
   PosKasirRoute: PosKasirRouteWithChildren,
   ProdukRoute: ProdukRoute,
@@ -3426,7 +3340,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   ApiPublicHooksShipmentStatusChangeRoute:
     ApiPublicHooksShipmentStatusChangeRoute,
-  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
