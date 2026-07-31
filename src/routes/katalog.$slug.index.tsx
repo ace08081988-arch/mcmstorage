@@ -2,7 +2,7 @@
  * Katalog publik per toko — bisa dibuka tanpa login.
  * Pengunjung melihat produk + stok dan memesan langsung lewat WhatsApp.
  */
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
@@ -131,7 +131,7 @@ function PublicKatalogPage() {
   // Teks pesanan WA dibangun SEKALI per perubahan keranjang. Sebelumnya
   // dipanggil 3x per render (textarea, tombol salin, link WA) — pada katalog
   // besar itu ~50ms per ketukan tombol +/- di perangkat Android kelas menengah.
-  const orderText = useMemo(
+  const cartOrderText = useMemo(
     () => bulkOrderText(data.shop?.name ?? "", cartLines),
     [data.shop?.name, cartLines],
   );
@@ -488,7 +488,7 @@ function PublicKatalogPage() {
                   </ul>
                   <textarea
                     readOnly
-                    value={bulkOrderText(shop.name, cartLines)}
+                    value={cartOrderText}
                     className="min-h-[120px] w-full rounded-lg border bg-muted/50 p-3 text-sm leading-relaxed"
                     aria-label="Teks pesanan WhatsApp"
                   />
@@ -504,7 +504,7 @@ function PublicKatalogPage() {
                     className="rounded-full"
                     onClick={() => {
                       void navigator.clipboard
-                        .writeText(bulkOrderText(shop.name, cartLines))
+                        .writeText(cartOrderText)
                         .then(() => {
                           setCopied(true);
                           setTimeout(() => setCopied(false), 1500);
@@ -524,7 +524,7 @@ function PublicKatalogPage() {
                   </Button>
                   <Button asChild className="rounded-full">
                     <a
-                      href={waLink(shop.wa, bulkOrderText(shop.name, cartLines))}
+                      href={waLink(shop.wa, cartOrderText)}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setPreviewOpen(false)}
