@@ -140,17 +140,19 @@ export function friendlyError(
       (msg.includes("subject") && msg.includes("url"))) {
     return "Konfigurasi notifikasi belum valid.";
   }
-  // Pro-tier paywall (thrown by enforce_free_*_cap triggers)
+  // Batas kapasitas bawaan (trigger enforce_free_*_cap). Tidak ada paket
+  // berbayar / halaman Langganan lagi sejak integrasi pembayaran dilepas —
+  // arahkan user menghubungi admin, bukan ke rute yang sudah dihapus.
   if (msg.includes("pro_required:warehouse_items"))
-    return "Batas 30 barang gudang pada paket Free sudah tercapai. Upgrade ke Pro untuk menambah lebih banyak.";
+    return "Batas 30 barang gudang sudah tercapai. Hubungi admin untuk menaikkan batas.";
   if (msg.includes("pro_required:sales"))
-    return "Batas 50 penjualan per 30 hari pada paket Free sudah tercapai. Upgrade ke Pro untuk lanjut menjual.";
+    return "Batas 50 penjualan per 30 hari sudah tercapai. Hubungi admin untuk menaikkan batas.";
   if (msg.includes("pro_required:staff_contacts"))
-    return "Paket Free hanya mengizinkan 1 kontak pegawai. Upgrade ke Pro untuk menambah pegawai.";
+    return "Batas 1 kontak pegawai sudah tercapai. Hubungi admin untuk menaikkan batas.";
   if (msg.includes("pro_required:user_devices"))
-    return "Paket Free hanya mengizinkan 1 perangkat tepercaya. Upgrade ke Pro untuk multi-perangkat.";
+    return "Batas 1 perangkat tepercaya sudah tercapai. Hubungi admin untuk menaikkan batas.";
   if (msg.includes("pro_required"))
-    return "Fitur ini hanya untuk pelanggan Pro. Buka halaman Langganan untuk upgrade.";
+    return "Batas kapasitas akun sudah tercapai. Hubungi admin untuk menaikkan batas.";
   if (msg.includes("invalid login") || msg.includes("invalid credentials"))
     return "Email atau kata sandi salah.";
   if (msg.includes("email not confirmed"))
