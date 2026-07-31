@@ -4,9 +4,18 @@
  */
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
+import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
