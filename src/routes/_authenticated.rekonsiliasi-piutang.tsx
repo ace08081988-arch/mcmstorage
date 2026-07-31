@@ -6,6 +6,7 @@
  * dan `debt_payments`. Kalau selisih ≠ 0 → ada baris yang lolos dari salah
  * satu kanal, dan bisa langsung ditelusuri lewat rincian per hari.
  */
+import { ProGate } from "@/components/ProGate";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/rekonsiliasi-piutang")({
       },
     ],
   }),
-  component: RekonsiliasiPiutangPage,
+  component: RekonsiliasiPiutangPageGated,
 });
 
 type SaleRow = { created_at: string; payment_method: string; total_revenue: number | string };
@@ -58,6 +59,14 @@ function toJakartaDate(iso: string): string {
 
 function num(v: unknown): number {
   return Number(v) || 0;
+}
+
+function RekonsiliasiPiutangPageGated() {
+  return (
+    <ProGate feature="Rekonsiliasi piutang">
+      <RekonsiliasiPiutangPage />
+    </ProGate>
+  );
 }
 
 function RekonsiliasiPiutangPage() {
