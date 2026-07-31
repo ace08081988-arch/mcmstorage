@@ -246,11 +246,12 @@ function NotifikasiPage() {
 
   return (
     <div className="container max-w-3xl space-ms-6 px-ms-4 py-ms-6">
-      <header className="space-y-1">
-        <h1 className="flex items-center gap-ms-2 text-ms-2xl font-semibold">
-          <BellRing className="size-6 text-primary" /> Pengaturan Notifikasi
+      <header className="space-y-1 rounded-2xl border border-border/60 bg-card/95 p-ms-4 shadow-sm">
+        <h1 className="flex items-center gap-ms-2 text-ms-xl font-semibold leading-tight md:text-ms-2xl">
+          <BellRing className="size-5 shrink-0 text-primary md:size-6" />
+          <span className="min-w-0">Pengaturan Notifikasi</span>
         </h1>
-        <p className="text-ms-sm text-muted-foreground">
+        <p className="text-ms-sm leading-relaxed text-muted-foreground">
           Pilih jenis notifikasi yang ingin Anda terima, atur getaran, dan jadwalkan jangan ganggu.
         </p>
         <p className="text-ms-xs text-muted-foreground">

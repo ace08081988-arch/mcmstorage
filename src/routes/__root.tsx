@@ -504,7 +504,10 @@ function RootComponent() {
       <Toaster
         richColors
         position="top-center"
-        mobileOffset={{ top: 12, left: 12, right: 12, bottom: 12 }}
+        // Header aplikasi ±56px: toast diturunkan supaya tidak menutupi
+        // judul halaman, lonceng notifikasi, dan avatar.
+        offset={{ top: 76, left: 16, right: 16, bottom: 16 }}
+        mobileOffset={{ top: 68, left: 12, right: 12, bottom: 12 }}
         toastOptions={{ style: { maxWidth: "calc(100vw - 24px)" } }}
       />
       <ConfirmHost />
