@@ -3,7 +3,7 @@
  * Pengunjung melihat produk + stok dan memesan langsung lewat WhatsApp.
  */
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { MessageCircle, PackageSearch, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
   type PublicCatalogPayload,
 } from "@/lib/public-catalog.functions";
 
-export const Route = createFileRoute("/katalog/$slug")({
+export const Route = createFileRoute("/katalog/$slug/")({
   ssr: true,
   loader: ({ params }) => getPublicCatalog({ data: { slug: params.slug } }),
   head: ({ loaderData }) => {
@@ -73,6 +73,7 @@ type SortOption = "name" | "price-asc" | "price-desc" | "stock";
 
 function PublicKatalogPage() {
   const data = Route.useLoaderData() as PublicCatalogPayload;
+  const { slug } = Route.useParams();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState(ALL);
   const [onlyReady, setOnlyReady] = useState(false);
@@ -207,21 +208,28 @@ function PublicKatalogPage() {
             return (
               <li key={it.id} className="lux-card flex flex-col gap-2 p-2.5">
                 {it.image_url ? (
+                  <Link to="/katalog/$slug/$itemId" params={{ slug, itemId: it.id }}>
                   <img
                     src={it.image_url}
                     alt={`Foto produk ${it.name}`}
                     loading="lazy"
                     className="aspect-square w-full rounded-lg border border-border/50 object-cover"
                   />
+                  </Link>
                 ) : (
                   <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-muted text-xl font-semibold text-muted-foreground">
                     {it.name.slice(0, 1).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold" title={it.name}>
+                  <Link
+                    to="/katalog/$slug/$itemId"
+                    params={{ slug, itemId: it.id }}
+                    className="block truncate text-sm font-semibold hover:underline"
+                    title={it.name}
+                  >
                     {it.name}
-                  </p>
+                  </Link>
                   <p className="truncate text-xs text-muted-foreground">
                     {it.category?.trim() || "Tanpa kategori"}
                   </p>
@@ -255,6 +263,13 @@ function PublicKatalogPage() {
                     </a>
                   </Button>
                 ) : null}
+                <Link
+                  to="/katalog/$slug/$itemId"
+                  params={{ slug, itemId: it.id }}
+                  className="text-center text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  Lihat detail
+                </Link>
               </li>
             );
           })}

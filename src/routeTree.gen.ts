@@ -28,7 +28,6 @@ import { Route as PosKasirIndexRouteImport } from './routes/pos-kasir.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as PosKasirRingkasanRouteImport } from './routes/pos-kasir.ringkasan'
-import { Route as KatalogSlugRouteImport } from './routes/katalog.$slug'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
@@ -96,6 +95,7 @@ import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as KatalogSlugIndexRouteImport } from './routes/katalog.$slug.index'
 import { Route as AuthenticatedKontakIndexRouteImport } from './routes/_authenticated.kontak.index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lovable.visual.worker-shot-marksent'
@@ -129,6 +129,7 @@ import { Route as LovableVisualApkAvailabilityShortcutsRouteImport } from './rou
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as LovableVisualAccessDeniedToastRouteImport } from './routes/lovable.visual.access-denied-toast'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as KatalogSlugItemIdRouteImport } from './routes/katalog.$slug.$itemId'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
@@ -256,11 +257,6 @@ const PosKasirRingkasanRoute = PosKasirRingkasanRouteImport.update({
   id: '/ringkasan',
   path: '/ringkasan',
   getParentRoute: () => PosKasirRoute,
-} as any)
-const KatalogSlugRoute = KatalogSlugRouteImport.update({
-  id: '/katalog/$slug',
-  path: '/katalog/$slug',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const ICodeRoute = ICodeRouteImport.update({
   id: '/i/$code',
@@ -630,6 +626,11 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const KatalogSlugIndexRoute = KatalogSlugIndexRouteImport.update({
+  id: '/katalog/$slug/',
+  path: '/katalog/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedKontakIndexRoute =
   AuthenticatedKontakIndexRouteImport.update({
     id: '/',
@@ -820,6 +821,11 @@ const LovableVisualAccessDeniedToastRoute =
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KatalogSlugItemIdRoute = KatalogSlugItemIdRouteImport.update({
+  id: '/katalog/$slug/$itemId',
+  path: '/katalog/$slug/$itemId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPrepRealtimeTokenRoute =
@@ -1098,7 +1104,6 @@ export interface FileRoutesByFullPath {
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
-  '/katalog/$slug': typeof KatalogSlugRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/pos-kasir/': typeof PosKasirIndexRoute
@@ -1119,6 +1124,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -1152,6 +1158,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/kontak/': typeof AuthenticatedKontakIndexRoute
+  '/katalog/$slug/': typeof KatalogSlugIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
@@ -1248,7 +1255,6 @@ export interface FileRoutesByTo {
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
-  '/katalog/$slug': typeof KatalogSlugRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
@@ -1270,6 +1276,7 @@ export interface FileRoutesByTo {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -1303,6 +1310,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/kontak': typeof AuthenticatedKontakIndexRoute
+  '/katalog/$slug': typeof KatalogSlugIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
@@ -1404,7 +1412,6 @@ export interface FileRoutesById {
   '/download/$variant': typeof DownloadVariantRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
-  '/katalog/$slug': typeof KatalogSlugRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -1426,6 +1433,7 @@ export interface FileRoutesById {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -1459,6 +1467,7 @@ export interface FileRoutesById {
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/kontak/': typeof AuthenticatedKontakIndexRoute
+  '/katalog/$slug/': typeof KatalogSlugIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/friend-notify': typeof ApiPublicHooksFriendNotifyRoute
@@ -1561,7 +1570,6 @@ export interface FileRouteTypes {
     | '/download/$variant'
     | '/email/unsubscribe'
     | '/i/$code'
-    | '/katalog/$slug'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/pos-kasir/'
@@ -1582,6 +1590,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
@@ -1615,6 +1624,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/worker-shot-marksent'
     | '/chat/'
     | '/kontak/'
+    | '/katalog/$slug/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/friend-notify'
@@ -1711,7 +1721,6 @@ export interface FileRouteTypes {
     | '/download/$variant'
     | '/email/unsubscribe'
     | '/i/$code'
-    | '/katalog/$slug'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/'
@@ -1733,6 +1742,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
@@ -1766,6 +1776,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/worker-shot-marksent'
     | '/chat'
     | '/kontak'
+    | '/katalog/$slug'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/friend-notify'
@@ -1866,7 +1877,6 @@ export interface FileRouteTypes {
     | '/download/$variant'
     | '/email/unsubscribe'
     | '/i/$code'
-    | '/katalog/$slug'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/_authenticated/'
@@ -1888,6 +1898,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
@@ -1921,6 +1932,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/worker-shot-marksent'
     | '/_authenticated/chat/'
     | '/_authenticated/kontak/'
+    | '/katalog/$slug/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/friend-notify'
@@ -1961,13 +1973,13 @@ export interface RootRouteChildren {
   DiagnostikPaketRoute: typeof DiagnostikPaketRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ICodeRoute: typeof ICodeRoute
-  KatalogSlugRoute: typeof KatalogSlugRoute
   TTokenRoute: typeof TTokenRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
+  KatalogSlugItemIdRoute: typeof KatalogSlugItemIdRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   LovableVisualAccessDeniedToastRoute: typeof LovableVisualAccessDeniedToastRoute
   LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
@@ -1999,6 +2011,7 @@ export interface RootRouteChildren {
   LovableVisualTwoUserDraftsRoute: typeof LovableVisualTwoUserDraftsRoute
   LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
   LovableVisualWorkerShotMarksentRoute: typeof LovableVisualWorkerShotMarksentRoute
+  KatalogSlugIndexRoute: typeof KatalogSlugIndexRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksFriendNotifyRoute: typeof ApiPublicHooksFriendNotifyRoute
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
@@ -2148,13 +2161,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/pos-kasir/ringkasan'
       preLoaderRoute: typeof PosKasirRingkasanRouteImport
       parentRoute: typeof PosKasirRoute
-    }
-    '/katalog/$slug': {
-      id: '/katalog/$slug'
-      path: '/katalog/$slug'
-      fullPath: '/katalog/$slug'
-      preLoaderRoute: typeof KatalogSlugRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/i/$code': {
       id: '/i/$code'
@@ -2625,6 +2631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/katalog/$slug/': {
+      id: '/katalog/$slug/'
+      path: '/katalog/$slug'
+      fullPath: '/katalog/$slug/'
+      preLoaderRoute: typeof KatalogSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/kontak/': {
       id: '/_authenticated/kontak/'
       path: '/'
@@ -2854,6 +2867,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/katalog/$slug/$itemId': {
+      id: '/katalog/$slug/$itemId'
+      path: '/katalog/$slug/$itemId'
+      fullPath: '/katalog/$slug/$itemId'
+      preLoaderRoute: typeof KatalogSlugItemIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/prep-realtime-token': {
@@ -3373,13 +3393,13 @@ const rootRouteChildren: RootRouteChildren = {
   DiagnostikPaketRoute: DiagnostikPaketRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ICodeRoute: ICodeRoute,
-  KatalogSlugRoute: KatalogSlugRoute,
   TTokenRoute: TTokenRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
+  KatalogSlugItemIdRoute: KatalogSlugItemIdRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   LovableVisualAccessDeniedToastRoute: LovableVisualAccessDeniedToastRoute,
   LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
@@ -3415,6 +3435,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualTwoUserDraftsRoute: LovableVisualTwoUserDraftsRoute,
   LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
   LovableVisualWorkerShotMarksentRoute: LovableVisualWorkerShotMarksentRoute,
+  KatalogSlugIndexRoute: KatalogSlugIndexRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksFriendNotifyRoute: ApiPublicHooksFriendNotifyRoute,
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,

@@ -2464,6 +2464,7 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
   const [stockBase, setStockBase] = useState(String(item.stock_base));
   const [avgCost, setAvgCost] = useState(String(item.avg_cost_per_base));
   const [sellingPrice, setSellingPrice] = useState(item.selling_price_per_base == null ? "" : String(item.selling_price_per_base));
+  const [description, setDescription] = useState((item as { description?: string | null }).description ?? "");
   const [imagePath, setImagePath] = useState<string | null>(item.image_path);
   const [saving, setSaving] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
@@ -2500,6 +2501,7 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
       stock_base: Number(stockBase) || 0,
       avg_cost_per_base: Number(avgCost) || 0,
       selling_price_per_base: sellingPrice.trim() === "" ? null : Number(sellingPrice) || null,
+      description: description.trim() || null,
       image_path: imagePath,
     }).eq("id", item.id);
     setSaving(false);
@@ -2520,6 +2522,16 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">Kategori</span>
           <input className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={category} onChange={(e) => setCategory(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="text-[0.6875rem] text-muted-foreground">Deskripsi (tampil di katalog publik)</span>
+          <textarea
+            rows={3}
+            className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Contoh: kemasan 1 kg, kualitas premium, cocok untuk…"
+          />
         </label>
         <div className="grid grid-cols-2 gap-ms-2">
           <label className="block">
