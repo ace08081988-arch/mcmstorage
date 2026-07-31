@@ -231,16 +231,6 @@ function TermsPage() {
               <a href="mailto:admin@mcmstorage.biz" className="underline">
                 admin@mcmstorage.biz
               </a>
-              . Untuk pertanyaan terkait transaksi atau pengembalian dana,
-              silakan hubungi Paddle melalui{" "}
-              <a
-                href="https://paddle.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                paddle.net
-              </a>
               .
             </p>
           </Section>
