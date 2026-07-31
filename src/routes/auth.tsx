@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,12 +116,11 @@ function AuthPage() {
       return { intent: null, mode: "login", email: "" };
     }
   };
-  // Route ini `ssr: false`, jadi aman membaca localStorage saat init —
-  // preferensi langsung terisi tanpa kedipan field kosong.
-  const initial = readPrefs();
-  const [mode, setMode] = useState<"login" | "signup">(initial.mode);
-  const [intent, setIntent] = useState<"storage" | "chat" | null>(initial.intent);
-  const [email, setEmail] = useState(initial.email);
+  // Render pertama harus deterministik (cocok antara server & klien), jadi
+  // preferensi dari localStorage baru diterapkan setelah hydrate.
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [intent, setIntent] = useState<"storage" | "chat" | null>(null);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -133,9 +132,20 @@ function AuthPage() {
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
   const secureSignUpFn = useServerFn(secureSignUp);
 
+  // Terapkan preferensi tersimpan setelah hydrate (bukan saat render pertama).
+  const prefsRestored = useRef(false);
+  useEffect(() => {
+    const p = readPrefs();
+    setMode(p.mode);
+    setIntent(p.intent);
+    setEmail(p.email);
+    prefsRestored.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !prefsRestored.current) return;
     try {
       window.localStorage.setItem(
         LS_KEY,
