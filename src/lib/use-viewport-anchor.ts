@@ -160,10 +160,13 @@ function startEngine() {
       keyboardOpen = shrink > cfg.keyboardOpenPx && !looksLikeChrome;
     }
 
-    // Kompensasi HANYA saat keyboard terbuka. Shrink akibat address bar
-    // dibiarkan (bar tetap menempel di dasar layar oleh `bottom: 0`), jadi
-    // tidak ada transform yang bergerak-gerak saat menggulir.
-    const target = cfg.enabled && keyboardOpen ? next : 0;
+    // Kompensasi WAJIB selalu aktif. Di WebView Android, `position: fixed;
+    // bottom: 0` menempel ke *layout viewport* yang lebih tinggi daripada
+    // visual viewport saat address bar tampil — akibatnya bar terdorong ke
+    // bawah layar dan HILANG saat menggulir (regresi yang terlihat di
+    // rekaman layar). `next` = selisih layout vs visual viewport, jadi bar
+    // selalu kembali menempel ke dasar layar yang benar-benar terlihat.
+    const target = cfg.enabled ? next : 0;
 
     // Hysteresis: perubahan <= 1px diabaikan (reflow dari list virtual sering
     // menghasilkan beda pecahan pixel yang bikin bar terlihat bergeser).
@@ -175,11 +178,14 @@ function startEngine() {
       document.documentElement.style.setProperty(VIEWPORT_ANCHOR_VAR, `${target}px`);
     }
 
-    // Mode terkunci: hanya diperbarui ketika keyboard tertutup, sehingga
-    // posisinya benar-benar diam apa pun yang terjadi pada address bar.
-    if (!keyboardOpen && Math.abs(currentLockOffset) > cfg.hysteresisPx) {
-      currentLockOffset = 0;
-      document.documentElement.style.setProperty(VIEWPORT_ANCHOR_LOCK_VAR, "0px");
+    // Mode terkunci: mengikuti address bar, TAPI dibekukan saat keyboard
+    // terbuka supaya bar tidak melompat mengikuti animasi keyboard.
+    if (!keyboardOpen && Math.abs(target - currentLockOffset) > cfg.hysteresisPx) {
+      currentLockOffset = target;
+      document.documentElement.style.setProperty(
+        VIEWPORT_ANCHOR_LOCK_VAR,
+        `${target}px`,
+      );
     }
 
     if (keyboardOpen !== currentKeyboardOpen) {
