@@ -61,7 +61,7 @@ export function useChatContacts(q: string) {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("search_chat_contacts", { _q: q || "" });
       if (error) throw error;
-      return (data ?? []) as Array<{
+      return (data ?? []) as unknown as Array<{
         user_id: string;
         display_name: string | null;
         phone: string | null;
@@ -197,7 +197,7 @@ export function useConversations() {
           });
           if (pErr) throw pErr;
           profileMap = new Map(
-            ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null; email: string | null }>).map(
+            ((profs ?? []) as unknown as Array<{ id: string; display_name: string | null; phone: string | null; email: string | null }>).map(
               (p) => [p.id, { display_name: p.display_name, phone: p.phone, email: p.email }],
             ),
           );
