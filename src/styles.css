@@ -578,6 +578,9 @@
     /* Warisi dari <html> — biar preferensi font-size cascade lewat rem. */
     position: relative;
     min-height: 100vh;
+    /* Cegah efek "bounce"/overscroll Android & iOS yang membuat elemen
+       `fixed` terlihat ikut bergeser saat scroll melewati ujung konten. */
+    overscroll-behavior-y: none;
   }
 
   /* Latar foto kustom — diatur via variabel di :root oleh AppearanceSettings */
