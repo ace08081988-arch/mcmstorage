@@ -83,7 +83,6 @@ export function MobileBottomNav() {
       )}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
-        ...anchorStyle,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
