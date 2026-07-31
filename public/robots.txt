@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Halaman publik yang diindeks ada di sitemap:
-#   /, /refund, /terms, /trust, /download, /auth
+#   /, /produk, /harga, /faq, /refund, /terms, /trust, /download, /auth
 
 # Endpoint API & internal — tidak untuk diindeks
 Disallow: /api/
