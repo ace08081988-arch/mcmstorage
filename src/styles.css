@@ -51,6 +51,11 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-info-soft: var(--info-soft);
+  /* Kanal WhatsApp / MCM — satu sumber warna untuk semua tombol kirim. */
+  --color-wa: var(--wa);
+  --color-wa-foreground: var(--wa-foreground);
+  --color-wa-strong: var(--wa-strong);
+  --color-wa-soft: var(--wa-soft);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
