@@ -408,14 +408,78 @@ function PublicKatalogPage() {
                 <DialogHeader>
                   <DialogTitle>Pratinjau pesanan WA</DialogTitle>
                   <DialogDescription>
-                    Cek dulu pesan yang akan dikirim ke {shop.name}. Tekan Edit untuk mengubah jumlah di katalog.
+                    Cek dan ubah jumlah tiap produk sebelum kirim ke {shop.name}.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-3">
+                <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
+                  <ul className="space-y-2">
+                    {cartLines.map(({ item, qty }) => {
+                      const empty = item.stock_base <= 0;
+                      return (
+                        <li
+                          key={item.id}
+                          className="flex items-center justify-between gap-2 rounded-lg border p-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{item.name}</p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {item.selling_price_per_base != null
+                                ? `${rupiah(item.selling_price_per_base)}/${item.base_unit || "pcs"}`
+                                : "Harga dikonfirmasi penjual"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-full"
+                              aria-label={`Kurangi ${item.name}`}
+                              onClick={() => setQty(item.id, qty - 1)}
+                            >
+                              <Minus className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={qty}
+                              onChange={(e) => {
+                                const v = parseInt(e.target.value.replace(/\D/g, ""), 10);
+                                setQty(item.id, Number.isNaN(v) ? 0 : v);
+                              }}
+                              className="h-7 w-12 rounded-md border bg-background text-center text-sm tabular-nums"
+                              aria-label={`Jumlah ${item.name}`}
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-full"
+                              aria-label={`Tambah ${item.name}`}
+                              disabled={!empty && qty >= item.stock_base}
+                              onClick={() => setQty(item.id, qty + 1)}
+                            >
+                              <Plus className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-full text-destructive"
+                              aria-label={`Hapus ${item.name}`}
+                              onClick={() => setQty(item.id, 0)}
+                            >
+                              <X className="h-3.5 w-3.5" aria-hidden />
+                            </Button>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
                   <textarea
                     readOnly
                     value={bulkOrderText(shop.name, cartLines)}
-                    className="min-h-[180px] w-full rounded-lg border bg-muted/50 p-3 text-sm leading-relaxed"
+                    className="min-h-[120px] w-full rounded-lg border bg-muted/50 p-3 text-sm leading-relaxed"
                     aria-label="Teks pesanan WhatsApp"
                   />
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -446,7 +510,7 @@ function PublicKatalogPage() {
                     className="rounded-full"
                     onClick={() => setPreviewOpen(false)}
                   >
-                    Edit
+                    Tutup
                   </Button>
                   <Button asChild className="rounded-full">
                     <a
