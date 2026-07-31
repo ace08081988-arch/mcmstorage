@@ -1423,25 +1423,70 @@ function DetailHero({
   );
 }
 
-function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
+function DetailRow({ icon, label, value, sub, accent, badge }: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+  accent?: boolean;
+  badge?: string;
+}) {
   return (
-    <div className="grid min-h-[40px] grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)] items-center gap-ms-2 py-ms-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
-      <EcerLabel className="flex min-w-0 items-center gap-ms-1.5 leading-snug" title={label}>
-        <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground/70 [&_svg]:h-3.5 [&_svg]:w-3.5">
-          {icon}
+    <div className="flex items-start gap-ms-3">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-muted/40 text-primary [&_svg]:h-[18px] [&_svg]:w-[18px]">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <EcerLabel as="div" className="leading-none" title={label}>
+          {label}
+        </EcerLabel>
+        <div className="mt-1 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+          <span
+            className={
+              accent
+                ? "min-w-0 text-ms-base font-bold leading-snug text-primary [overflow-wrap:anywhere]"
+                : "min-w-0 text-ms-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
+            }
+          >
+            {value}
+          </span>
+          {badge ? (
+            <span className="shrink-0 rounded-md border border-success/30 bg-success/10 px-1.5 py-0.5 text-ms-2xs font-bold leading-none text-success">
+              {badge}
+            </span>
+          ) : sub ? (
+            <EcerMeta as="span" className="min-w-0 font-normal leading-snug">
+              {sub}
+            </EcerMeta>
+          ) : null}
+          {badge && sub ? (
+            <EcerMeta as="span" className="min-w-0 font-normal leading-snug">
+              {sub}
+            </EcerMeta>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ icon, label, value, mono }: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <EcerLabel as="div" className="leading-none">{label}</EcerLabel>
+      <div className="mt-1 flex min-w-0 items-center gap-1.5 text-muted-foreground">
+        <span className="shrink-0 opacity-60 [&_svg]:h-3.5 [&_svg]:w-3.5">{icon}</span>
+        <span
+          className={`min-w-0 truncate text-ms-sm font-semibold text-foreground ${mono ? "font-mono text-ms-xs" : ""}`}
+          title={value}
+        >
+          {value}
         </span>
-        <span className="line-clamp-2 whitespace-normal">{label}</span>
-      </EcerLabel>
-      <div
-        className="flex min-w-0 items-center justify-end gap-x-1.5 text-right text-ms-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
-        title={[typeof value === "string" ? value : undefined, sub].filter(Boolean).join(" · ") || undefined}
-      >
-        <span className="min-w-0 truncate [overflow-wrap:anywhere]">{value}</span>
-        {sub && (
-          <EcerMeta as="span" className="min-w-0 shrink-0 truncate whitespace-nowrap font-normal leading-snug">
-            · {sub}
-          </EcerMeta>
-        )}
       </div>
     </div>
   );
