@@ -140,24 +140,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="8. Paddle sebagai Merchant of Record">
-            <p>
-              <em>
-                Our order process is conducted by our online reseller
-                Paddle.com. Paddle.com is the Merchant of Record for all our
-                orders. Paddle provides all customer service inquiries and
-                handles returns.
-              </em>
-            </p>
-            <p>
-              Proses pemesanan kami dijalankan oleh reseller daring kami,
-              Paddle.com. Paddle.com adalah Merchant of Record untuk semua
-              pesanan kami. Paddle menangani pertanyaan layanan pelanggan
-              terkait pembayaran serta proses pengembalian dana.
-            </p>
-          </Section>
-
-          <Section title="9. Ketersediaan layanan">
+          <Section title="8. Ketersediaan layanan">
             <p>
               Layanan diberikan "sebagaimana adanya" dan "sebagaimana
               tersedia". Kami berusaha menjaga ketersediaan dan kinerja,
