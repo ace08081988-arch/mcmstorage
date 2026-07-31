@@ -129,6 +129,7 @@ import { Route as LovableVisualApkAvailabilityShortcutsRouteImport } from './rou
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as LovableVisualAccessDeniedToastRouteImport } from './routes/lovable.visual.access-denied-toast'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as KatalogSlugItemIdRouteImport } from './routes/katalog.$slug.$itemId'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
@@ -822,6 +823,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KatalogSlugItemIdRoute = KatalogSlugItemIdRouteImport.update({
+  id: '/katalog/$slug/$itemId',
+  path: '/katalog/$slug/$itemId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPrepRealtimeTokenRoute =
   ApiPublicPrepRealtimeTokenRouteImport.update({
     id: '/api/public/prep-realtime-token',
@@ -1118,6 +1124,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -1269,6 +1276,7 @@ export interface FileRoutesByTo {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -1425,6 +1433,7 @@ export interface FileRoutesById {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -1581,6 +1590,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
@@ -1732,6 +1742,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
@@ -1887,6 +1898,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
@@ -1967,6 +1979,7 @@ export interface RootRouteChildren {
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
+  KatalogSlugItemIdRoute: typeof KatalogSlugItemIdRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   LovableVisualAccessDeniedToastRoute: typeof LovableVisualAccessDeniedToastRoute
   LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
@@ -2856,6 +2869,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/katalog/$slug/$itemId': {
+      id: '/katalog/$slug/$itemId'
+      path: '/katalog/$slug/$itemId'
+      fullPath: '/katalog/$slug/$itemId'
+      preLoaderRoute: typeof KatalogSlugItemIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/prep-realtime-token': {
       id: '/api/public/prep-realtime-token'
       path: '/api/public/prep-realtime-token'
@@ -3379,6 +3399,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
+  KatalogSlugItemIdRoute: KatalogSlugItemIdRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   LovableVisualAccessDeniedToastRoute: LovableVisualAccessDeniedToastRoute,
   LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
