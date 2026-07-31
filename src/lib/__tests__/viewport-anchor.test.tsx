@@ -71,13 +71,16 @@ const SCREENS = [
 
 describe("viewport anchor — Android WebView", () => {
   for (const s of SCREENS) {
-    it(`${s.name}: address bar menyusut saat scroll → bottom nav TIDAK bergerak`, () => {
+    it(`${s.name}: address bar menyusut saat scroll → bar tetap menempel dasar layar`, () => {
       const env = installViewport(s.h);
       render(<Probe lock={false} />);
       act(() => flushFrames(2));
       expect(read(VIEWPORT_ANCHOR_VAR)).toBe("0px");
 
       // User menggulir; Chrome menyembunyikan address bar (56–120px).
+      // Layout viewport tetap `s.h`, jadi bar `fixed bottom:0` akan
+      // terdorong keluar layar sebesar selisihnya → offset harus sama
+      // besar supaya bar kembali menempel ke dasar layar yang terlihat.
       for (const chrome of [56, 96, 120]) {
         act(() => {
           now += 50;
@@ -86,7 +89,9 @@ describe("viewport anchor — Android WebView", () => {
           env.emit("resize");
           flushFrames(3);
         });
-        expect(read(VIEWPORT_ANCHOR_VAR)).toBe("0px");
+        expect(read(VIEWPORT_ANCHOR_VAR)).toBe(`${chrome}px`);
+        // Mode terkunci ikut mengoreksi address bar (keyboard tertutup).
+        expect(read(VIEWPORT_ANCHOR_LOCK_VAR)).toBe(`${chrome}px`);
       }
 
       // Address bar kembali muncul.
@@ -98,6 +103,7 @@ describe("viewport anchor — Android WebView", () => {
         flushFrames(3);
       });
       expect(read(VIEWPORT_ANCHOR_VAR)).toBe("0px");
+      expect(read(VIEWPORT_ANCHOR_LOCK_VAR)).toBe("0px");
     });
 
     it(`${s.name}: keyboard terbuka → kompensasi aktif, lock tetap 0`, () => {
@@ -128,9 +134,9 @@ describe("viewport anchor — Android WebView", () => {
     });
   }
 
-  it("shrink besar tepat setelah scroll tetap dianggap address bar bila <= 180px", () => {
+  it("shrink besar tepat setelah scroll tetap diklasifikasi address bar (bukan keyboard) bila <= 180px", () => {
     const env = installViewport(915);
-    render(<Probe lock={false} />);
+    const view = render(<Probe lock={false} />);
     act(() => flushFrames(2));
     act(() => {
       now += 10;
@@ -139,6 +145,9 @@ describe("viewport anchor — Android WebView", () => {
       env.emit("resize");
       flushFrames(3);
     });
-    expect(read(VIEWPORT_ANCHOR_VAR)).toBe("0px");
+    // Diklasifikasi sebagai address bar → keyboard TIDAK dianggap terbuka
+    // (bar tidak disembunyikan), tapi posisinya tetap dikoreksi.
+    expect(view.getByTestId("kb").textContent).toBe("false");
+    expect(read(VIEWPORT_ANCHOR_VAR)).toBe("170px");
   });
 });
