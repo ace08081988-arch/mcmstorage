@@ -275,8 +275,8 @@ function TrustPage() {
             </li>
             <li>
               <strong>Catatan transaksi pembayaran</strong> — disimpan oleh
-              Paddle sesuai kewajiban akuntansi dan pajak (umumnya 5–10
-              tahun) sesuai kebijakan Paddle.
+              penyedia pembayaran resmi sesuai kewajiban akuntansi dan pajak
+              bila kelak ada transaksi berbayar.
             </li>
             <li>
               <strong>Log keamanan</strong> — disimpan paling lama{" "}
