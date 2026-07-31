@@ -207,7 +207,7 @@ export function WhatsAppTargetHost() {
           <Button
             asChild
             size="sm"
-            className="h-8 bg-warning text-white hover:bg-warning"
+            className="h-8 bg-warning text-warning-foreground hover:bg-warning"
           >
             <a href={url} target="_blank" rel="noopener noreferrer">
               <Download className="mr-1.5 h-3.5 w-3.5" />

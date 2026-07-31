@@ -1862,7 +1862,7 @@ function PublicPrepPage() {
                     setSessionJustExpired(false);
                     focusPinInput();
                   }}
-                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-ms-2 rounded-lg bg-warning text-ms-xs font-semibold text-white shadow-sm transition hover:bg-warning"
+                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-ms-2 rounded-lg bg-warning text-ms-xs font-semibold text-warning-foreground shadow-sm transition hover:bg-warning"
                 >
                   <Lock className="h-4 w-4" /> Re-login sekarang
                 </button>

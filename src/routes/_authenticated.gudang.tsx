@@ -3266,7 +3266,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <button
             type="button"
             onClick={() => setPaymentMethod("hutang")}
-            className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-warning text-white border-warning" : ""}`}
+            className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-warning text-warning-foreground border-warning" : ""}`}
           >
             📝 Hutang
           </button>
@@ -3725,7 +3725,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             <div className="text-[0.6875rem] text-muted-foreground mb-1">Cara bayar</div>
             <div className="flex gap-ms-1 text-ms-xs">
               <button type="button" onClick={() => setPaymentMethod("kas")} className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "kas" ? "bg-primary text-primary-foreground border-primary" : ""}`}>💵 Kas (lunas)</button>
-              <button type="button" onClick={() => setPaymentMethod("hutang")} className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-warning text-white border-warning" : ""}`}>📝 Hutang pelanggan</button>
+              <button type="button" onClick={() => setPaymentMethod("hutang")} className={`flex-1 rounded border px-ms-2 py-1.5 ${paymentMethod === "hutang" ? "bg-warning text-warning-foreground border-warning" : ""}`}>📝 Hutang pelanggan</button>
             </div>
           </div>
 

@@ -463,7 +463,7 @@ export function WaPreviewHost() {
                       ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                       : "Kirim ulang meski klik ganda terdeteksi"
                 }
-                className="bg-warning text-white hover:bg-warning disabled:opacity-50"
+                className="bg-warning text-warning-foreground hover:bg-warning disabled:opacity-50"
               >
                 <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
                 Kirim ulang (paksa)
