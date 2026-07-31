@@ -142,7 +142,7 @@ function AuthLock() {
                 // Ruang bawah mengikuti tinggi bar nyata (`--app-bottom-nav-h`,
                 // sudah termasuk safe-area) supaya konten terakhir tidak
                 // tertutup bar — termasuk saat landscape.
-                : "min-w-0 flex-1 scroll-mt-16 pb-[calc(var(--app-bottom-nav-h)+0.5rem)] focus:outline-none md:pb-0"
+                : "app-content-scrim min-w-0 flex-1 scroll-mt-16 pb-[calc(var(--app-bottom-nav-h)+0.5rem)] focus:outline-none md:pb-0"
             }
           >
             <Outlet />
