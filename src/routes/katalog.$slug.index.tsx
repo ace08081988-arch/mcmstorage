@@ -4,9 +4,18 @@
  */
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
+import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -105,6 +114,8 @@ function PublicKatalogPage() {
   const [onlyReady, setOnlyReady] = useState(false);
   const [sort, setSort] = useState<SortOption>("name");
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const cartLines = useMemo(
     () =>
@@ -387,15 +398,69 @@ function PublicKatalogPage() {
             >
               <X className="mr-1 h-4 w-4" aria-hidden /> Kosongkan
             </Button>
-            <Button asChild size="sm" className="rounded-full">
-              <a
-                href={waLink(shop.wa, bulkOrderText(shop.name, cartLines))}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Check className="mr-1.5 h-4 w-4" aria-hidden /> Kirim pesanan WA
-              </a>
-            </Button>
+            <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+              <DialogTrigger asChild>
+                <Button type="button" size="sm" className="rounded-full">
+                  <Check className="mr-1.5 h-4 w-4" aria-hidden /> Kirim pesanan WA
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Pratinjau pesanan WA</DialogTitle>
+                  <DialogDescription>
+                    Cek dulu pesan yang akan dikirim ke {shop.name}. Tekan Edit untuk mengubah jumlah di katalog.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <textarea
+                    readOnly
+                    value={bulkOrderText(shop.name, cartLines)}
+                    className="min-h-[180px] w-full rounded-lg border bg-muted/50 p-3 text-sm leading-relaxed"
+                    aria-label="Teks pesanan WhatsApp"
+                  />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{cartLines.length} produk</span>
+                    <span>{cartTotal > 0 ? `Perkiraan total ${rupiah(cartTotal)}` : "Total dikonfirmasi penjual"}</span>
+                  </div>
+                </div>
+                <DialogFooter className="flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => {
+                      void navigator.clipboard
+                        .writeText(bulkOrderText(shop.name, cartLines))
+                        .then(() => {
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 1500);
+                        });
+                    }}
+                  >
+                    <Copy className="mr-1.5 h-4 w-4" aria-hidden />
+                    {copied ? "Tersalin" : "Salin teks"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="rounded-full"
+                    onClick={() => setPreviewOpen(false)}
+                  >
+                    Edit
+                  </Button>
+                  <Button asChild className="rounded-full">
+                    <a
+                      href={waLink(shop.wa, bulkOrderText(shop.name, cartLines))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setPreviewOpen(false)}
+                    >
+                      <MessageCircle className="mr-1.5 h-4 w-4" aria-hidden /> Kirim ke WhatsApp
+                    </a>
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       ) : null}
