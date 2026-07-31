@@ -18,7 +18,7 @@ export const Route = createFileRoute("/refund")({
           "Status kebijakan pengembalian dana MCM Storage: aplikasi gratis, tanpa pembayaran daring.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/refund" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/refund" }],
   }),
   component: RefundPage,
 });
@@ -50,7 +50,7 @@ function RefundPage() {
         </header>
 
         <div className="space-ms-4">
-          <Section title="Jaminan uang kembali 30 hari">
+          <Section title="Tidak ada pembayaran daring">
             <p>
               Saat ini MCM Storage <strong>tidak memungut biaya</strong> dan
               tidak memproses pembayaran daring di dalam aplikasi, sehingga

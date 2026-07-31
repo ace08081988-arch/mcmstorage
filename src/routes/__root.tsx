@@ -260,7 +260,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "MCM Storage" },
-      { property: "og:url", content: "https://mcmstorage.lovable.app/" },
+      { property: "og:url", content: "https://mcmstorage.biz/" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "MCM Storage — Kelola Pesanan & Kirim WhatsApp" },
       { name: "twitter:description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
