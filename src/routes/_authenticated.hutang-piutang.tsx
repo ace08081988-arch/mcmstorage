@@ -956,13 +956,13 @@ function HutangPiutangPage() {
                       <li
                         key={d.id}
                         className={
-                          "p-ms-3 text-ms-sm transition-colors " +
+                          "px-ms-3.5 py-ms-3 text-ms-sm transition-colors " +
                           (overdue
                             ? "bg-destructive/[0.04] hover:bg-destructive/[0.07]"
                             : "hover:bg-muted/30")
                         }
                       >
-                        <div className="flex items-start gap-ms-2">
+                        <div className="flex items-start gap-ms-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                               <span className="min-w-0 max-w-full truncate font-medium">
@@ -998,18 +998,18 @@ function HutangPiutangPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="shrink-0 whitespace-nowrap text-right">
-                            <div className="font-semibold tabular-nums">
+                          <div className="shrink-0 whitespace-nowrap text-right leading-tight">
+                            <div className="font-semibold tabular-nums tracking-tight">
                               {rupiah(Number(d.amount))}
                             </div>
                             {paid > 0 && (
-                              <div className="text-ms-2xs tabular-nums text-muted-foreground">
+                              <div className="mt-0.5 text-ms-2xs tabular-nums text-muted-foreground">
                                 terbayar {rupiah(paid)}
                               </div>
                             )}
                             <div
                               className={
-                                "text-ms-2xs font-medium tabular-nums " +
+                                "mt-0.5 text-ms-2xs font-medium tabular-nums " +
                                 (lunas
                                   ? "text-success"
                                   : overdue
@@ -1021,7 +1021,7 @@ function HutangPiutangPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-ms-1.5">
+                        <div className="mt-ms-2.5 flex flex-wrap items-center gap-ms-1.5 border-t border-border/60 pt-ms-2.5">
                           {!lunas && (
                             <Button
                               size="sm"
