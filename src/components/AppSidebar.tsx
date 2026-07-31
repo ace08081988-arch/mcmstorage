@@ -387,6 +387,11 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Log Error Portal", url: "/admin/portal-error-log", icon: ShieldAlert },
       { title: "Percobaan Daftar", url: "/admin/signup-attempts", icon: Users },
       { title: "Portal Pegawai", url: "/admin/worker-portal", icon: MonitorSmartphone },
+      {
+        title: "Verifikasi Pembayaran",
+        url: "/admin/verifikasi-pembayaran",
+        icon: ShieldAlert,
+      },
       { title: "Rilis APK", url: "/pengaturan-apk", icon: Package },
       { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
       { title: "Log Penolakan Admin", url: "/admin-denial-log", icon: ShieldAlert },
