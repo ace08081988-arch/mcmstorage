@@ -891,14 +891,14 @@ function HutangPiutangPage() {
                       <section
                         key={group.key}
                         data-testid={`party-card-${normalizeParty(group.name)}`}
-                        className="overflow-hidden rounded-2xl border bg-card shadow-sm"
+                        className="overflow-hidden rounded-2xl border bg-card shadow-xs"
                       >
-                        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/30 px-ms-3 py-ms-2.5 sm:flex sm:flex-wrap sm:items-center">
+                        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/40 px-ms-3.5 py-ms-3 sm:flex sm:flex-wrap sm:items-center">
                           <div className="min-w-0 sm:flex-1">
-                            <div className="truncate text-ms-sm font-semibold text-foreground">
+                            <div className="truncate text-ms-base font-semibold leading-tight tracking-tight text-foreground">
                               {group.name}
                             </div>
-                            <div className="text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+                            <div className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                               {group.items.length} catatan · sisa{" "}
                               <span
                                 data-testid="party-card-sisa"
