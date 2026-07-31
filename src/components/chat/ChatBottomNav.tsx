@@ -26,9 +26,11 @@ export function ChatBottomNav() {
   // Ambil pathname saja lewat selector; scroll / hash / state lain tidak
   // memicu re-render, sehingga highlight tidak "berkedip" saat konten digulir.
   const path = useRouterState({ select: (s) => s.location.pathname });
-  // Tempel bar ke dasar visual viewport (anti "naik-turun" saat address bar
-  // Android menyusut) dan sembunyikan saat keyboard terbuka.
-  const { anchorStyle, keyboardOpen } = useViewportAnchor();
+  // Bar bawah diposisikan murni dengan CSS `fixed bottom-0`; kompensasi
+  // visual viewport via JS transform dihentikan agar tidak terasa bergerak.
+  // Status keyboard tetang dipantau untuk menyembunyikan bar saat keyboard
+  // virtual terbuka.
+  const { keyboardOpen } = useViewportAnchor();
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
     { to: "/panggilan", label: "Panggilan", Icon: Phone },
@@ -61,7 +63,6 @@ export function ChatBottomNav() {
       className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
-        ...anchorStyle,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,

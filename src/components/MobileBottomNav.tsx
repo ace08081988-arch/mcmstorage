@@ -26,11 +26,11 @@ export function MobileBottomNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
   const { toggleSidebar } = useSidebar();
-  // Kunci bar ke dasar visual viewport supaya tidak "naik-turun" saat
-  // address bar mobile mengecil/membesar, dan sembunyi saat keyboard buka.
-  // lock: true → posisi bar hanya dikompensasi terhadap address bar, tidak
-  // ikut bergerak saat keyboard buka/tutup (bar memang disembunyikan saat itu).
-  const { anchorStyle, keyboardOpen } = useViewportAnchor({ lock: true });
+  // Bar bawah diposisikan murni dengan CSS `fixed bottom-0` supaya tidak
+  // bergerak/terasa lag mengikuti perhitungan JS. Kompensasi visual viewport
+  // dihentikan untuk elemen ini; hanya status keyboard tetap dipantau agar
+  // bar bisa disembunyikan saat keyboard virtual terbuka.
+  const { keyboardOpen } = useViewportAnchor({ lock: true });
 
   // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
@@ -83,7 +83,6 @@ export function MobileBottomNav() {
       )}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
-        ...anchorStyle,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
