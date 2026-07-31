@@ -1551,7 +1551,10 @@ html[data-reduce-motion="on"] .skeleton-a11y {
 /* Landscape / layar pendek: rapatkan bar agar tidak memakan tinggi layar. */
 @media (orientation: landscape) and (max-height: 520px) {
   .app-static-bottom-bar {
-    padding-bottom: max(env(safe-area-inset-bottom), 0.125rem) !important;
+    padding-bottom: max(
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)),
+      0.125rem
+    ) !important;
   }
   .app-static-bottom-bar [data-nav-icon] {
     height: 1.5rem;
@@ -1581,18 +1584,28 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   z-index: var(--z-bottom-nav);
   /* Safe area lengkap: bawah (home indicator) + kiri/kanan (notch saat
      landscape) supaya isi bar tidak tertutup cutout layar. */
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.25rem);
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+  /* `--app-safe-*` dihitung ulang oleh safe-area-recalc.ts setiap rotasi
+     (Android melaporkan env() lama beberapa frame setelah orientationchange)
+     dan sudah memperhitungkan overlap toolbar browser. env() jadi fallback. */
+  padding-bottom: max(
+    var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)),
+    0.25rem
+  );
+  padding-left: var(--app-safe-left, env(safe-area-inset-left, 0px));
+  padding-right: var(--app-safe-right, env(safe-area-inset-right, 0px));
 }
 
 /* Tinggi nyata bar bawah — dipakai konten & FAB untuk memberi ruang. */
 :root {
-  --app-bottom-nav-h: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+  --app-bottom-nav-h: calc(
+    3.75rem + var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+  );
 }
 @media (orientation: landscape) and (max-height: 520px) {
   :root {
-    --app-bottom-nav-h: calc(3rem + env(safe-area-inset-bottom, 0px));
+    --app-bottom-nav-h: calc(
+      3rem + var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    );
   }
 }
 

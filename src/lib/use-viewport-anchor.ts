@@ -21,6 +21,7 @@ import {
 } from "@/lib/viewport-anchor-config";
 import { observeAnchorFrame } from "@/lib/viewport-anchor-autotune";
 import { recordAnchorEvent } from "@/lib/viewport-anchor-log";
+import { startSafeAreaRecalc } from "@/lib/safe-area-recalc";
 
 export type ViewportAnchor = {
   /**
@@ -321,6 +322,7 @@ export function useViewportAnchor(options: ViewportAnchorOptions = {}): Viewport
   useEffect(() => {
     const listener: Listener = (open) => setKeyboardOpen(open);
     listeners.add(listener);
+    const stopSafeArea = startSafeAreaRecalc();
     if (!started) {
       started = true;
       startEngine();
@@ -328,6 +330,7 @@ export function useViewportAnchor(options: ViewportAnchorOptions = {}): Viewport
     setKeyboardOpen(currentKeyboardOpen);
     return () => {
       listeners.delete(listener);
+      stopSafeArea();
       if (listeners.size === 0) {
         stopEngine?.();
         stopEngine = null;
