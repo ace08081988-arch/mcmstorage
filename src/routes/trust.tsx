@@ -236,20 +236,6 @@ function TrustPage() {
               <strong>Lovable</strong> — platform build &amp; hosting
               aplikasi.
             </li>
-            <li>
-              <strong>Paddle.com</strong> — Merchant of Record untuk
-              pembayaran paket berbayar; memproses data pembayaran, faktur,
-              pajak, dan permintaan pengembalian dana. Lihat{" "}
-              <a
-                href="https://www.paddle.com/legal/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Privacy Notice Paddle
-              </a>
-              .
-            </li>
           </ul>
           <p>
             Daftar ini dapat berubah seiring berkembangnya aplikasi. Versi
@@ -257,34 +243,12 @@ function TrustPage() {
           </p>
         </Section>
 
-        <Section title="Pembayaran (Paddle sebagai Merchant of Record)">
+        <Section title="Pembayaran">
           <p>
-            Untuk paket berbayar, transaksi diproses oleh{" "}
-            <strong>Paddle.com</strong> sebagai{" "}
-            <strong>Merchant of Record</strong> kami. Saat Anda melakukan
-            pembayaran, data yang dibutuhkan untuk transaksi (nama, email,
-            alamat tagihan, metode pembayaran) dikumpulkan dan diproses
-            langsung oleh Paddle sesuai{" "}
-            <a
-              href="https://www.paddle.com/legal/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              kebijakan privasi Paddle
-            </a>
-            . Kami hanya menerima informasi minimum yang dibutuhkan untuk
-            mengaktifkan akun (mis. ID pelanggan dan status langganan).
-            Permintaan pengembalian dana diproses melalui{" "}
-            <a
-              href="https://paddle.net"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              paddle.net
-            </a>{" "}
-            — lihat juga{" "}
+            Saat ini aplikasi tidak memproses pembayaran daring apa pun, dan
+            kami tidak mengumpulkan data kartu, alamat tagihan, maupun data
+            transaksi pembayaran. Bila paket berbayar diaktifkan kembali,
+            halaman ini akan diperbarui lebih dulu — lihat juga{" "}
             <Link to="/refund" className="underline">
               Kebijakan Pengembalian
             </Link>
