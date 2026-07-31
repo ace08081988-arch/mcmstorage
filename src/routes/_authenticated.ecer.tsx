@@ -1239,7 +1239,7 @@ function DetailHero({
             type="button"
             onClick={onAdd}
             title="Tambah penyiapan untuk judul ini"
-            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-success p-ms-2 text-success-foreground shadow-[0_6px_16px_-6px_hsl(var(--success)/0.7)] transition-all active:scale-95 sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-success p-ms-2 text-success-foreground shadow-[0_6px_16px_-8px_color-mix(in_oklab,var(--success)_70%,transparent)] transition-all active:scale-95 sm:hidden"
           >
             <Plus className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Tambah</span>
