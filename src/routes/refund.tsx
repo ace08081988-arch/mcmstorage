@@ -50,7 +50,7 @@ function RefundPage() {
         </header>
 
         <div className="space-ms-4">
-          <Section title="Jaminan uang kembali 30 hari">
+          <Section title="Tidak ada pembayaran daring">
             <p>
               Saat ini MCM Storage <strong>tidak memungut biaya</strong> dan
               tidak memproses pembayaran daring di dalam aplikasi, sehingga
