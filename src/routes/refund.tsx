@@ -45,7 +45,7 @@ function RefundPage() {
           </h1>
           <p className="mt-2 text-ms-sm text-muted-foreground">
             Terakhir diperbarui: {UPDATED_AT} · Dioperasikan oleh{" "}
-            <strong>BAROKAH RIZKI</strong>
+            <strong>Mcm</strong>
           </p>
         </header>
 

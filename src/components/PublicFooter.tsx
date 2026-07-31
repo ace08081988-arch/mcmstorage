@@ -31,6 +31,12 @@ export function PublicFooter() {
           </p>
         </div>
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <Link to="/produk" className="hover:underline">
+            Produk
+          </Link>
+          <Link to="/harga" className="hover:underline">
+            Harga
+          </Link>
           <Link to="/terms" className="hover:underline">
             Syarat &amp; Ketentuan
           </Link>

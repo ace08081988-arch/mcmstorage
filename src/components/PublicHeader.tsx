@@ -39,6 +39,17 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
             {full}
           </span>
         </Link>
+        <nav className="ml-auto flex items-center gap-x-4 text-ms-xs font-medium">
+          <Link to="/produk" className="hover:underline">
+            Produk
+          </Link>
+          <Link to="/harga" className="hover:underline">
+            Harga
+          </Link>
+          <Link to="/auth" className="hover:underline">
+            Masuk
+          </Link>
+        </nav>
       </div>
     </header>
   );

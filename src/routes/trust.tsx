@@ -108,8 +108,8 @@ function TrustPage() {
         <Section title="Penjual & pengendali data">
           <p>
             Layanan MCM Storage dioperasikan oleh{" "}
-            <strong>BAROKAH RIZKI</strong> (selanjutnya "kami"). Untuk
-            keperluan UU PDP dan GDPR, BAROKAH RIZKI bertindak sebagai{" "}
+            <strong>Mcm</strong> (selanjutnya "kami"). Untuk
+            keperluan UU PDP dan GDPR, Mcm bertindak sebagai{" "}
             <strong>pengendali data (data controller)</strong> atas data
             pribadi pengguna MCM Storage. Pertanyaan terkait privasi dapat
             dikirim ke{" "}
