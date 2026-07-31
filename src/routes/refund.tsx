@@ -9,13 +9,13 @@ export const Route = createFileRoute("/refund")({
       {
         name: "description",
         content:
-          "MCM Storage menawarkan jaminan uang kembali 30 hari. Pengembalian dana diproses melalui Paddle (paddle.net).",
+          "MCM Storage saat ini gratis dan tidak memproses pembayaran daring, sehingga tidak ada transaksi yang perlu dikembalikan.",
       },
       { property: "og:title", content: "Kebijakan Pengembalian Dana — MCM Storage" },
       {
         property: "og:description",
         content:
-          "Jaminan uang kembali 30 hari untuk pembelian MCM Storage, diproses oleh Paddle.",
+          "Status kebijakan pengembalian dana MCM Storage: aplikasi gratis, tanpa pembayaran daring.",
       },
     ],
     links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/refund" }],
