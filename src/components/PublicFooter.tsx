@@ -34,6 +34,12 @@ export function PublicFooter() {
           <Link to="/produk" className="hover:underline">
             Produk
           </Link>
+          <Link to="/harga" className="hover:underline">
+            Harga
+          </Link>
+          <Link to="/faq" className="hover:underline">
+            FAQ
+          </Link>
           <Link to="/terms" className="hover:underline">
             Syarat &amp; Ketentuan
           </Link>
