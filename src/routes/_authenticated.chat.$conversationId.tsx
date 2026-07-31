@@ -209,7 +209,7 @@ function ChatRoomPage() {
       });
       if (error) throw error;
       return new Map(
-        ((data ?? []) as Array<{
+        ((data ?? []) as unknown as Array<{
           id: string;
           display_name: string | null;
           email: string | null;
