@@ -77,13 +77,15 @@ export function MobileBottomNav() {
     <nav
       aria-label="Navigasi utama"
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 md:hidden",
+        // z-index & padding safe-area diatur lewat `.app-static-bottom-bar`
+        // (skala tunggal di styles.css) supaya bar tidak pernah tertutup
+        // toolbar browser, FAB, atau notifikasi.
+        "fixed inset-x-0 bottom-0 md:hidden",
         "app-static-bottom-bar",
         "border-t border-primary/15",
         "bg-background/92 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78",
       )}
       style={{
-        paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
