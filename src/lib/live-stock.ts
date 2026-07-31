@@ -21,6 +21,7 @@ export type LiveStockItem = {
   base_unit: string;
   stock_base: number;
   avg_cost_per_base: number;
+  selling_price_per_base: number | null;
   image_path: string | null;
   updated_at?: string | null;
 };
@@ -81,7 +82,7 @@ export function useLiveStock(enabled = true): LiveStockState {
     setLoading(true);
     supabase
       .from("warehouse_items")
-      .select("id,name,category,package_type,package_size,base_unit,stock_base,avg_cost_per_base,image_path,updated_at")
+      .select("id,name,category,package_type,package_size,base_unit,stock_base,avg_cost_per_base,selling_price_per_base,image_path,updated_at")
       .order("name")
       .then(({ data, error }) => {
         if (!alive) return;

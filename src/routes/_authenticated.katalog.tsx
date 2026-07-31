@@ -5,10 +5,17 @@
  */
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MessageCircle, PackageSearch } from "lucide-react";
+import { ArrowUpDown, MessageCircle, PackageSearch } from "lucide-react";
 
 import { PageContainer, PageHeader, PillsTabs } from "@/components/shell";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveStock, type LiveStockItem } from "@/lib/live-stock";
 import { openWhatsAppPreferBusiness } from "@/lib/share-wa";
@@ -79,15 +86,26 @@ function stockLabel(it: LiveStockItem) {
   return `${n.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${unit}`;
 }
 
+function rupiah(n: number | null | undefined) {
+  if (n == null || Number.isNaN(n)) return null;
+  return `Rp${Math.round(n).toLocaleString("id-ID")}`;
+}
+
 function buildOrderText(it: LiveStockItem) {
+  const price = rupiah(it.selling_price_per_base);
   return [
     "Halo, saya mau pesan:",
     `• ${it.name}${it.category ? ` (${it.category})` : ""}`,
     `Jumlah: ___ ${it.base_unit || "pcs"}`,
+    price ? `Harga: ${price}/${it.base_unit || "pcs"}` : "",
     "",
     "Mohon info ketersediaan & harganya. Terima kasih.",
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
+
+type SortOption = "name" | "price-asc" | "price-desc" | "stock";
 
 const ALL = "__all__";
 
@@ -96,6 +114,7 @@ function KatalogPage() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>(ALL);
   const [onlyReady, setOnlyReady] = useState(false);
+  const [sort, setSort] = useState<SortOption>("name");
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -116,7 +135,7 @@ function KatalogPage() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return items.filter((i) => {
+    const list = items.filter((i) => {
       if (cat !== ALL && (i.category ?? "").trim() !== cat) return false;
       if (onlyReady && (Number(i.stock_base) || 0) <= 0) return false;
       if (!s) return true;
@@ -124,7 +143,21 @@ function KatalogPage() {
         i.name.toLowerCase().includes(s) || (i.category ?? "").toLowerCase().includes(s)
       );
     });
-  }, [items, q, cat, onlyReady]);
+    list.sort((a, b) => {
+      switch (sort) {
+        case "price-asc":
+          return (a.selling_price_per_base ?? Infinity) - (b.selling_price_per_base ?? Infinity);
+        case "price-desc":
+          return (b.selling_price_per_base ?? -Infinity) - (a.selling_price_per_base ?? -Infinity);
+        case "stock":
+          return (Number(b.stock_base) || 0) - (Number(a.stock_base) || 0);
+        case "name":
+        default:
+          return a.name.localeCompare(b.name, "id-ID");
+      }
+    });
+    return list;
+  }, [items, q, cat, onlyReady, sort]);
 
   return (
     <>
@@ -149,6 +182,21 @@ function KatalogPage() {
               aria-label="Cari produk"
               className="h-9 min-w-40 flex-1 rounded-md border bg-background px-ms-3 text-ms-sm"
             />
+            <Select value={sort} onValueChange={(v) => setSort(v as SortOption)}>
+              <SelectTrigger
+                aria-label="Urutkan produk"
+                className="h-9 w-auto min-w-[10rem] rounded-full border bg-background px-ms-3 text-ms-sm"
+              >
+                <ArrowUpDown className="mr-1.5 h-4 w-4 text-muted-foreground" aria-hidden />
+                <SelectValue placeholder="Urutkan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Nama (A-Z)</SelectItem>
+                <SelectItem value="price-asc">Harga terendah</SelectItem>
+                <SelectItem value="price-desc">Harga tertinggi</SelectItem>
+                <SelectItem value="stock">Stok tersedia</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               type="button"
               size="sm"
@@ -202,6 +250,12 @@ function KatalogPage() {
                       <p className="truncate text-ms-2xs text-muted-foreground">
                         {it.category?.trim() || "Tanpa kategori"}
                       </p>
+                      {it.selling_price_per_base != null && (
+                        <p className="truncate text-ms-xs font-medium text-foreground">
+                          {rupiah(it.selling_price_per_base)}
+                          <span className="text-ms-2xs text-muted-foreground"> /{it.base_unit || "pcs"}</span>
+                        </p>
+                      )}
                     </div>
                     <span
                       className={`inline-flex w-fit items-center rounded-full border px-ms-2 py-0.5 text-ms-2xs font-medium ${

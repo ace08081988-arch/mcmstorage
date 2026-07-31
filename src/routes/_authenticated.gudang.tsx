@@ -173,6 +173,7 @@ type WItem = {
   base_unit: "g" | "pcs";
   stock_base: number;
   avg_cost_per_base: number;
+  selling_price_per_base: number | null;
   image_path: string | null;
 };
 type Purchase = {
@@ -2462,6 +2463,7 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
   const [packageSize, setPackageSize] = useState(String(item.package_size));
   const [stockBase, setStockBase] = useState(String(item.stock_base));
   const [avgCost, setAvgCost] = useState(String(item.avg_cost_per_base));
+  const [sellingPrice, setSellingPrice] = useState(item.selling_price_per_base == null ? "" : String(item.selling_price_per_base));
   const [imagePath, setImagePath] = useState<string | null>(item.image_path);
   const [saving, setSaving] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
@@ -2497,6 +2499,7 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
       base_unit: baseUnit,
       stock_base: Number(stockBase) || 0,
       avg_cost_per_base: Number(avgCost) || 0,
+      selling_price_per_base: sellingPrice.trim() === "" ? null : Number(sellingPrice) || null,
       image_path: imagePath,
     }).eq("id", item.id);
     setSaving(false);
@@ -2567,6 +2570,10 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
             <NumericTextField value={avgCost} onValueChange={setAvgCost} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" />
           </label>
         </div>
+        <label className="block">
+          <span className="text-[0.6875rem] text-muted-foreground">Harga jual / {baseUnit} (Rp) — opsional</span>
+          <NumericTextField value={sellingPrice} onValueChange={setSellingPrice} step={0.01} decimal={true} className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" />
+        </label>
         <div className="text-[0.6875rem] text-warning">
           ⚠️ Mengubah stok / HPP manual akan menimpa nilai dari riwayat pembelian.
         </div>
