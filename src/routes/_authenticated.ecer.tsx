@@ -1239,7 +1239,7 @@ function DetailHero({
             type="button"
             onClick={onAdd}
             title="Tambah penyiapan untuk judul ini"
-            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl border border-success/40 bg-success/10 p-ms-2 text-success transition-all active:scale-95 dark:bg-success/15 dark:text-success sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-success p-ms-2 text-success-foreground shadow-[0_6px_16px_-6px_hsl(var(--success)/0.7)] transition-all active:scale-95 sm:hidden"
           >
             <Plus className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Tambah</span>
@@ -1248,7 +1248,7 @@ function DetailHero({
             type="button"
             onClick={onScrollToWorker}
             title="Lihat kiriman pegawai untuk judul ini"
-            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-muted/40 p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/70 hover:text-foreground sm:hidden"
           >
             <Users className="h-5 w-5" aria-hidden />
             <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Pegawai</span>
@@ -1259,7 +1259,7 @@ function DetailHero({
               search={{ title_id: title.id }}
               title="Buat perintah penyiapan untuk pegawai (Shift+P)"
               aria-label="Buat perintah penyiapan untuk pegawai"
-              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-primary/10 p-ms-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl border border-primary/25 bg-primary/10 p-ms-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
             >
               <UserPlus className="h-5 w-5" aria-hidden />
               <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Perintah</span>
@@ -1272,7 +1272,7 @@ function DetailHero({
               <button
                 type="button"
                 title="Opsi lainnya"
-                className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+                className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-muted/40 p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/70 hover:text-foreground sm:hidden"
               >
                 <MoreHorizontal className="h-5 w-5" aria-hidden />
                 <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Lainnya</span>
