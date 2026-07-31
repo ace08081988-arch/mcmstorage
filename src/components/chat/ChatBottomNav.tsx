@@ -60,7 +60,7 @@ export function ChatBottomNav() {
       // route chat). Fallback lokal disediakan bila nav dipakai tanpa
       // container yang menyetel variabel tersebut. Nilai sudah mencakup
       // `env(safe-area-inset-bottom)` untuk notch/home indicator iOS.
-      className="fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
+      className="app-static-bottom-bar fixed inset-x-0 bottom-0 z-20 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)",
         transition: "opacity 160ms ease-out",
@@ -107,6 +107,7 @@ export function ChatBottomNav() {
           >
             <span
               aria-hidden="true"
+              data-nav-icon
               className={cn(
                 // Lebar pill ikon menyempit di 360px supaya keempat kolom
                 // tidak berdesakan; melebar lagi mulai 400px.
@@ -131,6 +132,7 @@ export function ChatBottomNav() {
             </span>
             <span
               aria-hidden="true"
+              data-nav-label
               className={cn(
                 "w-full min-w-0 truncate text-center text-ms-2xs leading-tight",
                 active ? "font-semibold" : "font-normal",

@@ -248,7 +248,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      // `interactive-widget=resizes-content`: keyboard virtual Android
+      // menyusutkan LAYOUT viewport (bukan hanya visual viewport), jadi bar
+      // bawah `fixed bottom-0` tidak pernah tergeser/melayang saat scroll
+      // maupun saat keyboard muncul.
+      {
+        name: "viewport",
+        content:
+          "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
+      },
       { title: "MCM Storage — Kelola Pesanan & Kirim WhatsApp" },
       { name: "description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { name: "author", content: "MCM Storage" },
