@@ -39,11 +39,17 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
             {full}
           </span>
         </Link>
-        <nav className="ml-auto flex items-center gap-x-4 text-ms-xs font-medium">
-          <Link to="/produk" className="hover:underline">
+        <nav className="ml-auto flex items-center gap-x-2 text-ms-xs font-medium">
+          <Link
+            to="/produk"
+            className="rounded-full px-ms-2.5 py-1 transition-colors hover:bg-primary/10 hover:text-primary"
+          >
             Produk
           </Link>
-          <Link to="/auth" className="hover:underline">
+          <Link
+            to="/auth"
+            className="rounded-full border border-primary/40 bg-primary/10 px-ms-3 py-1 font-semibold text-primary transition-colors hover:bg-primary/20"
+          >
             Masuk
           </Link>
         </nav>
