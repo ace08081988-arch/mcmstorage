@@ -20,7 +20,7 @@ import {
   type PublicCatalogPayload,
 } from "@/lib/public-catalog.functions";
 
-export const Route = createFileRoute("/katalog/$slug")({
+export const Route = createFileRoute("/katalog/$slug/")({
   ssr: true,
   loader: ({ params }) => getPublicCatalog({ data: { slug: params.slug } }),
   head: ({ loaderData }) => {
