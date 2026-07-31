@@ -292,6 +292,9 @@ function Index() {
     return window.localStorage.getItem("mcm_active_cat");
   });
   const [newCatName, setNewCatName] = useState("");
+  const [catManagerOpen, setCatManagerOpen] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     const saved = window.localStorage.getItem("mcm_rail_open");
@@ -373,10 +376,18 @@ function Index() {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
       if (!uid || cancelled) return;
+      setSaveState("saving");
       const { error } = await supabase
         .from("user_storage")
         .upsert({ user_id: uid, items: items as any, categories: categories as any });
-      if (error && !cancelled) toast.error("Gagal menyimpan: " + friendlyError(error));
+      if (cancelled) return;
+      if (error) {
+        setSaveState("error");
+        toast.error("Gagal menyimpan: " + friendlyError(error));
+      } else {
+        setSaveState("saved");
+        setLastSavedAt(Date.now());
+      }
     }, 600);
     return () => {
       cancelled = true;
