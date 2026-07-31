@@ -18,6 +18,7 @@ import { Route as ProdukRouteImport } from './routes/produk'
 import { Route as PosKasirRouteImport } from './routes/pos-kasir'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as HargaRouteImport } from './routes/harga'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
@@ -203,6 +204,11 @@ const McpRoute = McpRouteImport.update({
 const HargaRoute = HargaRouteImport.update({
   id: '/harga',
   path: '/harga',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -1003,6 +1009,7 @@ export interface FileRoutesByFullPath {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/faq': typeof FaqRoute
   '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
@@ -1153,6 +1160,7 @@ export interface FileRoutesByTo {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/faq': typeof FaqRoute
   '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
   '/produk': typeof ProdukRoute
@@ -1303,6 +1311,7 @@ export interface FileRoutesById {
   '/auth-callback': typeof AuthCallbackRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/faq': typeof FaqRoute
   '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
@@ -1457,6 +1466,7 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
+    | '/faq'
     | '/harga'
     | '/mcp'
     | '/pos-kasir'
@@ -1607,6 +1617,7 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
+    | '/faq'
     | '/harga'
     | '/mcp'
     | '/produk'
@@ -1756,6 +1767,7 @@ export interface FileRouteTypes {
     | '/auth-callback'
     | '/download'
     | '/error'
+    | '/faq'
     | '/harga'
     | '/mcp'
     | '/pos-kasir'
@@ -1909,6 +1921,7 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
+  FaqRoute: typeof FaqRoute
   HargaRoute: typeof HargaRoute
   McpRoute: typeof McpRoute
   PosKasirRoute: typeof PosKasirRouteWithChildren
@@ -2039,6 +2052,13 @@ declare module '@tanstack/react-router' {
       path: '/harga'
       fullPath: '/harga'
       preLoaderRoute: typeof HargaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -3295,6 +3315,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
+  FaqRoute: FaqRoute,
   HargaRoute: HargaRoute,
   McpRoute: McpRoute,
   PosKasirRoute: PosKasirRouteWithChildren,
