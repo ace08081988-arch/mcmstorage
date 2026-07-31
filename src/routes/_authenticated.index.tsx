@@ -12,6 +12,7 @@ import {
   type LockConfig,
 } from "@/lib/app-lock";
 import { AppLockSetup } from "@/components/AppLockSetup";
+import { CategoryManagerDialog } from "@/components/CategoryManagerDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
