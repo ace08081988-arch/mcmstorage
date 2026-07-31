@@ -741,9 +741,34 @@ function Index() {
 
           {categories.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Kategori kamu
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Kategori kamu
+                </p>
+                <button
+                  onClick={() => setCatManagerOpen(true)}
+                  className="rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                >
+                  Kelola kategori
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {saveState === "saving"
+                  ? "Menyimpan…"
+                  : saveState === "error"
+                    ? "Gagal menyimpan kategori"
+                    : lastSavedAt
+                      ? `Tersimpan ${new Date(lastSavedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+                      : "Tersinkron dengan akunmu"}
               </p>
+              {orphanCategories.length > 0 && (
+                <button
+                  onClick={() => setCatManagerOpen(true)}
+                  className="w-full rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-left text-[11px] font-medium"
+                >
+                  ⚠ {orphanCategories.length} kategori produk belum terdaftar — ketuk untuk memulihkan
+                </button>
+              )}
               <ul className="grid gap-1.5">
                 {categories.map((c) => {
                   const count = items.filter((i) => i.kategori === c).length;
