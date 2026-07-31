@@ -616,6 +616,23 @@ html[data-has-bg="1"] main.bg-background {
   background-color: transparent !important;
 }
 
+/* Keterbacaan: kolom konten utama mendapat lapisan peredam saat gambar latar
+   aktif. Tanpa ini, teks telanjang (judul halaman, deskripsi, empty state)
+   jatuh langsung di atas foto terang dan tidak terbaca. Foto tetap tembus
+   pandang lewat transparansi + blur, jadi preferensi tampilan tetap terasa. */
+.app-content-scrim {
+  background-color: transparent;
+}
+html[data-has-bg="1"] .app-content-scrim {
+  background-color: color-mix(
+    in oklab,
+    var(--color-background) var(--app-content-scrim, 74%),
+    transparent
+  );
+  -webkit-backdrop-filter: blur(12px) saturate(115%);
+  backdrop-filter: blur(12px) saturate(115%);
+}
+
 /* Wrapper full-page yang memakai gradient ke background juga harus transparan
    saat gambar latar aktif (mis. halaman publik /t/:token). */
 html[data-has-bg="1"] .min-h-screen.bg-gradient-to-b,
