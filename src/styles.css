@@ -1514,3 +1514,32 @@ html[data-reduce-motion="on"] .skeleton-a11y {
     border-color: var(--foreground);
   }
 }
+
+/* ------------------------------------------------------------------
+   Bottom nav statis (MobileBottomNav / ChatBottomNav)
+   ------------------------------------------------------------------
+   Bar bawah harus benar-benar diam: tidak ikut scroll, tidak ikut
+   address bar, dan tetap proporsional di mode landscape.
+   - GPU layer sendiri (translateZ) supaya WebView Android tidak
+     "menyeret" bar saat kompositor menggulir konten.
+   - `contain` mencegah reflow list virtual memicu repaint bar.
+*/
+.app-static-bottom-bar {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: layout paint style;
+  will-change: auto;
+}
+
+/* Landscape / layar pendek: rapatkan bar agar tidak memakan tinggi layar. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .app-static-bottom-bar {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.125rem) !important;
+  }
+  .app-static-bottom-bar [data-nav-icon] {
+    height: 1.5rem;
+  }
+  .app-static-bottom-bar [data-nav-label] {
+    font-size: 0.625rem;
+  }
+}
