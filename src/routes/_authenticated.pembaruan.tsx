@@ -92,7 +92,7 @@ const KIND_TONE: Record<FeedItemKind, string> = {
 const KIND_DEFAULT_HREF: Record<FeedItemKind, string> = {
   chat: "/chat",
   tugas: "/tugas",
-  order: "/pesanan",
+  order: "/request",
   system: "/notifikasi",
 };
 
@@ -601,7 +601,7 @@ function PembaruanPage() {
             subtitle="Foto & PIN dari pegawai"
           />
           <SuggestionRow
-            to="/pesanan"
+            to="/request"
             Icon={Store}
             tone="bg-warning/15 text-warning"
             title="Pesanan"
