@@ -2409,6 +2409,36 @@ export type Database = {
         }
         Relationships: []
       }
+      public_catalog_settings: {
+        Row: {
+          enabled: boolean
+          shop_name: string
+          slug: string
+          tagline: string
+          updated_at: string
+          user_id: string
+          wa_number: string
+        }
+        Insert: {
+          enabled?: boolean
+          shop_name?: string
+          slug: string
+          tagline?: string
+          updated_at?: string
+          user_id: string
+          wa_number?: string
+        }
+        Update: {
+          enabled?: boolean
+          shop_name?: string
+          slug?: string
+          tagline?: string
+          updated_at?: string
+          user_id?: string
+          wa_number?: string
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           base_added: number
