@@ -30,7 +30,10 @@ export function MobileBottomNav() {
   // bergerak/terasa lag mengikuti perhitungan JS. Kompensasi visual viewport
   // dihentikan untuk elemen ini; hanya status keyboard tetap dipantau agar
   // bar bisa disembunyikan saat keyboard virtual terbuka.
-  const { keyboardOpen } = useViewportAnchor({ lock: true });
+  // `anchorStyle` (mode lock) hanya mengompensasi pergerakan address bar
+  // browser — nilainya dihaluskan per-frame di engine sehingga bar tidak
+  // terlihat loncat saat address bar mengembang/menciut.
+  const { keyboardOpen, anchorStyle } = useViewportAnchor({ lock: true });
 
   // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
@@ -86,6 +89,7 @@ export function MobileBottomNav() {
         "bg-background/92 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78",
       )}
       style={{
+        ...anchorStyle,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
