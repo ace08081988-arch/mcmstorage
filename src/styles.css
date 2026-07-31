@@ -1543,3 +1543,43 @@ html[data-reduce-motion="on"] .skeleton-a11y {
     font-size: 0.625rem;
   }
 }
+
+/* ------------------------------------------------------------------
+   Skala z-index aplikasi (satu sumber kebenaran)
+   ------------------------------------------------------------------
+   Urutan dari bawah ke atas:
+     konten (0) < FAB (44) < bottom nav (45) < dialog/sheet (50)
+     < toast & notifikasi (9998) < badge build (9999)
+   Bottom nav sengaja DI ATAS FAB dan konten supaya tidak pernah
+   tertutup, tapi DI BAWAH dialog/toast agar tidak menutupi pesan.
+*/
+:root {
+  --z-fab: 44;
+  --z-bottom-nav: 45;
+  --z-overlay: 50;
+  --z-toast: 9998;
+}
+
+.app-static-bottom-bar {
+  z-index: var(--z-bottom-nav);
+  /* Safe area lengkap: bawah (home indicator) + kiri/kanan (notch saat
+     landscape) supaya isi bar tidak tertutup cutout layar. */
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.25rem);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Tinggi nyata bar bawah — dipakai konten & FAB untuk memberi ruang. */
+:root {
+  --app-bottom-nav-h: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  :root {
+    --app-bottom-nav-h: calc(3rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Toast Sonner selalu di atas bar bawah, dan menghormati safe area. */
+[data-sonner-toaster] {
+  z-index: var(--z-toast) !important;
+}

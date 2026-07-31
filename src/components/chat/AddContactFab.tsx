@@ -171,7 +171,7 @@ export function AddContactFab() {
         // FAB selalu duduk rapi di atas nav tanpa menghitung safe-area
         // dua kali. Fallback menambahkan safe-area agar tetap aman bila
         // container tidak menyetel variabelnya.
-        className="fixed right-3 z-30 grid h-11 w-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95 min-[400px]:right-4 min-[400px]:h-12 min-[400px]:w-12"
+        className="fixed right-3 z-[var(--z-fab)] grid h-11 w-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95 min-[400px]:right-4 min-[400px]:h-12 min-[400px]:w-12"
         style={{
           bottom:
             "calc(var(--chat-nav-h, calc(4rem + env(safe-area-inset-bottom, 0px))) + 0.75rem)",
