@@ -846,6 +846,24 @@ function Index() {
           <ReadyEcerSection />
           <ReadyRequestSection />
         </main>
+        <CategoryManagerDialog
+          open={catManagerOpen}
+          onOpenChange={setCatManagerOpen}
+          categories={categories}
+          usage={categoryUsage}
+          orphans={orphanCategories}
+          onAdd={addCategory}
+          onRename={renameCategory}
+          onDelete={deleteCategory}
+          onReorder={reorderCategory}
+          onAdoptOrphans={adoptOrphanCategories}
+          onSelect={(c) => {
+            setActiveCat(c);
+            setCatManagerOpen(false);
+          }}
+          saveState={saveState}
+          lastSavedAt={lastSavedAt}
+        />
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
     );
