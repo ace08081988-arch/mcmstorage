@@ -46,6 +46,28 @@ async function notifyOwner(userId: string, title: string, body: string) {
   }
 }
 
+/**
+ * Teruskan peristiwa langganan ke hook WA (n8n) memakai konfigurasi
+ * singleton `business_notify_hook_config` yang sudah dipakai fitur lain.
+ */
+async function notifyWa(kind: string, detail: Record<string, unknown>) {
+  try {
+    const { data: cfg } = await getSupabase()
+      .from("business_notify_hook_config")
+      .select("hook_url, enabled")
+      .eq("id", true)
+      .maybeSingle();
+    if (!cfg?.enabled || !cfg.hook_url) return;
+    await fetch(cfg.hook_url as string, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, ...detail, at: new Date().toISOString() }),
+    });
+  } catch (e) {
+    console.error("notifyWa failed", e);
+  }
+}
+
 async function upsertFromSubscription(data: any, env: PaddleEnv) {
   const { id, customerId, items, status, currentBillingPeriod, customData, scheduledChange } = data;
   const userId = customData?.userId;
@@ -94,6 +116,11 @@ async function handleWebhook(req: Request, env: PaddleEnv) {
       const res = await upsertFromSubscription(event.data as any, env);
       if (res?.userId) {
         await notifyOwner(res.userId, "Langganan Pro aktif", "Pembayaran berhasil — fitur Pro sudah terbuka.");
+        await notifyWa("subscription_started", {
+          user_id: res.userId,
+          price_id: (event.data as any)?.items?.[0]?.price?.importMeta?.externalId ?? null,
+          environment: env,
+        });
       }
       break;
     }
@@ -111,6 +138,11 @@ async function handleWebhook(req: Request, env: PaddleEnv) {
           "Langganan dibatalkan",
           "Akses Pro tetap aktif sampai akhir periode berjalan.",
         );
+        await notifyWa("subscription_canceled", {
+          user_id: res.userId,
+          period_end: (event.data as any)?.currentBillingPeriod?.endsAt ?? null,
+          environment: env,
+        });
       }
       break;
     }
