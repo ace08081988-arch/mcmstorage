@@ -5,7 +5,13 @@ import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PLANS } from "@/lib/paddle";
+import {
+  IDR_PER_USD,
+  MANUAL_PRICE_IDR,
+  PLANS,
+  TRIAL_DAYS,
+  formatIdr,
+} from "@/lib/paddle";
 
 const TITLE = "Harga & Paket — MCM Storage";
 const DESC =
@@ -123,6 +129,10 @@ function HargaPage() {
                 {plan.amountLabel}
               </p>
               <p className="text-ms-xs text-muted-foreground">{plan.cycleLabel}</p>
+              <p className="text-ms-xs text-muted-foreground">
+                ± {formatIdr(plan.amountUsd * IDR_PER_USD)} · transfer bank{" "}
+                {formatIdr(MANUAL_PRICE_IDR[plan.cycle])}
+              </p>
               <p className="mt-2 text-ms-xs text-muted-foreground">
                 {PLAN_DETAIL[plan.priceId]}
               </p>
@@ -135,7 +145,7 @@ function HargaPage() {
                 ))}
               </ul>
               <Button asChild className="mt-5 w-full">
-                <Link to="/auth">Pilih {plan.name}</Link>
+                <Link to="/auth">Coba gratis {TRIAL_DAYS} hari</Link>
               </Button>
             </article>
           ))}
@@ -146,6 +156,19 @@ function HargaPage() {
             Yang perlu Anda ketahui sebelum membeli
           </h2>
           <ul className="mt-3 space-ms-2 text-ms-sm text-muted-foreground">
+            <li>
+              Setiap paket Pro dimulai dengan uji coba gratis {TRIAL_DAYS} hari.
+              Tagihan pertama baru berjalan setelah masa uji coba berakhir, dan
+              Anda bisa membatalkan sebelum itu tanpa biaya.
+            </li>
+            <li>
+              Pembayaran kartu ditagih dalam dolar AS karena penyedia pembayaran
+              belum mendukung Rupiah; nilai Rupiah yang tertera adalah estimasi
+              kurs. Untuk membayar dalam Rupiah asli, tersedia transfer bank
+              ({formatIdr(MANUAL_PRICE_IDR.monthly)} per bulan atau{" "}
+              {formatIdr(MANUAL_PRICE_IDR.yearly)} per tahun) yang diverifikasi
+              manual di dalam aplikasi.
+            </li>
             <li>
               Pembayaran diproses oleh Paddle.com sebagai Merchant of Record untuk
               seluruh pesanan Mcm. Pajak yang berlaku dihitung oleh Paddle saat
