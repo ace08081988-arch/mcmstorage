@@ -287,6 +287,19 @@ function RootComponent() {
       pullPrefsFromCloud().catch(() => {});
       unsub = subscribeRemotePrefs(() => {});
     }).catch(() => {});
+    // Validasi skema database (kolom hasil migrasi) sekali saat startup.
+    import("@/lib/schema-guard").then(({ runSchemaGuard }) => {
+      runSchemaGuard((issues) => {
+        import("sonner").then(({ toast }) => {
+          toast.error(
+            `Skema database belum lengkap: ${issues
+              .map((i) => `${i.table}.${i.columns.join("/")}`)
+              .join(", ")}. Jalankan migrasi terbaru.`,
+            { duration: 12000 },
+          );
+        });
+      }).catch(() => {});
+    }).catch(() => {});
     return () => { if (unsub) unsub(); };
   }, []);
 
