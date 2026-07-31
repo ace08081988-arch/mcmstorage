@@ -24,11 +24,11 @@ export const Route = createFileRoute("/katalog/$slug")({
   ssr: true,
   loader: ({ params }) => getPublicCatalog({ data: { slug: params.slug } }),
   head: ({ loaderData }) => {
-    const name = loaderData?.shop?.name ?? "Katalog produk";
-    const title = `${name} — Katalog produk`;
+    const name = loaderData?.shop?.name ?? null;
+    const title = name ? `${name} — Katalog produk` : "Katalog produk tidak tersedia";
     const desc =
       loaderData?.shop?.tagline?.trim() ||
-      `Lihat daftar produk ${name} lengkap dengan stok dan harga, lalu pesan langsung lewat WhatsApp.`;
+      `Lihat daftar produk ${name ?? "toko"} lengkap dengan stok dan harga, lalu pesan langsung lewat WhatsApp.`;
     return {
       meta: [
         { title },
