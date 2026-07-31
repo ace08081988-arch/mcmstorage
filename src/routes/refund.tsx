@@ -52,62 +52,17 @@ function RefundPage() {
         <div className="space-ms-4">
           <Section title="Jaminan uang kembali 30 hari">
             <p>
-              Kami menawarkan <strong>jaminan uang kembali 30 hari</strong>{" "}
-              untuk setiap pembelian paket berbayar MCM Storage. Jika Anda
-              tidak puas dengan layanan, Anda dapat meminta pengembalian dana
-              penuh dalam waktu 30 hari sejak tanggal pembelian, tanpa perlu
-              menjelaskan alasan secara rinci.
+              Saat ini MCM Storage <strong>tidak memungut biaya</strong> dan
+              tidak memproses pembayaran daring di dalam aplikasi, sehingga
+              tidak ada transaksi yang perlu dikembalikan.
             </p>
           </Section>
 
-          <Section title="Cara meminta pengembalian dana">
+          <Section title="Jika nanti ada paket berbayar">
             <p>
-              Semua transaksi diproses oleh <strong>Paddle.com</strong>{" "}
-              sebagai Merchant of Record kami. Permintaan pengembalian dana
-              dilakukan melalui Paddle:
-            </p>
-            <ol className="list-decimal space-y-1 pl-5">
-              <li>
-                Buka{" "}
-                <a
-                  href="https://paddle.net"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                >
-                  paddle.net
-                </a>{" "}
-                dan masukkan email yang Anda gunakan saat membayar.
-              </li>
-              <li>
-                Pilih transaksi MCM Storage yang ingin Anda batalkan, lalu
-                ajukan permintaan pengembalian dana.
-              </li>
-              <li>
-                Sebagai alternatif, Anda juga dapat menghubungi kami di{" "}
-                <a href="mailto:admin@mcmstorage.biz" className="underline">
-                  admin@mcmstorage.biz
-                </a>{" "}
-                dan kami akan meneruskan permintaan Anda ke Paddle.
-              </li>
-            </ol>
-          </Section>
-
-          <Section title="Waktu pemrosesan">
-            <p>
-              Setelah permintaan disetujui, Paddle umumnya memproses
-              pengembalian dana dalam waktu 3–10 hari kerja, tergantung
-              metode pembayaran dan bank penerbit. Dana akan dikembalikan ke
-              metode pembayaran asli.
-            </p>
-          </Section>
-
-          <Section title="Pembatalan langganan">
-            <p>
-              Anda dapat membatalkan langganan kapan saja melalui portal
-              pelanggan Paddle. Setelah dibatalkan, langganan tetap aktif
-              hingga akhir periode tagihan yang sudah dibayarkan, dan tidak
-              akan diperpanjang otomatis pada periode berikutnya.
+              Bila paket berbayar diaktifkan kembali, kebijakan pengembalian
+              dana beserta cara pengajuannya akan diumumkan lebih dulu di
+              halaman ini sebelum pembayaran pertama dapat dilakukan.
             </p>
           </Section>
 
