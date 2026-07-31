@@ -3393,11 +3393,16 @@ export type Database = {
       subscriptions: {
         Row: {
           billing_cycle: string | null
+          cancel_at_period_end: boolean
           created_at: string
+          environment: string
           id: string
+          paddle_customer_id: string | null
+          paddle_subscription_id: string | null
           period_end: string | null
           period_start: string | null
           plan: string
+          price_id: string | null
           status: string
           trial_used_at: string | null
           updated_at: string
@@ -3405,11 +3410,16 @@ export type Database = {
         }
         Insert: {
           billing_cycle?: string | null
+          cancel_at_period_end?: boolean
           created_at?: string
+          environment?: string
           id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           period_end?: string | null
           period_start?: string | null
           plan?: string
+          price_id?: string | null
           status?: string
           trial_used_at?: string | null
           updated_at?: string
@@ -3417,11 +3427,16 @@ export type Database = {
         }
         Update: {
           billing_cycle?: string | null
+          cancel_at_period_end?: boolean
           created_at?: string
+          environment?: string
           id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           period_end?: string | null
           period_start?: string | null
           plan?: string
+          price_id?: string | null
           status?: string
           trial_used_at?: string | null
           updated_at?: string

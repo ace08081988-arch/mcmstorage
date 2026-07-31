@@ -64,6 +64,7 @@ import { Route as AuthenticatedPanggilanRouteImport } from './routes/_authentica
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
 import { Route as AuthenticatedMetrikQueryRouteImport } from './routes/_authenticated.metrik-query'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
+import { Route as AuthenticatedLanggananRouteImport } from './routes/_authenticated.langganan'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedKontakMappingRouteImport } from './routes/_authenticated.kontak-mapping'
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
@@ -146,6 +147,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
@@ -453,6 +455,11 @@ const AuthenticatedLinkPegawaiRoute =
     path: '/link-pegawai',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedLanggananRoute = AuthenticatedLanggananRouteImport.update({
+  id: '/langganan',
+  path: '/langganan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedLabelPreviewRoute =
   AuthenticatedLabelPreviewRouteImport.update({
     id: '/label-preview',
@@ -918,6 +925,12 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksShipmentStatusChangeRoute =
   ApiPublicHooksShipmentStatusChangeRouteImport.update({
     id: '/api/public/hooks/shipment-status-change',
@@ -1025,6 +1038,7 @@ export interface FileRoutesByFullPath {
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
+  '/langganan': typeof AuthenticatedLanggananRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1126,6 +1140,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1170,6 +1185,7 @@ export interface FileRoutesByTo {
   '/kios': typeof AuthenticatedKiosRouteWithChildren
   '/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
+  '/langganan': typeof AuthenticatedLanggananRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1272,6 +1288,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1321,6 +1338,7 @@ export interface FileRoutesById {
   '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/_authenticated/kontak-mapping': typeof AuthenticatedKontakMappingRoute
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
+  '/_authenticated/langganan': typeof AuthenticatedLanggananRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/metrik-query': typeof AuthenticatedMetrikQueryRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -1423,6 +1441,7 @@ export interface FileRoutesById {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1473,6 +1492,7 @@ export interface FileRouteTypes {
     | '/kontak'
     | '/kontak-mapping'
     | '/label-preview'
+    | '/langganan'
     | '/link-pegawai'
     | '/metrik-query'
     | '/notifikasi'
@@ -1574,6 +1594,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
+    | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1618,6 +1639,7 @@ export interface FileRouteTypes {
     | '/kios'
     | '/kontak-mapping'
     | '/label-preview'
+    | '/langganan'
     | '/link-pegawai'
     | '/metrik-query'
     | '/notifikasi'
@@ -1720,6 +1742,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
+    | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1768,6 +1791,7 @@ export interface FileRouteTypes {
     | '/_authenticated/kontak'
     | '/_authenticated/kontak-mapping'
     | '/_authenticated/label-preview'
+    | '/_authenticated/langganan'
     | '/_authenticated/link-pegawai'
     | '/_authenticated/metrik-query'
     | '/_authenticated/notifikasi'
@@ -1870,6 +1894,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
+    | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1943,6 +1968,7 @@ export interface RootRouteChildren {
   ApiPublicHooksPrepTaskNotifyRoute: typeof ApiPublicHooksPrepTaskNotifyRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   ApiPublicHooksShipmentStatusChangeRoute: typeof ApiPublicHooksShipmentStatusChangeRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -2335,6 +2361,13 @@ declare module '@tanstack/react-router' {
       path: '/link-pegawai'
       fullPath: '/link-pegawai'
       preLoaderRoute: typeof AuthenticatedLinkPegawaiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/langganan': {
+      id: '/_authenticated/langganan'
+      path: '/langganan'
+      fullPath: '/langganan'
+      preLoaderRoute: typeof AuthenticatedLanggananRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/label-preview': {
@@ -2911,6 +2944,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/shipment-status-change': {
       id: '/api/public/hooks/shipment-status-change'
       path: '/api/public/hooks/shipment-status-change'
@@ -3095,6 +3135,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
   AuthenticatedKontakMappingRoute: typeof AuthenticatedKontakMappingRoute
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
+  AuthenticatedLanggananRoute: typeof AuthenticatedLanggananRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedMetrikQueryRoute: typeof AuthenticatedMetrikQueryRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
@@ -3167,6 +3208,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
   AuthenticatedKontakMappingRoute: AuthenticatedKontakMappingRoute,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
+  AuthenticatedLanggananRoute: AuthenticatedLanggananRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedMetrikQueryRoute: AuthenticatedMetrikQueryRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
@@ -3319,6 +3361,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   ApiPublicHooksShipmentStatusChangeRoute:
     ApiPublicHooksShipmentStatusChangeRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
@@ -3328,13 +3371,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
