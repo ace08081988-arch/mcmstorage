@@ -2,7 +2,6 @@
  * Ekspor daftar pesanan & total penjualan per status.
  * Angka memakai SSOT `src/lib/orders-export.ts` (sold_total + fallback sales).
  */
-import { ProGate } from "@/components/ProGate";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { Download, RefreshCw, FileSpreadsheet } from "lucide-react";
@@ -34,16 +33,8 @@ export const Route = createFileRoute("/_authenticated/ekspor-pesanan")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: EksporPesananPageGated,
+  component: EksporPesananPage,
 });
-
-function EksporPesananPageGated() {
-  return (
-    <ProGate feature="Ekspor pesanan">
-      <EksporPesananPage />
-    </ProGate>
-  );
-}
 
 function EksporPesananPage() {
   const [data, setData] = useState<OrdersExportData | null>(null);
