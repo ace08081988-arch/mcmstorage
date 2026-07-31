@@ -174,6 +174,12 @@ export const Route = createFileRoute("/_authenticated")({
       3_000,
     );
     if (!data.session) {
+      // Pengunjung yang belum masuk dan membuka halaman depan diarahkan ke
+      // halaman produk publik (nilai jual + harga), bukan langsung ke form
+      // login — supaya calon pembeli bisa menilai produk lebih dulu.
+      if (location.pathname === "/") {
+        throw redirect({ to: "/produk" });
+      }
       throw redirect({
         to: "/auth",
         search: { redirect: location.href },

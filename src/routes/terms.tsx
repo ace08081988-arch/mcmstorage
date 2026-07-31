@@ -9,13 +9,13 @@ export const Route = createFileRoute("/terms")({
       {
         name: "description",
         content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI. Termasuk pengungkapan Paddle sebagai Merchant of Record.",
+          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh Mcm. Termasuk pengungkapan Paddle sebagai Merchant of Record.",
       },
       { property: "og:title", content: "Syarat & Ketentuan — MCM Storage" },
       {
         property: "og:description",
         content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI.",
+          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh Mcm.",
       },
     ],
     links: [{ rel: "canonical", href: "https://mcmstorage.biz/terms" }],
@@ -52,10 +52,10 @@ function TermsPage() {
           <Section title="1. Penjual">
             <p>
               Layanan MCM Storage (selanjutnya "<strong>Layanan</strong>")
-              disediakan dan dioperasikan oleh <strong>BAROKAH RIZKI</strong>{" "}
+              disediakan dan dioperasikan oleh <strong>Mcm</strong>{" "}
               (selanjutnya "<strong>kami</strong>", "<strong>kita</strong>",
               atau "<strong>Penjual</strong>"). Dengan menggunakan Layanan,
-              Anda menyatakan berkontrak dengan BAROKAH RIZKI.
+              Anda menyatakan berkontrak dengan Mcm.
             </p>
           </Section>
 
@@ -120,7 +120,7 @@ function TermsPage() {
             <p>
               Semua hak atas Layanan — termasuk perangkat lunak, dokumentasi,
               merek dagang, dan tampilan antarmuka — tetap menjadi milik
-              BAROKAH RIZKI dan pemberi lisensinya. Anda diberikan lisensi
+              Mcm dan pemberi lisensinya. Anda diberikan lisensi
               terbatas, non-eksklusif, dan tidak dapat dialihkan untuk
               menggunakan Layanan sesuai paket yang Anda pilih.
             </p>
