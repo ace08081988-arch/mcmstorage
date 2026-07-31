@@ -96,7 +96,7 @@ function VerifikasiPembayaranPage() {
     try {
       const { data, error } = await supabase.rpc(
         approve ? "admin_approve_payment" : "admin_reject_payment",
-        { _payment_id: row.id, _note: notes[row.id]?.trim() || "" },
+        { _payment_id: row.id, _note: notes[row.id]?.trim() || undefined },
       );
       if (error) throw new Error(error.message);
       const res = data as { ok?: boolean; error?: string } | null;
