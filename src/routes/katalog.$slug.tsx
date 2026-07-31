@@ -14,7 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getPublicCatalog, type PublicCatalogItem } from "@/lib/public-catalog.functions";
+import {
+  getPublicCatalog,
+  type PublicCatalogItem,
+  type PublicCatalogPayload,
+} from "@/lib/public-catalog.functions";
 
 export const Route = createFileRoute("/katalog/$slug")({
   ssr: true,
@@ -68,7 +72,7 @@ const ALL = "__all__";
 type SortOption = "name" | "price-asc" | "price-desc" | "stock";
 
 function PublicKatalogPage() {
-  const data = Route.useLoaderData();
+  const data = Route.useLoaderData() as PublicCatalogPayload;
   const [q, setQ] = useState("");
   const [cat, setCat] = useState(ALL);
   const [onlyReady, setOnlyReady] = useState(false);
