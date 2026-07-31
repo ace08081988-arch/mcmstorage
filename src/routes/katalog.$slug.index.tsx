@@ -2,7 +2,7 @@
  * Katalog publik per toko — bisa dibuka tanpa login.
  * Pengunjung melihat produk + stok dan memesan langsung lewat WhatsApp.
  */
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
@@ -124,9 +124,16 @@ function PublicKatalogPage() {
         .map((item) => ({ item, qty: cart[item.id] })),
     [data.items, cart],
   );
-  const cartTotal = cartLines.reduce(
-    (s, l) => s + (l.item.selling_price_per_base ?? 0) * l.qty,
-    0,
+  const cartTotal = useMemo(
+    () => cartLines.reduce((s, l) => s + (l.item.selling_price_per_base ?? 0) * l.qty, 0),
+    [cartLines],
+  );
+  // Teks pesanan WA dibangun SEKALI per perubahan keranjang. Sebelumnya
+  // dipanggil 3x per render (textarea, tombol salin, link WA) — pada katalog
+  // besar itu ~50ms per ketukan tombol +/- di perangkat Android kelas menengah.
+  const cartOrderText = useMemo(
+    () => bulkOrderText(data.shop?.name ?? "", cartLines),
+    [data.shop?.name, cartLines],
   );
   const setQty = (id: string, qty: number) =>
     setCart((prev) => {
@@ -142,8 +149,11 @@ function PublicKatalogPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b, "id-ID"));
   }, [data.items]);
 
+  // Pencarian dipisah dari render input supaya mengetik tetap responsif:
+  // filter+sort katalog besar berjalan di prioritas rendah.
+  const deferredQ = useDeferredValue(q);
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
+    const s = deferredQ.trim().toLowerCase();
     const list = data.items.filter((i) => {
       if (cat !== ALL && (i.category ?? "").trim() !== cat) return false;
       if (onlyReady && i.stock_base <= 0) return false;
@@ -163,7 +173,7 @@ function PublicKatalogPage() {
       }
     });
     return list;
-  }, [data.items, q, cat, onlyReady, sort]);
+  }, [data.items, deferredQ, cat, onlyReady, sort]);
 
   if (!data.found || !data.shop) {
     return (
@@ -478,7 +488,7 @@ function PublicKatalogPage() {
                   </ul>
                   <textarea
                     readOnly
-                    value={bulkOrderText(shop.name, cartLines)}
+                    value={cartOrderText}
                     className="min-h-[120px] w-full rounded-lg border bg-muted/50 p-3 text-sm leading-relaxed"
                     aria-label="Teks pesanan WhatsApp"
                   />
@@ -494,7 +504,7 @@ function PublicKatalogPage() {
                     className="rounded-full"
                     onClick={() => {
                       void navigator.clipboard
-                        .writeText(bulkOrderText(shop.name, cartLines))
+                        .writeText(cartOrderText)
                         .then(() => {
                           setCopied(true);
                           setTimeout(() => setCopied(false), 1500);
@@ -514,7 +524,7 @@ function PublicKatalogPage() {
                   </Button>
                   <Button asChild className="rounded-full">
                     <a
-                      href={waLink(shop.wa, bulkOrderText(shop.name, cartLines))}
+                      href={waLink(shop.wa, cartOrderText)}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setPreviewOpen(false)}
