@@ -21,6 +21,7 @@ import {
 } from "@/lib/viewport-anchor-config";
 import { observeAnchorFrame } from "@/lib/viewport-anchor-autotune";
 import { recordAnchorEvent } from "@/lib/viewport-anchor-log";
+import { startSafeAreaRecalc } from "@/lib/safe-area-recalc";
 
 export type ViewportAnchor = {
   /**
