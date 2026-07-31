@@ -4,7 +4,7 @@
  */
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MessageCircle, PackageSearch, Search } from "lucide-react";
+import { Check, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +68,32 @@ function orderText(shopName: string, it: PublicCatalogItem) {
     .join("\n");
 }
 
+/** Pesan WA sekali kirim untuk banyak produk sekaligus. */
+function bulkOrderText(
+  shopName: string,
+  lines: { item: PublicCatalogItem; qty: number }[],
+) {
+  let total = 0;
+  let complete = true;
+  const rows = lines.map(({ item, qty }, i) => {
+    const unit = item.base_unit || "pcs";
+    const price = item.selling_price_per_base;
+    if (price == null) complete = false;
+    else total += price * qty;
+    const sub = price != null ? ` = ${rupiah(price * qty)}` : "";
+    const at = price != null ? ` × ${rupiah(price)}` : "";
+    return `${i + 1}. ${item.name} — ${qty.toLocaleString("id-ID")} ${unit}${at}${sub}`;
+  });
+  return [
+    `Halo ${shopName}, saya mau pesan ${lines.length} produk:`,
+    "",
+    ...rows,
+    "",
+    complete ? `Perkiraan total: ${rupiah(total)}` : "Mohon info harga total.",
+    "Mohon konfirmasi ketersediaan & totalnya. Terima kasih.",
+  ].join("\n");
+}
+
 const ALL = "__all__";
 type SortOption = "name" | "price-asc" | "price-desc" | "stock";
 
@@ -78,6 +104,26 @@ function PublicKatalogPage() {
   const [cat, setCat] = useState(ALL);
   const [onlyReady, setOnlyReady] = useState(false);
   const [sort, setSort] = useState<SortOption>("name");
+  const [cart, setCart] = useState<Record<string, number>>({});
+
+  const cartLines = useMemo(
+    () =>
+      data.items
+        .filter((i) => (cart[i.id] ?? 0) > 0)
+        .map((item) => ({ item, qty: cart[item.id] })),
+    [data.items, cart],
+  );
+  const cartTotal = cartLines.reduce(
+    (s, l) => s + (l.item.selling_price_per_base ?? 0) * l.qty,
+    0,
+  );
+  const setQty = (id: string, qty: number) =>
+    setCart((prev) => {
+      const next = { ...prev };
+      if (qty <= 0) delete next[id];
+      else next[id] = qty;
+      return next;
+    });
 
   const categories = useMemo(() => {
     const set = new Set<string>();
