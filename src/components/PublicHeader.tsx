@@ -47,6 +47,12 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
             Produk
           </Link>
           <Link
+            to="/harga"
+            className="rounded-full px-ms-2.5 py-1 transition-colors hover:bg-primary/10 hover:text-primary"
+          >
+            Harga
+          </Link>
+          <Link
             to="/auth"
             className="rounded-full border border-primary/40 bg-primary/10 px-ms-3 py-1 font-semibold text-primary transition-colors hover:bg-primary/20"
           >
