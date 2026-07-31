@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Crown, Loader2, RefreshCw } from "lucide-react";
+import { Check, Crown, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ import {
   initializePaddle,
   type PlanPriceId,
 } from "@/lib/paddle";
+import { createPortalSession } from "@/utils/payments.functions";
 
 export const Route = createFileRoute("/_authenticated/langganan")({
   head: () => ({
@@ -81,6 +82,7 @@ function useSubscription() {
 function LanggananPage() {
   const { data, isLoading, refetch, isFetching } = useSubscription();
   const [busy, setBusy] = useState<PlanPriceId | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
 
   // Setelah checkout selesai, webhook butuh sesaat untuk menulis status.
   useEffect(() => {
@@ -123,6 +125,20 @@ function LanggananPage() {
       );
     } finally {
       setBusy(null);
+    }
+  };
+
+  const openPortal = async () => {
+    setPortalBusy(true);
+    const t = toast.loading("Membuka portal langganan…");
+    try {
+      const res = await createPortalSession();
+      window.open(res.cancelUrl ?? res.overviewUrl, "_blank", "noopener");
+      toast.success("Portal dibuka di tab baru", { id: t });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal membuka portal", { id: t });
+    } finally {
+      setPortalBusy(false);
     }
   };
 
@@ -180,18 +196,36 @@ function LanggananPage() {
               </div>
             </dl>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-          >
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
-              aria-hidden="true"
-            />
-            Segarkan status
-          </Button>
+          <div className="flex flex-wrap gap-ms-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+                aria-hidden="true"
+              />
+              Segarkan status
+            </Button>
+            {isPro && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={openPortal}
+                disabled={portalBusy}
+                data-testid="open-billing-portal"
+              >
+                {portalBusy ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
+                )}
+                Kelola langganan
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
