@@ -31,10 +31,10 @@ export function MobileBottomNav() {
   // bergerak/terasa lag mengikuti perhitungan JS. Kompensasi visual viewport
   // dihentikan untuk elemen ini; hanya status keyboard tetap dipantau agar
   // bar bisa disembunyikan saat keyboard virtual terbuka.
-  // `anchorStyle` (mode lock) hanya mengompensasi pergerakan address bar
-  // browser — nilainya dihaluskan per-frame di engine sehingga bar tidak
-  // terlihat loncat saat address bar mengembang/menciut.
-  const { keyboardOpen, anchorStyle } = useViewportAnchor({ lock: true });
+  // Tidak ada transform/kompensasi JS sama sekali: bar dipaku `fixed
+  // bottom-0` murni CSS supaya benar-benar diam saat scroll (address bar
+  // browser mengembang/menciut). Hook hanya dipakai untuk status keyboard.
+  const { keyboardOpen } = useViewportAnchor({ lock: true });
   // Tinggi bar diukur nyata (badge unread bisa mengubah tinggi) lalu
   // dipublikasikan ke `--app-bottom-nav-h` yang dipakai padding konten.
   const navRef = useRef<HTMLElement | null>(null);
@@ -95,7 +95,6 @@ export function MobileBottomNav() {
         "bg-background/92 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78",
       )}
       style={{
-        ...anchorStyle,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
