@@ -466,10 +466,10 @@ export function WaPreviewHost() {
                       ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                       : "Kirim ulang meski klik ganda terdeteksi"
                 }
-                className="bg-warning text-warning-foreground hover:bg-warning disabled:opacity-50"
+                className="min-w-0 bg-warning text-warning-foreground hover:bg-warning disabled:opacity-50"
               >
-                <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
-                Kirim ulang (paksa)
+                <ShieldAlert className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Kirim ulang (paksa)</span>
               </Button>
             ) : (
               <Button
@@ -478,10 +478,10 @@ export function WaPreviewHost() {
                 onClick={() => finish(true)}
                 disabled={live?.status === "in-flight"}
                 title={live?.status === "in-flight" ? (crossChannel ? "Kiriman Chat untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
-                className="bg-success text-white hover:bg-success"
+                className="min-w-0 bg-success text-white hover:bg-success"
               >
-                <Send className="mr-1.5 h-3.5 w-3.5" />
-                {live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via MCM"}
+                <Send className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via MCM"}</span>
               </Button>
             )}
           </div>
