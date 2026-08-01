@@ -434,80 +434,26 @@ export function WaPreviewHost() {
 
         <div className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-3 py-ms-3 sm:px-ms-5 sm:py-ms-4">
           {current?.peer && (current.peer.phone || current.peer.accountUserId) ? (
-            <DebtQuickActions
+            <MemoDebtQuickActions
               peerPhone={current.peer.phone ?? null}
               peerName={current.peer.name ?? null}
               peerAccountUserId={current.peer.accountUserId ?? null}
             />
           ) : null}
-          {dupActive ? (
-            <div className="flex items-start gap-ms-2 rounded-lg border border-warning/50 bg-warning/10 p-ms-3 text-ms-xs text-warning dark:text-warning">
-              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold">
-                  {dup!.status === "in-flight"
-                    ? (crossChannel
-                        ? "Kiriman Chat untuk paket ini sedang berjalan."
-                        : "Klik ganda terdeteksi — kiriman MCM sebelumnya masih berjalan.")
-                    : "Klik ganda terdeteksi — paket ini baru saja dikirim via MCM."}
-                </div>
-                <div className="mt-0.5 opacity-90">
-                  {dup!.status === "in-flight"
-                    ? `Dimulai ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
-                    : `Dikirim ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
-                </div>
-                <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-ms-2xs">
-                  <dt className="font-medium opacity-80">Waktu</dt>
-                  <dd className="min-w-0 break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
-                  {dup!.destination || crossChannel ? (<>
-                    <dt className="font-medium opacity-80">Tujuan</dt>
-                    <dd className="min-w-0 break-words">{dup!.destination ?? "—"}{crossChannel ? " · via Chat" : ""}</dd>
-                  </>) : null}
-                  <dt className="font-medium opacity-80">Status</dt>
-                  <dd className="min-w-0 break-words">{dupStatusLabel}</dd>
-                </dl>
-                {dup!.status !== "in-flight" ? (
-                  <div
-                    className={
-                      "mt-2 rounded-md border px-ms-2 py-1.5 text-ms-2xs " +
-                      (payloadMatches
-                        ? "border-success/40 bg-success/10 text-success dark:text-success"
-                        : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
-                    }
-                  >
-                    <span className="inline-flex items-start gap-ms-1">
-                      <span className="flex-1">
-                        {payloadMatches
-                          ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
-                          : forceDisabledReason}
-                      </span>
-                      <FingerprintInfoTooltip
-                        matches={payloadMatches}
-                        previousFp={dupFp}
-                        currentFp={curFp}
-                        previous={dup!.summary}
-                        current={current?.currentSummary}
-                      />
-                    </span>
-                  </div>
-                ) : null}
-                {dup!.status !== "in-flight" && !payloadMatches ? (
-                  <SendPayloadDiff previous={dup!.summary} current={current?.currentSummary} />
-                ) : null}
-                {dup!.status === "in-flight" ? (
-                  <InflightStepProgress
-                    entries={liveLog.entries}
-                    channel={liveChannel}
-                    stale={liveLog.stale}
-                    syncError={liveLog.error}
-                    lastSyncedAt={liveLog.lastSyncedAt}
-                  />
-                ) : null}
-              </div>
-            </div>
+          {dupActive && dup ? (
+            <DuplicateNotice
+              dup={dup}
+              crossChannel={crossChannel}
+              payloadMatches={payloadMatches}
+              forceDisabledReason={forceDisabledReason}
+              curFp={curFp}
+              currentSummary={current?.currentSummary}
+              liveLog={liveLog}
+              liveChannel={liveChannel}
+            />
           ) : null}
           {current?.previousLog && current.previousLog.length > 0 ? (
-            <SendLogViewer entries={current.previousLog} defaultOpen={dupActive && dup!.status !== "in-flight"} />
+            <MemoSendLogViewer entries={current.previousLog} defaultOpen={dupActive && dup!.status !== "in-flight"} />
           ) : null}
           <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
             <div className="mb-1.5 flex min-w-0 items-center justify-between gap-ms-2">
