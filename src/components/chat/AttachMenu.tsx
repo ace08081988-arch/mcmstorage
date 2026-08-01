@@ -22,6 +22,7 @@ import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { sendMessage } from "@/lib/chat.functions";
 import { StickerPickerDialog } from "@/components/chat/StickerPickerDialog";
 import type { LucideIcon } from "lucide-react";
+import { truncateWords } from "@/lib/truncate-message";
 
 function Tile({ icon: Icon, label, color, onClick, recent }: { icon: LucideIcon; label: string; color: string; onClick: () => void | Promise<void>; recent?: boolean }) {
   return (
@@ -543,7 +544,7 @@ export function AttachMenu({ conversationId, disabled, onSent, onStageFiles }: P
     if (!anyError && okCount > 0) {
       toast.success(
         okCount > 1 ? `${okCount} lampiran terkirim` : "Lampiran terkirim",
-        { description: cap ? `Caption: "${cap.slice(0, 60)}${cap.length > 60 ? "…" : ""}"` : undefined },
+        { description: cap ? `Caption: "${truncateWords(cap, 60)}"` : undefined },
       );
       // Semua berhasil → tutup dialog setelah jeda kecil supaya status terlihat.
       setTimeout(() => {

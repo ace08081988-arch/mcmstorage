@@ -11,6 +11,7 @@ import { fmtBase } from "@/lib/stock-format";
 import { urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
+import { truncateWords } from "@/lib/truncate-message";
 
 /**
  * Popover di sebelah tombol "Kirim" pada composer chat.
@@ -111,7 +112,7 @@ export async function sendProductRow(
 
   const nowIso = new Date().toISOString();
   const peer = opts.peerName?.trim() || null;
-  const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
+  const summary = truncateWords(caption, 140);
   let upErr: unknown = null;
   if (row.source === "ready") {
     upErr = (await supabase

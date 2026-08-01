@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { usePhotoEditorFlow, type EditedPhoto } from "@/components/photo-editor/use-photo-editor-flow";
+import { truncateWords } from "@/lib/truncate-message";
 
 const BUCKET = "self-prep-photos";
 
@@ -364,7 +365,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     const result = await shareToWhatsApp({ text, files });
     notifyShareResult(result);
     if (result.status === "shared" || result.status === "fallback") {
-      const summary = text.length > 140 ? `${text.slice(0, 140)}…` : text;
+      const summary = truncateWords(text, 140);
       const { error } = await table()
         .update({
           status: "sent",
@@ -431,7 +432,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
       toast.dismiss(tid);
       if (result.status === "shared") {
         toast.success(`Terkirim ke ${convTitle} (${result.messageCount} pesan).`);
-        const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
+        const summary = truncateWords(caption, 140);
         const { error } = await table()
           .update({
             status: "sent",

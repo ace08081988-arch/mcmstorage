@@ -2082,7 +2082,7 @@ function ChatRoomPage() {
                             <div className="truncate font-semibold opacity-80">
                               {replyMsg.sender_id === myId ? "Anda" : replySenderName}
                             </div>
-                            <div className="line-clamp-2 break-words [overflow-wrap:anywhere] opacity-80">
+                            <div className="line-clamp-2 break-words opacity-80">
                               <MessagePreview message={replyMsg} />
                             </div>
                           </div>
@@ -2129,7 +2129,7 @@ function ChatRoomPage() {
                                   <UnknownCardBlock mine={mine} />
                                 ) : null}
                                 {!card && !isCardBody(m.body) && m.body ? (
-                                  <div className="whitespace-pre-wrap break-words text-pretty [overflow-wrap:anywhere]">
+                                  <div className="wa-message-text">
                                     <Linkify text={m.body} highlight={quickSearchOpen ? quickNeedle : undefined} />
                                   </div>
                                 ) : null}
@@ -2404,7 +2404,7 @@ function ChatRoomPage() {
                       if (isCardBody(o.body)) return <UnknownCardBlock mine={true} />;
                       return (
                         <>
-                          <div className="whitespace-pre-wrap break-words text-pretty [overflow-wrap:anywhere]">
+                          <div className="wa-message-text">
                             <Linkify text={o.body} />
                           </div>
                           <UrlPreviewList text={o.body} mine />
@@ -2492,7 +2492,7 @@ function ChatRoomPage() {
             <Pencil className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-primary">Edit pesan</div>
-              <div className="line-clamp-2 break-words [overflow-wrap:anywhere] text-muted-foreground">
+              <div className="line-clamp-2 break-words text-muted-foreground">
                 {previewText(editing.body) || "(kosong)"}
               </div>
             </div>
@@ -2517,7 +2517,7 @@ function ChatRoomPage() {
               <div className="truncate font-semibold">
                 Balas {replyTo.sender_id === myId ? "Anda" : (profiles.data?.get(replyTo.sender_id)?.display_name || "Pengguna")}
               </div>
-              <div className="line-clamp-2 break-words [overflow-wrap:anywhere] text-muted-foreground">
+              <div className="line-clamp-2 break-words text-muted-foreground">
                 <MessagePreview message={replyTo} />
               </div>
             </div>

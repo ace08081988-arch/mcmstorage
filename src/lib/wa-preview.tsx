@@ -261,7 +261,7 @@ const LinkSection = memo(function LinkSection({ url }: { url: string }) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block break-all rounded-md bg-background p-ms-2 font-mono text-ms-2xs text-primary underline-offset-2 hover:underline"
+        className="wa-message-token block rounded-md bg-background p-ms-2 font-mono text-ms-2xs text-primary underline-offset-2 hover:underline"
       >
         {url}
       </a>
@@ -483,7 +483,7 @@ export function WaPreviewHost() {
             ) : (
               <pre
                 data-testid="wa-preview-text"
-                className="max-h-[38svh] cursor-text overflow-auto overscroll-contain whitespace-pre-wrap [overflow-wrap:anywhere] rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
+                className="wa-message-text max-h-[38svh] cursor-text overflow-auto overscroll-contain rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
                 onClick={() => setEditing(true)}
                 title="Klik untuk mengedit"
               >
