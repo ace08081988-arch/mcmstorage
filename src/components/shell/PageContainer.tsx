@@ -1,14 +1,16 @@
 /**
- * Wrapper `<main>` untuk halaman "aplikasi" — memastikan max-width,
- * gutter, dan spacing vertikal antar section KONSISTEN di seluruh
- * halaman. Nilai default:
- *   - mobile: max-w-3xl · px-ms-4 · py-ms-5 · space-ms-5
- *   - md+  : max-w-4xl · p-ms-6
+ * Wrapper `<main>` untuk halaman "aplikasi" — satu sumber untuk max-width,
+ * gutter, dan spacing vertikal antar section. Gutter/spacing didelegasikan
+ * ke `@/components/layout/PageContainer` supaya nilainya identik dengan
+ * container generik dan tidak ada dua skala padding yang bersaing.
  *
- * Semua halaman aplikasi yang punya header sticky di atas wajib
- * memakai PageContainer supaya tidak drift saat pindah tab/halaman.
+ * Nilai efektif:
+ *   - mobile: max-w-3xl · px-ms-4 · py-ms-4 · space-ms-4
+ *   - sm+   : px-ms-6 · py-ms-6 · space-ms-5
+ *   - md+   : max-w-4xl
  */
 import type { ReactNode } from "react";
+import { PageContainer as BasePageContainer } from "@/components/layout/PageContainer";
 
 export interface PageContainerProps {
   children: ReactNode;
@@ -19,11 +21,12 @@ export interface PageContainerProps {
 
 export function PageContainer({ children, className, ariaLabel }: PageContainerProps) {
   return (
-    <main
+    <BasePageContainer
       aria-label={ariaLabel}
-      className={`mx-auto max-w-3xl space-ms-5 px-ms-4 py-ms-5 md:max-w-4xl md:p-ms-6 ${className ?? ""}`}
+      width="md"
+      className={`md:max-w-4xl ${className ?? ""}`}
     >
       {children}
-    </main>
+    </BasePageContainer>
   );
 }
