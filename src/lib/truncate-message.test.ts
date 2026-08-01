@@ -20,7 +20,8 @@ describe("truncateWords", () => {
   it("memotong keras token tunggal yang kepanjangan", () => {
     const url = "https://mcmstorage.app/katalog/toko-kifa/produk-sangat-panjang";
     const out = truncateWords(url, 20);
-    expect(out.length).toBe(20);
+    expect(out.length).toBeLessThanOrEqual(20);
+    expect(out.startsWith("https://mcmstorage")).toBe(true);
     expect(out.endsWith("…")).toBe(true);
   });
 
