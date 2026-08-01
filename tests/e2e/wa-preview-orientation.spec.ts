@@ -91,8 +91,13 @@ async function assertNoClipping(page: Page, label: string) {
 
 async function openDialog(page: Page, testId: string) {
   await page.goto(HARNESS);
-  await page.getByTestId(testId).click();
-  await expect(page.getByTestId("wa-preview-dialog")).toBeVisible();
+  // Tunggu hidrasi selesai — sebelum React attach handler, klik jadi no-op.
+  await page.waitForLoadState("networkidle");
+  const dialog = page.getByTestId("wa-preview-dialog");
+  await expect(async () => {
+    await page.getByTestId(testId).click();
+    await expect(dialog).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20000 });
 }
 
 test.describe("Pratinjau WA — rotasi portrait ↔ landscape", () => {
