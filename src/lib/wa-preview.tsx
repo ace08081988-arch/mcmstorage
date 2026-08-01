@@ -351,8 +351,8 @@ export function WaPreviewHost() {
           </div>
 
           {url ? (
-            <div className="rounded-lg border bg-muted/30 p-ms-3">
-              <div className="mb-1.5 flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
+              <div className="mb-1.5 flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {isMapsUrl ? <MapPin className="h-3 w-3" /> : <Link2 className="h-3 w-3" />}
                 {isMapsUrl ? "Link Maps" : "Link tambahan"}
               </div>
@@ -367,19 +367,19 @@ export function WaPreviewHost() {
             </div>
           ) : null}
 
-          <div className="rounded-lg border bg-muted/30 p-ms-3">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
+            <div className="mb-2 flex min-w-0 items-center justify-between gap-ms-2">
+              <div className="flex min-w-0 items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <ImageIcon className="h-3 w-3" /> Foto / lampiran
               </div>
-              <span className="rounded-full bg-muted px-ms-2 py-0.5 text-ms-2xs font-medium text-muted-foreground">
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-muted px-ms-2 py-0.5 text-ms-2xs font-medium tabular-nums text-muted-foreground">
                 {photoCount}{expected > photoCount ? ` / ${expected}` : ""} berkas
               </span>
             </div>
             {missing > 0 ? (
-              <div className="mb-2 flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
+              <div className="mb-2 flex flex-wrap items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[10rem] flex-1">
                   <div className="font-medium">{missing} foto gagal diunduh.</div>
                   <div className="opacity-80">
                     {canRetry
@@ -392,7 +392,7 @@ export function WaPreviewHost() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-7 shrink-0 border-warning/60 bg-background px-ms-2 text-ms-2xs text-warning hover:bg-warning/10 dark:text-warning"
+                    className="h-8 shrink-0 border-warning/60 bg-background px-ms-2 text-ms-2xs text-warning hover:bg-warning/10 dark:text-warning"
                     onClick={handleRetry}
                     disabled={retrying}
                   >
@@ -427,8 +427,8 @@ export function WaPreviewHost() {
                       </div>
                     )}
                     <div className="px-1.5 py-1">
-                      <div className="truncate text-ms-2xs font-medium" title={p.name}>{p.name}</div>
-                      <div className="text-[9.5px] text-muted-foreground">{fmtSize(p.size)}</div>
+                    <div className="truncate text-ms-2xs font-medium leading-snug" title={p.name}>{p.name}</div>
+                    <div className="truncate text-ms-2xs tabular-nums text-muted-foreground">{fmtSize(p.size)}</div>
                     </div>
                   </div>
                 ))}
@@ -436,20 +436,20 @@ export function WaPreviewHost() {
             )}
           </div>
 
-          <label className="flex items-start gap-ms-2 rounded-lg border p-ms-3 text-ms-xs text-muted-foreground">
+          <label className="flex items-start gap-ms-2 rounded-lg border p-ms-2 text-ms-2xs leading-snug text-muted-foreground sm:p-ms-3 sm:text-ms-xs">
             <Checkbox checked={skip} onCheckedChange={(c) => setSkip(c === true)} className="mt-0.5" />
             <span>Jangan tampilkan pratinjau ini lagi (bisa diaktifkan kembali dari Pengaturan)</span>
           </label>
         </div>
 
         <div
-          className="flex shrink-0 flex-wrap items-center justify-between gap-ms-2 border-t bg-muted/20 px-ms-5 py-ms-3"
+          className="grid shrink-0 grid-cols-1 gap-ms-2 border-t bg-muted/20 px-ms-3 py-ms-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-ms-5"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
-          <span className="text-ms-2xs text-muted-foreground">
+          <span className="truncate text-ms-2xs text-muted-foreground">
             {photoCount > 0 ? `${photoCount} foto + teks` : "Teks saja"}
           </span>
-          <div className="flex gap-ms-2">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-ms-2 sm:flex">
             <Button type="button" variant="outline" size="sm" onClick={() => finish(false)}>
               Batal
             </Button>
