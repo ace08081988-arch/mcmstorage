@@ -261,15 +261,15 @@ export function WaPreviewHost() {
                     ? `Dimulai ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
                     : `Dikirim ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                 </div>
-                <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
+                <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-ms-2xs">
                   <dt className="font-medium opacity-80">Waktu</dt>
-                  <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
+                  <dd className="min-w-0 break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
                   {dup!.destination || crossChannel ? (<>
                     <dt className="font-medium opacity-80">Tujuan</dt>
-                    <dd className="break-words">{dup!.destination ?? "—"}{crossChannel ? " · via Chat" : ""}</dd>
+                    <dd className="min-w-0 break-words">{dup!.destination ?? "—"}{crossChannel ? " · via Chat" : ""}</dd>
                   </>) : null}
                   <dt className="font-medium opacity-80">Status</dt>
-                  <dd className="break-words">{dupStatusLabel}</dd>
+                  <dd className="min-w-0 break-words">{dupStatusLabel}</dd>
                 </dl>
                 {dup!.status !== "in-flight" ? (
                   <div
@@ -314,18 +314,18 @@ export function WaPreviewHost() {
           {current?.previousLog && current.previousLog.length > 0 ? (
             <SendLogViewer entries={current.previousLog} defaultOpen={dupActive && dup!.status !== "in-flight"} />
           ) : null}
-          <div className="rounded-lg border bg-muted/30 p-ms-3">
-            <div className="mb-1.5 flex items-center justify-between gap-ms-2">
-              <div className="flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
+            <div className="mb-1.5 flex min-w-0 items-center justify-between gap-ms-2">
+              <div className="flex min-w-0 items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <FileText className="h-3 w-3" /> Teks pesan {edited ? <StatusBadge size="xs" variant="menunggu">diubah</StatusBadge> : null}
               </div>
-              <div className="flex items-center gap-ms-1">
+              <div className="flex shrink-0 items-center gap-ms-1">
                 {edited ? (
-                  <Button type="button" variant="ghost" size="sm" className="h-6 px-ms-2 text-[10.5px]" onClick={() => setDraft(original)}>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-ms-2 text-ms-2xs" onClick={() => setDraft(original)}>
                     <RotateCcw className="mr-1 h-3 w-3" /> Reset
                   </Button>
                 ) : null}
-                <Button type="button" variant="ghost" size="sm" className="h-6 px-ms-2 text-[10.5px]" onClick={() => setEditing((v) => !v)}>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-ms-2 text-ms-2xs" onClick={() => setEditing((v) => !v)}>
                   <Pencil className="mr-1 h-3 w-3" /> {editing ? "Selesai" : "Edit"}
                 </Button>
               </div>
@@ -335,13 +335,13 @@ export function WaPreviewHost() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={8}
-                className="min-h-[8rem] resize-y bg-background font-sans text-ms-xs leading-relaxed"
+                className="min-h-[8rem] max-h-[45svh] resize-y bg-background font-sans text-ms-xs leading-relaxed"
                 placeholder="Tulis pesan untuk MCM…"
                 autoFocus
               />
             ) : (
               <pre
-                className="max-h-48 cursor-text overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
+                className="max-h-[38svh] cursor-text overflow-auto overscroll-contain whitespace-pre-wrap [overflow-wrap:anywhere] rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
                 onClick={() => setEditing(true)}
                 title="Klik untuk mengedit"
               >
