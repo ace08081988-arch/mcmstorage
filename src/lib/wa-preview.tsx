@@ -219,8 +219,8 @@ export function WaPreviewHost() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
-      <DialogContent className="max-w-md gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader className="border-b bg-muted/30 px-ms-5 pb-4 pt-5">
+      <DialogContent className="flex max-h-[88svh] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
+        <DialogHeader className="shrink-0 border-b bg-muted/30 px-ms-5 pb-4 pt-5">
           <div className="flex items-center gap-ms-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success">
               <MessageCircle className="h-5 w-5" />
@@ -237,7 +237,7 @@ export function WaPreviewHost() {
           </div>
         </DialogHeader>
 
-        <div className="max-h-[60vh] space-ms-3 overflow-y-auto px-ms-5 py-ms-4">
+        <div className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-5 py-ms-4">
           {current?.peer && (current.peer.phone || current.peer.accountUserId) ? (
             <DebtQuickActions
               peerPhone={current.peer.phone ?? null}
@@ -442,7 +442,10 @@ export function WaPreviewHost() {
           </label>
         </div>
 
-        <div className="flex items-center justify-between gap-ms-2 border-t bg-muted/20 px-ms-5 py-ms-3">
+        <div
+          className="flex shrink-0 flex-wrap items-center justify-between gap-ms-2 border-t bg-muted/20 px-ms-5 py-ms-3"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
           <span className="text-ms-2xs text-muted-foreground">
             {photoCount > 0 ? `${photoCount} foto + teks` : "Teks saja"}
           </span>
