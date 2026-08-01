@@ -102,6 +102,7 @@ import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lo
 import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
 import { Route as LovableVisualTwoUserDraftsRouteImport } from './routes/lovable.visual.two-user-drafts'
 import { Route as LovableVisualToastLayoutRouteImport } from './routes/lovable.visual.toast-layout'
+import { Route as LovableVisualToastActionsRouteImport } from './routes/lovable.visual.toast-actions'
 import { Route as LovableVisualTapTargetsRouteImport } from './routes/lovable.visual.tap-targets'
 import { Route as LovableVisualReadyBadgesSelectorRouteImport } from './routes/lovable.visual.ready-badges-selector'
 import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
@@ -667,6 +668,12 @@ const LovableVisualToastLayoutRoute =
     path: '/lovable/visual/toast-layout',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualToastActionsRoute =
+  LovableVisualToastActionsRouteImport.update({
+    id: '/lovable/visual/toast-actions',
+    path: '/lovable/visual/toast-actions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualTapTargetsRoute = LovableVisualTapTargetsRouteImport.update({
   id: '/lovable/visual/tap-targets',
   path: '/lovable/visual/tap-targets',
@@ -1160,6 +1167,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
+  '/lovable/visual/toast-actions': typeof LovableVisualToastActionsRoute
   '/lovable/visual/toast-layout': typeof LovableVisualToastLayoutRoute
   '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
@@ -1313,6 +1321,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
+  '/lovable/visual/toast-actions': typeof LovableVisualToastActionsRoute
   '/lovable/visual/toast-layout': typeof LovableVisualToastLayoutRoute
   '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
@@ -1471,6 +1480,7 @@ export interface FileRoutesById {
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/ready-badges-selector': typeof LovableVisualReadyBadgesSelectorRoute
   '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
+  '/lovable/visual/toast-actions': typeof LovableVisualToastActionsRoute
   '/lovable/visual/toast-layout': typeof LovableVisualToastLayoutRoute
   '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
@@ -1629,6 +1639,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/produk-list'
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
+    | '/lovable/visual/toast-actions'
     | '/lovable/visual/toast-layout'
     | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
@@ -1782,6 +1793,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/produk-list'
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
+    | '/lovable/visual/toast-actions'
     | '/lovable/visual/toast-layout'
     | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
@@ -1939,6 +1951,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/produk-list'
     | '/lovable/visual/ready-badges-selector'
     | '/lovable/visual/tap-targets'
+    | '/lovable/visual/toast-actions'
     | '/lovable/visual/toast-layout'
     | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
@@ -2021,6 +2034,7 @@ export interface RootRouteChildren {
   LovableVisualProdukListRoute: typeof LovableVisualProdukListRoute
   LovableVisualReadyBadgesSelectorRoute: typeof LovableVisualReadyBadgesSelectorRoute
   LovableVisualTapTargetsRoute: typeof LovableVisualTapTargetsRoute
+  LovableVisualToastActionsRoute: typeof LovableVisualToastActionsRoute
   LovableVisualToastLayoutRoute: typeof LovableVisualToastLayoutRoute
   LovableVisualTwoUserDraftsRoute: typeof LovableVisualTwoUserDraftsRoute
   LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
@@ -2692,6 +2706,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/visual/toast-layout'
       fullPath: '/lovable/visual/toast-layout'
       preLoaderRoute: typeof LovableVisualToastLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/toast-actions': {
+      id: '/lovable/visual/toast-actions'
+      path: '/lovable/visual/toast-actions'
+      fullPath: '/lovable/visual/toast-actions'
+      preLoaderRoute: typeof LovableVisualToastActionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/visual/tap-targets': {
@@ -3453,6 +3474,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualProdukListRoute: LovableVisualProdukListRoute,
   LovableVisualReadyBadgesSelectorRoute: LovableVisualReadyBadgesSelectorRoute,
   LovableVisualTapTargetsRoute: LovableVisualTapTargetsRoute,
+  LovableVisualToastActionsRoute: LovableVisualToastActionsRoute,
   LovableVisualToastLayoutRoute: LovableVisualToastLayoutRoute,
   LovableVisualTwoUserDraftsRoute: LovableVisualTwoUserDraftsRoute,
   LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
