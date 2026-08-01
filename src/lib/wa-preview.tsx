@@ -491,91 +491,17 @@ export function WaPreviewHost() {
             )}
           </div>
 
-          {url ? (
-            <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
-              <div className="mb-1.5 flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {isMapsUrl ? <MapPin className="h-3 w-3" /> : <Link2 className="h-3 w-3" />}
-                {isMapsUrl ? "Link Maps" : "Link tambahan"}
-              </div>
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block break-all rounded-md bg-background p-ms-2 font-mono text-ms-2xs text-primary underline-offset-2 hover:underline"
-              >
-                {url}
-              </a>
-            </div>
-          ) : null}
+          {url ? <LinkSection url={url} /> : null}
 
-          <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
-            <div className="mb-2 flex min-w-0 items-center justify-between gap-ms-2">
-              <div className="flex min-w-0 items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <ImageIcon className="h-3 w-3" /> Foto / lampiran
-              </div>
-              <span className="shrink-0 whitespace-nowrap rounded-full bg-muted px-ms-2 py-0.5 text-ms-2xs font-medium tabular-nums text-muted-foreground">
-                {photoCount}{expected > photoCount ? ` / ${expected}` : ""} berkas
-              </span>
-            </div>
-            {missing > 0 ? (
-              <div className="mb-2 flex flex-wrap items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <div className="min-w-[10rem] flex-1">
-                  <div className="font-medium">{missing} foto gagal diunduh.</div>
-                  <div className="opacity-80">
-                    {canRetry
-                      ? "Coba ambil ulang sebelum mengirim agar tidak ada foto yang hilang."
-                      : "Foto ini tidak akan ikut terkirim — lanjutkan kirim hanya jika tidak diperlukan."}
-                  </div>
-                </div>
-                {canRetry ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-8 shrink-0 border-warning/60 bg-background px-ms-2 text-ms-2xs text-warning hover:bg-warning/10 dark:text-warning"
-                    onClick={handleRetry}
-                    disabled={retrying}
-                  >
-                    {retrying ? (
-                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="mr-1 h-3 w-3" />
-                    )}
-                    {retrying ? "Mengambil…" : "Coba ambil ulang"}
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
-            {photoCount === 0 ? (
-              <div className="rounded-md border border-dashed bg-background/60 p-ms-4 text-center text-ms-xs text-muted-foreground">
-                Tidak ada foto — hanya teks{url ? " + link" : ""} yang akan dikirim.
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-ms-2">
-                {previews.map((p, i) => (
-                  <div key={i} className="overflow-hidden rounded-md border bg-background">
-                    {p.isImage ? (
-                      <img
-                        src={p.url}
-                        alt={p.name}
-                        className="aspect-square w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground">
-                        <FileText className="h-6 w-6" />
-                      </div>
-                    )}
-                    <div className="px-1.5 py-1">
-                    <div className="truncate text-ms-2xs font-medium leading-snug" title={p.name}>{p.name}</div>
-                    <div className="truncate text-ms-2xs tabular-nums text-muted-foreground">{fmtSize(p.size)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <AttachmentsSection
+            previews={previews}
+            expected={expected}
+            missing={missing}
+            canRetry={canRetry}
+            retrying={retrying}
+            onRetry={handleRetry}
+            hasUrl={!!url}
+          />
 
           <label className="flex items-start gap-ms-2 rounded-lg border p-ms-2 text-ms-2xs leading-snug text-muted-foreground sm:p-ms-3 sm:text-ms-xs">
             <Checkbox checked={skip} onCheckedChange={(c) => setSkip(c === true)} className="mt-0.5" />
