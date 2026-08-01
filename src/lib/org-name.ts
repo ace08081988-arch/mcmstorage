@@ -217,19 +217,26 @@ export function watchThemeForBrand() {
 
 /** Reactive hook — updates on cross-tab storage events + local setOrgName. */
 export function useOrgName(): { full: string; short: string; logo: string; brand: string } {
+  // Render pertama HARUS memakai nilai bawaan supaya markup SSR dan hidrasi
+  // klien identik; nilai dari localStorage baru dipasang setelah mount.
   const [state, setState] = useState(() => ({
-    full: getOrgName(),
-    short: getOrgShort(),
-    logo: getOrgLogo(),
-    brand: getOrgBrand(),
+    full: DEFAULT_ORG_NAME,
+    short: DEFAULT_ORG_SHORT,
+    logo: "",
+    brand: "",
   }));
   useEffect(() => {
-    const sync = () => setState({
-      full: getOrgName(),
-      short: getOrgShort(),
-      logo: getOrgLogo(),
-      brand: getOrgBrand(),
+    const sync = () => setState((prev) => {
+      const next = {
+        full: getOrgName(),
+        short: getOrgShort(),
+        logo: getOrgLogo(),
+        brand: getOrgBrand(),
+      };
+      return prev.full === next.full && prev.short === next.short
+        && prev.logo === next.logo && prev.brand === next.brand ? prev : next;
     });
+    sync();
     window.addEventListener("storage", sync);
     window.addEventListener("app-org-name-changed", sync);
     return () => {
