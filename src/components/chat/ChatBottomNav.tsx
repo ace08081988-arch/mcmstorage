@@ -33,7 +33,9 @@ export function ChatBottomNav() {
   // virtual terbuka.
   // Mode lock: bar mengikuti address bar (dihaluskan per-frame), tapi
   // dibekukan saat keyboard virtual terbuka.
-  const { keyboardOpen, anchorStyle } = useViewportAnchor({ lock: true });
+  // Posisi murni CSS (`fixed bottom-0`) — tanpa transform JS supaya bar
+  // tidak ikut naik-turun saat scroll.
+  const { keyboardOpen } = useViewportAnchor({ lock: true });
   const navRef = useRef<HTMLElement | null>(null);
   useBottomNavHeightSync(navRef);
   const items: Item[] = [
@@ -68,7 +70,6 @@ export function ChatBottomNav() {
       // `env(safe-area-inset-bottom)` untuk notch/home indicator iOS.
       className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
       style={{
-        ...anchorStyle,
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
         pointerEvents: keyboardOpen ? "none" : undefined,
