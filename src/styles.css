@@ -552,6 +552,71 @@
 @utility min-tap { min-height: var(--ms-tap); min-width: var(--ms-tap); }
 @utility rounded-ms-card { border-radius: var(--ms-radius-card); }
 
+/* ==========================================================================
+   Skala `--ms-*` lanjutan.
+
+   Banyak komponen memakai step setengah (`p-ms-2.5`, `px-ms-1`, `mt-ms-3`,
+   dst). Nama utility Tailwind v4 tidak boleh mengandung titik, jadi step
+   setengah + varian margin/padding-satu-sisi didefinisikan sebagai class CSS
+   biasa di sini. Tanpa ini, class tersebut tidak menghasilkan CSS apa pun —
+   padding/gap diam-diam jadi 0 dan tata letak mobile terlihat rapat/tidak
+   konsisten antar halaman.
+   ========================================================================== */
+:root {
+  --ms-space-1_5: 0.375rem; /* 6  */
+  --ms-space-2_5: 0.625rem; /* 10 */
+  --ms-space-3_5: 0.875rem; /* 14 */
+}
+
+.p-ms-1\.5  { padding: var(--ms-space-1_5); }
+.p-ms-2\.5  { padding: var(--ms-space-2_5); }
+.p-ms-3\.5  { padding: var(--ms-space-3_5); }
+.px-ms-1    { padding-inline: var(--ms-space-1); }
+.px-ms-1\.5 { padding-inline: var(--ms-space-1_5); }
+.px-ms-2\.5 { padding-inline: var(--ms-space-2_5); }
+.px-ms-3\.5 { padding-inline: var(--ms-space-3_5); }
+.py-ms-1    { padding-block: var(--ms-space-1); }
+.py-ms-1\.5 { padding-block: var(--ms-space-1_5); }
+.py-ms-2\.5 { padding-block: var(--ms-space-2_5); }
+.py-ms-3\.5 { padding-block: var(--ms-space-3_5); }
+.gap-ms-1\.5 { gap: var(--ms-space-1_5); }
+.gap-ms-2\.5 { gap: var(--ms-space-2_5); }
+
+.pt-ms-1\.5 { padding-top: var(--ms-space-1_5); }
+.pt-ms-2    { padding-top: var(--ms-space-2); }
+.pt-ms-2\.5 { padding-top: var(--ms-space-2_5); }
+.pt-ms-3    { padding-top: var(--ms-space-3); }
+.pt-ms-4    { padding-top: var(--ms-space-4); }
+.pt-ms-5    { padding-top: var(--ms-space-5); }
+.pb-ms-2    { padding-bottom: var(--ms-space-2); }
+.pb-ms-3    { padding-bottom: var(--ms-space-3); }
+.pb-ms-4    { padding-bottom: var(--ms-space-4); }
+
+.mt-ms-1    { margin-top: var(--ms-space-1); }
+.mt-ms-1\.5 { margin-top: var(--ms-space-1_5); }
+.mt-ms-2    { margin-top: var(--ms-space-2); }
+.mt-ms-2\.5 { margin-top: var(--ms-space-2_5); }
+.mt-ms-3    { margin-top: var(--ms-space-3); }
+.mt-ms-4    { margin-top: var(--ms-space-4); }
+.mb-ms-2    { margin-bottom: var(--ms-space-2); }
+.mb-ms-3    { margin-bottom: var(--ms-space-3); }
+.mb-ms-4    { margin-bottom: var(--ms-space-4); }
+.ml-ms-1    { margin-inline-start: var(--ms-space-1); }
+.ml-ms-2    { margin-inline-start: var(--ms-space-2); }
+.mx-ms-1    { margin-inline: var(--ms-space-1); }
+.mx-ms-2    { margin-inline: var(--ms-space-2); }
+
+.space-ms-1 > * + * { margin-top: var(--ms-space-1); }
+.top-ms-4 { top: var(--ms-space-4); }
+
+/* Varian `sm:` yang dipakai untuk class di atas (plain CSS tidak otomatis
+   mendapat variant Tailwind). Breakpoint sm = 40rem. */
+@media (width >= 40rem) {
+  .sm\:px-ms-2\.5 { padding-inline: var(--ms-space-2_5); }
+  .sm\:gap-ms-1\.5 { gap: var(--ms-space-1_5); }
+  .sm\:pt-ms-5 { padding-top: var(--ms-space-5); }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
