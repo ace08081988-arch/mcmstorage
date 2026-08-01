@@ -89,21 +89,31 @@
      alih-alih hardcode `text-ms-sm` / `p-ms-3.5`. Skala mengikuti `--app-font-size`
      sehingga preset "sm/md/lg/xl" di /pengaturan-tampilan tetap konsisten.
      ========================================================================== */
-  /* Type scale (line-height dipasangkan agar tidak drift). */
-  --ms-text-2xs: 0.6875rem;  /* 11px */
-  --ms-text-ms-xs:  0.75rem;    /* 12px */
-  --ms-text-ms-sm:  0.8125rem;  /* 13px */
-  --ms-text-ms-base:0.9375rem;  /* 15px — body mobile */
-  --ms-text-md:  1rem;       /* 16px */
-  --ms-text-ms-lg:  1.125rem;   /* 18px */
-  --ms-text-ms-xl:  1.25rem;    /* 20px */
-  --ms-text-ms-2xl: 1.5rem;     /* 24px — heading kartu */
-  --ms-text-ms-3xl: 1.75rem;    /* 28px — heading halaman */
-  --ms-text-ms-4xl: 2.125rem;   /* 34px — hero */
-  --ms-leading-tight:  1.15;
-  --ms-leading-snug:   1.3;
-  --ms-leading-normal: 1.5;
-  --ms-leading-relaxed:1.65;
+  /* Type scale (line-height dipasangkan agar tidak drift).
+     Semua ukuran dikalikan `--ms-type-scale` — faktor responsif bertahap
+     yang mengecil di layar sempit (≤400/360/340px) dan sedikit membesar
+     di tablet/desktop. Heading dikalikan tambahan `--ms-display-scale`
+     supaya judul besar menyusut lebih agresif dari body text (rasio
+     hierarki tetap terbaca, tapi tidak memaksa wrap di 320px). */
+  --ms-type-scale: 1;
+  --ms-display-scale: 1;
+  --ms-lead-bump: 0;
+  --ms-text-2xs: calc(0.6875rem * var(--ms-type-scale));  /* 11px */
+  --ms-text-ms-xs:  calc(0.75rem * var(--ms-type-scale));    /* 12px */
+  --ms-text-ms-sm:  calc(0.8125rem * var(--ms-type-scale));  /* 13px */
+  --ms-text-ms-base:calc(0.9375rem * var(--ms-type-scale));  /* 15px — body mobile */
+  --ms-text-md:  calc(1rem * var(--ms-type-scale));       /* 16px */
+  --ms-text-ms-lg:  calc(1.125rem * var(--ms-type-scale) * var(--ms-display-scale));   /* 18px */
+  --ms-text-ms-xl:  calc(1.25rem * var(--ms-type-scale) * var(--ms-display-scale));    /* 20px */
+  --ms-text-ms-2xl: calc(1.5rem * var(--ms-type-scale) * var(--ms-display-scale));     /* 24px — heading kartu */
+  --ms-text-ms-3xl: calc(1.75rem * var(--ms-type-scale) * var(--ms-display-scale));    /* 28px — heading halaman */
+  --ms-text-ms-4xl: calc(2.125rem * var(--ms-type-scale) * var(--ms-display-scale));   /* 34px — hero */
+  /* Line-height ikut naik sedikit di layar sempit (`--ms-lead-bump`)
+     supaya teks kecil tetap enak dibaca saat font-size menyusut. */
+  --ms-leading-tight:  calc(1.15 + var(--ms-lead-bump));
+  --ms-leading-snug:   calc(1.3 + var(--ms-lead-bump));
+  --ms-leading-normal: calc(1.5 + var(--ms-lead-bump));
+  --ms-leading-relaxed:calc(1.65 + var(--ms-lead-bump));
   --ms-tracking-tight: -0.015em;
   --ms-tracking-normal: 0;
   --ms-tracking-wide:  0.02em;
@@ -124,6 +134,28 @@
      tap target ikut membesar. */
   --ms-tap:      max(2.75rem, 44px);
   --ms-radius-card: calc(var(--radius) + 4px);
+}
+
+/* Tipografi responsif bertahap — anchor 411px = skala 1.
+   Nilai dijaga konservatif (maks −10%) agar tidak ada teks < 10px
+   efektif pada preset font "sm". */
+@media (max-width: 400px) {
+  :root { --ms-type-scale: 0.97; --ms-display-scale: 0.97; --ms-lead-bump: 0.02; }
+}
+@media (max-width: 360px) {
+  :root { --ms-type-scale: 0.94; --ms-display-scale: 0.94; --ms-lead-bump: 0.03; }
+}
+@media (max-width: 340px) {
+  :root { --ms-type-scale: 0.92; --ms-display-scale: 0.9; --ms-lead-bump: 0.04; }
+}
+@media (min-width: 768px) {
+  :root { --ms-type-scale: 1.02; --ms-display-scale: 1.06; --ms-lead-bump: 0; }
+}
+@media (min-width: 1280px) {
+  :root { --ms-type-scale: 1.04; --ms-display-scale: 1.12; --ms-lead-bump: 0; }
+}
+
+:root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
