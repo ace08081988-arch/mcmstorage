@@ -349,13 +349,13 @@ export function WaPreviewHost() {
   }, [previews]);
 
   const finish = useCallback((ok: boolean, force = false) => {
-    void 0;
     setOpen(false);
     if (ok && skip) setWaSkipPreview(true);
     current?.resolve({ ok, text: ok ? draft : undefined, force: ok ? force : undefined });
     setTimeout(() => setCurrent(null), 150);
   }, [current, draft, skip]);
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const url = current?.url;
   const photoCount = previews.length;
   const expected = current?.expectedCount ?? photoCount;
