@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,19 @@ import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
 import { DebtQuickActions } from "@/components/DebtQuickActions";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
+
+/** Format ukuran berkas — pure, dipindah ke module scope agar stabil. */
+function fmtSize(n: number) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(2)} MB`;
+}
+
+/** Sub-komponen berat yang di-memo agar tidak ikut re-render saat mengetik. */
+const MemoDebtQuickActions = memo(DebtQuickActions);
+const MemoSendLogViewer = memo(SendLogViewer);
+const MemoSendPayloadDiff = memo(SendPayloadDiff);
+const MemoInflightStepProgress = memo(InflightStepProgress);
 
 export function getWaSkipPreview(): boolean {
   if (typeof window === "undefined") return false;
