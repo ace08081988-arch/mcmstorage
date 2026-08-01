@@ -219,25 +219,25 @@ export function WaPreviewHost() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
-      <DialogContent className="flex max-h-[88svh] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader className="shrink-0 border-b bg-muted/30 px-ms-5 pb-4 pt-5">
-          <div className="flex items-center gap-ms-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success">
+      <DialogContent className="flex max-h-[92svh] w-[calc(100vw-1.5rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-h-[88svh] sm:w-full sm:max-w-md">
+        <DialogHeader className="shrink-0 border-b bg-muted/30 px-ms-4 pb-3 pt-4 sm:px-ms-5 sm:pb-4 sm:pt-5">
+          <div className="flex items-center gap-ms-2 sm:gap-ms-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success sm:h-10 sm:w-10">
               <MessageCircle className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1 text-left">
-              <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
-                <span>Pratinjau pesan MCM</span>
+              <DialogTitle className="flex min-w-0 flex-wrap items-center gap-ms-2 text-ms-sm sm:text-ms-base">
+                <span className="min-w-0 truncate">Pratinjau pesan MCM</span>
                 <SyncSourceBadge source={liveLog.lastSource} active={liveLog.active} />
               </DialogTitle>
-              <DialogDescription className="mt-0.5 text-ms-xs">
+              <DialogDescription className="mt-0.5 text-ms-2xs leading-snug sm:text-ms-xs">
                 Tinjau teks dan foto yang akan dikirim sebelum membuka MCM.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-5 py-ms-4">
+        <div className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-3 py-ms-3 sm:px-ms-5 sm:py-ms-4">
           {current?.peer && (current.peer.phone || current.peer.accountUserId) ? (
             <DebtQuickActions
               peerPhone={current.peer.phone ?? null}
@@ -261,15 +261,15 @@ export function WaPreviewHost() {
                     ? `Dimulai ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
                     : `Dikirim ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                 </div>
-                <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
+                <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-ms-2xs">
                   <dt className="font-medium opacity-80">Waktu</dt>
-                  <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
+                  <dd className="min-w-0 break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
                   {dup!.destination || crossChannel ? (<>
                     <dt className="font-medium opacity-80">Tujuan</dt>
-                    <dd className="break-words">{dup!.destination ?? "—"}{crossChannel ? " · via Chat" : ""}</dd>
+                    <dd className="min-w-0 break-words">{dup!.destination ?? "—"}{crossChannel ? " · via Chat" : ""}</dd>
                   </>) : null}
                   <dt className="font-medium opacity-80">Status</dt>
-                  <dd className="break-words">{dupStatusLabel}</dd>
+                  <dd className="min-w-0 break-words">{dupStatusLabel}</dd>
                 </dl>
                 {dup!.status !== "in-flight" ? (
                   <div
@@ -314,18 +314,18 @@ export function WaPreviewHost() {
           {current?.previousLog && current.previousLog.length > 0 ? (
             <SendLogViewer entries={current.previousLog} defaultOpen={dupActive && dup!.status !== "in-flight"} />
           ) : null}
-          <div className="rounded-lg border bg-muted/30 p-ms-3">
-            <div className="mb-1.5 flex items-center justify-between gap-ms-2">
-              <div className="flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
+            <div className="mb-1.5 flex min-w-0 items-center justify-between gap-ms-2">
+              <div className="flex min-w-0 items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <FileText className="h-3 w-3" /> Teks pesan {edited ? <StatusBadge size="xs" variant="menunggu">diubah</StatusBadge> : null}
               </div>
-              <div className="flex items-center gap-ms-1">
+              <div className="flex shrink-0 items-center gap-ms-1">
                 {edited ? (
-                  <Button type="button" variant="ghost" size="sm" className="h-6 px-ms-2 text-[10.5px]" onClick={() => setDraft(original)}>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-ms-2 text-ms-2xs" onClick={() => setDraft(original)}>
                     <RotateCcw className="mr-1 h-3 w-3" /> Reset
                   </Button>
                 ) : null}
-                <Button type="button" variant="ghost" size="sm" className="h-6 px-ms-2 text-[10.5px]" onClick={() => setEditing((v) => !v)}>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-ms-2 text-ms-2xs" onClick={() => setEditing((v) => !v)}>
                   <Pencil className="mr-1 h-3 w-3" /> {editing ? "Selesai" : "Edit"}
                 </Button>
               </div>
@@ -335,13 +335,13 @@ export function WaPreviewHost() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={8}
-                className="min-h-[8rem] resize-y bg-background font-sans text-ms-xs leading-relaxed"
+                className="min-h-[8rem] max-h-[45svh] resize-y bg-background font-sans text-ms-xs leading-relaxed"
                 placeholder="Tulis pesan untuk MCM…"
                 autoFocus
               />
             ) : (
               <pre
-                className="max-h-48 cursor-text overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
+                className="max-h-[38svh] cursor-text overflow-auto overscroll-contain whitespace-pre-wrap [overflow-wrap:anywhere] rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
                 onClick={() => setEditing(true)}
                 title="Klik untuk mengedit"
               >
@@ -351,8 +351,8 @@ export function WaPreviewHost() {
           </div>
 
           {url ? (
-            <div className="rounded-lg border bg-muted/30 p-ms-3">
-              <div className="mb-1.5 flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
+              <div className="mb-1.5 flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {isMapsUrl ? <MapPin className="h-3 w-3" /> : <Link2 className="h-3 w-3" />}
                 {isMapsUrl ? "Link Maps" : "Link tambahan"}
               </div>
@@ -367,19 +367,19 @@ export function WaPreviewHost() {
             </div>
           ) : null}
 
-          <div className="rounded-lg border bg-muted/30 p-ms-3">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
+            <div className="mb-2 flex min-w-0 items-center justify-between gap-ms-2">
+              <div className="flex min-w-0 items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
                 <ImageIcon className="h-3 w-3" /> Foto / lampiran
               </div>
-              <span className="rounded-full bg-muted px-ms-2 py-0.5 text-ms-2xs font-medium text-muted-foreground">
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-muted px-ms-2 py-0.5 text-ms-2xs font-medium tabular-nums text-muted-foreground">
                 {photoCount}{expected > photoCount ? ` / ${expected}` : ""} berkas
               </span>
             </div>
             {missing > 0 ? (
-              <div className="mb-2 flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
+              <div className="mb-2 flex flex-wrap items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[10rem] flex-1">
                   <div className="font-medium">{missing} foto gagal diunduh.</div>
                   <div className="opacity-80">
                     {canRetry
@@ -392,7 +392,7 @@ export function WaPreviewHost() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-7 shrink-0 border-warning/60 bg-background px-ms-2 text-ms-2xs text-warning hover:bg-warning/10 dark:text-warning"
+                    className="h-8 shrink-0 border-warning/60 bg-background px-ms-2 text-ms-2xs text-warning hover:bg-warning/10 dark:text-warning"
                     onClick={handleRetry}
                     disabled={retrying}
                   >
@@ -427,8 +427,8 @@ export function WaPreviewHost() {
                       </div>
                     )}
                     <div className="px-1.5 py-1">
-                      <div className="truncate text-ms-2xs font-medium" title={p.name}>{p.name}</div>
-                      <div className="text-[9.5px] text-muted-foreground">{fmtSize(p.size)}</div>
+                    <div className="truncate text-ms-2xs font-medium leading-snug" title={p.name}>{p.name}</div>
+                    <div className="truncate text-ms-2xs tabular-nums text-muted-foreground">{fmtSize(p.size)}</div>
                     </div>
                   </div>
                 ))}
@@ -436,20 +436,20 @@ export function WaPreviewHost() {
             )}
           </div>
 
-          <label className="flex items-start gap-ms-2 rounded-lg border p-ms-3 text-ms-xs text-muted-foreground">
+          <label className="flex items-start gap-ms-2 rounded-lg border p-ms-2 text-ms-2xs leading-snug text-muted-foreground sm:p-ms-3 sm:text-ms-xs">
             <Checkbox checked={skip} onCheckedChange={(c) => setSkip(c === true)} className="mt-0.5" />
             <span>Jangan tampilkan pratinjau ini lagi (bisa diaktifkan kembali dari Pengaturan)</span>
           </label>
         </div>
 
         <div
-          className="flex shrink-0 flex-wrap items-center justify-between gap-ms-2 border-t bg-muted/20 px-ms-5 py-ms-3"
+          className="grid shrink-0 grid-cols-1 gap-ms-2 border-t bg-muted/20 px-ms-3 py-ms-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-ms-5"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
-          <span className="text-ms-2xs text-muted-foreground">
+          <span className="truncate text-ms-2xs text-muted-foreground">
             {photoCount > 0 ? `${photoCount} foto + teks` : "Teks saja"}
           </span>
-          <div className="flex gap-ms-2">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-ms-2 sm:flex">
             <Button type="button" variant="outline" size="sm" onClick={() => finish(false)}>
               Batal
             </Button>
@@ -466,10 +466,10 @@ export function WaPreviewHost() {
                       ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                       : "Kirim ulang meski klik ganda terdeteksi"
                 }
-                className="bg-warning text-warning-foreground hover:bg-warning disabled:opacity-50"
+                className="min-w-0 bg-warning text-warning-foreground hover:bg-warning disabled:opacity-50"
               >
-                <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
-                Kirim ulang (paksa)
+                <ShieldAlert className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Kirim ulang (paksa)</span>
               </Button>
             ) : (
               <Button
@@ -478,10 +478,10 @@ export function WaPreviewHost() {
                 onClick={() => finish(true)}
                 disabled={live?.status === "in-flight"}
                 title={live?.status === "in-flight" ? (crossChannel ? "Kiriman Chat untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
-                className="bg-success text-white hover:bg-success"
+                className="min-w-0 bg-success text-white hover:bg-success"
               >
-                <Send className="mr-1.5 h-3.5 w-3.5" />
-                {live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via MCM"}
+                <Send className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via MCM"}</span>
               </Button>
             )}
           </div>
