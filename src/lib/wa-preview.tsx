@@ -432,7 +432,7 @@ export function WaPreviewHost() {
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-3 py-ms-3 sm:px-ms-5 sm:py-ms-4">
+        <div data-testid="wa-preview-scroll" className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-3 py-ms-3 sm:px-ms-5 sm:py-ms-4">
           {current?.peer && (current.peer.phone || current.peer.accountUserId) ? (
             <MemoDebtQuickActions
               peerPhone={current.peer.phone ?? null}
@@ -482,6 +482,7 @@ export function WaPreviewHost() {
               />
             ) : (
               <pre
+                data-testid="wa-preview-text"
                 className="max-h-[38svh] cursor-text overflow-auto overscroll-contain whitespace-pre-wrap [overflow-wrap:anywhere] rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
                 onClick={() => setEditing(true)}
                 title="Klik untuk mengedit"
@@ -510,6 +511,7 @@ export function WaPreviewHost() {
         </div>
 
         <div
+          data-testid="wa-preview-footer"
           className="grid shrink-0 grid-cols-1 gap-ms-2 border-t bg-muted/20 px-ms-3 py-ms-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-ms-5"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
