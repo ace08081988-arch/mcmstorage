@@ -348,15 +348,14 @@ export function WaPreviewHost() {
     };
   }, [previews]);
 
-  const finish = (ok: boolean, force = false) => {
+  const finish = useCallback((ok: boolean, force = false) => {
     setOpen(false);
     if (ok && skip) setWaSkipPreview(true);
     current?.resolve({ ok, text: ok ? draft : undefined, force: ok ? force : undefined });
     setTimeout(() => setCurrent(null), 150);
-  };
+  }, [current, draft, skip]);
 
   const url = current?.url;
-  const isMapsUrl = !!url && /(?:google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps|geo:)/i.test(url);
   const photoCount = previews.length;
   const expected = current?.expectedCount ?? photoCount;
   const missing = Math.max(0, expected - photoCount);
@@ -369,9 +368,12 @@ export function WaPreviewHost() {
   const liveLog = useLiveSendLogStatus(liveInflightKey);
   const crossChannel = !!live && liveChannel === "chat";
   const snapshotDup = current?.duplicate ?? null;
-  const dup = live
-    ? { at: live.at, status: live.status, destination: snapshotDup?.destination, fingerprint: live.fingerprint, summary: live.summary }
-    : snapshotDup;
+  const dup = useMemo(
+    () => (live
+      ? { at: live.at, status: live.status, destination: snapshotDup?.destination, fingerprint: live.fingerprint, summary: live.summary }
+      : snapshotDup),
+    [live, snapshotDup],
+  );
   const dupActive = !!dup && dup.status !== "failed";
   // Tombol "Kirim ulang (paksa)" hanya boleh aktif jika fingerprint payload
   // saat ini sama dengan fingerprint payload kiriman sebelumnya. Bila salah
@@ -386,14 +388,10 @@ export function WaPreviewHost() {
         ? "Tidak ada sidik jari payload tersimpan dari kiriman sebelumnya — tutup dialog dan tunggu jeda idempotency selesai sebelum mengirim ulang."
         : "Payload (caption / foto / link) berbeda dari kiriman sebelumnya. Tombol paksa dinonaktifkan agar konten berbeda tidak terkirim ke tujuan yang sama dengan key idempotency yang sama.")
     : null;
-  const dupAgoSec = dup ? Math.max(0, Math.round((Date.now() - dup.at) / 1000)) : 0;
-  const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
-  const dupAbsLabel = dup ? new Date(dup.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
-  const dupStatusLabel = dup ? (dup.status === "in-flight" ? "Masih berjalan" : dup.status === "done" ? "Sudah terkirim" : "Gagal") : "";
   const original = current?.text ?? "";
   const edited = draft !== original;
 
-  const handleRetry = async () => {
+  const handleRetry = useCallback(async () => {
     if (!current?.retryMissing || retrying) return;
     setRetrying(true);
     try {
@@ -412,13 +410,7 @@ export function WaPreviewHost() {
     } finally {
       setRetrying(false);
     }
-  };
-
-  const fmtSize = (n: number) => {
-    if (n < 1024) return `${n} B`;
-    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-    return `${(n / 1024 / 1024).toFixed(2)} MB`;
-  };
+  }, [current, retrying]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
