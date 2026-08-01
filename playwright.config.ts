@@ -1323,6 +1323,18 @@ export default defineConfig({
     //   sempat memicu regresi "Lingkaran terpotong". Viewport per-test
     //   di-set lewat `test.use()` di spec — project ini hanya
     //   menghubungkan file spec ke runner.
+    // ── Pratinjau WA rotasi portrait ↔ landscape: dialog harus tetap
+    //   utuh di viewport, tanpa overflow horizontal, footer/tombol
+    //   selalu actionable. Viewport di-set per-test di dalam spec.
+    {
+      name: "wa-preview-orientation-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /wa-preview-orientation\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+      },
+    },
     {
       name: "photo-editor-toolbar-viewports-e2e",
       testDir: "./tests/e2e",
