@@ -114,7 +114,9 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
       "sticky top-0 z-10 border-b border-transparent bg-background pb-2 transition-[box-shadow,border-color] duration-200",
       // Tutup celah padding di atas & samping header agar konten yang digulir
       // tidak "mengintip" di sela-sela saat header menempel.
-      "before:pointer-events-none before:absolute before:-left-4 before:-right-4 before:bottom-full before:h-4 before:bg-background sm:before:-left-6 sm:before:-right-6 sm:before:h-6",
+      // Bleed hanya ke kiri: bleed ke kanan menambah scrollWidth dialog
+      // (overflow horizontal palsu) padahal strip kanan itu cuma padding.
+      "before:pointer-events-none before:absolute before:-left-4 before:right-0 before:bottom-full before:h-4 before:bg-background sm:before:-left-6 sm:before:h-6",
       "group-data-[scrolled=true]/dialog:border-border group-data-[scrolled=true]/dialog:shadow-sm",
       className,
     )}
