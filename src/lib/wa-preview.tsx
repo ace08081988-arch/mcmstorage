@@ -392,6 +392,7 @@ export function WaPreviewHost() {
   const edited = draft !== original;
 
   const handleRetry = useCallback(async () => {
+    void 0;
     if (!current?.retryMissing || retrying) return;
     setRetrying(true);
     try {
