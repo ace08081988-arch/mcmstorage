@@ -1706,6 +1706,6 @@ html[data-reduce-motion="on"] .skeleton-a11y {
    plus inset samping supaya tombol tidak tertutup cutout di landscape. */
 @utility app-safe-header {
   padding-top: var(--app-safe-top, env(safe-area-inset-top, 0px));
-  padding-left: var(--app-safe-left, env(safe-area-inset-left, 0px));
-  padding-right: var(--app-safe-right, env(safe-area-inset-right, 0px));
+  padding-left: max(var(--app-safe-left, env(safe-area-inset-left, 0px)), 0.5rem);
+  padding-right: max(var(--app-safe-right, env(safe-area-inset-right, 0px)), 0.5rem);
 }
