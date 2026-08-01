@@ -10,10 +10,12 @@
  * Solusi: ukur ulang inset lewat elemen probe (bukan mengandalkan satu
  * pembacaan), ulangi beberapa kali setelah orientationchange sampai nilainya
  * stabil, lalu publikasikan hasilnya sebagai CSS variable:
+ *   --app-safe-top     : inset atas (notch / status bar)
  *   --app-safe-bottom  : inset bawah efektif (inset OS + overlap toolbar)
  *   --app-safe-left/right : inset samping (notch saat landscape)
  */
 
+const VAR_TOP = "--app-safe-top";
 const VAR_BOTTOM = "--app-safe-bottom";
 const VAR_LEFT = "--app-safe-left";
 const VAR_RIGHT = "--app-safe-right";
@@ -21,7 +23,7 @@ const VAR_RIGHT = "--app-safe-right";
 let probe: HTMLDivElement | null = null;
 let started = false;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
-let last = { bottom: -1, left: -1, right: -1 };
+let last = { top: -1, bottom: -1, left: -1, right: -1 };
 
 function ensureProbe(): HTMLDivElement {
   if (probe) return probe;
@@ -35,6 +37,7 @@ function ensureProbe(): HTMLDivElement {
     "height:0",
     "pointer-events:none",
     "visibility:hidden",
+    "padding-top:env(safe-area-inset-top,0px)",
     "padding-bottom:env(safe-area-inset-bottom,0px)",
     "padding-left:env(safe-area-inset-left,0px)",
     "padding-right:env(safe-area-inset-right,0px)",
@@ -58,16 +61,21 @@ function toolbarOverlap(): number {
 function apply(): boolean {
   const el = ensureProbe();
   const cs = getComputedStyle(el);
+  const top = Math.round(parseFloat(cs.paddingTop) || 0);
   const bottomInset = parseFloat(cs.paddingBottom) || 0;
   const left = Math.round(parseFloat(cs.paddingLeft) || 0);
   const right = Math.round(parseFloat(cs.paddingRight) || 0);
   const bottom = Math.round(Math.max(bottomInset, toolbarOverlap()));
 
   const changed =
-    bottom !== last.bottom || left !== last.left || right !== last.right;
+    top !== last.top ||
+    bottom !== last.bottom ||
+    left !== last.left ||
+    right !== last.right;
   if (changed) {
-    last = { bottom, left, right };
+    last = { top, bottom, left, right };
     const root = document.documentElement.style;
+    root.setProperty(VAR_TOP, `${top}px`);
     root.setProperty(VAR_BOTTOM, `${bottom}px`);
     root.setProperty(VAR_LEFT, `${left}px`);
     root.setProperty(VAR_RIGHT, `${right}px`);
@@ -120,6 +128,6 @@ export function startSafeAreaRecalc(): () => void {
     mq?.removeEventListener?.("change", onOrientation);
     probe?.remove();
     probe = null;
-    last = { bottom: -1, left: -1, right: -1 };
+    last = { top: -1, bottom: -1, left: -1, right: -1 };
   };
 }
