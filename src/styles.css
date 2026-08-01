@@ -609,6 +609,14 @@
 .space-ms-1 > * + * { margin-top: var(--ms-space-1); }
 .top-ms-4 { top: var(--ms-space-4); }
 
+/* Varian `sm:` yang dipakai untuk class di atas (plain CSS tidak otomatis
+   mendapat variant Tailwind). Breakpoint sm = 40rem. */
+@media (width >= 40rem) {
+  .sm\:px-ms-2\.5 { padding-inline: var(--ms-space-2_5); }
+  .sm\:gap-ms-1\.5 { gap: var(--ms-space-1_5); }
+  .sm\:pt-ms-5 { padding-top: var(--ms-space-5); }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
