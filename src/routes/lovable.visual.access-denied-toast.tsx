@@ -40,12 +40,35 @@ function AccessDeniedToastHarness() {
   useEffect(() => {
     const sink = document.getElementById("assign-sink");
     const orig = window.location.assign.bind(window.location);
-    (window.location as unknown as { assign: (u: string | URL) => void }).assign = (url: string | URL) => {
+    const stub = (url: string | URL) => {
       const s = typeof url === "string" ? url : url.toString();
       if (sink) sink.setAttribute("data-last-assign", s);
     };
+    // Chromium baru menandai `location.assign` read-only; assignment
+    // langsung melempar TypeError dan (dulu) merobohkan seluruh root.
+    // Coba defineProperty, dan jika tetap ditolak biarkan saja.
+    let patched = false;
+    try {
+      Object.defineProperty(window.location, "assign", {
+        configurable: true,
+        writable: true,
+        value: stub,
+      });
+      patched = true;
+    } catch {
+      /* harness tetap berguna tanpa hook navigasi */
+    }
     return () => {
-      (window.location as unknown as { assign: (u: string | URL) => void }).assign = orig;
+      if (!patched) return;
+      try {
+        Object.defineProperty(window.location, "assign", {
+          configurable: true,
+          writable: true,
+          value: orig,
+        });
+      } catch {
+        /* ignore */
+      }
     };
   }, []);
 
