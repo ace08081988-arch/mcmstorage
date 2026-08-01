@@ -502,7 +502,8 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster
-        richColors
+        // Ikuti tema aplikasi (Noir & Gold) — token semantik, bukan putih bawaan.
+        theme="system"
         // Varian B: toast muncul di bawah, tepat di atas bar navigasi
         // bawah. Header dan kontrol atas (judul, lonceng, avatar) tidak
         // pernah tertutup berapa pun jumlah toast yang menumpuk.
@@ -519,7 +520,18 @@ function RootComponent() {
           right: 12,
           top: 12,
         }}
-        toastOptions={{ style: { maxWidth: "calc(100vw - 24px)" } }}
+        toastOptions={{
+          style: { maxWidth: "calc(100vw - 24px)" },
+          classNames: {
+            toast:
+              "!bg-card !text-foreground !border-border/70 !shadow-lg !rounded-xl backdrop-blur",
+            title: "!text-sm !font-semibold !leading-snug !whitespace-normal !break-words",
+            description: "!text-xs !text-muted-foreground !whitespace-normal !break-words",
+            actionButton: "!bg-primary !text-primary-foreground",
+            cancelButton: "!bg-muted !text-muted-foreground",
+            closeButton: "!bg-card !text-muted-foreground !border-border/70",
+          },
+        }}
       />
       <ConfirmHost />
       <Suspense fallback={null}>
