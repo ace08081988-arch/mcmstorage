@@ -99,6 +99,7 @@ import { Route as KatalogSlugIndexRouteImport } from './routes/katalog.$slug.ind
 import { Route as AuthenticatedKontakIndexRouteImport } from './routes/_authenticated.kontak.index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lovable.visual.worker-shot-marksent'
+import { Route as LovableVisualWaPreviewRotateRouteImport } from './routes/lovable.visual.wa-preview-rotate'
 import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
 import { Route as LovableVisualTwoUserDraftsRouteImport } from './routes/lovable.visual.two-user-drafts'
 import { Route as LovableVisualToastLayoutRouteImport } from './routes/lovable.visual.toast-layout'
@@ -650,6 +651,12 @@ const LovableVisualWorkerShotMarksentRoute =
     path: '/lovable/visual/worker-shot-marksent',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualWaPreviewRotateRoute =
+  LovableVisualWaPreviewRotateRouteImport.update({
+    id: '/lovable/visual/wa-preview-rotate',
+    path: '/lovable/visual/wa-preview-rotate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualVoiceNotePlayerRoute =
   LovableVisualVoiceNotePlayerRouteImport.update({
     id: '/lovable/visual/voice-note-player',
@@ -1171,6 +1178,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/toast-layout': typeof LovableVisualToastLayoutRoute
   '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
+  '/lovable/visual/wa-preview-rotate': typeof LovableVisualWaPreviewRotateRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/kontak/': typeof AuthenticatedKontakIndexRoute
@@ -1325,6 +1333,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/toast-layout': typeof LovableVisualToastLayoutRoute
   '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
+  '/lovable/visual/wa-preview-rotate': typeof LovableVisualWaPreviewRotateRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/kontak': typeof AuthenticatedKontakIndexRoute
@@ -1484,6 +1493,7 @@ export interface FileRoutesById {
   '/lovable/visual/toast-layout': typeof LovableVisualToastLayoutRoute
   '/lovable/visual/two-user-drafts': typeof LovableVisualTwoUserDraftsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
+  '/lovable/visual/wa-preview-rotate': typeof LovableVisualWaPreviewRotateRoute
   '/lovable/visual/worker-shot-marksent': typeof LovableVisualWorkerShotMarksentRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/kontak/': typeof AuthenticatedKontakIndexRoute
@@ -1643,6 +1653,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/toast-layout'
     | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
+    | '/lovable/visual/wa-preview-rotate'
     | '/lovable/visual/worker-shot-marksent'
     | '/chat/'
     | '/kontak/'
@@ -1797,6 +1808,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/toast-layout'
     | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
+    | '/lovable/visual/wa-preview-rotate'
     | '/lovable/visual/worker-shot-marksent'
     | '/chat'
     | '/kontak'
@@ -1955,6 +1967,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/toast-layout'
     | '/lovable/visual/two-user-drafts'
     | '/lovable/visual/voice-note-player'
+    | '/lovable/visual/wa-preview-rotate'
     | '/lovable/visual/worker-shot-marksent'
     | '/_authenticated/chat/'
     | '/_authenticated/kontak/'
@@ -2038,6 +2051,7 @@ export interface RootRouteChildren {
   LovableVisualToastLayoutRoute: typeof LovableVisualToastLayoutRoute
   LovableVisualTwoUserDraftsRoute: typeof LovableVisualTwoUserDraftsRoute
   LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
+  LovableVisualWaPreviewRotateRoute: typeof LovableVisualWaPreviewRotateRoute
   LovableVisualWorkerShotMarksentRoute: typeof LovableVisualWorkerShotMarksentRoute
   KatalogSlugIndexRoute: typeof KatalogSlugIndexRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -2685,6 +2699,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/visual/worker-shot-marksent'
       fullPath: '/lovable/visual/worker-shot-marksent'
       preLoaderRoute: typeof LovableVisualWorkerShotMarksentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/wa-preview-rotate': {
+      id: '/lovable/visual/wa-preview-rotate'
+      path: '/lovable/visual/wa-preview-rotate'
+      fullPath: '/lovable/visual/wa-preview-rotate'
+      preLoaderRoute: typeof LovableVisualWaPreviewRotateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/visual/voice-note-player': {
@@ -3478,6 +3499,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualToastLayoutRoute: LovableVisualToastLayoutRoute,
   LovableVisualTwoUserDraftsRoute: LovableVisualTwoUserDraftsRoute,
   LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
+  LovableVisualWaPreviewRotateRoute: LovableVisualWaPreviewRotateRoute,
   LovableVisualWorkerShotMarksentRoute: LovableVisualWorkerShotMarksentRoute,
   KatalogSlugIndexRoute: KatalogSlugIndexRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
