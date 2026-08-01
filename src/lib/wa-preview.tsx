@@ -79,6 +79,196 @@ type Request = {
 let openRequest: ((req: Request) => void) | null = null;
 const queue: Request[] = [];
 
+type DupInfo = NonNullable<Request["duplicate"]>;
+
+/** Banner klik-ganda. Di-memo: hanya re-render saat data idempotency berubah. */
+const DuplicateNotice = memo(function DuplicateNotice({
+  dup, crossChannel, payloadMatches, forceDisabledReason, curFp, currentSummary, liveLog, liveChannel,
+}: {
+  dup: DupInfo;
+  crossChannel: boolean;
+  payloadMatches: boolean;
+  forceDisabledReason: string | null;
+  curFp?: string;
+  currentSummary?: SendPayloadSummary;
+  liveLog: ReturnType<typeof useLiveSendLogStatus>;
+  liveChannel: string;
+}) {
+  const dupAgoSec = Math.max(0, Math.round((Date.now() - dup.at) / 1000));
+  const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
+  const dupAbsLabel = new Date(dup.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const dupStatusLabel = dup.status === "in-flight" ? "Masih berjalan" : dup.status === "done" ? "Sudah terkirim" : "Gagal";
+  return (
+    <div className="flex items-start gap-ms-2 rounded-lg border border-warning/50 bg-warning/10 p-ms-3 text-ms-xs text-warning dark:text-warning">
+      <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="font-semibold">
+          {dup.status === "in-flight"
+            ? (crossChannel
+                ? "Kiriman Chat untuk paket ini sedang berjalan."
+                : "Klik ganda terdeteksi — kiriman MCM sebelumnya masih berjalan.")
+            : "Klik ganda terdeteksi — paket ini baru saja dikirim via MCM."}
+        </div>
+        <div className="mt-0.5 opacity-90">
+          {dup.status === "in-flight"
+            ? `Dimulai ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
+            : `Dikirim ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
+        </div>
+        <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-ms-2xs">
+          <dt className="font-medium opacity-80">Waktu</dt>
+          <dd className="min-w-0 break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
+          {dup.destination || crossChannel ? (<>
+            <dt className="font-medium opacity-80">Tujuan</dt>
+            <dd className="min-w-0 break-words">{dup.destination ?? "—"}{crossChannel ? " · via Chat" : ""}</dd>
+          </>) : null}
+          <dt className="font-medium opacity-80">Status</dt>
+          <dd className="min-w-0 break-words">{dupStatusLabel}</dd>
+        </dl>
+        {dup.status !== "in-flight" ? (
+          <div
+            className={
+              "mt-2 rounded-md border px-ms-2 py-1.5 text-ms-2xs " +
+              (payloadMatches
+                ? "border-success/40 bg-success/10 text-success dark:text-success"
+                : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
+            }
+          >
+            <span className="inline-flex items-start gap-ms-1">
+              <span className="flex-1">
+                {payloadMatches
+                  ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
+                  : forceDisabledReason}
+              </span>
+              <FingerprintInfoTooltip
+                matches={payloadMatches}
+                previousFp={dup.fingerprint}
+                currentFp={curFp}
+                previous={dup.summary}
+                current={currentSummary}
+              />
+            </span>
+          </div>
+        ) : null}
+        {dup.status !== "in-flight" && !payloadMatches ? (
+          <MemoSendPayloadDiff previous={dup.summary} current={currentSummary} />
+        ) : null}
+        {dup.status === "in-flight" ? (
+          <MemoInflightStepProgress
+            entries={liveLog.entries}
+            channel={liveChannel}
+            stale={liveLog.stale}
+            syncError={liveLog.error}
+            lastSyncedAt={liveLog.lastSyncedAt}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+});
+
+type PreviewItem = { name: string; size: number; url: string; isImage: boolean };
+
+/** Grid lampiran foto. Di-memo agar mengetik caption tidak me-render ulang thumbnail. */
+const AttachmentsSection = memo(function AttachmentsSection({
+  previews, expected, missing, canRetry, retrying, onRetry, hasUrl,
+}: {
+  previews: PreviewItem[];
+  expected: number;
+  missing: number;
+  canRetry: boolean;
+  retrying: boolean;
+  onRetry: () => void;
+  hasUrl: boolean;
+}) {
+  const photoCount = previews.length;
+  return (
+    <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
+      <div className="mb-2 flex min-w-0 items-center justify-between gap-ms-2">
+        <div className="flex min-w-0 items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <ImageIcon className="h-3 w-3" /> Foto / lampiran
+        </div>
+        <span className="shrink-0 whitespace-nowrap rounded-full bg-muted px-ms-2 py-0.5 text-ms-2xs font-medium tabular-nums text-muted-foreground">
+          {photoCount}{expected > photoCount ? ` / ${expected}` : ""} berkas
+        </span>
+      </div>
+      {missing > 0 ? (
+        <div className="mb-2 flex flex-wrap items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 p-ms-2 text-ms-2xs text-warning dark:text-warning">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="min-w-[10rem] flex-1">
+            <div className="font-medium">{missing} foto gagal diunduh.</div>
+            <div className="opacity-80">
+              {canRetry
+                ? "Coba ambil ulang sebelum mengirim agar tidak ada foto yang hilang."
+                : "Foto ini tidak akan ikut terkirim — lanjutkan kirim hanya jika tidak diperlukan."}
+            </div>
+          </div>
+          {canRetry ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 shrink-0 border-warning/60 bg-background px-ms-2 text-ms-2xs text-warning hover:bg-warning/10 dark:text-warning"
+              onClick={onRetry}
+              disabled={retrying}
+            >
+              {retrying ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1 h-3 w-3" />
+              )}
+              {retrying ? "Mengambil…" : "Coba ambil ulang"}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {photoCount === 0 ? (
+        <div className="rounded-md border border-dashed bg-background/60 p-ms-4 text-center text-ms-xs text-muted-foreground">
+          Tidak ada foto — hanya teks{hasUrl ? " + link" : ""} yang akan dikirim.
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-ms-2">
+          {previews.map((p, i) => (
+            <div key={`${p.name}-${i}`} className="overflow-hidden rounded-md border bg-background">
+              {p.isImage ? (
+                <img src={p.url} alt={p.name} className="aspect-square w-full object-cover" loading="lazy" />
+              ) : (
+                <div className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground">
+                  <FileText className="h-6 w-6" />
+                </div>
+              )}
+              <div className="px-1.5 py-1">
+                <div className="truncate text-ms-2xs font-medium leading-snug" title={p.name}>{p.name}</div>
+                <div className="truncate text-ms-2xs tabular-nums text-muted-foreground">{fmtSize(p.size)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+/** Kartu link tambahan — statis per request. */
+const LinkSection = memo(function LinkSection({ url }: { url: string }) {
+  const isMapsUrl = /(?:google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps|geo:)/i.test(url);
+  return (
+    <div className="rounded-lg border bg-muted/30 p-ms-2 sm:p-ms-3">
+      <div className="mb-1.5 flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {isMapsUrl ? <MapPin className="h-3 w-3" /> : <Link2 className="h-3 w-3" />}
+        {isMapsUrl ? "Link Maps" : "Link tambahan"}
+      </div>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block break-all rounded-md bg-background p-ms-2 font-mono text-ms-2xs text-primary underline-offset-2 hover:underline"
+      >
+        {url}
+      </a>
+    </div>
+  );
+});
+
 /**
  * Tampilkan pratinjau pesan WA + daftar foto sebelum benar-benar membuka WA.
  * Mengembalikan true jika user menekan "Kirim", false jika dibatalkan.
