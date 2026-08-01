@@ -21,6 +21,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { notifyError } from "@/lib/friendly-error";
+import { toastUndo, toastDetail } from "@/lib/toast-actions";
 
 export const Route = createFileRoute("/lovable/visual/access-denied-toast")({
   head: () => ({
@@ -97,6 +98,28 @@ function AccessDeniedToastHarness() {
         }
       >
         Trigger error biasa (kontrol negatif)
+      </Button>
+
+      <Button
+        data-testid="btn-undo"
+        variant="outline"
+        onClick={() =>
+          toastUndo("Pembayaran Rp 2.000.000 dicatat.", () => {}, {
+            description: "Tersimpan di catatan hutang.",
+          })
+        }
+      >
+        Trigger toast Undo
+      </Button>
+
+      <Button
+        data-testid="btn-detail"
+        variant="outline"
+        onClick={() =>
+          toastDetail("Penyiapan terkirim ke pelanggan.", { href: "#" })
+        }
+      >
+        Trigger toast Lihat Detail
       </Button>
     </div>
   );
