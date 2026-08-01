@@ -19,6 +19,10 @@ import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
+import { installChunkRecovery } from "@/lib/chunk-recovery";
+
+// Layar hitam: entry/chunk gagal di-fetch di luar React → pulihkan sendiri.
+installChunkRecovery();
 // Global observability: capture errors from background async work (WA share,
 // fetch during backgrounded WebView, dsb.) yang tidak melewati React
 // boundary. Tersimpan di sessionStorage["mcm:last-unhandled"] agar bisa
