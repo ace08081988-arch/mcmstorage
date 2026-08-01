@@ -502,7 +502,6 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster
-        richColors
         // Ikuti tema aplikasi (Noir & Gold) — token semantik, bukan putih bawaan.
         theme="system"
         // Varian B: toast muncul di bawah, tepat di atas bar navigasi
