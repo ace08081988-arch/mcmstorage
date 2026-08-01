@@ -524,11 +524,17 @@ function RootComponent() {
           style: { maxWidth: "calc(100vw - 24px)" },
           classNames: {
             toast:
-              "!bg-card !text-foreground !border-border/70 !shadow-lg !rounded-xl backdrop-blur",
+              // Layar sempit: teks di atas, tombol aksi turun ke baris
+              // sendiri (rata kanan) supaya judul tidak terpotong.
+              "group !bg-card !text-foreground !border-border/70 !shadow-lg !rounded-xl backdrop-blur !flex-wrap !gap-ms-2",
             title: "!text-sm !font-semibold !leading-snug !whitespace-normal !break-words",
             description: "!text-xs !text-muted-foreground !whitespace-normal !break-words",
-            actionButton: "!bg-primary !text-primary-foreground",
-            cancelButton: "!bg-muted !text-muted-foreground",
+            // Noir & Gold: aksi utama memakai aksen emas (primary),
+            // aksi sekunder tetap netral dengan border halus.
+            actionButton:
+              "!ml-auto !h-8 !shrink-0 !rounded-lg !px-3 !text-xs !font-semibold !bg-primary !text-primary-foreground hover:!brightness-110 active:!brightness-95 focus-visible:!outline-none focus-visible:!ring-2 focus-visible:!ring-ring focus-visible:!ring-offset-1 focus-visible:!ring-offset-card transition",
+            cancelButton:
+              "!h-8 !shrink-0 !rounded-lg !px-3 !text-xs !font-medium !bg-transparent !text-muted-foreground !border !border-border/70 hover:!bg-muted hover:!text-foreground focus-visible:!outline-none focus-visible:!ring-2 focus-visible:!ring-ring transition",
             closeButton: "!bg-card !text-muted-foreground !border-border/70",
           },
         }}
