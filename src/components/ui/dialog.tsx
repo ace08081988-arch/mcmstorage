@@ -85,10 +85,7 @@ const DialogContent = React.forwardRef<
           // `scroll-pt-*`: saat fokus keyboard berpindah ke input/tombol yang
           // berada di luar layar, browser menggulirkannya ke bawah header
           // sticky — bukan tersembunyi di baliknya.
-          // `overflow-x-clip`: bleed dekoratif header sticky (pseudo -left/-right)
-          // tidak boleh menciptakan area scroll horizontal — clip (bukan hidden)
-          // membuat kotak ini bukan scroll-container di sumbu X.
-          "group/dialog fixed left-[50%] top-[50%] z-50 flex w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-4 border bg-background p-4 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg overflow-y-auto overflow-x-clip overscroll-contain scroll-pt-24 scroll-pb-6 focus:outline-none [max-height:calc(100dvh-max(env(safe-area-inset-top),1rem)-max(env(safe-area-inset-bottom),1rem))] sm:w-full sm:p-6",
+          "group/dialog fixed left-[50%] top-[50%] z-50 flex w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-4 border bg-background p-4 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg overflow-y-auto overscroll-contain scroll-pt-24 scroll-pb-6 focus:outline-none [max-height:calc(100dvh-max(env(safe-area-inset-top),1rem)-max(env(safe-area-inset-bottom),1rem))] sm:w-full sm:p-6",
           className,
         )}
         {...props}
