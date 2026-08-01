@@ -219,25 +219,25 @@ export function WaPreviewHost() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
-      <DialogContent className="flex max-h-[88svh] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader className="shrink-0 border-b bg-muted/30 px-ms-5 pb-4 pt-5">
-          <div className="flex items-center gap-ms-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success">
+      <DialogContent className="flex max-h-[92svh] w-[calc(100vw-1.5rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-h-[88svh] sm:w-full sm:max-w-md">
+        <DialogHeader className="shrink-0 border-b bg-muted/30 px-ms-4 pb-3 pt-4 sm:px-ms-5 sm:pb-4 sm:pt-5">
+          <div className="flex items-center gap-ms-2 sm:gap-ms-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success sm:h-10 sm:w-10">
               <MessageCircle className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1 text-left">
-              <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
-                <span>Pratinjau pesan MCM</span>
+              <DialogTitle className="flex min-w-0 flex-wrap items-center gap-ms-2 text-ms-sm sm:text-ms-base">
+                <span className="min-w-0 truncate">Pratinjau pesan MCM</span>
                 <SyncSourceBadge source={liveLog.lastSource} active={liveLog.active} />
               </DialogTitle>
-              <DialogDescription className="mt-0.5 text-ms-xs">
+              <DialogDescription className="mt-0.5 text-ms-2xs leading-snug sm:text-ms-xs">
                 Tinjau teks dan foto yang akan dikirim sebelum membuka MCM.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-5 py-ms-4">
+        <div className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-3 py-ms-3 sm:px-ms-5 sm:py-ms-4">
           {current?.peer && (current.peer.phone || current.peer.accountUserId) ? (
             <DebtQuickActions
               peerPhone={current.peer.phone ?? null}
