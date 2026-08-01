@@ -194,7 +194,9 @@ export function AppHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-ms-2 px-ms-2 backdrop-blur-md",
+        // Ruang notch/status bar + cutout samping (landscape) diambil dari
+        // `--app-safe-*`; tinggi konten header tetap 14 (h-14 di baris dalam).
+        "app-safe-header sticky top-0 z-30 flex min-h-14 items-center gap-ms-2 backdrop-blur-md",
         "border-b border-primary/15 bg-background/85 supports-[backdrop-filter]:bg-background/70",
       )}
       style={{

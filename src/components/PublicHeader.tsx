@@ -10,7 +10,7 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
   const { full, short, logo } = useOrgName();
   return (
     <header
-      className="w-full border-b bg-background/80 backdrop-blur"
+      className="app-safe-top app-safe-x w-full border-b bg-background/80 backdrop-blur"
       style={{ borderBottomColor: "var(--primary)" }}
     >
       <div
