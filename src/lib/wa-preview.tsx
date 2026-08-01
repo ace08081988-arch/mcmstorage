@@ -92,7 +92,7 @@ const DuplicateNotice = memo(function DuplicateNotice({
   curFp?: string;
   currentSummary?: SendPayloadSummary;
   liveLog: ReturnType<typeof useLiveSendLogStatus>;
-  liveChannel: string;
+  liveChannel: ReturnType<typeof channelFromKey>;
 }) {
   const dupAgoSec = Math.max(0, Math.round((Date.now() - dup.at) / 1000));
   const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
