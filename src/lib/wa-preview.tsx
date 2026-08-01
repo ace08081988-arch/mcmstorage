@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -355,6 +355,7 @@ export function WaPreviewHost() {
     setTimeout(() => setCurrent(null), 150);
   }, [current, draft, skip]);
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const url = current?.url;
   const photoCount = previews.length;
   const expected = current?.expectedCount ?? photoCount;
@@ -414,8 +415,18 @@ export function WaPreviewHost() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
-      <DialogContent data-testid="wa-preview-dialog" className="flex max-h-[92svh] w-[calc(100vw-1.5rem)] max-w-md flex-col gap-0 overflow-clip p-0 sm:max-h-[88svh] sm:w-full sm:max-w-md">
-        <DialogHeader className="shrink-0 border-b bg-muted/30 px-ms-4 pb-3 pt-4 sm:px-ms-5 sm:pb-4 sm:pt-5">
+      <DialogContent
+        data-testid="wa-preview-dialog"
+        // Fokus awal diarahkan ke area konten (bukan tombol kirim) supaya
+        // pembaca layar membacakan judul + deskripsi lebih dulu dan pengguna
+        // tidak sengaja mengirim dengan Enter. Trap fokus & Esc ditangani Radix.
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          scrollRef.current?.focus();
+        }}
+        className="flex max-h-[92svh] w-[calc(100vw-1.5rem)] max-w-md flex-col gap-0 overflow-clip p-0 sm:max-h-[88svh] sm:w-full sm:max-w-md"
+      >
+        <DialogHeader className="shrink-0 border-b bg-muted/30 py-3 pl-ms-4 pr-14 sm:py-4 sm:pl-ms-5 sm:pr-16">
           <div className="flex items-center gap-ms-2 sm:gap-ms-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success sm:h-10 sm:w-10">
               <MessageCircle className="h-5 w-5" />
@@ -432,7 +443,12 @@ export function WaPreviewHost() {
           </div>
         </DialogHeader>
 
-        <div data-testid="wa-preview-scroll" className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-3 py-ms-3 sm:px-ms-5 sm:py-ms-4">
+        <div
+          ref={scrollRef}
+          data-testid="wa-preview-scroll"
+          tabIndex={-1}
+          className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-3 py-ms-3 focus:outline-none sm:px-ms-5 sm:py-ms-4"
+        >
           {current?.peer && (current.peer.phone || current.peer.accountUserId) ? (
             <MemoDebtQuickActions
               peerPhone={current.peer.phone ?? null}
@@ -476,6 +492,7 @@ export function WaPreviewHost() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={8}
+                aria-label="Teks pesan yang akan dikirim"
                 className="min-h-[8rem] max-h-[45svh] resize-y bg-background font-sans text-ms-xs leading-relaxed"
                 placeholder="Tulis pesan untuk MCM…"
                 autoFocus
@@ -483,8 +500,17 @@ export function WaPreviewHost() {
             ) : (
               <pre
                 data-testid="wa-preview-text"
+                role="button"
+                tabIndex={0}
+                aria-label="Teks pesan — aktifkan untuk mengedit"
                 className="wa-message-text max-h-[38svh] cursor-text overflow-auto overscroll-contain rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
                 onClick={() => setEditing(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setEditing(true);
+                  }
+                }}
                 title="Klik untuk mengedit"
               >
 {draft || <span className="italic text-muted-foreground">(kosong — klik untuk mengetik)</span>}
@@ -515,11 +541,11 @@ export function WaPreviewHost() {
           className="grid shrink-0 grid-cols-1 gap-ms-2 border-t bg-muted/20 px-ms-3 py-ms-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-ms-5"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
-          <span className="truncate text-ms-2xs text-muted-foreground">
+          <span className="truncate text-ms-2xs text-muted-foreground" aria-live="polite">
             {photoCount > 0 ? `${photoCount} foto + teks` : "Teks saja"}
           </span>
           <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-ms-2 sm:flex">
-            <Button type="button" variant="outline" size="sm" onClick={() => finish(false)}>
+            <Button type="button" variant="outline" size="sm" className="min-h-11 sm:min-h-9" onClick={() => finish(false)}>
               Batal
             </Button>
             {dupActive ? (
@@ -535,7 +561,7 @@ export function WaPreviewHost() {
                       ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                       : "Kirim ulang meski klik ganda terdeteksi"
                 }
-                className="min-w-0 bg-warning text-warning-foreground hover:bg-warning disabled:opacity-50"
+                className="min-h-11 min-w-0 bg-warning text-warning-foreground hover:bg-warning disabled:opacity-50 sm:min-h-9"
               >
                 <ShieldAlert className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">Kirim ulang (paksa)</span>
@@ -547,7 +573,7 @@ export function WaPreviewHost() {
                 onClick={() => finish(true)}
                 disabled={live?.status === "in-flight"}
                 title={live?.status === "in-flight" ? (crossChannel ? "Kiriman Chat untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
-                className="min-w-0 bg-success text-white hover:bg-success"
+                className="min-h-11 min-w-0 bg-success text-white hover:bg-success sm:min-h-9"
               >
                 <Send className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via MCM"}</span>
