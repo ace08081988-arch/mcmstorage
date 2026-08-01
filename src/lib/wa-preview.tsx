@@ -332,6 +332,7 @@ export function WaPreviewHost() {
   }, []);
 
   const previews = useMemo(() => {
+    void 0;
     if (!current?.files?.length) return [] as { name: string; size: number; url: string; isImage: boolean }[];
     return current.files.map((f) => ({
       name: f.name,
