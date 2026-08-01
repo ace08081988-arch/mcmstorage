@@ -416,6 +416,35 @@
 @utility status-danger  { background-color: color-mix(in oklab, var(--destructive) 15%, var(--background)); color: var(--destructive); }
 
 /* ==========================================================================
+   Aturan pemotongan teks pesan WhatsApp.
+
+   Masalah: di layar sempit teks pesan sebelumnya memakai
+   `overflow-wrap: anywhere` sehingga kata biasa ikut terpotong di tengah
+   ("penyiapa\nn"). Kontrak baru: patah baris SELALU dicoba di batas kata
+   dulu; pemotongan di tengah kata hanya untuk token yang memang tidak
+   muat sama sekali (URL panjang, kode resi, nomor tanpa spasi).
+   ========================================================================== */
+
+/* Blok teks pesan / caption WA (multi-baris, mempertahankan newline). */
+@utility wa-message-text {
+  white-space: pre-wrap;
+  /* Patah di batas kata; hanya kata yang lebih lebar dari barisnya yang dipecah. */
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+  /* Hindari baris terakhir "yatim" satu kata di layar kecil. */
+  text-wrap: pretty;
+}
+
+/* Token tanpa spasi (URL, kode) — boleh dipotong di mana saja agar tidak
+   memaksa overflow horizontal, tapi TIDAK dipakai untuk kalimat biasa. */
+@utility wa-message-token {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-break: anywhere;
+}
+
+/* ==========================================================================
    Noir & Gold audit contract — Slice 1 foundation.
 
    Utility yang di-share antara sidebar baru dan seluruh permukaan operasional
