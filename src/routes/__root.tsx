@@ -503,11 +503,22 @@ function RootComponent() {
       <Outlet />
       <Toaster
         richColors
-        position="top-center"
-        // Header aplikasi ±56px: toast diturunkan supaya tidak menutupi
-        // judul halaman, lonceng notifikasi, dan avatar.
-        offset={{ top: 76, left: 16, right: 16, bottom: 16 }}
-        mobileOffset={{ top: 68, left: 12, right: 12, bottom: 12 }}
+        // Varian B: toast muncul di bawah, tepat di atas bar navigasi
+        // bawah. Header dan kontrol atas (judul, lonceng, avatar) tidak
+        // pernah tertutup berapa pun jumlah toast yang menumpuk.
+        position="bottom-center"
+        offset={{
+          bottom: "calc(var(--app-bottom-nav-h, 0px) + 16px)",
+          left: 16,
+          right: 16,
+          top: 16,
+        }}
+        mobileOffset={{
+          bottom: "calc(var(--app-bottom-nav-h, 0px) + 12px)",
+          left: 12,
+          right: 12,
+          top: 12,
+        }}
         toastOptions={{ style: { maxWidth: "calc(100vw - 24px)" } }}
       />
       <ConfirmHost />
