@@ -264,7 +264,7 @@ export function ChatSharePreviewDialog({
             ) : null}
             <section>
               <h3 className="mb-1 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">Caption</h3>
-              <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-ms-2 font-sans text-[12.5px] leading-snug">{data.caption || "(kosong)"}</pre>
+              <pre className="max-h-48 wa-message-text overflow-auto rounded-md border bg-muted/40 p-ms-2 font-sans text-[12.5px] leading-snug">{data.caption || "(kosong)"}</pre>
             </section>
 
             <section>

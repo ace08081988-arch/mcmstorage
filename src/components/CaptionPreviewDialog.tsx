@@ -214,7 +214,7 @@ export function CaptionPreviewDialog({
           ) : null}
           <pre
             data-testid="caption-preview-text"
-            className="max-h-[55vh] overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-ms-2 font-sans text-ms-2xs leading-relaxed"
+            className="max-h-[55vh] wa-message-text overflow-auto rounded-md border bg-muted/40 p-ms-2 font-sans text-ms-2xs leading-relaxed"
           >
 {caption || "(caption kosong)"}
           </pre>
