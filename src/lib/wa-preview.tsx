@@ -414,7 +414,7 @@ export function WaPreviewHost() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
-      <DialogContent className="flex max-h-[92svh] w-[calc(100vw-1.5rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-h-[88svh] sm:w-full sm:max-w-md">
+      <DialogContent data-testid="wa-preview-dialog" className="flex max-h-[92svh] w-[calc(100vw-1.5rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-h-[88svh] sm:w-full sm:max-w-md">
         <DialogHeader className="shrink-0 border-b bg-muted/30 px-ms-4 pb-3 pt-4 sm:px-ms-5 sm:pb-4 sm:pt-5">
           <div className="flex items-center gap-ms-2 sm:gap-ms-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success dark:text-success sm:h-10 sm:w-10">
