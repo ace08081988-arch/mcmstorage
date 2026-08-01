@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensure-session";
+import { assertStorageAccess } from "@/lib/storage-access";
 import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { Button } from "@/components/ui/button";
@@ -3708,6 +3709,8 @@ function NewProductDialog({ onClose, onCreated }: {
     let userId: string;
     try { userId = (await ensureFreshSession()).userId; }
     catch (e) { toast.error((e as Error).message || "Sesi berakhir. Silakan login ulang."); setBusy(false); return; }
+    try { await assertStorageAccess(userId); }
+    catch (e) { toast.error((e as Error).message); setBusy(false); return; }
     const { data, error } = await supabase.from("warehouse_items").insert({
       user_id: userId,
       name: name.trim(),

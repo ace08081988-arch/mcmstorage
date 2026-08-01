@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { notifyError } from "@/lib/friendly-error";
 import { ensureFreshSession } from "@/lib/ensure-session";
+import { assertStorageAccess } from "@/lib/storage-access";
 import { StatusBadge } from "@/components/StatusBadge";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";
@@ -974,6 +975,8 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       let freshUid: string;
       try { freshUid = (await ensureFreshSession()).userId; }
       catch (e) { notifyError(e, { fallback: "Sesi berakhir. Silakan login ulang." }); return; }
+      try { await assertStorageAccess(freshUid); }
+      catch (e) { notifyError(e); return; }
       const { error } = await supabase.from("customers").insert({ user_id: freshUid, ...payload });
       if (error) { notifyError(error); return; }
       toast.success("Pelanggan ditambahkan");
@@ -3075,6 +3078,8 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       let freshUid: string;
       try { freshUid = (await ensureFreshSession()).userId; }
       catch (e) { notifyError(e, { fallback: "Sesi berakhir. Silakan login ulang." }); return; }
+      try { await assertStorageAccess(freshUid); }
+      catch (e) { notifyError(e); return; }
       const { data, error } = await supabase.from("warehouse_items").insert({
         user_id: freshUid,
         name: name.trim(),
