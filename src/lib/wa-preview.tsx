@@ -332,7 +332,6 @@ export function WaPreviewHost() {
   }, []);
 
   const previews = useMemo(() => {
-    void 0;
     if (!current?.files?.length) return [] as { name: string; size: number; url: string; isImage: boolean }[];
     return current.files.map((f) => ({
       name: f.name,
@@ -350,6 +349,7 @@ export function WaPreviewHost() {
   }, [previews]);
 
   const finish = useCallback((ok: boolean, force = false) => {
+    void 0;
     setOpen(false);
     if (ok && skip) setWaSkipPreview(true);
     current?.resolve({ ok, text: ok ? draft : undefined, force: ok ? force : undefined });
@@ -393,7 +393,6 @@ export function WaPreviewHost() {
   const edited = draft !== original;
 
   const handleRetry = useCallback(async () => {
-    void 0;
     if (!current?.retryMissing || retrying) return;
     setRetrying(true);
     try {
