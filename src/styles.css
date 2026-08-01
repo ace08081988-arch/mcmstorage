@@ -1678,3 +1678,34 @@ html[data-reduce-motion="on"] .skeleton-a11y {
 [data-sonner-toaster] {
   z-index: var(--z-toast) !important;
 }
+
+/* ------------------------------------------------------------------
+   Safe-area untuk header & konten (notch / status bar / gesture area)
+   ------------------------------------------------------------------
+   `--app-safe-*` dihitung ulang oleh safe-area-recalc.ts setiap rotasi;
+   env() dipakai sebagai fallback saat script belum sempat mengukur.
+   - .app-safe-top : header sticky/fixed menyisakan ruang notch di atas.
+   - .app-safe-x   : padding kiri/kanan mengikuti cutout saat landscape.
+*/
+@utility app-safe-top {
+  padding-top: var(--app-safe-top, env(safe-area-inset-top, 0px));
+}
+
+@utility app-safe-x {
+  padding-left: max(
+    var(--app-safe-left, env(safe-area-inset-left, 0px)),
+    0px
+  );
+  padding-right: max(
+    var(--app-safe-right, env(safe-area-inset-right, 0px)),
+    0px
+  );
+}
+
+/* Header sticky: tinggi konten tetap, hanya ruang notch yang ditambahkan,
+   plus inset samping supaya tombol tidak tertutup cutout di landscape. */
+@utility app-safe-header {
+  padding-top: var(--app-safe-top, env(safe-area-inset-top, 0px));
+  padding-left: var(--app-safe-left, env(safe-area-inset-left, 0px));
+  padding-right: var(--app-safe-right, env(safe-area-inset-right, 0px));
+}
