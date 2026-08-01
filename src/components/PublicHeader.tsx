@@ -48,25 +48,25 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
         <nav className="ml-auto flex shrink-0 items-center gap-x-1 text-ms-xs font-medium sm:gap-x-2">
           <Link
             to="/produk"
-            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-full px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
+            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
           >
             Produk
           </Link>
           <Link
             to="/harga"
-            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-full px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
+            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
           >
             Harga
           </Link>
           <Link
             to="/faq"
-            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-full px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
+            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
           >
             FAQ
           </Link>
           <Link
             to="/auth"
-            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-full border border-primary/40 bg-primary/10 px-ms-2.5 font-semibold text-primary transition-colors hover:bg-primary/20 sm:px-ms-3"
+            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl border border-primary/40 bg-primary/10 px-ms-2.5 font-semibold text-primary transition-colors hover:bg-primary/20 sm:px-ms-3"
           >
             Masuk
           </Link>
