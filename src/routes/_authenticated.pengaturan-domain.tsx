@@ -41,6 +41,7 @@ function initialRows(domain: string): Row[] {
     { key: "root-a", label: `A · ${d} (@)`, type: "A", host: domain, expectedHint: LOVABLE_IP, status: "idle", found: [] },
     { key: "www-a", label: `A · www.${d}`, type: "A", host: `www.${domain}`, expectedHint: LOVABLE_IP, status: "idle", found: [] },
     { key: "txt", label: `TXT · ${TXT_HOST_PREFIX}.${d}`, type: "TXT", host: `${TXT_HOST_PREFIX}.${domain}`, expectedHint: "lovable_verify=…", status: "idle", found: [] },
+    { key: "google-txt", label: `TXT · ${d} (Google Workspace)`, type: "TXT", host: domain, expectedHint: "google-site-verification=…", status: "idle", found: [] },
   ];
 }
 
@@ -74,7 +75,24 @@ const STATUS_STYLES: Record<CheckStatus, { badge: string; label: string; icon: R
 
 function DomainSettingsPage() {
   const [domain, setDomain] = useState("mcmstorage.biz");
-  const rows = useMemo<Row[]>(() => initialRows(domain.trim()), [domain]);
+  const [gCname, setGCname] = useState("");
+  const rows = useMemo<Row[]>(() => {
+    const base = initialRows(domain.trim());
+    const h = gCname.trim();
+    if (h) {
+      const host = h.endsWith(domain.trim()) ? h : `${h}.${domain.trim()}`;
+      base.push({
+        key: "google-cname",
+        label: `CNAME · ${host}`,
+        type: "CNAME",
+        host,
+        expectedHint: "…dv.googlehosted.com",
+        status: "idle",
+        found: [],
+      });
+    }
+    return base;
+  }, [domain, gCname]);
   const [state, setState] = useState<Record<Row["key"], Row>>(() =>
     Object.fromEntries(rows.map((r) => [r.key, r])) as Record<Row["key"], Row>,
   );
@@ -101,7 +119,7 @@ function DomainSettingsPage() {
       return next;
     });
     try {
-      const result = await invokeCheck({ data: { domain: d } });
+      const result = await invokeCheck({ data: { domain: d, googleCnameHost: gCname.trim() || undefined } });
       setState((prev) => {
         const next = { ...prev };
         for (const c of result.checks) {
@@ -133,7 +151,7 @@ function DomainSettingsPage() {
     } finally {
       setBusy(false);
     }
-  }, [domain, invokeCheck, rows]);
+  }, [domain, gCname, invokeCheck, rows]);
 
   const summary = useMemo(() => {
     const oks = checks.filter((c) => c.status === "ok").length;
@@ -169,6 +187,14 @@ function DomainSettingsPage() {
               autoCorrect="off"
               spellCheck={false}
               inputMode="url"
+            />
+            <Input
+              value={gCname}
+              onChange={(e) => setGCname(e.target.value.trim().toLowerCase())}
+              placeholder="CNAME Google (opsional), mis. x43lgnaxqio2"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
             <div className="flex items-center justify-between gap-ms-2">
               <span className="text-ms-xs text-muted-foreground">{summary}</span>
@@ -220,7 +246,11 @@ function DomainSettingsPage() {
                       <li key={`${c.key}-${i}`} className="flex items-center gap-ms-2 font-mono">
                         {c.type === "A" && v === LOVABLE_IP ? (
                           <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                        ) : c.type === "TXT" && v.toLowerCase().startsWith("lovable_verify=") ? (
+                        ) : c.type === "TXT" &&
+                          (v.toLowerCase().startsWith("lovable_verify=") ||
+                            (c.key === "google-txt" && v.toLowerCase().startsWith("google-site-verification="))) ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                        ) : c.type === "CNAME" && v.toLowerCase().endsWith("googlehosted.com") ? (
                           <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                         ) : (
                           <XCircle className="h-3.5 w-3.5 text-red-500" />
