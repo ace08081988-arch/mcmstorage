@@ -167,7 +167,7 @@ export function DownloadChatApkShortcut() {
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <div className="relative h-full">
+      <div className="relative h-full min-w-0">
       <button
         type="button"
         disabled={busy}
@@ -197,7 +197,7 @@ export function DownloadChatApkShortcut() {
         <span className="text-ms-base leading-none">
           {busy || isChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "💬"}
         </span>
-        <span className="mt-1 text-ms-xs font-semibold leading-tight">
+        <span className="mt-1 break-words text-ms-xs font-semibold leading-tight">
           {busy
             ? stage ?? "Memproses…"
             : isChecking
@@ -206,7 +206,7 @@ export function DownloadChatApkShortcut() {
                 ? "Belum tersedia"
                 : "Unduh APK Chat"}
         </span>
-        <span className="text-ms-2xs leading-tight text-muted-foreground">
+        <span className="break-words text-ms-2xs leading-tight text-muted-foreground">
           {busy
             ? cooldown > 0
               ? `Menunggu browser… ${cooldown}s`
