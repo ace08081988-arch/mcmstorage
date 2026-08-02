@@ -41,6 +41,7 @@ function initialRows(domain: string): Row[] {
     { key: "root-a", label: `A · ${d} (@)`, type: "A", host: domain, expectedHint: LOVABLE_IP, status: "idle", found: [] },
     { key: "www-a", label: `A · www.${d}`, type: "A", host: `www.${domain}`, expectedHint: LOVABLE_IP, status: "idle", found: [] },
     { key: "txt", label: `TXT · ${TXT_HOST_PREFIX}.${d}`, type: "TXT", host: `${TXT_HOST_PREFIX}.${domain}`, expectedHint: "lovable_verify=…", status: "idle", found: [] },
+    { key: "google-txt", label: `TXT · ${d} (Google Workspace)`, type: "TXT", host: domain, expectedHint: "google-site-verification=…", status: "idle", found: [] },
   ];
 }
 
