@@ -181,7 +181,6 @@ export function DownloadChatApkShortcut() {
                 : "Unduh APK MCM Chat versi terbaru"
         }
         aria-busy={busy}
-        aria-live="polite"
         aria-disabled={busy}
         onClick={() => {
           if (busy || isChecking) return;
@@ -233,6 +232,15 @@ export function DownloadChatApkShortcut() {
           <RefreshCw aria-hidden="true" className={(isChecking ? "busy-indicator animate-spin " : "") + "h-4 w-4"} />
         </button>
       ) : null}
+      <span className="sr-only" role="status" aria-live="polite">
+        {busy
+          ? `Unduhan APK MCM Chat berjalan${stage ? `: ${stage}` : ""}`
+          : isChecking
+            ? "Memeriksa ketersediaan APK MCM Chat"
+            : isUnavailable
+              ? "APK MCM Chat belum tersedia"
+              : ""}
+      </span>
       </div>
       <AlertDialogContent>
         <AlertDialogHeader>
