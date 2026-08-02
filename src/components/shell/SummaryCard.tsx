@@ -9,11 +9,13 @@ import type { ComponentType } from "react";
 
 export type SummaryTone = "primary" | "warning" | "danger" | "info";
 
+// Tone memakai token semantik (bukan warna literal) supaya mode gelap dan
+// high-contrast ikut menyesuaikan lewat override di src/styles.css.
 const TONE_CLASS: Record<SummaryTone, string> = {
-  primary: "text-primary bg-primary/10 ring-primary/20",
-  warning: "text-warning bg-warning/10 ring-warning/20 dark:text-warning",
-  danger: "text-destructive bg-destructive/10 ring-destructive/20",
-  info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+  primary: "summary-tone summary-tone-primary",
+  warning: "summary-tone summary-tone-warning",
+  danger: "summary-tone summary-tone-danger",
+  info: "summary-tone summary-tone-info",
 };
 
 export interface SummaryCardProps {
@@ -40,7 +42,7 @@ export function SummaryCard({
           {/* tracking di-relax pada mobile agar label 12-char seperti
               "TOTAL PRODUK" muat di kolom kartu di viewport 390px tanpa
               ter-truncate. Di ≥ md kembali ke 0.18em untuk identitas. */}
-          <p className="truncate text-ms-2xs font-semibold uppercase tracking-[0.1em] text-muted-foreground md:tracking-[0.18em]">
+          <p className="summary-card-label truncate text-ms-2xs font-semibold uppercase tracking-[0.1em] text-muted-foreground md:tracking-[0.18em]">
             {label}
           </p>
           {loading ? (

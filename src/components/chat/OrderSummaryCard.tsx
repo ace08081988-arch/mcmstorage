@@ -280,7 +280,7 @@ export function OrderSummaryCard({
             <span className="truncate">
               Total {rupiah(soldTotal)}
               {sisa != null && sisa > 0 ? (
-                <span className="text-warning dark:text-warning">
+                <span className="status-text-warning font-medium">
                   {" "}
                   · Sisa {rupiah(sisa)}
                 </span>

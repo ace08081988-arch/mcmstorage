@@ -52,7 +52,7 @@ export function PageHeader({
         <div className="flex min-w-0 items-center gap-ms-2">
           <Link
             to={backTo}
-            className="inline-flex h-8 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-card px-ms-3 text-ms-2xs font-medium text-foreground hover:border-primary/60"
+            className="inline-flex h-8 shrink-0 items-center justify-center rounded-full border border-primary/45 bg-card px-ms-3 text-ms-2xs font-medium text-foreground hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             {backLabel}
           </Link>
@@ -62,7 +62,7 @@ export function PageHeader({
               <span className="truncate">{title}</span>
             </p>
             {subtitle ? (
-              <p className="hidden min-[390px]:block truncate text-ms-2xs uppercase tracking-[0.1em] text-primary/70 md:tracking-[0.18em]">
+              <p className="app-header-subtitle hidden min-[390px]:block truncate text-ms-2xs uppercase tracking-[0.1em] text-primary md:tracking-[0.18em]">
                 {subtitle}
               </p>
             ) : null}
