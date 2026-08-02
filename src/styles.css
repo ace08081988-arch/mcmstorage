@@ -1452,6 +1452,33 @@ html[data-glass="1"] [data-slot="sheet-content"] {
   border-color: color-mix(in oklab, var(--foreground) 12%, transparent);
 }
 
+/* Permukaan MELAYANG (dialog, sheet, popover, dropdown) tidak boleh ikut
+   transparan ekstrem: di Android WebView isinya jadi "layar gelap" tanpa
+   teks. Lantai opasitas 0.9 + fallback penuh bila backdrop-filter tidak
+   didukung perangkat. */
+html[data-glass="1"] [data-slot="popover-content"],
+html[data-glass="1"] [data-slot="dropdown-menu-content"],
+html[data-glass="1"] [data-slot="dialog-content"],
+html[data-glass="1"] [data-slot="sheet-content"] {
+  background-color: color-mix(
+    in oklab,
+    var(--card) calc(max(var(--app-surface-opacity, 1), 0.9) * 100%),
+    transparent
+  );
+}
+@supports not (backdrop-filter: blur(2px)) {
+  html[data-glass="1"] [data-slot="card"],
+  html[data-glass="1"] [data-slot="popover-content"],
+  html[data-glass="1"] [data-slot="dropdown-menu-content"],
+  html[data-glass="1"] [data-slot="dialog-content"],
+  html[data-glass="1"] [data-slot="sheet-content"],
+  html[data-glass="1"] [data-slot="sidebar-container"],
+  html[data-glass="1"] [data-slot="sidebar-inner"],
+  html[data-glass="1"] .app-sidebar-surface {
+    background-color: var(--card);
+  }
+}
+
 html[data-glass="1"] [data-slot="sidebar-container"],
 html[data-glass="1"] [data-slot="sidebar-inner"],
 html[data-glass="1"] .app-sidebar-surface {
