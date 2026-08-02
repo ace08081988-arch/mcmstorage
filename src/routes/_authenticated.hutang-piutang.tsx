@@ -577,7 +577,7 @@ function HutangPiutangPage() {
       className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30"
       data-press-scope="on"
     >
-      <header className="sticky top-0 z-10 border-b bg-card/85 backdrop-blur-md">
+      <header className="app-sticky-header">
         <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
           <Link
             to="/"

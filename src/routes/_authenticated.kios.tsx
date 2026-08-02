@@ -257,7 +257,7 @@ function KiosPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground" data-press-scope="on">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+      <header className="app-sticky-header">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
           <Link
             to="/"

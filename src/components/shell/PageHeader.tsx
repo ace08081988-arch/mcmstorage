@@ -46,7 +46,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <header
-      className={`app-safe-top app-safe-x sticky top-0 z-10 border-b border-primary/15 bg-background/85 backdrop-blur-xl md:hidden ${className ?? ""}`}
+      className={`app-sticky-header app-safe-top app-safe-x md:hidden ${className ?? ""}`}
     >
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-ms-2 px-ms-4 py-ms-3">
         <div className="flex min-w-0 items-center gap-ms-2">

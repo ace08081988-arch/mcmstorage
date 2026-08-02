@@ -444,7 +444,7 @@ function ChatListPage() {
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 rounded-full"
+            className="h-11 w-11 shrink-0 rounded-full sm:h-9 sm:w-9"
             aria-label="Kembali ke Beranda"
             title="Beranda"
             onClick={() => goBackOr(router, { to: "/" })}
@@ -461,7 +461,7 @@ function ChatListPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
+                className="h-11 w-11 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground sm:h-9 sm:w-9"
                 aria-label="Menu lainnya"
               >
                 <MoreVertical className="h-5 w-5" />

@@ -1227,7 +1227,7 @@ function Index() {
           }}
         />
 
-        <header className="sticky top-0 z-20 border-b border-primary/12 bg-background/72 backdrop-blur-xl">
+        <header className="app-sticky-header">
           <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
             <div className="flex min-w-0 items-center gap-ms-2.5">
               <span
@@ -1680,7 +1680,7 @@ function Index() {
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+        <header className="app-sticky-header">
           <div className="mx-auto max-w-6xl px-ms-3 py-ms-3 sm:px-ms-6">
             <div className="flex items-center gap-ms-3">
               <button

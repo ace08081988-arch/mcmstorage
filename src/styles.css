@@ -1706,6 +1706,25 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   --z-toast: 9998;
 }
 
+/* ------------------------------------------------------------------
+   Header sticky kanonik
+   ------------------------------------------------------------------
+   Satu-satunya sumber tampilan header sticky "kaca" (glass) di seluruh
+   aplikasi. Sebelumnya tiap halaman menulis kombinasinya sendiri
+   (bg-card/95 backdrop-blur, bg-background/72 backdrop-blur-xl, …)
+   sehingga tebal blur, opasitas, warna garis, dan z-index berbeda-beda
+   antar halaman. Pakai `app-sticky-header` — jangan tulis manual lagi.
+*/
+@utility app-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid color-mix(in oklab, var(--primary) 15%, transparent);
+  background-color: color-mix(in oklab, var(--background) 85%, transparent);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
 .app-static-bottom-bar {
   z-index: var(--z-bottom-nav);
   /* Safe area lengkap: bawah (home indicator) + kiri/kanan (notch saat
