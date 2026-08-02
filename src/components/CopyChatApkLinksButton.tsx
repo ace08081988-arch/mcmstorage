@@ -150,7 +150,7 @@ export function CopyChatApkLinksButton({
   }
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full min-w-0">
       <button
       type="button"
       onClick={() => void onClick()}
@@ -180,7 +180,7 @@ export function CopyChatApkLinksButton({
           "📋"
         )}
       </span>
-      <span className="mt-1 text-ms-xs font-semibold leading-tight">
+      <span className="mt-1 break-words text-ms-xs font-semibold leading-tight">
         {copied
           ? "Tersalin"
           : isChecking
@@ -189,7 +189,7 @@ export function CopyChatApkLinksButton({
               ? "Belum tersedia"
               : "Salin link APK Chat"}
       </span>
-      <span className="text-ms-2xs leading-tight text-muted-foreground">
+      <span className="break-words text-ms-2xs leading-tight text-muted-foreground">
         {isChecking
           ? "Mengecek rilis terbaru…"
           : isUnavailable
