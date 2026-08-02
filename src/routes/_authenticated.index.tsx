@@ -1450,7 +1450,7 @@ function Index() {
               </span>
             </summary>
             <div className="space-ms-4 border-t border-primary/10 p-ms-4">
-              <div className="grid grid-cols-2 gap-ms-2.5">
+              <div className="grid grid-cols-2 items-stretch gap-ms-2.5 sm:grid-cols-3 lg:grid-cols-4">
                 {[
                   { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
                   { to: "/kontak", label: "Pelanggan & Supplier", emoji: "👥", desc: "Tautkan akun pengguna" },
@@ -1463,13 +1463,13 @@ function Index() {
                     key={s.to}
                     to={s.to}
                     preload="intent"
-                    className="surface-quiet flex flex-col gap-0.5 px-ms-3 py-ms-3 text-left"
+                    className="surface-quiet flex h-full w-full min-w-0 flex-col gap-0.5 px-ms-3 py-ms-3 text-left"
                   >
-                    <span className="text-[1.0625rem] leading-none">{s.emoji}</span>
-                    <span className="text-premium-heading mt-1.5 text-[0.9375rem] leading-tight text-foreground">
+                    <span className="text-ms-base leading-none">{s.emoji}</span>
+                    <span className="text-premium-heading mt-1 break-words text-ms-xs font-semibold leading-tight text-foreground">
                       {s.label}
                     </span>
-                    <span className="mt-0.5 text-[0.65625rem] leading-snug text-muted-foreground">
+                    <span className="break-words text-ms-2xs leading-tight text-muted-foreground">
                       {s.desc}
                     </span>
                   </Link>
