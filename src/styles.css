@@ -1141,6 +1141,17 @@ html[data-high-contrast="on"] .status-text-warning,
 html[data-high-contrast="on"] .app-header-subtitle {
   color: var(--foreground);
 }
+/*
+ * Indikator loading (spinner) pada kartu aksi: default memakai warna primary
+ * agar kontras terhadap permukaan card di mode terang maupun gelap; pada
+ * high-contrast dinaikkan ke foreground penuh.
+ */
+@utility busy-indicator {
+  color: var(--primary);
+}
+html[data-high-contrast="on"] .busy-indicator {
+  color: var(--foreground);
+}
 html[data-high-contrast="on"] .app-sticky-header :is(a, button) {
   border-width: 2px;
   border-color: var(--foreground);
