@@ -412,6 +412,31 @@
  */
 @utility status-success { background-color: var(--success-soft); color: var(--success); }
 @utility status-warning { background-color: var(--warning-soft); color: var(--warning); }
+
+/*
+ * Tone ikon kartu ringkasan (SummaryCard). Semua nilai berbasis token,
+ * jadi ikut berubah di dark mode dan diperkuat pada high-contrast.
+ * `--tone` = warna aksen tone yang sedang dipakai.
+ */
+@utility summary-tone {
+  color: var(--tone);
+  background-color: color-mix(in oklab, var(--tone) 12%, var(--card));
+  --tw-ring-color: color-mix(in oklab, var(--tone) 28%, transparent);
+}
+@utility summary-tone-primary { --tone: var(--primary); }
+@utility summary-tone-warning { --tone: var(--warning); }
+@utility summary-tone-danger  { --tone: var(--destructive); }
+@utility summary-tone-info    { --tone: var(--info); }
+
+/* Light mode: aksen kuning/biru terang kurang kontras di atas kartu terang. */
+html:not(.dark) .summary-tone-warning { --tone: color-mix(in oklab, var(--warning) 72%, black); }
+html:not(.dark) .summary-tone-info    { --tone: color-mix(in oklab, var(--info) 80%, black); }
+
+/* Status teks (mis. "Sisa Rp…") agar tetap terbaca di kedua mode. */
+@utility status-text-warning {
+  color: color-mix(in oklab, var(--warning) 72%, black);
+}
+.dark .status-text-warning { color: var(--warning); }
 @utility status-info    { background-color: var(--info-soft);    color: var(--info); }
 @utility status-danger  { background-color: color-mix(in oklab, var(--destructive) 15%, var(--background)); color: var(--destructive); }
 
