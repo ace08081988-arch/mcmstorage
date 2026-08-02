@@ -1122,6 +1122,29 @@ html[data-high-contrast="on"] *:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+/*
+ * High contrast: teks status & label ringkasan naik ke foreground penuh,
+ * ikon tone memakai latar solid + border tegas, dan tombol header
+ * (back / ikon) mendapat garis 2px agar batasnya terbaca.
+ */
+html[data-high-contrast="on"] .summary-card-label,
+html[data-high-contrast="on"] .app-sticky-header .text-muted-foreground {
+  color: var(--foreground);
+}
+html[data-high-contrast="on"] .summary-tone {
+  color: var(--foreground);
+  background-color: color-mix(in oklab, var(--tone) 22%, var(--card));
+  --tw-ring-color: var(--foreground);
+  box-shadow: inset 0 0 0 2px var(--foreground);
+}
+html[data-high-contrast="on"] .status-text-warning,
+html[data-high-contrast="on"] .app-header-subtitle {
+  color: var(--foreground);
+}
+html[data-high-contrast="on"] .app-sticky-header :is(a, button) {
+  border-width: 2px;
+  border-color: var(--foreground);
+}
 /* Perkuat border pada permukaan berlapis (dialog, popover, card, sheet). */
 html[data-high-contrast="on"] [role="dialog"],
 html[data-high-contrast="on"] [role="alertdialog"],
