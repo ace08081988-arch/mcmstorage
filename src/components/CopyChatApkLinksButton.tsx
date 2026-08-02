@@ -155,6 +155,7 @@ export function CopyChatApkLinksButton({
       type="button"
       onClick={() => void onClick()}
       disabled={busy || isChecking}
+      aria-busy={busy || isChecking}
       aria-label={
         copied
           ? "Tersalin: semua link APK MCM Chat sudah disalin ke clipboard"
@@ -212,6 +213,17 @@ export function CopyChatApkLinksButton({
           <RefreshCw aria-hidden="true" className={(isChecking ? "busy-indicator animate-spin " : "") + "h-4 w-4"} />
         </button>
       ) : null}
+      <span className="sr-only" role="status" aria-live="polite">
+        {copied
+          ? "Semua link APK MCM Chat sudah disalin"
+          : busy
+            ? "Menyalin link APK MCM Chat"
+            : isChecking
+              ? "Memeriksa ketersediaan APK MCM Chat"
+              : isUnavailable
+                ? "APK MCM Chat belum tersedia"
+                : ""}
+      </span>
     </div>
   );
 }

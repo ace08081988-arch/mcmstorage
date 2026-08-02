@@ -84,6 +84,7 @@ export function DownloadStorageApkShortcut() {
       }}
       disabled={busy}
       aria-disabled={busy}
+      aria-busy={busy || isChecking}
       aria-label={
         isUnavailable
           ? "APK MCM Storage belum tersedia — ketuk untuk cek ulang"
@@ -126,6 +127,15 @@ export function DownloadStorageApkShortcut() {
         <RefreshCw aria-hidden="true" className={(isChecking ? "busy-indicator animate-spin " : "") + "h-4 w-4"} />
       </button>
     ) : null}
+    <span className="sr-only" role="status" aria-live="polite">
+      {busy
+        ? "Unduhan APK MCM Storage sedang diproses"
+        : isChecking
+          ? "Memeriksa ketersediaan APK MCM Storage"
+          : isUnavailable
+            ? "APK MCM Storage belum tersedia"
+            : ""}
+    </span>
     </div>
   );
 }
