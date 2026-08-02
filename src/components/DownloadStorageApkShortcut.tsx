@@ -71,7 +71,7 @@ export function DownloadStorageApkShortcut() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
     <button
       type="button"
       onClick={() => {
@@ -91,7 +91,7 @@ export function DownloadStorageApkShortcut() {
             ? "Memeriksa ketersediaan APK MCM Storage"
             : "Unduh APK MCM Storage"
       }
-      className="group flex flex-col gap-0.5 rounded-md border bg-card px-ms-3 py-ms-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+      className="group flex h-full w-full flex-col gap-0.5 rounded-xl border bg-card px-ms-3 py-ms-3 pr-10 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
     >
       <span className="text-ms-base leading-none">
         {busy || isChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "⬇️"}
@@ -121,7 +121,7 @@ export function DownloadStorageApkShortcut() {
         disabled={isChecking}
         aria-label="Cek ulang ketersediaan APK MCM Storage"
         title="Cek ulang"
-        className="absolute right-0 top-0 grid min-h-11 min-w-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+        className="absolute right-1 top-1 grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
       >
         <RefreshCw className={"h-3.5 w-3.5 " + (isChecking ? "animate-spin" : "")} />
       </button>
