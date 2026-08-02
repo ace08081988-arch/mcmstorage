@@ -2464,7 +2464,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           {thumbs[0]?.thumb_url ? (
             <img src={thumbs[0].thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
+            <div
+              aria-hidden
+              className="h-full w-full animate-pulse bg-gradient-to-br from-muted via-muted/60 to-muted"
+            />
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-ms-2">
             <div className="flex min-w-0 items-center gap-ms-1 text-ms-2xs font-medium leading-none text-white/90">
@@ -2491,7 +2494,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           {thumbs[0]?.thumb_url ? (
             <img src={thumbs[0].thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
+            <div
+              aria-hidden
+              className="h-full w-full animate-pulse bg-gradient-to-br from-muted via-muted/60 to-muted"
+            />
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-ms-2">
             <div className="flex min-w-0 items-center gap-ms-1 text-ms-2xs font-medium leading-none text-white/90">
