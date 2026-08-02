@@ -197,13 +197,13 @@ function EcerSummaryCard({
     danger: "text-destructive bg-destructive/10 ring-destructive/20",
   };
   return (
-    <div className="group relative overflow-hidden rounded-xl border bg-card/70 p-ms-3 shadow-sm backdrop-blur transition-all hover:shadow-md md:p-ms-4">
+    <div className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-b from-card to-background p-ms-3 elev-sm backdrop-blur transition-all hover:border-primary/40 hover:elev-md md:p-ms-4">
       <div className="flex items-start justify-between gap-ms-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground md:text-ms-2xs">
+          <p className="truncate text-ms-2xs font-semibold uppercase tracking-[0.1em] text-muted-foreground md:tracking-[0.18em]">
             {label}
           </p>
-          <p className="mt-1 text-ms-xl font-bold tabular-nums tracking-tight md:text-ms-2xl">
+          <p className="mt-1 truncate text-ms-xl font-semibold tabular-nums md:text-ms-2xl">
             {value.toLocaleString("id-ID")}
           </p>
           {hint && (
@@ -213,10 +213,10 @@ function EcerSummaryCard({
           )}
         </div>
         <span
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset ${map[tone]} md:h-9 md:w-9`}
+          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-inset ${map[tone]} md:h-10 md:w-10`}
           aria-hidden
         >
-          <Icon className="h-4 w-4" />
+          <Icon className="h-4 w-4 md:h-[18px] md:w-[18px]" />
         </span>
       </div>
     </div>
