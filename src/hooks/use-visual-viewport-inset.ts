@@ -184,7 +184,7 @@ export function useVisualViewportBox(): VisualViewportBox | null {
  */
 export function visualViewportDialogStyle(
   box: VisualViewportBox | null,
-): React.CSSProperties | undefined {
+): { top: string; maxHeight: string } | undefined {
   if (!box) return undefined;
   const gap = 8;
   const maxH = Math.max(200, Math.round(box.height - 2 * gap));
