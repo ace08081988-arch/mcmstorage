@@ -89,3 +89,77 @@ export function useVisualViewportKeyboardInset(): number {
 
   return inset;
 }
+
+export type VisualViewportBox = { top: number; height: number };
+
+/**
+ * Kotak area yang BENAR-BENAR terlihat (visual viewport) relatif terhadap
+ * layout viewport — acuan elemen `position: fixed`.
+ *
+ * Di Android WebView/Chrome, layout viewport sering LEBIH TINGGI daripada
+ * area terlihat (toolbar browser, keyboard, bilah sistem). Dialog yang
+ * dipusatkan dengan `top: 50%` karena itu bisa jatuh separuh/seluruhnya di
+ * bawah layar. Dengan kotak ini, dialog bisa dipusatkan ke tengah area
+ * terlihat dan tingginya dibatasi ke tinggi area itu.
+ *
+ * Mengembalikan `null` bila tidak ada `visualViewport` atau bila selisihnya
+ * tidak berarti (<2px) → pakai perilaku CSS default.
+ */
+export function useVisualViewportBox(): VisualViewportBox | null {
+  const [box, setBox] = useState<VisualViewportBox | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    let raf = 0;
+    const timers: number[] = [];
+    const clearTimers = () => {
+      while (timers.length) window.clearTimeout(timers.shift()!);
+    };
+    const update = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const top = Math.max(0, Math.round(vv.offsetTop || 0));
+        const height = Math.round(vv.height || 0);
+        const layout = window.innerHeight || height;
+        const next: VisualViewportBox | null =
+          height > 0 && (top > 1 || Math.abs(layout - height) > 1) ? { top, height } : null;
+        setBox((prev) => {
+          if (prev === next) return prev;
+          if (prev && next && prev.top === next.top && prev.height === next.height) return prev;
+          return next;
+        });
+      });
+    };
+    const resample = () => {
+      clearTimers();
+      for (const delay of [60, 160, 320, 500]) timers.push(window.setTimeout(update, delay));
+    };
+    const onResize = () => {
+      update();
+      resample();
+    };
+
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    const so = typeof screen !== "undefined" ? screen.orientation : undefined;
+    so?.addEventListener?.("change", onResize);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimers();
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      so?.removeEventListener?.("change", onResize);
+    };
+  }, []);
+
+  return box;
+}
