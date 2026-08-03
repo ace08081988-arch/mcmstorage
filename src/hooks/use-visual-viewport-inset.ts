@@ -187,12 +187,28 @@ export function visualViewportDialogStyle(
 ): { top: string; maxHeight: string } | undefined {
   if (!box) return undefined;
   const gap = 8;
-  const maxH = Math.max(200, Math.round(box.height - 2 * gap));
+  const visible = Math.max(0, box.height);
+  // Tinggi maksimum: seluruh area terlihat dikurangi celah atas+bawah.
+  // Lantai 120px hanya untuk layar ekstrem (mis. keyboard menutup nyaris
+  // seluruh layar) supaya dialog tidak menyusut jadi tidak terpakai.
+  const maxH = Math.max(120, Math.round(visible - 2 * gap));
   const half = maxH / 2;
-  const rawCenter = box.top + box.height / 2;
-  const min = half + gap;
-  const max = box.layout - half - gap;
-  const center =
-    max < min ? box.layout / 2 : Math.min(Math.max(rawCenter, min), max);
+
+  // 1) Titik pusat ideal = tengah area TERLIHAT.
+  let center = box.top + visible / 2;
+
+  // 2) Jepit ke dalam area terlihat bila kartu memang muat di sana.
+  //    Ini yang mencegah dialog "melorot" ke bawah layar di WebView
+  //    Android saat toolbar/keyboard membuat layout viewport lebih tinggi.
+  const vMin = box.top + half + gap;
+  const vMax = box.top + visible - half - gap;
+  if (vMax >= vMin) center = Math.min(Math.max(center, vMin), vMax);
+
+  // 3) Terakhir, pastikan kartu tetap di dalam layout viewport (acuan
+  //    elemen `position: fixed`) supaya tidak ada bagian yang terpotong.
+  const lMin = half;
+  const lMax = box.layout - half;
+  if (lMax >= lMin) center = Math.min(Math.max(center, lMin), lMax);
+
   return { top: `${Math.round(center)}px`, maxHeight: `${maxH}px` };
 }
