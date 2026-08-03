@@ -119,6 +119,7 @@ import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.
 import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
 import { Route as LovableVisualGudangShellRouteImport } from './routes/lovable.visual.gudang-shell'
 import { Route as LovableVisualEcerReturnFromWaRouteImport } from './routes/lovable.visual.ecer-return-from-wa'
+import { Route as LovableVisualDialogViewportRouteImport } from './routes/lovable.visual.dialog-viewport'
 import { Route as LovableVisualDesignTokensRouteImport } from './routes/lovable.visual.design-tokens'
 import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
 import { Route as LovableVisualDebtSsotConsistencyRouteImport } from './routes/lovable.visual.debt-ssot-consistency'
@@ -767,6 +768,12 @@ const LovableVisualEcerReturnFromWaRoute =
     path: '/lovable/visual/ecer-return-from-wa',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualDialogViewportRoute =
+  LovableVisualDialogViewportRouteImport.update({
+    id: '/lovable/visual/dialog-viewport',
+    path: '/lovable/visual/dialog-viewport',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualDesignTokensRoute =
   LovableVisualDesignTokensRouteImport.update({
     id: '/lovable/visual/design-tokens',
@@ -1159,6 +1166,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/debt-ssot-consistency': typeof LovableVisualDebtSsotConsistencyRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
+  '/lovable/visual/dialog-viewport': typeof LovableVisualDialogViewportRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
@@ -1314,6 +1322,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/debt-ssot-consistency': typeof LovableVisualDebtSsotConsistencyRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
+  '/lovable/visual/dialog-viewport': typeof LovableVisualDialogViewportRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
@@ -1474,6 +1483,7 @@ export interface FileRoutesById {
   '/lovable/visual/debt-ssot-consistency': typeof LovableVisualDebtSsotConsistencyRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
+  '/lovable/visual/dialog-viewport': typeof LovableVisualDialogViewportRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
@@ -1634,6 +1644,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/debt-ssot-consistency'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
+    | '/lovable/visual/dialog-viewport'
     | '/lovable/visual/ecer-return-from-wa'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
@@ -1789,6 +1800,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/debt-ssot-consistency'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
+    | '/lovable/visual/dialog-viewport'
     | '/lovable/visual/ecer-return-from-wa'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
@@ -1948,6 +1960,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/debt-ssot-consistency'
     | '/lovable/visual/delivery-history'
     | '/lovable/visual/design-tokens'
+    | '/lovable/visual/dialog-viewport'
     | '/lovable/visual/ecer-return-from-wa'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
@@ -2032,6 +2045,7 @@ export interface RootRouteChildren {
   LovableVisualDebtSsotConsistencyRoute: typeof LovableVisualDebtSsotConsistencyRoute
   LovableVisualDeliveryHistoryRoute: typeof LovableVisualDeliveryHistoryRoute
   LovableVisualDesignTokensRoute: typeof LovableVisualDesignTokensRoute
+  LovableVisualDialogViewportRoute: typeof LovableVisualDialogViewportRoute
   LovableVisualEcerReturnFromWaRoute: typeof LovableVisualEcerReturnFromWaRoute
   LovableVisualGudangShellRoute: typeof LovableVisualGudangShellRoute
   LovableVisualKartonKonversiRoute: typeof LovableVisualKartonKonversiRoute
@@ -2841,6 +2855,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualEcerReturnFromWaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/dialog-viewport': {
+      id: '/lovable/visual/dialog-viewport'
+      path: '/lovable/visual/dialog-viewport'
+      fullPath: '/lovable/visual/dialog-viewport'
+      preLoaderRoute: typeof LovableVisualDialogViewportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/design-tokens': {
       id: '/lovable/visual/design-tokens'
       path: '/lovable/visual/design-tokens'
@@ -3479,6 +3500,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualDebtSsotConsistencyRoute: LovableVisualDebtSsotConsistencyRoute,
   LovableVisualDeliveryHistoryRoute: LovableVisualDeliveryHistoryRoute,
   LovableVisualDesignTokensRoute: LovableVisualDesignTokensRoute,
+  LovableVisualDialogViewportRoute: LovableVisualDialogViewportRoute,
   LovableVisualEcerReturnFromWaRoute: LovableVisualEcerReturnFromWaRoute,
   LovableVisualGudangShellRoute: LovableVisualGudangShellRoute,
   LovableVisualKartonKonversiRoute: LovableVisualKartonKonversiRoute,
