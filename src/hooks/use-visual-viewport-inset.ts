@@ -172,3 +172,27 @@ export function useVisualViewportBox(): VisualViewportBox | null {
 
   return box;
 }
+
+/**
+ * Ubah `VisualViewportBox` menjadi style untuk dialog `position: fixed`.
+ *
+ * Elemen fixed diposisikan relatif LAYOUT viewport, sedangkan `vv.offsetTop`
+ * ikut bergerak saat halaman di-scroll / toolbar Android muncul. Tanpa clamp,
+ * `top = offsetTop + height/2` bisa mendorong dialog ke bawah layar sehingga
+ * footer & isinya terpotong. Karena itu titik pusat dijepit supaya seluruh
+ * kartu tetap berada di dalam layout viewport.
+ */
+export function visualViewportDialogStyle(
+  box: VisualViewportBox | null,
+): React.CSSProperties | undefined {
+  if (!box) return undefined;
+  const gap = 8;
+  const maxH = Math.max(200, Math.round(box.height - 2 * gap));
+  const half = maxH / 2;
+  const rawCenter = box.top + box.height / 2;
+  const min = half + gap;
+  const max = box.layout - half - gap;
+  const center =
+    max < min ? box.layout / 2 : Math.min(Math.max(rawCenter, min), max);
+  return { top: `${Math.round(center)}px`, maxHeight: `${maxH}px` };
+}
