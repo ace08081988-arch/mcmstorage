@@ -1335,6 +1335,18 @@ export default defineConfig({
         viewport: { width: 411, height: 893 },
       },
     },
+    // ── Dialog `ui/dialog` di WebView Android: layout viewport lebih
+    //   tinggi daripada area terlihat (toolbar/keyboard). Kartu tidak
+    //   boleh melorot ke bawah layar atau terpotong.
+    {
+      name: "dialog-webview-viewport-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /dialog-webview-viewport\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 360, height: 800 },
+      },
+    },
     {
       name: "photo-editor-toolbar-viewports-e2e",
       testDir: "./tests/e2e",
