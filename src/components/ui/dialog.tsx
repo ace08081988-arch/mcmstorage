@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useScrollShadow } from "@/hooks/use-scroll-shadow";
-import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
+import { useVisualViewportBox } from "@/hooks/use-visual-viewport-inset";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -60,7 +60,17 @@ const DialogContent = React.forwardRef<
   // persis di balik keyboard → layar hanya menampilkan overlay gelap/blur dan
   // fiturnya "hilang". Kita geser pusat dialog ke tengah area yang benar-benar
   // terlihat dan batasi tingginya ke sisa ruang tersebut.
-  const kb = useVisualViewportKeyboardInset();
+  // Pusatkan dialog ke tengah AREA TERLIHAT, bukan tengah layout viewport.
+  // Di Android WebView, layout viewport bisa jauh lebih tinggi (toolbar,
+  // keyboard, bilah sistem) sehingga dialog `top-50%` jatuh ke bawah layar
+  // dan hanya bagian atasnya yang terlihat.
+  const box = useVisualViewportBox();
+  const vvStyle: React.CSSProperties | undefined = box
+    ? {
+        top: `${Math.round(box.top + box.height / 2)}px`,
+        maxHeight: `${Math.max(200, Math.round(box.height - 16))}px`,
+      }
+    : undefined;
 
   return (
     <DialogPortal>
@@ -68,15 +78,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={setRefs}
         data-scrolled={topShadow ? "true" : "false"}
-        style={
-          kb > 0
-            ? {
-                top: `calc(50% - ${Math.round(kb / 2)}px)`,
-                maxHeight: `calc(100dvh - ${kb}px - max(env(safe-area-inset-top), 0.5rem) - 0.5rem)`,
-                ...(props.style ?? {}),
-              }
-            : props.style
-        }
+        style={vvStyle ? { ...vvStyle, ...(props.style ?? {}) } : props.style}
         className={cn(
         // Mobile: hindari dialog "melompat keluar" viewport dengan membatasi
         // tinggi ke `100dvh` dikurangi safe-area, dan menaruh konten dalam
