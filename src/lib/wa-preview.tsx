@@ -356,6 +356,7 @@ export function WaPreviewHost() {
   }, [current, draft, skip]);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const url = current?.url;
   const photoCount = previews.length;
   const expected = current?.expectedCount ?? photoCount;
@@ -416,6 +417,7 @@ export function WaPreviewHost() {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
       <DialogContent
+        ref={contentRef}
         data-testid="wa-preview-dialog"
         // Fokus awal diarahkan ke area konten (bukan tombol kirim) supaya
         // pembaca layar membacakan judul + deskripsi lebih dulu dan pengguna
@@ -423,6 +425,52 @@ export function WaPreviewHost() {
         onOpenAutoFocus={(e) => {
           e.preventDefault();
           scrollRef.current?.focus();
+        }}
+        // Perilaku tutup dibuat eksplisit & konsisten:
+        // - ESC: saat mode edit aktif, ESC pertama keluar dari editor (draft
+        //   tetap tersimpan); ESC berikutnya membatalkan dialog.
+        // - Klik/tap backdrop: sama dengan tombol "Batal".
+        onEscapeKeyDown={(e) => {
+          if (editing) {
+            e.preventDefault();
+            setEditing(false);
+            scrollRef.current?.focus();
+            return;
+          }
+          e.preventDefault();
+          finish(false);
+        }}
+        onPointerDownOutside={(e) => {
+          e.preventDefault();
+          finish(false);
+        }}
+        onInteractOutside={(e) => {
+          e.preventDefault();
+          finish(false);
+        }}
+        // Fallback trap Tab/Shift+Tab: di sebagian Android WebView fokus bisa
+        // "lolos" ke konten di belakang overlay. Kita gulung fokus secara
+        // manual saat mencapai elemen pertama/terakhir di dalam dialog.
+        onKeyDown={(e) => {
+          if (e.key !== "Tab") return;
+          const root = contentRef.current;
+          if (!root) return;
+          const focusables = Array.from(
+            root.querySelectorAll<HTMLElement>(
+              'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+          if (focusables.length === 0) return;
+          const first = focusables[0]!;
+          const last = focusables[focusables.length - 1]!;
+          const active = document.activeElement as HTMLElement | null;
+          if (!e.shiftKey && (active === last || !root.contains(active))) {
+            e.preventDefault();
+            first.focus();
+          } else if (e.shiftKey && (active === first || !root.contains(active))) {
+            e.preventDefault();
+            last.focus();
+          }
         }}
         className="flex max-h-[92svh] w-[calc(100vw-1.5rem)] max-w-md flex-col gap-0 overflow-clip p-0 sm:max-h-[88svh] sm:w-full sm:max-w-md"
       >
