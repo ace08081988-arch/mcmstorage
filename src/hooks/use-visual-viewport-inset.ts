@@ -90,7 +90,7 @@ export function useVisualViewportKeyboardInset(): number {
   return inset;
 }
 
-export type VisualViewportBox = { top: number; height: number };
+export type VisualViewportBox = { top: number; height: number; layout: number };
 
 /**
  * Kotak area yang BENAR-BENAR terlihat (visual viewport) relatif terhadap
@@ -125,10 +125,19 @@ export function useVisualViewportBox(): VisualViewportBox | null {
         const height = Math.round(vv.height || 0);
         const layout = window.innerHeight || height;
         const next: VisualViewportBox | null =
-          height > 0 && (top > 1 || Math.abs(layout - height) > 1) ? { top, height } : null;
+          height > 0 && (top > 1 || Math.abs(layout - height) > 1)
+            ? { top, height, layout: Math.max(height, layout) }
+            : null;
         setBox((prev) => {
           if (prev === next) return prev;
-          if (prev && next && prev.top === next.top && prev.height === next.height) return prev;
+          if (
+            prev &&
+            next &&
+            prev.top === next.top &&
+            prev.height === next.height &&
+            prev.layout === next.layout
+          )
+            return prev;
           return next;
         });
       });
