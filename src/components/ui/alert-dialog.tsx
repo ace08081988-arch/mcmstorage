@@ -3,7 +3,10 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { useVisualViewportBox } from "@/hooks/use-visual-viewport-inset";
+import {
+  useVisualViewportBox,
+  visualViewportDialogStyle,
+} from "@/hooks/use-visual-viewport-inset";
 
 const AlertDialog = AlertDialogPrimitive.Root;
 
@@ -33,12 +36,7 @@ const AlertDialogContent = React.forwardRef<
   // Lihat catatan di `dialog.tsx`: keyboard bisa menutupi dialog yang
   // dipusatkan pada layout viewport. Geser & batasi tinggi ke area terlihat.
   const box = useVisualViewportBox();
-  const vvStyle: React.CSSProperties | undefined = box
-    ? {
-        top: `${Math.round(box.top + box.height / 2)}px`,
-        maxHeight: `${Math.max(200, Math.round(box.height - 16))}px`,
-      }
-    : undefined;
+  const vvStyle = visualViewportDialogStyle(box);
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />

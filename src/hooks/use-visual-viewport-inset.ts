@@ -90,7 +90,7 @@ export function useVisualViewportKeyboardInset(): number {
   return inset;
 }
 
-export type VisualViewportBox = { top: number; height: number };
+export type VisualViewportBox = { top: number; height: number; layout: number };
 
 /**
  * Kotak area yang BENAR-BENAR terlihat (visual viewport) relatif terhadap
@@ -125,10 +125,19 @@ export function useVisualViewportBox(): VisualViewportBox | null {
         const height = Math.round(vv.height || 0);
         const layout = window.innerHeight || height;
         const next: VisualViewportBox | null =
-          height > 0 && (top > 1 || Math.abs(layout - height) > 1) ? { top, height } : null;
+          height > 0 && (top > 1 || Math.abs(layout - height) > 1)
+            ? { top, height, layout: Math.max(height, layout) }
+            : null;
         setBox((prev) => {
           if (prev === next) return prev;
-          if (prev && next && prev.top === next.top && prev.height === next.height) return prev;
+          if (
+            prev &&
+            next &&
+            prev.top === next.top &&
+            prev.height === next.height &&
+            prev.layout === next.layout
+          )
+            return prev;
           return next;
         });
       });
@@ -162,4 +171,28 @@ export function useVisualViewportBox(): VisualViewportBox | null {
   }, []);
 
   return box;
+}
+
+/**
+ * Ubah `VisualViewportBox` menjadi style untuk dialog `position: fixed`.
+ *
+ * Elemen fixed diposisikan relatif LAYOUT viewport, sedangkan `vv.offsetTop`
+ * ikut bergerak saat halaman di-scroll / toolbar Android muncul. Tanpa clamp,
+ * `top = offsetTop + height/2` bisa mendorong dialog ke bawah layar sehingga
+ * footer & isinya terpotong. Karena itu titik pusat dijepit supaya seluruh
+ * kartu tetap berada di dalam layout viewport.
+ */
+export function visualViewportDialogStyle(
+  box: VisualViewportBox | null,
+): { top: string; maxHeight: string } | undefined {
+  if (!box) return undefined;
+  const gap = 8;
+  const maxH = Math.max(200, Math.round(box.height - 2 * gap));
+  const half = maxH / 2;
+  const rawCenter = box.top + box.height / 2;
+  const min = half + gap;
+  const max = box.layout - half - gap;
+  const center =
+    max < min ? box.layout / 2 : Math.min(Math.max(rawCenter, min), max);
+  return { top: `${Math.round(center)}px`, maxHeight: `${maxH}px` };
 }
