@@ -6,7 +6,10 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useScrollShadow } from "@/hooks/use-scroll-shadow";
-import { useVisualViewportBox } from "@/hooks/use-visual-viewport-inset";
+import {
+  useVisualViewportBox,
+  visualViewportDialogStyle,
+} from "@/hooks/use-visual-viewport-inset";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -65,12 +68,7 @@ const DialogContent = React.forwardRef<
   // keyboard, bilah sistem) sehingga dialog `top-50%` jatuh ke bawah layar
   // dan hanya bagian atasnya yang terlihat.
   const box = useVisualViewportBox();
-  const vvStyle: React.CSSProperties | undefined = box
-    ? {
-        top: `${Math.round(box.top + box.height / 2)}px`,
-        maxHeight: `${Math.max(200, Math.round(box.height - 16))}px`,
-      }
-    : undefined;
+  const vvStyle = visualViewportDialogStyle(box);
 
   return (
     <DialogPortal>
