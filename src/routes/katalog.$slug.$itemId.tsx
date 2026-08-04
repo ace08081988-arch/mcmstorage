@@ -20,6 +20,13 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
     const it = loaderData?.item;
     const shopName = loaderData?.shop?.name ?? "Toko";
     const title = it ? `${it.name} — ${shopName}` : "Produk tidak ditemukan";
+  ssr: true,
+  loader: ({ params }) =>
+    getPublicCatalogItem({ data: { slug: params.slug, itemId: params.itemId } }),
+  head: ({ params, loaderData }) => {
+    const it = loaderData?.item;
+    const shopName = loaderData?.shop?.name ?? "Toko";
+    const title = it ? `${it.name} — ${shopName}` : "Produk tidak ditemukan";
     const desc = it
       ? (it.description?.trim() ||
         `${it.name}${it.category ? ` (${it.category})` : ""} di ${shopName}. Cek stok terkini dan pesan langsung lewat WhatsApp.`)
