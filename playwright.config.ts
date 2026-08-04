@@ -100,6 +100,16 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
     },
     {
+      // Visual regression seluruh variasi menu (sidebar, bottom nav
+      // utama, bottom nav chat, pill tabs) di mode terang & gelap.
+      // Harness /lovable/visual/menu-variants memakai komponen asli,
+      // jadi perubahan token tema/CSS yang membuat warna menu tidak
+      // konsisten langsung menggagalkan snapshot + asersi token.
+      name: "menu-variants",
+      testMatch: /menu-variants\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // E2E fungsional portal pegawai (bukan visual regression).
       // Memakai mobile viewport karena pegawai mengakses lewat HP/APK.
       name: "worker-portal-e2e",

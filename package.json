@@ -61,6 +61,7 @@
     "test:visual:update": "playwright test --update-snapshots",
     "test:sidebar": "playwright test --project=sidebar-highlight",
     "test:tap-targets": "playwright test --project=tap-targets",
+    "test:menu": "playwright test --project=menu-variants",
     "test:worker-portal": "playwright test --project=worker-portal-e2e",
     "test:e2e:apk": "node scripts/run-apk-e2e.mjs",
     "test:e2e:apk:terminal": "node scripts/run-apk-e2e.mjs --mode terminal",
