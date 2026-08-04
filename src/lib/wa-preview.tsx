@@ -360,6 +360,19 @@ export function WaPreviewHost() {
    */
   const layerTriggerRef = useRef<HTMLElement | null>(null);
   /**
+   * Jejak posisi pemicu layer portal. Dipakai kalau node pemicunya sendiri
+   * sudah ter-unmount sebelum popover/select ditutup (mis. daftar kontak
+   * ikut re-render setelah memilih): kita masih bisa mengembalikan fokus ke
+   * elemen fokusable TERDEKAT di dalam dialog, bukan melempar ke area konten
+   * atau <body>.
+   */
+  const layerTriggerAnchorRef = useRef<{
+    selector: string | null;
+    parent: HTMLElement | null;
+    /** Indeks pemicu di antara seluruh elemen fokusable dialog saat itu. */
+    index: number;
+  } | null>(null);
+  /**
    * Cadangan pencarian pemicu: bila node aslinya sudah dilepas dari DOM
    * (list/kartu ikut re-render setelah kirim), kita cari ulang elemen
    * setara lewat selector stabil ini.
@@ -531,6 +544,17 @@ export function WaPreviewHost() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   /**
+   * Versi state dari `contentRef`. Effect penjaga fokus butuh tahu KAPAN node
+   * dialog benar-benar terpasang; membaca ref saja bisa kebagian `null` saat
+   * effect jalan lebih dulu dari commit portal Radix, dan penjaganya lalu tidak
+   * pernah terpasang sama sekali.
+   */
+  const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null);
+  const setContentNode = useCallback((node: HTMLDivElement | null) => {
+    contentRef.current = node;
+    setContentEl(node);
+  }, []);
+  /**
    * Urutan tab saat berpindah mode edit ⇄ baca.
    *
    * Blok "Teks pesan" menukar dua elemen fokusable yang menempati posisi tab
@@ -611,7 +635,7 @@ export function WaPreviewHost() {
    */
   useEffect(() => {
     if (!open) return;
-    const root = contentRef.current;
+    const root = contentEl ?? contentRef.current;
     if (!root) return;
 
     let raf = 0;
@@ -625,6 +649,45 @@ export function WaPreviewHost() {
 
     const portalLayerOpen = () => !!portalLayer && document.contains(portalLayer);
 
+    const FOCUSABLE_SELECTOR =
+      'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+    /** Semua elemen fokusable dialog dalam urutan DOM (yang terlihat saja). */
+    const focusablesIn = (node: HTMLElement) =>
+      Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+        (el) => el.offsetParent !== null || el === document.activeElement,
+      );
+
+    /**
+     * Fallback saat pemicu layer sudah ter-unmount: cari elemen fokusable
+     * TERDEKAT dengan posisi pemicu lama.
+     *  1. Node setara hasil re-render (selector stabil, dicari di dalam dialog).
+     *  2. Elemen fokusable pertama di dalam kontainer pemicu (parent) — biasanya
+     *     baris/kartu yang sama.
+     *  3. Elemen fokusable pada indeks yang sama; kalau daftar menyusut, ambil
+     *     tetangga terdekat ke belakang lalu ke depan.
+     */
+    const nearestFallback = (node: HTMLElement): HTMLElement | null => {
+      const anchor = layerTriggerAnchorRef.current;
+      if (!anchor) return null;
+
+      if (anchor.selector) {
+        const found = node.querySelector<HTMLElement>(anchor.selector);
+        if (found && found.offsetParent !== null) return found;
+      }
+
+      const parent = anchor.parent;
+      if (parent && document.contains(parent) && node.contains(parent)) {
+        const inParent = focusablesIn(parent)[0];
+        if (inParent) return inParent;
+      }
+
+      const list = focusablesIn(node).filter((el) => el !== scrollRef.current);
+      if (list.length === 0) return null;
+      const idx = Math.min(Math.max(anchor.index, 0), list.length - 1);
+      return list[idx] ?? list[list.length - 1] ?? null;
+    };
+
     /** Cek super-murah: apakah fokus sudah hilang dari dialog? */
     const focusEscaped = () => {
       const node = contentRef.current;
@@ -633,6 +696,11 @@ export function WaPreviewHost() {
       if (portalLayerOpen()) return false;
       const active = document.activeElement as HTMLElement | null;
       if (!active || active === document.body) return true;
+      // Radix FocusScope sering "menyelamatkan" fokus ke kontainer dialog saat
+      // elemen aktif dilepas. Itu masih di dalam dialog, tapi urutan Tab jadi
+      // mulai dari awal — anggap perlu diperbaiki bila kita tahu posisi
+      // pemicu terakhirnya.
+      if (active === node && layerTriggerAnchorRef.current) return true;
       return !node.contains(active);
     };
 
@@ -641,24 +709,32 @@ export function WaPreviewHost() {
         if (!node || !document.contains(node)) return;
         if (portalLayerOpen()) return;
         const active = document.activeElement as HTMLElement | null;
-        if (active && active !== document.body && node.contains(active)) return;
+        const parkedOnContainer = active === node && !!layerTriggerAnchorRef.current;
+        if (active && active !== document.body && node.contains(active) && !parkedOnContainer) return;
         // Prioritas 1: elemen pemicu popover/select yang tadi memegang fokus
         // di dalam dialog (mis. tombol "Pilih kontak"). Radix biasanya sudah
         // mengembalikannya sendiri, tapi di Android WebView sering meleset ke
         // <body> — di situ kita pulihkan manual.
         const back = layerTriggerRef.current;
-        if (back && document.contains(back) && node.contains(back)) {
+        // `back === node` berarti Radix cuma memarkir fokus di kontainer
+        // dialog — bukan pemicu sungguhan; jangan dipakai.
+        if (back && back !== node && document.contains(back) && node.contains(back)) {
           layerTriggerRef.current = null;
+          layerTriggerAnchorRef.current = null;
           try { back.focus({ preventScroll: true }); return; } catch { /* ignore */ }
+        }
+        // Prioritas 2: pemicu sudah ter-unmount selagi popover/select terbuka.
+        // Jangan buang fokus ke area konten — pakai tetangga terdekatnya.
+        const near = nearestFallback(node);
+        if (near) {
+          layerTriggerRef.current = null;
+          layerTriggerAnchorRef.current = null;
+          try { near.focus({ preventScroll: true }); return; } catch { /* ignore */ }
         }
         // Prioritaskan area konten (tabIndex -1) agar pembaca layar tetap
         // berada dalam konteks dialog tanpa memicu tombol aksi.
         const target =
-          scrollRef.current ??
-          node.querySelector<HTMLElement>(
-            'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
-          ) ??
-          node;
+          scrollRef.current ?? node.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? node;
         try { target.focus({ preventScroll: true }); } catch { /* ignore */ }
     };
 
@@ -695,8 +771,18 @@ export function WaPreviewHost() {
       if (node.contains(target)) {
         // Catat kandidat pemicu: elemen interaktif terakhir di dalam dialog.
         const el = target instanceof HTMLElement ? target : null;
-        if (el && typeof el.focus === "function" && el !== scrollRef.current) {
+        if (el && typeof el.focus === "function" && el !== scrollRef.current && el !== node) {
           layerTriggerRef.current = el;
+          // Rekam jejak posisinya sekalian — murah, dan satu-satunya cara
+          // memulihkan fokus kalau node ini keburu dilepas dari DOM.
+          layerTriggerAnchorRef.current = {
+            selector: stableSelectorFor(el),
+            parent: el.parentElement,
+            index: Math.max(
+              0,
+              focusablesIn(node).filter((f) => f !== scrollRef.current).indexOf(el),
+            ),
+          };
         }
         return;
       }
@@ -730,7 +816,7 @@ export function WaPreviewHost() {
       layerObserver?.disconnect();
       document.removeEventListener("focusin", onFocusIn, true);
     };
-  }, [open]);
+  }, [open, contentEl]);
   const crossChannel = !!live && liveChannel === "chat";
   const snapshotDup = current?.duplicate ?? null;
   const dup = useMemo(
@@ -780,7 +866,7 @@ export function WaPreviewHost() {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
       <DialogContent
-        ref={contentRef}
+        ref={setContentNode}
         data-testid="wa-preview-dialog"
         // Radix sudah menyetel role="dialog" + aria-labelledby/aria-describedby
         // (dari DialogTitle & DialogDescription di bawah). aria-modal ditulis
