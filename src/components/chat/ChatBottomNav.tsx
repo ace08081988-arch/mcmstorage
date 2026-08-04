@@ -27,14 +27,12 @@ export function ChatBottomNav() {
   // Ambil pathname saja lewat selector; scroll / hash / state lain tidak
   // memicu re-render, sehingga highlight tidak "berkedip" saat konten digulir.
   const path = useRouterState({ select: (s) => s.location.pathname });
-  // Bar bawah diposisikan murni dengan CSS `fixed bottom-0`; kompensasi
-  // visual viewport via JS transform dihentikan agar tidak terasa bergerak.
-  // Status keyboard tetang dipantau untuk menyembunyikan bar saat keyboard
-  // virtual terbuka.
-  // Mode lock: bar mengikuti address bar (dihaluskan per-frame), tapi
-  // dibekukan saat keyboard virtual terbuka.
-  // Posisi murni CSS (`fixed bottom-0`) — tanpa transform JS supaya bar
-  // tidak ikut naik-turun saat scroll.
+  // Bar bawah diposisikan dengan CSS `fixed bottom-0` dan dikompensasi
+  // ke visual viewport lewat class `.app-static-bottom-bar`
+  // (`translate3d(0, -var(--vv-anchor-offset-lock), 0)`). Kompensasi ini
+  // mencegah bar terdorong keluar layar atau terlihat naik-turun saat
+  // address bar Chrome / WebView mengembang-menciut saat scroll.
+  // Hook tetap dipanggil untuk menjalankan engine pengukuran & status keyboard.
   const { keyboardOpen } = useViewportAnchor({ lock: true });
   const navRef = useRef<HTMLElement | null>(null);
   useBottomNavHeightSync(navRef);
