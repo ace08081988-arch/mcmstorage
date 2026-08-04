@@ -406,6 +406,13 @@ export function WaPreviewHost() {
    * dari DOM. Browser lalu memindahkan fokus ke <body> — di luar dialog —
    * sehingga Tab berikutnya "meloncat" ke konten di belakang overlay.
    * Kita pantau mutasi DOM + focusin dan tarik fokus kembali ke dalam dialog.
+   *
+   * Optimasi: observer hanya melihat `childList` (tanpa atribut/teks), setiap
+   * batch mutasi disaring dulu — kalau tidak ada node yang DILEPAS atau fokus
+   * masih berada di dalam dialog, tidak ada kerja DOM sama sekali. Penjadwalan
+   * ulang dikoalesi lewat satu timer debounce + satu rAF, jadi badai mutasi
+   * (progres kiriman, foto refresh) tetap menghasilkan maksimal satu
+   * perhitungan fokus per frame.
    */
   useEffect(() => {
     if (!open) return;
@@ -413,9 +420,18 @@ export function WaPreviewHost() {
     if (!root) return;
 
     let raf = 0;
-    const refocusInside = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    /** Cek super-murah: apakah fokus sudah hilang dari dialog? */
+    const focusEscaped = () => {
+      const node = contentRef.current;
+      if (!node || !document.contains(node)) return false;
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || active === document.body) return true;
+      return !node.contains(active);
+    };
+
+    const runRefocus = () => {
         const node = contentRef.current;
         if (!node || !document.contains(node)) return;
         const active = document.activeElement as HTMLElement | null;
@@ -429,10 +445,32 @@ export function WaPreviewHost() {
           ) ??
           node;
         try { target.focus({ preventScroll: true }); } catch { /* ignore */ }
-      });
     };
 
-    const observer = new MutationObserver(refocusInside);
+    /** Koalesi: 1 timer + 1 rAF, tidak peduli berapa kali dipanggil. */
+    const scheduleRefocus = () => {
+      if (timer !== null || raf !== 0) return;
+      timer = setTimeout(() => {
+        timer = null;
+        if (!focusEscaped()) return;
+        raf = requestAnimationFrame(() => {
+          raf = 0;
+          runRefocus();
+        });
+      }, 50);
+    };
+
+    const observer = new MutationObserver((records) => {
+      // Hanya mutasi yang MELEPAS node bisa membuang fokus. Selain itu abaikan
+      // tanpa menyentuh DOM sedikit pun.
+      let removed = false;
+      for (const r of records) {
+        if (r.removedNodes.length > 0) { removed = true; break; }
+      }
+      if (!removed) return;
+      if (!focusEscaped()) return;
+      scheduleRefocus();
+    });
     observer.observe(root, { childList: true, subtree: true });
 
     const onFocusIn = (e: FocusEvent) => {
@@ -444,12 +482,13 @@ export function WaPreviewHost() {
       // masih "di dalam" konteks dialog secara logis, jangan direbut.
       const el = target instanceof Element ? target : (target.parentElement ?? null);
       if (el?.closest('[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]')) return;
-      refocusInside();
+      scheduleRefocus();
     };
     document.addEventListener("focusin", onFocusIn, true);
 
     return () => {
-      cancelAnimationFrame(raf);
+      if (timer !== null) clearTimeout(timer);
+      if (raf !== 0) cancelAnimationFrame(raf);
       observer.disconnect();
       document.removeEventListener("focusin", onFocusIn, true);
     };
