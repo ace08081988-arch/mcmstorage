@@ -43,6 +43,21 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
         ...(loaderData?.found ? [] : [{ name: "robots", content: "noindex" }]),
       ],
       links: [{ rel: "canonical", href: url }],
+      // Preload gambar produk: ini elemen LCP halaman detail, jadi browser
+      // boleh mulai mengunduhnya bersamaan dengan HTML/CSS.
+      ...(it?.image_url
+        ? {
+            links: [
+              { rel: "canonical", href: url },
+              {
+                rel: "preload",
+                as: "image",
+                href: it.image_url,
+                fetchpriority: "high",
+              },
+            ],
+          }
+        : {}),
       scripts:
         loaderData?.found && it
           ? [
