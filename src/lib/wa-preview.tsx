@@ -301,6 +301,21 @@ export function confirmWaShare(input: {
   });
 }
 
+/**
+ * Selector stabil untuk menemukan ulang elemen pemicu setelah re-render.
+ * Urutan preferensi: data-testid → id → aria-label (+tag).
+ */
+function stableSelectorFor(el: HTMLElement): string | null {
+  const esc = (v: string) =>
+    typeof CSS !== "undefined" && CSS.escape ? CSS.escape(v) : v.replace(/["\\]/g, "\\$&");
+  const testId = el.getAttribute("data-testid");
+  if (testId) return `[data-testid="${esc(testId)}"]`;
+  if (el.id) return `#${esc(el.id)}`;
+  const label = el.getAttribute("aria-label");
+  if (label) return `${el.tagName.toLowerCase()}[aria-label="${esc(label)}"]`;
+  return null;
+}
+
 export function WaPreviewHost() {
   const [current, setCurrent] = useState<Request | null>(null);
   const [open, setOpen] = useState(false);
