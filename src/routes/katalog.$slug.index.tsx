@@ -287,12 +287,21 @@ function PublicKatalogPage() {
         </div>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((it) => {
+          {filtered.map((it, idx) => {
             const empty = it.stock_base <= 0;
             const qty = cart[it.id] ?? 0;
+            // 4 kartu pertama kemungkinan besar berada di viewport awal:
+            // dimuat eager + prioritas tinggi (kandidat LCP), sisanya lazy
+            // dan paint-nya ditunda lewat content-visibility.
+            const aboveFold = idx < 4;
             return (
               <li
                 key={it.id}
+                style={
+                  aboveFold
+                    ? undefined
+                    : { contentVisibility: "auto", containIntrinsicSize: "auto 280px" }
+                }
                 className={`lux-card flex flex-col gap-2 p-2.5 ${qty > 0 ? "ring-1 ring-primary" : ""}`}
               >
                 {it.image_url ? (
@@ -300,7 +309,11 @@ function PublicKatalogPage() {
                   <img
                     src={it.image_url}
                     alt={`Foto produk ${it.name}`}
-                    loading="lazy"
+                    width={600}
+                    height={600}
+                    loading={aboveFold ? "eager" : "lazy"}
+                    fetchPriority={aboveFold ? "high" : "low"}
+                    decoding="async"
                     className="aspect-square w-full rounded-lg border border-border/50 object-cover"
                   />
                   </Link>

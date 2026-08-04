@@ -42,7 +42,21 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
           : []),
         ...(loaderData?.found ? [] : [{ name: "robots", content: "noindex" }]),
       ],
-      links: [{ rel: "canonical", href: url }],
+      // Gambar produk adalah elemen LCP halaman ini, jadi di-preload supaya
+      // unduhannya mulai bersamaan dengan HTML/CSS.
+      links: [
+        { rel: "canonical", href: url },
+        ...(it?.image_url
+          ? [
+              {
+                rel: "preload",
+                as: "image",
+                href: it.image_url,
+                fetchpriority: "high",
+              },
+            ]
+          : []),
+      ],
       scripts:
         loaderData?.found && it
           ? [
@@ -116,7 +130,7 @@ function MissingProduct() {
 
 function PublicItemPage() {
   const data = Route.useLoaderData() as PublicCatalogItemPayload;
-  const { slug } = Route.useParams();
+  const { slug, itemId } = Route.useParams();
 
   if (!data.found || !data.item || !data.shop) return <MissingProduct />;
 
@@ -124,7 +138,9 @@ function PublicItemPage() {
   const shop = data.shop;
   const empty = it.stock_base <= 0;
   const price = rupiah(it.selling_price_per_base);
-  const pageUrl = typeof window !== "undefined" ? window.location.href : "";
+  // URL dibangun dari params (bukan window) supaya markup SSR dan hasil
+  // hidrasi identik — mismatch memaksa React re-render dan menaikkan CLS/INP.
+  const pageUrl = `https://mcmstorage.app/katalog/${slug}/${itemId}`;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6">
@@ -141,6 +157,10 @@ function PublicItemPage() {
           <img
             src={it.image_url}
             alt={`Foto produk ${it.name}`}
+            width={1200}
+            height={1200}
+            fetchPriority="high"
+            decoding="async"
             className="aspect-square w-full border-b border-border/50 object-cover sm:aspect-[16/10]"
           />
         ) : (
