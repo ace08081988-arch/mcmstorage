@@ -318,6 +318,12 @@ export function WaPreviewHost() {
    * dibatalkan, supaya urutan Tab berlanjut dari titik semula.
    */
   const triggerRef = useRef<HTMLElement | null>(null);
+  /**
+   * Elemen di dalam dialog yang memegang fokus sebelum popover/select Radix
+   * terbuka di portal. Dipakai untuk memulihkan fokus ke pemicu setelah layer
+   * portal ditutup (Radix kadang meleset ke <body> di Android WebView).
+   */
+  const layerTriggerRef = useRef<HTMLElement | null>(null);
 
   const restoreTriggerFocus = useCallback(() => {
     const el = triggerRef.current;
