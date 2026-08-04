@@ -640,14 +640,33 @@ export function WaPreviewHost() {
 
     let raf = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    /** Layer Radix (popover/select/menu) yang sedang terbuka di portal luar. */
-    let portalLayer: Element | null = null;
+    /**
+     * TUMPUKAN layer Radix (popover → select → menu ...) yang terbuka di portal
+     * luar dialog. Tiap entri mengingat pemicunya sendiri, jadi saat layer
+     * ditutup satu per satu fokus kembali persis ke pemicu masing-masing:
+     * item di dalam popover dulu, baru tombol di dalam dialog.
+     */
+    type LayerEntry = {
+      layer: Element;
+      /** Elemen yang memegang fokus tepat sebelum layer ini terbuka. */
+      trigger: HTMLElement | null;
+      /** Jejak posisi pemicu, dipakai kalau node-nya keburu ter-unmount. */
+      anchor: {
+        selector: string | null;
+        parent: HTMLElement | null;
+        index: number;
+      } | null;
+    };
+    const layerStack: LayerEntry[] = [];
     let layerObserver: MutationObserver | null = null;
+    /** Elemen fokus terakhir, baik di dalam dialog maupun di dalam layer aktif. */
+    let lastFocused: HTMLElement | null = null;
 
     const PORTAL_LAYER_SELECTOR =
       '[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]';
 
-    const portalLayerOpen = () => !!portalLayer && document.contains(portalLayer);
+    const portalLayerOpen = () =>
+      layerStack.some((entry) => document.contains(entry.layer));
 
     const FOCUSABLE_SELECTOR =
       'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -751,7 +770,68 @@ export function WaPreviewHost() {
       }, 50);
     };
 
+    /**
+     * Kembalikan fokus ke pemicu satu layer yang baru saja ditutup. Pemicunya
+     * boleh berada di dalam dialog ATAU di dalam layer induk yang masih
+     * terbuka (kasus popover → select).
+     */
+    const restoreLayerTrigger = (entry: LayerEntry) => {
+      const node = contentRef.current;
+      const t = entry.trigger;
+      const stillReachable =
+        !!t &&
+        document.contains(t) &&
+        (!!node?.contains(t) ||
+          layerStack.some((e) => document.contains(e.layer) && e.layer.contains(t)));
+      if (stillReachable && t) {
+        lastFocused = t;
+        layerTriggerRef.current = node?.contains(t) ? t : layerTriggerRef.current;
+        try {
+          t.focus({ preventScroll: true });
+          return true;
+        } catch {
+          /* ignore */
+        }
+      }
+      // Pemicunya ter-unmount: pakai jejak posisinya untuk cari tetangga
+      // terdekat di dalam dialog lewat jalur pemulihan biasa.
+      if (entry.anchor) layerTriggerAnchorRef.current = entry.anchor;
+      return false;
+    };
+
+    /**
+     * Buang layer yang sudah lepas dari DOM, dari yang PALING ATAS ke bawah,
+     * sambil memulihkan fokus ke pemicu tiap layer sesuai urutan penutupannya.
+     */
+    const pruneClosedLayers = () => {
+      let closedAny = false;
+      let restored = false;
+      while (layerStack.length > 0) {
+        const top = layerStack[layerStack.length - 1]!;
+        if (document.contains(top.layer)) break;
+        layerStack.pop();
+        closedAny = true;
+        restored = restoreLayerTrigger(top);
+      }
+      if (layerStack.length === 0) {
+        layerObserver?.disconnect();
+        layerObserver = null;
+      }
+      // Kalau layer terluar sudah tertutup tapi fokusnya belum mendarat,
+      // serahkan ke penjaga fokus dialog (nearestFallback).
+      if (closedAny && !restored && layerStack.length === 0) scheduleRefocus();
+    };
+
+    /** Satu observer saja untuk seluruh tumpukan layer. */
+    const ensureLayerObserver = () => {
+      if (layerObserver) return;
+      layerObserver = new MutationObserver(() => pruneClosedLayers());
+      layerObserver.observe(document.body, { childList: true, subtree: true });
+    };
+
     const observer = new MutationObserver((records) => {
+      // Layer portal bisa ditutup bersamaan dengan mutasi ini.
+      pruneClosedLayers();
       // Hanya mutasi yang MELEPAS node bisa membuang fokus. Selain itu abaikan
       // tanpa menyentuh DOM sedikit pun.
       let removed = false;
@@ -772,6 +852,7 @@ export function WaPreviewHost() {
         // Catat kandidat pemicu: elemen interaktif terakhir di dalam dialog.
         const el = target instanceof HTMLElement ? target : null;
         if (el && typeof el.focus === "function" && el !== scrollRef.current && el !== node) {
+          lastFocused = el;
           layerTriggerRef.current = el;
           // Rekam jejak posisinya sekalian — murah, dan satu-satunya cara
           // memulihkan fokus kalau node ini keburu dilepas dari DOM.
@@ -791,18 +872,18 @@ export function WaPreviewHost() {
       const el = target instanceof Element ? target : (target.parentElement ?? null);
       const layer = el?.closest(PORTAL_LAYER_SELECTOR) ?? null;
       if (layer) {
-        // Layer portal aktif: matikan sementara penjaga fokus, lalu pantau
-        // sampai layer dilepas dari DOM agar fokus bisa dipulihkan ke pemicu.
-        portalLayer = layer;
-        layerObserver?.disconnect();
-        layerObserver = new MutationObserver(() => {
-          if (portalLayerOpen()) return;
-          portalLayer = null;
-          layerObserver?.disconnect();
-          layerObserver = null;
-          scheduleRefocus();
-        });
-        layerObserver.observe(document.body, { childList: true, subtree: true });
+        // Layer portal aktif: penjaga fokus dinonaktifkan selama layer hidup.
+        // Layer baru DITUMPUK di atas yang lama (popover → select), lengkap
+        // dengan pemicunya sendiri agar pemulihan mengikuti urutan penutupan.
+        if (!layerStack.some((entry) => entry.layer === layer)) {
+          layerStack.push({
+            layer,
+            trigger: lastFocused,
+            anchor: layerTriggerAnchorRef.current,
+          });
+          ensureLayerObserver();
+        }
+        if (el instanceof HTMLElement) lastFocused = el;
         return;
       }
       scheduleRefocus();
