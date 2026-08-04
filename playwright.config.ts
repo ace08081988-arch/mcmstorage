@@ -1444,5 +1444,17 @@ export default defineConfig({
       testMatch: /debt-chip-responsive\.spec\.ts/,
       use: { viewport: { width: 390, height: 844 } },
     },
+    {
+      // Skenario : Penutupan BERANTAI layer portal bertumpuk (dialog →
+      //            popover → select) saat isi kedua layer lazy-load lalu
+      //            re-render. Fokus harus pulih ke pemicu tiap layer
+      //            sesuai urutan penutupan, tidak pernah ke <body>.
+      // Harness  : /lovable/visual/focus-portal-stack (no-auth) yang
+      //            memakai hook produksi `usePortalFocusStack`.
+      name: "focus-portal-stack-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /focus-portal-stack\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 } },
+    },
   ],
 });
