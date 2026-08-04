@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, beforeEach } from "vitest";
-import { focusablesInOrder, nextFocusInOrder, resolveTabTarget } from "@/lib/focus-order";
+import { focusablesInOrder, isFocusableNow, nextFocusInOrder, resolveTabTarget } from "@/lib/focus-order";
 
 /** happy-dom tidak menghitung layout, jadi visibilitas dipaksa true. */
 const opts = { isVisible: () => true, skip: (el: HTMLElement) => el.dataset["scroll"] === "1" };
@@ -86,5 +86,27 @@ describe("urutan tab dialog pratinjau", () => {
     document.body.appendChild(layer);
     const opt = document.getElementById("opt") as HTMLElement;
     expect(resolveTabTarget(root, opt, false, opts)).toBeNull();
+  });
+});
+
+describe("isFocusableNow", () => {
+  it("menolak elemen disabled, aria-disabled, hidden, dan inert", () => {
+    const root = document.createElement("div");
+    root.innerHTML = `
+      <button id="ok">ok</button>
+      <button id="dis" disabled>dis</button>
+      <button id="aria" aria-disabled="true">aria</button>
+      <button id="hid" hidden>hid</button>
+      <div aria-hidden="true"><button id="ah">ah</button></div>
+    `;
+    document.body.appendChild(root);
+    const q = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
+    expect(isFocusableNow(q("ok"))).toBe(true);
+    expect(isFocusableNow(q("dis"))).toBe(false);
+    expect(isFocusableNow(q("aria"))).toBe(false);
+    expect(isFocusableNow(q("hid"))).toBe(false);
+    expect(isFocusableNow(q("ah"))).toBe(false);
+    expect(isFocusableNow(null)).toBe(false);
+    root.remove();
   });
 });
