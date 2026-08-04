@@ -88,3 +88,25 @@ describe("urutan tab dialog pratinjau", () => {
     expect(resolveTabTarget(root, opt, false, opts)).toBeNull();
   });
 });
+
+describe("isFocusableNow", () => {
+  it("menolak elemen disabled, aria-disabled, hidden, dan inert", () => {
+    const root = document.createElement("div");
+    root.innerHTML = `
+      <button id="ok">ok</button>
+      <button id="dis" disabled>dis</button>
+      <button id="aria" aria-disabled="true">aria</button>
+      <button id="hid" hidden>hid</button>
+      <div aria-hidden="true"><button id="ah">ah</button></div>
+    `;
+    document.body.appendChild(root);
+    const q = (id: string) => root.querySelector<HTMLElement>(`#${id}`)!;
+    expect(isFocusableNow(q("ok"))).toBe(true);
+    expect(isFocusableNow(q("dis"))).toBe(false);
+    expect(isFocusableNow(q("aria"))).toBe(false);
+    expect(isFocusableNow(q("hid"))).toBe(false);
+    expect(isFocusableNow(q("ah"))).toBe(false);
+    expect(isFocusableNow(null)).toBe(false);
+    root.remove();
+  });
+});
