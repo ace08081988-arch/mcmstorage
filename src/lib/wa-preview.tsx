@@ -625,8 +625,10 @@ export function WaPreviewHost() {
         onEscapeKeyDown={(e) => {
           if (editing) {
             e.preventDefault();
-            setEditing(false);
-            scrollRef.current?.focus();
+            // ESC pertama hanya keluar dari editor; fokus mendarat kembali di
+            // elemen pemicunya (teks pesan / tombol Edit), bukan ke awal
+            // dialog — jadi Tab berikutnya melanjutkan dari posisi yang sama.
+            exitEditing();
             return;
           }
           e.preventDefault();
@@ -722,33 +724,50 @@ export function WaPreviewHost() {
                     <RotateCcw className="mr-1 h-3 w-3" /> Reset
                   </Button>
                 ) : null}
-                <Button type="button" variant="ghost" size="sm" className="h-7 px-ms-2 text-ms-2xs" onClick={() => setEditing((v) => !v)}>
+                <Button
+                  ref={editToggleRef}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-ms-2 text-ms-2xs"
+                  aria-pressed={editing}
+                  onClick={() => (editing ? exitEditing() : enterEditing("button"))}
+                >
                   <Pencil className="mr-1 h-3 w-3" /> {editing ? "Selesai" : "Edit"}
                 </Button>
               </div>
             </div>
             {editing ? (
               <Textarea
+                ref={textareaRef}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={8}
                 aria-label="Teks pesan yang akan dikirim"
                 className="min-h-[8rem] max-h-[45svh] resize-y bg-background font-sans text-ms-xs leading-relaxed"
                 placeholder="Tulis pesan untuk MCM…"
-                autoFocus
+                onKeyDown={(e) => {
+                  // Ctrl/Cmd+Enter = selesai mengedit, sama seperti tombol
+                  // "Selesai" — tanpa perlu men-Tab keluar dari textarea.
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    exitEditing();
+                  }
+                }}
               />
             ) : (
               <pre
+                ref={preTextRef}
                 data-testid="wa-preview-text"
                 role="button"
                 tabIndex={0}
                 aria-label="Teks pesan — aktifkan untuk mengedit"
                 className="wa-message-text max-h-[38svh] cursor-text overflow-auto overscroll-contain rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
-                onClick={() => setEditing(true)}
+                onClick={() => enterEditing("pre")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setEditing(true);
+                    enterEditing("pre");
                   }
                 }}
                 title="Klik untuk mengedit"
