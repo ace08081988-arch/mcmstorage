@@ -16,7 +16,7 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
   ssr: true,
   loader: ({ params }) =>
     getPublicCatalogItem({ data: { slug: params.slug, itemId: params.itemId } }),
-  head: ({ loaderData }) => {
+  head: ({ params, loaderData }) => {
     const it = loaderData?.item;
     const shopName = loaderData?.shop?.name ?? "Toko";
     const title = it ? `${it.name} — ${shopName}` : "Produk tidak ditemukan";
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
       ? (it.description?.trim() ||
         `${it.name}${it.category ? ` (${it.category})` : ""} di ${shopName}. Cek stok terkini dan pesan langsung lewat WhatsApp.`)
       : "Produk yang Anda cari tidak tersedia di katalog ini.";
+    const url = `https://mcmstorage.app/katalog/${params.slug}/${params.itemId}`;
     return {
       meta: [
         { title },
@@ -31,9 +32,33 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
         { property: "og:title", content: title },
         { property: "og:description", content: desc },
         { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
+        ...(it?.image_url
+          ? [
+              { property: "og:image", content: it.image_url },
+              { name: "twitter:image", content: it.image_url },
+            ]
+          : []),
         ...(loaderData?.found ? [] : [{ name: "robots", content: "noindex" }]),
       ],
+      links: [{ rel: "canonical", href: url }],
+      scripts:
+        loaderData?.found && it
+          ? [
+              {
+                type: "application/ld+json",
+                children: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "Product",
+                  name: it.name,
+                  description: desc,
+                  ...(it.image_url ? { image: it.image_url } : {}),
+                  url,
+                }),
+              },
+            ]
+          : [],
     };
   },
   errorComponent: ({ error }) => (
