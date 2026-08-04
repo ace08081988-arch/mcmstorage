@@ -302,7 +302,6 @@ export function confirmWaShare(input: {
 }
 
 export function WaPreviewHost() {
-  /* eslint-disable-next-line no-use-before-define */
   const [current, setCurrent] = useState<Request | null>(null);
   const [open, setOpen] = useState(false);
   const [skip, setSkip] = useState(false);
