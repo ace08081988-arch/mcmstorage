@@ -12,6 +12,13 @@ import {
   type PublicCatalogItemPayload,
 } from "@/lib/public-catalog.functions";
 
+/**
+ * Lebar tampil foto produk: penuh di ponsel, maksimal 768px (max-w-3xl)
+ * di layar besar. Browser memakai ini untuk memilih varian srcset terkecil
+ * yang masih tajam, jadi ponsel tidak mengunduh gambar 1600px.
+ */
+const IMAGE_SIZES = "(min-width: 768px) 768px, 100vw";
+
 export const Route = createFileRoute("/katalog/$slug/$itemId")({
   ssr: true,
   loader: ({ params }) =>
@@ -53,6 +60,9 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
                 as: "image",
                 href: it.image_url,
                 fetchpriority: "high",
+                ...(it.image_srcset
+                  ? { imagesrcset: it.image_srcset, imagesizes: IMAGE_SIZES }
+                  : {}),
               },
             ]
           : []),
@@ -156,6 +166,7 @@ function PublicItemPage() {
         {it.image_url ? (
           <img
             src={it.image_url}
+            {...(it.image_srcset ? { srcSet: it.image_srcset, sizes: IMAGE_SIZES } : {})}
             alt={`Foto produk ${it.name}`}
             width={1200}
             height={1200}

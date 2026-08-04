@@ -31,6 +31,8 @@ export type PublicCatalogItemDetail = PublicCatalogItem & {
   package_type: string;
   package_size: number;
   updated_at: string;
+  /** Varian lebar gambar untuk `srcset` (kosong bila transformasi gagal). */
+  image_srcset: string | null;
 };
 
 export type PublicCatalogItemPayload = {
@@ -101,6 +103,18 @@ export const getPublicCatalog = createServerFn({ method: "GET" })
 
 const itemSchema = slugSchema.extend({ itemId: z.string().uuid("Produk tidak valid") });
 
+/**
+ * Lebar varian foto detail produk.
+ *
+ * Storage melakukan negosiasi format otomatis lewat header `Accept`:
+ * browser modern menerima WebP (rata-rata 5-10x lebih kecil dari JPEG asli),
+ * yang lain tetap dapat JPEG. AVIF belum didukung transformer, jadi WebP
+ * adalah format hemat terbaik yang tersedia.
+ */
+const DETAIL_WIDTHS = [640, 1024, 1600] as const;
+/** Lebar yang dipakai sebagai `src` fallback bila browser tidak baca srcset. */
+const DETAIL_FALLBACK_WIDTH = 1024;
+
 /** Detail satu produk katalog publik (stok live, deskripsi, foto). */
 export const getPublicCatalogItem = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => itemSchema.parse(data))
@@ -133,11 +147,35 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
     if (!r) return { found: false, shop, item: null };
 
     let imageUrl: string | null = null;
+    let imageSrcset: string | null = null;
     if (r.image_path) {
-      const { data: signed } = await supabaseAdmin.storage
-        .from("item-photos")
-        .createSignedUrl(r.image_path, 3600);
-      imageUrl = signed?.signedUrl ?? null;
+      const path = r.image_path;
+      // Semua varian ditandatangani paralel — token menyimpan parameter
+      // transformasi, jadi tiap lebar butuh URL-nya sendiri.
+      const variants = await Promise.all(
+        DETAIL_WIDTHS.map(async (width) => {
+          const { data: signed } = await supabaseAdmin.storage
+            .from("item-photos")
+            .createSignedUrl(path, 3600, {
+              transform: { width, resize: "contain", quality: 72 },
+            });
+          return signed?.signedUrl
+            ? { width: width as number, url: signed.signedUrl }
+            : null;
+        }),
+      );
+      const ok = variants.flatMap((v) => (v ? [v] : []));
+      const last = ok[ok.length - 1];
+      if (last) {
+        imageSrcset = ok.map((v) => `${v.url} ${v.width}w`).join(", ");
+        imageUrl = (ok.find((v) => v.width === DETAIL_FALLBACK_WIDTH) ?? last).url;
+      } else {
+        // Fallback: transformasi tidak tersedia — kirim berkas asli.
+        const { data: signed } = await supabaseAdmin.storage
+          .from("item-photos")
+          .createSignedUrl(path, 3600);
+        imageUrl = signed?.signedUrl ?? null;
+      }
     }
 
     return {
@@ -152,6 +190,7 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
         selling_price_per_base:
           r.selling_price_per_base == null ? null : Number(r.selling_price_per_base),
         image_url: imageUrl,
+        image_srcset: imageSrcset,
         description: r.description ?? null,
         package_type: r.package_type,
         package_size: Number(r.package_size) || 0,
