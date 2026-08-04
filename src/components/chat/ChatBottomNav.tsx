@@ -105,7 +105,7 @@ export function ChatBottomNav() {
             className={cn(
               // px-0.5 di base → cukup ruang untuk label "Pembaruan" pada
               // 360px tanpa memotong; naik ke px-1 mulai 400px.
-              "group/tab relative flex min-h-[var(--ms-tap)] flex-col items-center justify-center gap-0.5 px-0.5 py-1 outline-none transition-colors duration-200 min-[400px]:px-1",
+              "group/tab relative flex min-h-[var(--ms-tap)] flex-col items-center justify-center gap-ms-1 px-0.5 py-1 outline-none transition-colors duration-200 min-[400px]:px-1",
               "focus-visible:ring-2 focus-visible:ring-[var(--wa-green)]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--wa-header)]",
               active ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
             )}
@@ -128,7 +128,7 @@ export function ChatBottomNav() {
                 />
               ) : badge && badge > 0 ? (
                 <span
-                  className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-ms-2xs font-semibold text-white ring-2 ring-[var(--wa-header)]"
+                  className="absolute -right-0.5 -top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-ms-2xs font-semibold leading-none text-destructive-foreground ring-2 ring-[var(--wa-header)]"
                   aria-hidden="true"
                 >
                   {badge > 99 ? "99+" : badge}
@@ -139,7 +139,7 @@ export function ChatBottomNav() {
               aria-hidden="true"
               data-nav-label
               className={cn(
-                "w-full min-w-0 truncate text-center text-ms-2xs leading-tight",
+                "w-full min-w-0 truncate text-center text-ms-2xs leading-ms-tight tracking-ms-tight",
                 active ? "font-semibold" : "font-normal",
               )}
             >

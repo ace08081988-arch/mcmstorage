@@ -267,13 +267,13 @@ function OrgHeader() {
       )}
       <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
         <div
-          className="truncate text-[22px] leading-tight tracking-tight text-foreground"
+          className="truncate text-ms-xl leading-ms-tight tracking-ms-tight text-foreground"
           style={{ fontFamily: "var(--font-display)" }}
         >
           {full}
         </div>
         <div
-          className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.24em] text-primary/70"
+          className="mt-0.5 truncate text-ms-2xs font-medium uppercase leading-ms-tight tracking-[0.22em] text-primary/70"
           style={{ fontFamily: "var(--font-body)" }}
         >
           Manajemen Operasional
@@ -588,7 +588,7 @@ export function AppSidebar() {
               />
             ) : null}
             <SidebarGroupLabel
-              className="flex items-center gap-ms-2 px-ms-2 pb-ms-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary/75"
+              className="flex items-center gap-ms-2 px-ms-2 pb-ms-2 text-ms-2xs font-semibold uppercase leading-ms-tight tracking-[0.22em] text-primary/75"
               style={{ fontFamily: "var(--font-body)" }}
             >
               <span
@@ -805,13 +805,13 @@ export function AppSidebar() {
             </span>
             <span className="relative min-w-0 flex-1 leading-tight">
               <span
-                className="block truncate text-[15px] tracking-tight text-white"
+                className="block truncate text-ms-base leading-ms-tight tracking-ms-tight text-white"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 Coba MCM Chat
               </span>
               <span
-                className="mt-0.5 block truncate text-[10.5px] font-normal text-white/75"
+                className="mt-0.5 block truncate text-ms-2xs font-normal leading-ms-tight text-white/75"
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 APK khusus chat · akun sama
