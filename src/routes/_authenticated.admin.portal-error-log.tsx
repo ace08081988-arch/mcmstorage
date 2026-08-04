@@ -53,7 +53,7 @@ function PortalErrorLogPage() {
     return (
       <div className="mx-auto max-w-lg p-ms-6 text-center">
         <ShieldAlert className="mx-auto h-8 w-8 text-destructive" />
-        <h1 className="mt-2 text-ms-lg font-semibold">Akses ditolak</h1>
+        <h2 className="mt-2 text-ms-lg font-semibold">Akses ditolak</h2>
         <p className="text-ms-sm text-muted-foreground">
           Halaman ini hanya untuk admin.
         </p>

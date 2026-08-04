@@ -245,7 +245,7 @@ function AdminWorkerPortalPage() {
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-md px-ms-4 py-12 text-center">
-        <h1 className="text-ms-xl font-semibold">Akses ditolak</h1>
+        <h2 className="text-ms-xl font-semibold">Akses ditolak</h2>
         <p className="mt-2 text-ms-sm text-muted-foreground">Halaman ini hanya untuk admin.</p>
       </div>
     );

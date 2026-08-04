@@ -369,7 +369,11 @@ export function OrgNameSettings() {
               {pendingLogo ? (
                 <img src={pendingLogo.url} alt="Pratinjau logo baru" className="h-full w-full object-cover" />
               ) : savedLogo ? (
-                <img src={savedLogo} alt="Logo" className="h-full w-full object-cover" />
+                <img
+                  src={savedLogo}
+                  alt={`Logo ${full || DEFAULT_ORG_NAME}`}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <span className="text-ms-2xs font-bold tracking-wider text-muted-foreground">
                   {short || DEFAULT_ORG_SHORT}
