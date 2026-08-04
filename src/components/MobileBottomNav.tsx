@@ -141,7 +141,7 @@ export function MobileBottomNav() {
                     : label
               }
               className={cn(
-                "group/tab relative flex min-h-[var(--ms-tap)] flex-1 flex-col items-center justify-center gap-ms-1 rounded-xl px-ms-2 py-ms-2 text-ms-2xs leading-ms-tight tracking-ms-tight transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
+                "group/tab relative flex min-h-[var(--ms-tap)] flex-1 flex-col items-center justify-center gap-ms-1 rounded-xl px-ms-2 py-ms-2 leading-ms-tight tracking-ms-tight transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
                 "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 active ? "text-primary" : "text-muted-foreground",
               )}
@@ -188,7 +188,7 @@ export function MobileBottomNav() {
               <span
                 data-nav-label
                 className={cn(
-                  "w-full truncate text-center leading-ms-tight transition-all duration-300 ease-out",
+                  "w-full truncate text-center text-ms-2xs leading-ms-tight transition-all duration-300 ease-out",
                   active ? "font-semibold opacity-100" : "font-normal opacity-80",
                   "motion-reduce:transition-none",
                 )}
@@ -210,7 +210,7 @@ export function MobileBottomNav() {
           }
           aria-current={menuActive ? "page" : undefined}
           className={cn(
-            "relative flex min-h-[var(--ms-tap)] flex-1 flex-col items-center justify-center gap-ms-1 rounded-xl px-ms-2 py-ms-2 text-ms-2xs leading-ms-tight tracking-ms-tight text-muted-foreground transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
+            "relative flex min-h-[var(--ms-tap)] flex-1 flex-col items-center justify-center gap-ms-1 rounded-xl px-ms-2 py-ms-2 leading-ms-tight tracking-ms-tight text-muted-foreground transition-colors duration-300 active:scale-[0.96] motion-reduce:active:scale-100",
             "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             menuActive && "text-primary",
           )}
@@ -258,7 +258,7 @@ export function MobileBottomNav() {
           <span
             data-nav-label
             className={cn(
-              "w-full truncate text-center leading-ms-tight transition-all duration-300 ease-out",
+              "w-full truncate text-center text-ms-2xs leading-ms-tight transition-all duration-300 ease-out",
               menuActive ? "font-semibold opacity-100" : "font-normal opacity-80",
               "motion-reduce:transition-none",
             )}
