@@ -66,6 +66,34 @@ function WaPreviewRotateHarness() {
     setResult(r.ok ? "kirim" : "batal");
   };
 
+  /**
+   * Mode "progresif": dialog dibuka dengan foto belum lengkap sehingga muncul
+   * blok peringatan + tombol "Ambil ulang". Saat ditekan, tombol masuk state
+   * loading (disabled) beberapa detik, lalu foto ditambahkan bertahap —
+   * meniru konten yang berubah saat dialog terbuka. Dipakai oleh
+   * `tests/e2e/wa-preview-focus-loading.spec.ts` untuk memastikan focus trap
+   * tidak lepas saat loading & konten bertambah.
+   */
+  const openProgressive = async () => {
+    setWaSkipPreview(false);
+    let round = 0;
+    const r = await confirmWaShare({
+      text: LONG_TEXT,
+      files: [makeFile("foto-awal-1.png")],
+      expectedCount: 4,
+      retryMissing: async () => {
+        round += 1;
+        // Jeda: state loading dirender (tombol retry disabled + spinner).
+        await new Promise((res) => setTimeout(res, 900));
+        return round === 1
+          ? [makeFile("foto-susulan-2.png")]
+          : [makeFile("foto-susulan-3.png"), makeFile("foto-susulan-4.png")];
+      },
+      peer: { name: "Muhammad Abdurrahman Wijayakusuma", phone: "6281234567890" },
+    });
+    setResult(r.ok ? "kirim" : "batal");
+  };
+
   return (
     <div className="mx-auto flex max-w-md flex-col gap-ms-3 px-ms-4 py-ms-6">
       <h1 className="text-ms-lg font-semibold">Harness: Pratinjau WA (rotasi)</h1>
@@ -74,6 +102,13 @@ function WaPreviewRotateHarness() {
       </Button>
       <Button data-testid="btn-open-preview-text" variant="outline" onClick={() => void open(false)}>
         Buka pratinjau (teks saja)
+      </Button>
+      <Button
+        data-testid="btn-open-preview-progressive"
+        variant="outline"
+        onClick={() => void openProgressive()}
+      >
+        Buka pratinjau (foto menyusul / loading)
       </Button>
       <div data-testid="preview-result" className="text-ms-xs text-muted-foreground">
         {result}
