@@ -70,10 +70,10 @@ function levelStok(stokKg: number, ambang: number): StokLevel {
 }
 
 const LEVEL_META: Record<StokLevel, { label: string; badge: string; text: string; ring: string; emoji: string }> = {
-  habis:   { label: "Habis",   badge: "bg-slate-700 text-slate-200 border-slate-600", text: "text-slate-400", ring: "ring-1 ring-slate-600",       emoji: "⛔" },
+  habis:   { label: "Habis",   badge: "bg-muted text-foreground border-border", text: "text-muted-foreground", ring: "ring-1 ring-ring",       emoji: "⛔" },
   kritis:  { label: "Kritis",  badge: "bg-rose-500/20 text-rose-300 border-rose-500/40", text: "text-rose-300", ring: "ring-2 ring-rose-500/60 animate-pulse", emoji: "🚨" },
   menipis: { label: "Menipis", badge: "bg-warning/20 text-warning border-warning/40", text: "text-warning", ring: "ring-1 ring-warning/40", emoji: "⚠" },
-  aman:    { label: "Aman",    badge: "bg-success/15 text-success border-success/30", text: "text-slate-300", ring: "", emoji: "" },
+  aman:    { label: "Aman",    badge: "bg-success/15 text-success border-success/30", text: "text-foreground", ring: "", emoji: "" },
 };
 
 function PosKasirPage() {
@@ -588,11 +588,11 @@ function PosKasirPage() {
   // Edge case: user login tapi belum ada barang di gudang.
   if (gudangSynced && produk.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-ms-6 flex items-center justify-center">
-        <div className="max-w-md text-center space-ms-4 bg-slate-800/60 border border-slate-700 rounded-2xl p-ms-6">
+      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground p-ms-6 flex items-center justify-center">
+        <div className="max-w-md text-center space-ms-4 bg-card/60 border border-border rounded-2xl p-ms-6">
           <div className="text-ms-4xl">📦</div>
           <h1 className="text-ms-xl font-bold">Belum ada produk di gudang</h1>
-          <p className="text-ms-sm text-slate-400">
+          <p className="text-ms-sm text-muted-foreground">
             POS Kasir menampilkan produk dari halaman <Link className="underline text-success" to="/gudang">Gudang</Link>.
             Tambahkan minimal satu barang untuk mulai menjual.
           </p>
@@ -603,13 +603,13 @@ function PosKasirPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 md:p-8 ${modeRingkas ? "p-ms-2" : "p-ms-3"}`}>
+    <div className={`min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground md:p-8 ${modeRingkas ? "p-ms-2" : "p-ms-3"}`}>
       <div className="mx-auto max-w-6xl">
         {/* Mobile header */}
         <header className={`md:hidden grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-ms-2 ${modeRingkas ? "mb-2" : "mb-4"}`}>
           <div className="min-w-0">
             <h1 className="truncate text-ms-xl font-bold tracking-tight">🧾 POS Kasir</h1>
-            <p className="truncate text-ms-xs text-slate-400 mt-0.5">
+            <p className="truncate text-ms-xs text-muted-foreground mt-0.5">
               {riwayat.length} transaksi · {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
             </p>
           </div>
@@ -621,14 +621,14 @@ function PosKasirPage() {
             className={`shrink-0 rounded-lg border text-ms-xs font-medium transition-colors ${
               modeRingkas
                 ? "bg-success/20 border-success/50 text-success"
-                : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                : "bg-card border-border text-foreground hover:bg-muted"
             } ${modeRingkas ? "px-ms-2 py-1" : "px-ms-3 py-1.5"}`}
           >
             {modeRingkas ? "📱 Ringkas" : "📱 Normal"}
           </button>
           <Link
             to="/pos-kasir/ringkasan"
-            className={`shrink-0 rounded-lg bg-slate-800 border border-slate-700 text-ms-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors ${modeRingkas ? "px-ms-2 py-1" : "px-ms-3 py-1.5"}`}
+            className={`shrink-0 rounded-lg bg-card border border-border text-ms-xs font-medium text-foreground hover:bg-muted transition-colors ${modeRingkas ? "px-ms-2 py-1" : "px-ms-3 py-1.5"}`}
           >
             📊 Ringkasan
           </Link>
@@ -655,7 +655,7 @@ function PosKasirPage() {
         <header className="hidden md:flex mb-6 items-center justify-between">
           <div>
             <h1 className="text-ms-2xl md:text-ms-3xl font-bold tracking-tight">🧾 POS Kasir · Produk Curah</h1>
-            <p className="text-ms-sm text-slate-400 mt-1">Simulasi timbangan digital & penjualan per kilogram</p>
+            <p className="text-ms-sm text-muted-foreground mt-1">Simulasi timbangan digital & penjualan per kilogram</p>
           </div>
           <div className="flex items-center gap-ms-2">
             <button
@@ -666,14 +666,14 @@ function PosKasirPage() {
               className={`rounded-lg border text-ms-sm font-medium transition-colors ${
                 modeRingkas
                   ? "bg-success/20 border-success/50 text-success"
-                  : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                  : "bg-card border-border text-foreground hover:bg-muted"
               } px-ms-4 py-ms-2`}
             >
               {modeRingkas ? "📱 Mode ringkas" : "📱 Mode normal"}
             </button>
             <Link
               to="/pos-kasir/ringkasan"
-              className="px-ms-4 py-ms-2 rounded-lg bg-success hover:bg-success text-white text-ms-sm font-medium transition-colors"
+              className="px-ms-4 py-ms-2 rounded-lg bg-success hover:bg-success text-success-foreground text-ms-sm font-medium transition-colors"
             >
               📊 Ringkasan
             </Link>
@@ -682,10 +682,10 @@ function PosKasirPage() {
 
 
         {/* Mobile stock summary */}
-        <section className={`md:hidden bg-slate-800/50 backdrop-blur rounded-xl border border-slate-700 ${modeRingkas ? "mb-2 p-ms-2" : "mb-4 p-ms-3"}`}>
+        <section className={`md:hidden bg-card/50 backdrop-blur rounded-xl border border-border ${modeRingkas ? "mb-2 p-ms-2" : "mb-4 p-ms-3"}`}>
           <div className={`flex items-center justify-between ${modeRingkas ? "mb-1" : "mb-2"}`}>
-            <span className="text-ms-xs font-semibold text-slate-300 uppercase tracking-wider">Stok Tersisa</span>
-            <span className="text-ms-xs text-slate-400">{totalStok.toLocaleString("id-ID")} kg total</span>
+            <span className="text-ms-xs font-semibold text-foreground uppercase tracking-wider">Stok Tersisa</span>
+            <span className="text-ms-xs text-muted-foreground">{totalStok.toLocaleString("id-ID")} kg total</span>
           </div>
           <div className={`flex overflow-x-auto scrollbar-thin ${modeRingkas ? "gap-ms-1.5 pb-0.5" : "gap-ms-2 pb-1"}`}>
             {produk.map((p) => {
@@ -701,13 +701,13 @@ function PosKasirPage() {
                   className={`relative shrink-0 flex items-center gap-ms-2 rounded-lg border text-ms-xs transition-colors ${meta.ring} ${
                     active
                       ? "bg-success/20 border-success"
-                      : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
+                      : "bg-background/60 border-border hover:border-border"
                   } ${habis ? "opacity-40 cursor-not-allowed" : ""} ${modeRingkas ? "px-ms-2 py-1.5" : "px-ms-3 py-ms-2"}`}
                 >
                   <span className="text-ms-lg">{p.emoji}</span>
                   <div className="text-left min-w-0">
                     <div className="font-medium truncate max-w-[80px]">{p.nama}</div>
-                    <div className={`font-mono ${level === "aman" ? "text-slate-400" : meta.text}`}>
+                    <div className={`font-mono ${level === "aman" ? "text-muted-foreground" : meta.text}`}>
                       {p.stokKg.toLocaleString("id-ID")} {unitOf(p)}
                     </div>
                   </div>
@@ -735,11 +735,11 @@ function PosKasirPage() {
               </div>
             )}
             {produkHabis.length > 0 && (
-              <div className="text-ms-2xs text-slate-400">
+              <div className="text-ms-2xs text-muted-foreground">
                 ⛔ Habis: {produkHabis.map((p) => `${p.emoji} ${p.nama}`).join(", ")}
               </div>
             )}
-            <label className="mt-1 flex items-center gap-ms-2 text-ms-2xs text-slate-400">
+            <label className="mt-1 flex items-center gap-ms-2 text-ms-2xs text-muted-foreground">
               Ambang notifikasi
               <input
                 type="number"
@@ -750,7 +750,7 @@ function PosKasirPage() {
                   const n = parseFloat(e.target.value.replace(",", "."));
                   if (Number.isFinite(n) && n > 0) setAmbangStok(n);
                 }}
-                className="w-16 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-0.5 text-ms-xs text-slate-100 focus:outline-none focus:border-success"
+                className="w-16 rounded-md bg-background border border-border px-ms-2 py-0.5 text-ms-xs text-foreground focus:outline-none focus:border-success"
               />
               unit
             </label>
@@ -763,10 +763,10 @@ function PosKasirPage() {
           <section className={`lg:col-span-2 ${modeRingkas ? "space-ms-2 md:space-ms-6" : "space-ms-4 md:space-ms-6"}`}>
 
             {/* Desktop product grid */}
-            <div className="hidden md:block bg-slate-800/50 backdrop-blur rounded-2xl p-ms-5 border border-slate-700">
+            <div className="hidden md:block bg-card/50 backdrop-blur rounded-2xl p-ms-5 border border-border">
               <div className="flex items-center justify-between mb-3 gap-ms-3 flex-wrap">
-                <h2 className="text-ms-sm font-semibold text-slate-300 uppercase tracking-wider">Pilih Produk</h2>
-                <label className="flex items-center gap-ms-2 text-ms-xs text-slate-400">
+                <h2 className="text-ms-sm font-semibold text-foreground uppercase tracking-wider">Pilih Produk</h2>
+                <label className="flex items-center gap-ms-2 text-ms-xs text-muted-foreground">
                   Ambang notifikasi
                   <input
                     type="number"
@@ -777,7 +777,7 @@ function PosKasirPage() {
                       const n = parseFloat(e.target.value.replace(",", "."));
                       if (Number.isFinite(n) && n > 0) setAmbangStok(n);
                     }}
-                    className="w-20 rounded-md bg-slate-900 border border-slate-700 px-ms-2 py-1 text-ms-xs text-slate-100 focus:outline-none focus:border-success"
+                    className="w-20 rounded-md bg-background border border-border px-ms-2 py-1 text-ms-xs text-foreground focus:outline-none focus:border-success"
                   />
                   unit
                 </label>
@@ -795,7 +795,7 @@ function PosKasirPage() {
                     </div>
                   )}
                   {produkHabis.length > 0 && (
-                    <div className="text-slate-400">
+                    <div className="text-muted-foreground">
                       ⛔ Habis: {produkHabis.map((p) => `${p.emoji} ${p.nama}`).join(", ")}
                     </div>
                   )}
@@ -815,12 +815,12 @@ function PosKasirPage() {
                       className={`relative text-left p-ms-4 rounded-xl border transition-all ${meta.ring} ${
                         active
                           ? "bg-success/20 border-success shadow-lg shadow-success/20"
-                          : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
+                          : "bg-background/60 border-border hover:border-border"
                       } ${habis ? "opacity-40 cursor-not-allowed" : ""}`}
                     >
                       <div className="text-ms-3xl mb-2">{p.emoji}</div>
                       <div className="font-semibold text-ms-sm">{p.nama}</div>
-                      <div className="text-ms-xs text-slate-400 mt-1">{rupiah(p.hargaPerKg)}/{unitOf(p)}</div>
+                      <div className="text-ms-xs text-muted-foreground mt-1">{rupiah(p.hargaPerKg)}/{unitOf(p)}</div>
                       <div className={`text-ms-xs mt-2 ${meta.text}`}>
                         Stok: {p.stokKg.toLocaleString("id-ID")} {unitOf(p)}
                       </div>
@@ -839,14 +839,14 @@ function PosKasirPage() {
             </div>
 
             {/* Mobile scale */}
-            <div className={`md:hidden bg-gradient-to-b from-slate-950 to-black rounded-2xl border-2 border-slate-700 shadow-2xl ${modeRingkas ? "p-ms-3" : "p-ms-4"}`}>
+            <div className={`md:hidden bg-gradient-to-b from-background to-black rounded-2xl border-2 border-border shadow-2xl ${modeRingkas ? "p-ms-3" : "p-ms-4"}`}>
               <div className={`flex items-center justify-between ${modeRingkas ? "mb-2" : "mb-3"}`}>
                 <span className="text-ms-xs font-mono uppercase tracking-widest text-success">⚖ Timbangan</span>
-                <span className="text-ms-xs text-slate-400 truncate">
+                <span className="text-ms-xs text-muted-foreground truncate">
                   {selected.emoji} {selected.nama}
                 </span>
               </div>
-              <div className={`bg-black rounded-xl border border-success/50 relative overflow-hidden ${modeRingkas ? "p-ms-3" : "p-ms-4"}`}>
+              <div className={`bg-background rounded-xl border border-success/50 relative overflow-hidden ${modeRingkas ? "p-ms-3" : "p-ms-4"}`}>
                 <div className="absolute inset-0 bg-success/5" />
                 <div className="relative flex items-baseline justify-end gap-ms-2">
                   <span
@@ -864,16 +864,16 @@ function PosKasirPage() {
               </div>
 
               <div className={modeRingkas ? "mt-3" : "mt-4"}>
-                <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">Input Jumlah ({unit})</label>
+                <label className="text-ms-xs font-semibold text-muted-foreground uppercase tracking-wider">Input Jumlah ({unit})</label>
                 <NumericTextField
                   value={beratStr}
                   onValueChange={setBeratStr}
                   step={inputStep}
                   decimal={true}
-                  className={`w-full bg-slate-900 border rounded-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
+                  className={`w-full bg-background border rounded-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
                     berat > selected.stokKg
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
-                      : "border-slate-700 focus:border-success focus:ring-success/30"
+                      : "border-border focus:border-success focus:ring-success/30"
                   }`}
                   placeholder={inputPlaceholder}
                 />
@@ -888,7 +888,7 @@ function PosKasirPage() {
               </div>
               {selected.warehouseItemId && (
                 <div className={modeRingkas ? "mt-2" : "mt-3"}>
-                  <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <label className="text-ms-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Harga jual / {unit} (Rp)
                   </label>
                   <NumericTextField
@@ -896,7 +896,7 @@ function PosKasirPage() {
                     onValueChange={setHargaStr}
                     step={1}
                     decimal={false}
-                    className={`w-full bg-slate-900 border border-slate-700 focus:border-success focus:ring-success/30 rounded-lg font-mono focus:outline-none focus:ring-2 ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
+                    className={`w-full bg-background border border-border focus:border-success focus:ring-success/30 rounded-lg font-mono focus:outline-none focus:ring-2 ${modeRingkas ? "mt-1 px-ms-2.5 py-ms-2 text-ms-sm" : "mt-2 px-ms-3 py-ms-2.5 text-ms-base"}`}
                     placeholder="0"
                   />
                 </div>
@@ -916,8 +916,8 @@ function PosKasirPage() {
                       disabled={wouldExceed}
                       className={`rounded-lg border text-ms-xs font-semibold transition-colors ${
                         wouldExceed
-                          ? "bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed"
-                          : "bg-slate-800 hover:bg-slate-700 border-slate-700 active:bg-success/30"
+                          ? "bg-card/50 border-border text-muted-foreground cursor-not-allowed"
+                          : "bg-card hover:bg-muted border-border active:bg-success/30"
                       } ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
                     >
                       +{v}
@@ -929,20 +929,20 @@ function PosKasirPage() {
                 <button
                   onClick={() => addBerat(-0.25)}
                   disabled={berat <= 0}
-                  className={`rounded-lg border border-slate-700 bg-slate-800 text-ms-xs font-semibold disabled:opacity-50 active:bg-slate-700 ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
+                  className={`rounded-lg border border-border bg-card text-ms-xs font-semibold disabled:opacity-50 active:bg-muted ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
                 >
                   -0.25
                 </button>
                 <button
                   onClick={() => setBeratStr("0")}
-                  className={`rounded-lg border border-slate-700 bg-slate-800 text-ms-xs font-semibold text-slate-400 active:bg-slate-700 ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
+                  className={`rounded-lg border border-border bg-card text-ms-xs font-semibold text-muted-foreground active:bg-muted ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
                 >
                   Reset
                 </button>
                 <button
                   onClick={bayar}
                   disabled={!bayarSiap}
-                  className={`rounded-lg bg-success hover:bg-success disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-ms-xs font-bold text-white shadow-lg shadow-success/30 active:scale-95 transition-transform ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
+                  className={`rounded-lg bg-success hover:bg-success disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-ms-xs font-bold text-success-foreground shadow-lg shadow-success/30 active:scale-95 transition-transform ${modeRingkas ? "py-ms-2" : "py-ms-2.5"}`}
                 >
                   Bayar
                 </button>
@@ -951,7 +951,7 @@ function PosKasirPage() {
 
 
             {/* Desktop scale */}
-            <div className="hidden md:block bg-gradient-to-b from-slate-950 to-black rounded-2xl p-ms-6 border-2 border-slate-700 shadow-2xl">
+            <div className="hidden md:block bg-gradient-to-b from-background to-black rounded-2xl p-ms-6 border-2 border-border shadow-2xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-ms-xs font-mono uppercase tracking-widest text-success">⚖ Timbangan Digital</span>
                 <span className="flex gap-ms-1.5">
@@ -959,7 +959,7 @@ function PosKasirPage() {
                   <span className="text-ms-2xs font-mono text-success">LIVE</span>
                 </span>
               </div>
-              <div className="bg-black rounded-xl p-ms-6 border border-success/50 relative overflow-hidden">
+              <div className="bg-background rounded-xl p-ms-6 border border-success/50 relative overflow-hidden">
                 <div className="absolute inset-0 bg-success/5" />
                 <div className="relative flex items-baseline justify-end gap-ms-2">
                   <span
@@ -977,7 +977,7 @@ function PosKasirPage() {
               </div>
 
               <div className="mt-5">
-                <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <label className="text-ms-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Input Jumlah ({unit})
                 </label>
                 <NumericTextField
@@ -985,10 +985,10 @@ function PosKasirPage() {
                   onValueChange={setBeratStr}
                   step={inputStep}
                   decimal={true}
-                  className={`mt-2 w-full bg-slate-900 border rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
+                  className={`mt-2 w-full bg-background border rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
                     berat > selected.stokKg
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
-                      : "border-slate-700 focus:border-success focus:ring-success/30"
+                      : "border-border focus:border-success focus:ring-success/30"
                   }`}
                   placeholder={inputPlaceholder}
                 />
@@ -1017,8 +1017,8 @@ function PosKasirPage() {
                         disabled={wouldExceed}
                         className={`py-ms-2 rounded-lg border text-ms-sm font-medium transition-colors ${
                           wouldExceed
-                            ? "bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed"
-                            : "bg-slate-800 hover:bg-slate-700 border-slate-700"
+                            ? "bg-card/50 border-border text-muted-foreground cursor-not-allowed"
+                            : "bg-card hover:bg-muted border-border"
                         }`}
                       >
                         +{v} {unit}
@@ -1028,17 +1028,17 @@ function PosKasirPage() {
                 </div>
                 <button
                   onClick={() => setBeratStr("0")}
-                  className="mt-2 w-full py-ms-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700 text-ms-xs text-slate-400"
+                  className="mt-2 w-full py-ms-2 rounded-lg bg-card/50 hover:bg-card border border-border text-ms-xs text-muted-foreground"
                 >
                   Reset (Tara)
                 </button>
               </div>
               {selected.warehouseItemId && (
                 <div className="mt-4">
-                  <label className="text-ms-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <label className="text-ms-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Harga jual / {unit} (Rp)
                   </label>
-                  <NumericTextField value={hargaStr} onValueChange={setHargaStr} step={1} decimal={false} className="mt-2 w-full bg-slate-900 border border-slate-700 focus:border-success focus:ring-success/30 rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2" placeholder="0" />
+                  <NumericTextField value={hargaStr} onValueChange={setHargaStr} step={1} decimal={false} className="mt-2 w-full bg-background border border-border focus:border-success focus:ring-success/30 rounded-lg px-ms-4 py-ms-3 text-ms-lg font-mono focus:outline-none focus:ring-2" placeholder="0" />
                 </div>
               )}
             </div>
@@ -1046,29 +1046,29 @@ function PosKasirPage() {
 
           {/* Desktop summary */}
           <aside className="hidden md:block space-ms-4">
-            <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-ms-5 border border-slate-700 sticky top-4">
-              <h2 className="text-ms-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Ringkasan</h2>
+            <div className="bg-card/50 backdrop-blur rounded-2xl p-ms-5 border border-border sticky top-4">
+              <h2 className="text-ms-sm font-semibold text-foreground uppercase tracking-wider mb-4">Ringkasan</h2>
               <div className="space-ms-3 text-ms-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Produk</span>
+                  <span className="text-muted-foreground">Produk</span>
                   <span className="font-medium">{selected.emoji} {selected.nama}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Harga/{unit}</span>
+                  <span className="text-muted-foreground">Harga/{unit}</span>
                   <span className="font-mono">{rupiah(hargaEfektif)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Berat</span>
+                  <span className="text-muted-foreground">Berat</span>
                   <span className="font-mono">{berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unit}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Stok saat ini</span>
+                  <span className="text-muted-foreground">Stok saat ini</span>
                   <span className={`font-mono ${!stokCukup && berat > 0 ? "text-red-400" : ""}`}>
                     {selected.stokKg.toLocaleString("id-ID")} {unit}
                   </span>
                 </div>
-                <div className="border-t border-slate-700 pt-3 flex justify-between items-baseline">
-                  <span className="text-slate-300 font-semibold">TOTAL</span>
+                <div className="border-t border-border pt-3 flex justify-between items-baseline">
+                  <span className="text-foreground font-semibold">TOTAL</span>
                   <span className="text-ms-2xl font-bold text-success font-mono">{rupiah(total)}</span>
                 </div>
               </div>
@@ -1085,11 +1085,11 @@ function PosKasirPage() {
               <button
                 onClick={bayar}
                 disabled={!bayarSiap}
-                className="mt-5 w-full py-ms-4 rounded-xl bg-gradient-to-r from-success to-success hover:from-success hover:to-success disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed font-bold text-ms-lg shadow-lg shadow-success/30 transition-all"
+                className="mt-5 w-full py-ms-4 rounded-xl bg-gradient-to-r from-success to-success hover:from-success hover:to-success disabled:from-muted disabled:to-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-bold text-ms-lg shadow-lg shadow-success/30 transition-all"
               >
                 💳 Bayar
               </button>
-              <p className="mt-2 text-ms-2xs text-slate-500 text-center">
+              <p className="mt-2 text-ms-2xs text-muted-foreground text-center">
                 Stok akan otomatis berkurang setelah pembayaran
               </p>
             </div>
@@ -1097,34 +1097,34 @@ function PosKasirPage() {
         </div>
 
         {/* Riwayat Transaksi */}
-        <section className={`md:mt-6 bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700 ${modeRingkas ? "mt-2 p-ms-3 md:p-ms-5" : "mt-4 p-ms-4 md:p-ms-5"}`}>
+        <section className={`md:mt-6 bg-card/50 backdrop-blur rounded-2xl border border-border ${modeRingkas ? "mt-2 p-ms-3 md:p-ms-5" : "mt-4 p-ms-4 md:p-ms-5"}`}>
           <div className={`flex flex-wrap items-center justify-between gap-ms-3 ${modeRingkas ? "mb-2" : "mb-4"}`}>
 
             <div>
-              <h2 className="text-ms-sm font-semibold text-slate-300 uppercase tracking-wider">
+              <h2 className="text-ms-sm font-semibold text-foreground uppercase tracking-wider">
                 📋 Riwayat Transaksi
               </h2>
-              <p className="text-ms-xs text-slate-500 mt-1">
+              <p className="text-ms-xs text-muted-foreground mt-1">
                 {riwayat.length} transaksi · {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg · omzet {rupiah(totalOmzet)}
               </p>
             </div>
             <div className="flex flex-wrap items-end gap-ms-2">
-              <label className="flex flex-col text-ms-2xs uppercase tracking-wider text-slate-500">
+              <label className="flex flex-col text-ms-2xs uppercase tracking-wider text-muted-foreground">
                 Dari
                 <input
                   type="date"
                   value={dariTgl}
                   onChange={(e) => setDariTgl(e.target.value)}
-                  className="mt-1 text-ms-xs px-ms-2 py-1.5 rounded-lg bg-slate-900/60 border border-slate-700 text-slate-200"
+                  className="mt-1 text-ms-xs px-ms-2 py-1.5 rounded-lg bg-background/60 border border-border text-foreground"
                 />
               </label>
-              <label className="flex flex-col text-ms-2xs uppercase tracking-wider text-slate-500">
+              <label className="flex flex-col text-ms-2xs uppercase tracking-wider text-muted-foreground">
                 Sampai
                 <input
                   type="date"
                   value={sampaiTgl}
                   onChange={(e) => setSampaiTgl(e.target.value)}
-                  className="mt-1 text-ms-xs px-ms-2 py-1.5 rounded-lg bg-slate-900/60 border border-slate-700 text-slate-200"
+                  className="mt-1 text-ms-xs px-ms-2 py-1.5 rounded-lg bg-background/60 border border-border text-foreground"
                 />
               </label>
               {(dariTgl || sampaiTgl) && (
@@ -1133,19 +1133,19 @@ function PosKasirPage() {
                     setDariTgl("");
                     setSampaiTgl("");
                   }}
-                  className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+                  className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-background/60 hover:bg-background border border-border text-muted-foreground"
                 >
                   Reset
                 </button>
               )}
-              <div className="flex items-center rounded-lg border border-slate-700 overflow-hidden">
+              <div className="flex items-center rounded-lg border border-border overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setUrutan("terbaru")}
                   className={`px-ms-2.5 py-1.5 text-ms-xs font-medium transition-colors ${
                     urutan === "terbaru"
-                      ? "bg-success text-white"
-                      : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                      ? "bg-success text-success-foreground"
+                      : "bg-background/60 text-muted-foreground hover:bg-background"
                   }`}
                   aria-pressed={urutan === "terbaru"}
                 >
@@ -1156,8 +1156,8 @@ function PosKasirPage() {
                   onClick={() => setUrutan("terlama")}
                   className={`px-ms-2.5 py-1.5 text-ms-xs font-medium transition-colors ${
                     urutan === "terlama"
-                      ? "bg-success text-white"
-                      : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                      ? "bg-success text-success-foreground"
+                      : "bg-background/60 text-muted-foreground hover:bg-background"
                   }`}
                   aria-pressed={urutan === "terlama"}
                 >
@@ -1167,21 +1167,21 @@ function PosKasirPage() {
               <button
                 onClick={exportCSV}
                 disabled={riwayatSorted.length === 0}
-                className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-success text-white font-medium"
+                className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-success hover:bg-success disabled:bg-card disabled:text-muted-foreground disabled:cursor-not-allowed border border-success text-success-foreground font-medium"
               >
                 ⬇ Ekspor CSV ({riwayatSorted.length})
               </button>
               <button
                 onClick={exportPDF}
                 disabled={riwayatSorted.length === 0}
-                className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-rose-700 text-white font-medium"
+                className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-destructive hover:bg-destructive/90 disabled:bg-card disabled:text-muted-foreground disabled:cursor-not-allowed border border-destructive text-destructive-foreground font-medium"
               >
                 📄 Ekspor PDF ({riwayatSorted.length})
               </button>
               {riwayat.length > 0 && (
                 <button
                   onClick={() => setRiwayat([])}
-                  className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+                  className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-background/60 hover:bg-background border border-border text-muted-foreground"
                 >
                   Bersihkan
                 </button>
@@ -1190,7 +1190,7 @@ function PosKasirPage() {
           </div>
 
           {riwayatSorted.length === 0 ? (
-            <div className="text-center py-8 text-ms-sm text-slate-500">
+            <div className="text-center py-8 text-ms-sm text-muted-foreground">
               {riwayat.length === 0
                 ? "Belum ada transaksi. Lakukan pembayaran untuk melihat riwayat di sini."
                 : "Tidak ada transaksi pada rentang tanggal terpilih."}
@@ -1198,9 +1198,9 @@ function PosKasirPage() {
           ) : (
             <>
               {/* WA share form */}
-              <div className={`rounded-xl border border-slate-700 bg-slate-900/40 ${modeRingkas ? "mb-2 p-ms-2" : "mb-4 p-ms-3"}`}>
+              <div className={`rounded-xl border border-border bg-background/40 ${modeRingkas ? "mb-2 p-ms-2" : "mb-4 p-ms-3"}`}>
                 <div className={`flex items-center justify-between gap-ms-2 ${modeRingkas ? "mb-1" : "mb-2"}`}>
-                  <span className="text-ms-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  <span className="text-ms-xs font-semibold text-foreground uppercase tracking-wider">
                     💬 Kirim Struk via WA
                   </span>
                   {waReady ? (
@@ -1214,7 +1214,7 @@ function PosKasirPage() {
 
                 <div className={`grid md:grid-cols-2 ${modeRingkas ? "gap-ms-1.5" : "gap-ms-2"}`}>
                   <div>
-                    <label className="text-ms-2xs uppercase tracking-wider text-slate-500">
+                    <label className="text-ms-2xs uppercase tracking-wider text-muted-foreground">
                       Nomor WA tujuan
                     </label>
                     <input
@@ -1225,23 +1225,23 @@ function PosKasirPage() {
                       onChange={(e) => setWaNomor(e.target.value)}
                       placeholder="0812… atau 62812…"
                       aria-invalid={!!waNomor && !waNomorNorm}
-                      className={`w-full text-ms-sm rounded-lg bg-slate-900/60 border text-slate-100 font-mono focus:outline-none focus:ring-2 ${
+                      className={`w-full text-ms-sm rounded-lg bg-background/60 border text-foreground font-mono focus:outline-none focus:ring-2 ${
                         waNomor && !waNomorNorm
                           ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
-                          : "border-slate-700 focus:border-success focus:ring-success/30"
+                          : "border-border focus:border-success focus:ring-success/30"
                       } ${modeRingkas ? "mt-0.5 px-ms-2 py-1" : "mt-1 px-ms-3 py-ms-2"}`}
                     />
                     {waNomorError && waNomor.trim() !== "" && (
                       <p className="mt-1 text-ms-2xs text-red-300">{waNomorError}</p>
                     )}
                     {!waNomorError && waNomorDisplay && (
-                      <p className="mt-1 text-ms-2xs text-slate-400 font-mono">
+                      <p className="mt-1 text-ms-2xs text-muted-foreground font-mono">
                         Terformat: {waNomorDisplay}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-ms-2xs uppercase tracking-wider text-slate-500">
+                    <label className="text-ms-2xs uppercase tracking-wider text-muted-foreground">
                       Lokasi (URL Maps / http-https)
                     </label>
                     <div className={`flex items-stretch gap-ms-2 ${modeRingkas ? "mt-0.5" : "mt-1"}`}>
@@ -1254,10 +1254,10 @@ function PosKasirPage() {
                         placeholder="https://maps.google.com/…"
                         maxLength={500}
                         aria-invalid={!!waLokasiTrim && !waLokasiValid}
-                        className={`flex-1 min-w-0 text-ms-sm rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
+                        className={`flex-1 min-w-0 text-ms-sm rounded-lg bg-background/60 border text-foreground focus:outline-none focus:ring-2 ${
                           waLokasiTrim && !waLokasiValid
                             ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
-                            : "border-slate-700 focus:border-success focus:ring-success/30"
+                            : "border-border focus:border-success focus:ring-success/30"
                         } ${modeRingkas ? "px-ms-2 py-1" : "px-ms-3 py-ms-2"}`}
                       />
                       <button
@@ -1282,15 +1282,15 @@ function PosKasirPage() {
               {/* Mobile: card list */}
               <div className={`grid md:hidden ${modeRingkas ? "gap-ms-1.5" : "gap-ms-2"}`}>
                 <div className="flex items-center justify-between gap-ms-2">
-                  <span className={`text-slate-500 ${modeRingkas ? "text-ms-2xs" : "text-ms-xs"}`}>Urutan</span>
-                  <div className="flex rounded-lg border border-slate-700 overflow-hidden">
+                  <span className={`text-muted-foreground ${modeRingkas ? "text-ms-2xs" : "text-ms-xs"}`}>Urutan</span>
+                  <div className="flex rounded-lg border border-border overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setUrutan("terbaru")}
                       className={`text-ms-xs font-medium transition-colors ${
                         urutan === "terbaru"
-                          ? "bg-success text-white"
-                          : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                          ? "bg-success text-success-foreground"
+                          : "bg-background/60 text-muted-foreground hover:bg-background"
                       } ${modeRingkas ? "px-ms-2 py-1" : "px-ms-2.5 py-1.5"}`}
                       aria-pressed={urutan === "terbaru"}
                     >
@@ -1301,8 +1301,8 @@ function PosKasirPage() {
                       onClick={() => setUrutan("terlama")}
                       className={`text-ms-xs font-medium transition-colors ${
                         urutan === "terlama"
-                          ? "bg-success text-white"
-                          : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                          ? "bg-success text-success-foreground"
+                          : "bg-background/60 text-muted-foreground hover:bg-background"
                       } ${modeRingkas ? "px-ms-2 py-1" : "px-ms-2.5 py-1.5"}`}
                       aria-pressed={urutan === "terlama"}
                     >
@@ -1311,20 +1311,20 @@ function PosKasirPage() {
                   </div>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">🔍</span>
                   <input
                     type="search"
                     inputMode="search"
                     value={cariTransaksi}
                     onChange={(e) => setCariTransaksi(e.target.value)}
                     placeholder="Cari nama produk atau waktu…"
-                    className={`w-full pl-9 rounded-lg bg-slate-900/60 border border-slate-700 text-ms-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-success ${cariTransaksi ? "pr-20" : "pr-3"} ${modeRingkas ? "py-1.5" : "py-ms-2"}`}
+                    className={`w-full pl-9 rounded-lg bg-background/60 border border-border text-ms-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-success ${cariTransaksi ? "pr-20" : "pr-3"} ${modeRingkas ? "py-1.5" : "py-ms-2"}`}
                   />
                   {cariTransaksi && (
                     <button
                       type="button"
                       onClick={() => setCariTransaksi("")}
-                      className={`absolute right-1 top-1/2 -translate-y-1/2 rounded-md bg-slate-700 text-slate-200 text-ms-xs font-medium hover:bg-slate-600 transition-colors ${modeRingkas ? "px-ms-2 py-0.5" : "px-ms-2.5 py-1"}`}
+                      className={`absolute right-1 top-1/2 -translate-y-1/2 rounded-md bg-muted text-foreground text-ms-xs font-medium hover:bg-muted transition-colors ${modeRingkas ? "px-ms-2 py-0.5" : "px-ms-2.5 py-1"}`}
                       aria-label="Bersihkan pencarian"
                     >
                       Bersihkan
@@ -1333,7 +1333,7 @@ function PosKasirPage() {
                 </div>
 
                 {riwayatCariMobile.length === 0 ? (
-                  <div className="text-center py-ms-6 text-ms-xs text-slate-500">
+                  <div className="text-center py-ms-6 text-ms-xs text-muted-foreground">
                     Tidak ada transaksi yang cocok dengan pencarian.
                   </div>
                 ) : (
@@ -1344,18 +1344,18 @@ function PosKasirPage() {
                     return (
                     <div key={t.id} className="relative overflow-hidden rounded-xl">
                       {isTerakhir && (
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 bg-rose-600/90 rounded-xl">
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 bg-destructive/90 rounded-xl">
                           <button
                             type="button"
                             onClick={() => batalkanTransaksi(t)}
-                            className="text-white text-ms-xs font-semibold px-ms-3 py-1.5 rounded-md bg-rose-700 hover:bg-rose-800"
+                            className="text-destructive-foreground text-ms-xs font-semibold px-ms-3 py-1.5 rounded-md bg-destructive hover:bg-destructive/90"
                           >
                             ↶ Batalkan
                           </button>
                         </div>
                       )}
                       <div
-                        className={`rounded-xl bg-slate-900/60 border border-slate-700 relative transition-transform touch-pan-y ${modeRingkas ? "p-ms-2" : "p-ms-3"}`}
+                        className={`rounded-xl bg-background/60 border border-border relative transition-transform touch-pan-y ${modeRingkas ? "p-ms-2" : "p-ms-3"}`}
                         style={{ transform: `translateX(${dx}px)` }}
                         onTouchStart={(e) => {
                           if (!isTerakhir) return;
@@ -1384,21 +1384,21 @@ function PosKasirPage() {
                           <span className={`shrink-0 ${modeRingkas ? "text-ms-lg" : "text-ms-xl"}`}>{t.produkEmoji}</span>
                           <div className="min-w-0">
                             <div className="text-ms-sm font-medium truncate">{t.produkNama}</div>
-                            <div className="text-ms-2xs text-slate-500 font-mono">{waktuFmt.format(t.waktu)}</div>
+                            <div className="text-ms-2xs text-muted-foreground font-mono">{waktuFmt.format(t.waktu)}</div>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
                           <div className="text-success font-mono font-semibold text-ms-sm">{rupiah(t.total)}</div>
-                          <div className="text-ms-2xs text-slate-400 font-mono">
+                          <div className="text-ms-2xs text-muted-foreground font-mono">
                             {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(t)}
                           </div>
                         </div>
                       </div>
-                      <div className={`border-t border-slate-800 flex justify-between text-ms-2xs text-slate-500 ${modeRingkas ? "mt-1.5 pt-1.5" : "mt-2 pt-2"}`}>
+                      <div className={`border-t border-border flex justify-between text-ms-2xs text-muted-foreground ${modeRingkas ? "mt-1.5 pt-1.5" : "mt-2 pt-2"}`}>
                         <span>@ {rupiah(t.hargaPerKg)}/{unitOf(t)}</span>
                         <span>
                           Sisa:{" "}
-                          <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} {unitOf(t)}</span>
+                          <span className="text-foreground font-mono">{t.sisaStokKg.toLocaleString("id-ID")} {unitOf(t)}</span>
                         </span>
                       </div>
                       <div className={`flex ${modeRingkas ? "mt-1.5 gap-ms-1.5" : "mt-2 gap-ms-2"}`}>
@@ -1408,7 +1408,7 @@ function PosKasirPage() {
                           disabled={!waReady}
                           title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
                           aria-disabled={!waReady}
-                          className={`flex-1 rounded-lg text-ms-2xs font-semibold bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors ${modeRingkas ? "py-1" : "py-1.5"}`}
+                          className={`flex-1 rounded-lg text-ms-2xs font-semibold bg-success hover:bg-success disabled:bg-card disabled:text-muted-foreground disabled:cursor-not-allowed text-success-foreground transition-colors ${modeRingkas ? "py-1" : "py-1.5"}`}
                         >
                           💬 Kirim WA
                         </button>
@@ -1416,7 +1416,7 @@ function PosKasirPage() {
                           <button
                             type="button"
                             onClick={() => batalkanTransaksi(t)}
-                            className={`rounded-lg text-ms-2xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors ${modeRingkas ? "px-ms-2 py-1" : "px-ms-3 py-1.5"}`}
+                            className={`rounded-lg text-ms-2xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground transition-colors ${modeRingkas ? "px-ms-2 py-1" : "px-ms-3 py-1.5"}`}
                             title="Batalkan transaksi terakhir & kembalikan stok"
                           >
                             ↶ Batalkan
@@ -1424,7 +1424,7 @@ function PosKasirPage() {
                         )}
                       </div>
                       {isTerakhir && (
-                        <div className={`text-ms-2xs text-slate-500 text-center ${modeRingkas ? "mt-0.5" : "mt-1"}`}>
+                        <div className={`text-ms-2xs text-muted-foreground text-center ${modeRingkas ? "mt-0.5" : "mt-1"}`}>
                           {revealed ? "Lepas untuk membatalkan →" : "Geser ← untuk membatalkan"}
                         </div>
                       )}
@@ -1440,7 +1440,7 @@ function PosKasirPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-ms-sm">
                   <thead>
-                    <tr className="text-left text-ms-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
+                    <tr className="text-left text-ms-xs uppercase tracking-wider text-muted-foreground border-b border-border">
                       <th className="py-ms-2 pr-3 font-medium">Waktu</th>
                       <th className="py-ms-2 pr-3 font-medium">Produk</th>
                       <th className="py-ms-2 pr-3 font-medium text-right">Jumlah</th>
@@ -1450,10 +1450,10 @@ function PosKasirPage() {
                       <th className="py-ms-2 font-medium text-right">WA</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-border">
                     {riwayatSorted.map((t) => (
-                      <tr key={t.id} className="hover:bg-slate-900/40">
-                        <td className="py-ms-2 pr-3 font-mono text-ms-xs text-slate-400">{waktuFmt.format(t.waktu)}</td>
+                      <tr key={t.id} className="hover:bg-background/40">
+                        <td className="py-ms-2 pr-3 font-mono text-ms-xs text-muted-foreground">{waktuFmt.format(t.waktu)}</td>
                         <td className="py-ms-2 pr-3">
                           <span className="mr-1.5">{t.produkEmoji}</span>
                           {t.produkNama}
@@ -1461,11 +1461,11 @@ function PosKasirPage() {
                         <td className="py-ms-2 pr-3 text-right font-mono">
                           {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(t)}
                         </td>
-                        <td className="py-ms-2 pr-3 text-right font-mono text-slate-400">{rupiah(t.hargaPerKg)}</td>
+                        <td className="py-ms-2 pr-3 text-right font-mono text-muted-foreground">{rupiah(t.hargaPerKg)}</td>
                         <td className="py-ms-2 pr-3 text-right font-mono font-semibold text-success">
                           {rupiah(t.total)}
                         </td>
-                        <td className="py-ms-2 text-right font-mono text-slate-300">
+                        <td className="py-ms-2 text-right font-mono text-foreground">
                           {t.sisaStokKg.toLocaleString("id-ID")} {unitOf(t)}
                         </td>
                         <td className="py-ms-2 text-right">
@@ -1475,7 +1475,7 @@ function PosKasirPage() {
                             disabled={!waReady}
                             title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
                             aria-disabled={!waReady}
-                            className="px-ms-2.5 py-1 rounded-md text-ms-2xs font-semibold bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                            className="px-ms-2.5 py-1 rounded-md text-ms-2xs font-semibold bg-success hover:bg-success disabled:bg-card disabled:text-muted-foreground disabled:cursor-not-allowed text-success-foreground transition-colors"
                           >
                             💬 Kirim
                           </button>
@@ -1490,7 +1490,7 @@ function PosKasirPage() {
         </section>
 
         {toast && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-success/50 rounded-xl px-ms-5 py-ms-3 shadow-2xl text-ms-sm z-50 animate-in fade-in slide-in-from-bottom-4">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-background border border-success/50 rounded-xl px-ms-5 py-ms-3 shadow-2xl text-ms-sm z-50 animate-in fade-in slide-in-from-bottom-4">
             {toast}
           </div>
         )}
@@ -1501,10 +1501,10 @@ function PosKasirPage() {
             onClick={() => setStrukTransaksi(null)}
           >
             <div
-              className="w-full max-w-sm rounded-2xl bg-slate-900 border border-success/40 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4"
+              className="w-full max-w-sm rounded-2xl bg-background border border-success/40 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-ms-4 py-ms-3 border-b border-slate-800 flex items-center justify-between">
+              <div className="px-ms-4 py-ms-3 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-ms-2">
                   <span className="text-ms-lg">🧾</span>
                   <span className="text-ms-sm font-semibold text-success">Struk Transaksi</span>
@@ -1512,7 +1512,7 @@ function PosKasirPage() {
                 <button
                   type="button"
                   onClick={() => setStrukTransaksi(null)}
-                  className="text-slate-400 hover:text-slate-200 text-ms-lg leading-none px-1"
+                  className="text-muted-foreground hover:text-foreground text-ms-lg leading-none px-1"
                   aria-label="Tutup"
                 >
                   ✕
@@ -1522,32 +1522,32 @@ function PosKasirPage() {
                 <div className="flex items-center gap-ms-3">
                   <span className="text-ms-3xl">{strukTransaksi.produkEmoji}</span>
                   <div className="min-w-0">
-                    <div className="text-ms-base font-semibold text-slate-100 truncate">
+                    <div className="text-ms-base font-semibold text-foreground truncate">
                       {strukTransaksi.produkNama}
                     </div>
-                    <div className="text-ms-2xs text-slate-500 font-mono">
+                    <div className="text-ms-2xs text-muted-foreground font-mono">
                       {new Date(strukTransaksi.waktu).toLocaleString("id-ID")}
                     </div>
                   </div>
                 </div>
-                <div className="rounded-lg bg-slate-800/60 border border-slate-700 p-ms-3 text-ms-sm space-y-1.5 font-mono">
+                <div className="rounded-lg bg-card/60 border border-border p-ms-3 text-ms-sm space-y-1.5 font-mono">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Jumlah</span>
-                    <span className="text-slate-100">
+                    <span className="text-muted-foreground">Jumlah</span>
+                    <span className="text-foreground">
                       {strukTransaksi.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(strukTransaksi)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Harga/{unitOf(strukTransaksi)}</span>
-                    <span className="text-slate-100">{rupiah(strukTransaksi.hargaPerKg)}</span>
+                    <span className="text-muted-foreground">Harga/{unitOf(strukTransaksi)}</span>
+                    <span className="text-foreground">{rupiah(strukTransaksi.hargaPerKg)}</span>
                   </div>
-                  <div className="flex justify-between pt-1.5 border-t border-slate-700">
-                    <span className="text-slate-300">Total</span>
+                  <div className="flex justify-between pt-1.5 border-t border-border">
+                    <span className="text-foreground">Total</span>
                     <span className="text-success font-semibold text-ms-base">
                       {rupiah(strukTransaksi.total)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-ms-2xs text-slate-500">
+                  <div className="flex justify-between text-ms-2xs text-muted-foreground">
                     <span>Sisa stok</span>
                     <span>
                       {strukTransaksi.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unitOf(strukTransaksi)}
@@ -1558,7 +1558,7 @@ function PosKasirPage() {
                   <button
                     type="button"
                     onClick={() => salinStruk(strukTransaksi)}
-                    className="py-ms-2.5 rounded-lg text-ms-xs font-semibold bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors"
+                    className="py-ms-2.5 rounded-lg text-ms-xs font-semibold bg-muted hover:bg-muted text-foreground transition-colors"
                   >
                     📋 Salin ringkasan
                   </button>
@@ -1568,7 +1568,7 @@ function PosKasirPage() {
                     disabled={!waReady}
                     title={waDisabledReason || `Kirim ulang ke ${waNomorDisplay}`}
                     aria-disabled={!waReady}
-                    className="py-ms-2.5 rounded-lg text-ms-xs font-semibold bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                    className="py-ms-2.5 rounded-lg text-ms-xs font-semibold bg-success hover:bg-success disabled:bg-card disabled:text-muted-foreground disabled:cursor-not-allowed text-success-foreground transition-colors"
                   >
                     💬 Kirim ulang WA
                   </button>
@@ -1581,7 +1581,7 @@ function PosKasirPage() {
                 <button
                   type="button"
                   onClick={() => setStrukTransaksi(null)}
-                  className="w-full py-ms-2 rounded-lg text-ms-xs font-medium text-slate-400 hover:text-slate-200"
+                  className="w-full py-ms-2 rounded-lg text-ms-xs font-medium text-muted-foreground hover:text-foreground"
                 >
                   Tutup
                 </button>
