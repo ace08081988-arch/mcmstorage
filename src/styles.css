@@ -2039,3 +2039,1484 @@ html[data-reduce-motion="on"] .skeleton-a11y {
 :is([class^="ring-violet-"],[class*=" ring-violet-"]),
 :is([class^="ring-purple-"],[class*=" ring-purple-"]),
 :is([class^="ring-pink-"],[class*=" ring-pink-"]) { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+
+/* --- Varian state (hover/focus/active/disabled/data-state) ---------------
+   Digenerate agar state interaktif memakai token semantik yang sama dengan
+   state normalnya, jadi tidak ada warna menyimpang antar menu. */
+:is([class*="hover:text-emerald-"]):hover,
+:is([class*="hover:text-green-"]):hover,
+:is([class*="hover:text-lime-"]):hover,
+:is([class*="hover:text-teal-"]):hover { color: var(--tone-success); }
+:is([class*="hover:bg-emerald-"]):hover,
+:is([class*="hover:bg-green-"]):hover,
+:is([class*="hover:bg-lime-"]):hover,
+:is([class*="hover:bg-teal-"]):hover { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="hover:bg-emerald-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-green-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-lime-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-teal-"]):is([class*="text-white"],[class*="text-black"]):hover { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="hover:border-emerald-"]):hover,
+:is([class*="hover:border-green-"]):hover,
+:is([class*="hover:border-lime-"]):hover,
+:is([class*="hover:border-teal-"]):hover { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="hover:ring-emerald-"]):hover,
+:is([class*="hover:ring-green-"]):hover,
+:is([class*="hover:ring-lime-"]):hover,
+:is([class*="hover:ring-teal-"]):hover { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="hover:outline-emerald-"]):hover,
+:is([class*="hover:outline-green-"]):hover,
+:is([class*="hover:outline-lime-"]):hover,
+:is([class*="hover:outline-teal-"]):hover { outline-color: var(--tone-success); }
+:is([class*="hover:text-amber-"]):hover,
+:is([class*="hover:text-yellow-"]):hover,
+:is([class*="hover:text-orange-"]):hover { color: var(--tone-warning); }
+:is([class*="hover:bg-amber-"]):hover,
+:is([class*="hover:bg-yellow-"]):hover,
+:is([class*="hover:bg-orange-"]):hover { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="hover:bg-amber-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-yellow-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-orange-"]):is([class*="text-white"],[class*="text-black"]):hover { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="hover:border-amber-"]):hover,
+:is([class*="hover:border-yellow-"]):hover,
+:is([class*="hover:border-orange-"]):hover { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="hover:ring-amber-"]):hover,
+:is([class*="hover:ring-yellow-"]):hover,
+:is([class*="hover:ring-orange-"]):hover { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="hover:outline-amber-"]):hover,
+:is([class*="hover:outline-yellow-"]):hover,
+:is([class*="hover:outline-orange-"]):hover { outline-color: var(--tone-warning); }
+:is([class*="hover:text-red-"]):hover,
+:is([class*="hover:text-rose-"]):hover { color: var(--tone-danger); }
+:is([class*="hover:bg-red-"]):hover,
+:is([class*="hover:bg-rose-"]):hover { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="hover:bg-red-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-rose-"]):is([class*="text-white"],[class*="text-black"]):hover { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="hover:border-red-"]):hover,
+:is([class*="hover:border-rose-"]):hover { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="hover:ring-red-"]):hover,
+:is([class*="hover:ring-rose-"]):hover { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="hover:outline-red-"]):hover,
+:is([class*="hover:outline-rose-"]):hover { outline-color: var(--tone-danger); }
+:is([class*="hover:text-sky-"]):hover,
+:is([class*="hover:text-blue-"]):hover,
+:is([class*="hover:text-cyan-"]):hover,
+:is([class*="hover:text-indigo-"]):hover,
+:is([class*="hover:text-violet-"]):hover,
+:is([class*="hover:text-purple-"]):hover,
+:is([class*="hover:text-fuchsia-"]):hover,
+:is([class*="hover:text-pink-"]):hover { color: var(--tone-info); }
+:is([class*="hover:bg-sky-"]):hover,
+:is([class*="hover:bg-blue-"]):hover,
+:is([class*="hover:bg-cyan-"]):hover,
+:is([class*="hover:bg-indigo-"]):hover,
+:is([class*="hover:bg-violet-"]):hover,
+:is([class*="hover:bg-purple-"]):hover,
+:is([class*="hover:bg-fuchsia-"]):hover,
+:is([class*="hover:bg-pink-"]):hover { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="hover:bg-sky-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-blue-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-cyan-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-indigo-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-violet-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-purple-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"]):hover,
+:is([class*="hover:bg-pink-"]):is([class*="text-white"],[class*="text-black"]):hover { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="hover:border-sky-"]):hover,
+:is([class*="hover:border-blue-"]):hover,
+:is([class*="hover:border-cyan-"]):hover,
+:is([class*="hover:border-indigo-"]):hover,
+:is([class*="hover:border-violet-"]):hover,
+:is([class*="hover:border-purple-"]):hover,
+:is([class*="hover:border-fuchsia-"]):hover,
+:is([class*="hover:border-pink-"]):hover { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="hover:ring-sky-"]):hover,
+:is([class*="hover:ring-blue-"]):hover,
+:is([class*="hover:ring-cyan-"]):hover,
+:is([class*="hover:ring-indigo-"]):hover,
+:is([class*="hover:ring-violet-"]):hover,
+:is([class*="hover:ring-purple-"]):hover,
+:is([class*="hover:ring-fuchsia-"]):hover,
+:is([class*="hover:ring-pink-"]):hover { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="hover:outline-sky-"]):hover,
+:is([class*="hover:outline-blue-"]):hover,
+:is([class*="hover:outline-cyan-"]):hover,
+:is([class*="hover:outline-indigo-"]):hover,
+:is([class*="hover:outline-violet-"]):hover,
+:is([class*="hover:outline-purple-"]):hover,
+:is([class*="hover:outline-fuchsia-"]):hover,
+:is([class*="hover:outline-pink-"]):hover { outline-color: var(--tone-info); }
+:is([class*="hover:text-slate-"]):hover,
+:is([class*="hover:text-gray-"]):hover,
+:is([class*="hover:text-zinc-"]):hover,
+:is([class*="hover:text-neutral-"]):hover,
+:is([class*="hover:text-stone-"]):hover { color: var(--foreground); }
+:is([class*="hover:bg-slate-"]):hover,
+:is([class*="hover:bg-gray-"]):hover,
+:is([class*="hover:bg-zinc-"]):hover,
+:is([class*="hover:bg-neutral-"]):hover,
+:is([class*="hover:bg-stone-"]):hover { background-color: var(--muted); }
+:is([class*="hover:border-slate-"]):hover,
+:is([class*="hover:border-gray-"]):hover,
+:is([class*="hover:border-zinc-"]):hover,
+:is([class*="hover:border-neutral-"]):hover,
+:is([class*="hover:border-stone-"]):hover { border-color: var(--border); }
+:is([class*="hover:ring-slate-"]):hover,
+:is([class*="hover:ring-gray-"]):hover,
+:is([class*="hover:ring-zinc-"]):hover,
+:is([class*="hover:ring-neutral-"]):hover,
+:is([class*="hover:ring-stone-"]):hover { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="hover:outline-slate-"]):hover,
+:is([class*="hover:outline-gray-"]):hover,
+:is([class*="hover:outline-zinc-"]):hover,
+:is([class*="hover:outline-neutral-"]):hover,
+:is([class*="hover:outline-stone-"]):hover { outline-color: var(--border); }
+:is([class*="focus:text-emerald-"]):focus,
+:is([class*="focus:text-green-"]):focus,
+:is([class*="focus:text-lime-"]):focus,
+:is([class*="focus:text-teal-"]):focus { color: var(--tone-success); }
+:is([class*="focus:bg-emerald-"]):focus,
+:is([class*="focus:bg-green-"]):focus,
+:is([class*="focus:bg-lime-"]):focus,
+:is([class*="focus:bg-teal-"]):focus { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="focus:bg-emerald-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-green-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-lime-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-teal-"]):is([class*="text-white"],[class*="text-black"]):focus { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="focus:border-emerald-"]):focus,
+:is([class*="focus:border-green-"]):focus,
+:is([class*="focus:border-lime-"]):focus,
+:is([class*="focus:border-teal-"]):focus { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="focus:ring-emerald-"]):focus,
+:is([class*="focus:ring-green-"]):focus,
+:is([class*="focus:ring-lime-"]):focus,
+:is([class*="focus:ring-teal-"]):focus { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="focus:outline-emerald-"]):focus,
+:is([class*="focus:outline-green-"]):focus,
+:is([class*="focus:outline-lime-"]):focus,
+:is([class*="focus:outline-teal-"]):focus { outline-color: var(--tone-success); }
+:is([class*="focus:text-amber-"]):focus,
+:is([class*="focus:text-yellow-"]):focus,
+:is([class*="focus:text-orange-"]):focus { color: var(--tone-warning); }
+:is([class*="focus:bg-amber-"]):focus,
+:is([class*="focus:bg-yellow-"]):focus,
+:is([class*="focus:bg-orange-"]):focus { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="focus:bg-amber-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-yellow-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-orange-"]):is([class*="text-white"],[class*="text-black"]):focus { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="focus:border-amber-"]):focus,
+:is([class*="focus:border-yellow-"]):focus,
+:is([class*="focus:border-orange-"]):focus { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="focus:ring-amber-"]):focus,
+:is([class*="focus:ring-yellow-"]):focus,
+:is([class*="focus:ring-orange-"]):focus { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="focus:outline-amber-"]):focus,
+:is([class*="focus:outline-yellow-"]):focus,
+:is([class*="focus:outline-orange-"]):focus { outline-color: var(--tone-warning); }
+:is([class*="focus:text-red-"]):focus,
+:is([class*="focus:text-rose-"]):focus { color: var(--tone-danger); }
+:is([class*="focus:bg-red-"]):focus,
+:is([class*="focus:bg-rose-"]):focus { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="focus:bg-red-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-rose-"]):is([class*="text-white"],[class*="text-black"]):focus { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="focus:border-red-"]):focus,
+:is([class*="focus:border-rose-"]):focus { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="focus:ring-red-"]):focus,
+:is([class*="focus:ring-rose-"]):focus { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="focus:outline-red-"]):focus,
+:is([class*="focus:outline-rose-"]):focus { outline-color: var(--tone-danger); }
+:is([class*="focus:text-sky-"]):focus,
+:is([class*="focus:text-blue-"]):focus,
+:is([class*="focus:text-cyan-"]):focus,
+:is([class*="focus:text-indigo-"]):focus,
+:is([class*="focus:text-violet-"]):focus,
+:is([class*="focus:text-purple-"]):focus,
+:is([class*="focus:text-fuchsia-"]):focus,
+:is([class*="focus:text-pink-"]):focus { color: var(--tone-info); }
+:is([class*="focus:bg-sky-"]):focus,
+:is([class*="focus:bg-blue-"]):focus,
+:is([class*="focus:bg-cyan-"]):focus,
+:is([class*="focus:bg-indigo-"]):focus,
+:is([class*="focus:bg-violet-"]):focus,
+:is([class*="focus:bg-purple-"]):focus,
+:is([class*="focus:bg-fuchsia-"]):focus,
+:is([class*="focus:bg-pink-"]):focus { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="focus:bg-sky-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-blue-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-cyan-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-indigo-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-violet-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-purple-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"]):focus,
+:is([class*="focus:bg-pink-"]):is([class*="text-white"],[class*="text-black"]):focus { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="focus:border-sky-"]):focus,
+:is([class*="focus:border-blue-"]):focus,
+:is([class*="focus:border-cyan-"]):focus,
+:is([class*="focus:border-indigo-"]):focus,
+:is([class*="focus:border-violet-"]):focus,
+:is([class*="focus:border-purple-"]):focus,
+:is([class*="focus:border-fuchsia-"]):focus,
+:is([class*="focus:border-pink-"]):focus { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="focus:ring-sky-"]):focus,
+:is([class*="focus:ring-blue-"]):focus,
+:is([class*="focus:ring-cyan-"]):focus,
+:is([class*="focus:ring-indigo-"]):focus,
+:is([class*="focus:ring-violet-"]):focus,
+:is([class*="focus:ring-purple-"]):focus,
+:is([class*="focus:ring-fuchsia-"]):focus,
+:is([class*="focus:ring-pink-"]):focus { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="focus:outline-sky-"]):focus,
+:is([class*="focus:outline-blue-"]):focus,
+:is([class*="focus:outline-cyan-"]):focus,
+:is([class*="focus:outline-indigo-"]):focus,
+:is([class*="focus:outline-violet-"]):focus,
+:is([class*="focus:outline-purple-"]):focus,
+:is([class*="focus:outline-fuchsia-"]):focus,
+:is([class*="focus:outline-pink-"]):focus { outline-color: var(--tone-info); }
+:is([class*="focus:text-slate-"]):focus,
+:is([class*="focus:text-gray-"]):focus,
+:is([class*="focus:text-zinc-"]):focus,
+:is([class*="focus:text-neutral-"]):focus,
+:is([class*="focus:text-stone-"]):focus { color: var(--foreground); }
+:is([class*="focus:bg-slate-"]):focus,
+:is([class*="focus:bg-gray-"]):focus,
+:is([class*="focus:bg-zinc-"]):focus,
+:is([class*="focus:bg-neutral-"]):focus,
+:is([class*="focus:bg-stone-"]):focus { background-color: var(--muted); }
+:is([class*="focus:border-slate-"]):focus,
+:is([class*="focus:border-gray-"]):focus,
+:is([class*="focus:border-zinc-"]):focus,
+:is([class*="focus:border-neutral-"]):focus,
+:is([class*="focus:border-stone-"]):focus { border-color: var(--border); }
+:is([class*="focus:ring-slate-"]):focus,
+:is([class*="focus:ring-gray-"]):focus,
+:is([class*="focus:ring-zinc-"]):focus,
+:is([class*="focus:ring-neutral-"]):focus,
+:is([class*="focus:ring-stone-"]):focus { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="focus:outline-slate-"]):focus,
+:is([class*="focus:outline-gray-"]):focus,
+:is([class*="focus:outline-zinc-"]):focus,
+:is([class*="focus:outline-neutral-"]):focus,
+:is([class*="focus:outline-stone-"]):focus { outline-color: var(--border); }
+:is([class*="focus-visible:text-emerald-"]):focus-visible,
+:is([class*="focus-visible:text-green-"]):focus-visible,
+:is([class*="focus-visible:text-lime-"]):focus-visible,
+:is([class*="focus-visible:text-teal-"]):focus-visible { color: var(--tone-success); }
+:is([class*="focus-visible:bg-emerald-"]):focus-visible,
+:is([class*="focus-visible:bg-green-"]):focus-visible,
+:is([class*="focus-visible:bg-lime-"]):focus-visible,
+:is([class*="focus-visible:bg-teal-"]):focus-visible { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="focus-visible:bg-emerald-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-green-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-lime-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-teal-"]):is([class*="text-white"],[class*="text-black"]):focus-visible { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="focus-visible:border-emerald-"]):focus-visible,
+:is([class*="focus-visible:border-green-"]):focus-visible,
+:is([class*="focus-visible:border-lime-"]):focus-visible,
+:is([class*="focus-visible:border-teal-"]):focus-visible { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="focus-visible:ring-emerald-"]):focus-visible,
+:is([class*="focus-visible:ring-green-"]):focus-visible,
+:is([class*="focus-visible:ring-lime-"]):focus-visible,
+:is([class*="focus-visible:ring-teal-"]):focus-visible { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="focus-visible:outline-emerald-"]):focus-visible,
+:is([class*="focus-visible:outline-green-"]):focus-visible,
+:is([class*="focus-visible:outline-lime-"]):focus-visible,
+:is([class*="focus-visible:outline-teal-"]):focus-visible { outline-color: var(--tone-success); }
+:is([class*="focus-visible:text-amber-"]):focus-visible,
+:is([class*="focus-visible:text-yellow-"]):focus-visible,
+:is([class*="focus-visible:text-orange-"]):focus-visible { color: var(--tone-warning); }
+:is([class*="focus-visible:bg-amber-"]):focus-visible,
+:is([class*="focus-visible:bg-yellow-"]):focus-visible,
+:is([class*="focus-visible:bg-orange-"]):focus-visible { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="focus-visible:bg-amber-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-yellow-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-orange-"]):is([class*="text-white"],[class*="text-black"]):focus-visible { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="focus-visible:border-amber-"]):focus-visible,
+:is([class*="focus-visible:border-yellow-"]):focus-visible,
+:is([class*="focus-visible:border-orange-"]):focus-visible { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="focus-visible:ring-amber-"]):focus-visible,
+:is([class*="focus-visible:ring-yellow-"]):focus-visible,
+:is([class*="focus-visible:ring-orange-"]):focus-visible { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="focus-visible:outline-amber-"]):focus-visible,
+:is([class*="focus-visible:outline-yellow-"]):focus-visible,
+:is([class*="focus-visible:outline-orange-"]):focus-visible { outline-color: var(--tone-warning); }
+:is([class*="focus-visible:text-red-"]):focus-visible,
+:is([class*="focus-visible:text-rose-"]):focus-visible { color: var(--tone-danger); }
+:is([class*="focus-visible:bg-red-"]):focus-visible,
+:is([class*="focus-visible:bg-rose-"]):focus-visible { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="focus-visible:bg-red-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-rose-"]):is([class*="text-white"],[class*="text-black"]):focus-visible { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="focus-visible:border-red-"]):focus-visible,
+:is([class*="focus-visible:border-rose-"]):focus-visible { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="focus-visible:ring-red-"]):focus-visible,
+:is([class*="focus-visible:ring-rose-"]):focus-visible { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="focus-visible:outline-red-"]):focus-visible,
+:is([class*="focus-visible:outline-rose-"]):focus-visible { outline-color: var(--tone-danger); }
+:is([class*="focus-visible:text-sky-"]):focus-visible,
+:is([class*="focus-visible:text-blue-"]):focus-visible,
+:is([class*="focus-visible:text-cyan-"]):focus-visible,
+:is([class*="focus-visible:text-indigo-"]):focus-visible,
+:is([class*="focus-visible:text-violet-"]):focus-visible,
+:is([class*="focus-visible:text-purple-"]):focus-visible,
+:is([class*="focus-visible:text-fuchsia-"]):focus-visible,
+:is([class*="focus-visible:text-pink-"]):focus-visible { color: var(--tone-info); }
+:is([class*="focus-visible:bg-sky-"]):focus-visible,
+:is([class*="focus-visible:bg-blue-"]):focus-visible,
+:is([class*="focus-visible:bg-cyan-"]):focus-visible,
+:is([class*="focus-visible:bg-indigo-"]):focus-visible,
+:is([class*="focus-visible:bg-violet-"]):focus-visible,
+:is([class*="focus-visible:bg-purple-"]):focus-visible,
+:is([class*="focus-visible:bg-fuchsia-"]):focus-visible,
+:is([class*="focus-visible:bg-pink-"]):focus-visible { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="focus-visible:bg-sky-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-blue-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-cyan-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-indigo-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-violet-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-purple-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"]):focus-visible,
+:is([class*="focus-visible:bg-pink-"]):is([class*="text-white"],[class*="text-black"]):focus-visible { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="focus-visible:border-sky-"]):focus-visible,
+:is([class*="focus-visible:border-blue-"]):focus-visible,
+:is([class*="focus-visible:border-cyan-"]):focus-visible,
+:is([class*="focus-visible:border-indigo-"]):focus-visible,
+:is([class*="focus-visible:border-violet-"]):focus-visible,
+:is([class*="focus-visible:border-purple-"]):focus-visible,
+:is([class*="focus-visible:border-fuchsia-"]):focus-visible,
+:is([class*="focus-visible:border-pink-"]):focus-visible { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="focus-visible:ring-sky-"]):focus-visible,
+:is([class*="focus-visible:ring-blue-"]):focus-visible,
+:is([class*="focus-visible:ring-cyan-"]):focus-visible,
+:is([class*="focus-visible:ring-indigo-"]):focus-visible,
+:is([class*="focus-visible:ring-violet-"]):focus-visible,
+:is([class*="focus-visible:ring-purple-"]):focus-visible,
+:is([class*="focus-visible:ring-fuchsia-"]):focus-visible,
+:is([class*="focus-visible:ring-pink-"]):focus-visible { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="focus-visible:outline-sky-"]):focus-visible,
+:is([class*="focus-visible:outline-blue-"]):focus-visible,
+:is([class*="focus-visible:outline-cyan-"]):focus-visible,
+:is([class*="focus-visible:outline-indigo-"]):focus-visible,
+:is([class*="focus-visible:outline-violet-"]):focus-visible,
+:is([class*="focus-visible:outline-purple-"]):focus-visible,
+:is([class*="focus-visible:outline-fuchsia-"]):focus-visible,
+:is([class*="focus-visible:outline-pink-"]):focus-visible { outline-color: var(--tone-info); }
+:is([class*="focus-visible:text-slate-"]):focus-visible,
+:is([class*="focus-visible:text-gray-"]):focus-visible,
+:is([class*="focus-visible:text-zinc-"]):focus-visible,
+:is([class*="focus-visible:text-neutral-"]):focus-visible,
+:is([class*="focus-visible:text-stone-"]):focus-visible { color: var(--foreground); }
+:is([class*="focus-visible:bg-slate-"]):focus-visible,
+:is([class*="focus-visible:bg-gray-"]):focus-visible,
+:is([class*="focus-visible:bg-zinc-"]):focus-visible,
+:is([class*="focus-visible:bg-neutral-"]):focus-visible,
+:is([class*="focus-visible:bg-stone-"]):focus-visible { background-color: var(--muted); }
+:is([class*="focus-visible:border-slate-"]):focus-visible,
+:is([class*="focus-visible:border-gray-"]):focus-visible,
+:is([class*="focus-visible:border-zinc-"]):focus-visible,
+:is([class*="focus-visible:border-neutral-"]):focus-visible,
+:is([class*="focus-visible:border-stone-"]):focus-visible { border-color: var(--border); }
+:is([class*="focus-visible:ring-slate-"]):focus-visible,
+:is([class*="focus-visible:ring-gray-"]):focus-visible,
+:is([class*="focus-visible:ring-zinc-"]):focus-visible,
+:is([class*="focus-visible:ring-neutral-"]):focus-visible,
+:is([class*="focus-visible:ring-stone-"]):focus-visible { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="focus-visible:outline-slate-"]):focus-visible,
+:is([class*="focus-visible:outline-gray-"]):focus-visible,
+:is([class*="focus-visible:outline-zinc-"]):focus-visible,
+:is([class*="focus-visible:outline-neutral-"]):focus-visible,
+:is([class*="focus-visible:outline-stone-"]):focus-visible { outline-color: var(--border); }
+:is([class*="active:text-emerald-"]):active,
+:is([class*="active:text-green-"]):active,
+:is([class*="active:text-lime-"]):active,
+:is([class*="active:text-teal-"]):active { color: var(--tone-success); }
+:is([class*="active:bg-emerald-"]):active,
+:is([class*="active:bg-green-"]):active,
+:is([class*="active:bg-lime-"]):active,
+:is([class*="active:bg-teal-"]):active { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="active:bg-emerald-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-green-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-lime-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-teal-"]):is([class*="text-white"],[class*="text-black"]):active { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="active:border-emerald-"]):active,
+:is([class*="active:border-green-"]):active,
+:is([class*="active:border-lime-"]):active,
+:is([class*="active:border-teal-"]):active { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="active:ring-emerald-"]):active,
+:is([class*="active:ring-green-"]):active,
+:is([class*="active:ring-lime-"]):active,
+:is([class*="active:ring-teal-"]):active { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="active:outline-emerald-"]):active,
+:is([class*="active:outline-green-"]):active,
+:is([class*="active:outline-lime-"]):active,
+:is([class*="active:outline-teal-"]):active { outline-color: var(--tone-success); }
+:is([class*="active:text-amber-"]):active,
+:is([class*="active:text-yellow-"]):active,
+:is([class*="active:text-orange-"]):active { color: var(--tone-warning); }
+:is([class*="active:bg-amber-"]):active,
+:is([class*="active:bg-yellow-"]):active,
+:is([class*="active:bg-orange-"]):active { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="active:bg-amber-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-yellow-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-orange-"]):is([class*="text-white"],[class*="text-black"]):active { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="active:border-amber-"]):active,
+:is([class*="active:border-yellow-"]):active,
+:is([class*="active:border-orange-"]):active { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="active:ring-amber-"]):active,
+:is([class*="active:ring-yellow-"]):active,
+:is([class*="active:ring-orange-"]):active { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="active:outline-amber-"]):active,
+:is([class*="active:outline-yellow-"]):active,
+:is([class*="active:outline-orange-"]):active { outline-color: var(--tone-warning); }
+:is([class*="active:text-red-"]):active,
+:is([class*="active:text-rose-"]):active { color: var(--tone-danger); }
+:is([class*="active:bg-red-"]):active,
+:is([class*="active:bg-rose-"]):active { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="active:bg-red-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-rose-"]):is([class*="text-white"],[class*="text-black"]):active { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="active:border-red-"]):active,
+:is([class*="active:border-rose-"]):active { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="active:ring-red-"]):active,
+:is([class*="active:ring-rose-"]):active { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="active:outline-red-"]):active,
+:is([class*="active:outline-rose-"]):active { outline-color: var(--tone-danger); }
+:is([class*="active:text-sky-"]):active,
+:is([class*="active:text-blue-"]):active,
+:is([class*="active:text-cyan-"]):active,
+:is([class*="active:text-indigo-"]):active,
+:is([class*="active:text-violet-"]):active,
+:is([class*="active:text-purple-"]):active,
+:is([class*="active:text-fuchsia-"]):active,
+:is([class*="active:text-pink-"]):active { color: var(--tone-info); }
+:is([class*="active:bg-sky-"]):active,
+:is([class*="active:bg-blue-"]):active,
+:is([class*="active:bg-cyan-"]):active,
+:is([class*="active:bg-indigo-"]):active,
+:is([class*="active:bg-violet-"]):active,
+:is([class*="active:bg-purple-"]):active,
+:is([class*="active:bg-fuchsia-"]):active,
+:is([class*="active:bg-pink-"]):active { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="active:bg-sky-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-blue-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-cyan-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-indigo-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-violet-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-purple-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"]):active,
+:is([class*="active:bg-pink-"]):is([class*="text-white"],[class*="text-black"]):active { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="active:border-sky-"]):active,
+:is([class*="active:border-blue-"]):active,
+:is([class*="active:border-cyan-"]):active,
+:is([class*="active:border-indigo-"]):active,
+:is([class*="active:border-violet-"]):active,
+:is([class*="active:border-purple-"]):active,
+:is([class*="active:border-fuchsia-"]):active,
+:is([class*="active:border-pink-"]):active { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="active:ring-sky-"]):active,
+:is([class*="active:ring-blue-"]):active,
+:is([class*="active:ring-cyan-"]):active,
+:is([class*="active:ring-indigo-"]):active,
+:is([class*="active:ring-violet-"]):active,
+:is([class*="active:ring-purple-"]):active,
+:is([class*="active:ring-fuchsia-"]):active,
+:is([class*="active:ring-pink-"]):active { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="active:outline-sky-"]):active,
+:is([class*="active:outline-blue-"]):active,
+:is([class*="active:outline-cyan-"]):active,
+:is([class*="active:outline-indigo-"]):active,
+:is([class*="active:outline-violet-"]):active,
+:is([class*="active:outline-purple-"]):active,
+:is([class*="active:outline-fuchsia-"]):active,
+:is([class*="active:outline-pink-"]):active { outline-color: var(--tone-info); }
+:is([class*="active:text-slate-"]):active,
+:is([class*="active:text-gray-"]):active,
+:is([class*="active:text-zinc-"]):active,
+:is([class*="active:text-neutral-"]):active,
+:is([class*="active:text-stone-"]):active { color: var(--foreground); }
+:is([class*="active:bg-slate-"]):active,
+:is([class*="active:bg-gray-"]):active,
+:is([class*="active:bg-zinc-"]):active,
+:is([class*="active:bg-neutral-"]):active,
+:is([class*="active:bg-stone-"]):active { background-color: var(--muted); }
+:is([class*="active:border-slate-"]):active,
+:is([class*="active:border-gray-"]):active,
+:is([class*="active:border-zinc-"]):active,
+:is([class*="active:border-neutral-"]):active,
+:is([class*="active:border-stone-"]):active { border-color: var(--border); }
+:is([class*="active:ring-slate-"]):active,
+:is([class*="active:ring-gray-"]):active,
+:is([class*="active:ring-zinc-"]):active,
+:is([class*="active:ring-neutral-"]):active,
+:is([class*="active:ring-stone-"]):active { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="active:outline-slate-"]):active,
+:is([class*="active:outline-gray-"]):active,
+:is([class*="active:outline-zinc-"]):active,
+:is([class*="active:outline-neutral-"]):active,
+:is([class*="active:outline-stone-"]):active { outline-color: var(--border); }
+:is([class*="disabled:text-emerald-"]):disabled,
+:is([class*="disabled:text-green-"]):disabled,
+:is([class*="disabled:text-lime-"]):disabled,
+:is([class*="disabled:text-teal-"]):disabled { color: var(--tone-success); }
+:is([class*="disabled:bg-emerald-"]):disabled,
+:is([class*="disabled:bg-green-"]):disabled,
+:is([class*="disabled:bg-lime-"]):disabled,
+:is([class*="disabled:bg-teal-"]):disabled { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="disabled:bg-emerald-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-green-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-lime-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-teal-"]):is([class*="text-white"],[class*="text-black"]):disabled { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="disabled:border-emerald-"]):disabled,
+:is([class*="disabled:border-green-"]):disabled,
+:is([class*="disabled:border-lime-"]):disabled,
+:is([class*="disabled:border-teal-"]):disabled { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="disabled:ring-emerald-"]):disabled,
+:is([class*="disabled:ring-green-"]):disabled,
+:is([class*="disabled:ring-lime-"]):disabled,
+:is([class*="disabled:ring-teal-"]):disabled { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="disabled:outline-emerald-"]):disabled,
+:is([class*="disabled:outline-green-"]):disabled,
+:is([class*="disabled:outline-lime-"]):disabled,
+:is([class*="disabled:outline-teal-"]):disabled { outline-color: var(--tone-success); }
+:is([class*="disabled:text-amber-"]):disabled,
+:is([class*="disabled:text-yellow-"]):disabled,
+:is([class*="disabled:text-orange-"]):disabled { color: var(--tone-warning); }
+:is([class*="disabled:bg-amber-"]):disabled,
+:is([class*="disabled:bg-yellow-"]):disabled,
+:is([class*="disabled:bg-orange-"]):disabled { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="disabled:bg-amber-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-yellow-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-orange-"]):is([class*="text-white"],[class*="text-black"]):disabled { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="disabled:border-amber-"]):disabled,
+:is([class*="disabled:border-yellow-"]):disabled,
+:is([class*="disabled:border-orange-"]):disabled { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="disabled:ring-amber-"]):disabled,
+:is([class*="disabled:ring-yellow-"]):disabled,
+:is([class*="disabled:ring-orange-"]):disabled { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="disabled:outline-amber-"]):disabled,
+:is([class*="disabled:outline-yellow-"]):disabled,
+:is([class*="disabled:outline-orange-"]):disabled { outline-color: var(--tone-warning); }
+:is([class*="disabled:text-red-"]):disabled,
+:is([class*="disabled:text-rose-"]):disabled { color: var(--tone-danger); }
+:is([class*="disabled:bg-red-"]):disabled,
+:is([class*="disabled:bg-rose-"]):disabled { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="disabled:bg-red-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-rose-"]):is([class*="text-white"],[class*="text-black"]):disabled { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="disabled:border-red-"]):disabled,
+:is([class*="disabled:border-rose-"]):disabled { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="disabled:ring-red-"]):disabled,
+:is([class*="disabled:ring-rose-"]):disabled { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="disabled:outline-red-"]):disabled,
+:is([class*="disabled:outline-rose-"]):disabled { outline-color: var(--tone-danger); }
+:is([class*="disabled:text-sky-"]):disabled,
+:is([class*="disabled:text-blue-"]):disabled,
+:is([class*="disabled:text-cyan-"]):disabled,
+:is([class*="disabled:text-indigo-"]):disabled,
+:is([class*="disabled:text-violet-"]):disabled,
+:is([class*="disabled:text-purple-"]):disabled,
+:is([class*="disabled:text-fuchsia-"]):disabled,
+:is([class*="disabled:text-pink-"]):disabled { color: var(--tone-info); }
+:is([class*="disabled:bg-sky-"]):disabled,
+:is([class*="disabled:bg-blue-"]):disabled,
+:is([class*="disabled:bg-cyan-"]):disabled,
+:is([class*="disabled:bg-indigo-"]):disabled,
+:is([class*="disabled:bg-violet-"]):disabled,
+:is([class*="disabled:bg-purple-"]):disabled,
+:is([class*="disabled:bg-fuchsia-"]):disabled,
+:is([class*="disabled:bg-pink-"]):disabled { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="disabled:bg-sky-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-blue-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-cyan-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-indigo-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-violet-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-purple-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"]):disabled,
+:is([class*="disabled:bg-pink-"]):is([class*="text-white"],[class*="text-black"]):disabled { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="disabled:border-sky-"]):disabled,
+:is([class*="disabled:border-blue-"]):disabled,
+:is([class*="disabled:border-cyan-"]):disabled,
+:is([class*="disabled:border-indigo-"]):disabled,
+:is([class*="disabled:border-violet-"]):disabled,
+:is([class*="disabled:border-purple-"]):disabled,
+:is([class*="disabled:border-fuchsia-"]):disabled,
+:is([class*="disabled:border-pink-"]):disabled { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="disabled:ring-sky-"]):disabled,
+:is([class*="disabled:ring-blue-"]):disabled,
+:is([class*="disabled:ring-cyan-"]):disabled,
+:is([class*="disabled:ring-indigo-"]):disabled,
+:is([class*="disabled:ring-violet-"]):disabled,
+:is([class*="disabled:ring-purple-"]):disabled,
+:is([class*="disabled:ring-fuchsia-"]):disabled,
+:is([class*="disabled:ring-pink-"]):disabled { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="disabled:outline-sky-"]):disabled,
+:is([class*="disabled:outline-blue-"]):disabled,
+:is([class*="disabled:outline-cyan-"]):disabled,
+:is([class*="disabled:outline-indigo-"]):disabled,
+:is([class*="disabled:outline-violet-"]):disabled,
+:is([class*="disabled:outline-purple-"]):disabled,
+:is([class*="disabled:outline-fuchsia-"]):disabled,
+:is([class*="disabled:outline-pink-"]):disabled { outline-color: var(--tone-info); }
+:is([class*="disabled:text-slate-"]):disabled,
+:is([class*="disabled:text-gray-"]):disabled,
+:is([class*="disabled:text-zinc-"]):disabled,
+:is([class*="disabled:text-neutral-"]):disabled,
+:is([class*="disabled:text-stone-"]):disabled { color: var(--foreground); }
+:is([class*="disabled:bg-slate-"]):disabled,
+:is([class*="disabled:bg-gray-"]):disabled,
+:is([class*="disabled:bg-zinc-"]):disabled,
+:is([class*="disabled:bg-neutral-"]):disabled,
+:is([class*="disabled:bg-stone-"]):disabled { background-color: var(--muted); }
+:is([class*="disabled:border-slate-"]):disabled,
+:is([class*="disabled:border-gray-"]):disabled,
+:is([class*="disabled:border-zinc-"]):disabled,
+:is([class*="disabled:border-neutral-"]):disabled,
+:is([class*="disabled:border-stone-"]):disabled { border-color: var(--border); }
+:is([class*="disabled:ring-slate-"]):disabled,
+:is([class*="disabled:ring-gray-"]):disabled,
+:is([class*="disabled:ring-zinc-"]):disabled,
+:is([class*="disabled:ring-neutral-"]):disabled,
+:is([class*="disabled:ring-stone-"]):disabled { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="disabled:outline-slate-"]):disabled,
+:is([class*="disabled:outline-gray-"]):disabled,
+:is([class*="disabled:outline-zinc-"]):disabled,
+:is([class*="disabled:outline-neutral-"]):disabled,
+:is([class*="disabled:outline-stone-"]):disabled { outline-color: var(--border); }
+:is([class*="aria-selected:text-emerald-"])[aria-selected="true"],
+:is([class*="aria-selected:text-green-"])[aria-selected="true"],
+:is([class*="aria-selected:text-lime-"])[aria-selected="true"],
+:is([class*="aria-selected:text-teal-"])[aria-selected="true"] { color: var(--tone-success); }
+:is([class*="aria-selected:bg-emerald-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-green-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-lime-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-teal-"])[aria-selected="true"] { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="aria-selected:bg-emerald-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-green-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-lime-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-teal-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"] { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="aria-selected:border-emerald-"])[aria-selected="true"],
+:is([class*="aria-selected:border-green-"])[aria-selected="true"],
+:is([class*="aria-selected:border-lime-"])[aria-selected="true"],
+:is([class*="aria-selected:border-teal-"])[aria-selected="true"] { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="aria-selected:ring-emerald-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-green-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-lime-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-teal-"])[aria-selected="true"] { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="aria-selected:outline-emerald-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-green-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-lime-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-teal-"])[aria-selected="true"] { outline-color: var(--tone-success); }
+:is([class*="aria-selected:text-amber-"])[aria-selected="true"],
+:is([class*="aria-selected:text-yellow-"])[aria-selected="true"],
+:is([class*="aria-selected:text-orange-"])[aria-selected="true"] { color: var(--tone-warning); }
+:is([class*="aria-selected:bg-amber-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-yellow-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-orange-"])[aria-selected="true"] { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="aria-selected:bg-amber-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-yellow-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-orange-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"] { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="aria-selected:border-amber-"])[aria-selected="true"],
+:is([class*="aria-selected:border-yellow-"])[aria-selected="true"],
+:is([class*="aria-selected:border-orange-"])[aria-selected="true"] { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="aria-selected:ring-amber-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-yellow-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-orange-"])[aria-selected="true"] { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="aria-selected:outline-amber-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-yellow-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-orange-"])[aria-selected="true"] { outline-color: var(--tone-warning); }
+:is([class*="aria-selected:text-red-"])[aria-selected="true"],
+:is([class*="aria-selected:text-rose-"])[aria-selected="true"] { color: var(--tone-danger); }
+:is([class*="aria-selected:bg-red-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-rose-"])[aria-selected="true"] { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="aria-selected:bg-red-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-rose-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"] { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="aria-selected:border-red-"])[aria-selected="true"],
+:is([class*="aria-selected:border-rose-"])[aria-selected="true"] { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="aria-selected:ring-red-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-rose-"])[aria-selected="true"] { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="aria-selected:outline-red-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-rose-"])[aria-selected="true"] { outline-color: var(--tone-danger); }
+:is([class*="aria-selected:text-sky-"])[aria-selected="true"],
+:is([class*="aria-selected:text-blue-"])[aria-selected="true"],
+:is([class*="aria-selected:text-cyan-"])[aria-selected="true"],
+:is([class*="aria-selected:text-indigo-"])[aria-selected="true"],
+:is([class*="aria-selected:text-violet-"])[aria-selected="true"],
+:is([class*="aria-selected:text-purple-"])[aria-selected="true"],
+:is([class*="aria-selected:text-fuchsia-"])[aria-selected="true"],
+:is([class*="aria-selected:text-pink-"])[aria-selected="true"] { color: var(--tone-info); }
+:is([class*="aria-selected:bg-sky-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-blue-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-cyan-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-indigo-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-violet-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-purple-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-fuchsia-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-pink-"])[aria-selected="true"] { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="aria-selected:bg-sky-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-blue-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-cyan-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-indigo-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-violet-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-purple-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"],
+:is([class*="aria-selected:bg-pink-"]):is([class*="text-white"],[class*="text-black"])[aria-selected="true"] { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="aria-selected:border-sky-"])[aria-selected="true"],
+:is([class*="aria-selected:border-blue-"])[aria-selected="true"],
+:is([class*="aria-selected:border-cyan-"])[aria-selected="true"],
+:is([class*="aria-selected:border-indigo-"])[aria-selected="true"],
+:is([class*="aria-selected:border-violet-"])[aria-selected="true"],
+:is([class*="aria-selected:border-purple-"])[aria-selected="true"],
+:is([class*="aria-selected:border-fuchsia-"])[aria-selected="true"],
+:is([class*="aria-selected:border-pink-"])[aria-selected="true"] { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="aria-selected:ring-sky-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-blue-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-cyan-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-indigo-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-violet-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-purple-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-fuchsia-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-pink-"])[aria-selected="true"] { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="aria-selected:outline-sky-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-blue-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-cyan-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-indigo-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-violet-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-purple-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-fuchsia-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-pink-"])[aria-selected="true"] { outline-color: var(--tone-info); }
+:is([class*="aria-selected:text-slate-"])[aria-selected="true"],
+:is([class*="aria-selected:text-gray-"])[aria-selected="true"],
+:is([class*="aria-selected:text-zinc-"])[aria-selected="true"],
+:is([class*="aria-selected:text-neutral-"])[aria-selected="true"],
+:is([class*="aria-selected:text-stone-"])[aria-selected="true"] { color: var(--foreground); }
+:is([class*="aria-selected:bg-slate-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-gray-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-zinc-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-neutral-"])[aria-selected="true"],
+:is([class*="aria-selected:bg-stone-"])[aria-selected="true"] { background-color: var(--muted); }
+:is([class*="aria-selected:border-slate-"])[aria-selected="true"],
+:is([class*="aria-selected:border-gray-"])[aria-selected="true"],
+:is([class*="aria-selected:border-zinc-"])[aria-selected="true"],
+:is([class*="aria-selected:border-neutral-"])[aria-selected="true"],
+:is([class*="aria-selected:border-stone-"])[aria-selected="true"] { border-color: var(--border); }
+:is([class*="aria-selected:ring-slate-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-gray-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-zinc-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-neutral-"])[aria-selected="true"],
+:is([class*="aria-selected:ring-stone-"])[aria-selected="true"] { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="aria-selected:outline-slate-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-gray-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-zinc-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-neutral-"])[aria-selected="true"],
+:is([class*="aria-selected:outline-stone-"])[aria-selected="true"] { outline-color: var(--border); }
+:is([class*="data-[state=active]:text-emerald-"])[data-state="active"],
+:is([class*="data-[state=active]:text-green-"])[data-state="active"],
+:is([class*="data-[state=active]:text-lime-"])[data-state="active"],
+:is([class*="data-[state=active]:text-teal-"])[data-state="active"] { color: var(--tone-success); }
+:is([class*="data-[state=active]:bg-emerald-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-green-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-lime-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-teal-"])[data-state="active"] { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="data-[state=active]:bg-emerald-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-green-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-lime-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-teal-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"] { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="data-[state=active]:border-emerald-"])[data-state="active"],
+:is([class*="data-[state=active]:border-green-"])[data-state="active"],
+:is([class*="data-[state=active]:border-lime-"])[data-state="active"],
+:is([class*="data-[state=active]:border-teal-"])[data-state="active"] { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="data-[state=active]:ring-emerald-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-green-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-lime-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-teal-"])[data-state="active"] { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="data-[state=active]:outline-emerald-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-green-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-lime-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-teal-"])[data-state="active"] { outline-color: var(--tone-success); }
+:is([class*="data-[state=active]:text-amber-"])[data-state="active"],
+:is([class*="data-[state=active]:text-yellow-"])[data-state="active"],
+:is([class*="data-[state=active]:text-orange-"])[data-state="active"] { color: var(--tone-warning); }
+:is([class*="data-[state=active]:bg-amber-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-yellow-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-orange-"])[data-state="active"] { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="data-[state=active]:bg-amber-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-yellow-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-orange-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"] { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="data-[state=active]:border-amber-"])[data-state="active"],
+:is([class*="data-[state=active]:border-yellow-"])[data-state="active"],
+:is([class*="data-[state=active]:border-orange-"])[data-state="active"] { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="data-[state=active]:ring-amber-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-yellow-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-orange-"])[data-state="active"] { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="data-[state=active]:outline-amber-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-yellow-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-orange-"])[data-state="active"] { outline-color: var(--tone-warning); }
+:is([class*="data-[state=active]:text-red-"])[data-state="active"],
+:is([class*="data-[state=active]:text-rose-"])[data-state="active"] { color: var(--tone-danger); }
+:is([class*="data-[state=active]:bg-red-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-rose-"])[data-state="active"] { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="data-[state=active]:bg-red-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-rose-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"] { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="data-[state=active]:border-red-"])[data-state="active"],
+:is([class*="data-[state=active]:border-rose-"])[data-state="active"] { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="data-[state=active]:ring-red-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-rose-"])[data-state="active"] { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="data-[state=active]:outline-red-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-rose-"])[data-state="active"] { outline-color: var(--tone-danger); }
+:is([class*="data-[state=active]:text-sky-"])[data-state="active"],
+:is([class*="data-[state=active]:text-blue-"])[data-state="active"],
+:is([class*="data-[state=active]:text-cyan-"])[data-state="active"],
+:is([class*="data-[state=active]:text-indigo-"])[data-state="active"],
+:is([class*="data-[state=active]:text-violet-"])[data-state="active"],
+:is([class*="data-[state=active]:text-purple-"])[data-state="active"],
+:is([class*="data-[state=active]:text-fuchsia-"])[data-state="active"],
+:is([class*="data-[state=active]:text-pink-"])[data-state="active"] { color: var(--tone-info); }
+:is([class*="data-[state=active]:bg-sky-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-blue-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-cyan-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-indigo-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-violet-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-purple-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-fuchsia-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-pink-"])[data-state="active"] { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="data-[state=active]:bg-sky-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-blue-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-cyan-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-indigo-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-violet-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-purple-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"],
+:is([class*="data-[state=active]:bg-pink-"]):is([class*="text-white"],[class*="text-black"])[data-state="active"] { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="data-[state=active]:border-sky-"])[data-state="active"],
+:is([class*="data-[state=active]:border-blue-"])[data-state="active"],
+:is([class*="data-[state=active]:border-cyan-"])[data-state="active"],
+:is([class*="data-[state=active]:border-indigo-"])[data-state="active"],
+:is([class*="data-[state=active]:border-violet-"])[data-state="active"],
+:is([class*="data-[state=active]:border-purple-"])[data-state="active"],
+:is([class*="data-[state=active]:border-fuchsia-"])[data-state="active"],
+:is([class*="data-[state=active]:border-pink-"])[data-state="active"] { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="data-[state=active]:ring-sky-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-blue-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-cyan-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-indigo-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-violet-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-purple-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-fuchsia-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-pink-"])[data-state="active"] { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="data-[state=active]:outline-sky-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-blue-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-cyan-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-indigo-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-violet-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-purple-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-fuchsia-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-pink-"])[data-state="active"] { outline-color: var(--tone-info); }
+:is([class*="data-[state=active]:text-slate-"])[data-state="active"],
+:is([class*="data-[state=active]:text-gray-"])[data-state="active"],
+:is([class*="data-[state=active]:text-zinc-"])[data-state="active"],
+:is([class*="data-[state=active]:text-neutral-"])[data-state="active"],
+:is([class*="data-[state=active]:text-stone-"])[data-state="active"] { color: var(--foreground); }
+:is([class*="data-[state=active]:bg-slate-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-gray-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-zinc-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-neutral-"])[data-state="active"],
+:is([class*="data-[state=active]:bg-stone-"])[data-state="active"] { background-color: var(--muted); }
+:is([class*="data-[state=active]:border-slate-"])[data-state="active"],
+:is([class*="data-[state=active]:border-gray-"])[data-state="active"],
+:is([class*="data-[state=active]:border-zinc-"])[data-state="active"],
+:is([class*="data-[state=active]:border-neutral-"])[data-state="active"],
+:is([class*="data-[state=active]:border-stone-"])[data-state="active"] { border-color: var(--border); }
+:is([class*="data-[state=active]:ring-slate-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-gray-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-zinc-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-neutral-"])[data-state="active"],
+:is([class*="data-[state=active]:ring-stone-"])[data-state="active"] { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="data-[state=active]:outline-slate-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-gray-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-zinc-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-neutral-"])[data-state="active"],
+:is([class*="data-[state=active]:outline-stone-"])[data-state="active"] { outline-color: var(--border); }
+:is([class*="data-[state=open]:text-emerald-"])[data-state="open"],
+:is([class*="data-[state=open]:text-green-"])[data-state="open"],
+:is([class*="data-[state=open]:text-lime-"])[data-state="open"],
+:is([class*="data-[state=open]:text-teal-"])[data-state="open"] { color: var(--tone-success); }
+:is([class*="data-[state=open]:bg-emerald-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-green-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-lime-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-teal-"])[data-state="open"] { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="data-[state=open]:bg-emerald-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-green-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-lime-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-teal-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"] { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="data-[state=open]:border-emerald-"])[data-state="open"],
+:is([class*="data-[state=open]:border-green-"])[data-state="open"],
+:is([class*="data-[state=open]:border-lime-"])[data-state="open"],
+:is([class*="data-[state=open]:border-teal-"])[data-state="open"] { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="data-[state=open]:ring-emerald-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-green-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-lime-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-teal-"])[data-state="open"] { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="data-[state=open]:outline-emerald-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-green-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-lime-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-teal-"])[data-state="open"] { outline-color: var(--tone-success); }
+:is([class*="data-[state=open]:text-amber-"])[data-state="open"],
+:is([class*="data-[state=open]:text-yellow-"])[data-state="open"],
+:is([class*="data-[state=open]:text-orange-"])[data-state="open"] { color: var(--tone-warning); }
+:is([class*="data-[state=open]:bg-amber-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-yellow-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-orange-"])[data-state="open"] { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="data-[state=open]:bg-amber-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-yellow-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-orange-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"] { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="data-[state=open]:border-amber-"])[data-state="open"],
+:is([class*="data-[state=open]:border-yellow-"])[data-state="open"],
+:is([class*="data-[state=open]:border-orange-"])[data-state="open"] { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="data-[state=open]:ring-amber-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-yellow-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-orange-"])[data-state="open"] { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="data-[state=open]:outline-amber-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-yellow-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-orange-"])[data-state="open"] { outline-color: var(--tone-warning); }
+:is([class*="data-[state=open]:text-red-"])[data-state="open"],
+:is([class*="data-[state=open]:text-rose-"])[data-state="open"] { color: var(--tone-danger); }
+:is([class*="data-[state=open]:bg-red-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-rose-"])[data-state="open"] { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="data-[state=open]:bg-red-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-rose-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"] { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="data-[state=open]:border-red-"])[data-state="open"],
+:is([class*="data-[state=open]:border-rose-"])[data-state="open"] { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="data-[state=open]:ring-red-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-rose-"])[data-state="open"] { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="data-[state=open]:outline-red-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-rose-"])[data-state="open"] { outline-color: var(--tone-danger); }
+:is([class*="data-[state=open]:text-sky-"])[data-state="open"],
+:is([class*="data-[state=open]:text-blue-"])[data-state="open"],
+:is([class*="data-[state=open]:text-cyan-"])[data-state="open"],
+:is([class*="data-[state=open]:text-indigo-"])[data-state="open"],
+:is([class*="data-[state=open]:text-violet-"])[data-state="open"],
+:is([class*="data-[state=open]:text-purple-"])[data-state="open"],
+:is([class*="data-[state=open]:text-fuchsia-"])[data-state="open"],
+:is([class*="data-[state=open]:text-pink-"])[data-state="open"] { color: var(--tone-info); }
+:is([class*="data-[state=open]:bg-sky-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-blue-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-cyan-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-indigo-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-violet-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-purple-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-fuchsia-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-pink-"])[data-state="open"] { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="data-[state=open]:bg-sky-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-blue-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-cyan-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-indigo-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-violet-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-purple-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"],
+:is([class*="data-[state=open]:bg-pink-"]):is([class*="text-white"],[class*="text-black"])[data-state="open"] { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="data-[state=open]:border-sky-"])[data-state="open"],
+:is([class*="data-[state=open]:border-blue-"])[data-state="open"],
+:is([class*="data-[state=open]:border-cyan-"])[data-state="open"],
+:is([class*="data-[state=open]:border-indigo-"])[data-state="open"],
+:is([class*="data-[state=open]:border-violet-"])[data-state="open"],
+:is([class*="data-[state=open]:border-purple-"])[data-state="open"],
+:is([class*="data-[state=open]:border-fuchsia-"])[data-state="open"],
+:is([class*="data-[state=open]:border-pink-"])[data-state="open"] { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="data-[state=open]:ring-sky-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-blue-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-cyan-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-indigo-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-violet-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-purple-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-fuchsia-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-pink-"])[data-state="open"] { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="data-[state=open]:outline-sky-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-blue-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-cyan-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-indigo-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-violet-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-purple-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-fuchsia-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-pink-"])[data-state="open"] { outline-color: var(--tone-info); }
+:is([class*="data-[state=open]:text-slate-"])[data-state="open"],
+:is([class*="data-[state=open]:text-gray-"])[data-state="open"],
+:is([class*="data-[state=open]:text-zinc-"])[data-state="open"],
+:is([class*="data-[state=open]:text-neutral-"])[data-state="open"],
+:is([class*="data-[state=open]:text-stone-"])[data-state="open"] { color: var(--foreground); }
+:is([class*="data-[state=open]:bg-slate-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-gray-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-zinc-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-neutral-"])[data-state="open"],
+:is([class*="data-[state=open]:bg-stone-"])[data-state="open"] { background-color: var(--muted); }
+:is([class*="data-[state=open]:border-slate-"])[data-state="open"],
+:is([class*="data-[state=open]:border-gray-"])[data-state="open"],
+:is([class*="data-[state=open]:border-zinc-"])[data-state="open"],
+:is([class*="data-[state=open]:border-neutral-"])[data-state="open"],
+:is([class*="data-[state=open]:border-stone-"])[data-state="open"] { border-color: var(--border); }
+:is([class*="data-[state=open]:ring-slate-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-gray-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-zinc-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-neutral-"])[data-state="open"],
+:is([class*="data-[state=open]:ring-stone-"])[data-state="open"] { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="data-[state=open]:outline-slate-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-gray-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-zinc-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-neutral-"])[data-state="open"],
+:is([class*="data-[state=open]:outline-stone-"])[data-state="open"] { outline-color: var(--border); }
+:is([class*="data-[state=checked]:text-emerald-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-green-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-lime-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-teal-"])[data-state="checked"] { color: var(--tone-success); }
+:is([class*="data-[state=checked]:bg-emerald-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-green-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-lime-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-teal-"])[data-state="checked"] { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+:is([class*="data-[state=checked]:bg-emerald-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-green-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-lime-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-teal-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"] { background-color: var(--tone-success); color: var(--success-foreground); }
+:is([class*="data-[state=checked]:border-emerald-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-green-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-lime-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-teal-"])[data-state="checked"] { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+:is([class*="data-[state=checked]:ring-emerald-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-green-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-lime-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-teal-"])[data-state="checked"] { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class*="data-[state=checked]:outline-emerald-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-green-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-lime-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-teal-"])[data-state="checked"] { outline-color: var(--tone-success); }
+:is([class*="data-[state=checked]:text-amber-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-yellow-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-orange-"])[data-state="checked"] { color: var(--tone-warning); }
+:is([class*="data-[state=checked]:bg-amber-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-yellow-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-orange-"])[data-state="checked"] { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+:is([class*="data-[state=checked]:bg-amber-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-yellow-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-orange-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"] { background-color: var(--tone-warning); color: var(--warning-foreground); }
+:is([class*="data-[state=checked]:border-amber-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-yellow-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-orange-"])[data-state="checked"] { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+:is([class*="data-[state=checked]:ring-amber-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-yellow-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-orange-"])[data-state="checked"] { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class*="data-[state=checked]:outline-amber-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-yellow-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-orange-"])[data-state="checked"] { outline-color: var(--tone-warning); }
+:is([class*="data-[state=checked]:text-red-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-rose-"])[data-state="checked"] { color: var(--tone-danger); }
+:is([class*="data-[state=checked]:bg-red-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-rose-"])[data-state="checked"] { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+:is([class*="data-[state=checked]:bg-red-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-rose-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"] { background-color: var(--tone-danger); color: var(--destructive-foreground); }
+:is([class*="data-[state=checked]:border-red-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-rose-"])[data-state="checked"] { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+:is([class*="data-[state=checked]:ring-red-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-rose-"])[data-state="checked"] { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class*="data-[state=checked]:outline-red-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-rose-"])[data-state="checked"] { outline-color: var(--tone-danger); }
+:is([class*="data-[state=checked]:text-sky-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-blue-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-cyan-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-indigo-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-violet-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-purple-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-fuchsia-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-pink-"])[data-state="checked"] { color: var(--tone-info); }
+:is([class*="data-[state=checked]:bg-sky-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-blue-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-cyan-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-indigo-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-violet-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-purple-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-fuchsia-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-pink-"])[data-state="checked"] { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+:is([class*="data-[state=checked]:bg-sky-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-blue-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-cyan-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-indigo-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-violet-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-purple-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-fuchsia-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-pink-"]):is([class*="text-white"],[class*="text-black"])[data-state="checked"] { background-color: var(--tone-info); color: var(--info-foreground); }
+:is([class*="data-[state=checked]:border-sky-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-blue-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-cyan-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-indigo-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-violet-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-purple-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-fuchsia-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-pink-"])[data-state="checked"] { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+:is([class*="data-[state=checked]:ring-sky-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-blue-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-cyan-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-indigo-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-violet-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-purple-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-fuchsia-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-pink-"])[data-state="checked"] { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
+:is([class*="data-[state=checked]:outline-sky-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-blue-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-cyan-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-indigo-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-violet-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-purple-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-fuchsia-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-pink-"])[data-state="checked"] { outline-color: var(--tone-info); }
+:is([class*="data-[state=checked]:text-slate-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-gray-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-zinc-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-neutral-"])[data-state="checked"],
+:is([class*="data-[state=checked]:text-stone-"])[data-state="checked"] { color: var(--foreground); }
+:is([class*="data-[state=checked]:bg-slate-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-gray-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-zinc-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-neutral-"])[data-state="checked"],
+:is([class*="data-[state=checked]:bg-stone-"])[data-state="checked"] { background-color: var(--muted); }
+:is([class*="data-[state=checked]:border-slate-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-gray-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-zinc-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-neutral-"])[data-state="checked"],
+:is([class*="data-[state=checked]:border-stone-"])[data-state="checked"] { border-color: var(--border); }
+:is([class*="data-[state=checked]:ring-slate-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-gray-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-zinc-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-neutral-"])[data-state="checked"],
+:is([class*="data-[state=checked]:ring-stone-"])[data-state="checked"] { --tw-ring-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent); }
+:is([class*="data-[state=checked]:outline-slate-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-gray-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-zinc-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-neutral-"])[data-state="checked"],
+:is([class*="data-[state=checked]:outline-stone-"])[data-state="checked"] { outline-color: var(--border); }
+.group:hover :is([class*="group-hover:text-emerald-"]),
+.group:hover :is([class*="group-hover:text-green-"]),
+.group:hover :is([class*="group-hover:text-lime-"]),
+.group:hover :is([class*="group-hover:text-teal-"]) { color: var(--tone-success); }
+.group:hover :is([class*="group-hover:bg-emerald-"]),
+.group:hover :is([class*="group-hover:bg-green-"]),
+.group:hover :is([class*="group-hover:bg-lime-"]),
+.group:hover :is([class*="group-hover:bg-teal-"]) { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+.group:hover :is([class*="group-hover:border-emerald-"]),
+.group:hover :is([class*="group-hover:border-green-"]),
+.group:hover :is([class*="group-hover:border-lime-"]),
+.group:hover :is([class*="group-hover:border-teal-"]) { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+.group:hover :is([class*="group-hover:text-amber-"]),
+.group:hover :is([class*="group-hover:text-yellow-"]),
+.group:hover :is([class*="group-hover:text-orange-"]) { color: var(--tone-warning); }
+.group:hover :is([class*="group-hover:bg-amber-"]),
+.group:hover :is([class*="group-hover:bg-yellow-"]),
+.group:hover :is([class*="group-hover:bg-orange-"]) { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+.group:hover :is([class*="group-hover:border-amber-"]),
+.group:hover :is([class*="group-hover:border-yellow-"]),
+.group:hover :is([class*="group-hover:border-orange-"]) { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+.group:hover :is([class*="group-hover:text-red-"]),
+.group:hover :is([class*="group-hover:text-rose-"]) { color: var(--tone-danger); }
+.group:hover :is([class*="group-hover:bg-red-"]),
+.group:hover :is([class*="group-hover:bg-rose-"]) { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+.group:hover :is([class*="group-hover:border-red-"]),
+.group:hover :is([class*="group-hover:border-rose-"]) { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+.group:hover :is([class*="group-hover:text-sky-"]),
+.group:hover :is([class*="group-hover:text-blue-"]),
+.group:hover :is([class*="group-hover:text-cyan-"]),
+.group:hover :is([class*="group-hover:text-indigo-"]),
+.group:hover :is([class*="group-hover:text-violet-"]),
+.group:hover :is([class*="group-hover:text-purple-"]),
+.group:hover :is([class*="group-hover:text-fuchsia-"]),
+.group:hover :is([class*="group-hover:text-pink-"]) { color: var(--tone-info); }
+.group:hover :is([class*="group-hover:bg-sky-"]),
+.group:hover :is([class*="group-hover:bg-blue-"]),
+.group:hover :is([class*="group-hover:bg-cyan-"]),
+.group:hover :is([class*="group-hover:bg-indigo-"]),
+.group:hover :is([class*="group-hover:bg-violet-"]),
+.group:hover :is([class*="group-hover:bg-purple-"]),
+.group:hover :is([class*="group-hover:bg-fuchsia-"]),
+.group:hover :is([class*="group-hover:bg-pink-"]) { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+.group:hover :is([class*="group-hover:border-sky-"]),
+.group:hover :is([class*="group-hover:border-blue-"]),
+.group:hover :is([class*="group-hover:border-cyan-"]),
+.group:hover :is([class*="group-hover:border-indigo-"]),
+.group:hover :is([class*="group-hover:border-violet-"]),
+.group:hover :is([class*="group-hover:border-purple-"]),
+.group:hover :is([class*="group-hover:border-fuchsia-"]),
+.group:hover :is([class*="group-hover:border-pink-"]) { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+.group:hover :is([class*="group-hover:text-slate-"]),
+.group:hover :is([class*="group-hover:text-gray-"]),
+.group:hover :is([class*="group-hover:text-zinc-"]),
+.group:hover :is([class*="group-hover:text-neutral-"]),
+.group:hover :is([class*="group-hover:text-stone-"]) { color: var(--foreground); }
+.group:hover :is([class*="group-hover:bg-slate-"]),
+.group:hover :is([class*="group-hover:bg-gray-"]),
+.group:hover :is([class*="group-hover:bg-zinc-"]),
+.group:hover :is([class*="group-hover:bg-neutral-"]),
+.group:hover :is([class*="group-hover:bg-stone-"]) { background-color: var(--muted); }
+.group:hover :is([class*="group-hover:border-slate-"]),
+.group:hover :is([class*="group-hover:border-gray-"]),
+.group:hover :is([class*="group-hover:border-zinc-"]),
+.group:hover :is([class*="group-hover:border-neutral-"]),
+.group:hover :is([class*="group-hover:border-stone-"]) { border-color: var(--border); }
+.peer:checked ~ :is([class*="peer-checked:text-emerald-"]),
+.peer:checked ~ :is([class*="peer-checked:text-green-"]),
+.peer:checked ~ :is([class*="peer-checked:text-lime-"]),
+.peer:checked ~ :is([class*="peer-checked:text-teal-"]) { color: var(--tone-success); }
+.peer:checked ~ :is([class*="peer-checked:bg-emerald-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-green-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-lime-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-teal-"]) { background-color: color-mix(in oklab, var(--tone-success) 20%, var(--card)); }
+.peer:checked ~ :is([class*="peer-checked:border-emerald-"]),
+.peer:checked ~ :is([class*="peer-checked:border-green-"]),
+.peer:checked ~ :is([class*="peer-checked:border-lime-"]),
+.peer:checked ~ :is([class*="peer-checked:border-teal-"]) { border-color: color-mix(in oklab, var(--tone-success) 50%, transparent); }
+.peer:checked ~ :is([class*="peer-checked:text-amber-"]),
+.peer:checked ~ :is([class*="peer-checked:text-yellow-"]),
+.peer:checked ~ :is([class*="peer-checked:text-orange-"]) { color: var(--tone-warning); }
+.peer:checked ~ :is([class*="peer-checked:bg-amber-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-yellow-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-orange-"]) { background-color: color-mix(in oklab, var(--tone-warning) 20%, var(--card)); }
+.peer:checked ~ :is([class*="peer-checked:border-amber-"]),
+.peer:checked ~ :is([class*="peer-checked:border-yellow-"]),
+.peer:checked ~ :is([class*="peer-checked:border-orange-"]) { border-color: color-mix(in oklab, var(--tone-warning) 50%, transparent); }
+.peer:checked ~ :is([class*="peer-checked:text-red-"]),
+.peer:checked ~ :is([class*="peer-checked:text-rose-"]) { color: var(--tone-danger); }
+.peer:checked ~ :is([class*="peer-checked:bg-red-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-rose-"]) { background-color: color-mix(in oklab, var(--tone-danger) 20%, var(--card)); }
+.peer:checked ~ :is([class*="peer-checked:border-red-"]),
+.peer:checked ~ :is([class*="peer-checked:border-rose-"]) { border-color: color-mix(in oklab, var(--tone-danger) 50%, transparent); }
+.peer:checked ~ :is([class*="peer-checked:text-sky-"]),
+.peer:checked ~ :is([class*="peer-checked:text-blue-"]),
+.peer:checked ~ :is([class*="peer-checked:text-cyan-"]),
+.peer:checked ~ :is([class*="peer-checked:text-indigo-"]),
+.peer:checked ~ :is([class*="peer-checked:text-violet-"]),
+.peer:checked ~ :is([class*="peer-checked:text-purple-"]),
+.peer:checked ~ :is([class*="peer-checked:text-fuchsia-"]),
+.peer:checked ~ :is([class*="peer-checked:text-pink-"]) { color: var(--tone-info); }
+.peer:checked ~ :is([class*="peer-checked:bg-sky-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-blue-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-cyan-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-indigo-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-violet-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-purple-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-fuchsia-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-pink-"]) { background-color: color-mix(in oklab, var(--tone-info) 20%, var(--card)); }
+.peer:checked ~ :is([class*="peer-checked:border-sky-"]),
+.peer:checked ~ :is([class*="peer-checked:border-blue-"]),
+.peer:checked ~ :is([class*="peer-checked:border-cyan-"]),
+.peer:checked ~ :is([class*="peer-checked:border-indigo-"]),
+.peer:checked ~ :is([class*="peer-checked:border-violet-"]),
+.peer:checked ~ :is([class*="peer-checked:border-purple-"]),
+.peer:checked ~ :is([class*="peer-checked:border-fuchsia-"]),
+.peer:checked ~ :is([class*="peer-checked:border-pink-"]) { border-color: color-mix(in oklab, var(--tone-info) 50%, transparent); }
+.peer:checked ~ :is([class*="peer-checked:text-slate-"]),
+.peer:checked ~ :is([class*="peer-checked:text-gray-"]),
+.peer:checked ~ :is([class*="peer-checked:text-zinc-"]),
+.peer:checked ~ :is([class*="peer-checked:text-neutral-"]),
+.peer:checked ~ :is([class*="peer-checked:text-stone-"]) { color: var(--foreground); }
+.peer:checked ~ :is([class*="peer-checked:bg-slate-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-gray-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-zinc-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-neutral-"]),
+.peer:checked ~ :is([class*="peer-checked:bg-stone-"]) { background-color: var(--muted); }
+.peer:checked ~ :is([class*="peer-checked:border-slate-"]),
+.peer:checked ~ :is([class*="peer-checked:border-gray-"]),
+.peer:checked ~ :is([class*="peer-checked:border-zinc-"]),
+.peer:checked ~ :is([class*="peer-checked:border-neutral-"]),
+.peer:checked ~ :is([class*="peer-checked:border-stone-"]) { border-color: var(--border); }
+/* --- Gradient, ikon, dan properti warna lain ---------------------------- */
+:is([class^="from-emerald-"],[class*=" from-emerald-"]),
+:is([class^="from-green-"],[class*=" from-green-"]),
+:is([class^="from-lime-"],[class*=" from-lime-"]),
+:is([class^="from-teal-"],[class*=" from-teal-"]) { --tw-gradient-from: var(--tone-success); }
+:is([class^="via-emerald-"],[class*=" via-emerald-"]),
+:is([class^="via-green-"],[class*=" via-green-"]),
+:is([class^="via-lime-"],[class*=" via-lime-"]),
+:is([class^="via-teal-"],[class*=" via-teal-"]) { --tw-gradient-via: var(--tone-success); }
+:is([class^="to-emerald-"],[class*=" to-emerald-"]),
+:is([class^="to-green-"],[class*=" to-green-"]),
+:is([class^="to-lime-"],[class*=" to-lime-"]),
+:is([class^="to-teal-"],[class*=" to-teal-"]) { --tw-gradient-to: var(--tone-success); }
+:is([class^="fill-emerald-"],[class*=" fill-emerald-"]),
+:is([class^="fill-green-"],[class*=" fill-green-"]),
+:is([class^="fill-lime-"],[class*=" fill-lime-"]),
+:is([class^="fill-teal-"],[class*=" fill-teal-"]) { fill: var(--tone-success); }
+:is([class^="stroke-emerald-"],[class*=" stroke-emerald-"]),
+:is([class^="stroke-green-"],[class*=" stroke-green-"]),
+:is([class^="stroke-lime-"],[class*=" stroke-lime-"]),
+:is([class^="stroke-teal-"],[class*=" stroke-teal-"]) { stroke: var(--tone-success); }
+:is([class^="decoration-emerald-"],[class*=" decoration-emerald-"]),
+:is([class^="decoration-green-"],[class*=" decoration-green-"]),
+:is([class^="decoration-lime-"],[class*=" decoration-lime-"]),
+:is([class^="decoration-teal-"],[class*=" decoration-teal-"]) { text-decoration-color: var(--tone-success); }
+:is([class^="caret-emerald-"],[class*=" caret-emerald-"]),
+:is([class^="caret-green-"],[class*=" caret-green-"]),
+:is([class^="caret-lime-"],[class*=" caret-lime-"]),
+:is([class^="caret-teal-"],[class*=" caret-teal-"]) { caret-color: var(--tone-success); }
+:is([class^="accent-emerald-"],[class*=" accent-emerald-"]),
+:is([class^="accent-green-"],[class*=" accent-green-"]),
+:is([class^="accent-lime-"],[class*=" accent-lime-"]),
+:is([class^="accent-teal-"],[class*=" accent-teal-"]) { accent-color: var(--tone-success); }
+:is([class^="placeholder-emerald-"],[class*=" placeholder-emerald-"]),
+:is([class^="placeholder-green-"],[class*=" placeholder-green-"]),
+:is([class^="placeholder-lime-"],[class*=" placeholder-lime-"]),
+:is([class^="placeholder-teal-"],[class*=" placeholder-teal-"]) { --placeholder-color: var(--tone-success); }
+:is([class^="from-amber-"],[class*=" from-amber-"]),
+:is([class^="from-yellow-"],[class*=" from-yellow-"]),
+:is([class^="from-orange-"],[class*=" from-orange-"]) { --tw-gradient-from: var(--tone-warning); }
+:is([class^="via-amber-"],[class*=" via-amber-"]),
+:is([class^="via-yellow-"],[class*=" via-yellow-"]),
+:is([class^="via-orange-"],[class*=" via-orange-"]) { --tw-gradient-via: var(--tone-warning); }
+:is([class^="to-amber-"],[class*=" to-amber-"]),
+:is([class^="to-yellow-"],[class*=" to-yellow-"]),
+:is([class^="to-orange-"],[class*=" to-orange-"]) { --tw-gradient-to: var(--tone-warning); }
+:is([class^="fill-amber-"],[class*=" fill-amber-"]),
+:is([class^="fill-yellow-"],[class*=" fill-yellow-"]),
+:is([class^="fill-orange-"],[class*=" fill-orange-"]) { fill: var(--tone-warning); }
+:is([class^="stroke-amber-"],[class*=" stroke-amber-"]),
+:is([class^="stroke-yellow-"],[class*=" stroke-yellow-"]),
+:is([class^="stroke-orange-"],[class*=" stroke-orange-"]) { stroke: var(--tone-warning); }
+:is([class^="decoration-amber-"],[class*=" decoration-amber-"]),
+:is([class^="decoration-yellow-"],[class*=" decoration-yellow-"]),
+:is([class^="decoration-orange-"],[class*=" decoration-orange-"]) { text-decoration-color: var(--tone-warning); }
+:is([class^="caret-amber-"],[class*=" caret-amber-"]),
+:is([class^="caret-yellow-"],[class*=" caret-yellow-"]),
+:is([class^="caret-orange-"],[class*=" caret-orange-"]) { caret-color: var(--tone-warning); }
+:is([class^="accent-amber-"],[class*=" accent-amber-"]),
+:is([class^="accent-yellow-"],[class*=" accent-yellow-"]),
+:is([class^="accent-orange-"],[class*=" accent-orange-"]) { accent-color: var(--tone-warning); }
+:is([class^="placeholder-amber-"],[class*=" placeholder-amber-"]),
+:is([class^="placeholder-yellow-"],[class*=" placeholder-yellow-"]),
+:is([class^="placeholder-orange-"],[class*=" placeholder-orange-"]) { --placeholder-color: var(--tone-warning); }
+:is([class^="from-red-"],[class*=" from-red-"]),
+:is([class^="from-rose-"],[class*=" from-rose-"]) { --tw-gradient-from: var(--tone-danger); }
+:is([class^="via-red-"],[class*=" via-red-"]),
+:is([class^="via-rose-"],[class*=" via-rose-"]) { --tw-gradient-via: var(--tone-danger); }
+:is([class^="to-red-"],[class*=" to-red-"]),
+:is([class^="to-rose-"],[class*=" to-rose-"]) { --tw-gradient-to: var(--tone-danger); }
+:is([class^="fill-red-"],[class*=" fill-red-"]),
+:is([class^="fill-rose-"],[class*=" fill-rose-"]) { fill: var(--tone-danger); }
+:is([class^="stroke-red-"],[class*=" stroke-red-"]),
+:is([class^="stroke-rose-"],[class*=" stroke-rose-"]) { stroke: var(--tone-danger); }
+:is([class^="decoration-red-"],[class*=" decoration-red-"]),
+:is([class^="decoration-rose-"],[class*=" decoration-rose-"]) { text-decoration-color: var(--tone-danger); }
+:is([class^="caret-red-"],[class*=" caret-red-"]),
+:is([class^="caret-rose-"],[class*=" caret-rose-"]) { caret-color: var(--tone-danger); }
+:is([class^="accent-red-"],[class*=" accent-red-"]),
+:is([class^="accent-rose-"],[class*=" accent-rose-"]) { accent-color: var(--tone-danger); }
+:is([class^="placeholder-red-"],[class*=" placeholder-red-"]),
+:is([class^="placeholder-rose-"],[class*=" placeholder-rose-"]) { --placeholder-color: var(--tone-danger); }
+:is([class^="from-sky-"],[class*=" from-sky-"]),
+:is([class^="from-blue-"],[class*=" from-blue-"]),
+:is([class^="from-cyan-"],[class*=" from-cyan-"]),
+:is([class^="from-indigo-"],[class*=" from-indigo-"]),
+:is([class^="from-violet-"],[class*=" from-violet-"]),
+:is([class^="from-purple-"],[class*=" from-purple-"]),
+:is([class^="from-fuchsia-"],[class*=" from-fuchsia-"]),
+:is([class^="from-pink-"],[class*=" from-pink-"]) { --tw-gradient-from: var(--tone-info); }
+:is([class^="via-sky-"],[class*=" via-sky-"]),
+:is([class^="via-blue-"],[class*=" via-blue-"]),
+:is([class^="via-cyan-"],[class*=" via-cyan-"]),
+:is([class^="via-indigo-"],[class*=" via-indigo-"]),
+:is([class^="via-violet-"],[class*=" via-violet-"]),
+:is([class^="via-purple-"],[class*=" via-purple-"]),
+:is([class^="via-fuchsia-"],[class*=" via-fuchsia-"]),
+:is([class^="via-pink-"],[class*=" via-pink-"]) { --tw-gradient-via: var(--tone-info); }
+:is([class^="to-sky-"],[class*=" to-sky-"]),
+:is([class^="to-blue-"],[class*=" to-blue-"]),
+:is([class^="to-cyan-"],[class*=" to-cyan-"]),
+:is([class^="to-indigo-"],[class*=" to-indigo-"]),
+:is([class^="to-violet-"],[class*=" to-violet-"]),
+:is([class^="to-purple-"],[class*=" to-purple-"]),
+:is([class^="to-fuchsia-"],[class*=" to-fuchsia-"]),
+:is([class^="to-pink-"],[class*=" to-pink-"]) { --tw-gradient-to: var(--tone-info); }
+:is([class^="fill-sky-"],[class*=" fill-sky-"]),
+:is([class^="fill-blue-"],[class*=" fill-blue-"]),
+:is([class^="fill-cyan-"],[class*=" fill-cyan-"]),
+:is([class^="fill-indigo-"],[class*=" fill-indigo-"]),
+:is([class^="fill-violet-"],[class*=" fill-violet-"]),
+:is([class^="fill-purple-"],[class*=" fill-purple-"]),
+:is([class^="fill-fuchsia-"],[class*=" fill-fuchsia-"]),
+:is([class^="fill-pink-"],[class*=" fill-pink-"]) { fill: var(--tone-info); }
+:is([class^="stroke-sky-"],[class*=" stroke-sky-"]),
+:is([class^="stroke-blue-"],[class*=" stroke-blue-"]),
+:is([class^="stroke-cyan-"],[class*=" stroke-cyan-"]),
+:is([class^="stroke-indigo-"],[class*=" stroke-indigo-"]),
+:is([class^="stroke-violet-"],[class*=" stroke-violet-"]),
+:is([class^="stroke-purple-"],[class*=" stroke-purple-"]),
+:is([class^="stroke-fuchsia-"],[class*=" stroke-fuchsia-"]),
+:is([class^="stroke-pink-"],[class*=" stroke-pink-"]) { stroke: var(--tone-info); }
+:is([class^="decoration-sky-"],[class*=" decoration-sky-"]),
+:is([class^="decoration-blue-"],[class*=" decoration-blue-"]),
+:is([class^="decoration-cyan-"],[class*=" decoration-cyan-"]),
+:is([class^="decoration-indigo-"],[class*=" decoration-indigo-"]),
+:is([class^="decoration-violet-"],[class*=" decoration-violet-"]),
+:is([class^="decoration-purple-"],[class*=" decoration-purple-"]),
+:is([class^="decoration-fuchsia-"],[class*=" decoration-fuchsia-"]),
+:is([class^="decoration-pink-"],[class*=" decoration-pink-"]) { text-decoration-color: var(--tone-info); }
+:is([class^="caret-sky-"],[class*=" caret-sky-"]),
+:is([class^="caret-blue-"],[class*=" caret-blue-"]),
+:is([class^="caret-cyan-"],[class*=" caret-cyan-"]),
+:is([class^="caret-indigo-"],[class*=" caret-indigo-"]),
+:is([class^="caret-violet-"],[class*=" caret-violet-"]),
+:is([class^="caret-purple-"],[class*=" caret-purple-"]),
+:is([class^="caret-fuchsia-"],[class*=" caret-fuchsia-"]),
+:is([class^="caret-pink-"],[class*=" caret-pink-"]) { caret-color: var(--tone-info); }
+:is([class^="accent-sky-"],[class*=" accent-sky-"]),
+:is([class^="accent-blue-"],[class*=" accent-blue-"]),
+:is([class^="accent-cyan-"],[class*=" accent-cyan-"]),
+:is([class^="accent-indigo-"],[class*=" accent-indigo-"]),
+:is([class^="accent-violet-"],[class*=" accent-violet-"]),
+:is([class^="accent-purple-"],[class*=" accent-purple-"]),
+:is([class^="accent-fuchsia-"],[class*=" accent-fuchsia-"]),
+:is([class^="accent-pink-"],[class*=" accent-pink-"]) { accent-color: var(--tone-info); }
+:is([class^="placeholder-sky-"],[class*=" placeholder-sky-"]),
+:is([class^="placeholder-blue-"],[class*=" placeholder-blue-"]),
+:is([class^="placeholder-cyan-"],[class*=" placeholder-cyan-"]),
+:is([class^="placeholder-indigo-"],[class*=" placeholder-indigo-"]),
+:is([class^="placeholder-violet-"],[class*=" placeholder-violet-"]),
+:is([class^="placeholder-purple-"],[class*=" placeholder-purple-"]),
+:is([class^="placeholder-fuchsia-"],[class*=" placeholder-fuchsia-"]),
+:is([class^="placeholder-pink-"],[class*=" placeholder-pink-"]) { --placeholder-color: var(--tone-info); }
+:is([class^="from-slate-"],[class*=" from-slate-"]),
+:is([class^="from-gray-"],[class*=" from-gray-"]),
+:is([class^="from-zinc-"],[class*=" from-zinc-"]),
+:is([class^="from-neutral-"],[class*=" from-neutral-"]),
+:is([class^="from-stone-"],[class*=" from-stone-"]) { --tw-gradient-from: var(--muted-foreground); }
+:is([class^="via-slate-"],[class*=" via-slate-"]),
+:is([class^="via-gray-"],[class*=" via-gray-"]),
+:is([class^="via-zinc-"],[class*=" via-zinc-"]),
+:is([class^="via-neutral-"],[class*=" via-neutral-"]),
+:is([class^="via-stone-"],[class*=" via-stone-"]) { --tw-gradient-via: var(--muted-foreground); }
+:is([class^="to-slate-"],[class*=" to-slate-"]),
+:is([class^="to-gray-"],[class*=" to-gray-"]),
+:is([class^="to-zinc-"],[class*=" to-zinc-"]),
+:is([class^="to-neutral-"],[class*=" to-neutral-"]),
+:is([class^="to-stone-"],[class*=" to-stone-"]) { --tw-gradient-to: var(--muted-foreground); }
+:is([class^="fill-slate-"],[class*=" fill-slate-"]),
+:is([class^="fill-gray-"],[class*=" fill-gray-"]),
+:is([class^="fill-zinc-"],[class*=" fill-zinc-"]),
+:is([class^="fill-neutral-"],[class*=" fill-neutral-"]),
+:is([class^="fill-stone-"],[class*=" fill-stone-"]) { fill: var(--muted-foreground); }
+:is([class^="stroke-slate-"],[class*=" stroke-slate-"]),
+:is([class^="stroke-gray-"],[class*=" stroke-gray-"]),
+:is([class^="stroke-zinc-"],[class*=" stroke-zinc-"]),
+:is([class^="stroke-neutral-"],[class*=" stroke-neutral-"]),
+:is([class^="stroke-stone-"],[class*=" stroke-stone-"]) { stroke: var(--muted-foreground); }
+:is([class^="decoration-slate-"],[class*=" decoration-slate-"]),
+:is([class^="decoration-gray-"],[class*=" decoration-gray-"]),
+:is([class^="decoration-zinc-"],[class*=" decoration-zinc-"]),
+:is([class^="decoration-neutral-"],[class*=" decoration-neutral-"]),
+:is([class^="decoration-stone-"],[class*=" decoration-stone-"]) { text-decoration-color: var(--muted-foreground); }
+:is([class^="caret-slate-"],[class*=" caret-slate-"]),
+:is([class^="caret-gray-"],[class*=" caret-gray-"]),
+:is([class^="caret-zinc-"],[class*=" caret-zinc-"]),
+:is([class^="caret-neutral-"],[class*=" caret-neutral-"]),
+:is([class^="caret-stone-"],[class*=" caret-stone-"]) { caret-color: var(--muted-foreground); }
+:is([class^="accent-slate-"],[class*=" accent-slate-"]),
+:is([class^="accent-gray-"],[class*=" accent-gray-"]),
+:is([class^="accent-zinc-"],[class*=" accent-zinc-"]),
+:is([class^="accent-neutral-"],[class*=" accent-neutral-"]),
+:is([class^="accent-stone-"],[class*=" accent-stone-"]) { accent-color: var(--muted-foreground); }
+:is([class^="placeholder-slate-"],[class*=" placeholder-slate-"]),
+:is([class^="placeholder-gray-"],[class*=" placeholder-gray-"]),
+:is([class^="placeholder-zinc-"],[class*=" placeholder-zinc-"]),
+:is([class^="placeholder-neutral-"],[class*=" placeholder-neutral-"]),
+:is([class^="placeholder-stone-"],[class*=" placeholder-stone-"]) { --placeholder-color: var(--muted-foreground); }
+:is([class^="divide-slate-"],[class*=" divide-slate-"],[class^="divide-gray-"],[class*=" divide-gray-"],[class^="divide-zinc-"],[class*=" divide-zinc-"],[class^="divide-neutral-"],[class*=" divide-neutral-"]) > * + * { border-color: var(--border); }
+:is([class^="placeholder-"],[class*=" placeholder-"])::placeholder { color: var(--muted-foreground); }
+
