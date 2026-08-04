@@ -80,10 +80,16 @@ function FocusPortalStackHarness() {
   const popReady = useLazy(popOpen);
   const selReady = useLazy(selOpen);
 
+  // Penanda hidrasi: uji E2E menunggu atribut ini sebelum mengklik supaya
+  // klik tidak jatuh pada markup SSR yang belum punya handler.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
   return (
     <div
       data-testid="harness-root"
       data-open={open ? "1" : "0"}
+      data-hydrated={hydrated ? "1" : "0"}
       className="mx-auto flex max-w-md flex-col gap-ms-3 px-ms-4 py-ms-6"
     >
       <h1 className="text-ms-lg font-semibold">Harness: portal bertumpuk</h1>
