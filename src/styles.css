@@ -1752,12 +1752,17 @@ html[data-reduce-motion="on"] .skeleton-a11y {
    - GPU layer sendiri (translateZ) supaya WebView Android tidak
      "menyeret" bar saat kompositor menggulir konten.
    - `contain` mencegah reflow list virtual memicu repaint bar.
+   - Kompensasi visual viewport (--vv-anchor-offset-lock) menempelkan bar
+     ke dasar layar yang benar-benar terlihat saat address bar Chrome /
+     WebView mengembang-menciut saat scroll. Tanpa ini bar akan terdorong
+     keluar layar atau terlihat naik-turun mengikuti layout viewport.
 */
 .app-static-bottom-bar {
-  transform: translateZ(0);
+  transform: translateZ(0)
+    translate3d(0, calc(var(--vv-anchor-offset-lock, 0px) * -1), 0);
   backface-visibility: hidden;
   contain: layout paint style;
-  will-change: auto;
+  will-change: transform;
 }
 
 /* Landscape / layar pendek: rapatkan bar agar tidak memakan tinggi layar. */
