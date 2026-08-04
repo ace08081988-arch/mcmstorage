@@ -615,9 +615,19 @@ export function WaPreviewHost() {
             hasUrl={!!url}
           />
 
+          {/* Radix Checkbox dirender sebagai <button role="checkbox">, sehingga
+              pembungkus <label> TIDAK memberi nama aksesibel. Nama diambil
+              eksplisit dari teks lewat aria-labelledby. */}
           <label className="flex items-start gap-ms-2 rounded-lg border p-ms-2 text-ms-2xs leading-snug text-muted-foreground sm:p-ms-3 sm:text-ms-xs">
-            <Checkbox checked={skip} onCheckedChange={(c) => setSkip(c === true)} className="mt-0.5" />
-            <span>Jangan tampilkan pratinjau ini lagi (bisa diaktifkan kembali dari Pengaturan)</span>
+            <Checkbox
+              checked={skip}
+              onCheckedChange={(c) => setSkip(c === true)}
+              aria-labelledby="wa-preview-skip-label"
+              className="mt-0.5"
+            />
+            <span id="wa-preview-skip-label">
+              Jangan tampilkan pratinjau ini lagi (bisa diaktifkan kembali dari Pengaturan)
+            </span>
           </label>
         </div>
 
