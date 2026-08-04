@@ -12,6 +12,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Home, Warehouse, PackageSearch, MessageCircle, Boxes, Tags, Palette, Sun, Moon,
+  Search, Copy, Check, X,
 } from "lucide-react";
 import {
   SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton,
@@ -22,6 +23,8 @@ import {
 import { PillsTabs } from "@/components/shell/PillsTabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/pratinjau-tema")({
   head: () => ({
