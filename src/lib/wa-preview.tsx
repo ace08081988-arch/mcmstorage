@@ -387,6 +387,58 @@ export function WaPreviewHost() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * Urutan tab saat berpindah mode edit ⇄ baca.
+   *
+   * Blok "Teks pesan" menukar dua elemen fokusable yang menempati posisi tab
+   * yang sama: <Textarea> (mode edit) dan <pre role="button"> (mode baca).
+   * Kalau pergantian dibiarkan apa adanya, elemen lama dilepas dari DOM,
+   * fokus jatuh ke <body>, lalu penjaga fokus menariknya ke awal dialog —
+   * Tab berikutnya terasa "meloncat" ke atas.
+   *
+   * Solusinya: kita catat dari mana mode edit dimasuki (`editReturnRef`) dan
+   * ke mana fokus harus mendarat setelah re-render (`pendingFocusRef`), lalu
+   * memindahkannya di useLayoutEffect — sebelum browser sempat memicu blur ke
+   * <body>. Hasilnya posisi tab tetap di blok teks yang sama.
+   */
+  const preTextRef = useRef<HTMLPreElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const editToggleRef = useRef<HTMLButtonElement | null>(null);
+  const editReturnRef = useRef<"pre" | "button">("pre");
+  const pendingFocusRef = useRef<"pre" | "button" | "textarea" | null>(null);
+
+  /** Masuk mode edit; `from` menentukan tempat fokus kembali saat keluar. */
+  const enterEditing = useCallback((from: "pre" | "button") => {
+    editReturnRef.current = from;
+    pendingFocusRef.current = "textarea";
+    setEditing(true);
+  }, []);
+
+  /** Keluar mode edit dan kembalikan fokus ke pemicu awalnya. */
+  const exitEditing = useCallback(() => {
+    pendingFocusRef.current = editReturnRef.current;
+    setEditing(false);
+  }, []);
+
+  useLayoutEffect(() => {
+    const want = pendingFocusRef.current;
+    if (!want) return;
+    pendingFocusRef.current = null;
+    const el =
+      want === "textarea"
+        ? textareaRef.current
+        : want === "button"
+          ? editToggleRef.current
+          : preTextRef.current;
+    if (!el || !document.contains(el)) return;
+    try { el.focus({ preventScroll: true }); } catch { /* ignore */ }
+    if (want === "textarea" && textareaRef.current) {
+      // Kursor di akhir teks, bukan menyeleksi semuanya.
+      const len = textareaRef.current.value.length;
+      try { textareaRef.current.setSelectionRange(len, len); } catch { /* ignore */ }
+    }
+  }, [editing]);
+
   const url = current?.url;
   const photoCount = previews.length;
   const expected = current?.expectedCount ?? photoCount;
