@@ -43,6 +43,16 @@ async function openStack(page: Page) {
   await expect(page.getByTestId("sel-item-a")).toBeVisible();
 }
 
+/** Tutup select lalu popover secara berurutan, menunggu tiap layer benar-benar
+ *  lepas dari DOM supaya wrapper popper tidak lagi menahan pointer event. */
+async function closeLayers(page: Page) {
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("sel-content")).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("pop-content")).toBeHidden();
+  await expect(page.locator("[data-radix-popper-content-wrapper]")).toHaveCount(0);
+}
+
 test.describe("penutupan berantai portal bertumpuk", () => {
   test("select → popover ditutup berurutan, fokus pulih per-layer", async ({ page }) => {
     await openStack(page);
@@ -85,9 +95,7 @@ test.describe("penutupan berantai portal bertumpuk", () => {
 
   test("tutup dua layer sekaligus (ESC beruntun cepat) tidak membuang fokus keluar dialog", async ({ page }) => {
     await openStack(page);
-    await page.keyboard.press("Escape");
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("pop-content")).toBeHidden();
+    await closeLayers(page);
     await expect(page.getByTestId("stack-dialog")).toBeVisible();
     const inside = await page.evaluate(() => {
       const dlg = document.querySelector('[data-testid="stack-dialog"]');
@@ -98,8 +106,7 @@ test.describe("penutupan berantai portal bertumpuk", () => {
 
   test("Tab tetap terkurung di dialog setelah semua layer tertutup", async ({ page }) => {
     await openStack(page);
-    await page.keyboard.press("Escape");
-    await page.keyboard.press("Escape");
+    await closeLayers(page);
     for (let i = 0; i < 6; i++) {
       await page.keyboard.press("Tab");
       const inside = await page.evaluate(() => {
@@ -113,8 +120,7 @@ test.describe("penutupan berantai portal bertumpuk", () => {
 
   test("dialog ditutup: fokus kembali ke pemicu dialog", async ({ page }) => {
     await openStack(page);
-    await page.keyboard.press("Escape"); // select
-    await page.keyboard.press("Escape"); // popover
+    await closeLayers(page);
     await page.getByTestId("dlg-last").click();
     await expect(page.getByTestId("stack-dialog")).toBeHidden();
     await expect.poll(() => activeOwnerTestId(page)).toBe("base-trigger");
