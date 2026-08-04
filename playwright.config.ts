@@ -55,6 +55,11 @@ export default defineConfig({
       | undefined) ?? (process.env.CI ? "retain-on-failure" : "off"),
     locale: "id-ID",
     timezoneId: "Asia/Jakarta",
+    // Override biner Chromium untuk lingkungan sandbox/CI yang sudah
+    // menyediakan browser sendiri (hemat unduhan). Kosong = default Playwright.
+    ...(process.env.PWTEST_CHROMIUM_PATH
+      ? { launchOptions: { executablePath: process.env.PWTEST_CHROMIUM_PATH } }
+      : {}),
   },
   expect: {
     toHaveScreenshot: {
