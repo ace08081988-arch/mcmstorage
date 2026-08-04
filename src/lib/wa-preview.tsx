@@ -25,6 +25,7 @@ import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
 import { DebtQuickActions } from "@/components/DebtQuickActions";
+import { resolveTabTarget } from "@/lib/focus-order";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -999,29 +1000,13 @@ export function WaPreviewHost() {
           if (e.key !== "Tab") return;
           const root = contentRef.current;
           if (!root) return;
-          const active0 = document.activeElement as HTMLElement | null;
-          // Popover/select/menu Radix di portal mengelola Tab-nya sendiri —
-          // jangan gulung fokus balik ke dialog selagi layer itu terbuka.
-          if (
-            active0 &&
-            !root.contains(active0) &&
-            active0.closest('[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]')
-          ) return;
-          const focusables = Array.from(
-            root.querySelectorAll<HTMLElement>(
-              'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
-            ),
-          ).filter((el) => el.offsetParent !== null || el === document.activeElement);
-          if (focusables.length === 0) return;
-          const first = focusables[0]!;
-          const last = focusables[focusables.length - 1]!;
+          // Urutan dihitung ulang dari DOM saat ini (lihat lib/focus-order),
+          // jadi pertukaran textarea ↔ teks baca tidak menggeser posisi Tab.
           const active = document.activeElement as HTMLElement | null;
-          if (!e.shiftKey && (active === last || !root.contains(active))) {
+          const target = resolveTabTarget(root, active, e.shiftKey);
+          if (target) {
             e.preventDefault();
-            first.focus();
-          } else if (e.shiftKey && (active === first || !root.contains(active))) {
-            e.preventDefault();
-            last.focus();
+            target.focus();
           }
         }}
         className="flex max-h-[92svh] w-[calc(100vw-1.5rem)] max-w-md flex-col gap-0 overflow-clip p-0 sm:max-h-[88svh] sm:w-full sm:max-w-md"
