@@ -27,6 +27,8 @@ const activeOwnerTestId = (page: Page) =>
 
 async function openStack(page: Page) {
   await page.goto(URL_HARNESS);
+  // Tunggu hidrasi React sebelum klik pertama; markup SSR belum punya handler.
+  await expect(page.getByTestId("harness-root")).toHaveAttribute("data-hydrated", "1");
   await page.getByTestId("base-trigger").click();
   await expect(page.getByTestId("stack-dialog")).toBeVisible();
   await page.getByTestId("pop-trigger").click();
