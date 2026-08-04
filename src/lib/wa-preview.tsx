@@ -398,6 +398,62 @@ export function WaPreviewHost() {
   // untuk paket yang sama masih berjalan, dialog WA ikut menampilkan progresnya.
   const liveInflightKey = live && live.status === "in-flight" ? live.key : null;
   const liveLog = useLiveSendLogStatus(liveInflightKey);
+
+  /**
+   * Penjaga fokus untuk konten dinamis: saat dialog masih terbuka lalu isinya
+   * berubah (masuk/keluar mode edit, tombol retry hilang, progres kiriman
+   * muncul/hilang, foto di-refresh), elemen yang sedang fokus bisa dilepas
+   * dari DOM. Browser lalu memindahkan fokus ke <body> — di luar dialog —
+   * sehingga Tab berikutnya "meloncat" ke konten di belakang overlay.
+   * Kita pantau mutasi DOM + focusin dan tarik fokus kembali ke dalam dialog.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const root = contentRef.current;
+    if (!root) return;
+
+    let raf = 0;
+    const refocusInside = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const node = contentRef.current;
+        if (!node || !document.contains(node)) return;
+        const active = document.activeElement as HTMLElement | null;
+        if (active && active !== document.body && node.contains(active)) return;
+        // Prioritaskan area konten (tabIndex -1) agar pembaca layar tetap
+        // berada dalam konteks dialog tanpa memicu tombol aksi.
+        const target =
+          scrollRef.current ??
+          node.querySelector<HTMLElement>(
+            'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+          ) ??
+          node;
+        try { target.focus({ preventScroll: true }); } catch { /* ignore */ }
+      });
+    };
+
+    const observer = new MutationObserver(refocusInside);
+    observer.observe(root, { childList: true, subtree: true });
+
+    const onFocusIn = (e: FocusEvent) => {
+      const node = contentRef.current;
+      const target = e.target as Node | null;
+      if (!node || !target) return;
+      if (node.contains(target)) return;
+      // Popover/select/tooltip Radix dirender di portal luar dialog — itu
+      // masih "di dalam" konteks dialog secara logis, jangan direbut.
+      const el = target instanceof Element ? target : (target.parentElement ?? null);
+      if (el?.closest('[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]')) return;
+      refocusInside();
+    };
+    document.addEventListener("focusin", onFocusIn, true);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+      document.removeEventListener("focusin", onFocusIn, true);
+    };
+  }, [open]);
   const crossChannel = !!live && liveChannel === "chat";
   const snapshotDup = current?.duplicate ?? null;
   const dup = useMemo(
