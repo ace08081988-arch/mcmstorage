@@ -26,6 +26,13 @@ import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
 import { DebtQuickActions } from "@/components/DebtQuickActions";
 import { resolveTabTarget } from "@/lib/focus-order";
+import {
+  describeEl,
+  focusDebugLog,
+  focusDebugSetLayers,
+  installFocusDebug,
+  isFocusDebugEnabled,
+} from "@/lib/focus-debug";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -389,6 +396,9 @@ export function WaPreviewHost() {
    */
   const restoringRef = useRef(false);
 
+  // Mode debug fokus (dev/test): pasang helper `__waFocusDebug` sekali.
+  useEffect(() => { installFocusDebug(); }, []);
+
   const clearRestoreTimers = useCallback(() => {
     for (const id of restoreTimersRef.current) {
       clearTimeout(id);
@@ -436,6 +446,14 @@ export function WaPreviewHost() {
         'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
       );
     };
+
+    if (isFocusDebugEnabled()) {
+      const wanted = pick();
+      focusDebugLog(
+        "dialog-close-restore",
+        `target=${describeEl(wanted) ?? "(tidak ada)"} | pemicu=${describeEl(el) ?? "-"} | selector=${selector ?? "-"}`,
+      );
+    }
 
     // Radix baru melepas overlay & aria-hidden setelah animasi tutup; fokus
     // sebelum itu bisa langsung dibuang lagi — karena itu diulang.
@@ -659,6 +677,17 @@ export function WaPreviewHost() {
       } | null;
     };
     const layerStack: LayerEntry[] = [];
+    /** Snapshot tumpukan layer untuk panel debug (dev/test saja). */
+    const syncDebugLayers = () => {
+      if (!isFocusDebugEnabled()) return;
+      focusDebugSetLayers(
+        layerStack.map((e) => ({
+          layer: describeEl(e.layer) ?? "(layer)",
+          trigger: describeEl(e.trigger),
+          anchor: e.anchor ? { selector: e.anchor.selector, index: e.anchor.index } : null,
+        })),
+      );
+    };
     let layerObserver: MutationObserver | null = null;
     /** Elemen fokus terakhir, baik di dalam dialog maupun di dalam layer aktif. */
     let lastFocused: HTMLElement | null = null;
@@ -755,6 +784,7 @@ export function WaPreviewHost() {
         // berada dalam konteks dialog tanpa memicu tombol aksi.
         const target =
           scrollRef.current ?? node.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? node;
+        focusDebugLog("refocus", `fallback=${describeEl(target) ?? "(dialog)"}`);
         try { target.focus({ preventScroll: true }); } catch { /* ignore */ }
     };
 
@@ -787,6 +817,7 @@ export function WaPreviewHost() {
       if (stillReachable && t) {
         lastFocused = t;
         layerTriggerRef.current = node?.contains(t) ? t : layerTriggerRef.current;
+        focusDebugLog("restore-layer-trigger", `ke=${describeEl(t)}`);
         try {
           t.focus({ preventScroll: true });
           return true;
@@ -797,6 +828,10 @@ export function WaPreviewHost() {
       // Pemicunya ter-unmount: pakai jejak posisinya untuk cari tetangga
       // terdekat di dalam dialog lewat jalur pemulihan biasa.
       if (entry.anchor) layerTriggerAnchorRef.current = entry.anchor;
+      focusDebugLog(
+        "restore-layer-trigger",
+        `pemicu hilang → anchor selector=${entry.anchor?.selector ?? "-"} index=${entry.anchor?.index ?? -1}`,
+      );
       return false;
     };
 
@@ -812,8 +847,10 @@ export function WaPreviewHost() {
         if (document.contains(top.layer)) break;
         layerStack.pop();
         closedAny = true;
+        focusDebugLog("layer-close", `tutup=${describeEl(top.layer) ?? "(layer)"}`);
         restored = restoreLayerTrigger(top);
       }
+      if (closedAny) syncDebugLayers();
       if (layerStack.length === 0) {
         layerObserver?.disconnect();
         layerObserver = null;
@@ -882,6 +919,11 @@ export function WaPreviewHost() {
             trigger: lastFocused,
             anchor: layerTriggerAnchorRef.current,
           });
+          syncDebugLayers();
+          focusDebugLog(
+            "layer-open",
+            `buka=${describeEl(layer) ?? "(layer)"} | pemicu=${describeEl(lastFocused) ?? "-"} | depth=${layerStack.length}`,
+          );
           ensureLayerObserver();
         }
         if (el instanceof HTMLElement) lastFocused = el;
