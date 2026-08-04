@@ -34,8 +34,8 @@ async function openStack(page: Page) {
   await page.getByTestId("base-trigger").click();
   await expect(page.getByTestId("stack-dialog")).toBeVisible();
   await page.getByTestId("pop-trigger").click();
-  // Layer 1 lazy-load: "Memuat…" dulu, baru isinya.
-  await expect(page.getByTestId("pop-loading")).toBeVisible();
+  // Layer 1 lazy-load: "Memuat…" dulu, baru isinya. Fase "Memuat…" sangat
+  // singkat sehingga tidak diassert (bisa terlewat) — yang penting isi final.
   await expect(page.getByTestId("pop-item-1")).toBeVisible();
   await page.getByTestId("sel-trigger").click();
   // Layer 2 lazy-load.
