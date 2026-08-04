@@ -15,6 +15,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundRouteImport } from './routes/refund'
 import { Route as ProdukRouteImport } from './routes/produk'
+import { Route as PratinjauTemaRouteImport } from './routes/pratinjau-tema'
 import { Route as PosKasirRouteImport } from './routes/pos-kasir'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as HargaRouteImport } from './routes/harga'
@@ -198,6 +199,11 @@ const RefundRoute = RefundRouteImport.update({
 const ProdukRoute = ProdukRouteImport.update({
   id: '/produk',
   path: '/produk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PratinjauTemaRoute = PratinjauTemaRouteImport.update({
+  id: '/pratinjau-tema',
+  path: '/pratinjau-tema',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PosKasirRoute = PosKasirRouteImport.update({
@@ -1073,6 +1079,7 @@ export interface FileRoutesByFullPath {
   '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
+  '/pratinjau-tema': typeof PratinjauTemaRoute
   '/produk': typeof ProdukRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -1232,6 +1239,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
+  '/pratinjau-tema': typeof PratinjauTemaRoute
   '/produk': typeof ProdukRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -1393,6 +1401,7 @@ export interface FileRoutesById {
   '/harga': typeof HargaRoute
   '/mcp': typeof McpRoute
   '/pos-kasir': typeof PosKasirRouteWithChildren
+  '/pratinjau-tema': typeof PratinjauTemaRoute
   '/produk': typeof ProdukRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -1557,6 +1566,7 @@ export interface FileRouteTypes {
     | '/harga'
     | '/mcp'
     | '/pos-kasir'
+    | '/pratinjau-tema'
     | '/produk'
     | '/refund'
     | '/reset-password'
@@ -1716,6 +1726,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/harga'
     | '/mcp'
+    | '/pratinjau-tema'
     | '/produk'
     | '/refund'
     | '/reset-password'
@@ -1876,6 +1887,7 @@ export interface FileRouteTypes {
     | '/harga'
     | '/mcp'
     | '/pos-kasir'
+    | '/pratinjau-tema'
     | '/produk'
     | '/refund'
     | '/reset-password'
@@ -2039,6 +2051,7 @@ export interface RootRouteChildren {
   HargaRoute: typeof HargaRoute
   McpRoute: typeof McpRoute
   PosKasirRoute: typeof PosKasirRouteWithChildren
+  PratinjauTemaRoute: typeof PratinjauTemaRoute
   ProdukRoute: typeof ProdukRoute
   RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -2153,6 +2166,13 @@ declare module '@tanstack/react-router' {
       path: '/produk'
       fullPath: '/produk'
       preLoaderRoute: typeof ProdukRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pratinjau-tema': {
+      id: '/pratinjau-tema'
+      path: '/pratinjau-tema'
+      fullPath: '/pratinjau-tema'
+      preLoaderRoute: typeof PratinjauTemaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pos-kasir': {
@@ -3506,6 +3526,7 @@ const rootRouteChildren: RootRouteChildren = {
   HargaRoute: HargaRoute,
   McpRoute: McpRoute,
   PosKasirRoute: PosKasirRouteWithChildren,
+  PratinjauTemaRoute: PratinjauTemaRoute,
   ProdukRoute: ProdukRoute,
   RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
