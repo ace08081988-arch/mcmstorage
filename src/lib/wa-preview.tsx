@@ -771,6 +771,8 @@ export function WaPreviewHost() {
     };
 
     const observer = new MutationObserver((records) => {
+      // Layer portal bisa ditutup bersamaan dengan mutasi ini.
+      pruneClosedLayers();
       // Hanya mutasi yang MELEPAS node bisa membuang fokus. Selain itu abaikan
       // tanpa menyentuh DOM sedikit pun.
       let removed = false;
