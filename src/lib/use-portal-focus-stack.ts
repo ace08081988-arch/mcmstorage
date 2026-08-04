@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from "react";
 import { describeEl, focusDebugLog, focusDebugSetLayers, isFocusDebugEnabled } from "@/lib/focus-debug";
-import { FOCUSABLE_SELECTOR, PORTAL_LAYER_SELECTOR } from "@/lib/focus-order";
+import { FOCUSABLE_SELECTOR, PORTAL_LAYER_SELECTOR, isFocusableNow } from "@/lib/focus-order";
 
 /**
  * Penjaga fokus untuk dialog dengan layer portal BERTUMPUK (popover → select →
@@ -93,11 +93,18 @@ export function usePortalFocusStack({
     const portalLayerOpen = () =>
       layerStack.some((entry) => document.contains(entry.layer));
 
-    /** Semua elemen fokusable dialog dalam urutan DOM (yang terlihat saja). */
+    /** Semua elemen fokusable dialog dalam urutan DOM (terlihat & tidak disabled). */
     const focusablesIn = (node: HTMLElement) =>
       Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-        (el) => el.offsetParent !== null || el === document.activeElement,
+        (el) => isFocusableNow(el) || el === document.activeElement,
       );
+
+    /** Jejak posisi sebuah elemen, untuk mencari penggantinya nanti. */
+    const anchorOf = (node: HTMLElement, el: HTMLElement) => ({
+      selector: stableSelectorFor(el),
+      parent: el.parentElement,
+      index: Math.max(0, focusablesIn(node).filter((f) => f !== scrollRef.current).indexOf(el)),
+    });
 
     /**
      * Fallback saat pemicu layer sudah ter-unmount: cari elemen fokusable
@@ -114,16 +121,18 @@ export function usePortalFocusStack({
 
       if (anchor.selector) {
         const found = node.querySelector<HTMLElement>(anchor.selector);
-        if (found && found.offsetParent !== null) return found;
+        if (found && isFocusableNow(found)) return found;
       }
 
       const parent = anchor.parent;
       if (parent && document.contains(parent) && node.contains(parent)) {
-        const inParent = focusablesIn(parent)[0];
+        const inParent = focusablesIn(parent).find((el) => isFocusableNow(el));
         if (inParent) return inParent;
       }
 
-      const list = focusablesIn(node).filter((el) => el !== scrollRef.current);
+      const list = focusablesIn(node).filter(
+        (el) => el !== scrollRef.current && isFocusableNow(el),
+      );
       if (list.length === 0) return null;
       const idx = Math.min(Math.max(anchor.index, 0), list.length - 1);
       return list[idx] ?? list[list.length - 1] ?? null;
@@ -158,11 +167,17 @@ export function usePortalFocusStack({
         // <body> — di situ kita pulihkan manual.
         const back = layerTriggerRef.current;
         // `back === node` berarti Radix cuma memarkir fokus di kontainer
-        // dialog — bukan pemicu sungguhan; jangan dipakai.
-        if (back && back !== node && document.contains(back) && node.contains(back)) {
+        // dialog — bukan pemicu sungguhan; jangan dipakai. Pemicu yang sudah
+        // disabled/ter-hidden juga dilewati supaya fokus tidak "hilang".
+        if (back && back !== node && node.contains(back) && isFocusableNow(back)) {
           layerTriggerRef.current = null;
           layerTriggerAnchorRef.current = null;
           try { back.focus({ preventScroll: true }); return; } catch { /* ignore */ }
+        }
+        // Pemicu masih ada tapi tidak bisa difokus (disabled/hidden): pakai
+        // jejak posisinya supaya fallback mendarat di tetangga yang benar.
+        if (back && back !== node && node.contains(back) && !layerTriggerAnchorRef.current) {
+          layerTriggerAnchorRef.current = anchorOf(node, back);
         }
         // Prioritas 2: pemicu sudah ter-unmount selagi popover/select terbuka.
         // Jangan buang fokus ke area konten — pakai tetangga terdekatnya.
@@ -203,7 +218,7 @@ export function usePortalFocusStack({
       const t = entry.trigger;
       const stillReachable =
         !!t &&
-        document.contains(t) &&
+        isFocusableNow(t) &&
         (!!node?.contains(t) ||
           layerStack.some((e) => document.contains(e.layer) && e.layer.contains(t)));
       if (stillReachable && t) {
@@ -217,13 +232,19 @@ export function usePortalFocusStack({
           /* ignore */
         }
       }
-      // Pemicunya ter-unmount: pakai jejak posisinya untuk cari tetangga
-      // terdekat di dalam dialog lewat jalur pemulihan biasa.
-      if (entry.anchor) layerTriggerAnchorRef.current = entry.anchor;
+      // Pemicunya ter-unmount ATAU sudah disabled/ter-hidden: pakai jejak
+      // posisinya untuk cari tetangga terdekat di dalam dialog lewat jalur
+      // pemulihan biasa. Kalau jejak lama tidak ada tapi node-nya masih di
+      // DOM, rekam jejaknya sekarang (posisinya masih valid).
+      const anchor =
+        entry.anchor ?? (t && node && node.contains(t) ? anchorOf(node, t) : null);
+      if (anchor) layerTriggerAnchorRef.current = anchor;
+      layerTriggerRef.current = null;
       focusDebugLog(
         "restore-layer-trigger",
-        `pemicu hilang → anchor selector=${entry.anchor?.selector ?? "-"} index=${entry.anchor?.index ?? -1}`,
+        `pemicu tidak fokusable → anchor selector=${anchor?.selector ?? "-"} index=${anchor?.index ?? -1}`,
       );
+      scheduleRefocus();
       return false;
     };
 
@@ -286,14 +307,7 @@ export function usePortalFocusStack({
           layerTriggerRef.current = el;
           // Rekam jejak posisinya sekalian — murah, dan satu-satunya cara
           // memulihkan fokus kalau node ini keburu dilepas dari DOM.
-          layerTriggerAnchorRef.current = {
-            selector: stableSelectorFor(el),
-            parent: el.parentElement,
-            index: Math.max(
-              0,
-              focusablesIn(node).filter((f) => f !== scrollRef.current).indexOf(el),
-            ),
-          };
+          layerTriggerAnchorRef.current = anchorOf(node, el);
         }
         return;
       }
