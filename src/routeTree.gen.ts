@@ -114,6 +114,7 @@ import { Route as LovableVisualPhotoEditorRouteImport } from './routes/lovable.v
 import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lovable.visual.min-supported-form'
 import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lovable.visual.message-hidden-rls'
 import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/lovable.visual.message-hidden-persist'
+import { Route as LovableVisualMenuVariantsRouteImport } from './routes/lovable.visual.menu-variants'
 import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
 import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.visual.kemasan-badge'
 import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
@@ -739,6 +740,12 @@ const LovableVisualMessageHiddenPersistRoute =
     path: '/lovable/visual/message-hidden-persist',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualMenuVariantsRoute =
+  LovableVisualMenuVariantsRouteImport.update({
+    id: '/lovable/visual/menu-variants',
+    path: '/lovable/visual/menu-variants',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualKomponenReviewRoute =
   LovableVisualKomponenReviewRouteImport.update({
     id: '/lovable/visual/komponen-review',
@@ -1180,6 +1187,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
+  '/lovable/visual/menu-variants': typeof LovableVisualMenuVariantsRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
@@ -1337,6 +1345,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
+  '/lovable/visual/menu-variants': typeof LovableVisualMenuVariantsRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
@@ -1499,6 +1508,7 @@ export interface FileRoutesById {
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
+  '/lovable/visual/menu-variants': typeof LovableVisualMenuVariantsRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
@@ -1661,6 +1671,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
+    | '/lovable/visual/menu-variants'
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
@@ -1818,6 +1829,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
+    | '/lovable/visual/menu-variants'
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
@@ -1979,6 +1991,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
+    | '/lovable/visual/menu-variants'
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
@@ -2065,6 +2078,7 @@ export interface RootRouteChildren {
   LovableVisualKartonKonversiRoute: typeof LovableVisualKartonKonversiRoute
   LovableVisualKemasanBadgeRoute: typeof LovableVisualKemasanBadgeRoute
   LovableVisualKomponenReviewRoute: typeof LovableVisualKomponenReviewRoute
+  LovableVisualMenuVariantsRoute: typeof LovableVisualMenuVariantsRoute
   LovableVisualMessageHiddenPersistRoute: typeof LovableVisualMessageHiddenPersistRoute
   LovableVisualMessageHiddenRlsRoute: typeof LovableVisualMessageHiddenRlsRoute
   LovableVisualMinSupportedFormRoute: typeof LovableVisualMinSupportedFormRoute
@@ -2834,6 +2848,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualMessageHiddenPersistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/menu-variants': {
+      id: '/lovable/visual/menu-variants'
+      path: '/lovable/visual/menu-variants'
+      fullPath: '/lovable/visual/menu-variants'
+      preLoaderRoute: typeof LovableVisualMenuVariantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/komponen-review': {
       id: '/lovable/visual/komponen-review'
       path: '/lovable/visual/komponen-review'
@@ -3528,6 +3549,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualKartonKonversiRoute: LovableVisualKartonKonversiRoute,
   LovableVisualKemasanBadgeRoute: LovableVisualKemasanBadgeRoute,
   LovableVisualKomponenReviewRoute: LovableVisualKomponenReviewRoute,
+  LovableVisualMenuVariantsRoute: LovableVisualMenuVariantsRoute,
   LovableVisualMessageHiddenPersistRoute:
     LovableVisualMessageHiddenPersistRoute,
   LovableVisualMessageHiddenRlsRoute: LovableVisualMessageHiddenRlsRoute,
