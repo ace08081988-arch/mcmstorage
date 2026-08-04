@@ -62,17 +62,17 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-ms-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-ms-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-ms-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+        <h1 className="text-7xl font-bold tracking-tight text-primary">404</h1>
+        <h2 className="mt-ms-3 text-ms-xl font-semibold text-foreground">Halaman tidak ditemukan</h2>
+        <p className="mt-ms-2 text-ms-sm leading-relaxed text-muted-foreground">
+          Halaman yang kamu tuju tidak ada atau sudah dipindahkan.
         </p>
-        <div className="mt-6">
+        <div className="mt-ms-5">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-ms-4 py-ms-2 text-ms-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-ms-5 py-ms-2 text-ms-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            Kembali ke beranda
           </Link>
         </div>
       </div>

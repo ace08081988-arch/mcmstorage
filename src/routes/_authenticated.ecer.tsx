@@ -2620,7 +2620,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
         )}
         <div className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">#{index}</div>
         {prep.created_by === "worker" && (
-          <div className="absolute right-1 top-1 rounded bg-blue-500/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">Pegawai</div>
+          <div className="absolute right-1 top-1 rounded bg-info/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">Pegawai</div>
         )}
         {sold && (
           <div className="absolute inset-x-1 bottom-1 rounded bg-success/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-semibold text-white">

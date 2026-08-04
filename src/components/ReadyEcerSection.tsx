@@ -2475,7 +2475,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <span className="min-w-0 flex-1 truncate" title={r.name}>{r.name}</span>
             </div>
           </div>
-          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-ms-2xs font-semibold leading-none text-white shadow-sm">
+          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-info/95 px-1.5 text-ms-2xs font-semibold leading-none text-white shadow-sm">
             {shots.length} foto
           </span>
           {thumbs[0]?.location_url && (
@@ -2505,7 +2505,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <span className="min-w-0 flex-1 truncate" title={r.name}>{r.name}</span>
             </div>
           </div>
-          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-ms-2xs font-semibold leading-none text-white shadow-sm">
+          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-info/95 px-1.5 text-ms-2xs font-semibold leading-none text-white shadow-sm">
             {shots.length} foto
           </span>
           {thumbs[0]?.location_url && (

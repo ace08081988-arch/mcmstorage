@@ -154,52 +154,52 @@ function PosKasirRingkasanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-ms-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground p-ms-4 md:p-8">
       <div className="mx-auto max-w-6xl">
         <header className="mb-6 flex flex-col gap-ms-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-ms-2xl md:text-ms-3xl font-bold tracking-tight">📊 Ringkasan POS Kasir</h1>
-            <p className="text-ms-sm text-slate-400 mt-1">
+            <p className="text-ms-sm text-muted-foreground mt-1">
               Pantau omzet, berat terjual, dan jumlah transaksi hari ini
             </p>
           </div>
           <Link
             to="/pos-kasir"
-            className="inline-flex items-center justify-center px-ms-4 py-ms-2 rounded-lg bg-success hover:bg-success text-white text-ms-sm font-medium transition-colors"
+            className="inline-flex items-center justify-center px-ms-4 py-ms-2 rounded-lg bg-success hover:bg-success text-success-foreground text-ms-sm font-medium transition-colors"
           >
             ⬅ Kembali ke Kasir
           </Link>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-ms-4 mb-6">
-          <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-ms-5 border border-slate-700">
-            <div className="text-ms-xs text-slate-400 uppercase tracking-wider">Omzet Hari Ini</div>
+          <div className="bg-card/50 backdrop-blur rounded-2xl p-ms-5 border border-border">
+            <div className="text-ms-xs text-muted-foreground uppercase tracking-wider">Omzet Hari Ini</div>
             <div className="text-ms-2xl md:text-ms-3xl font-bold text-success font-mono mt-2">
               {rupiah(omzetHariIni)}
             </div>
           </div>
-          <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-ms-5 border border-slate-700">
-            <div className="text-ms-xs text-slate-400 uppercase tracking-wider">Berat Terjual Hari Ini</div>
+          <div className="bg-card/50 backdrop-blur rounded-2xl p-ms-5 border border-border">
+            <div className="text-ms-xs text-muted-foreground uppercase tracking-wider">Berat Terjual Hari Ini</div>
             <div className="text-ms-2xl md:text-ms-3xl font-bold text-blue-400 font-mono mt-2">
               {beratHariIni.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
             </div>
           </div>
-          <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-ms-5 border border-slate-700">
-            <div className="text-ms-xs text-slate-400 uppercase tracking-wider">Jumlah Transaksi Hari Ini</div>
+          <div className="bg-card/50 backdrop-blur rounded-2xl p-ms-5 border border-border">
+            <div className="text-ms-xs text-muted-foreground uppercase tracking-wider">Jumlah Transaksi Hari Ini</div>
             <div className="text-ms-2xl md:text-ms-3xl font-bold text-warning font-mono mt-2">
               {jumlahHariIni}
             </div>
           </div>
         </div>
 
-        <section className="bg-slate-800/50 backdrop-blur rounded-2xl p-ms-3 sm:p-ms-5 border border-slate-700 mb-6 min-w-0 overflow-hidden">
+        <section className="bg-card/50 backdrop-blur rounded-2xl p-ms-3 sm:p-ms-5 border border-border mb-6 min-w-0 overflow-hidden">
           <div className="flex flex-col gap-ms-4 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-ms-3">
               <div>
-                <h2 className="text-ms-sm font-semibold text-slate-300 uppercase tracking-wider">
+                <h2 className="text-ms-sm font-semibold text-foreground uppercase tracking-wider">
                   📈 Tren Omzet & Berat Terjual
                 </h2>
-                <p className="text-ms-xs text-slate-500 mt-1">
+                <p className="text-ms-xs text-muted-foreground mt-1">
                   {trenData.length > 0
                     ? `${trenData.length} hari · ${rupiah(totalOmzetRentang)} · ${totalBeratRentang.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg · ${totalTrxRentang} transaksi`
                     : "Pilih rentang tanggal yang valid"}
@@ -214,7 +214,7 @@ function PosKasirRingkasanPage() {
                   <button
                     key={p.n}
                     onClick={() => setPreset(p.n)}
-                    className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200"
+                    className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-background hover:bg-muted border border-border text-foreground"
                   >
                     {p.l}
                   </button>
@@ -222,17 +222,17 @@ function PosKasirRingkasanPage() {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-ms-3">
-              <label className="flex flex-col gap-ms-1 text-ms-xs text-slate-400">
+              <label className="flex flex-col gap-ms-1 text-ms-xs text-muted-foreground">
                 Dari tanggal
                 <input
                   type="date"
                   value={dariTanggal}
                   max={sampaiTanggal || undefined}
                   onChange={(e) => setDariTanggal(e.target.value)}
-                  className="rounded-lg bg-slate-900 border border-slate-700 px-ms-3 py-ms-2 text-ms-sm text-slate-100 focus:outline-none focus:border-success"
+                  className="rounded-lg bg-background border border-border px-ms-3 py-ms-2 text-ms-sm text-foreground focus:outline-none focus:border-success"
                 />
               </label>
-              <label className="flex flex-col gap-ms-1 text-ms-xs text-slate-400">
+              <label className="flex flex-col gap-ms-1 text-ms-xs text-muted-foreground">
                 Sampai tanggal
                 <input
                   type="date"
@@ -240,20 +240,20 @@ function PosKasirRingkasanPage() {
                   min={dariTanggal || undefined}
                   max={todayKey()}
                   onChange={(e) => setSampaiTanggal(e.target.value)}
-                  className="rounded-lg bg-slate-900 border border-slate-700 px-ms-3 py-ms-2 text-ms-sm text-slate-100 focus:outline-none focus:border-success"
+                  className="rounded-lg bg-background border border-border px-ms-3 py-ms-2 text-ms-sm text-foreground focus:outline-none focus:border-success"
                 />
               </label>
             </div>
           </div>
 
           {trenData.length === 0 ? (
-            <div className="text-center py-8 text-ms-sm text-slate-500">
+            <div className="text-center py-8 text-ms-sm text-muted-foreground">
               Tidak ada data untuk rentang tanggal ini.
             </div>
           ) : (
             <Suspense
               fallback={
-                <div className="w-full h-64 sm:h-72 md:h-80 flex items-center justify-center text-ms-sm text-slate-500">
+                <div className="w-full h-64 sm:h-72 md:h-80 flex items-center justify-center text-ms-sm text-muted-foreground">
                   Memuat grafik…
                 </div>
               }
@@ -263,28 +263,28 @@ function PosKasirRingkasanPage() {
           )}
         </section>
 
-        <section className="bg-slate-800/50 backdrop-blur rounded-2xl p-ms-5 border border-slate-700">
+        <section className="bg-card/50 backdrop-blur rounded-2xl p-ms-5 border border-border">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-ms-3 mb-4">
-            <h2 className="text-ms-sm font-semibold text-slate-300 uppercase tracking-wider">
+            <h2 className="text-ms-sm font-semibold text-foreground uppercase tracking-wider">
               Transaksi Hari Ini ({hariIni.length})
             </h2>
             <button
               onClick={exportCSV}
               disabled={hariIni.length === 0}
-              className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-success hover:bg-success disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-success text-white font-medium"
+              className="text-ms-xs px-ms-3 py-1.5 rounded-lg bg-success hover:bg-success disabled:bg-card disabled:text-muted-foreground disabled:cursor-not-allowed border border-success text-success-foreground font-medium"
             >
               ⬇ Ekspor CSV ({hariIni.length})
             </button>
           </div>
           {hariIni.length === 0 ? (
-            <div className="text-center py-8 text-ms-sm text-slate-500">
+            <div className="text-center py-8 text-ms-sm text-muted-foreground">
               Belum ada transaksi hari ini. Lakukan penjualan di halaman POS Kasir.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-ms-sm">
                 <thead>
-                  <tr className="text-left text-ms-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
+                  <tr className="text-left text-ms-xs uppercase tracking-wider text-muted-foreground border-b border-border">
                     <th className="py-ms-2 pr-3 font-medium">Waktu</th>
                     <th className="py-ms-2 pr-3 font-medium">Produk</th>
                     <th className="py-ms-2 pr-3 font-medium text-right">Berat</th>
@@ -292,10 +292,10 @@ function PosKasirRingkasanPage() {
                     <th className="py-ms-2 font-medium text-right">Sisa Stok</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {hariIni.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-900/40">
-                      <td className="py-ms-2 pr-3 font-mono text-ms-xs text-slate-400">
+                    <tr key={t.id} className="hover:bg-background/40">
+                      <td className="py-ms-2 pr-3 font-mono text-ms-xs text-muted-foreground">
                         {waktuFmt.format(t.waktu)}
                       </td>
                       <td className="py-ms-2 pr-3">
@@ -308,7 +308,7 @@ function PosKasirRingkasanPage() {
                       <td className="py-ms-2 pr-3 text-right font-mono font-semibold text-success">
                         {rupiah(t.total)}
                       </td>
-                      <td className="py-ms-2 text-right font-mono text-slate-300">
+                      <td className="py-ms-2 text-right font-mono text-foreground">
                         {t.sisaStokKg.toLocaleString("id-ID")} kg
                       </td>
                     </tr>
@@ -320,7 +320,7 @@ function PosKasirRingkasanPage() {
         </section>
 
         {toast && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-slate-900 border border-slate-700 px-ms-4 py-ms-2.5 text-ms-sm text-slate-100 shadow-lg">
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-background border border-border px-ms-4 py-ms-2.5 text-ms-sm text-foreground shadow-lg">
             {toast}
           </div>
         )}
