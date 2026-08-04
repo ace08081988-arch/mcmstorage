@@ -1880,3 +1880,162 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   padding-left: max(var(--app-safe-left, env(safe-area-inset-left, 0px)), 0.5rem);
   padding-right: max(var(--app-safe-right, env(safe-area-inset-right, 0px)), 0.5rem);
 }
+
+/* ==========================================================================
+   Normalisasi palet — SATU logika warna untuk semua menu.
+   --------------------------------------------------------------------------
+   Sebagian halaman lama memakai warna mentah Tailwind (emerald/sky/slate/...)
+   sehingga antar menu terlihat berbeda tema. Blok ini memetakan seluruh
+   keluarga warna mentah ke token semantik (success / warning / destructive /
+   info / muted) supaya konsisten di light & dark mode.
+
+   Aturan ini sengaja ditulis di luar @layer utilities agar menang atas
+   utility Tailwind bawaan, dan memakai [class*="..."] supaya varian shade
+   dan alpha (mis. bg-red-500/10) ikut ternormalisasi.
+   ========================================================================== */
+
+:where(html) {
+  --tone-success: var(--success);
+  --tone-warning: var(--warning);
+  --tone-danger: var(--destructive);
+  --tone-info: var(--info);
+}
+
+/* --- Teks --------------------------------------------------------------- */
+:is([class^="text-emerald-"],[class*=" text-emerald-"]),
+:is([class^="text-green-"],[class*=" text-green-"]),
+:is([class^="text-lime-"],[class*=" text-lime-"]),
+:is([class^="text-teal-"],[class*=" text-teal-"]) { color: var(--tone-success); }
+
+:is([class^="text-amber-"],[class*=" text-amber-"]),
+:is([class^="text-yellow-"],[class*=" text-yellow-"]),
+:is([class^="text-orange-"],[class*=" text-orange-"]) { color: var(--tone-warning); }
+
+:is([class^="text-red-"],[class*=" text-red-"]),
+:is([class^="text-rose-"],[class*=" text-rose-"]) { color: var(--tone-danger); }
+
+:is([class^="text-sky-"],[class*=" text-sky-"]),
+:is([class^="text-blue-"],[class*=" text-blue-"]),
+:is([class^="text-cyan-"],[class*=" text-cyan-"]),
+:is([class^="text-indigo-"],[class*=" text-indigo-"]),
+:is([class^="text-violet-"],[class*=" text-violet-"]),
+:is([class^="text-purple-"],[class*=" text-purple-"]),
+:is([class^="text-fuchsia-"],[class*=" text-fuchsia-"]),
+:is([class^="text-pink-"],[class*=" text-pink-"]) { color: var(--tone-info); }
+
+:is([class^="text-slate-"],[class*=" text-slate-"]),
+:is([class^="text-gray-"],[class*=" text-gray-"]),
+:is([class^="text-zinc-"],[class*=" text-zinc-"]),
+:is([class^="text-neutral-"],[class*=" text-neutral-"]),
+:is([class^="text-stone-"],[class*=" text-stone-"]) { color: var(--muted-foreground); }
+
+/* --- Latar (soft tint, tetap terbaca di light & dark) ------------------- */
+:is([class^="bg-emerald-"],[class*=" bg-emerald-"]),
+:is([class^="bg-green-"],[class*=" bg-green-"]),
+:is([class^="bg-lime-"],[class*=" bg-lime-"]),
+:is([class^="bg-teal-"],[class*=" bg-teal-"]) { background-color: color-mix(in oklab, var(--tone-success) 16%, var(--card)); }
+
+:is([class^="bg-amber-"],[class*=" bg-amber-"]),
+:is([class^="bg-yellow-"],[class*=" bg-yellow-"]),
+:is([class^="bg-orange-"],[class*=" bg-orange-"]) { background-color: color-mix(in oklab, var(--tone-warning) 16%, var(--card)); }
+
+:is([class^="bg-red-"],[class*=" bg-red-"]),
+:is([class^="bg-rose-"],[class*=" bg-rose-"]) { background-color: color-mix(in oklab, var(--tone-danger) 16%, var(--card)); }
+
+:is([class^="bg-sky-"],[class*=" bg-sky-"]),
+:is([class^="bg-blue-"],[class*=" bg-blue-"]),
+:is([class^="bg-cyan-"],[class*=" bg-cyan-"]),
+:is([class^="bg-indigo-"],[class*=" bg-indigo-"]),
+:is([class^="bg-violet-"],[class*=" bg-violet-"]),
+:is([class^="bg-purple-"],[class*=" bg-purple-"]),
+:is([class^="bg-fuchsia-"],[class*=" bg-fuchsia-"]),
+:is([class^="bg-pink-"],[class*=" bg-pink-"]) { background-color: color-mix(in oklab, var(--tone-info) 16%, var(--card)); }
+
+:is([class^="bg-slate-"],[class*=" bg-slate-"]),
+:is([class^="bg-gray-"],[class*=" bg-gray-"]),
+:is([class^="bg-zinc-"],[class*=" bg-zinc-"]),
+:is([class^="bg-neutral-"],[class*=" bg-neutral-"]),
+:is([class^="bg-stone-"],[class*=" bg-stone-"]) { background-color: var(--muted); }
+
+.bg-white { background-color: var(--card); }
+.bg-black { background-color: var(--background); }
+.text-black { color: var(--card-foreground); }
+
+/* Elemen solid (punya text-white/text-black eksplisit) tetap pekat supaya
+   kontras tombol/badge tidak hilang. */
+:is([class^="bg-emerald-"],[class*=" bg-emerald-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-green-"],[class*=" bg-green-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-lime-"],[class*=" bg-lime-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-teal-"],[class*=" bg-teal-"]):is([class*="text-white"], [class*="text-black"]) {
+  background-color: var(--tone-success);
+  color: var(--success-foreground);
+}
+
+:is([class^="bg-amber-"],[class*=" bg-amber-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-yellow-"],[class*=" bg-yellow-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-orange-"],[class*=" bg-orange-"]):is([class*="text-white"], [class*="text-black"]) {
+  background-color: var(--tone-warning);
+  color: var(--warning-foreground);
+}
+
+:is([class^="bg-red-"],[class*=" bg-red-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-rose-"],[class*=" bg-rose-"]):is([class*="text-white"], [class*="text-black"]) {
+  background-color: var(--tone-danger);
+  color: var(--destructive-foreground);
+}
+
+:is([class^="bg-sky-"],[class*=" bg-sky-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-blue-"],[class*=" bg-blue-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-cyan-"],[class*=" bg-cyan-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-indigo-"],[class*=" bg-indigo-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-violet-"],[class*=" bg-violet-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-purple-"],[class*=" bg-purple-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-fuchsia-"],[class*=" bg-fuchsia-"]):is([class*="text-white"], [class*="text-black"]),
+:is([class^="bg-pink-"],[class*=" bg-pink-"]):is([class*="text-white"], [class*="text-black"]) {
+  background-color: var(--tone-info);
+  color: var(--info-foreground);
+}
+
+/* --- Border ------------------------------------------------------------- */
+:is([class^="border-emerald-"],[class*=" border-emerald-"]),
+:is([class^="border-green-"],[class*=" border-green-"]),
+:is([class^="border-lime-"],[class*=" border-lime-"]),
+:is([class^="border-teal-"],[class*=" border-teal-"]) { border-color: color-mix(in oklab, var(--tone-success) 45%, transparent); }
+
+:is([class^="border-amber-"],[class*=" border-amber-"]),
+:is([class^="border-yellow-"],[class*=" border-yellow-"]),
+:is([class^="border-orange-"],[class*=" border-orange-"]) { border-color: color-mix(in oklab, var(--tone-warning) 45%, transparent); }
+
+:is([class^="border-red-"],[class*=" border-red-"]),
+:is([class^="border-rose-"],[class*=" border-rose-"]) { border-color: color-mix(in oklab, var(--tone-danger) 45%, transparent); }
+
+:is([class^="border-sky-"],[class*=" border-sky-"]),
+:is([class^="border-blue-"],[class*=" border-blue-"]),
+:is([class^="border-cyan-"],[class*=" border-cyan-"]),
+:is([class^="border-indigo-"],[class*=" border-indigo-"]),
+:is([class^="border-violet-"],[class*=" border-violet-"]),
+:is([class^="border-purple-"],[class*=" border-purple-"]),
+:is([class^="border-fuchsia-"],[class*=" border-fuchsia-"]),
+:is([class^="border-pink-"],[class*=" border-pink-"]) { border-color: color-mix(in oklab, var(--tone-info) 45%, transparent); }
+
+:is([class^="border-slate-"],[class*=" border-slate-"]),
+:is([class^="border-gray-"],[class*=" border-gray-"]),
+:is([class^="border-zinc-"],[class*=" border-zinc-"]),
+:is([class^="border-neutral-"],[class*=" border-neutral-"]),
+:is([class^="border-stone-"],[class*=" border-stone-"]) { border-color: var(--border); }
+
+/* --- Ring / outline ----------------------------------------------------- */
+:is([class^="ring-emerald-"],[class*=" ring-emerald-"]),
+:is([class^="ring-green-"],[class*=" ring-green-"]),
+:is([class^="ring-teal-"],[class*=" ring-teal-"]) { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+:is([class^="ring-amber-"],[class*=" ring-amber-"]),
+:is([class^="ring-yellow-"],[class*=" ring-yellow-"]),
+:is([class^="ring-orange-"],[class*=" ring-orange-"]) { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+:is([class^="ring-red-"],[class*=" ring-red-"]),
+:is([class^="ring-rose-"],[class*=" ring-rose-"]) { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+:is([class^="ring-sky-"],[class*=" ring-sky-"]),
+:is([class^="ring-blue-"],[class*=" ring-blue-"]),
+:is([class^="ring-indigo-"],[class*=" ring-indigo-"]),
+:is([class^="ring-violet-"],[class*=" ring-violet-"]),
+:is([class^="ring-purple-"],[class*=" ring-purple-"]),
+:is([class^="ring-pink-"],[class*=" ring-pink-"]) { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
