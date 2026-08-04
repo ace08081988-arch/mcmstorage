@@ -12,14 +12,14 @@ import {
   type PublicCatalogItemPayload,
 } from "@/lib/public-catalog.functions";
 
+/**
+ * Lebar tampil foto produk: penuh di ponsel, maksimal 768px (max-w-3xl)
+ * di layar besar. Browser memakai ini untuk memilih varian srcset terkecil
+ * yang masih tajam, jadi ponsel tidak mengunduh gambar 1600px.
+ */
+const IMAGE_SIZES = "(min-width: 768px) 768px, 100vw";
+
 export const Route = createFileRoute("/katalog/$slug/$itemId")({
-  ssr: true,
-  loader: ({ params }) =>
-    getPublicCatalogItem({ data: { slug: params.slug, itemId: params.itemId } }),
-  head: ({ params, loaderData }) => {
-    const it = loaderData?.item;
-    const shopName = loaderData?.shop?.name ?? "Toko";
-    const title = it ? `${it.name} — ${shopName}` : "Produk tidak ditemukan";
   ssr: true,
   loader: ({ params }) =>
     getPublicCatalogItem({ data: { slug: params.slug, itemId: params.itemId } }),
