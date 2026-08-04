@@ -23,10 +23,10 @@ export const Route = createFileRoute("/produk")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.biz/produk" },
+      { property: "og:url", content: "https://mcmstorage.app/produk" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.biz/produk" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.app/produk" }],
     scripts: [
       {
         type: "application/ld+json",

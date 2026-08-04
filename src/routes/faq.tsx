@@ -51,10 +51,10 @@ export const Route = createFileRoute("/faq")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.biz/faq" },
+      { property: "og:url", content: "https://mcmstorage.app/faq" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.biz/faq" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.app/faq" }],
     scripts: [
       {
         type: "application/ld+json",

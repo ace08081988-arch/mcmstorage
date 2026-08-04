@@ -18,7 +18,7 @@ export const Route = createFileRoute("/terms")({
           "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh Mcm.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.biz/terms" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.app/terms" }],
   }),
   component: TermsPage,
 });

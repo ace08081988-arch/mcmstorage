@@ -32,12 +32,13 @@ import {
 export const Route = createFileRoute("/katalog/$slug/")({
   ssr: true,
   loader: ({ params }) => getPublicCatalog({ data: { slug: params.slug } }),
-  head: ({ loaderData }) => {
+  head: ({ params, loaderData }) => {
     const name = loaderData?.shop?.name ?? null;
     const title = name ? `${name} — Katalog produk` : "Katalog produk tidak tersedia";
     const desc =
       loaderData?.shop?.tagline?.trim() ||
       `Lihat daftar produk ${name ?? "toko"} lengkap dengan stok dan harga, lalu pesan langsung lewat WhatsApp.`;
+    const url = `https://mcmstorage.app/katalog/${params.slug}`;
     return {
       meta: [
         { title },
@@ -45,9 +46,25 @@ export const Route = createFileRoute("/katalog/$slug/")({
         { property: "og:title", content: title },
         { property: "og:description", content: desc },
         { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
         { name: "twitter:card", content: "summary" },
         ...(loaderData?.found ? [] : [{ name: "robots", content: "noindex" }]),
       ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: loaderData?.found
+        ? [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "CollectionPage",
+                name: title,
+                description: desc,
+                url,
+              }),
+            },
+          ]
+        : [],
     };
   },
   component: PublicKatalogPage,

@@ -24,10 +24,10 @@ export const Route = createFileRoute("/harga")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.biz/harga" },
+      { property: "og:url", content: "https://mcmstorage.app/harga" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.biz/harga" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.app/harga" }],
   }),
   component: HargaPage,
 });
