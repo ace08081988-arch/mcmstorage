@@ -26,6 +26,7 @@ import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
 import { DebtQuickActions } from "@/components/DebtQuickActions";
 import { resolveTabTarget } from "@/lib/focus-order";
+import { usePortalFocusStack, stableSelectorFor } from "@/lib/use-portal-focus-stack";
 import {
   describeEl,
   focusDebugLog,
@@ -327,21 +328,6 @@ export function confirmWaShare(input: {
     if (openRequest) openRequest(req);
     else queue.push(req);
   });
-}
-
-/**
- * Selector stabil untuk menemukan ulang elemen pemicu setelah re-render.
- * Urutan preferensi: data-testid → id → aria-label (+tag).
- */
-function stableSelectorFor(el: HTMLElement): string | null {
-  const esc = (v: string) =>
-    typeof CSS !== "undefined" && CSS.escape ? CSS.escape(v) : v.replace(/["\\]/g, "\\$&");
-  const testId = el.getAttribute("data-testid");
-  if (testId) return `[data-testid="${esc(testId)}"]`;
-  if (el.id) return `#${esc(el.id)}`;
-  const label = el.getAttribute("aria-label");
-  if (label) return `${el.tagName.toLowerCase()}[aria-label="${esc(label)}"]`;
-  return null;
 }
 
 export function WaPreviewHost() {
