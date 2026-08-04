@@ -170,11 +170,11 @@
   --muted-foreground: oklch(0.554 0.046 257.417);
   --accent: oklch(0.968 0.007 247.896);
   --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.52 0.22 27);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --ring: oklch(0.55 0.06 257);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -187,15 +187,15 @@
   --sidebar-accent: oklch(0.968 0.007 247.896);
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --sidebar-ring: oklch(0.55 0.06 257);
   /* Semantik status — dipakai lintas modul (Gudang, Ecer, Tugas, Chat). */
-  --success: oklch(0.62 0.15 152);
+  --success: oklch(0.52 0.14 152);
   --success-foreground: oklch(0.985 0.02 152);
   --success-soft: color-mix(in oklab, var(--success) 15%, var(--background));
   --warning: oklch(0.75 0.16 75);
   --warning-foreground: oklch(0.22 0.08 75);
   --warning-soft: color-mix(in oklab, var(--warning) 18%, var(--background));
-  --info: oklch(0.68 0.14 235);
+  --info: oklch(0.52 0.13 245);
   --info-foreground: oklch(0.985 0.02 235);
   --info-soft: color-mix(in oklab, var(--info) 15%, var(--background));
   /* WhatsApp #25D366 dalam oklch; `strong` dipakai untuk TEKS hijau di atas
@@ -228,11 +228,11 @@
   --muted-foreground: oklch(0.704 0.04 256.788);
   --accent: oklch(0.279 0.041 260.031);
   --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
+  --destructive: oklch(0.55 0.20 25);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --ring: oklch(0.72 0.04 258);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -245,7 +245,7 @@
   --sidebar-accent: oklch(0.279 0.041 260.031);
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-ring: oklch(0.72 0.04 258);
   --success: oklch(0.72 0.17 152);
   --success-foreground: oklch(0.15 0.05 152);
   --success-soft: color-mix(in oklab, var(--success) 22%, var(--background));
@@ -1197,7 +1197,7 @@ html[data-reduce-motion="on"] *::after {
   -webkit-tap-highlight-color: transparent;
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+    box-shadow: 0 0 0 var(--focus-ring-offset, 2px) var(--background), 0 0 0 calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px)) var(--ring);
   }
   &:active {
     transform: scale(0.95);
@@ -1213,7 +1213,7 @@ html[data-reduce-motion="on"] *::after {
   -webkit-tap-highlight-color: transparent;
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+    box-shadow: 0 0 0 var(--focus-ring-offset, 2px) var(--background), 0 0 0 calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px)) var(--ring);
   }
   &:active {
     transform: scale(0.97);
@@ -1232,11 +1232,11 @@ html[data-reduce-motion="on"] *::after {
   -webkit-tap-highlight-color: transparent;
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+    box-shadow: 0 0 0 var(--focus-ring-offset, 2px) var(--background), 0 0 0 calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px)) var(--ring);
   }
   &:active {
     transform: scale(0.98);
-    background-color: hsl(var(--muted) / 0.6);
+    background-color: color-mix(in oklab, var(--muted) 60%, transparent);
   }
 }
 @utility press-fab {
@@ -1249,11 +1249,11 @@ html[data-reduce-motion="on"] *::after {
   -webkit-tap-highlight-color: transparent;
   &:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+    box-shadow: 0 0 0 var(--focus-ring-offset, 2px) var(--background), 0 0 0 calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px)) var(--ring);
   }
   &:active {
     transform: scale(0.95);
-    box-shadow: 0 4px 10px -4px hsl(var(--foreground) / 0.25);
+    box-shadow: 0 4px 10px -4px color-mix(in oklab, var(--foreground) 25%, transparent);
   }
 }
 
@@ -1320,7 +1320,7 @@ html[data-reduce-motion="on"] *::after {
   [role="combobox"]
 ):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+  box-shadow: 0 0 0 var(--focus-ring-offset, 2px) var(--background), 0 0 0 calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px)) var(--ring);
 }
 
 /*
@@ -3520,3 +3520,72 @@ html[data-reduce-motion="on"] .skeleton-a11y {
 :is([class^="divide-slate-"],[class*=" divide-slate-"],[class^="divide-gray-"],[class*=" divide-gray-"],[class^="divide-zinc-"],[class*=" divide-zinc-"],[class^="divide-neutral-"],[class*=" divide-neutral-"]) > * + * { border-color: var(--border); }
 :is([class^="placeholder-"],[class*=" placeholder-"])::placeholder { color: var(--muted-foreground); }
 
+
+/* ==========================================================================
+ * Standarisasi focus ring & disabled state (aksesibilitas)
+ * --------------------------------------------------------------------------
+ * Satu sumber kebenaran untuk semua tombol, tautan, dan item menu:
+ *   - Ring fokus keyboard: 2px ring token `--ring` + 2px offset `--background`
+ *     sehingga terlihat di atas permukaan gelap maupun terang (kontras >= 3:1).
+ *   - `:focus-visible` saja (bukan `:focus`) agar tap/klik mouse tidak
+ *     memunculkan ring.
+ *   - Disabled: opacity seragam 0.5 (selaras dengan utility `disabled:opacity-50`) + cursor-not-allowed + tanpa efek tekan.
+ *     `aria-disabled` tetap fokusable (agar pembaca layar bisa menjelaskan
+ *     kenapa aksi tidak tersedia), hanya pointer yang dinonaktifkan.
+ * ========================================================================== */
+/* Catatan: sengaja TIDAK dibungkus @layer agar aturan ini menang atas
+ * utility Tailwind (mis. `focus-visible:ring-2`) yang selama ini memberi
+ * ring nyaris transparan pada beberapa permukaan. */
+:root {
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+:is(
+  button, a[href], summary, label[for], select, textarea, input,
+  [role="button"], [role="link"], [role="tab"], [role="menuitem"],
+  [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"],
+  [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--focus-ring-offset) var(--background),
+    0 0 0 calc(var(--focus-ring-offset) + var(--focus-ring-width)) var(--ring);
+}
+
+/* Permukaan sidebar memakai background & ring khusus agar tetap kontras. */
+[data-sidebar] :is(button, a[href], [role="menuitem"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  box-shadow:
+    0 0 0 var(--focus-ring-offset) var(--sidebar),
+    0 0 0 calc(var(--focus-ring-offset) + var(--focus-ring-width)) var(--sidebar-ring);
+}
+
+:is(button, select, textarea, input, fieldset):disabled,
+[aria-disabled="true"],
+[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none !important;
+  transform: none !important;
+  box-shadow: none;
+}
+
+:is(button, select, textarea, input):disabled {
+  pointer-events: none;
+}
+
+/* Disabled tetap harus terlihat saat difokuskan lewat keyboard. */
+[aria-disabled="true"]:focus-visible {
+  opacity: 0.7;
+  box-shadow:
+    0 0 0 var(--focus-ring-offset) var(--background),
+    0 0 0 calc(var(--focus-ring-offset) + var(--focus-ring-width)) var(--ring);
+}
+
+/* Mode kontras tinggi: ring lebih tebal & memakai foreground penuh. */
+html[data-high-contrast="on"] {
+  --focus-ring-width: 3px;
+  --ring: var(--foreground);
+  --sidebar-ring: var(--sidebar-foreground);
+}
