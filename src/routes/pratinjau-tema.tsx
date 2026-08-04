@@ -140,6 +140,15 @@ function ThemePreviewPage() {
 
   const tokens = useResolvedTokens(dark);
   const [tab, setTab] = useState<(typeof TABS)[number]["k"]>("stok");
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const filteredGroups = TOKEN_GROUPS.map((g) => ({
+    ...g,
+    tokens: g.tokens.filter((t) => {
+      const value = tokens[t] || "";
+      return t.toLowerCase().includes(q) || value.toLowerCase().includes(q);
+    }),
+  })).filter((g) => g.tokens.length > 0);
 
   return (
     <SidebarProvider>
