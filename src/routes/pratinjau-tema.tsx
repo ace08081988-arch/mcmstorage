@@ -261,16 +261,30 @@ function ThemePreviewPage() {
             </div>
           </Section>
 
-          <Section title="Badge & link">
+          <Section title="Badge & link" desc="Hover badge lalu tap ikon salin untuk menyalin nilai/className.">
             <div className="flex flex-wrap items-center gap-ms-2">
               {BADGE_VARIANTS.map((v) => (
-                <Badge key={v} variant={v}>
-                  {v}
-                </Badge>
+                <div
+                  key={v}
+                  className="group flex items-center gap-0.5 rounded-lg border border-transparent hover:border-border/50"
+                >
+                  <Badge variant={v}>{v}</Badge>
+                  <CopyButton value={v} label={`varian ${v}`} className="opacity-0 group-hover:opacity-60" />
+                </div>
               ))}
-              <Badge className="border-success/30 bg-success/10 text-success">success</Badge>
-              <Badge className="border-warning/30 bg-warning/10 text-warning">warning</Badge>
-              <Badge className="border-info/30 bg-info/10 text-info">info</Badge>
+              {[
+                { label: "success", className: "border-success/30 bg-success/10 text-success" },
+                { label: "warning", className: "border-warning/30 bg-warning/10 text-warning" },
+                { label: "info", className: "border-info/30 bg-info/10 text-info" },
+              ].map((b) => (
+                <div
+                  key={b.label}
+                  className="group flex items-center gap-0.5 rounded-lg border border-transparent hover:border-border/50"
+                >
+                  <Badge className={b.className}>{b.label}</Badge>
+                  <CopyButton value={b.className} label={`class ${b.label}`} className="opacity-0 group-hover:opacity-60" />
+                </div>
+              ))}
             </div>
             <div className="mt-ms-3 flex flex-wrap items-center gap-ms-4 text-ms-sm">
               <a href="#top" className="text-primary underline-offset-4 hover:underline">
