@@ -21,6 +21,31 @@ export type FocusOrderOptions = {
   skip?: (el: HTMLElement) => boolean;
 };
 
+/** Elemen dianggap tampil: punya offsetParent, punya box, atau sedang fokus. */
+export function isVisibleNow(el: HTMLElement): boolean {
+  const doc = el.ownerDocument;
+  if (el === doc.activeElement) return true;
+  if (el.offsetParent !== null) return true;
+  return el.getClientRects().length > 0;
+}
+
+/**
+ * Apakah elemen ini BENAR-BENAR bisa menerima fokus SEKARANG: masih di DOM,
+ * tidak disabled (termasuk aria-disabled), tidak tersembunyi (hidden /
+ * aria-hidden / inert / display:none), dan bukan tabindex="-1" murni.
+ * Dipakai saat memulihkan fokus setelah layer portal ditutup — pemicu lama
+ * bisa saja sudah dinonaktifkan atau disembunyikan oleh re-render.
+ */
+export function isFocusableNow(el: HTMLElement | null | undefined): el is HTMLElement {
+  if (!el || !el.isConnected) return false;
+  if (typeof (el as HTMLElement).focus !== "function") return false;
+  if ((el as HTMLButtonElement).disabled) return false;
+  if (el.getAttribute("aria-disabled") === "true") return false;
+  if (el.hidden) return false;
+  if (el.closest('[hidden],[aria-hidden="true"],[inert]')) return false;
+  return isVisibleNow(el);
+}
+
 /** Semua elemen fokusable di dalam `root`, dalam urutan DOM. */
 export function focusablesInOrder(
   root: HTMLElement,
@@ -29,9 +54,13 @@ export function focusablesInOrder(
   const doc = root.ownerDocument;
   const isVisible =
     opts.isVisible ??
-    ((el: HTMLElement) => el.offsetParent !== null || el === doc.activeElement);
+    ((el: HTMLElement) => el === doc.activeElement || isVisibleNow(el));
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (el) => isVisible(el) && !(opts.skip?.(el) ?? false),
+    (el) =>
+      el.getAttribute("aria-disabled") !== "true" &&
+      !el.hidden &&
+      isVisible(el) &&
+      !(opts.skip?.(el) ?? false),
   );
 }
 
