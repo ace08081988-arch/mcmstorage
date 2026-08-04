@@ -22,7 +22,36 @@ async function open(page: Page) {
   await page.waitForSelector("[data-theme-preview]");
   await page.waitForSelector("[data-token]");
   await page.evaluate(() => document.fonts?.ready);
+  // Tunggu hidrasi React: sebelum ini klik/ketik tidak mengubah state.
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() =>
+          Boolean(
+            document.querySelector("[data-theme-preview]") &&
+              !document.documentElement.hasAttribute("data-hydrating"),
+          ),
+        ),
+      { timeout: 15_000 },
+    )
+    .toBe(true);
   return errors;
+}
+
+/** Klik ulang sampai efek state React terlihat (anti race hidrasi). */
+async function clickUntil(
+  page: Page,
+  click: () => Promise<void>,
+  done: () => Promise<boolean>,
+  attempts = 10,
+) {
+  for (let i = 0; i < attempts; i += 1) {
+    await click();
+    await page.waitForTimeout(300);
+    if (await done()) return;
+  }
+  throw new Error("aksi tidak pernah mengubah state setelah beberapa percobaan");
 }
 
 test("semua seksi variasi ter-render tanpa error", async ({ page }) => {
@@ -73,8 +102,11 @@ test("pill tabs bisa dipindah dan sidebar aktif tetap satu", async ({ page }) =>
   await open(page);
   const tabs = page.getByRole("tablist", { name: "Tab pratinjau tema" }).getByRole("tab");
   const last = tabs.last();
-  await last.click();
-  await expect(last).toHaveAttribute("aria-selected", "true");
+  await clickUntil(
+    page,
+    () => last.click(),
+    async () => (await last.getAttribute("aria-selected")) === "true",
+  );
   expect(await page.locator('[data-menu-state="active"]').count()).toBe(1);
 });
 
@@ -82,10 +114,11 @@ test("toggle gelap merender ulang semua variasi", async ({ page }) => {
   const errors = await open(page);
   const before = await page.locator("[data-token]").count();
 
-  await page.getByRole("button", { name: /Gelap|Terang/ }).click();
-  await expect
-    .poll(async () => page.evaluate(() => document.documentElement.classList.contains("dark")))
-    .toBe(true);
+  await clickUntil(
+    page,
+    () => page.getByRole("button", { name: /Gelap|Terang/ }).click(),
+    () => page.evaluate(() => document.documentElement.classList.contains("dark")),
+  );
   await page.waitForTimeout(200);
 
   expect(await page.locator("[data-token]").count()).toBe(before);
@@ -102,13 +135,23 @@ test("toggle gelap merender ulang semua variasi", async ({ page }) => {
 test("pencarian token memfilter dan tidak merusak seksi lain", async ({ page }) => {
   await open(page);
   const all = await page.locator("[data-token]").count();
-  await page.getByLabel("Cari token warna").fill("success");
-  await expect.poll(async () => page.locator("[data-token]").count()).toBeLessThan(all);
+  const search = page.getByLabel("Cari token warna");
+  await clickUntil(
+    page,
+    async () => {
+      await search.fill("");
+      await search.fill("success");
+    },
+    async () => (await page.locator("[data-token]").count()) < all,
+  );
   expect(await page.locator("[data-token]").count()).toBeGreaterThan(0);
 
   await expect(page.getByRole("link", { name: "Link primary" })).toBeVisible();
   expect(await page.locator("[data-menu-item]").count()).toBeGreaterThan(1);
 
-  await page.getByLabel("Hapus pencarian").click();
-  await expect.poll(async () => page.locator("[data-token]").count()).toBe(all);
+  await clickUntil(
+    page,
+    () => page.getByLabel("Hapus pencarian").click(),
+    async () => (await page.locator("[data-token]").count()) === all,
+  );
 });
