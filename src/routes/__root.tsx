@@ -353,6 +353,14 @@ function RootShell({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
         <HeadContent />
         <meta name="google" content="notranslate" />
+        {/* Verifikasi Search Console untuk domain mcmstorage.app.
+            Ditulis langsung di <head> agar tidak menimpa token
+            mcmstorage.biz yang dipasang lewat head() (meta di-dedupe
+            berdasarkan name). */}
+        <meta
+          name="google-site-verification"
+          content="iwAC6wE02G8EuSHBnL0KyePhsdySbjZn3k2OPLxjDhk"
+        />
       </head>
       <body suppressHydrationWarning>
         {children}
