@@ -38,4 +38,4 @@ Disallow: /.mcp/
 Disallow: /.well-known/
 Disallow: /.lovable/
 
-Sitemap: https://mcmstorage.biz/sitemap.xml
+Sitemap: https://mcmstorage.app/sitemap.xml

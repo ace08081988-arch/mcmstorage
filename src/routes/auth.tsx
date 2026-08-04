@@ -80,10 +80,10 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: "Masuk atau Daftar — MCM Storage" },
       { property: "og:description", content: "Masuk ke akun MCM Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.biz/auth" },
+      { property: "og:url", content: "https://mcmstorage.app/auth" },
     ],
     links: [
-      { rel: "canonical", href: "https://mcmstorage.biz/auth" },
+      { rel: "canonical", href: "https://mcmstorage.app/auth" },
       { rel: "preload", as: "image", href: "/icon-192.png", fetchPriority: "high" },
     ],
   }),

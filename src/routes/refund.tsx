@@ -18,7 +18,7 @@ export const Route = createFileRoute("/refund")({
           "Status kebijakan pengembalian dana MCM Storage: aplikasi gratis, tanpa pembayaran daring.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.biz/refund" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.app/refund" }],
   }),
   component: RefundPage,
 });

@@ -17,9 +17,9 @@ export const Route = createFileRoute("/trust")({
         content:
           "Bagaimana MCM Storage menjaga data pesanan, pemasok, dan akun pengguna.",
       },
-      { property: "og:url", content: "https://mcmstorage.biz/trust" },
+      { property: "og:url", content: "https://mcmstorage.app/trust" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.biz/trust" }],
+    links: [{ rel: "canonical", href: "https://mcmstorage.app/trust" }],
   }),
   component: TrustPage,
 });
