@@ -9,8 +9,6 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 
-const BUTTON_VARIANTS = 0; // dihitung dinamis dari DOM
-
 async function open(page: Page) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -69,7 +67,6 @@ test("semua seksi variasi ter-render tanpa error", async ({ page }) => {
   expect(await tablist.getByRole("tab").count()).toBeGreaterThan(1);
 
   expect(errors, `console/page errors: ${errors.join("\n")}`).toEqual([]);
-  expect(BUTTON_VARIANTS).toBe(0);
 });
 
 test("pill tabs bisa dipindah dan sidebar aktif tetap satu", async ({ page }) => {
