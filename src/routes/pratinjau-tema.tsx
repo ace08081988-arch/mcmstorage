@@ -12,6 +12,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Home, Warehouse, PackageSearch, MessageCircle, Boxes, Tags, Palette, Sun, Moon,
+  Search, Copy, Check, X,
 } from "lucide-react";
 import {
   SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton,
@@ -22,6 +23,8 @@ import {
 import { PillsTabs } from "@/components/shell/PillsTabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/pratinjau-tema")({
   head: () => ({
@@ -94,6 +97,31 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
   );
 }
 
+function CopyButton({ value, label, className }: { value: string; label?: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handle = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast.success(label ? `${label} disalin` : "Disalin ke clipboard");
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Gagal menyalin");
+    }
+  };
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={`h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground ${className ?? ""}`}
+      onClick={handle}
+      aria-label={`Salin ${label || value}`}
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+    </Button>
+  );
+}
+
 function ThemePreviewPage() {
   const [dark, setDark] = useState(false);
   useEffect(() => {
@@ -112,6 +140,15 @@ function ThemePreviewPage() {
 
   const tokens = useResolvedTokens(dark);
   const [tab, setTab] = useState<(typeof TABS)[number]["k"]>("stok");
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const filteredGroups = TOKEN_GROUPS.map((g) => ({
+    ...g,
+    tokens: g.tokens.filter((t) => {
+      const value = tokens[t] || "";
+      return t.toLowerCase().includes(q) || value.toLowerCase().includes(q);
+    }),
+  })).filter((g) => g.tokens.length > 0);
 
   return (
     <SidebarProvider>
@@ -138,26 +175,68 @@ function ThemePreviewPage() {
             </Button>
           </header>
 
-          {TOKEN_GROUPS.map((group) => (
+          <Section title="Panel pencarian token" desc="Ketik nama token atau nilai warna, lalu tap tombol salin.">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari token (contoh: success, wa, #3b82f6)..."
+                className="pl-9 pr-9"
+                aria-label="Cari token warna"
+              />
+              {query ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setQuery("")}
+                  aria-label="Hapus pencarian"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              ) : null}
+            </div>
+            <p className="mt-2 text-ms-2xs text-muted-foreground">
+              {q
+                ? `${filteredGroups.reduce((n, g) => n + g.tokens.length, 0)} token cocok`
+                : `${Object.keys(tokens).length} token tersedia`}
+            </p>
+          </Section>
+
+          {filteredGroups.length === 0 && q ? (
+            <Section title="Hasil pencarian">
+              <p className="text-ms-sm text-muted-foreground">Tidak ada token yang cocok dengan “{query}”.</p>
+            </Section>
+          ) : null}
+
+          {filteredGroups.map((group) => (
             <Section key={group.title} title={`Token — ${group.title}`}>
-              <ul className="grid grid-cols-2 gap-ms-2 sm:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2 lg:grid-cols-3">
                 {group.tokens.map((t) => (
                   <li
                     key={t}
                     data-token={t}
-                    className="flex items-center gap-ms-2 rounded-xl border border-border/50 bg-background/60 p-ms-2"
+                    className="group flex items-center justify-between gap-ms-2 rounded-xl border border-border/50 bg-background/60 p-ms-2"
                   >
-                    <span
-                      aria-hidden
-                      className="h-9 w-9 shrink-0 rounded-lg border border-border/60"
-                      style={{ background: `var(--${t})` }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate text-ms-xs font-medium">--{t}</span>
-                      <span className="block truncate text-ms-2xs text-muted-foreground">
-                        {tokens[t] || "—"}
+                    <div className="flex min-w-0 items-center gap-ms-2">
+                      <span
+                        aria-hidden
+                        className="h-9 w-9 shrink-0 rounded-lg border border-border/60"
+                        style={{ background: `var(--${t})` }}
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-ms-xs font-medium">--{t}</span>
+                        <span className="block truncate text-ms-2xs text-muted-foreground">
+                          {tokens[t] || "—"}
+                        </span>
                       </span>
-                    </span>
+                    </div>
+                    <CopyButton
+                      value={`--${t}: ${tokens[t] || ""}`}
+                      label={t}
+                      className="opacity-60 group-hover:opacity-100"
+                    />
                   </li>
                 ))}
               </ul>
@@ -182,16 +261,30 @@ function ThemePreviewPage() {
             </div>
           </Section>
 
-          <Section title="Badge & link">
+          <Section title="Badge & link" desc="Hover badge lalu tap ikon salin untuk menyalin nilai/className.">
             <div className="flex flex-wrap items-center gap-ms-2">
               {BADGE_VARIANTS.map((v) => (
-                <Badge key={v} variant={v}>
-                  {v}
-                </Badge>
+                <div
+                  key={v}
+                  className="group flex items-center gap-0.5 rounded-lg border border-transparent hover:border-border/50"
+                >
+                  <Badge variant={v}>{v}</Badge>
+                  <CopyButton value={v} label={`varian ${v}`} className="opacity-0 group-hover:opacity-60" />
+                </div>
               ))}
-              <Badge className="border-success/30 bg-success/10 text-success">success</Badge>
-              <Badge className="border-warning/30 bg-warning/10 text-warning">warning</Badge>
-              <Badge className="border-info/30 bg-info/10 text-info">info</Badge>
+              {[
+                { label: "success", className: "border-success/30 bg-success/10 text-success" },
+                { label: "warning", className: "border-warning/30 bg-warning/10 text-warning" },
+                { label: "info", className: "border-info/30 bg-info/10 text-info" },
+              ].map((b) => (
+                <div
+                  key={b.label}
+                  className="group flex items-center gap-0.5 rounded-lg border border-transparent hover:border-border/50"
+                >
+                  <Badge className={b.className}>{b.label}</Badge>
+                  <CopyButton value={b.className} label={`class ${b.label}`} className="opacity-0 group-hover:opacity-60" />
+                </div>
+              ))}
             </div>
             <div className="mt-ms-3 flex flex-wrap items-center gap-ms-4 text-ms-sm">
               <a href="#top" className="text-primary underline-offset-4 hover:underline">
