@@ -440,6 +440,10 @@ export function WaPreviewHost() {
       const target = e.target as Node | null;
       if (!node || !target) return;
       if (node.contains(target)) return;
+      // Popover/select/tooltip Radix dirender di portal luar dialog — itu
+      // masih "di dalam" konteks dialog secara logis, jangan direbut.
+      const el = target instanceof Element ? target : (target.parentElement ?? null);
+      if (el?.closest('[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]')) return;
       refocusInside();
     };
     document.addEventListener("focusin", onFocusIn, true);
