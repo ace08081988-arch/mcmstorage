@@ -81,7 +81,11 @@ function FocusPortalStackHarness() {
   const selReady = useLazy(selOpen);
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-ms-3 px-ms-4 py-ms-6">
+    <div
+      data-testid="harness-root"
+      data-open={open ? "1" : "0"}
+      className="mx-auto flex max-w-md flex-col gap-ms-3 px-ms-4 py-ms-6"
+    >
       <h1 className="text-ms-lg font-semibold">Harness: portal bertumpuk</h1>
       <Button data-testid="base-trigger" variant="outline" onClick={() => setOpen(true)}>
         Buka dialog
