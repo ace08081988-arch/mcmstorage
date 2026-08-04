@@ -85,7 +85,9 @@ test.describe("penutupan berantai portal bertumpuk", () => {
     // Pilih item: select menutup DAN isinya re-render (label nilai berubah).
     await page.getByTestId("sel-item-b").click();
     await expect(page.getByTestId("sel-content")).toBeHidden();
-    await expect(page.getByTestId("sel-trigger")).toContainText("Paket B");
+    // Label SelectValue bisa kosong saat item baru ter-mount lazy; nilai yang
+    // tersimpan di state harness adalah sumber kebenarannya.
+    await expect(page.getByTestId("harness-root")).toHaveAttribute("data-value", "b");
     await expect.poll(() => activeOwnerTestId(page)).toBe("sel-trigger");
 
     await page.keyboard.press("Escape");

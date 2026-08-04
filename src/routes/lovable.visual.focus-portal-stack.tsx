@@ -63,6 +63,7 @@ function FocusPortalStackHarness() {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null);
+  const baseTriggerRef = useRef<HTMLButtonElement | null>(null);
   const layerTriggerRef = useRef<HTMLElement | null>(null);
   const layerTriggerAnchorRef = useRef<{
     selector: string | null;
@@ -89,11 +90,17 @@ function FocusPortalStackHarness() {
     <div
       data-testid="harness-root"
       data-open={open ? "1" : "0"}
+      data-value={value}
       data-hydrated={hydrated ? "1" : "0"}
       className="mx-auto flex max-w-md flex-col gap-ms-3 px-ms-4 py-ms-6"
     >
       <h1 className="text-ms-lg font-semibold">Harness: portal bertumpuk</h1>
-      <Button data-testid="base-trigger" variant="outline" onClick={() => setOpen(true)}>
+      <Button
+        ref={baseTriggerRef}
+        data-testid="base-trigger"
+        variant="outline"
+        onClick={() => setOpen(true)}
+      >
         Buka dialog
       </Button>
 
@@ -102,6 +109,12 @@ function FocusPortalStackHarness() {
           data-testid="stack-dialog"
           ref={(node: HTMLDivElement | null) => { contentRef.current = node; setContentEl(node); }}
           onOpenAutoFocus={(e) => { e.preventDefault(); scrollRef.current?.focus(); }}
+          onCloseAutoFocus={(e) => {
+            // Sama seperti dialog pratinjau WA: fokus dikembalikan eksplisit ke
+            // pemicu dialog agar tidak terdampar di <body> setelah layer portal.
+            e.preventDefault();
+            baseTriggerRef.current?.focus();
+          }}
         >
           <DialogHeader>
             <DialogTitle>Layer bertumpuk</DialogTitle>
