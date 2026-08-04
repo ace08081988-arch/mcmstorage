@@ -307,9 +307,38 @@ export function WaPreviewHost() {
   const [retrying, setRetrying] = useState(false);
   /** Counter untuk memaksa re-render setelah retryMissing memutasi current.files. */
   const [fileRev, setFileRev] = useState(0);
+  /**
+   * Elemen yang memegang fokus tepat sebelum dialog dibuka (mis. tombol
+   * "Kirim WA"). Dialog ini dibuka secara imperatif — tanpa <DialogTrigger>
+   * — sehingga pemulihan fokus bawaan Radix tidak selalu menemukan pemicu
+   * yang benar. Kita simpan sendiri lalu kembalikan saat dialog tertutup /
+   * dibatalkan, supaya urutan Tab berlanjut dari titik semula.
+   */
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  const restoreTriggerFocus = useCallback(() => {
+    const el = triggerRef.current;
+    triggerRef.current = null;
+    if (!el) return;
+    // Elemen bisa sudah dilepas dari DOM (list re-render setelah kirim).
+    if (!document.contains(el)) return;
+    // Tunggu satu frame: Radix baru melepas overlay & aria-hidden setelah
+    // animasi tutup; fokus sebelum itu bisa langsung dibuang lagi.
+    requestAnimationFrame(() => {
+      try { el.focus({ preventScroll: true }); } catch { /* ignore */ }
+    });
+  }, []);
 
   useEffect(() => {
+    const capture = () => {
+      const active = document.activeElement as HTMLElement | null;
+      triggerRef.current =
+        active && active !== document.body && typeof active.focus === "function"
+          ? active
+          : null;
+    };
     openRequest = (req) => {
+      capture();
       setSkip(false);
       setEditing(false);
       setDraft(req.text);
@@ -320,6 +349,7 @@ export function WaPreviewHost() {
     };
     while (queue.length) {
       const req = queue.shift()!;
+      capture();
       setSkip(false);
       setEditing(false);
       setDraft(req.text);
@@ -425,6 +455,13 @@ export function WaPreviewHost() {
         onOpenAutoFocus={(e) => {
           e.preventDefault();
           scrollRef.current?.focus();
+        }}
+        // Saat dialog tertutup (kirim, batal, ESC, atau klik backdrop) fokus
+        // dikembalikan ke elemen pemicu asli, bukan ke <body> — sehingga
+        // Tab berikutnya melanjutkan urutan dari tombol tersebut.
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          restoreTriggerFocus();
         }}
         // Perilaku tutup dibuat eksplisit & konsisten:
         // - ESC: saat mode edit aktif, ESC pertama keluar dari editor (draft
