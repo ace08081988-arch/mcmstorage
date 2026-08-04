@@ -770,6 +770,65 @@ export function WaPreviewHost() {
       }, 50);
     };
 
+    /**
+     * Kembalikan fokus ke pemicu satu layer yang baru saja ditutup. Pemicunya
+     * boleh berada di dalam dialog ATAU di dalam layer induk yang masih
+     * terbuka (kasus popover → select).
+     */
+    const restoreLayerTrigger = (entry: LayerEntry) => {
+      const node = contentRef.current;
+      const t = entry.trigger;
+      const stillReachable =
+        !!t &&
+        document.contains(t) &&
+        (!!node?.contains(t) ||
+          layerStack.some((e) => document.contains(e.layer) && e.layer.contains(t)));
+      if (stillReachable && t) {
+        lastFocused = t;
+        layerTriggerRef.current = node?.contains(t) ? t : layerTriggerRef.current;
+        try {
+          t.focus({ preventScroll: true });
+          return true;
+        } catch {
+          /* ignore */
+        }
+      }
+      // Pemicunya ter-unmount: pakai jejak posisinya untuk cari tetangga
+      // terdekat di dalam dialog lewat jalur pemulihan biasa.
+      if (entry.anchor) layerTriggerAnchorRef.current = entry.anchor;
+      return false;
+    };
+
+    /**
+     * Buang layer yang sudah lepas dari DOM, dari yang PALING ATAS ke bawah,
+     * sambil memulihkan fokus ke pemicu tiap layer sesuai urutan penutupannya.
+     */
+    const pruneClosedLayers = () => {
+      let closedAny = false;
+      let restored = false;
+      while (layerStack.length > 0) {
+        const top = layerStack[layerStack.length - 1]!;
+        if (document.contains(top.layer)) break;
+        layerStack.pop();
+        closedAny = true;
+        restored = restoreLayerTrigger(top);
+      }
+      if (layerStack.length === 0) {
+        layerObserver?.disconnect();
+        layerObserver = null;
+      }
+      // Kalau layer terluar sudah tertutup tapi fokusnya belum mendarat,
+      // serahkan ke penjaga fokus dialog (nearestFallback).
+      if (closedAny && !restored && layerStack.length === 0) scheduleRefocus();
+    };
+
+    /** Satu observer saja untuk seluruh tumpukan layer. */
+    const ensureLayerObserver = () => {
+      if (layerObserver) return;
+      layerObserver = new MutationObserver(() => pruneClosedLayers());
+      layerObserver.observe(document.body, { childList: true, subtree: true });
+    };
+
     const observer = new MutationObserver((records) => {
       // Layer portal bisa ditutup bersamaan dengan mutasi ini.
       pruneClosedLayers();
