@@ -155,6 +155,11 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { CompactModeToggle } from "@/components/CompactModeToggle";
+import {
+  SIDEBAR_NAV_ITEM_CLASS,
+  sidebarNavIconClass,
+  sidebarNavLabelClass,
+} from "@/components/shell/menu-item-classes";
 import { ReduceMotionToggle } from "@/components/ReduceMotionToggle";
 import { useConversations } from "@/lib/chat";
 import { useOrgName } from "@/lib/org-name";
