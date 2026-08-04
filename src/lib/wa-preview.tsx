@@ -698,6 +698,14 @@ export function WaPreviewHost() {
           if (e.key !== "Tab") return;
           const root = contentRef.current;
           if (!root) return;
+          const active0 = document.activeElement as HTMLElement | null;
+          // Popover/select/menu Radix di portal mengelola Tab-nya sendiri —
+          // jangan gulung fokus balik ke dialog selagi layer itu terbuka.
+          if (
+            active0 &&
+            !root.contains(active0) &&
+            active0.closest('[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]')
+          ) return;
           const focusables = Array.from(
             root.querySelectorAll<HTMLElement>(
               'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
