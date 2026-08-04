@@ -449,6 +449,11 @@ export function WaPreviewHost() {
       <DialogContent
         ref={contentRef}
         data-testid="wa-preview-dialog"
+        // Radix sudah menyetel role="dialog" + aria-labelledby/aria-describedby
+        // (dari DialogTitle & DialogDescription di bawah). aria-modal ditulis
+        // eksplisit agar pembaca layar di Android WebView tetap mengunci
+        // pembacaan ke dalam dialog walau overlay tidak terdeteksi modal.
+        aria-modal="true"
         // Fokus awal diarahkan ke area konten (bukan tombol kirim) supaya
         // pembaca layar membacakan judul + deskripsi lebih dulu dan pengguna
         // tidak sengaja mengirim dengan Enter. Trap fokus & Esc ditangani Radix.
@@ -615,9 +620,19 @@ export function WaPreviewHost() {
             hasUrl={!!url}
           />
 
+          {/* Radix Checkbox dirender sebagai <button role="checkbox">, sehingga
+              pembungkus <label> TIDAK memberi nama aksesibel. Nama diambil
+              eksplisit dari teks lewat aria-labelledby. */}
           <label className="flex items-start gap-ms-2 rounded-lg border p-ms-2 text-ms-2xs leading-snug text-muted-foreground sm:p-ms-3 sm:text-ms-xs">
-            <Checkbox checked={skip} onCheckedChange={(c) => setSkip(c === true)} className="mt-0.5" />
-            <span>Jangan tampilkan pratinjau ini lagi (bisa diaktifkan kembali dari Pengaturan)</span>
+            <Checkbox
+              checked={skip}
+              onCheckedChange={(c) => setSkip(c === true)}
+              aria-labelledby="wa-preview-skip-label"
+              className="mt-0.5"
+            />
+            <span id="wa-preview-skip-label">
+              Jangan tampilkan pratinjau ini lagi (bisa diaktifkan kembali dari Pengaturan)
+            </span>
           </label>
         </div>
 
