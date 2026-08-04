@@ -1,4 +1,7 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+
+/** useLayoutEffect aman-SSR (di server jatuh ke useEffect, tanpa warning). */
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import {
   Dialog,
   DialogContent,
