@@ -97,6 +97,31 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
   );
 }
 
+function CopyButton({ value, label, className }: { value: string; label?: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handle = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast.success(label ? `${label} disalin` : "Disalin ke clipboard");
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Gagal menyalin");
+    }
+  };
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={`h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground ${className ?? ""}`}
+      onClick={handle}
+      aria-label={`Salin ${label || value}`}
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+    </Button>
+  );
+}
+
 function ThemePreviewPage() {
   const [dark, setDark] = useState(false);
   useEffect(() => {
