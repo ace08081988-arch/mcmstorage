@@ -1,4 +1,7 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+
+/** useLayoutEffect aman-SSR (di server jatuh ke useEffect, tanpa warning). */
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 import {
   Dialog,
   DialogContent,
@@ -387,6 +390,58 @@ export function WaPreviewHost() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * Urutan tab saat berpindah mode edit ⇄ baca.
+   *
+   * Blok "Teks pesan" menukar dua elemen fokusable yang menempati posisi tab
+   * yang sama: <Textarea> (mode edit) dan <pre role="button"> (mode baca).
+   * Kalau pergantian dibiarkan apa adanya, elemen lama dilepas dari DOM,
+   * fokus jatuh ke <body>, lalu penjaga fokus menariknya ke awal dialog —
+   * Tab berikutnya terasa "meloncat" ke atas.
+   *
+   * Solusinya: kita catat dari mana mode edit dimasuki (`editReturnRef`) dan
+   * ke mana fokus harus mendarat setelah re-render (`pendingFocusRef`), lalu
+   * memindahkannya di useLayoutEffect — sebelum browser sempat memicu blur ke
+   * <body>. Hasilnya posisi tab tetap di blok teks yang sama.
+   */
+  const preTextRef = useRef<HTMLPreElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const editToggleRef = useRef<HTMLButtonElement | null>(null);
+  const editReturnRef = useRef<"pre" | "button">("pre");
+  const pendingFocusRef = useRef<"pre" | "button" | "textarea" | null>(null);
+
+  /** Masuk mode edit; `from` menentukan tempat fokus kembali saat keluar. */
+  const enterEditing = useCallback((from: "pre" | "button") => {
+    editReturnRef.current = from;
+    pendingFocusRef.current = "textarea";
+    setEditing(true);
+  }, []);
+
+  /** Keluar mode edit dan kembalikan fokus ke pemicu awalnya. */
+  const exitEditing = useCallback(() => {
+    pendingFocusRef.current = editReturnRef.current;
+    setEditing(false);
+  }, []);
+
+  useIsoLayoutEffect(() => {
+    const want = pendingFocusRef.current;
+    if (!want) return;
+    pendingFocusRef.current = null;
+    const el =
+      want === "textarea"
+        ? textareaRef.current
+        : want === "button"
+          ? editToggleRef.current
+          : preTextRef.current;
+    if (!el || !document.contains(el)) return;
+    try { el.focus({ preventScroll: true }); } catch { /* ignore */ }
+    if (want === "textarea" && textareaRef.current) {
+      // Kursor di akhir teks, bukan menyeleksi semuanya.
+      const len = textareaRef.current.value.length;
+      try { textareaRef.current.setSelectionRange(len, len); } catch { /* ignore */ }
+    }
+  }, [editing]);
+
   const url = current?.url;
   const photoCount = previews.length;
   const expected = current?.expectedCount ?? photoCount;
@@ -570,8 +625,10 @@ export function WaPreviewHost() {
         onEscapeKeyDown={(e) => {
           if (editing) {
             e.preventDefault();
-            setEditing(false);
-            scrollRef.current?.focus();
+            // ESC pertama hanya keluar dari editor; fokus mendarat kembali di
+            // elemen pemicunya (teks pesan / tombol Edit), bukan ke awal
+            // dialog — jadi Tab berikutnya melanjutkan dari posisi yang sama.
+            exitEditing();
             return;
           }
           e.preventDefault();
@@ -667,33 +724,50 @@ export function WaPreviewHost() {
                     <RotateCcw className="mr-1 h-3 w-3" /> Reset
                   </Button>
                 ) : null}
-                <Button type="button" variant="ghost" size="sm" className="h-7 px-ms-2 text-ms-2xs" onClick={() => setEditing((v) => !v)}>
+                <Button
+                  ref={editToggleRef}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-ms-2 text-ms-2xs"
+                  aria-pressed={editing}
+                  onClick={() => (editing ? exitEditing() : enterEditing("button"))}
+                >
                   <Pencil className="mr-1 h-3 w-3" /> {editing ? "Selesai" : "Edit"}
                 </Button>
               </div>
             </div>
             {editing ? (
               <Textarea
+                ref={textareaRef}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={8}
                 aria-label="Teks pesan yang akan dikirim"
                 className="min-h-[8rem] max-h-[45svh] resize-y bg-background font-sans text-ms-xs leading-relaxed"
                 placeholder="Tulis pesan untuk MCM…"
-                autoFocus
+                onKeyDown={(e) => {
+                  // Ctrl/Cmd+Enter = selesai mengedit, sama seperti tombol
+                  // "Selesai" — tanpa perlu men-Tab keluar dari textarea.
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    exitEditing();
+                  }
+                }}
               />
             ) : (
               <pre
+                ref={preTextRef}
                 data-testid="wa-preview-text"
                 role="button"
                 tabIndex={0}
                 aria-label="Teks pesan — aktifkan untuk mengedit"
                 className="wa-message-text max-h-[38svh] cursor-text overflow-auto overscroll-contain rounded-md bg-background p-ms-2 font-sans text-ms-xs leading-relaxed text-foreground"
-                onClick={() => setEditing(true)}
+                onClick={() => enterEditing("pre")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setEditing(true);
+                    enterEditing("pre");
                   }
                 }}
                 title="Klik untuk mengedit"
