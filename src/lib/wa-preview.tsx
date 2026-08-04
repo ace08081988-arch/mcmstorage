@@ -476,11 +476,21 @@ export function WaPreviewHost() {
 
     let raf = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    /** Layer Radix (popover/select/menu) yang sedang terbuka di portal luar. */
+    let portalLayer: Element | null = null;
+    let layerObserver: MutationObserver | null = null;
+
+    const PORTAL_LAYER_SELECTOR =
+      '[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]';
+
+    const portalLayerOpen = () => !!portalLayer && document.contains(portalLayer);
 
     /** Cek super-murah: apakah fokus sudah hilang dari dialog? */
     const focusEscaped = () => {
       const node = contentRef.current;
       if (!node || !document.contains(node)) return false;
+      // Selama layer portal masih terbuka, fokus di dalamnya SAH.
+      if (portalLayerOpen()) return false;
       const active = document.activeElement as HTMLElement | null;
       if (!active || active === document.body) return true;
       return !node.contains(active);
@@ -489,8 +499,18 @@ export function WaPreviewHost() {
     const runRefocus = () => {
         const node = contentRef.current;
         if (!node || !document.contains(node)) return;
+        if (portalLayerOpen()) return;
         const active = document.activeElement as HTMLElement | null;
         if (active && active !== document.body && node.contains(active)) return;
+        // Prioritas 1: elemen pemicu popover/select yang tadi memegang fokus
+        // di dalam dialog (mis. tombol "Pilih kontak"). Radix biasanya sudah
+        // mengembalikannya sendiri, tapi di Android WebView sering meleset ke
+        // <body> — di situ kita pulihkan manual.
+        const back = layerTriggerRef.current;
+        if (back && document.contains(back) && node.contains(back)) {
+          layerTriggerRef.current = null;
+          try { back.focus({ preventScroll: true }); return; } catch { /* ignore */ }
+        }
         // Prioritaskan area konten (tabIndex -1) agar pembaca layar tetap
         // berada dalam konteks dialog tanpa memicu tombol aksi.
         const target =
@@ -532,11 +552,33 @@ export function WaPreviewHost() {
       const node = contentRef.current;
       const target = e.target as Node | null;
       if (!node || !target) return;
-      if (node.contains(target)) return;
+      if (node.contains(target)) {
+        // Catat kandidat pemicu: elemen interaktif terakhir di dalam dialog.
+        const el = target instanceof HTMLElement ? target : null;
+        if (el && typeof el.focus === "function" && el !== scrollRef.current) {
+          layerTriggerRef.current = el;
+        }
+        return;
+      }
       // Popover/select/tooltip Radix dirender di portal luar dialog — itu
       // masih "di dalam" konteks dialog secara logis, jangan direbut.
       const el = target instanceof Element ? target : (target.parentElement ?? null);
-      if (el?.closest('[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]')) return;
+      const layer = el?.closest(PORTAL_LAYER_SELECTOR) ?? null;
+      if (layer) {
+        // Layer portal aktif: matikan sementara penjaga fokus, lalu pantau
+        // sampai layer dilepas dari DOM agar fokus bisa dipulihkan ke pemicu.
+        portalLayer = layer;
+        layerObserver?.disconnect();
+        layerObserver = new MutationObserver(() => {
+          if (portalLayerOpen()) return;
+          portalLayer = null;
+          layerObserver?.disconnect();
+          layerObserver = null;
+          scheduleRefocus();
+        });
+        layerObserver.observe(document.body, { childList: true, subtree: true });
+        return;
+      }
       scheduleRefocus();
     };
     document.addEventListener("focusin", onFocusIn, true);
@@ -545,6 +587,7 @@ export function WaPreviewHost() {
       if (timer !== null) clearTimeout(timer);
       if (raf !== 0) cancelAnimationFrame(raf);
       observer.disconnect();
+      layerObserver?.disconnect();
       document.removeEventListener("focusin", onFocusIn, true);
     };
   }, [open]);
