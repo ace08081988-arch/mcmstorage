@@ -110,6 +110,14 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
     },
     {
+      // Render-guard halaman /pratinjau-tema: seluruh variasi komponen
+      // (token, tombol, badge, link, sidebar item, pill tabs) harus
+      // ter-render di mode terang & gelap tanpa error konsol.
+      name: "pratinjau-tema",
+      testMatch: /pratinjau-tema\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // E2E fungsional portal pegawai (bukan visual regression).
       // Memakai mobile viewport karena pegawai mengakses lewat HP/APK.
       name: "worker-portal-e2e",
