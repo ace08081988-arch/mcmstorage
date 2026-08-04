@@ -464,7 +464,13 @@ export function WaPreviewHost() {
     if (ok && skip) setWaSkipPreview(true);
     current?.resolve({ ok, text: ok ? draft : undefined, force: ok ? force : undefined });
     setTimeout(() => setCurrent(null), 150);
-  }, [current, draft, skip]);
+    // Jaring pengaman: kalau `onCloseAutoFocus` Radix tidak terpanggil
+    // (unmount mendadak karena konten di belakang berubah), pulihkan fokus
+    // sendiri. `restoreTriggerFocus` menihilkan ref-nya, jadi aman ganda.
+    setTimeout(() => {
+      if (triggerRef.current || triggerSelectorRef.current) restoreTriggerFocus();
+    }, 120);
+  }, [current, draft, skip, restoreTriggerFocus]);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
