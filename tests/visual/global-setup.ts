@@ -30,14 +30,22 @@ export default async function globalSetup(config: FullConfig) {
     console.warn(
       "[visual] TEST_EMAIL / TEST_PASSWORD not set — admin specs will be skipped.",
     );
-    const browser = await chromium.launch();
+    const browser = await chromium.launch(
+      process.env.PWTEST_CHROMIUM_PATH
+        ? { executablePath: process.env.PWTEST_CHROMIUM_PATH }
+        : {},
+    );
     const ctx = await browser.newContext();
     await ctx.storageState({ path: STORAGE });
     await browser.close();
     return;
   }
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(
+      process.env.PWTEST_CHROMIUM_PATH
+        ? { executablePath: process.env.PWTEST_CHROMIUM_PATH }
+        : {},
+    );
   const ctx = await browser.newContext({ baseURL });
   const page = await ctx.newPage();
   await page.goto("/auth");
