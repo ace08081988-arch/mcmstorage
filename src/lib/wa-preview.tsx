@@ -396,6 +396,9 @@ export function WaPreviewHost() {
    */
   const restoringRef = useRef(false);
 
+  // Mode debug fokus (dev/test): pasang helper `__waFocusDebug` sekali.
+  useEffect(() => { installFocusDebug(); }, []);
+
   const clearRestoreTimers = useCallback(() => {
     for (const id of restoreTimersRef.current) {
       clearTimeout(id);
@@ -443,6 +446,14 @@ export function WaPreviewHost() {
         'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
       );
     };
+
+    if (isFocusDebugEnabled()) {
+      const wanted = pick();
+      focusDebugLog(
+        "dialog-close-restore",
+        `target=${describeEl(wanted) ?? "(tidak ada)"} | pemicu=${describeEl(el) ?? "-"} | selector=${selector ?? "-"}`,
+      );
+    }
 
     // Radix baru melepas overlay & aria-hidden setelah animasi tutup; fokus
     // sebelum itu bisa langsung dibuang lagi — karena itu diulang.
