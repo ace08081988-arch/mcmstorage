@@ -49,7 +49,7 @@ export function PillsTabs<K extends string>({
               type="button"
               aria-selected={active}
               onClick={() => onChange(k)}
-              className={`inline-flex shrink-0 items-center gap-ms-2 whitespace-nowrap rounded-full border px-ms-3.5 py-1.5 font-medium tracking-ms-tight transition-colors ${
+              className={`inline-flex min-h-9 shrink-0 items-center gap-ms-2 whitespace-nowrap rounded-full border px-ms-3.5 py-1.5 font-medium leading-ms-tight tracking-ms-tight transition-colors ${
                 active
                   ? "border-primary bg-primary text-primary-foreground elev-sm"
                   : "border-primary/20 bg-card/70 text-foreground/80 hover:border-primary/50 hover:bg-accent"
