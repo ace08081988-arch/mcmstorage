@@ -105,7 +105,9 @@ function ThemePreviewPage() {
     const root = document.documentElement;
     const had = root.classList.contains("dark");
     root.classList.toggle("dark", dark);
-    return () => root.classList.toggle("dark", had);
+    return () => {
+      root.classList.toggle("dark", had);
+    };
   }, [dark]);
 
   const tokens = useResolvedTokens(dark);
