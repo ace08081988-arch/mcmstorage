@@ -27,13 +27,12 @@ export function MobileBottomNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
   const { toggleSidebar } = useSidebar();
-  // Bar bawah diposisikan murni dengan CSS `fixed bottom-0` supaya tidak
-  // bergerak/terasa lag mengikuti perhitungan JS. Kompensasi visual viewport
-  // dihentikan untuk elemen ini; hanya status keyboard tetap dipantau agar
-  // bar bisa disembunyikan saat keyboard virtual terbuka.
-  // Tidak ada transform/kompensasi JS sama sekali: bar dipaku `fixed
-  // bottom-0` murni CSS supaya benar-benar diam saat scroll (address bar
-  // browser mengembang/menciut). Hook hanya dipakai untuk status keyboard.
+  // Bar bawah diposisikan dengan CSS `fixed bottom-0` dan dikompensasi
+  // ke visual viewport lewat class `.app-static-bottom-bar`
+  // (`translate3d(0, -var(--vv-anchor-offset-lock), 0)`). Kompensasi ini
+  // mencegah bar terdorong keluar layar atau terlihat naik-turun saat
+  // address bar Chrome / WebView mengembang-menciut saat scroll.
+  // Hook tetap dipanggil untuk menjalankan engine pengukuran & status keyboard.
   const { keyboardOpen } = useViewportAnchor({ lock: true });
   // Tinggi bar diukur nyata (badge unread bisa mengubah tinggi) lalu
   // dipublikasikan ke `--app-bottom-nav-h` yang dipakai padding konten.
