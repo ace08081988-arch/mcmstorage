@@ -401,10 +401,12 @@ export function WaPreviewHost() {
     restoringRef.current = true;
     const el = triggerRef.current;
     const selector = triggerSelectorRef.current;
-    triggerRef.current = null;
-    triggerSelectorRef.current = null;
     clearRestoreTimers();
-    ((window as any).__waDbg ??= []).push({ el: el?.getAttribute?.('data-testid') ?? el?.tagName ?? null, selector, stack: new Error().stack?.split('\n').slice(1,5).join(' | ') });
+    // Ref pemicu sengaja TIDAK dikosongkan di sini: Radix bisa memicu blur
+    // susulan setelah animasi tutup, dan siklus pemulihan berikutnya harus
+    // tetap tahu tombol aslinya (kalau dikosongkan, ia jatuh ke fallback dan
+    // fokus melompat ke elemen pertama halaman). Ref dibersihkan saat dialog
+    // dibuka lagi (`capture`).
 
     const pick = (): HTMLElement | null => {
       if (el && document.contains(el) && el.offsetParent !== null) return el;
@@ -412,6 +414,9 @@ export function WaPreviewHost() {
         const found = document.querySelector<HTMLElement>(selector);
         if (found && found.offsetParent !== null) return found;
       }
+      // Fallback halaman hanya dipakai bila pemicu memang tidak pernah
+      // diketahui — bukan sekadar sedang tidak bisa difokus.
+      if (el || selector) return null;
       const main = document.querySelector("main") ?? document.body;
       return main.querySelector<HTMLElement>(
         'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
@@ -424,19 +429,21 @@ export function WaPreviewHost() {
     const tryFocus = () => {
       attempt += 1;
       const active = document.activeElement as HTMLElement | null;
-      const settled = active && active !== document.body && document.contains(active);
+      const wanted = pick();
+      const settled =
+        active && active !== document.body && document.contains(active) &&
+        (!wanted || active === wanted);
       if (settled && attempt > 1) {
         clearRestoreTimers();
         restoringRef.current = false;
         return;
       }
-      const target = pick();
-      if (target) {
-        try { target.focus({ preventScroll: true }); } catch { /* ignore */ }
+      if (wanted) {
+        try { wanted.focus({ preventScroll: true }); } catch { /* ignore */ }
       }
-      if (attempt < 3) {
+      if (attempt < 4) {
         restoreTimersRef.current.push(
-          window.setTimeout(tryFocus, attempt === 1 ? 60 : 180),
+          window.setTimeout(tryFocus, attempt === 1 ? 60 : attempt === 2 ? 180 : 320),
         );
       } else {
         restoringRef.current = false;
