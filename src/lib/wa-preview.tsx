@@ -449,6 +449,11 @@ export function WaPreviewHost() {
       <DialogContent
         ref={contentRef}
         data-testid="wa-preview-dialog"
+        // Radix sudah menyetel role="dialog" + aria-labelledby/aria-describedby
+        // (dari DialogTitle & DialogDescription di bawah). aria-modal ditulis
+        // eksplisit agar pembaca layar di Android WebView tetap mengunci
+        // pembacaan ke dalam dialog walau overlay tidak terdeteksi modal.
+        aria-modal="true"
         // Fokus awal diarahkan ke area konten (bukan tombol kirim) supaya
         // pembaca layar membacakan judul + deskripsi lebih dulu dan pengguna
         // tidak sengaja mengirim dengan Enter. Trap fokus & Esc ditangani Radix.
