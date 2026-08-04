@@ -456,6 +456,13 @@ export function WaPreviewHost() {
           e.preventDefault();
           scrollRef.current?.focus();
         }}
+        // Saat dialog tertutup (kirim, batal, ESC, atau klik backdrop) fokus
+        // dikembalikan ke elemen pemicu asli, bukan ke <body> — sehingga
+        // Tab berikutnya melanjutkan urutan dari tombol tersebut.
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          restoreTriggerFocus();
+        }}
         // Perilaku tutup dibuat eksplisit & konsisten:
         // - ESC: saat mode edit aktif, ESC pertama keluar dari editor (draft
         //   tetap tersimpan); ESC berikutnya membatalkan dialog.
