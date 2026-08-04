@@ -791,6 +791,7 @@ export function WaPreviewHost() {
         // Catat kandidat pemicu: elemen interaktif terakhir di dalam dialog.
         const el = target instanceof HTMLElement ? target : null;
         if (el && typeof el.focus === "function" && el !== scrollRef.current && el !== node) {
+          lastFocused = el;
           layerTriggerRef.current = el;
           // Rekam jejak posisinya sekalian — murah, dan satu-satunya cara
           // memulihkan fokus kalau node ini keburu dilepas dari DOM.
@@ -810,18 +811,18 @@ export function WaPreviewHost() {
       const el = target instanceof Element ? target : (target.parentElement ?? null);
       const layer = el?.closest(PORTAL_LAYER_SELECTOR) ?? null;
       if (layer) {
-        // Layer portal aktif: matikan sementara penjaga fokus, lalu pantau
-        // sampai layer dilepas dari DOM agar fokus bisa dipulihkan ke pemicu.
-        portalLayer = layer;
-        layerObserver?.disconnect();
-        layerObserver = new MutationObserver(() => {
-          if (portalLayerOpen()) return;
-          portalLayer = null;
-          layerObserver?.disconnect();
-          layerObserver = null;
-          scheduleRefocus();
-        });
-        layerObserver.observe(document.body, { childList: true, subtree: true });
+        // Layer portal aktif: penjaga fokus dinonaktifkan selama layer hidup.
+        // Layer baru DITUMPUK di atas yang lama (popover → select), lengkap
+        // dengan pemicunya sendiri agar pemulihan mengikuti urutan penutupan.
+        if (!layerStack.some((entry) => entry.layer === layer)) {
+          layerStack.push({
+            layer,
+            trigger: lastFocused,
+            anchor: layerTriggerAnchorRef.current,
+          });
+          ensureLayerObserver();
+        }
+        if (el instanceof HTMLElement) lastFocused = el;
         return;
       }
       scheduleRefocus();
