@@ -640,14 +640,33 @@ export function WaPreviewHost() {
 
     let raf = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    /** Layer Radix (popover/select/menu) yang sedang terbuka di portal luar. */
-    let portalLayer: Element | null = null;
+    /**
+     * TUMPUKAN layer Radix (popover → select → menu ...) yang terbuka di portal
+     * luar dialog. Tiap entri mengingat pemicunya sendiri, jadi saat layer
+     * ditutup satu per satu fokus kembali persis ke pemicu masing-masing:
+     * item di dalam popover dulu, baru tombol di dalam dialog.
+     */
+    type LayerEntry = {
+      layer: Element;
+      /** Elemen yang memegang fokus tepat sebelum layer ini terbuka. */
+      trigger: HTMLElement | null;
+      /** Jejak posisi pemicu, dipakai kalau node-nya keburu ter-unmount. */
+      anchor: {
+        selector: string | null;
+        parent: HTMLElement | null;
+        index: number;
+      } | null;
+    };
+    const layerStack: LayerEntry[] = [];
     let layerObserver: MutationObserver | null = null;
+    /** Elemen fokus terakhir, baik di dalam dialog maupun di dalam layer aktif. */
+    let lastFocused: HTMLElement | null = null;
 
     const PORTAL_LAYER_SELECTOR =
       '[data-radix-popper-content-wrapper],[role="menu"],[role="listbox"],[role="dialog"],[role="alertdialog"]';
 
-    const portalLayerOpen = () => !!portalLayer && document.contains(portalLayer);
+    const portalLayerOpen = () =>
+      layerStack.some((entry) => document.contains(entry.layer));
 
     const FOCUSABLE_SELECTOR =
       'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
