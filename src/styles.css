@@ -1880,3 +1880,162 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   padding-left: max(var(--app-safe-left, env(safe-area-inset-left, 0px)), 0.5rem);
   padding-right: max(var(--app-safe-right, env(safe-area-inset-right, 0px)), 0.5rem);
 }
+
+/* ==========================================================================
+   Normalisasi palet — SATU logika warna untuk semua menu.
+   --------------------------------------------------------------------------
+   Sebagian halaman lama memakai warna mentah Tailwind (emerald/sky/slate/...)
+   sehingga antar menu terlihat berbeda tema. Blok ini memetakan seluruh
+   keluarga warna mentah ke token semantik (success / warning / destructive /
+   info / muted) supaya konsisten di light & dark mode.
+
+   Aturan ini sengaja ditulis di luar @layer utilities agar menang atas
+   utility Tailwind bawaan, dan memakai [class*="..."] supaya varian shade
+   dan alpha (mis. bg-red-500/10) ikut ternormalisasi.
+   ========================================================================== */
+
+:where(html) {
+  --tone-success: var(--success);
+  --tone-warning: var(--warning);
+  --tone-danger: var(--destructive);
+  --tone-info: var(--info);
+}
+
+/* --- Teks --------------------------------------------------------------- */
+[class*="text-emerald-"],
+[class*="text-green-"],
+[class*="text-lime-"],
+[class*="text-teal-"] { color: var(--tone-success); }
+
+[class*="text-amber-"],
+[class*="text-yellow-"],
+[class*="text-orange-"] { color: var(--tone-warning); }
+
+[class*="text-red-"],
+[class*="text-rose-"] { color: var(--tone-danger); }
+
+[class*="text-sky-"],
+[class*="text-blue-"],
+[class*="text-cyan-"],
+[class*="text-indigo-"],
+[class*="text-violet-"],
+[class*="text-purple-"],
+[class*="text-fuchsia-"],
+[class*="text-pink-"] { color: var(--tone-info); }
+
+[class*="text-slate-"],
+[class*="text-gray-"],
+[class*="text-zinc-"],
+[class*="text-neutral-"],
+[class*="text-stone-"] { color: var(--muted-foreground); }
+
+/* --- Latar (soft tint, tetap terbaca di light & dark) ------------------- */
+[class*="bg-emerald-"],
+[class*="bg-green-"],
+[class*="bg-lime-"],
+[class*="bg-teal-"] { background-color: color-mix(in oklab, var(--tone-success) 16%, var(--card)); }
+
+[class*="bg-amber-"],
+[class*="bg-yellow-"],
+[class*="bg-orange-"] { background-color: color-mix(in oklab, var(--tone-warning) 16%, var(--card)); }
+
+[class*="bg-red-"],
+[class*="bg-rose-"] { background-color: color-mix(in oklab, var(--tone-danger) 16%, var(--card)); }
+
+[class*="bg-sky-"],
+[class*="bg-blue-"],
+[class*="bg-cyan-"],
+[class*="bg-indigo-"],
+[class*="bg-violet-"],
+[class*="bg-purple-"],
+[class*="bg-fuchsia-"],
+[class*="bg-pink-"] { background-color: color-mix(in oklab, var(--tone-info) 16%, var(--card)); }
+
+[class*="bg-slate-"],
+[class*="bg-gray-"],
+[class*="bg-zinc-"],
+[class*="bg-neutral-"],
+[class*="bg-stone-"] { background-color: var(--muted); }
+
+.bg-white { background-color: var(--card); }
+.bg-black { background-color: var(--background); }
+.text-black { color: var(--card-foreground); }
+
+/* Elemen solid (punya text-white/text-black eksplisit) tetap pekat supaya
+   kontras tombol/badge tidak hilang. */
+[class*="bg-emerald-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-green-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-lime-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-teal-"]:is([class*="text-white"], [class*="text-black"]) {
+  background-color: var(--tone-success);
+  color: var(--success-foreground);
+}
+
+[class*="bg-amber-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-yellow-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-orange-"]:is([class*="text-white"], [class*="text-black"]) {
+  background-color: var(--tone-warning);
+  color: var(--warning-foreground);
+}
+
+[class*="bg-red-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-rose-"]:is([class*="text-white"], [class*="text-black"]) {
+  background-color: var(--tone-danger);
+  color: var(--destructive-foreground);
+}
+
+[class*="bg-sky-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-blue-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-cyan-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-indigo-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-violet-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-purple-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-fuchsia-"]:is([class*="text-white"], [class*="text-black"]),
+[class*="bg-pink-"]:is([class*="text-white"], [class*="text-black"]) {
+  background-color: var(--tone-info);
+  color: var(--info-foreground);
+}
+
+/* --- Border ------------------------------------------------------------- */
+[class*="border-emerald-"],
+[class*="border-green-"],
+[class*="border-lime-"],
+[class*="border-teal-"] { border-color: color-mix(in oklab, var(--tone-success) 45%, transparent); }
+
+[class*="border-amber-"],
+[class*="border-yellow-"],
+[class*="border-orange-"] { border-color: color-mix(in oklab, var(--tone-warning) 45%, transparent); }
+
+[class*="border-red-"],
+[class*="border-rose-"] { border-color: color-mix(in oklab, var(--tone-danger) 45%, transparent); }
+
+[class*="border-sky-"],
+[class*="border-blue-"],
+[class*="border-cyan-"],
+[class*="border-indigo-"],
+[class*="border-violet-"],
+[class*="border-purple-"],
+[class*="border-fuchsia-"],
+[class*="border-pink-"] { border-color: color-mix(in oklab, var(--tone-info) 45%, transparent); }
+
+[class*="border-slate-"],
+[class*="border-gray-"],
+[class*="border-zinc-"],
+[class*="border-neutral-"],
+[class*="border-stone-"] { border-color: var(--border); }
+
+/* --- Ring / outline ----------------------------------------------------- */
+[class*="ring-emerald-"],
+[class*="ring-green-"],
+[class*="ring-teal-"] { --tw-ring-color: color-mix(in oklab, var(--tone-success) 55%, transparent); }
+[class*="ring-amber-"],
+[class*="ring-yellow-"],
+[class*="ring-orange-"] { --tw-ring-color: color-mix(in oklab, var(--tone-warning) 55%, transparent); }
+[class*="ring-red-"],
+[class*="ring-rose-"] { --tw-ring-color: color-mix(in oklab, var(--tone-danger) 55%, transparent); }
+[class*="ring-sky-"],
+[class*="ring-blue-"],
+[class*="ring-indigo-"],
+[class*="ring-violet-"],
+[class*="ring-purple-"],
+[class*="ring-pink-"] { --tw-ring-color: color-mix(in oklab, var(--tone-info) 55%, transparent); }
