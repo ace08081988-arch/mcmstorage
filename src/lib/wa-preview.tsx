@@ -26,6 +26,13 @@ import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
 import { DebtQuickActions } from "@/components/DebtQuickActions";
 import { resolveTabTarget } from "@/lib/focus-order";
+import {
+  describeEl,
+  focusDebugLog,
+  focusDebugSetLayers,
+  installFocusDebug,
+  isFocusDebugEnabled,
+} from "@/lib/focus-debug";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
