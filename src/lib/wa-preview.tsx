@@ -423,7 +423,7 @@ export function WaPreviewHost() {
     setEditing(false);
   }, []);
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const want = pendingFocusRef.current;
     if (!want) return;
     pendingFocusRef.current = null;
