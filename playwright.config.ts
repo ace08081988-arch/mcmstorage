@@ -1335,6 +1335,18 @@ export default defineConfig({
         viewport: { width: 411, height: 893 },
       },
     },
+    // ── Focus trap dialog pratinjau saat konten dimuat bertahap (state
+    //   loading retry foto): fokus tidak boleh lolos ke <body>/latar, dan
+    //   harus pulih ke tombol pemicu setelah dialog ditutup.
+    {
+      name: "wa-preview-focus-loading-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /wa-preview-focus-loading\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+      },
+    },
     // ── Dialog `ui/dialog` di WebView Android: layout viewport lebih
     //   tinggi daripada area terlihat (toolbar/keyboard). Kartu tidak
     //   boleh melorot ke bawah layar atau terpotong.

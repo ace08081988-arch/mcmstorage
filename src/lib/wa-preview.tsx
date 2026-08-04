@@ -77,6 +77,14 @@ type Request = {
   /** Info lawan bicara (pelanggan / supplier) untuk tombol Hutang / Bayar / Lunas. */
   peer?: { name?: string; phone?: string; accountUserId?: string } | null;
   resolve: (result: { ok: boolean; text?: string; force?: boolean }) => void;
+  /**
+   * Elemen pemicu yang ditangkap di titik pemanggilan `confirmWaShare`.
+   * Host dialog di-lazy-load, jadi saat pemanggilan pertama komponennya
+   * belum ter-mount; kalau menunggu host, `document.activeElement` sudah
+   * berpindah dan fokus tidak bisa dipulihkan ke tombol aslinya.
+   */
+  trigger?: HTMLElement | null;
+  triggerSelector?: string | null;
 };
 
 let openRequest: ((req: Request) => void) | null = null;
@@ -295,7 +303,19 @@ export function confirmWaShare(input: {
   const dupActive = !!input.duplicate && input.duplicate.status !== "failed";
   if (getWaSkipPreview() && !dupActive) return Promise.resolve({ ok: true, text: input.text });
   return new Promise((resolve) => {
-    const req: Request = { ...input, resolve };
+    // Tangkap pemicu SEKARANG (masih di dalam handler klik), bukan nanti saat
+    // host lazy-nya selesai dimuat.
+    const active = typeof document !== "undefined"
+      ? (document.activeElement as HTMLElement | null)
+      : null;
+    const trigger =
+      active && active !== document.body && typeof active.focus === "function" ? active : null;
+    const req: Request = {
+      ...input,
+      resolve,
+      trigger,
+      triggerSelector: trigger ? stableSelectorFor(trigger) : null,
+    };
     if (openRequest) openRequest(req);
     else queue.push(req);
   });
@@ -347,6 +367,13 @@ export function WaPreviewHost() {
   const triggerSelectorRef = useRef<string | null>(null);
   /** Timer/rAF pemulihan fokus agar bisa dibatalkan saat dialog dibuka lagi. */
   const restoreTimersRef = useRef<number[]>([]);
+  /**
+   * Penanda siklus pemulihan yang sedang berjalan. Beberapa jalur bisa memicu
+   * pemulihan hampir bersamaan (onCloseAutoFocus + jaring pengaman di
+   * `finish`); tanpa penjaga ini, panggilan kedua kehilangan ref pemicu dan
+   * malah melompat ke fallback (elemen fokusable pertama halaman).
+   */
+  const restoringRef = useRef(false);
 
   const clearRestoreTimers = useCallback(() => {
     for (const id of restoreTimersRef.current) {
@@ -370,11 +397,16 @@ export function WaPreviewHost() {
    * masih remount saat dialog menutup (animasi + refetch daftar).
    */
   const restoreTriggerFocus = useCallback(() => {
+    if (restoringRef.current) return;
+    restoringRef.current = true;
     const el = triggerRef.current;
     const selector = triggerSelectorRef.current;
-    triggerRef.current = null;
-    triggerSelectorRef.current = null;
     clearRestoreTimers();
+    // Ref pemicu sengaja TIDAK dikosongkan di sini: Radix bisa memicu blur
+    // susulan setelah animasi tutup, dan siklus pemulihan berikutnya harus
+    // tetap tahu tombol aslinya (kalau dikosongkan, ia jatuh ke fallback dan
+    // fokus melompat ke elemen pertama halaman). Ref dibersihkan saat dialog
+    // dibuka lagi (`capture`).
 
     const pick = (): HTMLElement | null => {
       if (el && document.contains(el) && el.offsetParent !== null) return el;
@@ -382,6 +414,9 @@ export function WaPreviewHost() {
         const found = document.querySelector<HTMLElement>(selector);
         if (found && found.offsetParent !== null) return found;
       }
+      // Fallback halaman hanya dipakai bila pemicu memang tidak pernah
+      // diketahui — bukan sekadar sedang tidak bisa difokus.
+      if (el || selector) return null;
       const main = document.querySelector("main") ?? document.body;
       return main.querySelector<HTMLElement>(
         'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
@@ -394,16 +429,24 @@ export function WaPreviewHost() {
     const tryFocus = () => {
       attempt += 1;
       const active = document.activeElement as HTMLElement | null;
-      const settled = active && active !== document.body && document.contains(active);
-      if (settled && attempt > 1) { clearRestoreTimers(); return; }
-      const target = pick();
-      if (target) {
-        try { target.focus({ preventScroll: true }); } catch { /* ignore */ }
+      const wanted = pick();
+      const settled =
+        active && active !== document.body && document.contains(active) &&
+        (!wanted || active === wanted);
+      if (settled && attempt > 1) {
+        clearRestoreTimers();
+        restoringRef.current = false;
+        return;
       }
-      if (attempt < 3) {
+      if (wanted) {
+        try { wanted.focus({ preventScroll: true }); } catch { /* ignore */ }
+      }
+      if (attempt < 4) {
         restoreTimersRef.current.push(
-          window.setTimeout(tryFocus, attempt === 1 ? 60 : 180),
+          window.setTimeout(tryFocus, attempt === 1 ? 60 : attempt === 2 ? 180 : 320),
         );
+      } else {
+        restoringRef.current = false;
       }
     };
     restoreTimersRef.current.push(requestAnimationFrame(tryFocus));
@@ -412,14 +455,27 @@ export function WaPreviewHost() {
   useEffect(() => clearRestoreTimers, [clearRestoreTimers]);
 
   useEffect(() => {
-    const capture = () => {
+    /**
+     * Pemicu diambil dari request (ditangkap saat `confirmWaShare` dipanggil).
+     * Fallback ke `document.activeElement` untuk pemanggil lama.
+     */
+    const capture = (req: Request) => {
+      // Dialog dibuka lagi: batalkan siklus pemulihan lama.
+      clearRestoreTimers();
+      restoringRef.current = false;
+      const fromReq = req.trigger ?? null;
+      if (fromReq) {
+        triggerRef.current = fromReq;
+        triggerSelectorRef.current = req.triggerSelector ?? stableSelectorFor(fromReq);
+        return;
+      }
       const active = document.activeElement as HTMLElement | null;
       const ok = active && active !== document.body && typeof active.focus === "function";
       triggerRef.current = ok ? active : null;
       triggerSelectorRef.current = ok ? stableSelectorFor(active!) : null;
     };
     openRequest = (req) => {
-      capture();
+      capture(req);
       setSkip(false);
       setEditing(false);
       setDraft(req.text);
@@ -430,7 +486,7 @@ export function WaPreviewHost() {
     };
     while (queue.length) {
       const req = queue.shift()!;
-      capture();
+      capture(req);
       setSkip(false);
       setEditing(false);
       setDraft(req.text);
