@@ -159,14 +159,16 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
             .createSignedUrl(path, 3600, {
               transform: { width, resize: "contain", quality: 72 },
             });
-          return signed?.signedUrl ? { width, url: signed.signedUrl } : null;
+          return signed?.signedUrl
+            ? { width: width as number, url: signed.signedUrl }
+            : null;
         }),
       );
-      const ok = variants.filter((v): v is { width: number; url: string } => v !== null);
-      if (ok.length) {
+      const ok = variants.flatMap((v) => (v ? [v] : []));
+      const last = ok[ok.length - 1];
+      if (last) {
         imageSrcset = ok.map((v) => `${v.url} ${v.width}w`).join(", ");
-        imageUrl =
-          (ok.find((v) => v.width === DETAIL_FALLBACK_WIDTH) ?? ok[ok.length - 1]).url;
+        imageUrl = (ok.find((v) => v.width === DETAIL_FALLBACK_WIDTH) ?? last).url;
       } else {
         // Fallback: transformasi tidak tersedia — kirim berkas asli.
         const { data: signed } = await supabaseAdmin.storage
