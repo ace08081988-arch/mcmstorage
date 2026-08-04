@@ -175,26 +175,68 @@ function ThemePreviewPage() {
             </Button>
           </header>
 
-          {TOKEN_GROUPS.map((group) => (
+          <Section title="Panel pencarian token" desc="Ketik nama token atau nilai warna, lalu tap tombol salin.">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Cari token (contoh: success, wa, #3b82f6)..."
+                className="pl-9 pr-9"
+                aria-label="Cari token warna"
+              />
+              {query ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setQuery("")}
+                  aria-label="Hapus pencarian"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              ) : null}
+            </div>
+            <p className="mt-2 text-ms-2xs text-muted-foreground">
+              {q
+                ? `${filteredGroups.reduce((n, g) => n + g.tokens.length, 0)} token cocok`
+                : `${Object.keys(tokens).length} token tersedia`}
+            </p>
+          </Section>
+
+          {filteredGroups.length === 0 && q ? (
+            <Section title="Hasil pencarian">
+              <p className="text-ms-sm text-muted-foreground">Tidak ada token yang cocok dengan “{query}”.</p>
+            </Section>
+          ) : null}
+
+          {filteredGroups.map((group) => (
             <Section key={group.title} title={`Token — ${group.title}`}>
-              <ul className="grid grid-cols-2 gap-ms-2 sm:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-ms-2 sm:grid-cols-2 lg:grid-cols-3">
                 {group.tokens.map((t) => (
                   <li
                     key={t}
                     data-token={t}
-                    className="flex items-center gap-ms-2 rounded-xl border border-border/50 bg-background/60 p-ms-2"
+                    className="group flex items-center justify-between gap-ms-2 rounded-xl border border-border/50 bg-background/60 p-ms-2"
                   >
-                    <span
-                      aria-hidden
-                      className="h-9 w-9 shrink-0 rounded-lg border border-border/60"
-                      style={{ background: `var(--${t})` }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block truncate text-ms-xs font-medium">--{t}</span>
-                      <span className="block truncate text-ms-2xs text-muted-foreground">
-                        {tokens[t] || "—"}
+                    <div className="flex min-w-0 items-center gap-ms-2">
+                      <span
+                        aria-hidden
+                        className="h-9 w-9 shrink-0 rounded-lg border border-border/60"
+                        style={{ background: `var(--${t})` }}
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-ms-xs font-medium">--{t}</span>
+                        <span className="block truncate text-ms-2xs text-muted-foreground">
+                          {tokens[t] || "—"}
+                        </span>
                       </span>
-                    </span>
+                    </div>
+                    <CopyButton
+                      value={`--${t}: ${tokens[t] || ""}`}
+                      label={t}
+                      className="opacity-60 group-hover:opacity-100"
+                    />
                   </li>
                 ))}
               </ul>
