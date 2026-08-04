@@ -53,6 +53,9 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
                 as: "image",
                 href: it.image_url,
                 fetchpriority: "high",
+                ...(it.image_srcset
+                  ? { imagesrcset: it.image_srcset, imagesizes: IMAGE_SIZES }
+                  : {}),
               },
             ]
           : []),
