@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, beforeEach } from "vitest";
-import { focusablesInOrder, nextFocusInOrder, resolveTabTarget } from "@/lib/focus-order";
+import { focusablesInOrder, isFocusableNow, nextFocusInOrder, resolveTabTarget } from "@/lib/focus-order";
 
 /** happy-dom tidak menghitung layout, jadi visibilitas dipaksa true. */
 const opts = { isVisible: () => true, skip: (el: HTMLElement) => el.dataset["scroll"] === "1" };
