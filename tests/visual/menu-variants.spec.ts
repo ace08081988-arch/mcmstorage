@@ -118,7 +118,7 @@ for (const theme of THEMES) {
 
       // Tab bottom nav idle memakai muted-foreground (bukan abu-abu mentah).
       const idleNavColor = await page
-        .locator("nav a[aria-current!='page']")
+        .locator('nav a:not([aria-current="page"])')
         .first()
         .evaluate((el) => getComputedStyle(el).color);
       expect(
