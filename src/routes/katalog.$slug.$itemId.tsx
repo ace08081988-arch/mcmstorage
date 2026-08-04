@@ -166,6 +166,7 @@ function PublicItemPage() {
         {it.image_url ? (
           <img
             src={it.image_url}
+            {...(it.image_srcset ? { srcSet: it.image_srcset, sizes: IMAGE_SIZES } : {})}
             alt={`Foto produk ${it.name}`}
             width={1200}
             height={1200}
