@@ -324,27 +324,84 @@ export function WaPreviewHost() {
    * portal ditutup (Radix kadang meleset ke <body> di Android WebView).
    */
   const layerTriggerRef = useRef<HTMLElement | null>(null);
+  /**
+   * Cadangan pencarian pemicu: bila node aslinya sudah dilepas dari DOM
+   * (list/kartu ikut re-render setelah kirim), kita cari ulang elemen
+   * setara lewat selector stabil ini.
+   */
+  const triggerSelectorRef = useRef<string | null>(null);
+  /** Timer/rAF pemulihan fokus agar bisa dibatalkan saat dialog dibuka lagi. */
+  const restoreTimersRef = useRef<number[]>([]);
 
+  const clearRestoreTimers = useCallback(() => {
+    for (const id of restoreTimersRef.current) {
+      clearTimeout(id);
+      cancelAnimationFrame(id);
+    }
+    restoreTimersRef.current = [];
+  }, []);
+
+  /**
+   * Pemulihan fokus yang tahan perubahan konten.
+   *
+   * Semua jalur penutupan (tombol Batal, tombol X, Kirim, ESC, klik backdrop)
+   * bermuara ke sini. Tiga lapis fallback:
+   *  1. Node pemicu asli, kalau masih ada di DOM.
+   *  2. Node baru hasil re-render, dicari ulang lewat selector stabil
+   *     (data-testid / id / aria-label).
+   *  3. Elemen fokusable pertama di dalam <main> — supaya Tab tidak pernah
+   *     mulai lagi dari awal halaman.
+   * Percobaan diulang beberapa frame karena konten di belakang dialog bisa
+   * masih remount saat dialog menutup (animasi + refetch daftar).
+   */
   const restoreTriggerFocus = useCallback(() => {
     const el = triggerRef.current;
+    const selector = triggerSelectorRef.current;
     triggerRef.current = null;
-    if (!el) return;
-    // Elemen bisa sudah dilepas dari DOM (list re-render setelah kirim).
-    if (!document.contains(el)) return;
-    // Tunggu satu frame: Radix baru melepas overlay & aria-hidden setelah
-    // animasi tutup; fokus sebelum itu bisa langsung dibuang lagi.
-    requestAnimationFrame(() => {
-      try { el.focus({ preventScroll: true }); } catch { /* ignore */ }
-    });
-  }, []);
+    triggerSelectorRef.current = null;
+    clearRestoreTimers();
+
+    const pick = (): HTMLElement | null => {
+      if (el && document.contains(el) && el.offsetParent !== null) return el;
+      if (selector) {
+        const found = document.querySelector<HTMLElement>(selector);
+        if (found && found.offsetParent !== null) return found;
+      }
+      const main = document.querySelector("main") ?? document.body;
+      return main.querySelector<HTMLElement>(
+        'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+      );
+    };
+
+    // Radix baru melepas overlay & aria-hidden setelah animasi tutup; fokus
+    // sebelum itu bisa langsung dibuang lagi — karena itu diulang.
+    let attempt = 0;
+    const tryFocus = () => {
+      attempt += 1;
+      const active = document.activeElement as HTMLElement | null;
+      const settled = active && active !== document.body && document.contains(active);
+      if (settled && attempt > 1) { clearRestoreTimers(); return; }
+      const target = pick();
+      if (target) {
+        try { target.focus({ preventScroll: true }); } catch { /* ignore */ }
+      }
+      if (attempt < 3) {
+        restoreTimersRef.current.push(
+          window.setTimeout(tryFocus, attempt === 1 ? 60 : 180),
+        );
+      }
+    };
+    restoreTimersRef.current.push(requestAnimationFrame(tryFocus));
+  }, [clearRestoreTimers]);
+
+  useEffect(() => clearRestoreTimers, [clearRestoreTimers]);
 
   useEffect(() => {
     const capture = () => {
       const active = document.activeElement as HTMLElement | null;
-      triggerRef.current =
-        active && active !== document.body && typeof active.focus === "function"
-          ? active
-          : null;
+      const ok = active && active !== document.body && typeof active.focus === "function";
+      triggerRef.current = ok ? active : null;
+      triggerSelectorRef.current = ok ? stableSelectorFor(active!) : null;
     };
     openRequest = (req) => {
       capture();
