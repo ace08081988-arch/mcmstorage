@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   ScanLine,
   Loader2,
+  Merge,
 } from "lucide-react";
 import {
   Search as SearchIcon,
