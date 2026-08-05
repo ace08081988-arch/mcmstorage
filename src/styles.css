@@ -1321,6 +1321,13 @@ textarea::placeholder {
   & :where(em, i) {
     color: inherit;
   }
+
+  &::selection,
+  & ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    -webkit-text-fill-color: var(--primary-foreground);
+  }
 }
 
 /* Judul kecil di atas pratinjau (nama pengirim, label "Disematkan"). */
@@ -1348,6 +1355,12 @@ textarea::placeholder {
   color: color-mix(in oklab, var(--card-foreground) 82%, var(--card));
   -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 82%, var(--card));
   opacity: 1;
+
+  &::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    -webkit-text-fill-color: var(--primary-foreground);
+  }
 }
 
 /*
