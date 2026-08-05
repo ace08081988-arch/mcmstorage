@@ -1298,6 +1298,46 @@ textarea::placeholder {
   }
 }
 
+/* Teks read-only / pratinjau pesan di chat (balas, edit, pin, kutipan).
+   Warnanya diturunkan dari warna teks permukaan induk (`--preview-ink`),
+   bukan dari --muted-foreground global, supaya tidak pernah menyatu dengan
+   latar panel berwarna (muted, primary/5, warning) di mode terang & gelap. */
+@utility chat-preview-text {
+  color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 78%, transparent);
+  -webkit-text-fill-color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 78%, transparent);
+
+  & :where(em, i) {
+    color: inherit;
+  }
+}
+
+/* Judul kecil di atas pratinjau (nama pengirim, label "Disematkan"). */
+@utility chat-preview-label {
+  color: var(--preview-ink, var(--foreground));
+  -webkit-text-fill-color: var(--preview-ink, var(--foreground));
+}
+
+/* Panel pratinjau bertema: menetapkan tinta yang kontras dengan latarnya. */
+@utility chat-preview-panel {
+  --preview-ink: var(--foreground);
+}
+@utility chat-preview-panel-primary {
+  --preview-ink: var(--foreground);
+}
+@utility chat-preview-panel-warning {
+  --preview-ink: var(--warning-foreground);
+}
+.dark .chat-preview-panel-warning {
+  --preview-ink: var(--foreground);
+}
+
+/* Input read-only/disabled di chat tetap terbaca, hanya sedikit diredam. */
+@utility chat-readonly-input {
+  color: color-mix(in oklab, var(--card-foreground) 82%, var(--card));
+  -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 82%, var(--card));
+  opacity: 1;
+}
+
 /*
  * Scoped auto-press: setiap elemen dengan atribut `data-press-scope="on"`
  * akan otomatis memberi reaksi sentuh pada elemen interaktif di dalamnya —
