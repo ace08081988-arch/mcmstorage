@@ -24,6 +24,8 @@ export function useBottomNavHeightSync(
     const root = document.documentElement;
     if (!enabled || !el || typeof ResizeObserver === "undefined") {
       root.style.removeProperty("--app-bottom-nav-h");
+      root.style.setProperty("--app-bottom-bar-space", "0px");
+      delete root.dataset["bottomBar"];
       return;
     }
 
@@ -35,6 +37,11 @@ export function useBottomNavHeightSync(
       if (h <= 0 || h === last) return;
       last = h;
       root.style.setProperty("--app-bottom-nav-h", `${h}px`);
+      // Spacer otomatis: 0px saat tidak ada bar, tinggi nyata saat ada.
+      // Dipakai utility `app-bottom-spacer` di layout supaya konten
+      // terakhir tidak pernah tertutup bar di halaman mana pun.
+      root.style.setProperty("--app-bottom-bar-space", `${h}px`);
+      root.dataset["bottomBar"] = "1";
     };
 
     publish();
@@ -52,6 +59,8 @@ export function useBottomNavHeightSync(
       window.removeEventListener("orientationchange", onViewport);
       window.removeEventListener("resize", onViewport);
       root.style.removeProperty("--app-bottom-nav-h");
+      root.style.setProperty("--app-bottom-bar-space", "0px");
+      delete root.dataset["bottomBar"];
     };
   }, [ref, enabled]);
 }

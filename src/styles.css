@@ -1836,6 +1836,15 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   --app-bottom-nav-h: calc(
     3.75rem + var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
   );
+  /* Ruang spacer otomatis: 0px selama tidak ada bar bawah terpasang.
+     Diisi tinggi nyata oleh use-bottom-nav-height.ts saat bar mount. */
+  --app-bottom-bar-space: 0px;
+}
+
+/* Spacer otomatis untuk konten halaman: menyesuaikan sendiri dengan ada /
+   tidaknya bar bawah dan tinggi nyatanya (badge, landscape, safe-area). */
+@utility app-bottom-spacer {
+  padding-bottom: calc(var(--app-bottom-bar-space, 0px) + 0.5rem);
 }
 @media (orientation: landscape) and (max-height: 520px) {
   :root {
