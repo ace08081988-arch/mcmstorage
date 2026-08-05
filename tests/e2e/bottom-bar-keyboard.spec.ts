@@ -100,10 +100,11 @@ test("Enter pada tombol Menu membuka sidebar", async ({ page }) => {
   // State sidebar (drawer mobile) berubah jadi terbuka.
   await expect(page.getByTestId("sidebar-state")).toHaveText("open", { timeout: 5_000 });
 
-  // Space juga mengaktifkan tombol (toggle kembali ke tertutup).
-  await expect(menu).toBeFocused();
-  await page.keyboard.press("Space");
+  // Escape menutup drawer dan fokus dikembalikan ke tombol Menu
+  // (tidak terjebak di dalam drawer).
+  await page.keyboard.press("Escape");
   await expect(page.getByTestId("sidebar-state")).toHaveText("closed", { timeout: 5_000 });
+  await expect(menu).toBeFocused();
 });
 
 test("scroll tidak mencuri fokus dari bilah bawah", async ({ page }) => {
