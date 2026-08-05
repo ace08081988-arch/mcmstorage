@@ -66,6 +66,7 @@
     "test:worker-portal": "playwright test --project=worker-portal-e2e",
     "test:bottom-bar": "playwright test --project=bottom-bar-snap-e2e",
     "test:bottom-bar:all": "playwright test --project=bottom-bar-snap-e2e --project=bottom-bar-snap-e2e-tablet --project=bottom-bar-snap-e2e-desktop",
+    "test:bottom-bar:keyboard": "playwright test --project=bottom-bar-keyboard-e2e",
     "test:bottom-bar:visual": "playwright test --project=bottom-bar-snap-visual",
     "test:bottom-bar:visual:update": "playwright test --project=bottom-bar-snap-visual --update-snapshots",
     "test:e2e:apk": "node scripts/run-apk-e2e.mjs",

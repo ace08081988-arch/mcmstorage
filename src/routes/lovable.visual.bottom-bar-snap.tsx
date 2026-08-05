@@ -14,7 +14,7 @@
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 type Search = { page?: number; rows?: number };
@@ -147,8 +147,18 @@ function BottomBarSnapHarness() {
           </ul>
         )}
 
+        <SidebarStateProbe />
         <MobileBottomNav />
       </main>
     </SidebarProvider>
+  );
+}
+/** Probe status drawer sidebar untuk uji keyboard (Enter/Space di tombol Menu). */
+function SidebarStateProbe() {
+  const { openMobile, open } = useSidebar();
+  return (
+    <span data-testid="sidebar-state" className="sr-only">
+      {openMobile || open ? "open" : "closed"}
+    </span>
   );
 }
