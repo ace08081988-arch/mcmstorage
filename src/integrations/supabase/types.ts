@@ -3944,6 +3944,108 @@ export type Database = {
         }
         Relationships: []
       }
+      web_vital_alert_config: {
+        Row: {
+          admin_email: string | null
+          cls_threshold: number
+          cooldown_minutes: number
+          created_at: string
+          enabled: boolean
+          id: number
+          inp_threshold_ms: number
+          last_check_at: string | null
+          lcp_threshold_ms: number
+          min_samples: number
+          updated_at: string
+          window_minutes: number
+        }
+        Insert: {
+          admin_email?: string | null
+          cls_threshold?: number
+          cooldown_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          id?: number
+          inp_threshold_ms?: number
+          last_check_at?: string | null
+          lcp_threshold_ms?: number
+          min_samples?: number
+          updated_at?: string
+          window_minutes?: number
+        }
+        Update: {
+          admin_email?: string | null
+          cls_threshold?: number
+          cooldown_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          id?: number
+          inp_threshold_ms?: number
+          last_check_at?: string | null
+          lcp_threshold_ms?: number
+          min_samples?: number
+          updated_at?: string
+          window_minutes?: number
+        }
+        Relationships: []
+      }
+      web_vital_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          delivery_error: string | null
+          delivery_status: string
+          device: string
+          id: string
+          message: string
+          metric: string
+          notified_email: string | null
+          p75: number
+          page: string
+          samples: number
+          severity: string
+          threshold: number
+          window_minutes: number
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string
+          device?: string
+          id?: string
+          message: string
+          metric: string
+          notified_email?: string | null
+          p75: number
+          page: string
+          samples: number
+          severity?: string
+          threshold: number
+          window_minutes: number
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string
+          device?: string
+          id?: string
+          message?: string
+          metric?: string
+          notified_email?: string | null
+          p75?: number
+          page?: string
+          samples?: number
+          severity?: string
+          threshold?: number
+          window_minutes?: number
+        }
+        Relationships: []
+      }
       web_vital_samples: {
         Row: {
           created_at: string
