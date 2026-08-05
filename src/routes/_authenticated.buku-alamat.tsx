@@ -631,6 +631,15 @@ function BukuAlamatPage() {
           await refresh();
         }}
       />
+
+      <MergeDuplicatesDialog
+        open={mergeOpen}
+        rows={rows}
+        onOpenChange={setMergeOpen}
+        onMerged={async () => {
+          await refresh();
+        }}
+      />
     </div>
   );
 }
