@@ -14,10 +14,11 @@ export function readStylesCss(): string {
 /** Ambil isi semua blok CSS yang selector-nya cocok dengan `matcher`. */
 export function tokensForSelector(css: string, matcher: (selector: string) => boolean) {
   const tokens: Record<string, string> = {};
+  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
   const re = /([^{}]+)\{([^{}]*)\}/g;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(css))) {
-    const selector = m[1]!.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+  while ((m = re.exec(stripped))) {
+    const selector = m[1]!.trim();
     if (!selector || !matcher(selector)) continue;
     for (const decl of m[2]!.split(";")) {
       const idx = decl.indexOf(":");
