@@ -1408,6 +1408,67 @@ textarea::placeholder {
   }
 }
 
+/* Scrollbar daftar dropdown/autocomplete/mention di composer chat.
+   Default scrollbar UA sering nyaris tak terlihat di tema gelap; di sini
+   track & thumb memakai token turunan tema sehingga rasio thumb:track dan
+   thumb:popover tetap ≥3:1 di semua tema. */
+@utility chat-option-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-scroll-thumb) var(--chat-scroll-track);
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: var(--chat-scroll-track);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--chat-scroll-thumb);
+    border: 2px solid var(--chat-scroll-track);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover,
+  &::-webkit-scrollbar-thumb:active {
+    background-color: var(--chat-scroll-thumb-hover);
+  }
+  &::-webkit-scrollbar-corner {
+    background-color: var(--chat-scroll-track);
+  }
+}
+
+:where(.chat-field-scope, .chat-input-contrast)
+  :where(
+    [cmdk-list],
+    [data-slot="command-list"],
+    [data-radix-select-viewport],
+    [data-radix-popper-content-wrapper] [role="listbox"],
+    [role="listbox"],
+    [data-slot="dropdown-menu-content"]
+  ) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-scroll-thumb) var(--chat-scroll-track);
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: var(--chat-scroll-track);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--chat-scroll-thumb);
+    border: 2px solid var(--chat-scroll-track);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover,
+  &::-webkit-scrollbar-thumb:active {
+    background-color: var(--chat-scroll-thumb-hover);
+  }
+}
+
 /* Judul kecil di atas pratinjau (nama pengirim, label "Disematkan"). */
 @utility chat-preview-label {
   color: var(--preview-ink, var(--foreground));
