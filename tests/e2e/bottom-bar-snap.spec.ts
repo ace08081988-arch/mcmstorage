@@ -133,3 +133,44 @@ test("bilah bawah tetap snap saat konten dinamis bertambah", async ({ page }) =>
   const [rowBox, navBox] = await Promise.all([lastRow.boundingBox(), nav(page).boundingBox()]);
   expect(rowBox!.y + rowBox!.height).toBeLessThanOrEqual(navBox!.y + TOL);
 });
+
+test("bilah bawah & spacer diukur ulang saat orientasi berubah", async ({ page }) => {
+  const readVars = () =>
+    page.evaluate(() => {
+      const cs = getComputedStyle(document.documentElement);
+      return {
+        navH: parseFloat(cs.getPropertyValue("--app-bottom-nav-h")) || 0,
+        space: parseFloat(cs.getPropertyValue("--app-bottom-bar-space")) || 0,
+      };
+    });
+
+  const portrait = page.viewportSize()!;
+  expect(Math.abs(await bottomGap(page))).toBeLessThanOrEqual(TOL);
+
+  // Portrait -> landscape
+  await page.setViewportSize({ width: portrait.height, height: portrait.width });
+  await page.waitForTimeout(1200); // tunggu burst pengukuran selesai
+  const land = await readVars();
+  const landNav = await nav(page).boundingBox();
+  expect(Math.abs(await bottomGap(page)), "bar bergeser di landscape").toBeLessThanOrEqual(TOL);
+  expect(Math.abs(land.navH - landNav!.height), "--app-bottom-nav-h basi").toBeLessThanOrEqual(TOL);
+  expect(land.space).toBeCloseTo(land.navH, 0);
+
+  // Kembali ke portrait
+  await page.setViewportSize(portrait);
+  await page.waitForTimeout(1200);
+  const port = await readVars();
+  const portNav = await nav(page).boundingBox();
+  expect(Math.abs(await bottomGap(page)), "bar bergeser kembali di portrait").toBeLessThanOrEqual(TOL);
+  expect(Math.abs(port.navH - portNav!.height)).toBeLessThanOrEqual(TOL);
+  expect(port.space).toBeCloseTo(port.navH, 0);
+
+  // Konten terakhir tetap tidak tertutup bar setelah rotasi bolak-balik.
+  await page.evaluate(() =>
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" as ScrollBehavior }),
+  );
+  await page.waitForTimeout(150);
+  const lastRow2 = page.getByTestId("dynamic-list").locator("li").last();
+  const [r, n] = await Promise.all([lastRow2.boundingBox(), nav(page).boundingBox()]);
+  expect(r!.y + r!.height).toBeLessThanOrEqual(n!.y + TOL);
+});
