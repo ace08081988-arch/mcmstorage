@@ -2488,11 +2488,11 @@ function ChatRoomPage() {
         style={{ paddingBottom: `max(env(safe-area-inset-bottom), 0.5rem)` }}
       >
         {editing ? (
-          <div className="mb-2 flex items-start gap-ms-2 rounded-md border border-primary/40 bg-primary/5 px-ms-2 py-1 text-ms-xs">
+          <div className="chat-preview-panel-primary mb-2 flex items-start gap-ms-2 rounded-md border border-primary/40 bg-primary/5 px-ms-2 py-1 text-ms-xs">
             <Pencil className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-primary">Edit pesan</div>
-              <div className="line-clamp-2 break-words text-muted-foreground">
+              <div className="chat-preview-text line-clamp-2 break-words">
                 {previewText(editing.body) || "(kosong)"}
               </div>
             </div>
@@ -2511,13 +2511,13 @@ function ChatRoomPage() {
             </Button>
           </div>
         ) : replyTo ? (
-          <div className="mb-2 flex items-start gap-ms-2 rounded-md border-l-2 border-primary bg-muted/60 px-ms-2 py-1 text-ms-xs">
+          <div className="chat-preview-panel mb-2 flex items-start gap-ms-2 rounded-md border-l-2 border-primary bg-muted/60 px-ms-2 py-1 text-ms-xs">
             <Reply className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <div className="truncate font-semibold">
+              <div className="chat-preview-label truncate font-semibold">
                 Balas {replyTo.sender_id === myId ? "Anda" : (profiles.data?.get(replyTo.sender_id)?.display_name || "Pengguna")}
               </div>
-              <div className="line-clamp-2 break-words text-muted-foreground">
+              <div className="chat-preview-text line-clamp-2 break-words">
                 <MessagePreview message={replyTo} />
               </div>
             </div>
