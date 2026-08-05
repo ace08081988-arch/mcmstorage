@@ -530,7 +530,7 @@ function ChatListPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Cari percakapan…"
-          className="h-9 rounded-full border border-[var(--wa-border)] bg-transparent pl-9 pr-8 text-ms-sm shadow-none placeholder:text-[var(--wa-text-muted)] focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/40"
+          className="chat-input-contrast h-9 rounded-full border border-[var(--wa-field-border)] bg-transparent pl-9 pr-8 text-ms-sm shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/40"
         />
         {q ? (
           <Button
