@@ -155,10 +155,11 @@ function BottomBarSnapHarness() {
 }
 /** Probe status drawer sidebar untuk uji keyboard (Enter/Space di tombol Menu). */
 function SidebarStateProbe() {
-  const { openMobile, open } = useSidebar();
+  // Bilah bawah hanya ada di mobile, jadi yang relevan adalah drawer mobile.
+  const { openMobile } = useSidebar();
   return (
     <span data-testid="sidebar-state" className="sr-only">
-      {openMobile || open ? "open" : "closed"}
+      {openMobile ? "open" : "closed"}
     </span>
   );
 }

@@ -100,9 +100,10 @@ test("Enter pada tombol Menu membuka sidebar", async ({ page }) => {
   // State sidebar (drawer mobile) berubah jadi terbuka.
   await expect(page.getByTestId("sidebar-state")).toHaveText("open", { timeout: 5_000 });
 
-  // Escape menutup drawer dan fokus dikembalikan ke tombol Menu
-  // (tidak terjebak di dalam drawer).
-  await page.keyboard.press("Escape");
+  // Space juga mengaktifkan tombol (toggle kembali ke tertutup) dan fokus
+  // tetap di tombol Menu — tidak lompat ke elemen lain.
+  await expect(menu).toBeFocused();
+  await page.keyboard.press("Space");
   await expect(page.getByTestId("sidebar-state")).toHaveText("closed", { timeout: 5_000 });
   await expect(menu).toBeFocused();
 });
