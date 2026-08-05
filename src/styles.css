@@ -1862,6 +1862,13 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   padding-top: var(--app-safe-top, env(safe-area-inset-top, 0px));
 }
 
+@utility app-safe-bottom {
+  padding-bottom: max(
+    var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)),
+    0.25rem
+  );
+}
+
 @utility app-safe-x {
   padding-left: max(
     var(--app-safe-left, env(safe-area-inset-left, 0px)),
