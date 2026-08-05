@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   ScanLine,
   Loader2,
+  Merge,
 } from "lucide-react";
 import {
   Search as SearchIcon,
@@ -56,8 +57,10 @@ import {
   applyProfileMatches,
   promoteToCustomer,
   promoteToSupplier,
+  findDuplicateGroups,
   type AddressBookRow,
 } from "@/lib/address-book";
+import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDialog";
 import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
@@ -157,6 +160,7 @@ function BukuAlamatPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<SortKey>("name");
   const [editing, setEditing] = useState<AddressBookRow | "new" | null>(null);
+  const [mergeOpen, setMergeOpen] = useState(false);
   const navigate = useNavigate();
   const startDm = useStartDm();
   const [chatting, setChatting] = useState<string | null>(null);
@@ -303,6 +307,7 @@ function BukuAlamatPage() {
   }, [rows, q, filter, sort]);
 
   const linkedCount = useMemo(() => rows.filter((r) => r.linked_user_id).length, [rows]);
+  const dupGroups = useMemo(() => findDuplicateGroups(rows), [rows]);
   const deviceCount = useMemo(() => rows.filter((r) => r.source === "device").length, [rows]);
   const manualCount = useMemo(() => rows.filter((r) => r.source === "manual").length, [rows]);
   const linkedPct = rows.length ? Math.round((linkedCount / rows.length) * 100) : 0;
@@ -394,6 +399,17 @@ function BukuAlamatPage() {
             <UserPlus className="mr-1.5 h-4 w-4" /> Tambah manual
           </Button>
         </div>
+        {dupGroups.length > 0 && (
+          <div className="flex items-center gap-ms-2 rounded-xl border border-warning/50 bg-warning/10 px-ms-3 py-ms-2">
+            <p className="min-w-0 flex-1 text-ms-xs text-foreground">
+              <span className="font-semibold">{dupGroups.length} grup kontak ganda</span> terdeteksi
+              (nomor, email, atau nama sama).
+            </p>
+            <Button size="sm" className="h-9 shrink-0 rounded-lg" onClick={() => setMergeOpen(true)}>
+              <Merge className="mr-1.5 h-4 w-4" /> Gabungkan
+            </Button>
+          </div>
+        )}
         {support === "unsupported" && (
           <p className="rounded-xl border border-warning/50 bg-warning px-ms-3 py-ms-2 text-ms-xs text-warning dark:bg-warning/40 dark:text-warning">
             Akses kontak HP hanya tersedia di aplikasi Android MCM Storage, atau di Chrome Android
@@ -612,6 +628,15 @@ function BukuAlamatPage() {
         onClose={() => setEditing(null)}
         onSaved={async () => {
           setEditing(null);
+          await refresh();
+        }}
+      />
+
+      <MergeDuplicatesDialog
+        open={mergeOpen}
+        rows={rows}
+        onOpenChange={setMergeOpen}
+        onMerged={async () => {
           await refresh();
         }}
       />
