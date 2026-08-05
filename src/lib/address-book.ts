@@ -62,12 +62,28 @@ export async function upsertManualEntry(input: {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
   if (!uid) throw new Error("Tidak ada sesi pengguna.");
+  const name = input.name.trim();
+  const phone = input.phone?.trim() || null;
+  const email = input.email?.trim() || null;
+  // Cegah kontak ganda: cek nomor / email / nama (untuk kontak tanpa nomor).
+  const dup = await findDuplicate({
+    uid,
+    name,
+    phone,
+    email,
+    excludeId: input.id ?? null,
+  });
+  if (dup) {
+    throw new Error(
+      `Kontak sudah tersimpan sebagai "${dup.name}". Tidak boleh ada kontak ganda.`,
+    );
+  }
   const payload = {
     id: input.id,
     user_id: uid,
-    name: input.name.trim(),
-    phone: input.phone?.trim() || null,
-    email: input.email?.trim() || null,
+    name,
+    phone,
+    email,
     note: input.note?.trim() || null,
     source: "manual" as const,
   };
@@ -76,8 +92,37 @@ export async function upsertManualEntry(input: {
     .upsert(payload, { onConflict: "id" })
     .select("*")
     .single();
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("Kontak dengan nomor/email/nama ini sudah tersimpan.");
+    }
+    throw error;
+  }
   return data as AddressBookRow;
+}
+
+/** Cari kontak yang sudah ada berdasarkan nomor, email, atau nama. */
+export async function findDuplicate(opts: {
+  uid: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  excludeId?: string | null;
+}): Promise<Pick<AddressBookRow, "id" | "name"> | null> {
+  const phoneNorm = normalizePhone(opts.phone);
+  const emailNorm = opts.email?.trim().toLowerCase() || null;
+  let q = supabase
+    .from("address_book")
+    .select("id,name")
+    .eq("user_id", opts.uid)
+    .limit(1);
+  if (opts.excludeId) q = q.neq("id", opts.excludeId);
+  if (phoneNorm) q = q.eq("phone_norm", phoneNorm);
+  else if (emailNorm) q = q.eq("email_norm", emailNorm);
+  else q = q.ilike("name", opts.name.trim());
+  const { data, error } = await q.maybeSingle();
+  if (error) return null;
+  return (data as Pick<AddressBookRow, "id" | "name"> | null) ?? null;
 }
 
 /** Import device contacts: one row per (contact x phone-or-email), dedup via device_contact_id. */
