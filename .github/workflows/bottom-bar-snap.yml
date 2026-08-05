@@ -38,8 +38,8 @@ jobs:
             sleep 1
           done
 
-      - name: Run bottom bar snap suite
-        run: bunx playwright test --project=bottom-bar-snap-e2e --reporter=list,html
+      - name: Run bottom bar snap suite (mobile + tablet + desktop)
+        run: bunx playwright test --project=bottom-bar-snap-e2e --project=bottom-bar-snap-e2e-tablet --project=bottom-bar-snap-e2e-desktop --reporter=list,html
 
       - name: Run bottom bar visual regression (screenshot diff)
         run: bunx playwright test --project=bottom-bar-snap-visual --workers=1 --reporter=list,html
