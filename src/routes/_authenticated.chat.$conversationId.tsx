@@ -2484,7 +2484,7 @@ function ChatRoomPage() {
       ) : null}
       <form
         onSubmit={onSubmit}
-        className="z-10 shrink-0 border-t bg-background/95 p-ms-2 backdrop-blur"
+        className="chat-field-scope z-10 shrink-0 border-t bg-background/95 p-ms-2 backdrop-blur"
         style={{ paddingBottom: `max(env(safe-area-inset-bottom), 0.5rem)` }}
       >
         {editing ? (
