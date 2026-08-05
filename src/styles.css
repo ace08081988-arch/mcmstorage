@@ -1489,6 +1489,19 @@ textarea::placeholder {
     color: var(--primary-foreground);
     -webkit-text-fill-color: var(--primary-foreground);
   }
+
+  /* Navigasi panah (cmdk/Radix menandai item aktif lewat data-highlighted /
+     aria-selected tanpa memindahkan fokus DOM) dan fokus keyboard nyata
+     mendapat cincin ganda: outline dalam --primary-foreground di atas latar
+     --primary, plus box-shadow --ring di luar item supaya tetap terlihat di
+     atas --popover pada semua tema. */
+  &:is([data-highlighted], [aria-selected="true"], [data-selected="true"]),
+  &:focus-visible {
+    outline: 2px solid var(--primary-foreground);
+    outline-offset: -2px;
+    box-shadow: 0 0 0 2px var(--ring);
+    scroll-margin-block: 0.5rem;
+  }
 }
 
 :where(.chat-field-scope, .chat-input-contrast)
@@ -1515,13 +1528,22 @@ textarea::placeholder {
     }
   }
 
+  /* Item aktif hasil navigasi panah ATAU fokus keyboard nyata: cincin dalam
+     kontras terhadap latar sorotan, cincin luar kontras terhadap popover.
+     Latar item saat fokus/hover selalu --primary, jadi outline memakai
+     --primary-foreground supaya rasio kontrasnya tetap ≥3:1 di semua tema
+     (var(--ring) menyatu dengan --primary di tema high-contrast). */
+  &:is([data-highlighted], [aria-selected="true"], [data-selected="true"]),
   &:focus-visible {
-    /* Latar item saat fokus/hover selalu --primary, jadi outline memakai
-       --primary-foreground supaya rasio kontrasnya tetap ≥3:1 di semua tema
-       (var(--ring) menyatu dengan --primary di tema high-contrast). */
     outline: 2px solid var(--primary-foreground);
     outline-offset: -2px;
+    box-shadow: 0 0 0 2px var(--ring);
+    scroll-margin-block: 0.5rem;
   }
+
+  /* Item aktif selalu tergulir penuh ke tampilan saat ditelusuri dengan
+     panah, jadi indikator fokusnya tidak pernah terpotong. */
+  scroll-margin-block: 0.5rem;
 
   & ::selection {
     background-color: var(--primary);

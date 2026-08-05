@@ -124,6 +124,8 @@ const hoverCases: Case[] = [
   { label: "latar hover vs kartu", fg: "var(--primary)", bg: "var(--card)", min: UI_AA },
   { label: "latar hover vs permukaan chat", fg: "var(--primary)", bg: "var(--wa-surface)", min: UI_AA },
   { label: "outline fokus item hover", fg: "var(--primary-foreground)", bg: "var(--primary)", min: UI_AA },
+  { label: "cincin luar fokus keyboard vs popover", fg: "var(--ring)", bg: "var(--popover)", min: UI_AA },
+  { label: "cincin luar fokus keyboard vs kartu", fg: "var(--ring)", bg: "var(--card)", min: UI_AA },
 ];
 
 describe("kontras state hover dropdown autocomplete/mention chat", () => {
@@ -161,5 +163,19 @@ describe("kontras state hover dropdown autocomplete/mention chat", () => {
     // teks sekunder/ikon tidak boleh tetap redup saat hover
     expect(block).toMatch(/opacity:\s*1/);
     expect(block).not.toMatch(/var\(--accent\)/);
+  });
+
+  it("navigasi panah (data-highlighted/aria-selected) mendapat cincin fokus", () => {
+    const block = chatOptionScopeBlock();
+    expect(block).toMatch(/&:is\(\[data-highlighted\], \[aria-selected="true"\], \[data-selected="true"\]\),\s*\n\s*&:focus-visible \{/);
+    expect(block).toMatch(/box-shadow:\s*0 0 0 2px var\(--ring\)/);
+    expect(block).toMatch(/scroll-margin-block/);
+  });
+
+  it("utility chat-option-highlight memberi cincin fokus keyboard yang sama", () => {
+    const body = css.match(/@utility\s+chat-option-highlight\s*\{[\s\S]*?\n\}/)?.[0] ?? "";
+    expect(body).toMatch(/\[data-highlighted\]/);
+    expect(body).toMatch(/outline:\s*2px solid var\(--primary-foreground\)/);
+    expect(body).toMatch(/box-shadow:\s*0 0 0 2px var\(--ring\)/);
   });
 });
