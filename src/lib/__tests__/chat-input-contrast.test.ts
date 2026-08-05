@@ -72,6 +72,11 @@ const cases: Case[] = [
   { label: "ring fokus di atas kartu", fg: "var(--ring)", bg: "var(--card)", min: UI_AA },
   { label: "ring fokus di atas latar", fg: "var(--ring)", bg: "var(--background)", min: UI_AA },
   { label: "ring fokus di atas permukaan chat", fg: "var(--ring)", bg: "var(--wa-surface)", min: UI_AA },
+
+  // Item aktif dropdown/autocomplete di composer chat
+  { label: "teks item dropdown tersorot", fg: "var(--primary-foreground)", bg: "var(--primary)", min: TEXT_AA },
+  { label: "latar item tersorot vs popover", fg: "var(--primary)", bg: "var(--popover)", min: UI_AA },
+  { label: "latar item tersorot vs kartu", fg: "var(--primary)", bg: "var(--card)", min: UI_AA },
 ];
 
 describe("kontras komponen input chat", () => {
