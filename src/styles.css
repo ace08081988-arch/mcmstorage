@@ -1471,6 +1471,62 @@ textarea::placeholder {
 }
 
 /* Anchor yang menjadi elemen ber-utility itu sendiri (bukan turunannya). */
+
+/* Item aktif di dropdown/autocomplete/mention di area chat (cmdk, Select,
+   listbox, combobox). Warna sorotannya disamakan dengan seleksi teks —
+   latar --primary dan tinta --primary-foreground — supaya kontrasnya sama
+   jelas di light, dark, Noir & Gold, Midnight Indigo, dan high-contrast.
+   Token --accent terlalu tipis (≈1.1–1.5:1) di beberapa tema. */
+@utility chat-option-highlight {
+  &:is(
+      [data-selected="true"],
+      [data-highlighted],
+      [aria-selected="true"],
+      [data-state="checked"]
+    ),
+  &:where(:hover, :focus-visible) {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    -webkit-text-fill-color: var(--primary-foreground);
+  }
+}
+
+:where(.chat-field-scope, .chat-input-contrast)
+  :where(
+    [cmdk-item],
+    [role="option"],
+    [data-slot="select-item"],
+    [data-slot="command-item"],
+    [data-slot="dropdown-menu-item"]
+  ) {
+  &:is([data-selected="true"], [data-highlighted], [aria-selected="true"]),
+  &:hover,
+  &:focus-visible {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    -webkit-text-fill-color: var(--primary-foreground);
+
+    /* Ikon, badge, dan keterangan sekunder di dalam item ikut menyesuaikan
+       supaya tidak ada teks redup yang menyatu dengan latar sorotan. */
+    & :where(svg, span, small, p, strong, [data-slot="badge"]) {
+      color: var(--primary-foreground);
+      -webkit-text-fill-color: var(--primary-foreground);
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+
+  & ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    -webkit-text-fill-color: var(--primary-foreground);
+  }
+}
+
 :where(
   .chat-input-contrast,
   .chat-preview-text,
