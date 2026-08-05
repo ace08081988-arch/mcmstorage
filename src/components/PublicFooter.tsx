@@ -16,6 +16,9 @@ export function PublicFooter() {
               alt={full}
               width={24}
               height={24}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
               className="h-6 w-6 rounded object-cover"
             />
           ) : (
