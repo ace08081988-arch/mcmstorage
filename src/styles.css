@@ -1270,6 +1270,34 @@ textarea::placeholder {
   opacity: 1;
 }
 
+/* Input chat: teks & placeholder selalu diturunkan dari warna permukaan
+   field-nya sendiri (kartu), bukan dari --foreground halaman, sehingga
+   kontras tetap aman di mode terang maupun gelap. */
+@utility chat-input-contrast {
+  color: var(--card-foreground);
+  -webkit-text-fill-color: var(--card-foreground);
+  caret-color: var(--primary, var(--card-foreground));
+
+  &::placeholder {
+    /* 55% teks kartu di atas latar kartu ≈ rasio kontras aman (>4.5:1)
+       tanpa terlihat sekeras teks utama, di kedua mode tema. */
+    color: color-mix(in oklab, var(--card-foreground) 55%, var(--card));
+    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 55%, var(--card));
+    opacity: 1;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    color: color-mix(in oklab, var(--card-foreground) 60%, var(--card));
+    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 60%, var(--card));
+  }
+
+  &:disabled::placeholder {
+    color: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
+    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
+  }
+}
+
 /*
  * Scoped auto-press: setiap elemen dengan atribut `data-press-scope="on"`
  * akan otomatis memberi reaksi sentuh pada elemen interaktif di dalamnya —
