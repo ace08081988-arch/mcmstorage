@@ -1936,16 +1936,22 @@ function TitleDetailView({
   }
   useEffect(() => { void load(); }, [title.id]);
 
-  async function handleDelete(p: RequestPreparation) {
+  const [deleteTarget, setDeleteTarget] = useState<RequestPreparation | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+
+  function handleDelete(p: RequestPreparation) {
     // `isSentPrep` = SSOT untuk "sudah masuk Riwayat Terkirim". Jangan
     // pernah tulis literal boolean atas sold_at di call site —
     // konsistensi definisi "sent" dijaga di satu tempat saja.
-    const wasSold = isSentPrep(p);
-    const msg = wasSold
-      ? "Hapus catatan penyiapan ini? Penjualan & piutang yang sudah tercatat TIDAK ikut terhapus."
-      : "Hapus penyiapan ini? Stok akan dikembalikan.";
-    if (!confirm(msg)) return;
+    setDeleteTarget(p);
+  }
+
+  async function runDelete() {
+    if (!deleteTarget) return;
+    setDeleteBusy(true);
     try {
+      const p = deleteTarget;
+      const wasSold = isSentPrep(p);
       await deleteRequestPhoto(p.photo_path);
       // Legacy photos di photo_paths[] juga dibersihkan.
       const extra = (p.photo_paths ?? []).filter((x) => x && x !== p.photo_path);
@@ -1953,11 +1959,19 @@ function TitleDetailView({
       const { error } = await sb.from("request_preparations").delete().eq("id", p.id);
       if (error) throw error;
       toast.success(wasSold ? "Penyiapan dihapus" : "Penyiapan dihapus, stok dikembalikan");
+      setDeleteTarget(null);
       onChanged(); void load();
-    } catch (e) { toast.error("Gagal: " + (e as Error).message); }
+    } catch (e) {
+      toast.error("Gagal: " + (e as Error).message);
+    } finally {
+      setDeleteBusy(false);
+    }
   }
 
+  const deleteTargetSold = deleteTarget ? isSentPrep(deleteTarget) : false;
+
   return (
+
     <div className="mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
       <button onClick={onBack} className="inline-flex items-center gap-ms-1 text-ms-xs text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-3 w-3" /> Kembali
