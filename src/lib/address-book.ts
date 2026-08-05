@@ -144,7 +144,7 @@ export async function findDuplicate(opts: {
   excludeId?: string | null;
 }): Promise<Pick<AddressBookRow, "id" | "name"> | null> {
   const phoneNorm = normalizePhone(opts.phone);
-  const emailNorm = opts.email?.trim().toLowerCase() || null;
+  const emailNorm = normalizeEmail(opts.email);
   let q = supabase
     .from("address_book")
     .select("id,name")
@@ -243,7 +243,7 @@ export async function importDeviceContacts(
   const toInsert = rows.filter((r) => {
     if (byId.has(r.device_contact_id)) return false;
     const p = normalizePhone(r.phone);
-    const e = r.email?.trim().toLowerCase() || null;
+    const e = normalizeEmail(r.email);
     const n = (r.name ?? "").trim().toLowerCase();
     if (p) {
       if (seenPhone.has(p)) return false;
