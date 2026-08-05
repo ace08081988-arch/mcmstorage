@@ -55,7 +55,9 @@ async function bottomGap(page: Page): Promise<number> {
 
 test.beforeEach(async ({ page }) => {
   await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
-  await expect(nav(page)).toBeVisible();
+  // Bar hanya tampil di breakpoint ponsel (`md:hidden`); di tablet/desktop
+  // cukup pastikan harness ter-render.
+  await expect(page.getByTestId("dynamic-list")).toBeVisible();
   // Tunggu hidrasi React selesai: sebelum hidrasi, klik tombol tidak
   // memicu handler apa pun sehingga test jadi flaky.
   await page.waitForLoadState("networkidle").catch(() => {});
