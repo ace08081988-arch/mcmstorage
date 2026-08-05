@@ -33,6 +33,21 @@ async function bottomGap(page: Page): Promise<number> {
 test.beforeEach(async ({ page }) => {
   await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
   await expect(nav(page)).toBeVisible();
+  // Tunggu hidrasi React selesai: sebelum hidrasi, klik tombol tidak
+  // memicu handler apa pun sehingga test jadi flaky.
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          const el = document.querySelector("[data-bottom-bar-harness]");
+          return el
+            ? Object.keys(el).some((k) => k.startsWith("__reactFiber$"))
+            : false;
+        }),
+      { timeout: 15_000 },
+    )
+    .toBe(true);
 });
 
 test("bilah bawah menempel di dasar layar saat halaman dimuat", async ({ page }) => {
