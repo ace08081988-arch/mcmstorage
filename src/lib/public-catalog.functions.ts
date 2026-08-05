@@ -122,12 +122,14 @@ const DETAIL_FALLBACK_WIDTH = 1024;
  *
  * Supabase Storage belum bisa menghasilkan AVIF (dan proxy gambar publik
  * seperti wsrv.nl sudah menonaktifkan saver AVIF), jadi varian AVIF dibuat
- * di server lewat `/api/public/img/avif` dan di-cache di tepi. Browser tanpa
- * dukungan AVIF tetap memakai varian WebP/JPEG langsung dari Storage.
+ * lewat `/api/public/img/avif`, yang mengalihkan ke CDN transcoding sesuai
+ * konfigurasi env. Varian ini hanya ditawarkan bila transcoding memang
+ * aktif; browser tanpa dukungan AVIF (atau saat fitur mati) tetap memakai
+ * varian WebP/JPEG langsung dari Storage.
  */
 const AVIF_ENDPOINT = "/api/public/img/avif";
-/** Kualitas AVIF: 50 sudah setara WebP q72 secara visual, ukuran ~30% lebih kecil. */
-const AVIF_QUALITY = 50;
+/** Kualitas AVIF: 55 setara WebP q72 secara visual, ukuran ~30% lebih kecil. */
+const AVIF_QUALITY = 55;
 
 function avifVariantUrl(slug: string, itemId: string, width: number) {
   const q = new URLSearchParams({
