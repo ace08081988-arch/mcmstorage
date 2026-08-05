@@ -67,6 +67,51 @@ function fmtRaw(metric: AlertMetric, v: number): string {
 const GATEWAY = "https://connector-gateway.lovable.dev";
 const REPORT_BASE_URL = process.env["SITE_URL"] ?? "https://mcmstorage.app";
 
+type MetricSnapshot = { metric: AlertMetric; p75: number | null; threshold: number; breached: boolean };
+
+function buildAlertMessages(
+  page: AlertPage,
+  breachedMetric: AlertMetric,
+  p75: number,
+  threshold: number,
+  snapshots: MetricSnapshot[],
+  checkedAt: string,
+) {
+  const pageLabel = PAGE_LABEL[page];
+  const reportUrl = `${REPORT_BASE_URL}/admin/web-vitals`;
+  const severity = threshold > 0 && p75 / threshold >= 1.5 ? "critical" : "warning";
+  const emoji = severity === "critical" ? "🚨" : "⚠️";
+
+  const metricLines = snapshots
+    .map((s) => {
+      const value = s.p75 == null ? "tidak tersedia" : fmtRaw(s.metric, s.p75);
+      const limit = fmtRaw(s.metric, s.threshold);
+      const marker = s.metric === breachedMetric ? " ❗" : "";
+      return `• ${s.metric}: p75 ${value} (ambang ${limit})${marker}`;
+    })
+    .join("\n");
+
+  const telegramHtml =
+    `${emoji} <b>Peringatan Core Web Vitals — ${pageLabel}</b>\n\n` +
+    `<b>Metrik yang melewati ambang:</b> ${breachedMetric}\n` +
+    `<b>Nilai p75:</b> ${fmtRaw(breachedMetric, p75)}\n` +
+    `<b>Ambang batas:</b> ${fmtRaw(breachedMetric, threshold)}\n\n` +
+    `<b>Ringkasan p75 halaman:</b>\n${metricLines}\n\n` +
+    `<a href="${reportUrl}">📊 Lihat laporan di dashboard</a>\n` +
+    `<i>Diperiksa: ${new Date(checkedAt).toLocaleString("id-ID")}</i>`;
+
+  const slackText =
+    `${emoji} *Peringatan Core Web Vitals — ${pageLabel}*\n\n` +
+    `*Metrik yang melewati ambang:* ${breachedMetric}\n` +
+    `*Nilai p75:* ${fmtRaw(breachedMetric, p75)}\n` +
+    `*Ambang batas:* ${fmtRaw(breachedMetric, threshold)}\n\n` +
+    `*Ringkasan p75 halaman:*\n${metricLines}\n\n` +
+    `<${reportUrl}|📊 Lihat laporan di dashboard>\n` +
+    `_Diperiksa: ${new Date(checkedAt).toLocaleString("id-ID")}_`;
+
+  return { telegramHtml, slackText, severity };
+}
+
 /** Kirim pesan ke Telegram lewat connector gateway. */
 async function sendTelegram(chatId: string, text: string): Promise<string> {
   const apiKey = process.env["LOVABLE_API_KEY"];
