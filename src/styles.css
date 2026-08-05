@@ -845,38 +845,40 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
      aksen di /pengaturan-tampilan juga mewarnai halaman chat & profil-chat. */
   --mcm-brand: var(--primary, #0f766e);
   --mcm-brand-strong: color-mix(in oklab, var(--primary, #0f766e) 80%, black 20%);
-  --wa-surface: #ffffff;
-  --wa-surface-2: #f0f2f5;
-  --wa-header: #ffffff;
-  --wa-text: #111b21;
-  --wa-text-muted: #667781;
-  --wa-border: #e9edef;
+  /* Chat mengikuti token tema aktif (termasuk preset & mode gelap) supaya
+     warnanya selalu kompak dengan halaman lain — jangan hardcode hex. */
+  --wa-surface: var(--card);
+  --wa-surface-2: var(--muted);
+  --wa-header: var(--card);
+  --wa-text: var(--foreground);
+  --wa-text-muted: var(--muted-foreground);
+  --wa-border: var(--border);
   --wa-green: var(--mcm-brand);
   --wa-green-strong: var(--mcm-brand-strong);
-  --wa-bubble-out: color-mix(in oklab, var(--mcm-brand) 22%, #ffffff);
-  --wa-bubble-out-fg: #111b21;
-  --wa-bubble-in: #ffffff;
-  --wa-bubble-in-fg: #111b21;
-  --wa-chat-bg: #efeae2;
-  --wa-check: #25d366;
+  --wa-bubble-out: color-mix(in oklab, var(--primary) 22%, var(--card));
+  --wa-bubble-out-fg: var(--card-foreground);
+  --wa-bubble-in: var(--card);
+  --wa-bubble-in-fg: var(--card-foreground);
+  --wa-chat-bg: var(--background);
+  --wa-check: var(--success, var(--primary));
 }
 .dark {
   --mcm-brand: var(--primary, #14b8a6);
   --mcm-brand-strong: color-mix(in oklab, var(--primary, #14b8a6) 70%, white 30%);
-  --wa-surface: #0b141a;
-  --wa-surface-2: #111b21;
-  --wa-header: #1f2c34;
-  --wa-text: #e9edef;
-  --wa-text-muted: #8696a0;
-  --wa-border: rgba(134,150,160,0.15);
+  --wa-surface: var(--card);
+  --wa-surface-2: var(--muted);
+  --wa-header: color-mix(in oklab, var(--card) 88%, var(--foreground) 12%);
+  --wa-text: var(--foreground);
+  --wa-text-muted: var(--muted-foreground);
+  --wa-border: var(--border);
   --wa-green: var(--mcm-brand);
   --wa-green-strong: var(--mcm-brand-strong);
-  --wa-bubble-out: color-mix(in oklab, var(--mcm-brand) 45%, black 55%);
-  --wa-bubble-out-fg: #e9edef;
-  --wa-bubble-in: #1f2c34;
-  --wa-bubble-in-fg: #e9edef;
-  --wa-chat-bg: #0b141a;
-  --wa-check: #25d366;
+  --wa-bubble-out: color-mix(in oklab, var(--primary) 34%, var(--card) 66%);
+  --wa-bubble-out-fg: var(--card-foreground);
+  --wa-bubble-in: color-mix(in oklab, var(--card) 92%, var(--foreground) 8%);
+  --wa-bubble-in-fg: var(--card-foreground);
+  --wa-chat-bg: var(--background);
+  --wa-check: var(--success, var(--primary));
 }
 
 @utility wa-surface {
@@ -966,19 +968,8 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
    sistem appearance-preset di halaman lain tetap utuh. Palet: Slate+Steel.
    ========================================================================== */
 [data-industrial="chat"] {
-  /* Slate+Steel — dark-first (chat memang default dark di app ini). */
-  --wa-surface: #0C1116;
-  --wa-surface-2: #131A22;
-  --wa-header: #0F1620;
-  --wa-text: #E4E9EF;
-  --wa-text-muted: #7C8B9E;
-  --wa-border: rgba(148, 163, 184, 0.14);
-  --wa-green: #7BA6D9;
-  --wa-green-strong: #A8C4E4;
-  --wa-check: #25d366;
-  --wa-chat-bg: #0C1116;
-
-  /* Tipografi: DM Sans body, Space Grotesk untuk heading/label. */
+  /* Warna mengikuti tema aktif (lihat token --wa-* di atas); di sini hanya
+     tipografi supaya daftar chat tidak pernah beda palet dengan halaman lain. */
   font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "ss01", "cv11";
   letter-spacing: -0.005em;
@@ -992,7 +983,7 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
 }
 /* Elevated surface untuk row aktif / hover — precision, no glow. */
 [data-industrial="chat"] [data-elevated] {
-  background-color: #1E2732;
+  background-color: color-mix(in oklab, var(--wa-surface-2) 82%, var(--foreground) 18%);
 }
 
 html[data-font-size="sm"] { --app-font-size: 14px; }
