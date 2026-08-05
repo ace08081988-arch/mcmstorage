@@ -853,6 +853,9 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
   --wa-text: var(--foreground);
   --wa-text-muted: var(--muted-foreground);
   --wa-border: var(--border);
+  /* Batas field chat (kotak cari, composer) — ≥3:1 terhadap permukaan kartu
+     sesuai WCAG 1.4.11; --wa-border biasa terlalu tipis untuk input. */
+  --wa-field-border: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
   --wa-green: var(--mcm-brand);
   --wa-green-strong: var(--mcm-brand-strong);
   --wa-bubble-out: color-mix(in oklab, var(--primary) 22%, var(--card));
@@ -871,6 +874,9 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
   --wa-text: var(--foreground);
   --wa-text-muted: var(--muted-foreground);
   --wa-border: var(--border);
+  /* Batas field chat (kotak cari, composer) — ≥3:1 terhadap permukaan kartu
+     sesuai WCAG 1.4.11; --wa-border biasa terlalu tipis untuk input. */
+  --wa-field-border: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
   --wa-green: var(--mcm-brand);
   --wa-green-strong: var(--mcm-brand-strong);
   --wa-bubble-out: color-mix(in oklab, var(--primary) 34%, var(--card) 66%);
