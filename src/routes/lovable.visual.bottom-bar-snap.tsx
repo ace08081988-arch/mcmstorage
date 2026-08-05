@@ -62,7 +62,10 @@ function BottomBarSnapHarness() {
               className="rounded-lg border border-primary/30 px-ms-3 py-ms-2 text-ms-xs"
               onClick={() =>
                 void navigate({
-                  search: (prev) => ({ ...prev, page: ((page % 3) + 1) }),
+                  search: (prev: Search): Search => ({
+                    ...prev,
+                    page: (page % 3) + 1,
+                  }),
                 })
               }
             >
