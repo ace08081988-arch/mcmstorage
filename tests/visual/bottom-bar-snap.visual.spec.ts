@@ -45,6 +45,10 @@ async function shootStrip(page: Page) {
   if (!size) throw new Error("viewport size tidak tersedia");
   return page.screenshot({
     clip: { x: 0, y: size.height - STRIP_H, width: size.width, height: STRIP_H },
+    // Isi daftar di belakang bilah selalu berubah (scroll/konten dinamis);
+    // yang diuji hanya posisi + tampilan bilah bawahnya.
+    mask: [page.getByTestId("dynamic-list")],
+    maskColor: "#000000",
     animations: "disabled",
     caret: "hide",
   });
