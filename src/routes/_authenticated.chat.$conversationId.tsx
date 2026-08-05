@@ -2863,7 +2863,7 @@ function ChatRoomPage() {
                 }}
                 placeholder="Tulis pesan…"
                 rows={1}
-                className="max-h-32 min-h-10 w-full resize-none"
+                className="max-h-32 min-h-10 w-full resize-none bg-card text-foreground caret-primary placeholder:text-muted-foreground"
                 disabled={chatBlocked}
               />
             </div>
