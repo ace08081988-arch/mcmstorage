@@ -118,27 +118,25 @@ const DETAIL_WIDTHS = [640, 1024, 1600] as const;
 const DETAIL_FALLBACK_WIDTH = 1024;
 
 /**
- * Proxy transcoding gambar (wsrv.nl / images.weserv.nl).
+ * Endpoint transcoding AVIF milik aplikasi sendiri.
  *
- * Supabase Storage belum bisa menghasilkan AVIF, jadi varian AVIF dibuat
- * lewat proxy publik yang menerima URL bertanda tangan sebagai sumber dan
- * meng-encode ulang + cache di CDN-nya. Browser tanpa dukungan AVIF tetap
- * memakai varian WebP/JPEG langsung dari Storage.
+ * Supabase Storage belum bisa menghasilkan AVIF (dan proxy gambar publik
+ * seperti wsrv.nl sudah menonaktifkan saver AVIF), jadi varian AVIF dibuat
+ * di server lewat `/api/public/img/avif` dan di-cache di tepi. Browser tanpa
+ * dukungan AVIF tetap memakai varian WebP/JPEG langsung dari Storage.
  */
-const AVIF_PROXY = "https://wsrv.nl/";
+const AVIF_ENDPOINT = "/api/public/img/avif";
 /** Kualitas AVIF: 50 sudah setara WebP q72 secara visual, ukuran ~30% lebih kecil. */
 const AVIF_QUALITY = 50;
 
-function avifProxyUrl(sourceUrl: string, width: number) {
+function avifVariantUrl(slug: string, itemId: string, width: number) {
   const q = new URLSearchParams({
-    url: sourceUrl,
+    slug,
+    item: itemId,
     w: String(width),
-    fit: "inside",
-    we: "",
-    output: "avif",
     q: String(AVIF_QUALITY),
   });
-  return `${AVIF_PROXY}?${q.toString()}`;
+  return `${AVIF_ENDPOINT}?${q.toString()}`;
 }
 
 /** Detail satu produk katalog publik (stok live, deskripsi, foto). */
@@ -204,13 +202,11 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
         imageUrl = signed?.signedUrl ?? null;
       }
 
-      // Sumber AVIF memakai varian WebP terkecil-yang-cukup dari Storage,
-      // bukan berkas asli, supaya proxy tidak perlu mengunduh file besar.
-      if (ok.length) {
-        imageAvifSrcset = ok
-          .map((v) => `${avifProxyUrl(v.url, v.width)} ${v.width}w`)
-          .join(", ");
-      }
+      // URL AVIF stabil (tanpa token) supaya bisa di-cache lama di tepi;
+      // endpoint-nya sendiri yang menandatangani ulang berkas Storage.
+      imageAvifSrcset = DETAIL_WIDTHS.map(
+        (width) => `${avifVariantUrl(data.slug, data.itemId, width)} ${width}w`,
+      ).join(", ");
     }
 
     return {
