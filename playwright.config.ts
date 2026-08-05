@@ -196,7 +196,14 @@ export default defineConfig({
       name: "bottom-bar-snap-e2e-tablet",
       testDir: "./tests/e2e",
       testMatch: /bottom-bar-snap\.spec\.ts/,
-      use: { ...devices["iPad (gen 7)"], viewport: { width: 768, height: 1024 } },
+      // Pakai basis Chromium (bukan preset iPad/WebKit) supaya konsisten
+      // dengan proyek lain & override PWTEST_CHROMIUM_PATH tetap berlaku.
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 768, height: 1024 },
+        isMobile: false,
+        hasTouch: true,
+      },
     },
     {
       // Breakpoint desktop (1280x800) — invarian sama dengan tablet.
