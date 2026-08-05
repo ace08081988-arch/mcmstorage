@@ -1278,6 +1278,18 @@ textarea::placeholder {
   -webkit-text-fill-color: var(--card-foreground);
   caret-color: var(--primary, var(--card-foreground));
 
+  /* Sorotan seleksi: latar primary solid + teks primary-foreground supaya
+     tetap terbaca di tema terang, gelap, maupun Noir & Gold. */
+  &::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    -webkit-text-fill-color: var(--primary-foreground);
+  }
+  &::-moz-selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
   &::placeholder {
     /* 55% teks kartu di atas latar kartu ≈ rasio kontras aman (>4.5:1)
        tanpa terlihat sekeras teks utama, di kedua mode tema. */
