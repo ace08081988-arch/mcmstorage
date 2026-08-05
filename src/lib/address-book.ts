@@ -337,6 +337,91 @@ export async function applyProfileMatches(
   return ok;
 }
 
+/** Kunci dedup untuk satu kontak: nomor > email > nama. */
+function duplicateKey(r: AddressBookRow): string | null {
+  if (r.phone_norm) return `p:${r.phone_norm}`;
+  const p = normalizePhone(r.phone);
+  if (p) return `p:${p}`;
+  if (r.email_norm) return `e:${r.email_norm}`;
+  const e = normalizeEmail(r.email);
+  if (e) return `e:${e}`;
+  const n = r.name.trim().toLowerCase().replace(/\s+/g, " ");
+  return n ? `n:${n}` : null;
+}
+
+export type DuplicateGroup = {
+  key: string;
+  reason: "phone" | "email" | "name";
+  rows: AddressBookRow[];
+};
+
+/** Kelompokkan kontak yang terdeteksi ganda (nomor / email / nama sama). */
+export function findDuplicateGroups(rows: AddressBookRow[]): DuplicateGroup[] {
+  const map = new Map<string, AddressBookRow[]>();
+  for (const r of rows) {
+    const k = duplicateKey(r);
+    if (!k) continue;
+    const list = map.get(k);
+    if (list) list.push(r);
+    else map.set(k, [r]);
+  }
+  const groups: DuplicateGroup[] = [];
+  for (const [key, list] of map) {
+    if (list.length < 2) continue;
+    const reason = key.startsWith("p:") ? "phone" : key.startsWith("e:") ? "email" : "name";
+    groups.push({
+      key,
+      reason,
+      rows: [...list].sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "")),
+    });
+  }
+  return groups.sort((a, b) => b.rows.length - a.rows.length);
+}
+
+export type MergeFields = {
+  name: string;
+  phone: string | null;
+  email: string | null;
+  note: string | null;
+  linked_user_id: string | null;
+};
+
+/**
+ * Gabungkan beberapa kontak ganda jadi satu. Baris lain dihapus DULU supaya
+ * indeks unik (phone_norm/email_norm/name) tidak bentrok saat baris utama
+ * diperbarui dengan data pilihan pengguna.
+ */
+export async function mergeContacts(opts: {
+  keepId: string;
+  removeIds: string[];
+  fields: MergeFields;
+}): Promise<AddressBookRow> {
+  const removeIds = opts.removeIds.filter((id) => id && id !== opts.keepId);
+  if (removeIds.length > 0) {
+    const { error } = await supabase.from("address_book").delete().in("id", removeIds);
+    if (error) throw error;
+  }
+  const { data, error } = await supabase
+    .from("address_book")
+    .update({
+      name: opts.fields.name.trim(),
+      phone: opts.fields.phone?.trim() || null,
+      email: opts.fields.email?.trim() || null,
+      note: opts.fields.note?.trim() || null,
+      linked_user_id: opts.fields.linked_user_id ?? null,
+    })
+    .eq("id", opts.keepId)
+    .select("*")
+    .single();
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("Data gabungan bentrok dengan kontak lain yang sudah tersimpan.");
+    }
+    throw error;
+  }
+  return data as AddressBookRow;
+}
+
 export async function promoteToCustomer(row: AddressBookRow): Promise<void> {
   const { userId: uid } = await ensureFreshSession();
   await assertStorageAccess(uid);
