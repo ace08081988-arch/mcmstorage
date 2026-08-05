@@ -1510,8 +1510,23 @@ html [data-slot="card"] {
 html {
   --app-saturation: 1;
 }
+/* PENTING: `filter` pada <body> membuat body jadi *containing block* untuk
+   semua elemen `position: fixed` — bar bawah jadi menempel ke dasar DOKUMEN
+   dan ikut menggulir, bukan menempel ke dasar layar. Karena itu filter tidak
+   pernah dipasang di body. Saat user memang mengubah saturasi (≠ 100%),
+   efeknya dipasang lewat overlay `backdrop-filter` yang tidak memengaruhi
+   layout maupun containing block elemen fixed. */
 body {
-  filter: saturate(var(--app-saturation, 1));
+  filter: none;
+}
+html[data-saturation-fx="1"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483000;
+  backdrop-filter: saturate(var(--app-saturation, 1));
+  -webkit-backdrop-filter: saturate(var(--app-saturation, 1));
 }
 
 /* Gradien pada elemen beraksen */
