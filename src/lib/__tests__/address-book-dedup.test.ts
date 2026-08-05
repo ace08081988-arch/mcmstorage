@@ -10,7 +10,7 @@
  * yang lolos dari filter klien tetap ketahuan lewat error 23505.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fakeDb, FAKE_UID } from "./_fake-address-book-db";
+import { fakeDb, FAKE_UID, setNormalizers } from "./_fake-address-book-db";
 
 vi.mock("@/integrations/supabase/client", async () => {
   const m = await import("./_fake-address-book-db");
@@ -30,6 +30,8 @@ const {
   mergeContacts,
   fetchAddressBook,
 } = await import("@/lib/address-book");
+
+setNormalizers(normalizePhone, normalizeEmail);
 
 beforeEach(() => fakeDb.reset());
 

@@ -6,7 +6,17 @@
  * Tujuannya: kalau logika dedup di klien lolos, fake DB ini melempar 23505
  * persis seperti Postgres — jadi tes gagal, bukan diam-diam lolos.
  */
-import { normalizeEmail, normalizePhone, type AddressBookRow } from "@/lib/address-book";
+import type { AddressBookRow } from "@/lib/address-book.types";
+
+// Normalizer disuntik dari tes (bukan di-import langsung) supaya tidak terjadi
+// siklus impor: address-book -> supabase client (mock) -> modul ini.
+type Norm = (v: string | null | undefined) => string | null;
+let normalizePhone: Norm = () => null;
+let normalizeEmail: Norm = () => null;
+export function setNormalizers(phone: Norm, email: Norm) {
+  normalizePhone = phone;
+  normalizeEmail = email;
+}
 
 export const FAKE_UID = "user-1";
 
