@@ -60,7 +60,12 @@ function fmt(metric: AlertMetric, v: number): string {
   return metric === "CLS" ? v.toFixed(3) : `${(v / 1000).toFixed(2)} s`;
 }
 
+function fmtRaw(metric: AlertMetric, v: number): string {
+  return metric === "CLS" ? v.toFixed(3) : `${Math.round(v)} ms`;
+}
+
 const GATEWAY = "https://connector-gateway.lovable.dev";
+const REPORT_BASE_URL = process.env["SITE_URL"] ?? "https://mcmstorage.app";
 
 /** Kirim pesan ke Telegram lewat connector gateway. */
 async function sendTelegram(chatId: string, text: string): Promise<string> {
