@@ -103,3 +103,63 @@ describe("kontras komponen input chat", () => {
     }
   });
 });
+
+/* ---------------------------------------------------------------------------
+ * State HOVER pada dropdown autocomplete / mention di composer chat.
+ * Selain rasio kontras, kita verifikasi juga bahwa aturan CSS-nya memang
+ * memakai token --primary / --primary-foreground (bukan --accent yang tipis).
+ * ------------------------------------------------------------------------ */
+
+/** Ambil blok aturan item dropdown dalam lingkup chat. */
+function chatOptionScopeBlock(): string {
+  const anchor = css.indexOf('[data-slot="dropdown-menu-item"]');
+  expect(anchor, "aturan item dropdown chat tidak ditemukan").toBeGreaterThan(-1);
+  return css.slice(anchor, anchor + 1400);
+}
+
+const hoverCases: Case[] = [
+  { label: "teks item saat hover", fg: "var(--primary-foreground)", bg: "var(--primary)", min: TEXT_AA },
+  { label: "ikon/badge item saat hover", fg: "var(--primary-foreground)", bg: "var(--primary)", min: UI_AA },
+  { label: "latar hover vs popover", fg: "var(--primary)", bg: "var(--popover)", min: UI_AA },
+  { label: "latar hover vs kartu", fg: "var(--primary)", bg: "var(--card)", min: UI_AA },
+  { label: "latar hover vs permukaan chat", fg: "var(--primary)", bg: "var(--wa-surface)", min: UI_AA },
+  { label: "outline fokus item hover", fg: "var(--primary-foreground)", bg: "var(--primary)", min: UI_AA },
+];
+
+describe("kontras state hover dropdown autocomplete/mention chat", () => {
+  for (const theme of THEME_NAMES) {
+    describe(`tema ${theme}`, () => {
+      for (const c of hoverCases) {
+        it(`${c.label} ≥ ${c.min}:1`, () => {
+          const ratio = contrastRatio(c.fg, c.bg, themes[theme]);
+          expect(
+            Number(ratio.toFixed(2)),
+            `${c.label} di tema ${theme} hanya ${ratio.toFixed(2)}:1`,
+          ).toBeGreaterThanOrEqual(c.min);
+        });
+      }
+    });
+  }
+
+  it("utility chat-option-highlight menangani :hover", () => {
+    const bg = utilityDecl("chat-option-highlight", "background-color");
+    const fg = utilityDecl("chat-option-highlight", "color");
+    expect(bg).toBe("var(--primary)");
+    expect(fg).toBe("var(--primary-foreground)");
+    const re = /@utility\s+chat-option-highlight\s*\{[\s\S]*?\n\}/;
+    const body = css.match(re)?.[0] ?? "";
+    expect(body).toMatch(/:hover/);
+    expect(body).toMatch(/focus-visible/);
+  });
+
+  it("item dropdown dalam lingkup chat memakai token primary saat hover", () => {
+    const block = chatOptionScopeBlock();
+    expect(block).toMatch(/&:hover/);
+    expect(block).toMatch(/outline:\s*2px solid var\(--primary-foreground\)/);
+    expect(block).toMatch(/background-color:\s*var\(--primary\)/);
+    expect(block).toMatch(/color:\s*var\(--primary-foreground\)/);
+    // teks sekunder/ikon tidak boleh tetap redup saat hover
+    expect(block).toMatch(/opacity:\s*1/);
+    expect(block).not.toMatch(/var\(--accent\)/);
+  });
+});
