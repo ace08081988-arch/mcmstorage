@@ -62,12 +62,28 @@ export async function upsertManualEntry(input: {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
   if (!uid) throw new Error("Tidak ada sesi pengguna.");
+  const name = input.name.trim();
+  const phone = input.phone?.trim() || null;
+  const email = input.email?.trim() || null;
+  // Cegah kontak ganda: cek nomor / email / nama (untuk kontak tanpa nomor).
+  const dup = await findDuplicate({
+    uid,
+    name,
+    phone,
+    email,
+    excludeId: input.id ?? null,
+  });
+  if (dup) {
+    throw new Error(
+      `Kontak sudah tersimpan sebagai "${dup.name}". Tidak boleh ada kontak ganda.`,
+    );
+  }
   const payload = {
     id: input.id,
     user_id: uid,
-    name: input.name.trim(),
-    phone: input.phone?.trim() || null,
-    email: input.email?.trim() || null,
+    name,
+    phone,
+    email,
     note: input.note?.trim() || null,
     source: "manual" as const,
   };
@@ -76,8 +92,37 @@ export async function upsertManualEntry(input: {
     .upsert(payload, { onConflict: "id" })
     .select("*")
     .single();
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("Kontak dengan nomor/email/nama ini sudah tersimpan.");
+    }
+    throw error;
+  }
   return data as AddressBookRow;
+}
+
+/** Cari kontak yang sudah ada berdasarkan nomor, email, atau nama. */
+export async function findDuplicate(opts: {
+  uid: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  excludeId?: string | null;
+}): Promise<Pick<AddressBookRow, "id" | "name"> | null> {
+  const phoneNorm = normalizePhone(opts.phone);
+  const emailNorm = opts.email?.trim().toLowerCase() || null;
+  let q = supabase
+    .from("address_book")
+    .select("id,name")
+    .eq("user_id", opts.uid)
+    .limit(1);
+  if (opts.excludeId) q = q.neq("id", opts.excludeId);
+  if (phoneNorm) q = q.eq("phone_norm", phoneNorm);
+  else if (emailNorm) q = q.eq("email_norm", emailNorm);
+  else q = q.ilike("name", opts.name.trim());
+  const { data, error } = await q.maybeSingle();
+  if (error) return null;
+  return (data as Pick<AddressBookRow, "id" | "name"> | null) ?? null;
 }
 
 /** Import device contacts: one row per (contact x phone-or-email), dedup via device_contact_id. */
@@ -142,7 +187,44 @@ export async function importDeviceContacts(
   for (const r of (existing ?? []) as ExistingRow[]) {
     if (r.device_contact_id) byId.set(r.device_contact_id, r);
   }
-  const toInsert = rows.filter((r) => !byId.has(r.device_contact_id));
+  // Dedup lintas-kontak: nomor/email/nama yang sudah ada tidak diimpor ulang.
+  const { data: allExisting } = await supabase
+    .from("address_book")
+    .select("phone_norm,email_norm,name")
+    .eq("user_id", uid);
+  const seenPhone = new Set<string>();
+  const seenEmail = new Set<string>();
+  const seenName = new Set<string>();
+  for (const r of (allExisting ?? []) as Array<{
+    phone_norm: string | null;
+    email_norm: string | null;
+    name: string | null;
+  }>) {
+    if (r.phone_norm) seenPhone.add(r.phone_norm);
+    if (r.email_norm) seenEmail.add(r.email_norm);
+    if (!r.phone_norm && !r.email_norm && r.name) {
+      seenName.add(r.name.trim().toLowerCase());
+    }
+  }
+  const toInsert = rows.filter((r) => {
+    if (byId.has(r.device_contact_id)) return false;
+    const p = normalizePhone(r.phone);
+    const e = r.email?.trim().toLowerCase() || null;
+    const n = (r.name ?? "").trim().toLowerCase();
+    if (p) {
+      if (seenPhone.has(p)) return false;
+      seenPhone.add(p);
+      return true;
+    }
+    if (e) {
+      if (seenEmail.has(e)) return false;
+      seenEmail.add(e);
+      return true;
+    }
+    if (!n || seenName.has(n)) return false;
+    seenName.add(n);
+    return true;
+  });
   const toUpdate = rows
     .filter((r) => byId.has(r.device_contact_id))
     .map((r) => ({ existing: byId.get(r.device_contact_id)!, next: r }))
