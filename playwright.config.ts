@@ -213,6 +213,15 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // Aksesibilitas keyboard bilah bawah: Tab menjangkau semua slot,
+      // cincin :focus-visible ada, Enter membuka menu, dan fokus tidak
+      // hilang/dicuri saat scroll, pindah halaman, atau konten bertambah.
+      name: "bottom-bar-keyboard-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /bottom-bar-keyboard\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // Visual regression (screenshot diff) bilah bawah: strip 140px
       // paling bawah layar dibandingkan ke SATU baseline yang sama di
       // semua skenario (muat awal, scroll, pindah halaman, konten
