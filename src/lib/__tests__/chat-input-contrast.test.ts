@@ -112,7 +112,7 @@ describe("kontras komponen input chat", () => {
 
 /** Ambil blok aturan item dropdown dalam lingkup chat. */
 function chatOptionScopeBlock(): string {
-  const anchor = css.indexOf('[data-slot="dropdown-menu-item"]');
+  const anchor = css.indexOf('&:is([data-selected="true"], [data-highlighted], [aria-selected="true"]),');
   expect(anchor, "aturan item dropdown chat tidak ditemukan").toBeGreaterThan(-1);
   return css.slice(anchor, anchor + 1400);
 }
@@ -254,7 +254,7 @@ describe("kontras item disabled dropdown autocomplete/mention chat", () => {
   }
 
   it("aturan disabled mengganti opacity default Radix/cmdk", () => {
-    const idx = css.indexOf('[aria-disabled="true"]');
+    const idx = css.indexOf('[data-disabled="true"],\n    [disabled]\n  ) {');
     expect(idx, "aturan item disabled dropdown chat tidak ditemukan").toBeGreaterThan(-1);
     const block = css.slice(idx, idx + 1600);
     expect(block).toMatch(/opacity:\s*1/);
