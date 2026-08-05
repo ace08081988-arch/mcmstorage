@@ -58,6 +58,8 @@ import {
   promoteToCustomer,
   promoteToSupplier,
   findDuplicateGroups,
+  normalizePhone,
+  normalizeEmail,
   type AddressBookRow,
 } from "@/lib/address-book";
 import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDialog";
