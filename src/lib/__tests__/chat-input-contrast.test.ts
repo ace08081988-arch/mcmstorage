@@ -123,7 +123,7 @@ const hoverCases: Case[] = [
   { label: "latar hover vs popover", fg: "var(--primary)", bg: "var(--popover)", min: UI_AA },
   { label: "latar hover vs kartu", fg: "var(--primary)", bg: "var(--card)", min: UI_AA },
   { label: "latar hover vs permukaan chat", fg: "var(--primary)", bg: "var(--wa-surface)", min: UI_AA },
-  { label: "outline fokus item hover", fg: "var(--ring)", bg: "var(--primary)", min: UI_AA },
+  { label: "outline fokus item hover", fg: "var(--primary-foreground)", bg: "var(--primary)", min: UI_AA },
 ];
 
 describe("kontras state hover dropdown autocomplete/mention chat", () => {
@@ -155,6 +155,7 @@ describe("kontras state hover dropdown autocomplete/mention chat", () => {
   it("item dropdown dalam lingkup chat memakai token primary saat hover", () => {
     const block = chatOptionScopeBlock();
     expect(block).toMatch(/&:hover/);
+    expect(block).toMatch(/outline:\s*2px solid var\(--primary-foreground\)/);
     expect(block).toMatch(/background-color:\s*var\(--primary\)/);
     expect(block).toMatch(/color:\s*var\(--primary-foreground\)/);
     // teks sekunder/ikon tidak boleh tetap redup saat hover
