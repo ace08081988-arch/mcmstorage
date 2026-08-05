@@ -4393,6 +4393,7 @@ export type Database = {
         Args: { _day?: string; _prefix: string }
         Returns: string
       }
+      normalize_email: { Args: { _e: string }; Returns: string }
       normalize_phone: { Args: { _p: string }; Returns: string }
       normalize_unit_label: { Args: { _u: string }; Returns: string }
       party_balance_events_v1: {
