@@ -3950,12 +3950,17 @@ export type Database = {
           cls_threshold: number
           cooldown_minutes: number
           created_at: string
+          email_enabled: boolean
           enabled: boolean
           id: number
           inp_threshold_ms: number
           last_check_at: string | null
           lcp_threshold_ms: number
           min_samples: number
+          slack_channel: string | null
+          slack_enabled: boolean
+          telegram_chat_id: string | null
+          telegram_enabled: boolean
           updated_at: string
           window_minutes: number
         }
@@ -3964,12 +3969,17 @@ export type Database = {
           cls_threshold?: number
           cooldown_minutes?: number
           created_at?: string
+          email_enabled?: boolean
           enabled?: boolean
           id?: number
           inp_threshold_ms?: number
           last_check_at?: string | null
           lcp_threshold_ms?: number
           min_samples?: number
+          slack_channel?: string | null
+          slack_enabled?: boolean
+          telegram_chat_id?: string | null
+          telegram_enabled?: boolean
           updated_at?: string
           window_minutes?: number
         }
@@ -3978,12 +3988,17 @@ export type Database = {
           cls_threshold?: number
           cooldown_minutes?: number
           created_at?: string
+          email_enabled?: boolean
           enabled?: boolean
           id?: number
           inp_threshold_ms?: number
           last_check_at?: string | null
           lcp_threshold_ms?: number
           min_samples?: number
+          slack_channel?: string | null
+          slack_enabled?: boolean
+          telegram_chat_id?: string | null
+          telegram_enabled?: boolean
           updated_at?: string
           window_minutes?: number
         }
@@ -4005,6 +4020,8 @@ export type Database = {
           page: string
           samples: number
           severity: string
+          slack_status: string | null
+          telegram_status: string | null
           threshold: number
           window_minutes: number
         }
@@ -4023,6 +4040,8 @@ export type Database = {
           page: string
           samples: number
           severity?: string
+          slack_status?: string | null
+          telegram_status?: string | null
           threshold: number
           window_minutes: number
         }
@@ -4041,6 +4060,8 @@ export type Database = {
           page?: string
           samples?: number
           severity?: string
+          slack_status?: string | null
+          telegram_status?: string | null
           threshold?: number
           window_minutes?: number
         }

@@ -24,6 +24,11 @@ export type VitalsAlertRow = {
 export type VitalsAlertConfig = {
   enabled: boolean;
   admin_email: string | null;
+  email_enabled: boolean;
+  telegram_enabled: boolean;
+  telegram_chat_id: string | null;
+  slack_enabled: boolean;
+  slack_channel: string | null;
   lcp_threshold_ms: number;
   cls_threshold: number;
   inp_threshold_ms: number;
@@ -86,6 +91,17 @@ export const updateVitalsAlertConfig = createServerFn({ method: "POST" })
       admin_email:
         typeof d.admin_email === "string" && d.admin_email.trim()
           ? d.admin_email.trim().slice(0, 200)
+          : null,
+      email_enabled: d.email_enabled !== false,
+      telegram_enabled: d.telegram_enabled === true,
+      telegram_chat_id:
+        typeof d.telegram_chat_id === "string" && d.telegram_chat_id.trim()
+          ? d.telegram_chat_id.trim().slice(0, 100)
+          : null,
+      slack_enabled: d.slack_enabled === true,
+      slack_channel:
+        typeof d.slack_channel === "string" && d.slack_channel.trim()
+          ? d.slack_channel.trim().slice(0, 120)
           : null,
       lcp_threshold_ms: Math.round(num(d.lcp_threshold_ms, 500, 20_000, 2500)),
       cls_threshold: num(d.cls_threshold, 0.01, 1, 0.1),
