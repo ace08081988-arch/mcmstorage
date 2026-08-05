@@ -8,12 +8,25 @@ export const Route = createFileRoute("/api/public/hooks/web-vitals-monitor")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected =
-          process.env["WEB_VITALS_MONITOR_SECRET"] || process.env["LOVABLE_API_KEY"];
         const auth =
           request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ??
           request.headers.get("apikey");
-        if (!expected || !auth || auth !== expected) {
+        if (!auth) return new Response("Unauthorized", { status: 401 });
+
+        const envSecret =
+          process.env["WEB_VITALS_MONITOR_SECRET"] || process.env["LOVABLE_API_KEY"];
+        let allowed = Boolean(envSecret) && auth === envSecret;
+        if (!allowed) {
+          // Cron database memakai secret bersama di vault (tanpa akses env).
+          try {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const { data } = await supabaseAdmin.rpc("get_email_cron_secret");
+            allowed = typeof data === "string" && data.length > 0 && auth === data;
+          } catch {
+            allowed = false;
+          }
+        }
+        if (!allowed) {
           return new Response("Unauthorized", { status: 401 });
         }
         try {
