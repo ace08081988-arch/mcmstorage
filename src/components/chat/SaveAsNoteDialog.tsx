@@ -31,7 +31,7 @@ export function SaveAsNoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Tambah ke Catatan</DialogTitle>
         </DialogHeader>

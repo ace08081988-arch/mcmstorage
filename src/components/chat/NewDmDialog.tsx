@@ -108,7 +108,7 @@ export function NewDmDialog() {
           <MessageSquarePlus className="h-5 w-5" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Mulai chat dengan kontak</DialogTitle>
         </DialogHeader>

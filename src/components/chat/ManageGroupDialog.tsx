@@ -128,7 +128,7 @@ export function ManageGroupDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2">
             <Users className="h-4 w-4" /> Kelola grup

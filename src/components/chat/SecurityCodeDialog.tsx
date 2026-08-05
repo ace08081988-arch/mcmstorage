@@ -36,7 +36,7 @@ export function SecurityCodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2"><ShieldCheck className="h-5 w-5 text-primary" /> Kode keamanan percakapan</DialogTitle>
           <DialogDescription>

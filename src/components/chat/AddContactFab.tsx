@@ -181,7 +181,7 @@ export function AddContactFab() {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="chat-field-scope max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-ms-2">
               <UserPlus className="h-4 w-4" /> Tambah kontak PIN

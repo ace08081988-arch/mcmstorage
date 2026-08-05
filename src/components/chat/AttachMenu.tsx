@@ -650,7 +650,7 @@ export function AttachMenu({ conversationId, disabled, onSent, onStageFiles }: P
       </Sheet>
 
       <Dialog open={!!pending} onOpenChange={(v) => { if (!v && !busy) setPending(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="chat-field-scope max-w-md">
           <DialogHeader>
             <DialogTitle>
               Pratinjau lampiran{pending && pending.length > 1 ? ` · ${pending.length} berkas` : ""}
@@ -871,7 +871,7 @@ export function AttachMenu({ conversationId, disabled, onSent, onStageFiles }: P
       </Dialog>
 
       <Dialog open={openLoc} onOpenChange={(v) => !busy && setOpenLoc(v)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="chat-field-scope max-w-sm">
           <DialogHeader>
             <DialogTitle>Bagikan lokasi</DialogTitle>
           </DialogHeader>
@@ -1138,7 +1138,7 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
   }
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="chat-field-scope max-w-sm">
         <DialogHeader><DialogTitle>Kirim kontak</DialogTitle></DialogHeader>
         {staff.data && staff.data.length > 0 ? (
           <div className="space-y-1">
@@ -1211,7 +1211,7 @@ function ProductDialog({ conversationId, open, onOpenChange, onSent }: { convers
   }
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="chat-field-scope max-w-sm">
         <DialogHeader><DialogTitle>Kirim tautan produk</DialogTitle></DialogHeader>
         <Input placeholder="Cari nama produk…" value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="max-h-72 space-y-1 overflow-y-auto">

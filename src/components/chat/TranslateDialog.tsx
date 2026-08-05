@@ -42,7 +42,7 @@ export function TranslateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="chat-field-scope max-w-lg">
         <DialogHeader>
           <DialogTitle>Terjemahkan pesan</DialogTitle>
         </DialogHeader>

@@ -134,7 +134,7 @@ export function StickerPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2">
             {view === "editor" && mode.kind !== "edit" ? (
