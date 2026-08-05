@@ -56,8 +56,10 @@ import {
   applyProfileMatches,
   promoteToCustomer,
   promoteToSupplier,
+  findDuplicateGroups,
   type AddressBookRow,
 } from "@/lib/address-book";
+import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDialog";
 import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
@@ -157,6 +159,7 @@ function BukuAlamatPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<SortKey>("name");
   const [editing, setEditing] = useState<AddressBookRow | "new" | null>(null);
+  const [mergeOpen, setMergeOpen] = useState(false);
   const navigate = useNavigate();
   const startDm = useStartDm();
   const [chatting, setChatting] = useState<string | null>(null);
@@ -303,6 +306,7 @@ function BukuAlamatPage() {
   }, [rows, q, filter, sort]);
 
   const linkedCount = useMemo(() => rows.filter((r) => r.linked_user_id).length, [rows]);
+  const dupGroups = useMemo(() => findDuplicateGroups(rows), [rows]);
   const deviceCount = useMemo(() => rows.filter((r) => r.source === "device").length, [rows]);
   const manualCount = useMemo(() => rows.filter((r) => r.source === "manual").length, [rows]);
   const linkedPct = rows.length ? Math.round((linkedCount / rows.length) * 100) : 0;
