@@ -25,6 +25,8 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
     getPublicCatalogItem({ data: { slug: params.slug, itemId: params.itemId } }),
   head: ({ params, loaderData }) => {
     const it = loaderData?.item;
+    // href wajib ada meski `imagesrcset` yang dipakai browser modern.
+    const avifHref = it?.image_avif_srcset?.split(" ")[0] ?? null;
     const shopName = loaderData?.shop?.name ?? "Toko";
     const title = it ? `${it.name} — ${shopName}` : "Produk tidak ditemukan";
     const desc = it
@@ -58,7 +60,7 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
               {
                 rel: "preload",
                 as: "image",
-                href: it.image_avif_srcset ? undefined : it.image_url,
+                href: avifHref ?? it.image_url,
                 fetchpriority: "high",
                 // Browser yang tidak mendukung AVIF melewati preload bertipe
                 // image/avif, jadi hanya satu berkas yang pernah diunduh.
