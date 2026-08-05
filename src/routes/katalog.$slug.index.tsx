@@ -2,11 +2,12 @@
  * Katalog publik per toko — bisa dibuka tanpa login.
  * Pengunjung melihat produk + stok dan memesan langsung lewat WhatsApp.
  */
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { reportCatalogVitals } from "@/lib/web-vitals-report";
 import {
   Dialog,
   DialogContent,
@@ -133,6 +134,9 @@ function PublicKatalogPage() {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Pemantauan Core Web Vitals lapangan (LCP/CLS/INP) — hanya di browser.
+  useEffect(() => reportCatalogVitals("katalog_list", slug), [slug]);
 
   const cartLines = useMemo(
     () =>

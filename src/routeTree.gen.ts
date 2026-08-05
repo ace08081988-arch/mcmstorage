@@ -137,6 +137,7 @@ import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovab
 import { Route as LovableVisualAccessDeniedToastRouteImport } from './routes/lovable.visual.access-denied-toast'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as KatalogSlugItemIdRouteImport } from './routes/katalog.$slug.$itemId'
+import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
@@ -149,6 +150,7 @@ import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_a
 import { Route as AuthenticatedDebugSelectorRouteImport } from './routes/_authenticated.debug.selector'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
+import { Route as AuthenticatedAdminWebVitalsRouteImport } from './routes/_authenticated.admin.web-vitals'
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
 import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
 import { Route as AuthenticatedAdminEmailStatusRouteImport } from './routes/_authenticated.admin.email-status'
@@ -877,6 +879,11 @@ const KatalogSlugItemIdRoute = KatalogSlugItemIdRouteImport.update({
   path: '/katalog/$slug/$itemId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
+  id: '/api/public/web-vitals',
+  path: '/api/public/web-vitals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPrepRealtimeTokenRoute =
   ApiPublicPrepRealtimeTokenRouteImport.update({
     id: '/api/public/prep-realtime-token',
@@ -944,6 +951,12 @@ const AuthenticatedAdminWorkerPortalRoute =
   AuthenticatedAdminWorkerPortalRouteImport.update({
     id: '/admin/worker-portal',
     path: '/admin/worker-portal',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminWebVitalsRoute =
+  AuthenticatedAdminWebVitalsRouteImport.update({
+    id: '/admin/web-vitals',
+    path: '/admin/web-vitals',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminSignupAttemptsRoute =
@@ -1167,6 +1180,7 @@ export interface FileRoutesByFullPath {
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
+  '/admin/web-vitals': typeof AuthenticatedAdminWebVitalsRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -1179,6 +1193,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
@@ -1327,6 +1342,7 @@ export interface FileRoutesByTo {
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
+  '/admin/web-vitals': typeof AuthenticatedAdminWebVitalsRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -1339,6 +1355,7 @@ export interface FileRoutesByTo {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
@@ -1492,6 +1509,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/_authenticated/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
+  '/_authenticated/admin/web-vitals': typeof AuthenticatedAdminWebVitalsRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/_authenticated/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -1504,6 +1522,7 @@ export interface FileRoutesById {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
@@ -1657,6 +1676,7 @@ export interface FileRouteTypes {
     | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
+    | '/admin/web-vitals'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/debug/selector'
@@ -1669,6 +1689,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/api/public/web-vitals'
     | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
@@ -1817,6 +1838,7 @@ export interface FileRouteTypes {
     | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
+    | '/admin/web-vitals'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/debug/selector'
@@ -1829,6 +1851,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/api/public/web-vitals'
     | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
@@ -1981,6 +2004,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/email-status'
     | '/_authenticated/admin/portal-error-log'
     | '/_authenticated/admin/signup-attempts'
+    | '/_authenticated/admin/web-vitals'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
     | '/_authenticated/debug/selector'
@@ -1993,6 +2017,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/api/public/web-vitals'
     | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
@@ -2082,6 +2107,7 @@ export interface RootRouteChildren {
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
+  ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   KatalogSlugItemIdRoute: typeof KatalogSlugItemIdRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   LovableVisualAccessDeniedToastRoute: typeof LovableVisualAccessDeniedToastRoute
@@ -3035,6 +3061,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KatalogSlugItemIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/web-vitals': {
+      id: '/api/public/web-vitals'
+      path: '/api/public/web-vitals'
+      fullPath: '/api/public/web-vitals'
+      preLoaderRoute: typeof ApiPublicWebVitalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/prep-realtime-token': {
       id: '/api/public/prep-realtime-token'
       path: '/api/public/prep-realtime-token'
@@ -3117,6 +3150,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/worker-portal'
       fullPath: '/admin/worker-portal'
       preLoaderRoute: typeof AuthenticatedAdminWorkerPortalRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/web-vitals': {
+      id: '/_authenticated/admin/web-vitals'
+      path: '/admin/web-vitals'
+      fullPath: '/admin/web-vitals'
+      preLoaderRoute: typeof AuthenticatedAdminWebVitalsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/signup-attempts': {
@@ -3419,6 +3459,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminEmailStatusRoute: typeof AuthenticatedAdminEmailStatusRoute
   AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
   AuthenticatedAdminSignupAttemptsRoute: typeof AuthenticatedAdminSignupAttemptsRoute
+  AuthenticatedAdminWebVitalsRoute: typeof AuthenticatedAdminWebVitalsRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
   AuthenticatedDebugSelectorRoute: typeof AuthenticatedDebugSelectorRoute
   AuthenticatedDevPressAuditCodesRoute: typeof AuthenticatedDevPressAuditCodesRoute
@@ -3498,6 +3539,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminEmailStatusRoute: AuthenticatedAdminEmailStatusRoute,
   AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
   AuthenticatedAdminSignupAttemptsRoute: AuthenticatedAdminSignupAttemptsRoute,
+  AuthenticatedAdminWebVitalsRoute: AuthenticatedAdminWebVitalsRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
   AuthenticatedDebugSelectorRoute: AuthenticatedDebugSelectorRoute,
   AuthenticatedDevPressAuditCodesRoute: AuthenticatedDevPressAuditCodesRoute,
@@ -3566,6 +3608,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
+  ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   KatalogSlugItemIdRoute: KatalogSlugItemIdRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   LovableVisualAccessDeniedToastRoute: LovableVisualAccessDeniedToastRoute,
