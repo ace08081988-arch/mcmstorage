@@ -1,0 +1,1 @@
+DELETE FROM public.web_vital_samples WHERE release_tag = 'test';
