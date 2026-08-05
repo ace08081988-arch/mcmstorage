@@ -168,6 +168,11 @@
   --chat-scroll-track: color-mix(in oklab, var(--popover) 92%, var(--foreground));
   --chat-scroll-thumb: color-mix(in oklab, var(--foreground) 62%, var(--popover));
   --chat-scroll-thumb-hover: color-mix(in oklab, var(--foreground) 82%, var(--popover));
+  /* Item disabled / tidak tersedia di dropdown chat. Dibuat cukup redup untuk
+     terbaca sebagai "nonaktif" tapi tetap ≥4.5:1 (teks) dan ≥3:1 (ikon/border)
+     di semua tema — bukan opacity 50% yang bisa menyatu dengan latar. */
+  --chat-option-disabled-ink: color-mix(in oklab, var(--foreground) 72%, var(--popover));
+  --chat-option-disabled-border: color-mix(in oklab, var(--foreground) 45%, var(--popover));
   --primary: oklch(0.208 0.042 265.755);
   --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: oklch(0.968 0.007 247.896);
