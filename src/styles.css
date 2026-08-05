@@ -1356,8 +1356,8 @@ textarea::placeholder {
    bukan dari --muted-foreground global, supaya tidak pernah menyatu dengan
    latar panel berwarna (muted, primary/5, warning) di mode terang & gelap. */
 @utility chat-preview-text {
-  color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 78%, transparent);
-  -webkit-text-fill-color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 78%, transparent);
+  color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 85%, transparent);
+  -webkit-text-fill-color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 85%, transparent);
 
   & :where(em, i) {
     color: inherit;
