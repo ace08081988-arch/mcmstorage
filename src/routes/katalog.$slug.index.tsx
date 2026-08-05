@@ -7,6 +7,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { reportCatalogVitals } from "@/lib/web-vitals-report";
 import {
   Dialog,
   DialogContent,
