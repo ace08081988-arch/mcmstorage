@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Merge, Loader2, ChevronRight } from "lucide-react";
 import { notifyError } from "@/lib/friendly-error";
 import {
@@ -90,6 +91,8 @@ export function MergeDuplicatesDialog({
     note: null,
   });
   const [busy, setBusy] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
   const group = groups.find((g) => g.key === activeKey) ?? null;
 
@@ -97,8 +100,60 @@ export function MergeDuplicatesDialog({
     if (!open) {
       setActiveKey(null);
       setBusy(false);
+      setSelected(new Set());
+      setBulkProgress(null);
     }
   }, [open]);
+
+  const toggleGroup = (key: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const allSelected = groups.length > 0 && selected.size === groups.length;
+
+  // Gabung otomatis: pertahankan kontak tertaut akun (atau yang pertama),
+  // ambil nilai pertama yang tidak kosong untuk setiap kolom.
+  const handleBulkMerge = async () => {
+    const targets = groups.filter((g) => selected.has(g.key));
+    if (targets.length === 0) return;
+    setBusy(true);
+    setBulkProgress({ done: 0, total: targets.length });
+    let ok = 0;
+    let failed = 0;
+    for (const g of targets) {
+      const first = (k: FieldKey) =>
+        g.rows.map((r) => (r[k] ?? "").toString().trim()).find((v) => v) ?? null;
+      const keep = g.rows.find((r) => r.linked_user_id) ?? g.rows[0]!;
+      try {
+        await mergeContacts({
+          keepId: keep.id,
+          removeIds: g.rows.filter((r) => r.id !== keep.id).map((r) => r.id),
+          fields: {
+            name: first("name") || keep.name,
+            phone: first("phone"),
+            email: first("email"),
+            note: first("note"),
+            linked_user_id: keep.linked_user_id ?? g.rows.find((r) => r.linked_user_id)?.linked_user_id ?? null,
+          },
+        });
+        ok += 1;
+      } catch (e) {
+        failed += 1;
+        if (failed === 1) notifyError(e);
+      }
+      setBulkProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
+    }
+    if (ok > 0) toast.success(`${ok} grup kontak ganda digabungkan.`);
+    if (failed > 0) toast.error(`${failed} grup gagal digabungkan.`);
+    setSelected(new Set());
+    setBulkProgress(null);
+    setBusy(false);
+    await onMerged();
+  };
 
   // Saat memilih grup / grup berubah, isi pilihan default dari nilai pertama
   // yang tidak kosong.
@@ -169,13 +224,38 @@ export function MergeDuplicatesDialog({
               Tidak ada kontak ganda. Buku alamat Anda sudah bersih.
             </p>
           ) : (
-            <ul className="space-ms-2">
+            <>
+              <div className="flex items-center justify-between gap-ms-2 rounded-xl border bg-muted/40 px-ms-3 py-ms-2">
+                <label className="flex items-center gap-ms-2 text-ms-sm">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={(v) =>
+                      setSelected(v ? new Set(groups.map((g) => g.key)) : new Set())
+                    }
+                    aria-label="Pilih semua grup duplikat"
+                    disabled={busy}
+                  />
+                  Pilih semua
+                </label>
+                <span className="text-ms-2xs text-muted-foreground">
+                  {selected.size} dari {groups.length} grup dipilih
+                </span>
+              </div>
+              <ul className="space-ms-2">
               {groups.map((g) => (
                 <li key={g.key}>
-                  <button
+                  <div className="flex items-center gap-ms-2 rounded-xl border bg-card px-ms-3 py-ms-2">
+                    <Checkbox
+                      checked={selected.has(g.key)}
+                      onCheckedChange={() => toggleGroup(g.key)}
+                      disabled={busy}
+                      aria-label={`Pilih grup ${g.rows.map((r) => r.name).join(", ")}`}
+                    />
+                    <button
                     type="button"
                     onClick={() => setActiveKey(g.key)}
-                    className="flex w-full items-center gap-ms-2 rounded-xl border bg-card px-ms-3 py-ms-2 text-left hover:bg-accent"
+                    disabled={busy}
+                    className="flex min-w-0 flex-1 items-center gap-ms-2 text-left"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-ms-sm font-medium">
@@ -189,10 +269,17 @@ export function MergeDuplicatesDialog({
                       {g.rows.length}× · {reasonLabel(g)}
                     </Badge>
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  </button>
+                    </button>
+                  </div>
                 </li>
               ))}
-            </ul>
+              </ul>
+              {bulkProgress && (
+                <p className="text-center text-ms-2xs text-muted-foreground">
+                  Menggabungkan {bulkProgress.done}/{bulkProgress.total} grup…
+                </p>
+              )}
+            </>
           )
         ) : (
           <div className="space-ms-3">
@@ -262,6 +349,12 @@ export function MergeDuplicatesDialog({
             <Button onClick={() => void handleMerge()} disabled={busy || !keepId}>
               {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Merge className="mr-1.5 h-4 w-4" />}
               Gabungkan {group.rows.length} kontak
+            </Button>
+          )}
+          {!group && groups.length > 0 && (
+            <Button onClick={() => void handleBulkMerge()} disabled={busy || selected.size === 0}>
+              {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Merge className="mr-1.5 h-4 w-4" />}
+              Gabungkan {selected.size || ""} grup terpilih
             </Button>
           )}
         </DialogFooter>
