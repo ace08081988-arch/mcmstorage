@@ -162,6 +162,12 @@
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
+  /* Scrollbar dropdown/autocomplete chat — diturunkan dari token tema aktif
+     supaya track & thumb ikut berganti otomatis di light, dark, Noir & Gold,
+     Midnight Indigo, dan high-contrast (thumb vs track ≥3:1 WCAG 1.4.11). */
+  --chat-scroll-track: color-mix(in oklab, var(--popover) 92%, var(--foreground));
+  --chat-scroll-thumb: color-mix(in oklab, var(--foreground) 62%, var(--popover));
+  --chat-scroll-thumb-hover: color-mix(in oklab, var(--foreground) 82%, var(--popover));
   --primary: oklch(0.208 0.042 265.755);
   --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: oklch(0.968 0.007 247.896);
@@ -1399,6 +1405,67 @@ textarea::placeholder {
     background-color: var(--primary);
     color: var(--primary-foreground);
     -webkit-text-fill-color: var(--primary-foreground);
+  }
+}
+
+/* Scrollbar daftar dropdown/autocomplete/mention di composer chat.
+   Default scrollbar UA sering nyaris tak terlihat di tema gelap; di sini
+   track & thumb memakai token turunan tema sehingga rasio thumb:track dan
+   thumb:popover tetap ≥3:1 di semua tema. */
+@utility chat-option-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-scroll-thumb) var(--chat-scroll-track);
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: var(--chat-scroll-track);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--chat-scroll-thumb);
+    border: 2px solid var(--chat-scroll-track);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover,
+  &::-webkit-scrollbar-thumb:active {
+    background-color: var(--chat-scroll-thumb-hover);
+  }
+  &::-webkit-scrollbar-corner {
+    background-color: var(--chat-scroll-track);
+  }
+}
+
+:where(.chat-field-scope, .chat-input-contrast)
+  :where(
+    [cmdk-list],
+    [data-slot="command-list"],
+    [data-radix-select-viewport],
+    [data-radix-popper-content-wrapper] [role="listbox"],
+    [role="listbox"],
+    [data-slot="dropdown-menu-content"]
+  ) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-scroll-thumb) var(--chat-scroll-track);
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: var(--chat-scroll-track);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--chat-scroll-thumb);
+    border: 2px solid var(--chat-scroll-track);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover,
+  &::-webkit-scrollbar-thumb:active {
+    background-color: var(--chat-scroll-thumb-hover);
   }
 }
 
