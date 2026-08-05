@@ -65,6 +65,8 @@
     "test:tema": "playwright test --project=pratinjau-tema",
     "test:worker-portal": "playwright test --project=worker-portal-e2e",
     "test:bottom-bar": "playwright test --project=bottom-bar-snap-e2e",
+    "test:bottom-bar:visual": "playwright test --project=bottom-bar-snap-visual",
+    "test:bottom-bar:visual:update": "playwright test --project=bottom-bar-snap-visual --update-snapshots",
     "test:e2e:apk": "node scripts/run-apk-e2e.mjs",
     "test:e2e:apk:terminal": "node scripts/run-apk-e2e.mjs --mode terminal",
     "test:e2e:apk:full": "node scripts/run-apk-e2e.mjs --mode full",
