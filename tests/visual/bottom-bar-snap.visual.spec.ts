@@ -50,16 +50,23 @@ async function ready(page: Page) {
 async function shootStrip(page: Page) {
   const size = page.viewportSize();
   if (!size) throw new Error("viewport size tidak tersedia");
-  await page.addStyleTag({
+  const style = await page.addStyleTag({
     content:
       '[data-bottom-bar-harness] > ul, [data-bottom-bar-harness] > header { visibility: hidden !important; }',
   });
   await page.waitForTimeout(120);
-  return page.screenshot({
-    clip: { x: 0, y: size.height - STRIP_H, width: size.width, height: STRIP_H },
-    animations: "disabled",
-    caret: "hide",
-  });
+  try {
+    return await page.screenshot({
+      clip: { x: 0, y: size.height - STRIP_H, width: size.width, height: STRIP_H },
+      animations: "disabled",
+      caret: "hide",
+    });
+  } finally {
+    // Wajib dilepas: `visibility: hidden` membuat tombol harness tidak
+    // bisa diklik pada langkah skenario berikutnya.
+    await style.evaluate((el) => el.remove());
+    await page.waitForTimeout(80);
+  }
 }
 
 async function expectStripStable(page: Page) {
