@@ -233,3 +233,78 @@ test("bilah bawah & spacer diukur ulang saat orientasi berubah", async ({ page }
     expect(r!.y + r!.height).toBeLessThanOrEqual(n!.y + TOL);
   }
 });
+/**
+ * Sampling posisi bar secara berkala selama sebuah aksi berjalan.
+ * Mengembalikan simpangan terbesar (px) terhadap `baseline`.
+ */
+async function maxDriftDuring(
+  page: Page,
+  baseline: number,
+  durationMs: number,
+  intervalMs = 60,
+): Promise<number> {
+  let worst = 0;
+  const end = Date.now() + durationMs;
+  while (Date.now() < end) {
+    if (await barShown(page)) {
+      worst = Math.max(worst, Math.abs((await bottomGap(page)) - baseline));
+    } else {
+      worst = Math.max(worst, await spacerPx(page));
+    }
+    await page.waitForTimeout(intervalMs);
+  }
+  return worst;
+}
+
+test("bilah bawah tidak bergeser selama proses loading", async ({ page }) => {
+  const hidden = !(await barShown(page));
+  const baseline = hidden ? 0 : await bottomGap(page);
+
+  // Tiga siklus loading beruntun: konten diganti skeleton (tinggi dokumen
+  // menyusut drastis) lalu kembali penuh. Bar harus diam sepanjang transisi.
+  for (let cycle = 1; cycle <= 3; cycle++) {
+    await page.getByTestId("start-loading").click();
+    await expect(page.getByTestId("loading-skeleton")).toBeVisible();
+
+    const drift = await maxDriftDuring(page, baseline, 1000);
+    expect(drift, `bar bergeser ${drift}px saat loading (siklus ${cycle})`)
+      .toBeLessThanOrEqual(TOL);
+
+    await expect(page.getByTestId("dynamic-list")).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(120);
+    if (hidden) {
+      await assertHiddenBarInvariants(page, `selesai loading ${cycle}`);
+    } else {
+      expect(Math.abs((await bottomGap(page)) - baseline)).toBeLessThanOrEqual(TOL);
+    }
+  }
+});
+
+test("bilah bawah tidak bergeser saat konten rerender bertahap", async ({ page }) => {
+  const hidden = !(await barShown(page));
+  const baseline = hidden ? 0 : await bottomGap(page);
+  const rowsBefore = await page.getByTestId("dynamic-list").locator("li").count();
+
+  // 12 rerender @100ms, tiap rerender menambah 5 baris (streaming/lazy-load).
+  await page.getByTestId("stream-rows").click();
+  const drift = await maxDriftDuring(page, baseline, 1500, 50);
+  expect(drift, `bar bergeser ${drift}px selama render bertahap`).toBeLessThanOrEqual(TOL);
+
+  await expect(page.getByTestId("dynamic-list").locator("li")).toHaveCount(
+    rowsBefore + 60,
+  );
+
+  // Setelah semua batch masuk: posisi akhir sama & konten terakhir tidak tertutup.
+  await page.evaluate(() =>
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" as ScrollBehavior }),
+  );
+  await page.waitForTimeout(150);
+  if (hidden) {
+    await assertHiddenBarInvariants(page, "selesai render bertahap");
+    return;
+  }
+  expect(Math.abs((await bottomGap(page)) - baseline)).toBeLessThanOrEqual(TOL);
+  const lastRow = page.getByTestId("dynamic-list").locator("li").last();
+  const [r, n] = await Promise.all([lastRow.boundingBox(), nav(page).boundingBox()]);
+  expect(r!.y + r!.height).toBeLessThanOrEqual(n!.y + TOL);
+});
