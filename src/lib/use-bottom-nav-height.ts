@@ -51,13 +51,48 @@ export function useBottomNavHeightSync(
     // Rotasi / recalculation safe-area mengubah padding bar tanpa memicu
     // ResizeObserver di sebagian WebView Android — ukur ulang eksplisit.
     const onViewport = () => requestAnimationFrame(publish);
-    window.addEventListener("orientationchange", onViewport);
+
+    /**
+     * Rotasi portrait <-> landscape: tinggi bar dan safe-area inset baru
+     * baru stabil beberapa ratus ms setelah event. Satu pengukuran saja
+     * sering merekam nilai orientasi lama sehingga spacer meleset dan
+     * konten/bilah tampak bergeser. Karena itu: reset dedupe lalu ukur
+     * ulang berulang sampai layout benar-benar settle.
+     */
+    let burstTimer: ReturnType<typeof setTimeout> | null = null;
+    const remeasureBurst = () => {
+      if (burstTimer) clearTimeout(burstTimer);
+      const delays = [0, 60, 150, 300, 600, 1000];
+      let i = 0;
+      const step = () => {
+        last = -1; // paksa publish walau hasil ukur sama dengan sebelumnya
+        publish();
+        i += 1;
+        if (i < delays.length) {
+          burstTimer = setTimeout(step, delays[i]! - delays[i - 1]!);
+        } else {
+          burstTimer = null;
+        }
+      };
+      requestAnimationFrame(step);
+    };
+
+    window.addEventListener("orientationchange", remeasureBurst);
     window.addEventListener("resize", onViewport);
+    window.visualViewport?.addEventListener("resize", onViewport);
+    const mqLandscape = window.matchMedia?.("(orientation: landscape)");
+    mqLandscape?.addEventListener?.("change", remeasureBurst);
+    const so = window.screen?.orientation;
+    so?.addEventListener?.("change", remeasureBurst);
 
     return () => {
       ro.disconnect();
-      window.removeEventListener("orientationchange", onViewport);
+      if (burstTimer) clearTimeout(burstTimer);
+      window.removeEventListener("orientationchange", remeasureBurst);
       window.removeEventListener("resize", onViewport);
+      window.visualViewport?.removeEventListener("resize", onViewport);
+      mqLandscape?.removeEventListener?.("change", remeasureBurst);
+      so?.removeEventListener?.("change", remeasureBurst);
       root.style.removeProperty("--app-bottom-nav-h");
       root.style.setProperty("--app-bottom-bar-space", "0px");
       delete root.dataset["bottomBar"];
