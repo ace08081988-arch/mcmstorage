@@ -13,7 +13,7 @@
  * URL: /lovable/visual/bottom-bar-snap — noindex, tanpa auth.
  */
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
@@ -41,13 +41,46 @@ function BottomBarSnapHarness() {
   const { page = 1, rows = 30 } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [extra, setExtra] = useState(0);
+  /** Fase loading: konten diganti skeleton lalu kembali (mensimulasikan fetch). */
+  const [loading, setLoading] = useState(false);
+  /** Streaming bertahap: baris ditambah sedikit demi sedikit tiap frame/tick. */
+  const [streaming, setStreaming] = useState(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const total = rows + extra;
+
+  useEffect(
+    () => () => {
+      timers.current.forEach(clearTimeout);
+    },
+    [],
+  );
+
+  const startLoading = () => {
+    setLoading(true);
+    timers.current.push(setTimeout(() => setLoading(false), 1200));
+  };
+
+  /** 12 rerender bertahap @ ~100ms, masing-masing menambah 5 baris. */
+  const startStreaming = () => {
+    if (streaming) return;
+    setStreaming(true);
+    for (let i = 1; i <= 12; i++) {
+      timers.current.push(
+        setTimeout(() => {
+          setExtra((n) => n + 5);
+          if (i === 12) setStreaming(false);
+        }, i * 100),
+      );
+    }
+  };
 
   return (
     <SidebarProvider>
       <main
         data-bottom-bar-harness
         data-page={page}
+        data-loading={loading ? "true" : "false"}
+        data-streaming={streaming ? "true" : "false"}
         className="min-h-screen w-full bg-background text-foreground app-bottom-spacer"
       >
         <header className="app-sticky-header p-ms-4">
@@ -79,16 +112,40 @@ function BottomBarSnapHarness() {
             >
               Tambah konten
             </button>
+            <button
+              type="button"
+              data-testid="start-loading"
+              className="rounded-lg border border-primary/30 px-ms-3 py-ms-2 text-ms-xs"
+              onClick={startLoading}
+            >
+              Muat ulang data
+            </button>
+            <button
+              type="button"
+              data-testid="stream-rows"
+              className="rounded-lg border border-primary/30 px-ms-3 py-ms-2 text-ms-xs"
+              onClick={startStreaming}
+            >
+              Render bertahap
+            </button>
           </div>
         </header>
 
-        <ul data-testid="dynamic-list" className="divide-y divide-border">
+        {loading ? (
+          <div data-testid="loading-skeleton" className="space-y-ms-2 p-ms-4">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="h-6 animate-pulse rounded bg-muted" />
+            ))}
+          </div>
+        ) : (
+          <ul data-testid="dynamic-list" className="divide-y divide-border">
           {Array.from({ length: total }, (_, i) => (
             <li key={i} className="px-ms-4 py-ms-3 text-ms-sm">
               Baris {i + 1} — halaman {page}
             </li>
           ))}
-        </ul>
+          </ul>
+        )}
 
         <MobileBottomNav />
       </main>
