@@ -98,6 +98,9 @@ export function applySurfaceFx(v: SurfaceFx) {
   root.style.setProperty("--app-sidebar-opacity", String(v.sidebarOpacity));
   root.style.setProperty("--app-shadow", String(v.shadow));
   root.style.setProperty("--app-saturation", String(v.saturation));
+  // Overlay saturasi hanya aktif bila memang berbeda dari 100%. Lihat catatan
+  // di styles.css: filter di <body> akan merusak posisi bar bawah `fixed`.
+  root.dataset.saturationFx = Math.abs(v.saturation - 1) > 0.001 ? "1" : "0";
 }
 
 export const ACCENTS: { id: string; label: string; value: string; swatch: string }[] = [
