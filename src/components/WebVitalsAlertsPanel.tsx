@@ -120,6 +120,56 @@ export function WebVitalsAlertsPanel() {
         </Label>
       </div>
 
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border border-border/60 p-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="cwv-email-enabled"
+              checked={cfg.email_enabled}
+              onCheckedChange={(v) => patch({ email_enabled: v })}
+            />
+            <Label htmlFor="cwv-email-enabled" className="text-sm">Email</Label>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Dikirim ke alamat email penerima di bawah.
+          </p>
+        </div>
+        <div className="rounded-lg border border-border/60 p-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="cwv-tg-enabled"
+              checked={cfg.telegram_enabled}
+              onCheckedChange={(v) => patch({ telegram_enabled: v })}
+            />
+            <Label htmlFor="cwv-tg-enabled" className="text-sm">Telegram</Label>
+          </div>
+          <Input
+            className="mt-2"
+            aria-label="ID chat Telegram"
+            value={cfg.telegram_chat_id ?? ""}
+            onChange={(e) => patch({ telegram_chat_id: e.target.value })}
+            placeholder="Chat ID mis. -1001234567890"
+          />
+        </div>
+        <div className="rounded-lg border border-border/60 p-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="cwv-slack-enabled"
+              checked={cfg.slack_enabled}
+              onCheckedChange={(v) => patch({ slack_enabled: v })}
+            />
+            <Label htmlFor="cwv-slack-enabled" className="text-sm">Slack</Label>
+          </div>
+          <Input
+            className="mt-2"
+            aria-label="Channel Slack"
+            value={cfg.slack_channel ?? ""}
+            onChange={(e) => patch({ slack_channel: e.target.value })}
+            placeholder="#nama-channel"
+          />
+        </div>
+      </div>
+
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Label htmlFor="cwv-email" className="text-xs">Email penerima</Label>
