@@ -275,19 +275,31 @@ export async function runWebVitalsAlertCheck(): Promise<AlertCheckResult> {
       }
     }
 
-    const chatText =
-      `${severity === "critical" ? "🚨" : "⚠️"} <b>Peringatan Core Web Vitals</b>\n` +
-      `${message}\n${checkedAt}`;
+    const snapshots = evaluated
+      .filter((e) => e.page === b.page)
+      .map((e) => ({
+        metric: e.metric,
+        p75: e.p75,
+        threshold: e.threshold,
+        breached: e.breached,
+      }));
+
+    const { telegramHtml, slackText } = buildAlertMessages(
+      b.page,
+      b.metric,
+      b.p75,
+      threshold,
+      snapshots as MetricSnapshot[],
+      checkedAt,
+    );
+
     const telegramStatus =
       cfg.telegram_enabled && cfg.telegram_chat_id
-        ? await sendTelegram(String(cfg.telegram_chat_id), chatText)
+        ? await sendTelegram(String(cfg.telegram_chat_id), telegramHtml)
         : "disabled";
     const slackStatus =
       cfg.slack_enabled && cfg.slack_channel
-        ? await sendSlack(
-            String(cfg.slack_channel),
-            `${severity === "critical" ? ":rotating_light:" : ":warning:"} *Peringatan Core Web Vitals*\n${message}`,
-          )
+        ? await sendSlack(String(cfg.slack_channel), slackText)
         : "disabled";
 
     await supabaseAdmin.from("web_vital_alerts").insert({
