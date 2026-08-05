@@ -2039,7 +2039,54 @@ function TitleDetailView({
         onClose={() => setCreating(false)}
         onSaved={() => { onChanged(); void load(); }}
       />
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (deleteBusy) return;
+          if (!o) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteTargetSold ? "Hapus arsip terkirim?" : "Hapus penyiapan ini?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTargetSold ? (
+                <>
+                  Kartu ini akan hilang dari <span className="font-semibold">Riwayat Terkirim</span>.
+                  Catatan penjualan, pembayaran, dan piutang <span className="font-semibold">tidak</span> ikut dibatalkan — stok tetap seperti setelah terjual. Foto di penyimpanan ikut dihapus.
+                </>
+              ) : (
+                <>
+                  Stok akan dikembalikan ke gudang dan foto di penyimpanan ikut dihapus.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteBusy && (
+            <div className="flex items-center gap-2 text-ms-2xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Menghapus…
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteBusy} onClick={() => setDeleteTarget(null)}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteBusy}
+              onClick={() => void runDelete()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }
 
