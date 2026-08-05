@@ -129,6 +129,7 @@ import { Route as LovableVisualDebtSsotConsistencyRouteImport } from './routes/l
 import { Route as LovableVisualChatQueueNetworkDropRouteImport } from './routes/lovable.visual.chat-queue-network-drop'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as LovableVisualCallVideoStageRouteImport } from './routes/lovable.visual.call-video-stage'
+import { Route as LovableVisualBottomBarSnapRouteImport } from './routes/lovable.visual.bottom-bar-snap'
 import { Route as LovableVisualAutoSendCancelRouteImport } from './routes/lovable.visual.auto-send-cancel'
 import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
 import { Route as LovableVisualAppearanceImportRouteImport } from './routes/lovable.visual.appearance-import'
@@ -834,6 +835,12 @@ const LovableVisualCallVideoStageRoute =
     path: '/lovable/visual/call-video-stage',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualBottomBarSnapRoute =
+  LovableVisualBottomBarSnapRouteImport.update({
+    id: '/lovable/visual/bottom-bar-snap',
+    path: '/lovable/visual/bottom-bar-snap',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualAutoSendCancelRoute =
   LovableVisualAutoSendCancelRouteImport.update({
     id: '/lovable/visual/auto-send-cancel',
@@ -1209,6 +1216,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
+  '/lovable/visual/bottom-bar-snap': typeof LovableVisualBottomBarSnapRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
@@ -1372,6 +1380,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
+  '/lovable/visual/bottom-bar-snap': typeof LovableVisualBottomBarSnapRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
@@ -1540,6 +1549,7 @@ export interface FileRoutesById {
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
+  '/lovable/visual/bottom-bar-snap': typeof LovableVisualBottomBarSnapRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/chat-queue-network-drop': typeof LovableVisualChatQueueNetworkDropRoute
@@ -1708,6 +1718,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/auto-send-cancel'
+    | '/lovable/visual/bottom-bar-snap'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
@@ -1871,6 +1882,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/auto-send-cancel'
+    | '/lovable/visual/bottom-bar-snap'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
@@ -2038,6 +2050,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/auto-send-cancel'
+    | '/lovable/visual/bottom-bar-snap'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/chat-queue-network-drop'
@@ -2129,6 +2142,7 @@ export interface RootRouteChildren {
   LovableVisualAppearanceImportRoute: typeof LovableVisualAppearanceImportRoute
   LovableVisualAttachmentDurationConsistencyRoute: typeof LovableVisualAttachmentDurationConsistencyRoute
   LovableVisualAutoSendCancelRoute: typeof LovableVisualAutoSendCancelRoute
+  LovableVisualBottomBarSnapRoute: typeof LovableVisualBottomBarSnapRoute
   LovableVisualCallVideoStageRoute: typeof LovableVisualCallVideoStageRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualChatQueueNetworkDropRoute: typeof LovableVisualChatQueueNetworkDropRoute
@@ -3019,6 +3033,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualCallVideoStageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/bottom-bar-snap': {
+      id: '/lovable/visual/bottom-bar-snap'
+      path: '/lovable/visual/bottom-bar-snap'
+      fullPath: '/lovable/visual/bottom-bar-snap'
+      preLoaderRoute: typeof LovableVisualBottomBarSnapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/auto-send-cancel': {
       id: '/lovable/visual/auto-send-cancel'
       path: '/lovable/visual/auto-send-cancel'
@@ -3640,6 +3661,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualAttachmentDurationConsistencyRoute:
     LovableVisualAttachmentDurationConsistencyRoute,
   LovableVisualAutoSendCancelRoute: LovableVisualAutoSendCancelRoute,
+  LovableVisualBottomBarSnapRoute: LovableVisualBottomBarSnapRoute,
   LovableVisualCallVideoStageRoute: LovableVisualCallVideoStageRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
   LovableVisualChatQueueNetworkDropRoute:
