@@ -3,9 +3,11 @@
  * dan tombol Pesan WA dengan draft pesan yang sudah terisi.
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ArrowLeft, MessageCircle, PackageSearch } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { reportCatalogVitals } from "@/lib/web-vitals-report";
 import {
   getPublicCatalogItem,
   type PublicCatalogItemDetail,
@@ -151,6 +153,9 @@ function MissingProduct() {
 function PublicItemPage() {
   const data = Route.useLoaderData() as PublicCatalogItemPayload;
   const { slug, itemId } = Route.useParams();
+
+  // Pemantauan Core Web Vitals lapangan untuk halaman detail produk.
+  useEffect(() => reportCatalogVitals("katalog_detail", slug), [slug]);
 
   if (!data.found || !data.item || !data.shop) return <MissingProduct />;
 
