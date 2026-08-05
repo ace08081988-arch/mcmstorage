@@ -82,6 +82,7 @@
     "test:security:integration": "vitest run tests/integration/security-rls.test.ts",
     "test:security": "npm run test:security:sql && npm run test:security:integration",
     "test:chat-deleted": "vitest run src/lib/chat-deleted.test.tsx src/lib/chat-deleted-ui.test.tsx src/lib/chat-deleted-snapshots.test.tsx",
+    "test:dedup": "vitest run src/lib/__tests__/address-book-dedup.test.ts tests/integration/address-book-normalize-parity.test.ts",
     "test:mcm-branding": "vitest run src/lib/mcm-branding-snapshots.test.ts",
     "test:worker-portal-config": "vitest run src/lib/worker-portal-config.test.ts",
     "codemod:mmss": "bun run scripts/codemod-mmss.mjs",
