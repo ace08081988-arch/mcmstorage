@@ -41,6 +41,9 @@ jobs:
       - name: Run bottom bar snap suite
         run: bunx playwright test --project=bottom-bar-snap-e2e --reporter=list,html
 
+      - name: Run bottom bar visual regression (screenshot diff)
+        run: bunx playwright test --project=bottom-bar-snap-visual --workers=1 --reporter=list,html
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
