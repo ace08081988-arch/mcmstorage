@@ -57,6 +57,7 @@
     "lint:mmss:ci": "node scripts/lint-mmss-ci.mjs",
     "lint:hooks": "node scripts/lint-hooks-ci.mjs",
     "format": "prettier --write .",
+    "test:contrast": "vitest run src/lib/__tests__/color-contrast.test.ts src/lib/__tests__/chat-input-contrast.test.ts",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "test:sidebar": "playwright test --project=sidebar-highlight",
