@@ -96,7 +96,7 @@ export async function upsertManualEntry(input: {
   });
   if (dup) {
     throw new Error(
-      `${dupFieldLabel(phone, email)} ini sudah dipakai kontak "${dup.name}". ` +
+      `${dupFieldLabel(phone, email)} sudah tersimpan pada kontak "${dup.name}". ` +
         `Ubah datanya atau buka kontak tersebut.`,
     );
   }
