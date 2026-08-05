@@ -104,7 +104,7 @@ export function EditContactNameDialog({ open, onOpenChange, peerKey, initialName
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!save.isPending) onOpenChange(v); }}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="chat-field-scope max-w-sm">
         <DialogHeader>
           <DialogTitle>Edit nama kontak</DialogTitle>
           <DialogDescription>

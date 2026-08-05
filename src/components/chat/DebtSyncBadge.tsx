@@ -142,7 +142,7 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
 
           <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
             <DialogContent
-              className="max-w-sm"
+              className="chat-field-scope max-w-sm"
               onClick={(e) => e.stopPropagation()}
             >
               <DialogHeader>

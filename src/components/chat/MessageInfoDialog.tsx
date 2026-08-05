@@ -20,7 +20,7 @@ export function MessageInfoDialog({
   const read = readAtMs && readAtMs >= sent.getTime();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Info pesan</DialogTitle>
         </DialogHeader>

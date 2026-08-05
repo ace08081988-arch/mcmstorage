@@ -65,7 +65,7 @@ export function NewGroupDialog({
           </Button>
         </DialogTrigger>
       ) : null}
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Buat grup chat</DialogTitle>
         </DialogHeader>

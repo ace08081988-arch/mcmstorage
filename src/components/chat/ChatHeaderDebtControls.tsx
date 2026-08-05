@@ -1076,7 +1076,7 @@ export function ChatHeaderDebtControls({
       </PopoverContent>
     </Popover>
     <Dialog open={previewOpen} onOpenChange={(o) => !sendingReport && setPreviewOpen(o)}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Pratinjau laporan</DialogTitle>
           <DialogDescription>
@@ -1259,7 +1259,7 @@ export function ChatHeaderDebtControls({
       open={confirmSend}
       onOpenChange={(o) => !sendingReport && setConfirmSend(o)}
     >
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Konfirmasi kirim laporan</DialogTitle>
           <DialogDescription>
@@ -1349,7 +1349,7 @@ export function ChatHeaderDebtControls({
       </DialogContent>
     </Dialog>
     <Dialog open={!!payPlan} onOpenChange={(o) => !payingPlan && !o && setPayPlan(null)}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Rincian pembayaran</DialogTitle>
           <DialogDescription>

@@ -69,7 +69,7 @@ export function PeerProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm p-0 overflow-hidden">
+      <DialogContent className="chat-field-scope max-w-sm p-0 overflow-hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>Profil {displayName}</DialogTitle>
           <DialogDescription>Detail kontak percakapan</DialogDescription>

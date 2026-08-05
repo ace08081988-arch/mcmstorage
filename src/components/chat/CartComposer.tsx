@@ -153,7 +153,7 @@ export function CartComposer({
           <ShoppingCart className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2">
             <ShoppingCart className="h-4 w-4" /> Keranjang

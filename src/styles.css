@@ -853,6 +853,9 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
   --wa-text: var(--foreground);
   --wa-text-muted: var(--muted-foreground);
   --wa-border: var(--border);
+  /* Batas field chat (kotak cari, composer) — ≥3:1 terhadap permukaan kartu
+     sesuai WCAG 1.4.11; --wa-border biasa terlalu tipis untuk input. */
+  --wa-field-border: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
   --wa-green: var(--mcm-brand);
   --wa-green-strong: var(--mcm-brand-strong);
   --wa-bubble-out: color-mix(in oklab, var(--primary) 22%, var(--card));
@@ -871,6 +874,9 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
   --wa-text: var(--foreground);
   --wa-text-muted: var(--muted-foreground);
   --wa-border: var(--border);
+  /* Batas field chat (kotak cari, composer) — ≥3:1 terhadap permukaan kartu
+     sesuai WCAG 1.4.11; --wa-border biasa terlalu tipis untuk input. */
+  --wa-field-border: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
   --wa-green: var(--mcm-brand);
   --wa-green-strong: var(--mcm-brand-strong);
   --wa-bubble-out: color-mix(in oklab, var(--primary) 34%, var(--card) 66%);
@@ -1291,22 +1297,63 @@ textarea::placeholder {
   }
 
   &::placeholder {
-    /* 55% teks kartu di atas latar kartu ≈ rasio kontras aman (>4.5:1)
-       tanpa terlihat sekeras teks utama, di kedua mode tema. */
-    color: color-mix(in oklab, var(--card-foreground) 55%, var(--card));
-    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 55%, var(--card));
+    /* 62% teks kartu di atas latar kartu — terukur ≥5.8:1 di semua tema
+       (light, dark, Noir & Gold, Midnight Indigo, high-contrast), jadi
+       placeholder tidak pernah menyatu dengan latar field. */
+    color: color-mix(in oklab, var(--card-foreground) 62%, var(--card));
+    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 62%, var(--card));
     opacity: 1;
+  }
+
+  /* Batas field: ≥3:1 terhadap latar kartu (WCAG 1.4.11 non-text contrast),
+     karena token --input mentah hanya ~1.2–1.6:1. */
+  &:where(input, textarea, select, [data-slot="select-trigger"]) {
+    border-color: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
   }
 
   &:disabled,
   &[aria-disabled="true"] {
-    color: color-mix(in oklab, var(--card-foreground) 60%, var(--card));
-    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 60%, var(--card));
+    color: color-mix(in oklab, var(--card-foreground) 68%, var(--card));
+    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 68%, var(--card));
   }
 
   &:disabled::placeholder {
-    color: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
-    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
+    color: color-mix(in oklab, var(--card-foreground) 55%, var(--card));
+    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 55%, var(--card));
+  }
+}
+
+/* Pembungkus form/dialog di area chat: semua input, textarea, select, caret,
+   dan label di dalamnya otomatis memakai kontras yang sama dengan composer
+   (tanpa perlu menempel class satu per satu di ratusan field). */
+@utility chat-field-scope {
+  & :where(input, textarea, select, [data-slot="select-trigger"], [contenteditable="true"]) {
+    color: var(--card-foreground);
+    -webkit-text-fill-color: var(--card-foreground);
+    caret-color: var(--primary, var(--card-foreground));
+    border-color: color-mix(in oklab, var(--card-foreground) 45%, var(--card));
+  }
+
+  & :where(input, textarea)::placeholder {
+    color: color-mix(in oklab, var(--card-foreground) 62%, var(--card));
+    -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 62%, var(--card));
+    opacity: 1;
+  }
+
+  & :where(input, textarea, select, [contenteditable="true"])::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    -webkit-text-fill-color: var(--primary-foreground);
+  }
+
+  /* Label & keterangan field: minimal 7:1 di semua tema, tidak lagi
+     mengandalkan --muted-foreground yang hanya pas-pasan di mode terang. */
+  & :where(label, [data-slot="label"], [data-slot="form-label"]) {
+    color: color-mix(in oklab, var(--card-foreground) 82%, var(--card));
+  }
+
+  & :where([data-slot="select-trigger"]) :where([data-placeholder], .placeholder) {
+    color: color-mix(in oklab, var(--card-foreground) 62%, var(--card));
   }
 }
 
@@ -1315,8 +1362,8 @@ textarea::placeholder {
    bukan dari --muted-foreground global, supaya tidak pernah menyatu dengan
    latar panel berwarna (muted, primary/5, warning) di mode terang & gelap. */
 @utility chat-preview-text {
-  color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 78%, transparent);
-  -webkit-text-fill-color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 78%, transparent);
+  color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 85%, transparent);
+  -webkit-text-fill-color: color-mix(in oklab, var(--preview-ink, var(--foreground)) 85%, transparent);
 
   & :where(em, i) {
     color: inherit;

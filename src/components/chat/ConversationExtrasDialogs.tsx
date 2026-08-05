@@ -57,7 +57,7 @@ export function ConversationSearchDialog({
   }, [q, messages]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2">
             <Search className="h-4 w-4" /> Cari di percakapan
@@ -129,7 +129,7 @@ export function MediaLinksDialog({
   }, [messages]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="chat-field-scope max-w-lg">
         <DialogHeader>
           <DialogTitle>Media, tautan, dan dokumen</DialogTitle>
           <DialogDescription>
@@ -220,7 +220,7 @@ export function MuteDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="chat-field-scope max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-ms-2">
             <BellOff className="h-4 w-4" /> Senyapkan notifikasi
