@@ -290,10 +290,13 @@ function PublicKatalogPage() {
           {filtered.map((it, idx) => {
             const empty = it.stock_base <= 0;
             const qty = cart[it.id] ?? 0;
-            // 4 kartu pertama kemungkinan besar berada di viewport awal:
-            // dimuat eager + prioritas tinggi (kandidat LCP), sisanya lazy
-            // dan paint-nya ditunda lewat content-visibility.
+            // Kartu pertama adalah satu-satunya kandidat LCP: eager +
+            // fetchpriority high. Kartu 2-4 masih di viewport awal jadi
+            // tetap eager, tapi prioritas auto supaya tidak berebut
+            // bandwidth dengan LCP. Sisanya lazy + paint ditunda lewat
+            // content-visibility.
             const aboveFold = idx < 4;
+            const isLcp = idx === 0;
             return (
               <li
                 key={it.id}
@@ -311,8 +314,9 @@ function PublicKatalogPage() {
                     alt={`Foto produk ${it.name}`}
                     width={600}
                     height={600}
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                     loading={aboveFold ? "eager" : "lazy"}
-                    fetchPriority={aboveFold ? "high" : "low"}
+                    fetchPriority={isLcp ? "high" : aboveFold ? "auto" : "low"}
                     decoding="async"
                     className="aspect-square w-full rounded-lg border border-border/50 object-cover"
                   />

@@ -29,6 +29,9 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
               alt={full}
               width={32}
               height={32}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
               className="h-8 w-8 shrink-0 rounded-md object-cover"
             />
           ) : (

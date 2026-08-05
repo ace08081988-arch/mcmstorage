@@ -185,6 +185,7 @@ function PublicItemPage() {
               width={1200}
               height={1200}
               fetchPriority="high"
+            loading="eager"
               decoding="async"
               className="aspect-square w-full border-b border-border/50 object-cover sm:aspect-[16/10]"
             />
