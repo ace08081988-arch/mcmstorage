@@ -204,11 +204,16 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
         imageUrl = signed?.signedUrl ?? null;
       }
 
-      // URL AVIF stabil (tanpa token) supaya bisa di-cache lama di tepi;
-      // endpoint-nya sendiri yang menandatangani ulang berkas Storage.
-      imageAvifSrcset = DETAIL_WIDTHS.map(
-        (width) => `${avifVariantUrl(data.slug, data.itemId, width)} ${width}w`,
-      ).join(", ");
+      // URL AVIF stabil (tanpa token) supaya bisa di-cache lama; endpoint
+      // yang menandatangani ulang berkas Storage. Hanya ditawarkan bila
+      // transcoding aktif — kalau tidak, `<source>` AVIF akan menyajikan
+      // WebP dengan tipe yang salah.
+      const { isAvifEnabled } = await import("@/lib/avif-cdn.server");
+      if (ok.length && isAvifEnabled()) {
+        imageAvifSrcset = DETAIL_WIDTHS.map(
+          (width) => `${avifVariantUrl(data.slug, data.itemId, width)} ${width}w`,
+        ).join(", ");
+      }
     }
 
     return {
