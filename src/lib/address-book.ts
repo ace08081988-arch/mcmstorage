@@ -96,7 +96,8 @@ export async function upsertManualEntry(input: {
   });
   if (dup) {
     throw new Error(
-      `Kontak sudah tersimpan sebagai "${dup.name}". Tidak boleh ada kontak ganda.`,
+      `${dupFieldLabel(phone, email)} sudah tersimpan pada kontak "${dup.name}". ` +
+        `Ubah datanya atau buka kontak tersebut.`,
     );
   }
   const payload = {
@@ -115,11 +116,23 @@ export async function upsertManualEntry(input: {
     .single();
   if (error) {
     if (error.code === "23505") {
-      throw new Error("Kontak dengan nomor/email/nama ini sudah tersimpan.");
+      const m = error.message ?? "";
+      const field = m.includes("phone")
+        ? `Nomor telepon ${phone ?? ""}`.trim()
+        : m.includes("email")
+          ? `Email ${email ?? ""}`.trim()
+          : `Nama "${name}"`;
+      throw new Error(`${field} sudah tersimpan di buku alamat. Data tidak boleh ganda.`);
     }
     throw error;
   }
   return data as AddressBookRow;
+}
+
+function dupFieldLabel(phone: string | null, email: string | null): string {
+  if (phone) return `Nomor telepon ${phone}`;
+  if (email) return `Email ${email}`;
+  return "Nama";
 }
 
 /** Cari kontak yang sudah ada berdasarkan nomor, email, atau nama. */
