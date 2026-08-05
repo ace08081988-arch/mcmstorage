@@ -62,6 +62,11 @@ const cases: Case[] = [
   { label: "pratinjau di panel muted", fg: utilityDecl("chat-preview-text", "color").replace("var(--preview-ink, var(--foreground))", "var(--foreground)"), bg: "var(--muted)", min: TEXT_AA },
   { label: "pratinjau di panel kartu", fg: utilityDecl("chat-preview-text", "color").replace("var(--preview-ink, var(--foreground))", "var(--foreground)"), bg: "var(--card)", min: TEXT_AA },
   { label: "label pratinjau", fg: "var(--foreground)", bg: "var(--muted)", min: TEXT_AA },
+
+  // Kotak cari daftar chat (token --wa-*)
+  { label: "teks kotak cari chat", fg: "var(--wa-text)", bg: "var(--wa-surface)", min: TEXT_AA },
+  { label: "placeholder kotak cari chat", fg: "var(--wa-text-muted)", bg: "var(--wa-surface)", min: TEXT_AA },
+  { label: "border kotak cari chat", fg: "var(--wa-field-border)", bg: "var(--wa-surface)", min: UI_AA },
 ];
 
 describe("kontras komponen input chat", () => {
