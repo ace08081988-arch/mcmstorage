@@ -67,6 +67,11 @@ const cases: Case[] = [
   { label: "teks kotak cari chat", fg: "var(--wa-text)", bg: "var(--wa-surface)", min: TEXT_AA },
   { label: "placeholder kotak cari chat", fg: "var(--wa-text-muted)", bg: "var(--wa-surface)", min: TEXT_AA },
   { label: "border kotak cari chat", fg: "var(--wa-field-border)", bg: "var(--wa-surface)", min: UI_AA },
+
+  // Ring fokus (WCAG 1.4.11 non-text contrast ≥3:1)
+  { label: "ring fokus di atas kartu", fg: "var(--ring)", bg: "var(--card)", min: UI_AA },
+  { label: "ring fokus di atas latar", fg: "var(--ring)", bg: "var(--background)", min: UI_AA },
+  { label: "ring fokus di atas permukaan chat", fg: "var(--ring)", bg: "var(--wa-surface)", min: UI_AA },
 ];
 
 describe("kontras komponen input chat", () => {
