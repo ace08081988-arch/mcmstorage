@@ -190,6 +190,15 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
     },
     {
+      // Visual regression (screenshot diff) bilah bawah: strip 140px
+      // paling bawah layar dibandingkan ke SATU baseline yang sama di
+      // semua skenario (muat awal, scroll, pindah halaman, konten
+      // dinamis, rotasi). Pergeseran sekecil apa pun langsung gagal.
+      name: "bottom-bar-snap-visual",
+      testMatch: /bottom-bar-snap\.visual\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // Skenario : Toast "Perbaiki Akses" muncul saat error akses
       //            ditolak (42501 / PGRST301 / 401 / 403) dan tombolnya
       //            memicu navigasi ke `/profil`. Error non-akses (mis.
