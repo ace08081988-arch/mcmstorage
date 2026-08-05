@@ -39,16 +39,24 @@ async function ready(page: Page) {
   await page.waitForTimeout(250);
 }
 
-/** Screenshot strip paling bawah viewport (bukan full page). */
+/**
+ * Screenshot strip paling bawah viewport (bukan full page).
+ *
+ * Konten daftar/header disembunyikan dengan `visibility: hidden` (bukan
+ * `display: none`) tepat sebelum jepretan: layout & posisi scroll tidak
+ * berubah, tapi latar di belakang bilah jadi konstan sehingga diff murni
+ * mengukur posisi + tampilan bilah bawah.
+ */
 async function shootStrip(page: Page) {
   const size = page.viewportSize();
   if (!size) throw new Error("viewport size tidak tersedia");
+  await page.addStyleTag({
+    content:
+      '[data-bottom-bar-harness] > ul, [data-bottom-bar-harness] > header { visibility: hidden !important; }',
+  });
+  await page.waitForTimeout(120);
   return page.screenshot({
     clip: { x: 0, y: size.height - STRIP_H, width: size.width, height: STRIP_H },
-    // Isi daftar di belakang bilah selalu berubah (scroll/konten dinamis);
-    // yang diuji hanya posisi + tampilan bilah bawahnya.
-    mask: [page.getByTestId("dynamic-list")],
-    maskColor: "#000000",
     animations: "disabled",
     caret: "hide",
   });
