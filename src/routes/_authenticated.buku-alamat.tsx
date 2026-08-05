@@ -626,6 +626,7 @@ function BukuAlamatPage() {
         target={editing}
         rows={rows}
         onClose={() => setEditing(null)}
+        onOpenExisting={(r) => setEditing(r)}
         onSaved={async () => {
           setEditing(null);
           await refresh();
@@ -648,11 +649,13 @@ function EditDialog({
   target,
   rows,
   onClose,
+  onOpenExisting,
   onSaved,
 }: {
   target: AddressBookRow | "new" | null;
   rows: AddressBookRow[];
   onClose: () => void;
+  onOpenExisting?: (row: AddressBookRow) => void;
   onSaved: () => void | Promise<void>;
 }) {
   const isNew = target === "new";
@@ -718,30 +721,53 @@ function EditDialog({
     };
   }, [pin, isNew]);
 
-  const normPhone = (s: string) => s.replace(/\D/g, "");
-  const normEmail = (s: string) => s.trim().toLowerCase();
   const normName = (s: string) => s.trim().toLowerCase();
-  const duplicate = useMemo(() => {
-    if (!isNew) return null;
+  // Deteksi duplikat memakai normalisasi yang sama persis dengan database
+  // (normalize_phone / normalize_email) supaya klien & server tidak beda hasil.
+  const duplicate = useMemo((): {
+    row: AddressBookRow;
+    field: "name" | "phone" | "email";
+    label: string;
+    value: string;
+    reason: string;
+  } | null => {
     const others = rows.filter((r) => r.id !== row?.id);
-    const p = normPhone(phone);
-    const e = normEmail(email);
+    const p = normalizePhone(phone);
+    const e = normalizeEmail(email);
     const n = normName(name);
     for (const r of others) {
-      if (p && (r.phone_norm === p || normPhone(r.phone ?? "") === p)) {
-        return { row: r, reason: `Nomor telepon sudah dipakai kontak "${r.name}"` };
+      if (p && normalizePhone(r.phone) === p) {
+        return {
+          row: r,
+          field: "phone",
+          label: "Nomor telepon",
+          value: phone.trim(),
+          reason: `Nomor telepon ${phone.trim()} sudah dipakai kontak "${r.name}"`,
+        };
       }
-      if (e && normEmail(r.email ?? "") === e) {
-        return { row: r, reason: `Email sudah dipakai kontak "${r.name}"` };
+      if (e && normalizeEmail(r.email) === e) {
+        return {
+          row: r,
+          field: "email",
+          label: "Email",
+          value: email.trim(),
+          reason: `Email ${email.trim()} sudah dipakai kontak "${r.name}"`,
+        };
       }
     }
     if (n) {
       const nameMatch = others.find((r) => normName(r.name) === n);
       if (nameMatch)
-        return { row: nameMatch, reason: `Nama "${nameMatch.name}" sudah ada di buku alamat` };
+        return {
+          row: nameMatch,
+          field: "name",
+          label: "Nama",
+          value: name.trim(),
+          reason: `Nama "${nameMatch.name}" sudah ada di buku alamat`,
+        };
     }
     return null;
-  }, [isNew, rows, row?.id, name, phone, email]);
+  }, [rows, row?.id, name, phone, email]);
 
   const save = async () => {
     if (!name.trim()) {
@@ -758,7 +784,17 @@ function EditDialog({
       validatedPin = v.code;
     }
     if (duplicate) {
-      toast.error("Kontak duplikat", { description: duplicate.reason });
+      toast.error(`${duplicate.label} sudah terdaftar`, {
+        description: `${duplicate.reason}. Ubah data ini atau buka kontak yang sudah ada.`,
+        ...(onOpenExisting
+          ? {
+              action: {
+                label: "Buka kontak",
+                onClick: () => onOpenExisting(duplicate.row),
+              },
+            }
+          : {}),
+      });
       return;
     }
     setBusy(true);
