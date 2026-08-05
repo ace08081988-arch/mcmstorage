@@ -34,7 +34,18 @@ export function useBottomNavHeightSync(
       // getBoundingClientRect ikut menghitung padding safe-area & border,
       // jadi angkanya persis ruang layar yang ditutupi bar.
       const h = Math.round(el.getBoundingClientRect().height);
-      if (h <= 0 || h === last) return;
+      if (h === last) return;
+      // Tinggi 0 = bar sedang disembunyikan (mis. `md:hidden` saat ponsel
+      // diputar ke landscape yang melewati breakpoint). Spacer WAJIB ikut
+      // dinolkan, kalau tidak konten menyisakan ruang kosong sebesar bar
+      // orientasi sebelumnya.
+      if (h <= 0) {
+        last = 0;
+        root.style.removeProperty("--app-bottom-nav-h");
+        root.style.setProperty("--app-bottom-bar-space", "0px");
+        delete root.dataset["bottomBar"];
+        return;
+      }
       last = h;
       root.style.setProperty("--app-bottom-nav-h", `${h}px`);
       // Spacer otomatis: 0px saat tidak ada bar, tinggi nyata saat ada.
