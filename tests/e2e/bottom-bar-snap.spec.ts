@@ -21,6 +21,29 @@ const TOL = 1.5;
 
 const nav = (page: Page) => page.getByRole("navigation", { name: "Navigasi utama" });
 
+/**
+ * Bilah bawah sengaja `md:hidden` — hanya tampil di breakpoint ponsel.
+ * Di tablet/desktop invarian yang berlaku berbeda: bar TIDAK tampil dan
+ * spacer harus 0 supaya tidak ada ruang kosong di dasar halaman.
+ */
+const barShown = (page: Page) => nav(page).isVisible();
+
+const spacerPx = (page: Page) =>
+  page.evaluate(
+    () =>
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--app-bottom-bar-space",
+        ),
+      ) || 0,
+  );
+
+/** Invarian saat bar disembunyikan (tablet/desktop): tidak ada spacer sisa. */
+async function assertHiddenBarInvariants(page: Page, label: string) {
+  expect(await spacerPx(page), `spacer harus 0 saat bar tersembunyi (${label})`)
+    .toBeLessThanOrEqual(TOL);
+}
+
 async function bottomGap(page: Page): Promise<number> {
   const box = await nav(page).boundingBox();
   expect(box, "bilah bawah harus terlihat").not.toBeNull();
@@ -51,6 +74,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("bilah bawah menempel di dasar layar saat halaman dimuat", async ({ page }) => {
+  if (!(await barShown(page))) {
+    await assertHiddenBarInvariants(page, "muat awal");
+    return;
+  }
   expect(Math.abs(await bottomGap(page))).toBeLessThanOrEqual(TOL);
 
   // Posisi harus `fixed`, dan tidak boleh ada ancestor yang menjadikan
@@ -80,6 +107,14 @@ test("bilah bawah menempel di dasar layar saat halaman dimuat", async ({ page })
 });
 
 test("bilah bawah tetap snap saat konten digulir", async ({ page }) => {
+  if (!(await barShown(page))) {
+    await page.evaluate(() =>
+      window.scrollTo({ top: 2400, behavior: "instant" as ScrollBehavior }),
+    );
+    await page.waitForTimeout(120);
+    await assertHiddenBarInvariants(page, "scroll");
+    return;
+  }
   const before = await bottomGap(page);
   for (const y of [200, 600, 1200, 2400]) {
     await page.evaluate((top) => window.scrollTo({ top, behavior: "instant" as ScrollBehavior }), y);
@@ -97,6 +132,12 @@ test("bilah bawah tetap snap saat konten digulir", async ({ page }) => {
 });
 
 test("bilah bawah tetap snap saat pindah halaman", async ({ page }) => {
+  if (!(await barShown(page))) {
+    await page.getByTestId("go-next-page").click();
+    await expect(page.getByTestId("page-label")).toContainText("Halaman 2");
+    await assertHiddenBarInvariants(page, "pindah halaman");
+    return;
+  }
   const before = await bottomGap(page);
   for (let i = 0; i < 3; i++) {
     await page.getByTestId("go-next-page").click();
@@ -108,6 +149,12 @@ test("bilah bawah tetap snap saat pindah halaman", async ({ page }) => {
 });
 
 test("bilah bawah tetap snap saat konten dinamis bertambah", async ({ page }) => {
+  if (!(await barShown(page))) {
+    await page.getByTestId("add-rows").click();
+    await page.waitForTimeout(150);
+    await assertHiddenBarInvariants(page, "konten dinamis");
+    return;
+  }
   const before = await bottomGap(page);
   const rowsBefore = await page.getByTestId("dynamic-list").locator("li").count();
 
@@ -160,7 +207,7 @@ test("bilah bawah & spacer diukur ulang saat orientasi berubah", async ({ page }
   };
 
   const portrait = page.viewportSize()!;
-  expect(Math.abs(await bottomGap(page))).toBeLessThanOrEqual(TOL);
+  await assertConsistent("orientasi awal");
 
   // Portrait -> landscape
   await page.setViewportSize({ width: portrait.height, height: portrait.width });
@@ -170,7 +217,6 @@ test("bilah bawah & spacer diukur ulang saat orientasi berubah", async ({ page }
   // Kembali ke portrait
   await page.setViewportSize(portrait);
   await page.waitForTimeout(1200);
-  await expect(nav(page)).toBeVisible();
   await assertConsistent("kembali ke portrait");
 
   // Konten terakhir tetap tidak tertutup bar setelah rotasi bolak-balik.
@@ -179,6 +225,8 @@ test("bilah bawah & spacer diukur ulang saat orientasi berubah", async ({ page }
   );
   await page.waitForTimeout(150);
   const lastRow2 = page.getByTestId("dynamic-list").locator("li").last();
-  const [r, n] = await Promise.all([lastRow2.boundingBox(), nav(page).boundingBox()]);
-  expect(r!.y + r!.height).toBeLessThanOrEqual(n!.y + TOL);
+  if (await barShown(page)) {
+    const [r, n] = await Promise.all([lastRow2.boundingBox(), nav(page).boundingBox()]);
+    expect(r!.y + r!.height).toBeLessThanOrEqual(n!.y + TOL);
+  }
 });
