@@ -128,6 +128,15 @@ const hoverCases: Case[] = [
   { label: "cincin luar fokus keyboard vs kartu", fg: "var(--ring)", bg: "var(--card)", min: UI_AA },
 ];
 
+/* Scrollbar daftar dropdown chat (WCAG 1.4.11 non-text ≥3:1). */
+const scrollbarCases: Case[] = [
+  { label: "thumb vs track", fg: "var(--chat-scroll-thumb)", bg: "var(--chat-scroll-track)", min: UI_AA },
+  { label: "thumb vs popover", fg: "var(--chat-scroll-thumb)", bg: "var(--popover)", min: UI_AA },
+  { label: "thumb vs kartu", fg: "var(--chat-scroll-thumb)", bg: "var(--card)", min: UI_AA },
+  { label: "thumb hover vs track", fg: "var(--chat-scroll-thumb-hover)", bg: "var(--chat-scroll-track)", min: UI_AA },
+  { label: "thumb hover vs popover", fg: "var(--chat-scroll-thumb-hover)", bg: "var(--popover)", min: UI_AA },
+];
+
 describe("kontras state hover dropdown autocomplete/mention chat", () => {
   for (const theme of THEME_NAMES) {
     describe(`tema ${theme}`, () => {
@@ -177,5 +186,39 @@ describe("kontras state hover dropdown autocomplete/mention chat", () => {
     expect(body).toMatch(/\[data-highlighted\]/);
     expect(body).toMatch(/outline:\s*2px solid var\(--primary-foreground\)/);
     expect(body).toMatch(/box-shadow:\s*0 0 0 2px var\(--ring\)/);
+  });
+});
+
+describe("kontras scrollbar dropdown autocomplete/mention chat", () => {
+  for (const theme of THEME_NAMES) {
+    describe(`tema ${theme}`, () => {
+      for (const c of scrollbarCases) {
+        it(`${c.label} ≥ ${c.min}:1`, () => {
+          const ratio = contrastRatio(c.fg, c.bg, themes[theme]);
+          expect(
+            Number(ratio.toFixed(2)),
+            `scrollbar ${c.label} di tema ${theme} hanya ${ratio.toFixed(2)}:1`,
+          ).toBeGreaterThanOrEqual(c.min);
+        });
+      }
+
+      it("track tetap terbeda dari permukaan popover (≥1.1:1)", () => {
+        const ratio = contrastRatio("var(--chat-scroll-track)", "var(--popover)", themes[theme]);
+        expect(Number(ratio.toFixed(3))).toBeGreaterThan(1.02);
+      });
+    });
+  }
+
+  it("daftar dropdown chat memakai token scrollbar tema", () => {
+    const idx = css.indexOf("@utility chat-option-scrollbar");
+    expect(idx, "@utility chat-option-scrollbar tidak ditemukan").toBeGreaterThan(-1);
+    const block = css.slice(idx, idx + 2600);
+    expect(block).toMatch(/scrollbar-color:\s*var\(--chat-scroll-thumb\) var\(--chat-scroll-track\)/);
+    expect(block).toMatch(/::-webkit-scrollbar-track/);
+    expect(block).toMatch(/::-webkit-scrollbar-thumb/);
+    expect(block).toMatch(/var\(--chat-scroll-thumb-hover\)/);
+    // diterapkan otomatis pada daftar cmdk / listbox dalam lingkup chat
+    expect(block).toMatch(/\[cmdk-list\]/);
+    expect(block).toMatch(/\[role="listbox"\]/);
   });
 });
