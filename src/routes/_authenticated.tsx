@@ -144,7 +144,10 @@ function AuthLock() {
                 // tertutup bar — termasuk saat landscape.
                 // `app-safe-x` menjaga konten tidak masuk ke area cutout
                 // (notch) saat perangkat dipakai landscape.
-                : "app-safe-x app-content-scrim min-w-0 flex-1 scroll-mt-16 pb-[calc(var(--app-bottom-nav-h)+0.5rem)] focus:outline-none md:pb-0"
+                // `app-bottom-spacer` otomatis 0px saat tak ada bar bawah
+                // (desktop/sidebar) dan mengikuti tinggi bar nyata saat ada,
+                // termasuk ChatBottomNav yang tampil juga di layar lebar.
+                : "app-safe-x app-content-scrim min-w-0 flex-1 scroll-mt-16 app-bottom-spacer focus:outline-none"
             }
           >
             <Outlet />
