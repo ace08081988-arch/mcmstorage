@@ -144,26 +144,34 @@ test("bilah bawah & spacer diukur ulang saat orientasi berubah", async ({ page }
       };
     });
 
+  /** Landscape ponsel bisa melewati breakpoint `md` sehingga bar mobile
+   *  disembunyikan — yang penting variabel spacer ikut disesuaikan. */
+  const assertConsistent = async (label: string) => {
+    const vars = await readVars();
+    const visible = await nav(page).isVisible();
+    if (visible) {
+      const box = await nav(page).boundingBox();
+      expect(Math.abs(await bottomGap(page)), `bar bergeser (${label})`).toBeLessThanOrEqual(TOL);
+      expect(Math.abs(vars.navH - box!.height), `--app-bottom-nav-h basi (${label})`).toBeLessThanOrEqual(TOL);
+      expect(vars.space).toBeCloseTo(vars.navH, 0);
+    } else {
+      expect(vars.space, `spacer harus 0 saat bar tersembunyi (${label})`).toBeLessThanOrEqual(TOL);
+    }
+  };
+
   const portrait = page.viewportSize()!;
   expect(Math.abs(await bottomGap(page))).toBeLessThanOrEqual(TOL);
 
   // Portrait -> landscape
   await page.setViewportSize({ width: portrait.height, height: portrait.width });
   await page.waitForTimeout(1200); // tunggu burst pengukuran selesai
-  const land = await readVars();
-  const landNav = await nav(page).boundingBox();
-  expect(Math.abs(await bottomGap(page)), "bar bergeser di landscape").toBeLessThanOrEqual(TOL);
-  expect(Math.abs(land.navH - landNav!.height), "--app-bottom-nav-h basi").toBeLessThanOrEqual(TOL);
-  expect(land.space).toBeCloseTo(land.navH, 0);
+  await assertConsistent("landscape");
 
   // Kembali ke portrait
   await page.setViewportSize(portrait);
   await page.waitForTimeout(1200);
-  const port = await readVars();
-  const portNav = await nav(page).boundingBox();
-  expect(Math.abs(await bottomGap(page)), "bar bergeser kembali di portrait").toBeLessThanOrEqual(TOL);
-  expect(Math.abs(port.navH - portNav!.height)).toBeLessThanOrEqual(TOL);
-  expect(port.space).toBeCloseTo(port.navH, 0);
+  await expect(nav(page)).toBeVisible();
+  await assertConsistent("kembali ke portrait");
 
   // Konten terakhir tetap tidak tertutup bar setelah rotasi bolak-balik.
   await page.evaluate(() =>
