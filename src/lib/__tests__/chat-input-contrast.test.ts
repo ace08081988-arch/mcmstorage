@@ -137,6 +137,15 @@ const scrollbarCases: Case[] = [
   { label: "thumb hover vs popover", fg: "var(--chat-scroll-thumb-hover)", bg: "var(--popover)", min: UI_AA },
 ];
 
+/* Item disabled / tidak tersedia di dropdown chat. */
+const disabledCases: Case[] = [
+  { label: "teks item disabled vs popover", fg: "var(--chat-option-disabled-ink)", bg: "var(--popover)", min: TEXT_AA },
+  { label: "teks item disabled vs kartu", fg: "var(--chat-option-disabled-ink)", bg: "var(--card)", min: TEXT_AA },
+  { label: "ikon item disabled vs popover", fg: "var(--chat-option-disabled-border)", bg: "var(--popover)", min: UI_AA },
+  { label: "border item disabled vs popover", fg: "var(--chat-option-disabled-border)", bg: "var(--popover)", min: UI_AA },
+  { label: "border item disabled vs kartu", fg: "var(--chat-option-disabled-border)", bg: "var(--card)", min: UI_AA },
+];
+
 describe("kontras state hover dropdown autocomplete/mention chat", () => {
   for (const theme of THEME_NAMES) {
     describe(`tema ${theme}`, () => {
@@ -220,5 +229,46 @@ describe("kontras scrollbar dropdown autocomplete/mention chat", () => {
     // diterapkan otomatis pada daftar cmdk / listbox dalam lingkup chat
     expect(block).toMatch(/\[cmdk-list\]/);
     expect(block).toMatch(/\[role="listbox"\]/);
+  });
+});
+
+describe("kontras item disabled dropdown autocomplete/mention chat", () => {
+  for (const theme of THEME_NAMES) {
+    describe(`tema ${theme}`, () => {
+      for (const c of disabledCases) {
+        it(`${c.label} ≥ ${c.min}:1`, () => {
+          const ratio = contrastRatio(c.fg, c.bg, themes[theme]);
+          expect(
+            Number(ratio.toFixed(2)),
+            `${c.label} di tema ${theme} hanya ${ratio.toFixed(2)}:1`,
+          ).toBeGreaterThanOrEqual(c.min);
+        });
+      }
+
+      it("teks disabled tetap lebih redup dari teks aktif", () => {
+        const disabled = contrastRatio("var(--chat-option-disabled-ink)", "var(--popover)", themes[theme]);
+        const active = contrastRatio("var(--foreground)", "var(--popover)", themes[theme]);
+        expect(disabled).toBeLessThan(active);
+      });
+    });
+  }
+
+  it("aturan disabled mengganti opacity default Radix/cmdk", () => {
+    const idx = css.indexOf('[aria-disabled="true"]');
+    expect(idx, "aturan item disabled dropdown chat tidak ditemukan").toBeGreaterThan(-1);
+    const block = css.slice(idx, idx + 1600);
+    expect(block).toMatch(/opacity:\s*1/);
+    expect(block).toMatch(/color:\s*var\(--chat-option-disabled-ink\)/);
+    expect(block).toMatch(/border-color:\s*var\(--chat-option-disabled-border\)/);
+    expect(block).toMatch(/cursor:\s*not-allowed/);
+    // item disabled tidak boleh tampak seperti item aktif saat hover/highlight
+    expect(block).toMatch(/background-color:\s*transparent/);
+  });
+
+  it("utility chat-option-disabled tersedia untuk pemakaian manual", () => {
+    const body = css.match(/@utility\s+chat-option-disabled\s*\{[\s\S]*?\n\}/)?.[0] ?? "";
+    expect(body).toMatch(/var\(--chat-option-disabled-ink\)/);
+    expect(body).toMatch(/var\(--chat-option-disabled-border\)/);
+    expect(body).not.toMatch(/opacity:\s*0?\.\d/);
   });
 });
