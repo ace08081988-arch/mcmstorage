@@ -1445,6 +1445,44 @@ textarea::placeholder {
   }
 }
 
+/* Sorotan seleksi pada tautan (hasil Linkify), teks ter-highlight <mark>,
+   dan elemen inline di dalam composer serta pratinjau pesan.
+   Tanpa aturan ini, anchor/mark memakai warna sendiri (underline primary,
+   bg warning) sehingga saat di-select warnanya berbeda dengan teks biasa. */
+:where(
+  .chat-input-contrast,
+  .chat-field-scope,
+  .chat-preview-text,
+  .chat-preview-label,
+  .chat-readonly-input
+)
+  :where(a, a *, mark, mark *, code, code *, [role="link"], [data-link]) {
+  &::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    -webkit-text-fill-color: var(--primary-foreground);
+    text-decoration-color: var(--primary-foreground);
+  }
+  &::-moz-selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    text-decoration-color: var(--primary-foreground);
+  }
+}
+
+/* Anchor yang menjadi elemen ber-utility itu sendiri (bukan turunannya). */
+:where(
+  .chat-input-contrast,
+  .chat-preview-text,
+  .chat-preview-label,
+  .chat-readonly-input
+):is(a, mark)::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  -webkit-text-fill-color: var(--primary-foreground);
+  text-decoration-color: var(--primary-foreground);
+}
+
 /*
  * Scoped auto-press: setiap elemen dengan atribut `data-press-scope="on"`
  * akan otomatis memberi reaksi sentuh pada elemen interaktif di dalamnya —
