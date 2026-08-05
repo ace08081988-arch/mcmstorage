@@ -24,6 +24,7 @@ const nav = (page: Page) => page.getByRole("navigation", { name: "Navigasi utama
 
 async function ready(page: Page) {
   await expect(nav(page)).toBeVisible();
+  await page.waitForLoadState("networkidle").catch(() => {});
   await expect
     .poll(
       () =>
@@ -54,9 +55,6 @@ async function expectStripStable(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.route("**/rest/v1/**", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
-  );
   await page.goto(HARNESS, { waitUntil: "domcontentloaded" });
   await ready(page);
 });
