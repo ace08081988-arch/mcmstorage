@@ -22,6 +22,8 @@ export type AlertFired = {
   severity: "warning" | "critical";
   message: string;
   deliveryStatus: string;
+  telegramStatus: string;
+  slackStatus: string;
 };
 
 export type AlertCheckResult = {
@@ -56,6 +58,56 @@ function p75(values: number[]): number | null {
 
 function fmt(metric: AlertMetric, v: number): string {
   return metric === "CLS" ? v.toFixed(3) : `${(v / 1000).toFixed(2)} s`;
+}
+
+const GATEWAY = "https://connector-gateway.lovable.dev";
+
+/** Kirim pesan ke Telegram lewat connector gateway. */
+async function sendTelegram(chatId: string, text: string): Promise<string> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  const conn = process.env["TELEGRAM_API_KEY"];
+  if (!apiKey || !conn) return "skipped_no_credentials";
+  try {
+    const res = await fetch(`${GATEWAY}/telegram/sendMessage`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "X-Connection-Api-Key": conn,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    });
+    const body = await res.text();
+    if (!res.ok) return `failed_${res.status}: ${body.slice(0, 200)}`;
+    const json = JSON.parse(body) as { ok?: boolean; description?: string };
+    return json.ok ? "sent" : `failed: ${json.description ?? "unknown"}`;
+  } catch (e) {
+    return `failed: ${e instanceof Error ? e.message : String(e)}`;
+  }
+}
+
+/** Kirim pesan ke channel Slack lewat connector gateway. */
+async function sendSlack(channel: string, text: string): Promise<string> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  const conn = process.env["SLACK_API_KEY"];
+  if (!apiKey || !conn) return "skipped_no_credentials";
+  try {
+    const res = await fetch(`${GATEWAY}/slack/api/chat.postMessage`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "X-Connection-Api-Key": conn,
+        "Content-Type": "application/json; charset=utf-8",
+      },
+      body: JSON.stringify({ channel, text }),
+    });
+    const body = await res.text();
+    if (!res.ok) return `failed_${res.status}: ${body.slice(0, 200)}`;
+    const json = JSON.parse(body) as { ok?: boolean; error?: string };
+    return json.ok ? "sent" : `failed: ${json.error ?? "unknown"}`;
+  } catch (e) {
+    return `failed: ${e instanceof Error ? e.message : String(e)}`;
+  }
 }
 
 /** Jalankan satu siklus pemeriksaan ambang; menulis riwayat & mengirim email. */
@@ -145,7 +197,7 @@ export async function runWebVitalsAlertCheck(): Promise<AlertCheckResult> {
     const apiKey = process.env["LOVABLE_API_KEY"];
     const to = cfg.admin_email;
 
-    if (to && apiKey) {
+    if (to && apiKey && cfg.email_enabled !== false) {
       try {
         const { sendLovableEmail } = await import("@lovable.dev/email-js");
         const domain = process.env["SENDER_DOMAIN"] ?? "notify.mcmstorage.biz";
@@ -186,6 +238,8 @@ export async function runWebVitalsAlertCheck(): Promise<AlertCheckResult> {
       notified_email: to ?? null,
       delivery_status: deliveryStatus,
       delivery_error: deliveryError,
+      telegram_status: telegramStatus,
+      slack_status: slackStatus,
     });
 
     fired.push({
@@ -197,6 +251,8 @@ export async function runWebVitalsAlertCheck(): Promise<AlertCheckResult> {
       severity,
       message,
       deliveryStatus,
+      telegramStatus,
+      slackStatus,
     });
   }
 
