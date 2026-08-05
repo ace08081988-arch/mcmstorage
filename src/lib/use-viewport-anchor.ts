@@ -194,7 +194,20 @@ function startEngine() {
     // selisihnya < 0.5px, lalu di-snap persis ke target.
     if (!keyboardOpen) lockTarget = target;
     const lockDiff = lockTarget - currentLockOffset;
-    if (Math.abs(lockDiff) > 0.5) {
+    // Saat keyboard TERTUTUP (perubahan datang dari address bar / scroll),
+    // offset di-snap persis ke target setiap frame. Penghalusan bertahap
+    // membuat bar terlihat ikut menggeser sedikit saat menggulir; snapping
+    // membuat bar terasa benar-benar diam di dasar layar.
+    if (!keyboardOpen) {
+      if (Math.abs(lockDiff) > 0.01) {
+        currentLockOffset = lockTarget;
+        lockSettling = false;
+        document.documentElement.style.setProperty(
+          VIEWPORT_ANCHOR_LOCK_VAR,
+          `${lockTarget}px`,
+        );
+      }
+    } else if (Math.abs(lockDiff) > 0.5) {
       // Faktor 0.3 ≈ waktu tempuh ~10 frame (±160ms) — sepadan dengan durasi
       // animasi address bar, jadi gerakannya terasa menyatu, bukan menyusul.
       currentLockOffset += lockDiff * 0.3;
