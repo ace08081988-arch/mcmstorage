@@ -859,9 +859,23 @@ function EditDialog({
         {duplicate && (
           <div
             role="alert"
-            className="rounded-md border border-destructive/40 bg-destructive/10 px-ms-3 py-ms-2 text-ms-sm text-destructive"
+            className="space-y-ms-2 rounded-md border border-destructive/40 bg-destructive/10 px-ms-3 py-ms-2 text-ms-sm text-destructive"
           >
-            {duplicate.reason}. Silakan buka kontak yang sudah ada atau ubah data.
+            <p className="font-medium">{duplicate.label} sudah terdaftar</p>
+            <p className="text-ms-xs">
+              {duplicate.reason}. Ubah {duplicate.label.toLowerCase()} ini atau buka kontak yang
+              sudah ada.
+            </p>
+            {onOpenExisting && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onOpenExisting(duplicate.row)}
+              >
+                Buka kontak "{duplicate.row.name}"
+              </Button>
+            )}
           </div>
         )}
         <div className="space-ms-2">
@@ -870,6 +884,8 @@ function EditDialog({
             placeholder="Nama"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            aria-invalid={duplicate?.field === "name"}
+            className={duplicate?.field === "name" ? "border-destructive" : undefined}
           />
           {isNew ? (
             <>
@@ -926,6 +942,8 @@ function EditDialog({
                 placeholder="Nomor telepon (mis. 0812…)"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                aria-invalid={duplicate?.field === "phone"}
+                className={duplicate?.field === "phone" ? "border-destructive" : undefined}
               />
               <Input
                 type="email"
@@ -933,6 +951,8 @@ function EditDialog({
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={duplicate?.field === "email"}
+                className={duplicate?.field === "email" ? "border-destructive" : undefined}
               />
             </>
           )}
