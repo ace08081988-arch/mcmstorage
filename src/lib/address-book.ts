@@ -187,7 +187,44 @@ export async function importDeviceContacts(
   for (const r of (existing ?? []) as ExistingRow[]) {
     if (r.device_contact_id) byId.set(r.device_contact_id, r);
   }
-  const toInsert = rows.filter((r) => !byId.has(r.device_contact_id));
+  // Dedup lintas-kontak: nomor/email/nama yang sudah ada tidak diimpor ulang.
+  const { data: allExisting } = await supabase
+    .from("address_book")
+    .select("phone_norm,email_norm,name")
+    .eq("user_id", uid);
+  const seenPhone = new Set<string>();
+  const seenEmail = new Set<string>();
+  const seenName = new Set<string>();
+  for (const r of (allExisting ?? []) as Array<{
+    phone_norm: string | null;
+    email_norm: string | null;
+    name: string | null;
+  }>) {
+    if (r.phone_norm) seenPhone.add(r.phone_norm);
+    if (r.email_norm) seenEmail.add(r.email_norm);
+    if (!r.phone_norm && !r.email_norm && r.name) {
+      seenName.add(r.name.trim().toLowerCase());
+    }
+  }
+  const toInsert = rows.filter((r) => {
+    if (byId.has(r.device_contact_id)) return false;
+    const p = normalizePhone(r.phone);
+    const e = r.email?.trim().toLowerCase() || null;
+    const n = (r.name ?? "").trim().toLowerCase();
+    if (p) {
+      if (seenPhone.has(p)) return false;
+      seenPhone.add(p);
+      return true;
+    }
+    if (e) {
+      if (seenEmail.has(e)) return false;
+      seenEmail.add(e);
+      return true;
+    }
+    if (!n || seenName.has(n)) return false;
+    seenName.add(n);
+    return true;
+  });
   const toUpdate = rows
     .filter((r) => byId.has(r.device_contact_id))
     .map((r) => ({ existing: byId.get(r.device_contact_id)!, next: r }))
