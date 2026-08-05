@@ -184,6 +184,7 @@ test("bilah bawah tetap snap saat konten dinamis bertambah", async ({ page }) =>
 });
 
 test("bilah bawah & spacer diukur ulang saat orientasi berubah", async ({ page }) => {
+  // (lihat juga uji loading & render bertahap di bawah)
   const readVars = () =>
     page.evaluate(() => {
       const cs = getComputedStyle(document.documentElement);
