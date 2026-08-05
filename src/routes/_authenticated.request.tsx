@@ -2489,6 +2489,48 @@ function PrepCard({
     const ti = titleItems.find((t) => t.warehouse_item_id === wid);
     return displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
   };
+  // Kirim ulang (khusus kartu Riwayat Terkirim): hanya membagikan ulang
+  // pesan + foto ke WhatsApp. TIDAK menulis apa pun ke database — stok
+  // gudang, penjualan, dan piutang tidak berubah, kartu tetap di Riwayat.
+  const [resendBusy, setResendBusy] = useState(false);
+  const resendToWa = async () => {
+    if (resendBusy) return;
+    setResendBusy(true);
+    try {
+      const lines: string[] = [
+        `*${titleName ?? "Paket"}* #${index}`,
+        ...items.map((it) => {
+          const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
+          return `• ${w?.name ?? "?"} ${it.actual_grams}${unitFor(it.warehouse_item_id)}`;
+        }),
+        formatSoldPaymentSummary(
+          prep.sold_payment_method,
+          effectiveTotal,
+          Number(prep.sold_paid_amount ?? 0),
+        ),
+        prep.sold_party_name ? `Pelanggan: ${prep.sold_party_name}` : "",
+        ...photoPairs
+          .map((p, i) => (p.locationUrl ? `Lokasi ${photoPairs.length > 1 ? i + 1 : ""}: ${p.locationUrl}` : ""))
+          .filter(Boolean),
+        prep.note ? `Catatan: ${prep.note}` : "",
+      ].filter(Boolean) as string[];
+      const files: File[] = [];
+      for (const [i, path] of photoPaths.entries()) {
+        const signed = await requestSignedUrl(path, 60 * 60);
+        if (!signed) continue;
+        const f = await urlToFile(signed, `paket-${prep.id}-${i + 1}.jpg`);
+        if (f) files.push(f);
+      }
+      const res = await shareToWhatsApp({
+        text: lines.join("\n"),
+        title: `Kirim ulang ${titleName ?? "paket"}`,
+        files: files.length ? files : undefined,
+      });
+      notifyShareResult(res);
+    } finally {
+      setResendBusy(false);
+    }
+  };
   return (
     <div
       className={
@@ -2525,6 +2567,16 @@ function PrepCard({
                 data-testid={`fix-payment-${prep.id}`}
               >
                 <Wrench className="h-3 w-3" /> Perbaiki bayar
+              </button>
+              <button
+                onClick={() => { void resendToWa(); }}
+                disabled={resendBusy}
+                className="inline-flex items-center gap-ms-1 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1 text-ms-2xs font-semibold text-wa-strong hover:bg-wa/25 disabled:opacity-60"
+                aria-label="Kirim ulang ke WhatsApp"
+                title="Kirim ulang pesan + foto ke WhatsApp — tidak mengubah stok, kartu tetap di Riwayat Terkirim"
+                data-testid={`resend-${prep.id}`}
+              >
+                {resendBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} Kirim ulang
               </button>
               <button
                 onClick={() => { setUndoOpen(true); void runUnsendCheck(); }}

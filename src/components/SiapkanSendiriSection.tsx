@@ -942,11 +942,18 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     {r.sent_summary}
                   </div>
                 )}
-                <div className="mt-ms-2 grid grid-cols-2 gap-ms-2">
+                <div className="mt-ms-2 grid grid-cols-3 gap-ms-2">
                   <button
                     onClick={() => onUnsend(r)}
                     className="inline-flex h-8 items-center justify-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-medium"
                   >↩ Belum terkirim</button>
+                  <button
+                    onClick={() => void onSendWA(r)}
+                    title="Kirim ulang ke WhatsApp — tidak mengubah stok, kartu tetap di Riwayat Terkirim"
+                    className="inline-flex h-8 items-center justify-center gap-ms-1 rounded-md border border-wa/40 bg-wa/15 px-ms-2 text-ms-2xs font-semibold text-wa-strong"
+                  >
+                    <Send className="h-3.5 w-3.5" /> Kirim ulang
+                  </button>
                   <button
                     onClick={() => onRemove(r)}
                     className="inline-flex h-8 items-center justify-center gap-ms-1 rounded-md border px-ms-2 text-ms-2xs font-medium text-destructive"

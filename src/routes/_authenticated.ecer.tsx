@@ -2683,6 +2683,18 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
                       <Button size="icon" variant="ghost" className={btnCls} aria-label="Edit penyiapan" title="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}><Edit3 className={iconCls} /></Button>
                     </>
                   )}
+                  {readOnly && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className={btnCls}
+                      aria-label="Kirim ulang"
+                      title="Kirim ulang ke WhatsApp — tidak mengubah stok, kartu tetap di Riwayat Terkirim"
+                      onClick={(e) => { e.stopPropagation(); void onShare(); }}
+                    >
+                      <Share2 className={iconCls} />
+                    </Button>
+                  )}
                   <Button size="icon" variant="ghost" className={btnCls} aria-label={readOnly ? "Hapus arsip" : "Hapus penyiapan"} title={readOnly ? "Hapus arsip dari Riwayat Terkirim" : "Hapus penyiapan"} onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
                 </div>
               );
