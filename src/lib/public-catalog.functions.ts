@@ -33,6 +33,8 @@ export type PublicCatalogItemDetail = PublicCatalogItem & {
   updated_at: string;
   /** Varian lebar gambar untuk `srcset` (kosong bila transformasi gagal). */
   image_srcset: string | null;
+  /** Varian AVIF (lewat proxy transcoding) untuk `<source type="image/avif">`. */
+  image_avif_srcset: string | null;
 };
 
 export type PublicCatalogItemPayload = {
@@ -115,6 +117,30 @@ const DETAIL_WIDTHS = [640, 1024, 1600] as const;
 /** Lebar yang dipakai sebagai `src` fallback bila browser tidak baca srcset. */
 const DETAIL_FALLBACK_WIDTH = 1024;
 
+/**
+ * Proxy transcoding gambar (wsrv.nl / images.weserv.nl).
+ *
+ * Supabase Storage belum bisa menghasilkan AVIF, jadi varian AVIF dibuat
+ * lewat proxy publik yang menerima URL bertanda tangan sebagai sumber dan
+ * meng-encode ulang + cache di CDN-nya. Browser tanpa dukungan AVIF tetap
+ * memakai varian WebP/JPEG langsung dari Storage.
+ */
+const AVIF_PROXY = "https://wsrv.nl/";
+/** Kualitas AVIF: 50 sudah setara WebP q72 secara visual, ukuran ~30% lebih kecil. */
+const AVIF_QUALITY = 50;
+
+function avifProxyUrl(sourceUrl: string, width: number) {
+  const q = new URLSearchParams({
+    url: sourceUrl,
+    w: String(width),
+    fit: "inside",
+    we: "",
+    output: "avif",
+    q: String(AVIF_QUALITY),
+  });
+  return `${AVIF_PROXY}?${q.toString()}`;
+}
+
 /** Detail satu produk katalog publik (stok live, deskripsi, foto). */
 export const getPublicCatalogItem = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => itemSchema.parse(data))
@@ -148,6 +174,7 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
 
     let imageUrl: string | null = null;
     let imageSrcset: string | null = null;
+    let imageAvifSrcset: string | null = null;
     if (r.image_path) {
       const path = r.image_path;
       // Semua varian ditandatangani paralel — token menyimpan parameter
@@ -176,6 +203,14 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
           .createSignedUrl(path, 3600);
         imageUrl = signed?.signedUrl ?? null;
       }
+
+      // Sumber AVIF memakai varian WebP terkecil-yang-cukup dari Storage,
+      // bukan berkas asli, supaya proxy tidak perlu mengunduh file besar.
+      if (ok.length) {
+        imageAvifSrcset = ok
+          .map((v) => `${avifProxyUrl(v.url, v.width)} ${v.width}w`)
+          .join(", ");
+      }
     }
 
     return {
@@ -191,6 +226,7 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
           r.selling_price_per_base == null ? null : Number(r.selling_price_per_base),
         image_url: imageUrl,
         image_srcset: imageSrcset,
+        image_avif_srcset: imageAvifSrcset,
         description: r.description ?? null,
         package_type: r.package_type,
         package_size: Number(r.package_size) || 0,
