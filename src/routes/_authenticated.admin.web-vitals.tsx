@@ -19,6 +19,7 @@ import {
 
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import { Button } from "@/components/ui/button";
+import { WebVitalsAlertsPanel } from "@/components/WebVitalsAlertsPanel";
 import {
   getWebVitalsReport,
   type VitalsMetric,
@@ -261,6 +262,8 @@ function WebVitalsPage() {
           </div>
         </section>
       ) : null}
+
+      <WebVitalsAlertsPanel />
     </main>
   );
 }
