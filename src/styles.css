@@ -162,6 +162,12 @@
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
+  /* Scrollbar dropdown/autocomplete chat — diturunkan dari token tema aktif
+     supaya track & thumb ikut berganti otomatis di light, dark, Noir & Gold,
+     Midnight Indigo, dan high-contrast (thumb vs track ≥3:1 WCAG 1.4.11). */
+  --chat-scroll-track: color-mix(in oklab, var(--popover) 92%, var(--foreground));
+  --chat-scroll-thumb: color-mix(in oklab, var(--foreground) 62%, var(--popover));
+  --chat-scroll-thumb-hover: color-mix(in oklab, var(--foreground) 82%, var(--popover));
   --primary: oklch(0.208 0.042 265.755);
   --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: oklch(0.968 0.007 247.896);
