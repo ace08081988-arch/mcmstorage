@@ -190,6 +190,22 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
     },
     {
+      // Breakpoint tablet (768x1024). Bilah bawah `md:hidden`, jadi yang
+      // dijaga di sini: bar TIDAK tampil dan `--app-bottom-bar-space`
+      // tetap 0 (tidak ada ruang kosong sisa) di semua skenario.
+      name: "bottom-bar-snap-e2e-tablet",
+      testDir: "./tests/e2e",
+      testMatch: /bottom-bar-snap\.spec\.ts/,
+      use: { ...devices["iPad (gen 7)"], viewport: { width: 768, height: 1024 } },
+    },
+    {
+      // Breakpoint desktop (1280x800) — invarian sama dengan tablet.
+      name: "bottom-bar-snap-e2e-desktop",
+      testDir: "./tests/e2e",
+      testMatch: /bottom-bar-snap\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // Visual regression (screenshot diff) bilah bawah: strip 140px
       // paling bawah layar dibandingkan ke SATU baseline yang sama di
       // semua skenario (muat awal, scroll, pindah halaman, konten
