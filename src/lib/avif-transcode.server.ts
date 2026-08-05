@@ -11,9 +11,9 @@ import decodeWebp, { init as initWebp } from "@jsquash/webp/decode";
 import decodeJpeg, { init as initJpeg } from "@jsquash/jpeg/decode";
 import encodeAvif, { init as initAvif } from "@jsquash/avif/encode";
 
-import WEBP_DEC_WASM from "@jsquash/webp/codec/dec/webp_dec.wasm";
-import JPEG_DEC_WASM from "@jsquash/jpeg/codec/dec/mozjpeg_dec.wasm";
-import AVIF_ENC_WASM from "@jsquash/avif/codec/enc/avif_enc.wasm";
+import WEBP_DEC_WASM from "@jsquash/webp/codec/dec/webp_dec.wasm?module";
+import JPEG_DEC_WASM from "@jsquash/jpeg/codec/dec/mozjpeg_dec.wasm?module";
+import AVIF_ENC_WASM from "@jsquash/avif/codec/enc/avif_enc.wasm?module";
 
 let ready: Promise<void> | null = null;
 
