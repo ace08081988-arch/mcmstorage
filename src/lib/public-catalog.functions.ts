@@ -33,6 +33,8 @@ export type PublicCatalogItemDetail = PublicCatalogItem & {
   updated_at: string;
   /** Varian lebar gambar untuk `srcset` (kosong bila transformasi gagal). */
   image_srcset: string | null;
+  /** Varian AVIF (lewat proxy transcoding) untuk `<source type="image/avif">`. */
+  image_avif_srcset: string | null;
 };
 
 export type PublicCatalogItemPayload = {
@@ -115,6 +117,30 @@ const DETAIL_WIDTHS = [640, 1024, 1600] as const;
 /** Lebar yang dipakai sebagai `src` fallback bila browser tidak baca srcset. */
 const DETAIL_FALLBACK_WIDTH = 1024;
 
+/**
+ * Endpoint transcoding AVIF milik aplikasi sendiri.
+ *
+ * Supabase Storage belum bisa menghasilkan AVIF (dan proxy gambar publik
+ * seperti wsrv.nl sudah menonaktifkan saver AVIF), jadi varian AVIF dibuat
+ * lewat `/api/public/img/avif`, yang mengalihkan ke CDN transcoding sesuai
+ * konfigurasi env. Varian ini hanya ditawarkan bila transcoding memang
+ * aktif; browser tanpa dukungan AVIF (atau saat fitur mati) tetap memakai
+ * varian WebP/JPEG langsung dari Storage.
+ */
+const AVIF_ENDPOINT = "/api/public/img/avif";
+/** Kualitas AVIF: 55 setara WebP q72 secara visual, ukuran ~30% lebih kecil. */
+const AVIF_QUALITY = 55;
+
+function avifVariantUrl(slug: string, itemId: string, width: number) {
+  const q = new URLSearchParams({
+    slug,
+    item: itemId,
+    w: String(width),
+    q: String(AVIF_QUALITY),
+  });
+  return `${AVIF_ENDPOINT}?${q.toString()}`;
+}
+
 /** Detail satu produk katalog publik (stok live, deskripsi, foto). */
 export const getPublicCatalogItem = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => itemSchema.parse(data))
@@ -148,6 +174,7 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
 
     let imageUrl: string | null = null;
     let imageSrcset: string | null = null;
+    let imageAvifSrcset: string | null = null;
     if (r.image_path) {
       const path = r.image_path;
       // Semua varian ditandatangani paralel — token menyimpan parameter
@@ -176,6 +203,17 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
           .createSignedUrl(path, 3600);
         imageUrl = signed?.signedUrl ?? null;
       }
+
+      // URL AVIF stabil (tanpa token) supaya bisa di-cache lama; endpoint
+      // yang menandatangani ulang berkas Storage. Hanya ditawarkan bila
+      // transcoding aktif — kalau tidak, `<source>` AVIF akan menyajikan
+      // WebP dengan tipe yang salah.
+      const { isAvifEnabled } = await import("@/lib/avif-cdn.server");
+      if (ok.length && isAvifEnabled()) {
+        imageAvifSrcset = DETAIL_WIDTHS.map(
+          (width) => `${avifVariantUrl(data.slug, data.itemId, width)} ${width}w`,
+        ).join(", ");
+      }
     }
 
     return {
@@ -191,6 +229,7 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
           r.selling_price_per_base == null ? null : Number(r.selling_price_per_base),
         image_url: imageUrl,
         image_srcset: imageSrcset,
+        image_avif_srcset: imageAvifSrcset,
         description: r.description ?? null,
         package_type: r.package_type,
         package_size: Number(r.package_size) || 0,

@@ -25,6 +25,8 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
     getPublicCatalogItem({ data: { slug: params.slug, itemId: params.itemId } }),
   head: ({ params, loaderData }) => {
     const it = loaderData?.item;
+    // href wajib ada meski `imagesrcset` yang dipakai browser modern.
+    const avifHref = it?.image_avif_srcset?.split(" ")[0] ?? null;
     const shopName = loaderData?.shop?.name ?? "Toko";
     const title = it ? `${it.name} — ${shopName}` : "Produk tidak ditemukan";
     const desc = it
@@ -58,11 +60,19 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
               {
                 rel: "preload",
                 as: "image",
-                href: it.image_url,
+                href: avifHref ?? it.image_url,
                 fetchpriority: "high",
-                ...(it.image_srcset
-                  ? { imagesrcset: it.image_srcset, imagesizes: IMAGE_SIZES }
-                  : {}),
+                // Browser yang tidak mendukung AVIF melewati preload bertipe
+                // image/avif, jadi hanya satu berkas yang pernah diunduh.
+                ...(it.image_avif_srcset
+                  ? {
+                      type: "image/avif",
+                      imagesrcset: it.image_avif_srcset,
+                      imagesizes: IMAGE_SIZES,
+                    }
+                  : it.image_srcset
+                    ? { imagesrcset: it.image_srcset, imagesizes: IMAGE_SIZES }
+                    : {}),
               },
             ]
           : []),
@@ -164,16 +174,21 @@ function PublicItemPage() {
 
       <article className="lux-card overflow-hidden">
         {it.image_url ? (
-          <img
-            src={it.image_url}
-            {...(it.image_srcset ? { srcSet: it.image_srcset, sizes: IMAGE_SIZES } : {})}
-            alt={`Foto produk ${it.name}`}
-            width={1200}
-            height={1200}
-            fetchPriority="high"
-            decoding="async"
-            className="aspect-square w-full border-b border-border/50 object-cover sm:aspect-[16/10]"
-          />
+          <picture>
+            {it.image_avif_srcset ? (
+              <source type="image/avif" srcSet={it.image_avif_srcset} sizes={IMAGE_SIZES} />
+            ) : null}
+            <img
+              src={it.image_url}
+              {...(it.image_srcset ? { srcSet: it.image_srcset, sizes: IMAGE_SIZES } : {})}
+              alt={`Foto produk ${it.name}`}
+              width={1200}
+              height={1200}
+              fetchPriority="high"
+              decoding="async"
+              className="aspect-square w-full border-b border-border/50 object-cover sm:aspect-[16/10]"
+            />
+          </picture>
         ) : (
           <div className="flex aspect-[16/10] w-full items-center justify-center border-b border-border/50 bg-muted text-4xl font-semibold text-muted-foreground">
             {it.name.slice(0, 1).toUpperCase()}
