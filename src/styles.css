@@ -1516,7 +1516,10 @@ textarea::placeholder {
   }
 
   &:focus-visible {
-    outline: 2px solid var(--ring);
+    /* Latar item saat fokus/hover selalu --primary, jadi outline memakai
+       --primary-foreground supaya rasio kontrasnya tetap ≥3:1 di semua tema
+       (var(--ring) menyatu dengan --primary di tema high-contrast). */
+    outline: 2px solid var(--primary-foreground);
     outline-offset: -2px;
   }
 
