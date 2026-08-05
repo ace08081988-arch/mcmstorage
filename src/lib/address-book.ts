@@ -26,16 +26,50 @@ export type ProfileMatch = {
   display_name: string | null;
 };
 
+/**
+ * Normalisasi nomor telepon — HARUS identik dengan fungsi database
+ * `public.normalize_phone()` yang mengisi kolom `phone_norm`. Kalau beda,
+ * pengecekan duplikat di klien lolos tapi database menolak (23505).
+ *
+ * Semua varian ini menjadi satu nilai yang sama:
+ *   0812-3456-7890 · +62 812 3456 7890 · 62 812 3456 7890 ·
+ *   0062 812 3456 7890 · (0812) 34567890 · 81234567890
+ */
 export function normalizePhone(p: string | null | undefined): string | null {
   if (!p) return null;
-  const t = p.trim();
-  if (!t) return null;
-  const digits = t.replace(/[^\d+]/g, "");
-  if (!digits) return null;
-  if (digits.startsWith("+")) return digits.replace(/[^\d]/g, "");
-  const onlyDigits = digits.replace(/[^\d]/g, "");
-  if (onlyDigits.startsWith("0")) return "62" + onlyDigits.slice(1);
-  return onlyDigits;
+  let d = p.replace(/\D/g, "");
+  if (!d) return null;
+
+  if (d.startsWith("00")) d = d.slice(2); // awalan internasional
+  else if (d.startsWith("0")) d = "62" + d.slice(1); // nomor lokal Indonesia
+  else if (d.startsWith("8")) d = "62" + d; // ditulis tanpa awalan
+
+  while (d.startsWith("6262")) d = d.slice(2); // kode negara terulang
+  if (d.startsWith("620")) d = "62" + d.slice(3);
+
+  return d || null;
+}
+
+/**
+ * Normalisasi email — cermin dari `public.normalize_email()`:
+ * huruf kecil, tanpa spasi, label `+tag` dibuang, dan titik pada alamat
+ * Gmail diabaikan (googlemail.com disamakan dengan gmail.com).
+ */
+export function normalizeEmail(e: string | null | undefined): string | null {
+  if (!e) return null;
+  const v = e.trim().replace(/\s/g, "").toLowerCase();
+  if (!v) return null;
+  const at = v.indexOf("@");
+  if (at < 0) return v;
+  let local = v.slice(0, at);
+  let domain = v.slice(at + 1);
+  const plus = local.indexOf("+");
+  if (plus >= 0) local = local.slice(0, plus);
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    local = local.replace(/\./g, "");
+    domain = "gmail.com";
+  }
+  return local ? `${local}@${domain}` : null;
 }
 
 export async function fetchAddressBook(): Promise<AddressBookRow[]> {
