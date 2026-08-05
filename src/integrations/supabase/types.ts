@@ -3944,6 +3944,45 @@ export type Database = {
         }
         Relationships: []
       }
+      web_vital_samples: {
+        Row: {
+          created_at: string
+          device: string
+          id: number
+          metric: string
+          nav_type: string | null
+          page: string
+          rating: string
+          release_tag: string | null
+          slug: string | null
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          device?: string
+          id?: number
+          metric: string
+          nav_type?: string | null
+          page: string
+          rating: string
+          release_tag?: string | null
+          slug?: string | null
+          value: number
+        }
+        Update: {
+          created_at?: string
+          device?: string
+          id?: number
+          metric?: string
+          nav_type?: string | null
+          page?: string
+          rating?: string
+          release_tag?: string | null
+          slug?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       prep_submissions_unrouted: {
