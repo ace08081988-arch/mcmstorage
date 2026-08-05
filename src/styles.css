@@ -1248,6 +1248,28 @@ html[data-reduce-motion="on"] *::after {
   }
 }
 
+/* Teks yang diketik harus selalu kontras dengan latar field —
+   cegah huruf "hilang" karena warna teks sama dengan board input. */
+input:where(
+  [type="text"], [type="email"], [type="password"], [type="number"],
+  [type="search"], [type="tel"], [type="url"], [type="date"], [type="time"],
+  [type="datetime-local"], [type="month"], [type="week"], :not([type])
+),
+textarea,
+select,
+[contenteditable="true"] {
+  color: var(--foreground);
+  caret-color: var(--primary, var(--foreground));
+  -webkit-text-fill-color: var(--foreground);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+  -webkit-text-fill-color: var(--muted-foreground);
+  opacity: 1;
+}
+
 /*
  * Scoped auto-press: setiap elemen dengan atribut `data-press-scope="on"`
  * akan otomatis memberi reaksi sentuh pada elemen interaktif di dalamnya —
