@@ -3,14 +3,19 @@
  *
  * `/api/public/img/avif?slug=<toko>&item=<uuid>&w=<lebar>`
  *
- * Hanya melayani foto milik toko yang katalog publiknya aktif — path
- * Storage diselesaikan di server, jadi tidak ada URL sembarang yang bisa
- * dititipkan lewat query (mencegah rute ini jadi proxy terbuka).
- * Bila codec gagal, respons dialihkan ke varian WebP asli supaya halaman
- * tetap menampilkan gambar.
+ * URL ini stabil dan bebas token supaya bisa dipakai di `srcset` + cache
+ * lama; endpoint yang menandatangani ulang berkas Storage lalu mengalihkan
+ * (302) ke CDN transcoding. Penyedia CDN bisa diganti lewat env tanpa
+ * mengubah markup. Path Storage diselesaikan di server — tidak ada URL
+ * sembarang yang bisa dititipkan, jadi rute ini bukan proxy terbuka.
+ *
+ * Bila transcoding tidak dikonfigurasi, respons dialihkan ke varian WebP
+ * Storage sehingga `<source type="image/avif">` tidak pernah rusak.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+
+const DETAIL_WIDTHS = [640, 1024, 1600];
 
 const querySchema = z.object({
   slug: z
@@ -19,11 +24,9 @@ const querySchema = z.object({
     .toLowerCase()
     .regex(/^[a-z0-9][a-z0-9-]{1,40}$/),
   item: z.string().uuid(),
-  w: z.coerce.number().int().refine((n) => [640, 1024, 1600].includes(n)),
-  q: z.coerce.number().int().min(30).max(80).default(50),
+  w: z.coerce.number().int().refine((n) => DETAIL_WIDTHS.includes(n)),
+  q: z.coerce.number().int().min(30).max(90).default(55),
 });
-
-const CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 export const Route = createFileRoute("/api/public/img/avif")({
   server: {
@@ -33,12 +36,6 @@ export const Route = createFileRoute("/api/public/img/avif")({
         const parsed = querySchema.safeParse(Object.fromEntries(url.searchParams));
         if (!parsed.success) return new Response("Parameter tidak valid", { status: 400 });
         const { slug, item, w, q } = parsed.data;
-
-        // Cache tepi: hasil encode mahal, jadi disimpan per URL.
-        const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
-        const cacheKey = new Request(url.toString(), { method: "GET" });
-        const hit = await cache?.match(cacheKey);
-        if (hit) return hit;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -57,39 +54,30 @@ export const Route = createFileRoute("/api/public/img/avif")({
           .maybeSingle();
         if (!row?.image_path) return new Response("Tidak ditemukan", { status: 404 });
 
+        // Sumber untuk CDN: varian WebP berukuran target, bukan berkas asli,
+        // supaya CDN tidak perlu mengunduh foto mentah bermegabyte.
         const { data: signed } = await supabaseAdmin.storage
           .from("item-photos")
-          .createSignedUrl(row.image_path, 600, {
+          .createSignedUrl(row.image_path, 60 * 60 * 24, {
             transform: { width: w, resize: "contain", quality: 82 },
           });
         if (!signed?.signedUrl) return new Response("Tidak ditemukan", { status: 404 });
 
-        const upstream = await fetch(signed.signedUrl, {
-          headers: { Accept: "image/webp,image/jpeg" },
+        const { getAvifCdnTemplate, buildAvifCdnUrl } = await import("@/lib/avif-cdn.server");
+        const template = getAvifCdnTemplate();
+        const target = template
+          ? buildAvifCdnUrl(template, signed.signedUrl, w, q)
+          : signed.signedUrl;
+
+        return new Response(null, {
+          status: 302,
+          headers: {
+            location: target,
+            // Redirect di-cache pendek karena URL sumber bertanda tangan
+            // punya masa berlaku; berkas AVIF sendiri di-cache lama di CDN.
+            "cache-control": "public, max-age=3600",
+          },
         });
-        if (!upstream.ok) return Response.redirect(signed.signedUrl, 302);
-
-        const contentType = upstream.headers.get("content-type") ?? "image/jpeg";
-        const source = await upstream.arrayBuffer();
-
-        try {
-          const { transcodeToAvif } = await import("@/lib/avif-transcode.server");
-          const avif = await transcodeToAvif(source, contentType, q);
-          const response = new Response(avif, {
-            headers: {
-              "content-type": "image/avif",
-              "cache-control": CACHE_CONTROL,
-              vary: "Accept",
-            },
-          });
-          await cache?.put(cacheKey, response.clone());
-          return response;
-        } catch {
-          // Fallback aman: kirim berkas sumber apa adanya.
-          return new Response(source, {
-            headers: { "content-type": contentType, "cache-control": "public, max-age=3600" },
-          });
-        }
       },
     },
   },
