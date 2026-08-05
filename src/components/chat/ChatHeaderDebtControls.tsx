@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Minus, Plus, Loader2, ArrowRight, Equal, Pencil, X, Search, AlertTriangle, Send, FileText, FileSpreadsheet, ClipboardCopy, Bookmark, Trash2, RotateCcw, RotateCw } from "lucide-react";
@@ -1477,6 +1477,16 @@ function KindRow({
   // Sudah dikonfirmasi untuk nominal "tidak wajar" (butuh tekan dua kali).
   const [ack, setAck] = useState(false);
   useEffect(() => setAck(false), [raw, target]);
+  // Toast "loading" wajib ikut hilang saat komponen dilepas (pindah menu),
+  // kalau tidak sonner menahannya selamanya (duration: Infinity).
+  const pendingToasts = useRef<Set<string | number>>(new Set<string | number>());
+  useEffect(
+    () => () => {
+      pendingToasts.current.forEach((id: string | number) => toast.dismiss(id));
+      pendingToasts.current.clear();
+    },
+    [],
+  );
 
   /**
    * Validasi nominal sebelum menulis ke buku hutang/piutang.
@@ -1533,17 +1543,21 @@ function KindRow({
         ? `Menambah tagihan ${rupiah(parsed)}…`
         : `Mencatat pembayaran ${rupiah(parsed)}…`,
     );
+    pendingToasts.current.add(tid);
+    let failed = false;
     try {
       await onSubmit(sign * parsed, "button");
       setRaw("");
       setAck(false);
-      toast.dismiss(tid);
     } catch (e) {
+      failed = true;
       toast.error(
         (e as { message?: string })?.message ?? "Gagal menyimpan perubahan.",
         { id: tid },
       );
     } finally {
+      pendingToasts.current.delete(tid);
+      if (!failed) toast.dismiss(tid);
       setBusy(false);
     }
   };
@@ -1566,17 +1580,21 @@ function KindRow({
     const tid = toast.loading(
       `Menyesuaikan saldo ke ${rupiah(targetParsed)}…`,
     );
+    pendingToasts.current.add(tid);
+    let failed = false;
     try {
       await onSubmit(delta, "quick");
       setTarget("");
       setAck(false);
-      toast.dismiss(tid);
     } catch (e) {
+      failed = true;
       toast.error(
         (e as { message?: string })?.message ?? "Gagal menyesuaikan saldo.",
         { id: tid },
       );
     } finally {
+      pendingToasts.current.delete(tid);
+      if (!failed) toast.dismiss(tid);
       setBusy(false);
     }
   };
