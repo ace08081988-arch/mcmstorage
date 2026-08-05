@@ -176,6 +176,20 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // Skenario : Bilah bawah (MobileBottomNav) harus selalu "snap" ke
+      //            dasar layar saat scroll, pindah halaman, dan saat
+      //            konten dinamis bertambah.
+      // Harness  : /lovable/visual/bottom-bar-snap (publik, no-auth) —
+      //            memakai komponen bottom nav asli.
+      // Tujuan   : Regresi guard untuk `.app-static-bottom-bar`,
+      //            use-viewport-anchor, dan spacer otomatis (ancestor
+      //            ber-`filter`/`transform` membuat fixed ikut menggulir).
+      name: "bottom-bar-snap-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /bottom-bar-snap\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // Skenario : Toast "Perbaiki Akses" muncul saat error akses
       //            ditolak (42501 / PGRST301 / 401 / 403) dan tombolnya
       //            memicu navigasi ke `/profil`. Error non-akses (mis.
