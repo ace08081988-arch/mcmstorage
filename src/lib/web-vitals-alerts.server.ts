@@ -225,6 +225,21 @@ export async function runWebVitalsAlertCheck(): Promise<AlertCheckResult> {
       }
     }
 
+    const chatText =
+      `${severity === "critical" ? "🚨" : "⚠️"} <b>Peringatan Core Web Vitals</b>\n` +
+      `${message}\n${checkedAt}`;
+    const telegramStatus =
+      cfg.telegram_enabled && cfg.telegram_chat_id
+        ? await sendTelegram(String(cfg.telegram_chat_id), chatText)
+        : "disabled";
+    const slackStatus =
+      cfg.slack_enabled && cfg.slack_channel
+        ? await sendSlack(
+            String(cfg.slack_channel),
+            `${severity === "critical" ? ":rotating_light:" : ":warning:"} *Peringatan Core Web Vitals*\n${message}`,
+          )
+        : "disabled";
+
     await supabaseAdmin.from("web_vital_alerts").insert({
       page: b.page,
       metric: b.metric,
