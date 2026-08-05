@@ -1479,10 +1479,10 @@ function KindRow({
   useEffect(() => setAck(false), [raw, target]);
   // Toast "loading" wajib ikut hilang saat komponen dilepas (pindah menu),
   // kalau tidak sonner menahannya selamanya (duration: Infinity).
-  const pendingToasts = useRef<Set<string | number>>(new Set());
+  const pendingToasts = useRef<Set<string | number>>(new Set<string | number>());
   useEffect(
     () => () => {
-      pendingToasts.current.forEach((id) => toast.dismiss(id));
+      pendingToasts.current.forEach((id: string | number) => toast.dismiss(id));
       pendingToasts.current.clear();
     },
     [],
@@ -1544,18 +1544,20 @@ function KindRow({
         : `Mencatat pembayaran ${rupiah(parsed)}…`,
     );
     pendingToasts.current.add(tid);
+    let failed = false;
     try {
       await onSubmit(sign * parsed, "button");
       setRaw("");
       setAck(false);
     } catch (e) {
+      failed = true;
       toast.error(
         (e as { message?: string })?.message ?? "Gagal menyimpan perubahan.",
         { id: tid },
       );
     } finally {
       pendingToasts.current.delete(tid);
-      toast.dismiss(tid);
+      if (!failed) toast.dismiss(tid);
       setBusy(false);
     }
   };
@@ -1579,18 +1581,20 @@ function KindRow({
       `Menyesuaikan saldo ke ${rupiah(targetParsed)}…`,
     );
     pendingToasts.current.add(tid);
+    let failed = false;
     try {
       await onSubmit(delta, "quick");
       setTarget("");
       setAck(false);
     } catch (e) {
+      failed = true;
       toast.error(
         (e as { message?: string })?.message ?? "Gagal menyesuaikan saldo.",
         { id: tid },
       );
     } finally {
       pendingToasts.current.delete(tid);
-      toast.dismiss(tid);
+      if (!failed) toast.dismiss(tid);
       setBusy(false);
     }
   };
