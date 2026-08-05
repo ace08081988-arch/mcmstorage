@@ -1321,6 +1321,16 @@ textarea::placeholder {
     color: color-mix(in oklab, var(--card-foreground) 55%, var(--card));
     -webkit-text-fill-color: color-mix(in oklab, var(--card-foreground) 55%, var(--card));
   }
+
+  /* Fokus keyboard: outline solid 2px + offset, bukan sekadar perubahan
+     warna border. --ring terukur ≥4.8:1 terhadap latar kartu di semua tema,
+     jadi ring selalu terlihat (WCAG 2.4.7 & 1.4.11). */
+  &:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring) 28%, transparent);
+  }
 }
 
 /* Pembungkus form/dialog di area chat: semua input, textarea, select, caret,
@@ -1354,6 +1364,21 @@ textarea::placeholder {
 
   & :where([data-slot="select-trigger"]) :where([data-placeholder], .placeholder) {
     color: color-mix(in oklab, var(--card-foreground) 62%, var(--card));
+  }
+
+  /* Ring fokus konsisten untuk semua field di dalam dialog/form chat. */
+  & :where(input, textarea, select, [data-slot="select-trigger"], [contenteditable="true"]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring) 28%, transparent);
+  }
+
+  /* Tombol/kontrol lain di area chat juga dapat ring yang sama. */
+  & :where(button, [role="button"], a[href], [role="tab"], [role="switch"], [role="option"]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring) 28%, transparent);
   }
 }
 
@@ -1407,6 +1432,16 @@ textarea::placeholder {
     background-color: var(--primary);
     color: var(--primary-foreground);
     -webkit-text-fill-color: var(--primary-foreground);
+  }
+
+  /* Read-only tetap fokusable (bisa disalin dengan keyboard) — ring harus
+     terlihat, termasuk saat elemen di-focus lewat klik/tab. */
+  &:focus-visible,
+  &:focus {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring) 28%, transparent);
   }
 }
 
