@@ -1,7 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import {
-  AUTH_STORAGE,
   requireAuthState,
   skipUnlessAuth,
 } from "./_helpers/auth-state";
@@ -19,9 +18,6 @@ import {
  * Self-skip bila `storageState` kosong (belum login) atau kredensial
  * Supabase tidak tersedia untuk seeding data uji.
  */
-
-const STORAGE = AUTH_STORAGE;
-void STORAGE;
 
 function readEnv(): { url: string; key: string } | null {
   const fromProcess = {
