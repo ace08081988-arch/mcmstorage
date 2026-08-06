@@ -95,9 +95,23 @@ function replaceManifestLink(href: string) {
 function setIconLinks(href: string) {
   document
     .querySelectorAll<HTMLLinkElement>('link[rel="icon"]')
-    .forEach((el) => el.setAttribute("href", href));
+    .forEach((el) => {
+      // Simpan href asli sekali supaya set favicon multi-ukuran (16/32/48)
+      // bisa dipulihkan persis saat kembali ke mode full.
+      if (!el.dataset.brandHref) el.dataset.brandHref = el.getAttribute("href") ?? "";
+      el.setAttribute("href", href);
+    });
   const shortcut = document.querySelector<HTMLLinkElement>('link[rel="shortcut icon"]');
   if (shortcut) shortcut.href = href;
+}
+
+function restoreIconLinks(bust: string) {
+  document
+    .querySelectorAll<HTMLLinkElement>('link[rel="icon"]')
+    .forEach((el) => {
+      const orig = el.dataset.brandHref;
+      if (orig) el.setAttribute("href", withBust(stripQuery(orig), bust));
+    });
 }
 
 function invalidateSwAssets(paths: string[]) {
@@ -127,8 +141,9 @@ function applyProfile(profile: BrandingProfile, mode: "chat" | "full") {
   const apple = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
   if (apple) apple.href = withBust(stripQuery(profile.appleIcon), bust);
 
-  // Favicon utama.
-  setIconLinks(withBust(stripQuery(profile.favicon), bust));
+  // Favicon: mode chat pakai satu ikon; mode full kembalikan set asli.
+  if (mode === "chat") setIconLinks(withBust(stripQuery(profile.favicon), bust));
+  else restoreIconLinks(bust);
 
   invalidateSwAssets(ASSETS_TO_INVALIDATE);
 }
