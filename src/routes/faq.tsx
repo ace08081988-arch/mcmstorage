@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -45,16 +46,8 @@ const FAQ: { q: string; a: string }[] = [
 
 export const Route = createFileRoute("/faq")({
   head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESC },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESC },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.app/faq" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.app/faq" }],
+    meta: socialMeta({ title: TITLE, description: DESC, url: "/faq" }),
+    links: [canonical("/faq")],
     scripts: [
       {
         type: "application/ld+json",
