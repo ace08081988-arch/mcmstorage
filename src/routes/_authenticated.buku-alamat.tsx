@@ -64,7 +64,7 @@ import {
 } from "@/lib/address-book";
 import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDialog";
 import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
-import { logAddressBookDuplicateBlock, logPartyWriteFailure } from "@/lib/contact-telemetry";
+import { logAddressBookDuplicateBlock } from "@/lib/contact-telemetry";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
   head: () => ({
