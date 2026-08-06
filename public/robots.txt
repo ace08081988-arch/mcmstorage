@@ -4,6 +4,7 @@ Disallow: /pratinjau-tema
 
 # Halaman publik yang diindeks ada di sitemap:
 #   /, /produk, /harga, /faq, /refund, /terms, /trust, /download, /auth
+#   + /katalog/<toko> dan /katalog/<toko>/<produk> (dibangkitkan otomatis)
 
 # Endpoint API & internal — tidak untuk diindeks
 Disallow: /api/
@@ -38,7 +39,7 @@ Disallow: /.mcp/
 Disallow: /.well-known/
 Disallow: /.lovable/
 
-Sitemap: https://mcmstorage.app/sitemap.xml
-
 # Katalog publik toko (dinamis, terdaftar di sitemap)
 Allow: /katalog/
+
+Sitemap: https://mcmstorage.app/sitemap.xml
