@@ -54,6 +54,11 @@ jobs:
           CI: "true"
         run: bun run audit:seo -- --reporter=verbose --no-color 2>&1 | tee artifacts/audit-seo.log
 
+      - name: Audit cache-buster versi aset (og:image, ikon, manifest)
+        env:
+          CI: "true"
+        run: bun run audit:asset-version 2>&1 | tee artifacts/audit-asset-version.log
+
       - name: Upload audit log on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -70,4 +75,5 @@ jobs:
             echo "";
             echo "- \`audit:head\` — tag head, manifest, ikon, cache-buster, header cache";
             echo "- \`audit:seo\` — title/description/OG/Twitter/canonical tiap rute publik";
+            echo "- \`audit:asset-version\` — \`?v=\` og:image/ikon/manifest sinkron dengan BRAND_ASSET_VERSION";
           } >> "$GITHUB_STEP_SUMMARY"
