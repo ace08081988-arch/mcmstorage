@@ -81,7 +81,7 @@ describe("audit halaman produk dinamis", () => {
   });
 
   it("meringkas laporan gabungan", () => {
-    const report = auditRenderedPages([page(), page({}, "/katalog/toko/def")]);
+    const report = auditRenderedPages([page(), page({ canonical: "https://mcmstorage.app/katalog/toko/def", ogUrl: "https://mcmstorage.app/katalog/toko/def" }, "/katalog/toko/def")]);
     expect(report.ok).toBe(true);
     expect(formatRenderedHeadAudit(report)).toBe("Head URL OK — 2 URL diperiksa.");
   });
