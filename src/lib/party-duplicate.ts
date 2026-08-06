@@ -59,7 +59,7 @@ export function findPartyDuplicate(input: {
         row: r,
         field: "email",
         label: "Email",
-        reason: `Email ${(input.email ?? "").trim()} sudah dipakai "${r.name}"`,
+        reason: `Email ${(input.email ?? "").trim()} sudah dipakai kontak "${r.name}"`,
       };
     }
   }
