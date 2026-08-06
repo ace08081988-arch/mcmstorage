@@ -21,11 +21,11 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as HargaRouteImport } from './routes/harga'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ErrorRouteImport } from './routes/error'
-import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as PosKasirIndexRouteImport } from './routes/pos-kasir.index'
+import { Route as DownloadIndexRouteImport } from './routes/download.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as PosKasirRingkasanRouteImport } from './routes/pos-kasir.ringkasan'
@@ -236,11 +236,6 @@ const ErrorRoute = ErrorRouteImport.update({
   path: '/error',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DownloadRoute = DownloadRouteImport.update({
-  id: '/download',
-  path: '/download',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth-callback',
   path: '/auth-callback',
@@ -259,6 +254,11 @@ const PosKasirIndexRoute = PosKasirIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PosKasirRoute,
+} as any)
+const DownloadIndexRoute = DownloadIndexRouteImport.update({
+  id: '/download/',
+  path: '/download/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
@@ -286,9 +286,9 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const DownloadVariantRoute = DownloadVariantRouteImport.update({
-  id: '/$variant',
-  path: '/$variant',
-  getParentRoute: () => DownloadRoute,
+  id: '/download/$variant',
+  path: '/download/$variant',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DiagnostikPaketRoute = DiagnostikPaketRouteImport.update({
   id: '/diagnostik/paket',
@@ -1106,7 +1106,6 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
-  '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/faq': typeof FaqRoute
   '/harga': typeof HargaRoute
@@ -1188,6 +1187,7 @@ export interface FileRoutesByFullPath {
   '/i/$code': typeof ICodeRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
+  '/download/': typeof DownloadIndexRoute
   '/pos-kasir/': typeof PosKasirIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -1272,7 +1272,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
-  '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/faq': typeof FaqRoute
   '/harga': typeof HargaRoute
@@ -1352,6 +1351,7 @@ export interface FileRoutesByTo {
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
+  '/download': typeof DownloadIndexRoute
   '/pos-kasir': typeof PosKasirIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -1438,7 +1438,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
   '/auth-callback': typeof AuthCallbackRoute
-  '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/faq': typeof FaqRoute
   '/harga': typeof HargaRoute
@@ -1521,6 +1520,7 @@ export interface FileRoutesById {
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/download/': typeof DownloadIndexRoute
   '/pos-kasir/': typeof PosKasirIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -1608,7 +1608,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/auth-callback'
-    | '/download'
     | '/error'
     | '/faq'
     | '/harga'
@@ -1690,6 +1689,7 @@ export interface FileRouteTypes {
     | '/i/$code'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
+    | '/download/'
     | '/pos-kasir/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1774,7 +1774,6 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/auth-callback'
-    | '/download'
     | '/error'
     | '/faq'
     | '/harga'
@@ -1854,6 +1853,7 @@ export interface FileRouteTypes {
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/'
+    | '/download'
     | '/pos-kasir'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1939,7 +1939,6 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/auth-callback'
-    | '/download'
     | '/error'
     | '/faq'
     | '/harga'
@@ -2022,6 +2021,7 @@ export interface FileRouteTypes {
     | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/_authenticated/'
+    | '/download/'
     | '/pos-kasir/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -2108,7 +2108,6 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
-  DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
   FaqRoute: typeof FaqRoute
   HargaRoute: typeof HargaRoute
@@ -2125,9 +2124,11 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiVersionRoute: typeof ApiVersionRoute
   DiagnostikPaketRoute: typeof DiagnostikPaketRoute
+  DownloadVariantRoute: typeof DownloadVariantRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ICodeRoute: typeof ICodeRoute
   TTokenRoute: typeof TTokenRoute
+  DownloadIndexRoute: typeof DownloadIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
@@ -2277,13 +2278,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/download': {
-      id: '/download'
-      path: '/download'
-      fullPath: '/download'
-      preLoaderRoute: typeof DownloadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth-callback': {
       id: '/auth-callback'
       path: '/auth-callback'
@@ -2311,6 +2305,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pos-kasir/'
       preLoaderRoute: typeof PosKasirIndexRouteImport
       parentRoute: typeof PosKasirRoute
+    }
+    '/download/': {
+      id: '/download/'
+      path: '/download'
+      fullPath: '/download/'
+      preLoaderRoute: typeof DownloadIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
       id: '/_authenticated/'
@@ -2349,10 +2350,10 @@ declare module '@tanstack/react-router' {
     }
     '/download/$variant': {
       id: '/download/$variant'
-      path: '/$variant'
+      path: '/download/$variant'
       fullPath: '/download/$variant'
       preLoaderRoute: typeof DownloadVariantRouteImport
-      parentRoute: typeof DownloadRoute
+      parentRoute: typeof rootRouteImport
     }
     '/diagnostik/paket': {
       id: '/diagnostik/paket'
@@ -3594,18 +3595,6 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface DownloadRouteChildren {
-  DownloadVariantRoute: typeof DownloadVariantRoute
-}
-
-const DownloadRouteChildren: DownloadRouteChildren = {
-  DownloadVariantRoute: DownloadVariantRoute,
-}
-
-const DownloadRouteWithChildren = DownloadRoute._addFileChildren(
-  DownloadRouteChildren,
-)
-
 interface PosKasirRouteChildren {
   PosKasirRingkasanRoute: typeof PosKasirRingkasanRoute
   PosKasirIndexRoute: typeof PosKasirIndexRoute
@@ -3624,7 +3613,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   AuthCallbackRoute: AuthCallbackRoute,
-  DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
   FaqRoute: FaqRoute,
   HargaRoute: HargaRoute,
@@ -3642,9 +3630,11 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiVersionRoute: ApiVersionRoute,
   DiagnostikPaketRoute: DiagnostikPaketRoute,
+  DownloadVariantRoute: DownloadVariantRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ICodeRoute: ICodeRoute,
   TTokenRoute: TTokenRoute,
+  DownloadIndexRoute: DownloadIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
