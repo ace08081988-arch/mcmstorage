@@ -32,7 +32,7 @@ describe("buildDiagnosticsSummary", () => {
       packages: PACKAGES,
       checks: OK_CHECKS,
     });
-    expect(text).toContain("DIAGNOSTIK Ace STORAGE");
+    expect(text).toContain("DIAGNOSTIK ACE STORAGE");
     expect(text).toContain("2026-06-22 15:30 UTC");
     expect(text).toContain("Status   : KOMPATIBEL");
     expect(text).toContain("Ringkas  : 2/2 cek lolos");
