@@ -97,15 +97,15 @@ export function extractHeadBlock(source: string): string | null {
   const idx = source.search(/\bhead\s*:\s*\(/);
   if (idx === -1) return null;
   let depth = 0;
-  let started = false;
+  let sawBrace = false;
   for (let i = idx; i < source.length; i++) {
     const ch = source[i];
     if (ch === "(" || ch === "{") {
       depth++;
-      started = true;
+      if (ch === "{") sawBrace = true;
     } else if (ch === ")" || ch === "}") {
       depth--;
-      if (started && depth <= 0) return source.slice(idx, i + 1);
+      if (sawBrace && depth <= 0) return source.slice(idx, i + 1);
     }
   }
   return source.slice(idx);
