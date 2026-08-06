@@ -24,6 +24,7 @@ import {
 } from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 
 const VALID: ApkVariant[] = ["storage", "chat"];
 
@@ -36,18 +37,14 @@ export const Route = createFileRoute("/download/$variant")({
       params.variant === "chat"
         ? "Detail rilis Ace Chat"
         : "Detail rilis Ace Storage";
+    const nama = title.replace("Detail rilis ", "");
     return {
-      meta: [
-        { title: `${title} — Unduh APK` },
-        {
-          name: "description",
-          content: `Versi, tanggal rilis, ukuran, dan changelog ${title.replace(
-            "Detail rilis ",
-            "",
-          )}.`,
-        },
-        { property: "og:title", content: `${title} — Unduh APK` },
-      ],
+      meta: socialMeta({
+        title: `${title} — Unduh APK`,
+        description: `Versi, tanggal rilis, ukuran, dan changelog ${nama}.`,
+        url: `/download/${params.variant}`,
+      }),
+      links: [canonical(`/download/${params.variant}`)],
     };
   },
   component: DetailPage,
