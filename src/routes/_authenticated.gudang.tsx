@@ -2721,7 +2721,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
     setEmailBcc(s.email_bcc ?? "");
     setNotes(s.notes ?? "");
   }
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent, opts?: { force?: boolean }) {
     e.preventDefault();
     if (!uid || !name.trim()) return;
     const payload = {
@@ -2733,8 +2733,8 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
       notes: notes.trim() || null,
     };
     const dup = findPartyDuplicate({ rows: suppliers, currentId: editingId, name, contact, email });
-    if (dup) {
-      toast.error(`${dup.label} sudah terdaftar`, { description: `${dup.reason}. Ubah data ini atau edit supplier yang sudah ada.` });
+    if (dup && !opts?.force) {
+      setSupConflict({ hit: dup, ev: e });
       return;
     }
     if (editingId) {
