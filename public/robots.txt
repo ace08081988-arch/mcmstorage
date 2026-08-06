@@ -39,3 +39,6 @@ Disallow: /.well-known/
 Disallow: /.lovable/
 
 Sitemap: https://mcmstorage.app/sitemap.xml
+
+# Katalog publik toko (dinamis, terdaftar di sitemap)
+Allow: /katalog/
