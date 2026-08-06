@@ -23,7 +23,7 @@ export function organizationSchema(): JsonLd {
     },
     image: DEFAULT_OG_IMAGE,
     description:
-      "Ace Storage — aplikasi pengelola pesanan, stok gudang, dan hutang-piutang yang terhubung ke WhatsApp.",
+      "Kelola pesanan, stok gudang, dan hutang-piutang dari HP — lengkap dengan foto produk, tautan lokasi, dan kirim cepat ke WhatsApp pelanggan.",
   };
 }
 
