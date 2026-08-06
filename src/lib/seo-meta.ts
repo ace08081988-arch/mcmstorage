@@ -12,6 +12,9 @@ export const BRAND = "Ace Storage";
 export const SITE_URL = "https://mcmstorage.app";
 /** Kartu OG default (1200×630) — dipakai bila halaman tak punya gambar sendiri. */
 export const DEFAULT_OG_IMAGE = withAssetVersion(`${SITE_URL}/og-ace-storage.png`);
+/** Dimensi fisik kartu OG default. */
+export const DEFAULT_OG_IMAGE_WIDTH = 1200;
+export const DEFAULT_OG_IMAGE_HEIGHT = 630;
 
 /** Tambahkan suffix brand bila judul belum menyebut "Ace Storage"/"Ace Chat". */
 export function withBrand(title: string): string {
@@ -29,6 +32,9 @@ export type SocialMetaInput = {
   /** URL gambar absolut; default kartu brand Ace Storage. */
   image?: string | null;
   imageAlt?: string;
+  /** Dimensi gambar kustom (px). Wajib berpasangan agar tag dipancarkan. */
+  imageWidth?: number;
+  imageHeight?: number;
   noindex?: boolean;
 };
 
@@ -48,6 +54,14 @@ export function socialMeta(input: SocialMetaInput): MetaTag[] {
   // WhatsApp/X ikut berubah setelah publish; URL eksternal dibiarkan.
   const image = input.image ? withAssetVersion(absoluteUrl(input.image)) : DEFAULT_OG_IMAGE;
   const alt = input.imageAlt || `${title} — ${BRAND}`;
+  // Dimensi: pakai nilai kustom bila lengkap, kalau tidak pakai ukuran kartu
+  // default (hanya valid saat gambarnya memang kartu default).
+  const dims =
+    input.imageWidth && input.imageHeight
+      ? { w: input.imageWidth, h: input.imageHeight }
+      : input.image
+        ? null
+        : { w: DEFAULT_OG_IMAGE_WIDTH, h: DEFAULT_OG_IMAGE_HEIGHT };
   return [
     { title },
     { name: "description", content: input.description },
@@ -58,7 +72,15 @@ export function socialMeta(input: SocialMetaInput): MetaTag[] {
     { property: "og:site_name", content: BRAND },
     { property: "og:locale", content: "id_ID" },
     { property: "og:image", content: image },
+    { property: "og:image:secure_url", content: image },
     { property: "og:image:alt", content: alt },
+    ...(dims
+      ? [
+          { property: "og:image:width", content: String(dims.w) },
+          { property: "og:image:height", content: String(dims.h) },
+          { property: "og:image:type", content: image.includes(".jpg") || image.includes(".jpeg") ? "image/jpeg" : "image/png" },
+        ]
+      : []),
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: input.description },
