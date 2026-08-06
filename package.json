@@ -111,7 +111,8 @@
     "test:party-session": "vitest run src/components/__tests__/DebtQuickActions.expired-session.test.tsx",
     "test:auth-setup": "bun -e \"const m = await import('./tests/visual/global-setup.ts'); await m.default({});\"",
     "test:contact-same-name-e2e:auth": "npx playwright install && PWTEST_REQUIRE_AUTH=1 playwright test --project=buku-alamat-nama-kembar-e2e",
-    "audit:head": "vitest run src/lib/__tests__/head-audit.test.ts"
+    "audit:head": "vitest run src/lib/__tests__/head-audit.test.ts",
+    "audit:seo": "vitest run src/lib/__tests__/route-seo-audit.test.ts"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
