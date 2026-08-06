@@ -541,6 +541,21 @@ export default defineConfig({
       },
     },
     {
+      // Regresi Buku Alamat: dua kontak dengan NAMA sama tapi NOMOR
+      // berbeda harus tetap bisa disimpan (indeks unik parsial hanya
+      // melarang duplikat nomor/email), dengan toast "Kontak berhasil
+      // diperbarui". Nomor identik (termasuk variasi +62/08) tetap
+      // diblokir. Self-skip bila storageState kosong.
+      name: "buku-alamat-nama-kembar-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /buku-alamat-same-name-different-phone\.spec\.ts/,
+      use: {
+        ...devices["iPhone 14"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // E2E chat surface: guard bahwa nomor telepon TIDAK muncul sebagai
       // fallback identitas — semua permukaan chat memakai `PIN xxxx-xxxx`.
       // Static source guard selalu jalan; blok runtime (buka `/chat`,
