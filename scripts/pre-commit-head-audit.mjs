@@ -78,7 +78,12 @@ if (isMain) {
   );
 
   const runner = process.env.HEAD_AUDIT_RUNNER || "bunx";
-  let code = run(runner, ["vitest", "run", "src/lib/__tests__/route-seo-audit.test.ts"]);
+  let code = run(runner, [
+    "vitest",
+    "run",
+    "src/lib/__tests__/route-seo-audit.test.ts",
+    "src/lib/__tests__/seo-audit-policy.test.ts",
+  ]);
   if (code === 0) {
     code = run(runner, [
       "vitest",
