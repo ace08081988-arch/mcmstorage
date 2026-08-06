@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 import { auditHead, formatHeadAudit, extractMeta, extractLinks } from "../head-audit";
 import { socialMeta, DEFAULT_OG_IMAGE, SITE_URL } from "../seo-meta";
+import { BRAND_ASSET_VERSION, stripAssetQuery, withAssetVersion } from "../asset-version";
 
 const root = resolve(__dirname, "../../..");
 const publicDir = resolve(root, "public");
@@ -50,6 +51,7 @@ describe("audit head + manifest + aset brand", () => {
     expect(facts.manifestName).toBe("Ace Storage");
     expect(facts.ogImageSize).toBe("1200x630");
     expect(facts.twitterCard).toBe("summary_large_image");
+    expect(facts.assetVersion).toBe(BRAND_ASSET_VERSION);
     expect(facts.manifestIcons).toMatchSnapshot();
   });
 
@@ -84,6 +86,33 @@ describe("audit head + manifest + aset brand", () => {
     expect(report.issues.map((i) => i.id)).toEqual(expect.arrayContaining(["icon-512", "maskable"]));
   });
 
+  it("mendeteksi ikon head tanpa cache-buster versi", () => {
+    const report = auditHead({
+      ...input,
+      rootSource: input.rootSource.replace(
+        'withAssetVersion("/apple-touch-icon.png")',
+        '"/apple-touch-icon.png"',
+      ),
+    });
+    expect(report.issues.some((i) => i.area === "version" && i.id === "/apple-touch-icon.png")).toBe(true);
+  });
+
+  it("mendeteksi ikon manifest tanpa cache-buster versi", () => {
+    const report = auditHead({
+      ...input,
+      manifest: input.manifest.replace(`?v=${BRAND_ASSET_VERSION}`, ""),
+    });
+    expect(report.issues.some((i) => i.area === "version" && i.id.startsWith("manifest:"))).toBe(true);
+  });
+
+  it("mendeteksi tile mstile tanpa cache-buster versi", () => {
+    const report = auditHead({
+      ...input,
+      browserconfig: input.browserconfig.replace(`?v=${BRAND_ASSET_VERSION}`, ""),
+    });
+    expect(report.issues.some((i) => i.area === "version" && i.id.startsWith("mstile:"))).toBe(true);
+  });
+
   it("mendeteksi mask-icon yang dihapus dari head", () => {
     const report = auditHead({
       ...input,
@@ -116,6 +145,7 @@ describe("kartu sosial per-rute (socialMeta)", () => {
     expect(get("og:description")).toBe(get("twitter:description"));
     expect(get("og:image")).toBe(get("twitter:image"));
     expect(get("og:image")).toBe(DEFAULT_OG_IMAGE);
+    expect(get("og:image")).toBe(`${SITE_URL}/og-ace-storage.png?v=${BRAND_ASSET_VERSION}`);
     expect(get("og:image")!.startsWith("https://")).toBe(true);
     expect(get("og:url")).toBe(`${SITE_URL}/katalog/toko`);
     expect(get("twitter:card")).toBe("summary_large_image");
@@ -132,5 +162,32 @@ describe("parser head", () => {
     expect(meta["theme-color"]).toMatch(/^#/);
     const links = extractLinks(input.rootSource);
     expect(links.some((l) => l.rel === "manifest" && l.href === "/manifest.webmanifest")).toBe(true);
+  });
+});
+
+describe("cache-buster aset brand", () => {
+  it("menempel versi pada aset lokal & absolut milik sendiri", () => {
+    expect(withAssetVersion("/icon-512.png")).toBe(`/icon-512.png?v=${BRAND_ASSET_VERSION}`);
+    expect(withAssetVersion(`${SITE_URL}/og-ace-storage.png`)).toBe(
+      `${SITE_URL}/og-ace-storage.png?v=${BRAND_ASSET_VERSION}`,
+    );
+  });
+
+  it("tidak menumpuk versi lama dan tidak menyentuh URL eksternal", () => {
+    expect(withAssetVersion("/icon-512.png?v=1999")).toBe(`/icon-512.png?v=${BRAND_ASSET_VERSION}`);
+    expect(withAssetVersion("https://cdn.contoh.com/foto.jpg")).toBe("https://cdn.contoh.com/foto.jpg");
+    expect(stripAssetQuery("/a.png?v=1#x")).toBe("/a.png");
+  });
+
+  it("memakai gambar produk katalog apa adanya bila dari domain lain", () => {
+    const tags = socialMeta({
+      title: "Produk",
+      description: "d",
+      url: "/katalog/toko/p",
+      image: "https://cdn.contoh.com/produk.jpg",
+    });
+    expect(tags.find((t) => t["property"] === "og:image")?.["content"]).toBe(
+      "https://cdn.contoh.com/produk.jpg",
+    );
   });
 });
