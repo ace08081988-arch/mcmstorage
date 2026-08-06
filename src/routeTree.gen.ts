@@ -164,6 +164,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicImgAvifRouteImport } from './routes/api/public/img/avif'
 import { Route as ApiPublicHooksWebVitalsMonitorRouteImport } from './routes/api/public/hooks/web-vitals-monitor'
+import { Route as ApiPublicHooksSocialRescrapeRouteImport } from './routes/api/public/hooks/social-rescrape'
 import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
@@ -1035,6 +1036,12 @@ const ApiPublicHooksWebVitalsMonitorRoute =
     path: '/api/public/hooks/web-vitals-monitor',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSocialRescrapeRoute =
+  ApiPublicHooksSocialRescrapeRouteImport.update({
+    id: '/api/public/hooks/social-rescrape',
+    path: '/api/public/hooks/social-rescrape',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksShipmentStatusChangeRoute =
   ApiPublicHooksShipmentStatusChangeRouteImport.update({
     id: '/api/public/hooks/shipment-status-change',
@@ -1259,6 +1266,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
+  '/api/public/hooks/social-rescrape': typeof ApiPublicHooksSocialRescrapeRoute
   '/api/public/hooks/web-vitals-monitor': typeof ApiPublicHooksWebVitalsMonitorRoute
   '/api/public/img/avif': typeof ApiPublicImgAvifRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1423,6 +1431,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
+  '/api/public/hooks/social-rescrape': typeof ApiPublicHooksSocialRescrapeRoute
   '/api/public/hooks/web-vitals-monitor': typeof ApiPublicHooksWebVitalsMonitorRoute
   '/api/public/img/avif': typeof ApiPublicImgAvifRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1592,6 +1601,7 @@ export interface FileRoutesById {
   '/api/public/hooks/prep-task-notify': typeof ApiPublicHooksPrepTaskNotifyRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
+  '/api/public/hooks/social-rescrape': typeof ApiPublicHooksSocialRescrapeRoute
   '/api/public/hooks/web-vitals-monitor': typeof ApiPublicHooksWebVitalsMonitorRoute
   '/api/public/img/avif': typeof ApiPublicImgAvifRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -1761,6 +1771,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
+    | '/api/public/hooks/social-rescrape'
     | '/api/public/hooks/web-vitals-monitor'
     | '/api/public/img/avif'
     | '/lovable/email/auth/preview'
@@ -1925,6 +1936,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
+    | '/api/public/hooks/social-rescrape'
     | '/api/public/hooks/web-vitals-monitor'
     | '/api/public/img/avif'
     | '/lovable/email/auth/preview'
@@ -2093,6 +2105,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prep-task-notify'
     | '/api/public/hooks/security-scan-daily'
     | '/api/public/hooks/shipment-status-change'
+    | '/api/public/hooks/social-rescrape'
     | '/api/public/hooks/web-vitals-monitor'
     | '/api/public/img/avif'
     | '/lovable/email/auth/preview'
@@ -2183,6 +2196,7 @@ export interface RootRouteChildren {
   ApiPublicHooksPrepTaskNotifyRoute: typeof ApiPublicHooksPrepTaskNotifyRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   ApiPublicHooksShipmentStatusChangeRoute: typeof ApiPublicHooksShipmentStatusChangeRoute
+  ApiPublicHooksSocialRescrapeRoute: typeof ApiPublicHooksSocialRescrapeRoute
   ApiPublicHooksWebVitalsMonitorRoute: typeof ApiPublicHooksWebVitalsMonitorRoute
   ApiPublicImgAvifRoute: typeof ApiPublicImgAvifRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -3279,6 +3293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWebVitalsMonitorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/social-rescrape': {
+      id: '/api/public/hooks/social-rescrape'
+      path: '/api/public/hooks/social-rescrape'
+      fullPath: '/api/public/hooks/social-rescrape'
+      preLoaderRoute: typeof ApiPublicHooksSocialRescrapeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/shipment-status-change': {
       id: '/api/public/hooks/shipment-status-change'
       path: '/api/public/hooks/shipment-status-change'
@@ -3694,6 +3715,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   ApiPublicHooksShipmentStatusChangeRoute:
     ApiPublicHooksShipmentStatusChangeRoute,
+  ApiPublicHooksSocialRescrapeRoute: ApiPublicHooksSocialRescrapeRoute,
   ApiPublicHooksWebVitalsMonitorRoute: ApiPublicHooksWebVitalsMonitorRoute,
   ApiPublicImgAvifRoute: ApiPublicImgAvifRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

@@ -114,7 +114,11 @@
     "audit:head": "vitest run src/lib/__tests__/head-audit.test.ts src/lib/__tests__/rendered-head-audit.test.ts",
     "audit:seo": "vitest run src/lib/__tests__/route-seo-audit.test.ts",
     "audit:head:urls": "vitest run src/lib/__tests__/rendered-head-audit.test.ts",
-    "audit:head:live": "bun scripts/audit-rendered-head.ts"
+    "audit:head:live": "bun scripts/audit-rendered-head.ts",
+    "rescrape:social": "bun scripts/social-rescrape.ts",
+    "rescrape:social:live": "bun scripts/social-rescrape.ts --base https://mcmstorage.app",
+    "postpublish": "bun scripts/social-rescrape.ts --base https://mcmstorage.app || true",
+    "test:rescrape": "vitest run src/lib/__tests__/social-rescrape.test.ts"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
