@@ -310,13 +310,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         // pasangan utama). Lebih sedikit request & byte pada buka pertama.
         href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600;700&family=Merriweather:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap",
       },
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", type: "image/x-icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16.png" },
-      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" },
-      { rel: "icon", type: "image/png", sizes: "48x48", href: "/favicon-48.png" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
-      { rel: "mask-icon", href: "/mask-icon.svg", color: "#c9a227" },
+      // `withAssetVersion` menempelkan ?v=<BRAND_ASSET_VERSION> supaya ikon &
+      // manifest lama tidak nyangkut di cache browser/launcher setelah publish.
+      { rel: "manifest", href: withAssetVersion("/manifest.webmanifest") },
+      { rel: "icon", type: "image/x-icon", href: withAssetVersion("/favicon.ico"), sizes: "any" },
+      { rel: "icon", type: "image/png", sizes: "16x16", href: withAssetVersion("/favicon-16.png") },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: withAssetVersion("/favicon-32.png") },
+      { rel: "icon", type: "image/png", sizes: "48x48", href: withAssetVersion("/favicon-48.png") },
+      { rel: "apple-touch-icon", sizes: "180x180", href: withAssetVersion("/apple-touch-icon.png") },
+      { rel: "mask-icon", href: withAssetVersion("/mask-icon.svg"), color: "#c9a227" },
     ],
   }),
   shellComponent: RootShell,
