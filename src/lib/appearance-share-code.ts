@@ -1,13 +1,17 @@
 // ============================================================================
 // Kode preset tampilan — cara ringkas berbagi setting antar perangkat.
-// Format: "MCMTAMPILAN1:<base64url(JSON payload)>"
+// Format: "ACETAMPILAN1:<base64url(JSON payload)>"
+// Kode lama "MCMTAMPILAN1:" tetap bisa dibaca supaya preset yang sudah
+// terlanjur dibagikan sebelum rebrand tidak jadi rusak.
 // Payload-nya identik dengan file ekspor (skema mcm.appearance-settings),
 // sehingga jalur impor tetap satu: teks di-decode di sini lalu diserahkan ke
 // `migrateImportedAppearance`. Foto latar (data URL) sengaja dibuang dari kode
 // karena bisa megabyte-an dan tidak muat dikirim lewat chat.
 // ============================================================================
 
-export const SHARE_CODE_PREFIX = "MCMTAMPILAN1:";
+export const SHARE_CODE_PREFIX = "ACETAMPILAN1:";
+/** Prefiks lama pra-rebrand — hanya untuk dibaca, tidak pernah dibuat lagi. */
+export const LEGACY_SHARE_CODE_PREFIXES = ["MCMTAMPILAN1:"] as const;
 
 function toBase64Url(s: string): string {
   const bytes = new TextEncoder().encode(s);
@@ -45,9 +49,12 @@ export function encodePresetCode(payload: Record<string, unknown>): {
  */
 export function decodeShareText(text: string): string | null {
   const t = text.trim();
-  if (!t.startsWith(SHARE_CODE_PREFIX)) return t;
+  const prefix = [SHARE_CODE_PREFIX, ...LEGACY_SHARE_CODE_PREFIXES].find((p) =>
+    t.startsWith(p),
+  );
+  if (!prefix) return t;
   try {
-    const json = fromBase64Url(t.slice(SHARE_CODE_PREFIX.length).trim());
+    const json = fromBase64Url(t.slice(prefix.length).trim());
     JSON.parse(json);
     return json;
   } catch {
