@@ -1885,7 +1885,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             if (!match) {
               return (
                 <div className="mt-1 text-ms-2xs text-muted-foreground">
-                  Jika diisi, Ace akan otomatis terbuka berisi link & PIN setelah tugas dibuat.
+                  Jika diisi, WhatsApp akan otomatis terbuka berisi link & PIN setelah tugas dibuat.
                 </div>
               );
             }
@@ -2662,7 +2662,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
     const hasWebShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
     if (!hasWebShare) {
       toast.message("Browser ini tak mendukung tombol Bagikan langsung.", {
-        description: "Coba 'Buka WhatsApp (WhatsApp Web)' atau Salin pesan lalu tempel di Ace.",
+        description: "Coba 'Buka WhatsApp (WhatsApp Web)' atau Salin pesan lalu tempel di WhatsApp.",
         duration: 7000,
       });
     }
@@ -2877,7 +2877,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       {sub.note && <div className="mt-0.5 line-clamp-2 text-ms-2xs">{sub.note}</div>}
       <div className="mt-1 flex gap-ms-1">
         {sub.location_url && /^https:\/\//i.test(sub.location_url) && <a href={sub.location_url} target="_blank" rel="noreferrer" className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded border text-ms-2xs"><MapPin className="h-3 w-3" /> Lokasi</a>}
-        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-wa text-ms-2xs font-semibold text-wa-foreground"><MessageCircle className="h-3 w-3" /> Ace</button>
+        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-wa text-ms-2xs font-semibold text-wa-foreground"><MessageCircle className="h-3 w-3" /> WA</button>
       </div>
     </div>
   );

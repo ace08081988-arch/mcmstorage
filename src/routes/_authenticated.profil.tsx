@@ -330,7 +330,7 @@ function ProfilPage() {
           <CardHeader className="space-y-1">
             <div className="flex items-center gap-ms-2">
               <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle className="text-ms-base">Kontak Ace</CardTitle>
+              <CardTitle className="text-ms-base">Kontak WhatsApp</CardTitle>
             </div>
             <CardDescription>
               Nomor pengirim default untuk pesan WA & link pegawai.

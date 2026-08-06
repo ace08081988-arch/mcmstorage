@@ -1511,7 +1511,7 @@ function Index() {
           <div className="pt-4 text-center">
             <div className="mx-auto mb-3 h-px w-16 bg-primary/25" />
             <p className="text-[0.625rem] font-medium uppercase tracking-[0.3em] text-primary/45">
-              Ace · Barokah Rizki
+              Ace Storage · Barokah Rizki
             </p>
           </div>
         </main>
@@ -1958,7 +1958,7 @@ function Index() {
                       className="shrink-0 rounded-md bg-wa px-ms-2 py-1 text-[0.6875rem] font-semibold text-wa-foreground hover:opacity-90"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      Ace
+                      WA
                     </a>
                   )}
                   {!selectMode && (

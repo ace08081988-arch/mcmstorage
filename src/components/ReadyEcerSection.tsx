@@ -1296,7 +1296,7 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
             <li key={shot.id} className="flex flex-wrap items-center gap-ms-1 text-ms-2xs leading-snug">
               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-success/10 text-success dark:text-success"}`}>
                 {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
-                {channel === "chat" ? "Chat" : "Ace"}
+                {channel === "chat" ? "Chat" : "WA"}
               </span>
               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-success/10 text-success dark:text-success" : "bg-destructive/10 text-destructive"}`}>
                 {ok ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
