@@ -1317,7 +1317,7 @@ function PaymentsReport({
             onClick={onSendWA}
             title="Kirim laporan via WhatsApp"
           >
-            Kirim laporan Ace
+            Kirim laporan WA
           </Button>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-ms-2 text-center text-ms-xs">

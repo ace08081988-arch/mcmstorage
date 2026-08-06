@@ -140,7 +140,7 @@ function writeCompact(v: boolean) {
 export const Route = createFileRoute("/_authenticated/pengaturan-tampilan")({
   head: () => ({
     meta: [
-      { title: "Tampilan · Pengaturan Ace" },
+      { title: "Tampilan · Pengaturan — Ace Storage" },
       { name: "description", content: "Atur tema, aksen, font, kerapatan, latar, dan preset tampilan profesional." },
     ],
   }),

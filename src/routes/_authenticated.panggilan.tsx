@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/panggilan")({
   component: PanggilanPage,
   head: () => ({
     meta: [
-      { title: "Panggilan · Ace" },
+      { title: "Panggilan — Ace Storage" },
       { name: "description", content: "Riwayat panggilan suara & video Ace Chat." },
     ],
   }),

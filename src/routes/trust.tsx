@@ -304,7 +304,7 @@ function TrustPage() {
               </a>
             </li>
             <li>
-              <strong>WhatsApp / kanal internal:</strong> hubungi admin Ace
+              <strong>WhatsApp / kanal internal:</strong> hubungi admin Ace Storage
               Storage yang biasa Anda gunakan untuk operasional harian.
             </li>
           </ul>

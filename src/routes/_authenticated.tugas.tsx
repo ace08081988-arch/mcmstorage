@@ -2517,7 +2517,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                             title={`Kirim detail item "${p.name}" via WhatsApp`}
                             className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-wa/40 bg-wa/10 px-1.5 text-ms-2xs font-medium text-wa-strong hover:bg-wa/20"
                           >
-                            <MessageCircle className="h-2.5 w-2.5" /> Ace
+                            <MessageCircle className="h-2.5 w-2.5" /> WA
                           </button>
                         </li>
                       ))}
