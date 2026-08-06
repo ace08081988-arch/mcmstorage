@@ -17,6 +17,10 @@ function page(overrides: Partial<Record<string, string>> = {}, url = "/katalog/t
     ogTitle: "Beras Premium 5kg — Toko Ace — Ace Storage",
     ogDescription: "Beras premium kemasan 5kg, stok tersedia.",
     ogImage: "https://mcmstorage.app/og-ace-storage.png?v=20260806",
+    ogImageSecure: "https://mcmstorage.app/og-ace-storage.png?v=20260806",
+    ogImageWidth: "1200",
+    ogImageHeight: "630",
+    ogImageType: "image/png",
     ogUrl: "https://mcmstorage.app/katalog/toko/abc",
     twitterCard: "summary_large_image",
     canonical: "https://mcmstorage.app/katalog/toko/abc",
@@ -28,6 +32,10 @@ function page(overrides: Partial<Record<string, string>> = {}, url = "/katalog/t
     <meta property="og:title" content="${m.ogTitle}">
     <meta property="og:description" content="${m.ogDescription}">
     <meta property="og:image" content="${m.ogImage}">
+    <meta property="og:image:secure_url" content="${m.ogImageSecure}">
+    <meta property="og:image:width" content="${m.ogImageWidth}">
+    <meta property="og:image:height" content="${m.ogImageHeight}">
+    <meta property="og:image:type" content="${m.ogImageType}">
     <meta property="og:url" content="${m.ogUrl}">
     <meta name="twitter:card" content="${m.twitterCard}">
     <link rel="canonical" href="${m.canonical}">
