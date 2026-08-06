@@ -24,7 +24,9 @@ const fix = process.argv.includes("--fix");
 
 const BRAND_ASSET_RE = /\.(png|svg|ico|jpg|jpeg|webp)$/i;
 const SCAN_EXT = /\.(ts|tsx|webmanifest|xml|json|html)$/i;
-const SKIP_DIR = new Set(["node_modules", "dist", "android", "ios", ".git", "__pycache__"]);
+const SKIP_DIR = new Set(["node_modules", "dist", "android", "ios", ".git", "__pycache__", "__tests__", "__snapshots__"]);
+// Fixture tes sengaja memuat versi lama sebagai kasus negatif.
+const SKIP_FILE = /(\.test\.|\.spec\.|__snapshots__)/;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -49,7 +51,7 @@ for (const root of scanRoots) {
       assets.push({ path: rel, mtimeMs: statSync(full).mtimeMs });
       continue;
     }
-    if (!SCAN_EXT.test(full)) continue;
+    if (!SCAN_EXT.test(full) || SKIP_FILE.test(rel)) continue;
     if (full === VERSION_FILE) continue;
     files.push({ path: rel, content: readFileSync(full, "utf8") });
   }
