@@ -130,7 +130,7 @@ export function auditRouteSeo(routes: RouteSource[]): RouteSeoReport {
 
     // Rute layout (hanya membungkus <Outlet />) tidak punya metadata sendiri;
     // anak `*.index.tsx`-nya yang diaudit.
-    if (!head && /<Outlet\s*\/?>/.test(source)) {
+    if (/<Outlet\s*\/?>/.test(source)) {
       skipped.push(file);
       continue;
     }
