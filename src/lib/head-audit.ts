@@ -163,9 +163,21 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
     if (!meta[key]) push("meta", key, `Meta "${key}" hilang di head root.`);
   }
 
+  const expectedQuery = `?v=${BRAND_ASSET_VERSION}`;
   for (const req of REQUIRED_LINKS) {
-    const found = links.find((l) => l.rel === req.rel && l.href === req.href);
-    if (!found) push("link", `${req.rel}:${req.href}`, `Link <${req.rel}> ke ${req.href} hilang.`);
+    const found = links.find((l) => l.rel === req.rel && stripAssetQuery(l.href) === req.href);
+    if (!found) {
+      push("link", `${req.rel}:${req.href}`, `Link <${req.rel}> ke ${req.href} hilang.`);
+      continue;
+    }
+    // Cache-buster wajib supaya ikon/manifest lama tidak nyangkut di cache.
+    if (!found.href.endsWith(expectedQuery)) {
+      push(
+        "version",
+        req.href,
+        `Link <${req.rel}> ${found.href} belum memakai cache-buster ${expectedQuery}.`,
+      );
+    }
   }
 
   // Aset harus benar-benar ada di public/ dengan dimensi yang benar.
