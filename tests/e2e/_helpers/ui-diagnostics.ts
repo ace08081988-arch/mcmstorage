@@ -62,9 +62,12 @@ const OBSERVER_SCRIPT = `(() => {
       });
     }
   });
+  let observing = false;
   const start = () => {
+    if (observing) return;
     const root = document.documentElement || document.body;
     if (!root) { setTimeout(start, 10); return; }
+    observing = true;
     obs.observe(root, { childList: true, subtree: true });
     scan(document.body || root);
   };
