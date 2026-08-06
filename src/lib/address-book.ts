@@ -80,6 +80,8 @@ export async function upsertManualEntry(input: {
   phone?: string | null;
   email?: string | null;
   note?: string | null;
+  /** Lewati pra-cek duplikat di klien (dipakai alur konflik "Tetap simpan"). */
+  allowDuplicate?: boolean;
 }): Promise<AddressBookRow> {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
@@ -88,7 +90,9 @@ export async function upsertManualEntry(input: {
   const phone = input.phone?.trim() || null;
   const email = input.email?.trim() || null;
   // Cegah kontak ganda: cek nomor / email / nama (untuk kontak tanpa nomor).
-  const dup = await findDuplicate({
+  const dup = input.allowDuplicate
+    ? null
+    : await findDuplicate({
     uid,
     name,
     phone,

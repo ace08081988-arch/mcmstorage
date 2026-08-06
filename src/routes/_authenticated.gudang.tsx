@@ -252,7 +252,8 @@ import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-f
 import { ReadyPrepPicker, type ReadyPrep } from "@/components/gudang/ReadyPrepPicker";
 import { logPartyWriteFailure } from "@/lib/contact-telemetry";
 import { notifyRlsRelogin } from "@/lib/rls-relogin";
-import { findPartyDuplicate } from "@/lib/party-duplicate";
+import { findPartyDuplicate, type PartyDuplicateHit } from "@/lib/party-duplicate";
+import { DuplicateConflictDialog } from "@/components/contacts/DuplicateConflictDialog";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -949,6 +950,7 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const { data: myProfile } = useMyProfile();
+  const [conflict, setConflict] = useState<{ hit: PartyDuplicateHit; ev: React.FormEvent } | null>(null);
   const normalizedMyPhone = normalizeWaNumber(myProfile?.phone, myProfile?.country_code);
   const canUseMyContact = !!(myProfile?.display_name || normalizedMyPhone);
   function useMyContact() {
@@ -966,14 +968,14 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
   function startEdit(c: Customer) {
     setEditingId(c.id); setName(c.name); setContact(c.contact ?? ""); setNotes(c.notes ?? "");
   }
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent, opts?: { force?: boolean }) {
     e.preventDefault();
     if (!uid || !name.trim()) return;
     const payload = { name: name.trim(), contact: contact.trim() || null, notes: notes.trim() || null };
     // Nomor dinormalisasi dulu supaya 0812…, +62812…, dan 62812… dianggap sama.
     const dup = findPartyDuplicate({ rows: customers, currentId: editingId, name, contact });
-    if (dup) {
-      toast.error(`${dup.label} sudah terdaftar`, { description: `${dup.reason}. Ubah data ini atau edit kontak yang sudah ada.` });
+    if (dup && !opts?.force) {
+      setConflict({ hit: dup, ev: e });
       return;
     }
     if (editingId) {
@@ -1035,6 +1037,29 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
           {editingId && <button type="button" onClick={resetForm} className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">Batal</button>}
         </div>
       </form>
+      <DuplicateConflictDialog
+        open={!!conflict}
+        onOpenChange={(v) => { if (!v) setConflict(null); }}
+        info={
+          conflict
+            ? {
+                label: conflict.hit.label,
+                reason: conflict.hit.reason,
+                existing: {
+                  name: conflict.hit.row.name,
+                  phone: conflict.hit.row.contact,
+                  note: (conflict.hit.row as Customer).notes ?? null,
+                },
+                incoming: { name, phone: contact || null },
+              }
+            : null
+        }
+        onKeep={() => {
+          const ev = conflict?.ev;
+          setConflict(null);
+          if (ev) void submit(ev, { force: true });
+        }}
+      />
       {customers.length === 0 ? (
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada pelanggan.</div>
       ) : (
@@ -2671,6 +2696,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const { data: myProfile } = useMyProfile();
+  const [supConflict, setSupConflict] = useState<{ hit: PartyDuplicateHit; ev: React.FormEvent } | null>(null);
   const normalizedMyPhone = normalizeWaNumber(myProfile?.phone, myProfile?.country_code);
   const canUseMyContact = !!(myProfile?.display_name || normalizedMyPhone);
   function useMyContact() {
@@ -2696,7 +2722,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
     setEmailBcc(s.email_bcc ?? "");
     setNotes(s.notes ?? "");
   }
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent, opts?: { force?: boolean }) {
     e.preventDefault();
     if (!uid || !name.trim()) return;
     const payload = {
@@ -2708,8 +2734,8 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
       notes: notes.trim() || null,
     };
     const dup = findPartyDuplicate({ rows: suppliers, currentId: editingId, name, contact, email });
-    if (dup) {
-      toast.error(`${dup.label} sudah terdaftar`, { description: `${dup.reason}. Ubah data ini atau edit supplier yang sudah ada.` });
+    if (dup && !opts?.force) {
+      setSupConflict({ hit: dup, ev: e });
       return;
     }
     if (editingId) {
@@ -2768,6 +2794,30 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
           )}
         </div>
       </form>
+      <DuplicateConflictDialog
+        open={!!supConflict}
+        onOpenChange={(v) => { if (!v) setSupConflict(null); }}
+        info={
+          supConflict
+            ? {
+                label: supConflict.hit.label,
+                reason: supConflict.hit.reason,
+                existing: {
+                  name: supConflict.hit.row.name,
+                  phone: supConflict.hit.row.contact,
+                  email: supConflict.hit.row.email,
+                  note: (supConflict.hit.row as Supplier).notes ?? null,
+                },
+                incoming: { name, phone: contact || null, email: email || null },
+              }
+            : null
+        }
+        onKeep={() => {
+          const ev = supConflict?.ev;
+          setSupConflict(null);
+          if (ev) void submit(ev, { force: true });
+        }}
+      />
       {suppliers.length === 0 ? (
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada supplier.</div>
       ) : (

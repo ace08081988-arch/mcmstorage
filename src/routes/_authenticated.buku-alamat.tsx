@@ -66,6 +66,7 @@ import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDial
 import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
 import { logAddressBookDuplicateBlock } from "@/lib/contact-telemetry";
 import { findEditorDuplicate, type DuplicateHit } from "@/lib/address-book-duplicate";
+import { DuplicateConflictDialog } from "@/components/contacts/DuplicateConflictDialog";
 import { notifyRlsRelogin } from "@/lib/rls-relogin";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
@@ -742,7 +743,9 @@ function EditDialog({
     [rows, row?.id, name, phone, email],
   );
 
-  const save = async () => {
+  const [conflictOpen, setConflictOpen] = useState(false);
+
+  const save = async (opts?: { force?: boolean }) => {
     if (!name.trim()) {
       toast.error("Nama wajib diisi.");
       return;
@@ -756,19 +759,9 @@ function EditDialog({
       }
       validatedPin = v.code;
     }
-    if (duplicate) {
+    if (duplicate && !opts?.force) {
       logAddressBookDuplicateBlock({ field: duplicate.field, isNew });
-      toast.error(`${duplicate.label} sudah terdaftar`, {
-        description: `${duplicate.reason}. Ubah data ini atau buka kontak yang sudah ada.`,
-        ...(onOpenExisting
-          ? {
-              action: {
-                label: "Buka kontak",
-                onClick: () => onOpenExisting(duplicate.row),
-              },
-            }
-          : {}),
-      });
+      setConflictOpen(true);
       return;
     }
     setBusy(true);
@@ -791,6 +784,7 @@ function EditDialog({
         phone: phone || null,
         email: email || null,
         note: note || null,
+        allowDuplicate: !!opts?.force,
       });
       if (isNew) {
         const description = linkedName
@@ -814,6 +808,7 @@ function EditDialog({
       notifyError(e);
     } finally {
       setBusy(false);
+      setConflictOpen(false);
     }
   };
 
@@ -938,11 +933,40 @@ function EditDialog({
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Batal
           </Button>
-          <Button onClick={() => void save()} disabled={busy || !!duplicate}>
+          <Button onClick={() => void save()} disabled={busy}>
             {busy ? "Menyimpan…" : "Simpan"}
           </Button>
         </DialogFooter>
       </DialogContent>
+      <DuplicateConflictDialog
+        open={conflictOpen}
+        onOpenChange={(v) => setConflictOpen(v)}
+        busy={busy}
+        info={
+          duplicate
+            ? {
+                label: duplicate.label,
+                reason: duplicate.reason,
+                existing: {
+                  name: duplicate.row.name,
+                  phone: duplicate.row.phone,
+                  email: duplicate.row.email,
+                  note: duplicate.row.note,
+                },
+                incoming: { name, phone: phone || null, email: email || null },
+              }
+            : null
+        }
+        onKeep={() => void save({ force: true })}
+        {...(onOpenExisting && duplicate
+          ? {
+              onOpenExisting: () => {
+                setConflictOpen(false);
+                onOpenExisting(duplicate.row);
+              },
+            }
+          : {})}
+      />
       {isNew && (
         <QrScannerDialog
           open={scanOpen}
