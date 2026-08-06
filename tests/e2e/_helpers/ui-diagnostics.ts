@@ -62,8 +62,16 @@ const OBSERVER_SCRIPT = `(() => {
       });
     }
   });
-  obs.observe(document.documentElement, { childList: true, subtree: true });
-  scan(document.body || document.documentElement);
+  const start = () => {
+    const root = document.documentElement || document.body;
+    if (!root) { setTimeout(start, 10); return; }
+    obs.observe(root, { childList: true, subtree: true });
+    scan(document.body || root);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+    setTimeout(start, 0);
+  } else start();
 })();`;
 
 /**
