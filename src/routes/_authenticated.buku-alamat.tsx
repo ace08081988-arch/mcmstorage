@@ -65,6 +65,7 @@ import {
 import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDialog";
 import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
 import { logAddressBookDuplicateBlock } from "@/lib/contact-telemetry";
+import { findEditorDuplicate, type DuplicateHit } from "@/lib/address-book-duplicate";
 import { notifyRlsRelogin } from "@/lib/rls-relogin";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
