@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
@@ -74,16 +75,14 @@ function AuthBrand() {
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
-    meta: [
-      { title: "Masuk atau Daftar — Ace Storage" },
-      { name: "description", content: "Masuk ke akun Ace Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
-      { property: "og:title", content: "Masuk atau Daftar — Ace Storage" },
-      { property: "og:description", content: "Masuk ke akun Ace Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.app/auth" },
-    ],
+    meta: socialMeta({
+      title: "Masuk atau Daftar — Ace Storage",
+      description:
+        "Masuk ke akun Ace Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda.",
+      url: "/auth",
+    }),
     links: [
-      { rel: "canonical", href: "https://mcmstorage.app/auth" },
+      canonical("/auth"),
       { rel: "preload", as: "image", href: "/icon-192.png", fetchPriority: "high" },
     ],
   }),
