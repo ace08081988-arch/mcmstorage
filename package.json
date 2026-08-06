@@ -105,7 +105,8 @@
     "codemod:noir-gold": "node scripts/codemod-noir-gold.mjs",
     "analyze": "cross-env-shell ANALYZE=1 vite build && node scripts/bundle-report.mjs",
     "analyze:report": "node scripts/bundle-report.mjs",
-    "analyze:save": "node scripts/bundle-report.mjs --save"
+    "analyze:save": "node scripts/bundle-report.mjs --save",
+    "test:party-session": "vitest run src/components/__tests__/DebtQuickActions.expired-session.test.tsx"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
