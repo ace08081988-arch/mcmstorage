@@ -10,6 +10,8 @@
  * langsung terlihat sebelum publish.
  */
 
+import { BRAND_ASSET_VERSION, stripAssetQuery } from "./asset-version";
+
 export type HeadAuditInput = {
   /** Source `src/routes/__root.tsx` (dipakai untuk mengekstrak meta/link). */
   rootSource: string;
@@ -24,7 +26,7 @@ export type HeadAuditInput = {
 };
 
 export type HeadAuditIssue = {
-  area: "meta" | "link" | "manifest" | "mstile" | "asset" | "social";
+  area: "meta" | "link" | "manifest" | "mstile" | "asset" | "social" | "version";
   id: string;
   message: string;
 };
@@ -41,6 +43,7 @@ export type HeadAuditReport = {
     manifestIcons: string[];
     ogImageSize: string | null;
     twitterCard: string | null;
+    assetVersion: string;
   };
 };
 
@@ -117,17 +120,21 @@ export function extractMeta(source: string): Record<string, string> {
 /** Ambil daftar `{ rel, href, sizes?, color? }` dari source. */
 export function extractLinks(
   source: string,
-): { rel: string; href: string; sizes?: string; color?: string }[] {
-  const out: { rel: string; href: string; sizes?: string; color?: string }[] = [];
+): { rel: string; href: string; sizes?: string; color?: string; versioned: boolean }[] {
+  const out: { rel: string; href: string; sizes?: string; color?: string; versioned: boolean }[] = [];
   const re = /\{\s*rel:\s*"([^"]+)"([^}]*)\}/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(source))) {
     const body = m[2];
-    const href = /href:\s*"([^"]+)"/.exec(body)?.[1];
+    const hrefMatch = /href:\s*(withAssetVersion\()?"([^"]+)"/.exec(body);
+    const href = hrefMatch?.[2];
     if (!href) continue;
     out.push({
       rel: m[1],
       href,
+      // Versi bisa datang dari helper `withAssetVersion(...)` di source atau
+      // dari query yang ditulis langsung.
+      versioned: Boolean(hrefMatch?.[1]) || /[?&]v=/.test(href),
       sizes: /sizes:\s*"([^"]+)"/.exec(body)?.[1],
       color: /color:\s*"([^"]+)"/.exec(body)?.[1],
     });
@@ -161,9 +168,21 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
     if (!meta[key]) push("meta", key, `Meta "${key}" hilang di head root.`);
   }
 
+  const expectedQuery = `?v=${BRAND_ASSET_VERSION}`;
   for (const req of REQUIRED_LINKS) {
-    const found = links.find((l) => l.rel === req.rel && l.href === req.href);
-    if (!found) push("link", `${req.rel}:${req.href}`, `Link <${req.rel}> ke ${req.href} hilang.`);
+    const found = links.find((l) => l.rel === req.rel && stripAssetQuery(l.href) === req.href);
+    if (!found) {
+      push("link", `${req.rel}:${req.href}`, `Link <${req.rel}> ke ${req.href} hilang.`);
+      continue;
+    }
+    // Cache-buster wajib supaya ikon/manifest lama tidak nyangkut di cache.
+    if (!found.versioned) {
+      push(
+        "version",
+        req.href,
+        `Link <${req.rel}> ${found.href} belum memakai cache-buster versi (withAssetVersion / ?v=).`,
+      );
+    }
   }
 
   // Aset harus benar-benar ada di public/ dengan dimensi yang benar.
@@ -185,7 +204,7 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
   // Semua href lokal di head harus punya file-nya.
   for (const l of links) {
     if (!l.href.startsWith("/")) continue;
-    const file = l.href.slice(1);
+    const file = stripAssetQuery(l.href).slice(1);
     if (!files.has(file)) push("link", l.href, `Link <${l.rel}> menunjuk ${l.href} yang tidak ada di public/.`);
   }
 
@@ -210,10 +229,13 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
       if (!mf[field]) push("manifest", field, `Manifest kehilangan field "${field}".`);
     }
     for (const icon of mf.icons ?? []) {
-      const file = icon.src.replace(/^\//, "");
+      const file = stripAssetQuery(icon.src).replace(/^\//, "");
       if (!files.has(file)) {
         push("manifest", icon.src, `Ikon manifest ${icon.src} tidak ada di public/.`);
         continue;
+      }
+      if (!icon.src.endsWith(expectedQuery)) {
+        push("version", `manifest:${icon.src}`, `Ikon manifest ${icon.src} belum memakai cache-buster ${expectedQuery}.`);
       }
       const actual = sizes[file];
       const declared = icon.sizes.split("x").map(Number);
@@ -255,10 +277,13 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
       push("mstile", t.tag, `browserconfig.xml kehilangan <${t.tag}>.`);
       continue;
     }
-    const file = src.replace(/^\//, "");
+    const file = stripAssetQuery(src).replace(/^\//, "");
     if (!files.has(file)) {
       push("mstile", t.tag, `Tile ${src} tidak ada di public/.`);
       continue;
+    }
+    if (!src.endsWith(expectedQuery)) {
+      push("version", `mstile:${t.tag}`, `Tile ${src} belum memakai cache-buster ${expectedQuery}.`);
     }
     const actual = sizes[file];
     if (actual && (actual[0] !== t.expect[0] || actual[1] !== t.expect[1])) {
@@ -312,6 +337,7 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
           ? `${meta["og:image:width"]}x${meta["og:image:height"]}`
           : null,
       twitterCard: meta["twitter:card"] ?? null,
+      assetVersion: BRAND_ASSET_VERSION,
     },
   };
 }

@@ -6,10 +6,12 @@
  * brand, dan tag `twitter:*` selalu dicerminkan dari `og:*` supaya tidak
  * jatuh ke nilai default root yang generik.
  */
+import { withAssetVersion } from "./asset-version";
+
 export const BRAND = "Ace Storage";
 export const SITE_URL = "https://mcmstorage.app";
 /** Kartu OG default (1200×630) — dipakai bila halaman tak punya gambar sendiri. */
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-ace-storage.png`;
+export const DEFAULT_OG_IMAGE = withAssetVersion(`${SITE_URL}/og-ace-storage.png`);
 
 /** Tambahkan suffix brand bila judul belum menyebut "Ace Storage"/"Ace Chat". */
 export function withBrand(title: string): string {
@@ -42,7 +44,9 @@ export function absoluteUrl(url: string): string {
 export function socialMeta(input: SocialMetaInput): MetaTag[] {
   const title = withBrand(input.title);
   const url = absoluteUrl(input.url);
-  const image = input.image || DEFAULT_OG_IMAGE;
+  // Gambar milik sendiri diberi cache-buster versi supaya pratinjau
+  // WhatsApp/X ikut berubah setelah publish; URL eksternal dibiarkan.
+  const image = input.image ? withAssetVersion(absoluteUrl(input.image)) : DEFAULT_OG_IMAGE;
   const alt = input.imageAlt || `${title} — ${BRAND}`;
   return [
     { title },
