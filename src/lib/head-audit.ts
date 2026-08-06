@@ -26,7 +26,7 @@ export type HeadAuditInput = {
 };
 
 export type HeadAuditIssue = {
-  area: "meta" | "link" | "manifest" | "mstile" | "asset" | "social";
+  area: "meta" | "link" | "manifest" | "mstile" | "asset" | "social" | "version";
   id: string;
   message: string;
 };
