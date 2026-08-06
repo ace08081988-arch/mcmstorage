@@ -252,7 +252,8 @@ import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-f
 import { ReadyPrepPicker, type ReadyPrep } from "@/components/gudang/ReadyPrepPicker";
 import { logPartyWriteFailure } from "@/lib/contact-telemetry";
 import { notifyRlsRelogin } from "@/lib/rls-relogin";
-import { findPartyDuplicate } from "@/lib/party-duplicate";
+import { findPartyDuplicate, type PartyDuplicateHit } from "@/lib/party-duplicate";
+import { DuplicateConflictDialog } from "@/components/contacts/DuplicateConflictDialog";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -966,14 +967,14 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
   function startEdit(c: Customer) {
     setEditingId(c.id); setName(c.name); setContact(c.contact ?? ""); setNotes(c.notes ?? "");
   }
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent, opts?: { force?: boolean }) {
     e.preventDefault();
     if (!uid || !name.trim()) return;
     const payload = { name: name.trim(), contact: contact.trim() || null, notes: notes.trim() || null };
     // Nomor dinormalisasi dulu supaya 0812…, +62812…, dan 62812… dianggap sama.
     const dup = findPartyDuplicate({ rows: customers, currentId: editingId, name, contact });
-    if (dup) {
-      toast.error(`${dup.label} sudah terdaftar`, { description: `${dup.reason}. Ubah data ini atau edit kontak yang sudah ada.` });
+    if (dup && !opts?.force) {
+      setConflict({ hit: dup, ev: e });
       return;
     }
     if (editingId) {
