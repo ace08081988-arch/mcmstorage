@@ -1,7 +1,7 @@
 {
-  "name": "Ace",
+  "name": "Ace Storage",
   "short_name": "Ace",
-  "description": "Ace — kelola pesanan, chat, dan kirim cepat dalam satu aplikasi.",
+  "description": "Ace Storage — kelola pesanan, chat, dan kirim cepat dalam satu aplikasi.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
