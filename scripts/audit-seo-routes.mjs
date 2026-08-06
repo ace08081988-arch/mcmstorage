@@ -115,10 +115,12 @@ function extractRoutePath(src) {
 function routeIdToUrl(routeId) {
   // /_authenticated/audit -> /audit
   // /posts/$slug         -> /posts/$slug (tetap)
-  return routeId
+  const url = routeId
     .split("/")
     .filter((seg) => !seg.startsWith("_"))
     .join("/") || "/";
+  // /download/ (index route) -> /download
+  return url.length > 1 ? url.replace(/\/+$/, "") || "/" : url;
 }
 
 /** Apakah rute punya meta robots noindex di head()? */
