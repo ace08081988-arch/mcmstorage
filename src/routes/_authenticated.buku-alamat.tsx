@@ -65,6 +65,7 @@ import {
 import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDialog";
 import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
 import { logAddressBookDuplicateBlock } from "@/lib/contact-telemetry";
+import { notifyRlsRelogin } from "@/lib/rls-relogin";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
   head: () => ({
@@ -278,7 +279,15 @@ function BukuAlamatPage() {
       else await promoteToSupplier(row);
       toast.success(`${row.name} ditambahkan ke ${kind === "customer" ? "pelanggan" : "supplier"}.`);
     } catch (e) {
-      notifyError(e);
+      const label = kind === "customer" ? "pelanggan" : "supplier";
+      if (
+        !notifyRlsRelogin(e, {
+          message: `Gagal menambahkan ${label}.`,
+          onRetry: () => handlePromote(row, kind),
+        })
+      ) {
+        notifyError(e);
+      }
     }
   };
 
