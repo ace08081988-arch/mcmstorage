@@ -11,6 +11,13 @@
  * Murni tanpa I/O: pemanggil (skrip CI / test) yang mengambil HTML-nya.
  */
 import { DEFAULT_OG_IMAGE, SITE_URL } from "./seo-meta";
+import {
+  DEFAULT_AUDIT_POLICY,
+  filterAuditUrls,
+  isIssueExempt,
+  stripIgnoredParams,
+  type AuditPolicy,
+} from "./seo-audit-policy";
 
 export type RenderedPage = {
   /** URL yang diminta, absolut atau path (mis. "/katalog/toko/123"). */
@@ -47,6 +54,8 @@ export type RenderedHeadIssue = {
 export type RenderedHeadReport = {
   ok: boolean;
   checked: string[];
+  /** URL yang sengaja dilewati oleh whitelist/blacklist kebijakan audit. */
+  skipped: string[];
   issues: RenderedHeadIssue[];
 };
 
@@ -92,26 +101,44 @@ export function parseHead(html: string): {
   return { title, meta, canonical, robots: meta["robots"] ?? null };
 }
 
-/** Samakan bentuk URL agar perbandingan canonical/og:url tidak palsu-gagal. */
-export function normalizeUrl(url: string, base = SITE_URL): string {
-  const abs = url.startsWith("http") ? url : `${base}${url.startsWith("/") ? url : `/${url}`}`;
+/**
+ * Samakan bentuk URL agar perbandingan canonical/og:url tidak palsu-gagal.
+ *
+ * Tanpa `policy`, semua query dibuang (perilaku lama). Dengan `policy`, hanya
+ * parameter dinamis yang di-whitelist-abaikan (utm_*, fbclid, …) yang dibuang;
+ * parameter yang membentuk identitas halaman tetap ikut dibandingkan.
+ */
+export function normalizeUrl(url: string, base = SITE_URL, policy?: AuditPolicy): string {
+  const raw = url.startsWith("http") ? url : `${base}${url.startsWith("/") ? url : `/${url}`}`;
+  const abs = policy ? stripIgnoredParams(raw, policy, base) : raw;
   try {
     const u = new URL(abs);
     u.hash = "";
-    u.search = "";
+    if (!policy) u.search = "";
     u.protocol = "https:";
     u.host = new URL(base).host;
     u.pathname = u.pathname.replace(/\/+$/, "") || "/";
-    return u.toString().replace(/\/$/, "") || u.origin;
+    const search = u.search;
+    u.search = "";
+    const clean = u.toString().replace(/\/$/, "") || u.origin;
+    return `${clean}${search}`;
   } catch {
     return abs;
   }
 }
 
-export function auditRenderedPage(page: RenderedPage, base = SITE_URL): RenderedHeadIssue[] {
+export function auditRenderedPage(
+  page: RenderedPage,
+  base = SITE_URL,
+  policy: AuditPolicy = DEFAULT_AUDIT_POLICY,
+): RenderedHeadIssue[] {
   const issues: RenderedHeadIssue[] = [];
   const url = page.url;
-  const add = (id: RenderedHeadIssueId, message: string) => issues.push({ url, id, message });
+  const add = (id: RenderedHeadIssueId, message: string) => {
+    // Halaman yang memang sengaja berbeda bisa dikecualikan per aturan.
+    if (isIssueExempt(url, id, policy)) return;
+    issues.push({ url, id, message });
+  };
 
   if (page.status !== undefined && (page.status < 200 || page.status >= 400)) {
     add("http", `status HTTP ${page.status} — halaman tidak bisa dirayapi`);
@@ -168,24 +195,34 @@ export function auditRenderedPage(page: RenderedPage, base = SITE_URL): Rendered
       add("og:image:type", `og:image:type "${type ?? ""}" tidak valid (image/png|jpeg|webp)`);
   }
 
-  const expected = normalizeUrl(url, base);
+  const expected = normalizeUrl(url, base, policy);
   if (!canonical) add("canonical", "link rel=canonical tidak ada");
-  else if (normalizeUrl(canonical, base) !== expected)
+  else if (normalizeUrl(canonical, base, policy) !== expected)
     add(
       "canonical-self",
       `canonical "${canonical}" ≠ URL halaman "${expected}" — harus self-referensial`,
     );
 
   const ogUrl = meta["og:url"];
-  if (ogUrl && normalizeUrl(ogUrl, base) !== expected)
+  if (ogUrl && normalizeUrl(ogUrl, base, policy) !== expected)
     add("og:url", `og:url "${ogUrl}" ≠ URL halaman "${expected}"`);
 
   return issues;
 }
 
-export function auditRenderedPages(pages: RenderedPage[], base = SITE_URL): RenderedHeadReport {
-  const issues = pages.flatMap((p) => auditRenderedPage(p, base));
-  return { ok: issues.length === 0, checked: pages.map((p) => p.url), issues };
+export function auditRenderedPages(
+  pages: RenderedPage[],
+  base = SITE_URL,
+  policy: AuditPolicy = DEFAULT_AUDIT_POLICY,
+): RenderedHeadReport {
+  const { audited, skipped } = filterAuditUrls(
+    pages.map((p) => p.url),
+    policy,
+  );
+  const auditedSet = new Set(audited);
+  const target = pages.filter((p) => auditedSet.has(p.url));
+  const issues = target.flatMap((p) => auditRenderedPage(p, base, policy));
+  return { ok: issues.length === 0, checked: target.map((p) => p.url), skipped, issues };
 }
 
 /** Ambil daftar <loc> dari sitemap.xml untuk dijadikan target audit. */
@@ -200,9 +237,11 @@ export function urlsFromSitemap(xml: string): string[] {
  */
 export function selectAuditUrls(
   urls: string[],
-  opts: { perDynamicPattern?: number } = {},
+  opts: { perDynamicPattern?: number; policy?: AuditPolicy } = {},
 ): string[] {
   const perPattern = opts.perDynamicPattern ?? 3;
+  const policy = opts.policy ?? DEFAULT_AUDIT_POLICY;
+  urls = filterAuditUrls(urls, policy).audited;
   const seen = new Map<string, string[]>();
   for (const u of urls) {
     let path: string;
@@ -223,9 +262,10 @@ export function selectAuditUrls(
 }
 
 export function formatRenderedHeadAudit(report: RenderedHeadReport): string {
-  if (report.ok) return `Head URL OK — ${report.checked.length} URL diperiksa.`;
+  const skipNote = report.skipped?.length ? ` (${report.skipped.length} dilewati kebijakan)` : "";
+  if (report.ok) return `Head URL OK — ${report.checked.length} URL diperiksa${skipNote}.`;
   return [
-    `Head URL: ${report.issues.length} masalah pada ${report.checked.length} URL.`,
+    `Head URL: ${report.issues.length} masalah pada ${report.checked.length} URL${skipNote}.`,
     ...report.issues.map((i) => `  • ${i.url} — ${i.id}: ${i.message}`),
   ].join("\n");
 }

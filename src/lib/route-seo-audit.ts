@@ -14,6 +14,8 @@
  * tag-per-tag.
  */
 
+import { DEFAULT_AUDIT_POLICY, isUrlAudited, type AuditPolicy } from "./seo-audit-policy";
+
 export type RouteSource = {
   /** Nama file relatif terhadap `src/routes`, mis. "faq.tsx". */
   file: string;
@@ -116,7 +118,15 @@ export function extractHeadBlock(source: string): string | null {
   return source.slice(start);
 }
 
-export function auditRouteSeo(routes: RouteSource[]): RouteSeoReport {
+/** Ubah path rute (`/katalog/$slug`) jadi pola glob (`/katalog/*`). */
+export function routeGlobPath(route: string): string {
+  return route.replace(/\$[^/]+/g, "*");
+}
+
+export function auditRouteSeo(
+  routes: RouteSource[],
+  policy: AuditPolicy = DEFAULT_AUDIT_POLICY,
+): RouteSeoReport {
   const issues: RouteSeoIssue[] = [];
   const audited: string[] = [];
   const skipped: string[] = [];
@@ -127,6 +137,13 @@ export function auditRouteSeo(routes: RouteSource[]): RouteSeoReport {
       continue;
     }
     const route = routePathFromFile(file);
+
+    // Whitelist/blacklist: rute yang sengaja berbeda tidak diaudit.
+    if (!isUrlAudited(routeGlobPath(route), policy)) {
+      skipped.push(file);
+      continue;
+    }
+
     const head = extractHeadBlock(source);
 
     // Rute layout (hanya membungkus <Outlet />) tidak punya metadata sendiri;

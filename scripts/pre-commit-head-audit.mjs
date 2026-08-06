@@ -32,6 +32,8 @@ const WATCHED = [
   /^src\/lib\/head-audit\.ts$/,
   /^src\/lib\/rendered-head-audit\.ts$/,
   /^src\/lib\/route-seo-audit\.ts$/,
+  /^src\/lib\/seo-audit-policy(\.load)?\.ts$/,
+  /^seo-audit\.policy\.json$/,
   /^public\/(_headers|robots\.txt|manifest\.webmanifest|browserconfig\.xml)$/,
   /^public\/.*\.(png|svg|ico|webmanifest|xml)$/,
 ];
@@ -76,7 +78,12 @@ if (isMain) {
   );
 
   const runner = process.env.HEAD_AUDIT_RUNNER || "bunx";
-  let code = run(runner, ["vitest", "run", "src/lib/__tests__/route-seo-audit.test.ts"]);
+  let code = run(runner, [
+    "vitest",
+    "run",
+    "src/lib/__tests__/route-seo-audit.test.ts",
+    "src/lib/__tests__/seo-audit-policy.test.ts",
+  ]);
   if (code === 0) {
     code = run(runner, [
       "vitest",
