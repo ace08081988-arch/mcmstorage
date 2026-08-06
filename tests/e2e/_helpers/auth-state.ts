@@ -71,3 +71,51 @@ export function skipUnlessAuth(
   if (authRequired()) throw new Error(`[PWTEST_REQUIRE_AUTH] ${reason}`);
   test.skip(true, reason);
 }
+
+type EvaluatablePage = {
+  evaluate: <R>(fn: (arg?: any) => R | Promise<R>, arg?: any) => Promise<R>;
+  reload: (opts?: any) => Promise<any>;
+  url: () => string;
+};
+
+/**
+ * Tandai device browser test sebagai "tepercaya" supaya guard verifikasi
+ * device (`/device-verify`, OTP email) tidak memblokir spec. Fingerprint
+ * dihitung dengan algoritma yang sama seperti `src/lib/device-fingerprint.ts`.
+ *
+ * Panggil setelah `page.goto()` pertama ke origin app; halaman di-reload
+ * bila guard sempat mengalihkan ke `/device-verify`.
+ */
+export async function trustTestDevice(page: EvaluatablePage): Promise<void> {
+  await page.evaluate(async () => {
+    const parts = [
+      navigator.userAgent || "",
+      navigator.language || "",
+      (navigator.languages || []).join(","),
+      `${screen.width}x${screen.height}x${screen.colorDepth}`,
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+      navigator.hardwareConcurrency?.toString() || "",
+      (navigator as any).deviceMemory?.toString() || "",
+    ];
+    const digest = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(parts.join("|")),
+    );
+    const hash = [...new Uint8Array(digest)]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const authKey = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k));
+    let uid: string | undefined;
+    if (authKey) {
+      try {
+        let raw = localStorage.getItem(authKey) || "";
+        if (raw.startsWith("base64-")) raw = atob(raw.slice(7));
+        const s = JSON.parse(raw);
+        uid = s?.user?.id ?? s?.currentSession?.user?.id;
+      } catch {}
+    }
+    if (uid) localStorage.setItem(`mcm_device_trusted_${uid}_${hash}`, "1");
+  });
+  if (page.url().includes("/device-verify")) await page.reload({ waitUntil: "domcontentloaded" });
+}
