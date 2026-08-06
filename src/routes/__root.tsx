@@ -264,19 +264,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
       },
       { title: "Ace Storage — Kelola Pesanan & Kirim WhatsApp" },
-      { name: "description", content: "Ace Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
+      { name: "description", content: "Kelola pesanan, stok gudang, dan hutang-piutang dari HP — lengkap dengan foto produk, tautan lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { name: "author", content: "Ace Storage" },
       { name: "theme-color", content: "#0a7a4a" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Ace Storage" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { property: "og:title", content: "Ace Storage — Kelola Pesanan & Kirim WhatsApp" },
-      { property: "og:description", content: "Ace Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
+      { property: "og:description", content: "Kelola pesanan, stok gudang, dan hutang-piutang dari HP — lengkap dengan foto produk, tautan lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Ace Storage" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Ace Storage — Kelola Pesanan & Kirim WhatsApp" },
-      { name: "twitter:description", content: "Ace Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
+      { name: "twitter:description", content: "Kelola pesanan, stok gudang, dan hutang-piutang dari HP — lengkap dengan foto produk, tautan lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       // Ukuran kartu OG bersifat sitewide (semua halaman memakai 1200×630);
       // URL gambarnya sendiri di-set per-rute lewat `socialMeta()` di
       // src/lib/seo-meta.ts supaya foto produk katalog bisa menimpanya.
