@@ -30,6 +30,7 @@ export type RouteSeoIssue = {
     | "og:title"
     | "og:description"
     | "og:image"
+    | "og:image-dimensions"
     | "twitter:card"
     | "canonical"
     | "canonical-self";
@@ -158,6 +159,19 @@ export function auditRouteSeo(routes: RouteSource[]): RouteSeoReport {
         if (!hasTag(head, "og:description", "property"))
           add("og:description", "og:description tidak ditemukan");
         if (!hasTag(head, "og:image", "property")) add("og:image", "og:image tidak ditemukan");
+        else {
+          const missing = [
+            "og:image:secure_url",
+            "og:image:width",
+            "og:image:height",
+            "og:image:type",
+          ].filter((tag) => !hasTag(head, tag, "property"));
+          if (missing.length)
+            add(
+              "og:image-dimensions",
+              `og:image dideklarasikan manual tetapi kurang ${missing.join(", ")} — pakai socialMeta() dari @/lib/seo-meta`,
+            );
+        }
         if (!hasTag(head, "twitter:card", "name"))
           add("twitter:card", "twitter:card tidak ditemukan");
       }
