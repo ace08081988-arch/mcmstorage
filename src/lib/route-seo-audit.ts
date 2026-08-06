@@ -169,7 +169,10 @@ export function auditRouteSeo(routes: RouteSource[]): RouteSeoReport {
         add("canonical", "link rel=canonical tidak ditemukan");
       } else if (/canonical\s*\(\s*["'`](\/[^"'`]*)["'`]\s*\)/.test(head)) {
         const target = head.match(/canonical\s*\(\s*["'`](\/[^"'`]*)["'`]\s*\)/)![1];
-        if (target !== route) {
+        // Template literal `/download/${params.variant}` disetarakan dengan
+        // segmen dinamis rute `$variant`.
+        const normalized = target.replace(/\$\{[^}]*\.(\w+)\}/g, "$$$1");
+        if (normalized !== route) {
           add(
             "canonical-self",
             `canonical menunjuk "${target}" padahal rute ini "${route}" — harus self-referensial`,
