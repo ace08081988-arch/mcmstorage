@@ -9,13 +9,13 @@ export const Route = createFileRoute("/terms")({
       {
         name: "description",
         content:
-          "Syarat dan Ketentuan penggunaan Ace Storage, dioperasikan oleh Mcm. Aplikasi saat ini gratis tanpa pembayaran daring.",
+          "Syarat dan Ketentuan penggunaan Ace Storage, dioperasikan oleh Ace Storage. Aplikasi saat ini gratis tanpa pembayaran daring.",
       },
       { property: "og:title", content: "Syarat & Ketentuan — Ace Storage" },
       {
         property: "og:description",
         content:
-          "Syarat dan Ketentuan penggunaan Ace Storage, dioperasikan oleh Mcm.",
+          "Syarat dan Ketentuan penggunaan Ace Storage, dioperasikan oleh Ace Storage.",
       },
     ],
     links: [{ rel: "canonical", href: "https://mcmstorage.app/terms" }],
@@ -52,10 +52,10 @@ function TermsPage() {
           <Section title="1. Penjual">
             <p>
               Layanan Ace Storage (selanjutnya "<strong>Layanan</strong>")
-              disediakan dan dioperasikan oleh <strong>Mcm</strong>{" "}
+              disediakan dan dioperasikan oleh <strong>Ace Storage</strong>{" "}
               (selanjutnya "<strong>kami</strong>", "<strong>kita</strong>",
               atau "<strong>Penjual</strong>"). Dengan menggunakan Layanan,
-              Anda menyatakan berkontrak dengan Mcm.
+              Anda menyatakan berkontrak dengan Ace Storage.
             </p>
           </Section>
 
@@ -120,7 +120,7 @@ function TermsPage() {
             <p>
               Semua hak atas Layanan — termasuk perangkat lunak, dokumentasi,
               merek dagang, dan tampilan antarmuka — tetap menjadi milik
-              Mcm dan pemberi lisensinya. Anda diberikan lisensi
+              Ace Storage dan pemberi lisensinya. Anda diberikan lisensi
               terbatas, non-eksklusif, dan tidak dapat dialihkan untuk
               menggunakan Layanan sesuai paket yang Anda pilih.
             </p>
