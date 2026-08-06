@@ -792,6 +792,7 @@ function EditDialog({
       validatedPin = v.code;
     }
     if (duplicate) {
+      logAddressBookDuplicateBlock({ field: duplicate.field, isNew });
       toast.error(`${duplicate.label} sudah terdaftar`, {
         description: `${duplicate.reason}. Ubah data ini atau buka kontak yang sudah ada.`,
         ...(onOpenExisting
