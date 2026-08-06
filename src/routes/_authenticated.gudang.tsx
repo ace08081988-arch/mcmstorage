@@ -2696,6 +2696,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const { data: myProfile } = useMyProfile();
+  const [supConflict, setSupConflict] = useState<{ hit: PartyDuplicateHit; ev: React.FormEvent } | null>(null);
   const normalizedMyPhone = normalizeWaNumber(myProfile?.phone, myProfile?.country_code);
   const canUseMyContact = !!(myProfile?.display_name || normalizedMyPhone);
   function useMyContact() {
