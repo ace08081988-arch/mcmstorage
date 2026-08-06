@@ -229,6 +229,9 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
         push("manifest", icon.src, `Ikon manifest ${icon.src} tidak ada di public/.`);
         continue;
       }
+      if (!icon.src.endsWith(expectedQuery)) {
+        push("version", `manifest:${icon.src}`, `Ikon manifest ${icon.src} belum memakai cache-buster ${expectedQuery}.`);
+      }
       const actual = sizes[file];
       const declared = icon.sizes.split("x").map(Number);
       if (actual && declared.length === 2 && (actual[0] !== declared[0] || actual[1] !== declared[1])) {
@@ -273,6 +276,9 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
     if (!files.has(file)) {
       push("mstile", t.tag, `Tile ${src} tidak ada di public/.`);
       continue;
+    }
+    if (!src.endsWith(expectedQuery)) {
+      push("version", `mstile:${t.tag}`, `Tile ${src} belum memakai cache-buster ${expectedQuery}.`);
     }
     const actual = sizes[file];
     if (actual && (actual[0] !== t.expect[0] || actual[1] !== t.expect[1])) {
