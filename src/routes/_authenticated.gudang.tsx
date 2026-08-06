@@ -2795,7 +2795,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
         </div>
       </form>
       {suppliers.length === 0 ? (
-
+      <></>
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada supplier.</div>
       ) : (
         <ul className="space-ms-2">
