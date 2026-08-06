@@ -5,6 +5,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { canonical, socialMeta } from "@/lib/seo-meta";
+import { CATALOG_OG_HEIGHT, CATALOG_OG_WIDTH } from "@/lib/catalog-og-image";
 import { jsonLdScript, productListSchema, storeSchema } from "@/lib/structured-data";
 import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
@@ -49,6 +50,15 @@ export const Route = createFileRoute("/katalog/$slug/")({
         title,
         description: desc,
         url,
+        // Foto produk pertama toko dipakai sebagai kartu pratinjau; kalau
+        // katalog belum punya foto, kartu brand default yang dipakai.
+        image: loaderData?.og?.path ?? null,
+        imageVersion: loaderData?.og?.version ?? null,
+        imageType: loaderData?.og?.type,
+        imageAlt: name ? `Katalog produk ${name}` : undefined,
+        ...(loaderData?.og
+          ? { imageWidth: CATALOG_OG_WIDTH, imageHeight: CATALOG_OG_HEIGHT }
+          : {}),
         noindex: !loaderData?.found,
       }),
       links: [canonical(url)],

@@ -25,5 +25,12 @@ export function withAssetVersion(url: string, version = BRAND_ASSET_VERSION): st
   if (!url) return url;
   const isLocal = url.startsWith("/") || url.startsWith("https://mcmstorage.app");
   if (!isLocal) return url;
-  return `${stripAssetQuery(url)}?v=${version}`;
+  // Query fungsional (mis. `/api/public/img/og?slug=…&item=…`) dipertahankan;
+  // hanya parameter versi lama yang diganti.
+  const [withoutHash] = url.split("#");
+  const [path, query = ""] = withoutHash.split("?");
+  const params = new URLSearchParams(query);
+  params.delete("v");
+  params.set("v", version);
+  return `${path}?${params.toString()}`;
 }

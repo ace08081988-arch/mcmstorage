@@ -162,6 +162,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicImgOgRouteImport } from './routes/api/public/img/og'
 import { Route as ApiPublicImgAvifRouteImport } from './routes/api/public/img/avif'
 import { Route as ApiPublicHooksWebVitalsMonitorRouteImport } from './routes/api/public/hooks/web-vitals-monitor'
 import { Route as ApiPublicHooksSocialRescrapeRouteImport } from './routes/api/public/hooks/social-rescrape'
@@ -1025,6 +1026,11 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicImgOgRoute = ApiPublicImgOgRouteImport.update({
+  id: '/api/public/img/og',
+  path: '/api/public/img/og',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicImgAvifRoute = ApiPublicImgAvifRouteImport.update({
   id: '/api/public/img/avif',
   path: '/api/public/img/avif',
@@ -1269,6 +1275,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/social-rescrape': typeof ApiPublicHooksSocialRescrapeRoute
   '/api/public/hooks/web-vitals-monitor': typeof ApiPublicHooksWebVitalsMonitorRoute
   '/api/public/img/avif': typeof ApiPublicImgAvifRoute
+  '/api/public/img/og': typeof ApiPublicImgOgRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1434,6 +1441,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/social-rescrape': typeof ApiPublicHooksSocialRescrapeRoute
   '/api/public/hooks/web-vitals-monitor': typeof ApiPublicHooksWebVitalsMonitorRoute
   '/api/public/img/avif': typeof ApiPublicImgAvifRoute
+  '/api/public/img/og': typeof ApiPublicImgOgRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1604,6 +1612,7 @@ export interface FileRoutesById {
   '/api/public/hooks/social-rescrape': typeof ApiPublicHooksSocialRescrapeRoute
   '/api/public/hooks/web-vitals-monitor': typeof ApiPublicHooksWebVitalsMonitorRoute
   '/api/public/img/avif': typeof ApiPublicImgAvifRoute
+  '/api/public/img/og': typeof ApiPublicImgOgRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1774,6 +1783,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/social-rescrape'
     | '/api/public/hooks/web-vitals-monitor'
     | '/api/public/img/avif'
+    | '/api/public/img/og'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1939,6 +1949,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/social-rescrape'
     | '/api/public/hooks/web-vitals-monitor'
     | '/api/public/img/avif'
+    | '/api/public/img/og'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -2108,6 +2119,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/social-rescrape'
     | '/api/public/hooks/web-vitals-monitor'
     | '/api/public/img/avif'
+    | '/api/public/img/og'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -2199,6 +2211,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSocialRescrapeRoute: typeof ApiPublicHooksSocialRescrapeRoute
   ApiPublicHooksWebVitalsMonitorRoute: typeof ApiPublicHooksWebVitalsMonitorRoute
   ApiPublicImgAvifRoute: typeof ApiPublicImgAvifRoute
+  ApiPublicImgOgRoute: typeof ApiPublicImgOgRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -3279,6 +3292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/img/og': {
+      id: '/api/public/img/og'
+      path: '/api/public/img/og'
+      fullPath: '/api/public/img/og'
+      preLoaderRoute: typeof ApiPublicImgOgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/img/avif': {
       id: '/api/public/img/avif'
       path: '/api/public/img/avif'
@@ -3718,6 +3738,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSocialRescrapeRoute: ApiPublicHooksSocialRescrapeRoute,
   ApiPublicHooksWebVitalsMonitorRoute: ApiPublicHooksWebVitalsMonitorRoute,
   ApiPublicImgAvifRoute: ApiPublicImgAvifRoute,
+  ApiPublicImgOgRoute: ApiPublicImgOgRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,

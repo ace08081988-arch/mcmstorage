@@ -4,6 +4,7 @@
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { canonical, socialMeta } from "@/lib/seo-meta";
+import { CATALOG_OG_HEIGHT, CATALOG_OG_WIDTH } from "@/lib/catalog-og-image";
 import {
   breadcrumbSchema,
   jsonLdScript,
@@ -52,8 +53,15 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
         description: desc,
         url: path,
         type: "product",
-        image: it?.image_url ?? null,
+        // URL Storage bertanda tangan kedaluwarsa sebelum crawler sempat
+        // mengambilnya, jadi og:image memakai endpoint stabil /api/public/img/og.
+        image: loaderData?.og?.path ?? null,
+        imageVersion: loaderData?.og?.version ?? null,
+        imageType: loaderData?.og?.type,
         imageAlt: it ? `Foto produk ${it.name} di ${shopName}` : undefined,
+        ...(loaderData?.og
+          ? { imageWidth: CATALOG_OG_WIDTH, imageHeight: CATALOG_OG_HEIGHT }
+          : {}),
         noindex: !loaderData?.found,
       }),
       // Gambar produk adalah elemen LCP halaman ini, jadi di-preload supaya

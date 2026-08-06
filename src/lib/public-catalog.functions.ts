@@ -6,6 +6,7 @@
  * ditandatangani di server supaya bucket tetap privat.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { buildCatalogOgImage, type CatalogOgImage } from "@/lib/catalog-og-image";
 import { z } from "zod";
 
 const slugSchema = z.object({
@@ -41,12 +42,15 @@ export type PublicCatalogItemPayload = {
   found: boolean;
   shop: { name: string; wa: string; tagline: string } | null;
   item: PublicCatalogItemDetail | null;
+  /** Kartu OG stabil (bebas token) untuk crawler sosial. */
+  og: CatalogOgImage | null;
 };
 
 export type PublicCatalogPayload = {
   found: boolean;
   shop: { name: string; wa: string; tagline: string } | null;
   items: PublicCatalogItem[];
+  og: CatalogOgImage | null;
 };
 
 export const getPublicCatalog = createServerFn({ method: "GET" })
@@ -61,7 +65,7 @@ export const getPublicCatalog = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (!settings || !settings.enabled) {
-      return { found: false, shop: null, items: [] };
+      return { found: false, shop: null, items: [], og: null };
     }
 
     const { data: rows } = await supabaseAdmin
@@ -83,8 +87,19 @@ export const getPublicCatalog = createServerFn({ method: "GET" })
       }
     }
 
+    // Kartu OG katalog memakai foto produk pertama yang punya gambar.
+    const cover = list.find((r) => !!r.image_path);
+
     return {
       found: true,
+      og: cover
+        ? buildCatalogOgImage({
+            slug: data.slug,
+            itemId: cover.id,
+            imagePath: cover.image_path,
+            updatedAt: null,
+          })
+        : null,
       shop: {
         name: settings.shop_name,
         wa: settings.wa_number,
@@ -153,7 +168,7 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
       .eq("slug", data.slug)
       .maybeSingle();
 
-    if (!settings || !settings.enabled) return { found: false, shop: null, item: null };
+    if (!settings || !settings.enabled) return { found: false, shop: null, item: null, og: null };
 
     const { data: r } = await supabaseAdmin
       .from("warehouse_items")
@@ -170,7 +185,7 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
       tagline: settings.tagline,
     };
 
-    if (!r) return { found: false, shop, item: null };
+    if (!r) return { found: false, shop, item: null, og: null };
 
     let imageUrl: string | null = null;
     let imageSrcset: string | null = null;
@@ -218,6 +233,12 @@ export const getPublicCatalogItem = createServerFn({ method: "GET" })
 
     return {
       found: true,
+      og: buildCatalogOgImage({
+        slug: data.slug,
+        itemId: r.id,
+        imagePath: r.image_path,
+        updatedAt: r.updated_at,
+      }),
       shop,
       item: {
         id: r.id,
