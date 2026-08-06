@@ -275,11 +275,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Ace Storage — Kelola Pesanan & Kirim WhatsApp" },
       { name: "twitter:description", content: "Ace Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
-      { property: "og:image", content: "https://mcmstorage.app/og-ace-storage.png" },
+      // Ukuran kartu OG bersifat sitewide (semua halaman memakai 1200×630);
+      // URL gambarnya sendiri di-set per-rute lewat `socialMeta()` di
+      // src/lib/seo-meta.ts supaya foto produk katalog bisa menimpanya.
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "Logo gudang emas Ace Storage di latar charcoal" },
-      { name: "twitter:image", content: "https://mcmstorage.app/og-ace-storage.png" },
+      { property: "og:locale", content: "id_ID" },
       { name: "msapplication-TileColor", content: "#0a7a4a" },
       { name: "msapplication-config", content: "/browserconfig.xml" },
       { name: "google-site-verification", content: "U9gNbUi1Ly1ya2k-cTFj2H05IsYp3K9gIB6TQsCzOLg" },
