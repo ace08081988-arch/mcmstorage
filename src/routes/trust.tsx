@@ -1,25 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 
 export const Route = createFileRoute("/trust")({
   head: () => ({
-    meta: [
-      { title: "Trust & Privacy — Ace Storage" },
-      {
-        name: "description",
-        content:
-          "Bagaimana Ace Storage menjaga data pesanan, pemasok, dan akun pengguna: autentikasi, akses, subprocessor, dan kontak.",
-      },
-      { property: "og:title", content: "Trust & Privacy — Ace Storage" },
-      {
-        property: "og:description",
-        content:
-          "Bagaimana Ace Storage menjaga data pesanan, pemasok, dan akun pengguna.",
-      },
-      { property: "og:url", content: "https://mcmstorage.app/trust" },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.app/trust" }],
+    meta: socialMeta({
+      title: "Keamanan & Privasi — Ace Storage",
+      description:
+        "Bagaimana Ace Storage menjaga data pesanan, pemasok, dan akun pengguna: autentikasi, akses, subprocessor, dan kontak.",
+      url: "/trust",
+    }),
+    links: [canonical("/trust")],
   }),
   component: TrustPage,
 });

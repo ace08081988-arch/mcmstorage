@@ -1,24 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 
 export const Route = createFileRoute("/refund")({
   head: () => ({
-    meta: [
-      { title: "Kebijakan Pengembalian Dana — Ace Storage" },
-      {
-        name: "description",
-        content:
-          "Ace Storage saat ini gratis dan tidak memproses pembayaran daring, sehingga tidak ada transaksi yang perlu dikembalikan.",
-      },
-      { property: "og:title", content: "Kebijakan Pengembalian Dana — Ace Storage" },
-      {
-        property: "og:description",
-        content:
-          "Status kebijakan pengembalian dana Ace Storage: aplikasi gratis, tanpa pembayaran daring.",
-      },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.app/refund" }],
+    meta: socialMeta({
+      title: "Kebijakan Pengembalian Dana — Ace Storage",
+      description:
+        "Ace Storage saat ini gratis dan tidak memproses pembayaran daring, sehingga tidak ada transaksi yang perlu dikembalikan.",
+      url: "/refund",
+    }),
+    links: [canonical("/refund")],
   }),
   component: RefundPage,
 });

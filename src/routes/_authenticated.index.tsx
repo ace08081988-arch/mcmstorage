@@ -68,6 +68,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 // Bagian "Lainnya" hanya dipakai setelah user membuka <details>.
 // Dipecah jadi chunk terpisah lewat React.lazy agar landing inti (hero
 // stepper + form kategori) tidak menyeret JS ini di initial bundle.
@@ -242,15 +243,13 @@ export const Route = createFileRoute("/_authenticated/")({
     }
   },
   head: () => ({
-    meta: [
-      { title: "Beranda — Kelola Pesanan & Kirim via Ace" },
-      { name: "description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via Ace dalam satu halaman." },
-      { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim via Ace" },
-      { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via Ace dalam satu halaman." },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.app/" },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.app/" }],
+    meta: socialMeta({
+      title: "Ace Storage — Kelola pesanan & kirim cepat lewat WhatsApp",
+      description:
+        "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan lewat WhatsApp dalam satu halaman.",
+      url: "/",
+    }),
+    links: [canonical("/")],
   }),
   component: Index,
 });

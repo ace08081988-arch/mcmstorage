@@ -1,24 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
-    meta: [
-      { title: "Syarat & Ketentuan — Ace Storage" },
-      {
-        name: "description",
-        content:
-          "Syarat dan Ketentuan penggunaan Ace Storage, dioperasikan oleh Ace Storage. Aplikasi saat ini gratis tanpa pembayaran daring.",
-      },
-      { property: "og:title", content: "Syarat & Ketentuan — Ace Storage" },
-      {
-        property: "og:description",
-        content:
-          "Syarat dan Ketentuan penggunaan Ace Storage, dioperasikan oleh Ace Storage.",
-      },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.app/terms" }],
+    meta: socialMeta({
+      title: "Syarat & Ketentuan — Ace Storage",
+      description:
+        "Syarat dan Ketentuan penggunaan Ace Storage. Aplikasi saat ini gratis tanpa pembayaran daring.",
+      url: "/terms",
+    }),
+    links: [canonical("/terms")],
   }),
   component: TermsPage,
 });

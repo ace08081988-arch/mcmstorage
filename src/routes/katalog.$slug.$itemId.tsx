@@ -3,6 +3,7 @@
  * dan tombol Pesan WA dengan draft pesan yang sudah terisi.
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { useEffect } from "react";
 import { ArrowLeft, MessageCircle, PackageSearch } from "lucide-react";
 
@@ -30,33 +31,29 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
     // href wajib ada meski `imagesrcset` yang dipakai browser modern.
     const avifHref = it?.image_avif_srcset?.split(" ")[0] ?? null;
     const shopName = loaderData?.shop?.name ?? "Toko";
-    const title = it ? `${it.name} — ${shopName}` : "Produk tidak ditemukan";
+    const title = it
+      ? `${it.name} — ${shopName} | Ace Storage`
+      : "Produk tidak ditemukan — Ace Storage";
     const desc = it
       ? (it.description?.trim() ||
         `${it.name}${it.category ? ` (${it.category})` : ""} di ${shopName}. Cek stok terkini dan pesan langsung lewat WhatsApp.`)
       : "Produk yang Anda cari tidak tersedia di katalog ini.";
-    const url = `https://mcmstorage.app/katalog/${params.slug}/${params.itemId}`;
+    const path = `/katalog/${params.slug}/${params.itemId}`;
+    const url = `https://mcmstorage.app${path}`;
     return {
-      meta: [
-        { title },
-        { name: "description", content: desc },
-        { property: "og:title", content: title },
-        { property: "og:description", content: desc },
-        { property: "og:type", content: "product" },
-        { property: "og:url", content: url },
-        { name: "twitter:card", content: "summary_large_image" },
-        ...(it?.image_url
-          ? [
-              { property: "og:image", content: it.image_url },
-              { name: "twitter:image", content: it.image_url },
-            ]
-          : []),
-        ...(loaderData?.found ? [] : [{ name: "robots", content: "noindex" }]),
-      ],
+      meta: socialMeta({
+        title,
+        description: desc,
+        url: path,
+        type: "product",
+        image: it?.image_url ?? null,
+        imageAlt: it ? `Foto produk ${it.name} di ${shopName}` : undefined,
+        noindex: !loaderData?.found,
+      }),
       // Gambar produk adalah elemen LCP halaman ini, jadi di-preload supaya
       // unduhannya mulai bersamaan dengan HTML/CSS.
       links: [
-        { rel: "canonical", href: url },
+        canonical(path),
         ...(it?.image_url
           ? [
               {
