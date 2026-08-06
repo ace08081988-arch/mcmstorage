@@ -251,6 +251,7 @@ import { KemasanKonversiBadge } from "@/components/KemasanKonversiBadge";
 import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
 import { ReadyPrepPicker, type ReadyPrep } from "@/components/gudang/ReadyPrepPicker";
 import { logPartyWriteFailure } from "@/lib/contact-telemetry";
+import { notifyRlsRelogin } from "@/lib/rls-relogin";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -972,7 +973,10 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       const { error } = await supabase.from("customers").update(payload).eq("id", editingId);
       if (error) {
         logPartyWriteFailure({ table: "customers", op: "update", error, source: "GudangCustomersForm" });
-        notifyError(error); return;
+        if (!notifyRlsRelogin(error, { message: "Gagal memperbarui pelanggan.", onRetry: () => submit(e) })) {
+          notifyError(error);
+        }
+        return;
       }
       toast.success("Pelanggan diperbarui");
     } else {
@@ -984,7 +988,10 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       const { error } = await supabase.from("customers").insert({ user_id: freshUid, ...payload });
       if (error) {
         logPartyWriteFailure({ table: "customers", op: "insert", error, source: "GudangCustomersForm" });
-        notifyError(error); return;
+        if (!notifyRlsRelogin(error, { message: "Gagal menambahkan pelanggan.", onRetry: () => submit(e) })) {
+          notifyError(error);
+        }
+        return;
       }
       toast.success("Pelanggan ditambahkan");
     }
