@@ -1,0 +1,11 @@
+#!/bin/sh
+# Pre-commit hook Ace Storage — cegah mismatch tag head masuk ke commit.
+# Aktifkan dengan: bun run hooks:install  (otomatis lewat `prepare`).
+set -e
+
+if [ -n "$SKIP_HEAD_AUDIT" ] && [ "$SKIP_HEAD_AUDIT" = "1" ]; then
+  echo "↷ Audit head dilewati (SKIP_HEAD_AUDIT=1)."
+  exit 0
+fi
+
+node scripts/pre-commit-head-audit.mjs

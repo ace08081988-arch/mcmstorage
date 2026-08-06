@@ -118,7 +118,12 @@
     "rescrape:social": "bun scripts/social-rescrape.ts",
     "rescrape:social:live": "bun scripts/social-rescrape.ts --base https://mcmstorage.app",
     "postpublish": "bun scripts/social-rescrape.ts --base https://mcmstorage.app || true",
-    "test:rescrape": "vitest run src/lib/__tests__/social-rescrape.test.ts"
+    "test:rescrape": "vitest run src/lib/__tests__/social-rescrape.test.ts",
+    "prepare": "node scripts/install-git-hooks.mjs",
+    "hooks:install": "node scripts/install-git-hooks.mjs",
+    "audit:head:staged": "node scripts/pre-commit-head-audit.mjs",
+    "audit:head:staged:all": "node scripts/pre-commit-head-audit.mjs --all",
+    "audit:seo:fix": "node scripts/audit-seo-routes.mjs --fix"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
