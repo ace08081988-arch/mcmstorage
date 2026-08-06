@@ -10,7 +10,7 @@
  *
  * Murni tanpa I/O: pemanggil (skrip CI / test) yang mengambil HTML-nya.
  */
-import { SITE_URL } from "./seo-meta";
+import { DEFAULT_OG_IMAGE, SITE_URL } from "./seo-meta";
 
 export type RenderedPage = {
   /** URL yang diminta, absolut atau path (mis. "/katalog/toko/123"). */
@@ -148,15 +148,20 @@ export function auditRenderedPage(page: RenderedPage, base = SITE_URL): Rendered
         `og:image:secure_url "${secure}" ≠ og:image "${image}" — termasuk versi cache-buster`,
       );
 
-    const width = Number(meta["og:image:width"]);
-    const height = Number(meta["og:image:height"]);
-    if (!Number.isFinite(width) || width < 200)
-      add("og:image:width", `og:image:width "${meta["og:image:width"] ?? ""}" tidak valid (≥200)`);
-    if (!Number.isFinite(height) || height < 200)
-      add(
-        "og:image:height",
-        `og:image:height "${meta["og:image:height"] ?? ""}" tidak valid (≥200)`,
-      );
+    // Kartu brand default punya dimensi yang kita ketahui pasti; foto produk
+    // eksternal boleh tanpa dimensi, tapi bila ada harus valid & berpasangan.
+    const rawW = meta["og:image:width"];
+    const rawH = meta["og:image:height"];
+    const isDefaultCard = image === DEFAULT_OG_IMAGE;
+    const needDims = isDefaultCard || rawW !== undefined || rawH !== undefined;
+    if (needDims) {
+      const width = Number(rawW);
+      const height = Number(rawH);
+      if (!Number.isFinite(width) || width < 200)
+        add("og:image:width", `og:image:width "${rawW ?? ""}" tidak valid (angka ≥200)`);
+      if (!Number.isFinite(height) || height < 200)
+        add("og:image:height", `og:image:height "${rawH ?? ""}" tidak valid (angka ≥200)`);
+    }
 
     const type = meta["og:image:type"];
     if (!type || !/^image\/(png|jpeg|jpg|webp)$/i.test(type))
