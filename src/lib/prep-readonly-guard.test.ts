@@ -108,10 +108,12 @@ describe("Ecer PrepBox — Edit/Hapus tidak render & onDelete diblokir saat sold
     expect(ECER).toMatch(/onClick=\{\s*selectionMode\s*&&\s*!readOnly\s*\?/);
   });
 
-  it("onDelete: guard if (readOnly) → toast.error + return SEBELUM hapus", () => {
+  it("onDelete membuka dialog konfirmasi, dengan salinan khusus arsip", () => {
+    // Hapus arsip Terkirim diizinkan; pengamannya dialog konfirmasi.
     expect(ECER).toMatch(
-      /async function onDelete\(\)\s*\{\s*if\s*\(\s*readOnly\s*\)\s*\{[\s\S]*?buildReadOnlyToast\(\s*["']delete["']\s*,\s*prep\s*\)[\s\S]*?toast\.error\([\s\S]*?description[\s\S]*?\)\s*;\s*return\s*;\s*\}/,
+      /async function onDelete\(\)\s*\{\s*setDeleteStep\("idle"\)\s*;\s*setDeleteOpen\(true\)\s*;\s*\}/,
     );
+    expect(ECER).toMatch(/readOnly\s*\?\s*"Hapus arsip terkirim\?"/);
   });
 
   it("kartu memiliki aria-readonly saat sold", () => {
