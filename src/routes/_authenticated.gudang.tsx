@@ -252,6 +252,7 @@ import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-f
 import { ReadyPrepPicker, type ReadyPrep } from "@/components/gudang/ReadyPrepPicker";
 import { logPartyWriteFailure } from "@/lib/contact-telemetry";
 import { notifyRlsRelogin } from "@/lib/rls-relogin";
+import { findPartyDuplicate } from "@/lib/party-duplicate";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -969,6 +970,12 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
     e.preventDefault();
     if (!uid || !name.trim()) return;
     const payload = { name: name.trim(), contact: contact.trim() || null, notes: notes.trim() || null };
+    // Nomor dinormalisasi dulu supaya 0812…, +62812…, dan 62812… dianggap sama.
+    const dup = findPartyDuplicate({ rows: customers, currentId: editingId, name, contact });
+    if (dup) {
+      toast.error(`${dup.label} sudah terdaftar`, { description: `${dup.reason}. Ubah data ini atau edit kontak yang sudah ada.` });
+      return;
+    }
     if (editingId) {
       const { error } = await supabase.from("customers").update(payload).eq("id", editingId);
       if (error) {
