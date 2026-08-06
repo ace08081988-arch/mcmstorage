@@ -2906,7 +2906,7 @@ function SendPrepToCustomerDialog({
   const [paidStr, setPaidStr] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  // State kanal Chat Ace: dialog picker + percakapan yang dipilih user.
+  // State kanal Ace Chat: dialog picker + percakapan yang dipilih user.
   // Hanya dipakai bila `channel === "chat"`.
   const [chatPickerOpen, setChatPickerOpen] = useState(false);
   const [chatConv, setChatConv] = useState<{ id: string; title: string } | null>(null);
@@ -3013,7 +3013,7 @@ function SendPrepToCustomerDialog({
     if (totalAmount <= 0) {
       if (!confirm("Total belum diisi (Rp 0). Lanjutkan tanpa mencatat penjualan?")) return;
     }
-    // Kanal Chat Ace: pastikan user memilih percakapan tujuan lebih dulu.
+    // Kanal Ace Chat: pastikan user memilih percakapan tujuan lebih dulu.
     // RPC pencatatan penjualan/piutang tidak dijalankan sampai target valid,
     // supaya tidak ada "tercatat tapi tidak terkirim".
     const conv = channel === "chat" ? (chosenConv ?? chatConv) : null;
@@ -3487,7 +3487,7 @@ function PrepEditorDialog({
     const q = waPhone.trim().toLowerCase();
     const nq = normalizePhone(waPhone) ?? "";
     const base = contacts.slice().sort((a, b) => {
-      // Kontak dengan linked_user_id (bisa Chat Ace) di atas.
+      // Kontak dengan linked_user_id (bisa Ace Chat) di atas.
       const la = a.linked_user_id ? 0 : 1;
       const lb = b.linked_user_id ? 0 : 1;
       if (la !== lb) return la - lb;
@@ -3630,7 +3630,7 @@ function PrepEditorDialog({
       }
       // Simpan otomatis ke buku alamat bila di-opt-in dan kontak yang
       // dipakai belum ada rownya. Berlaku untuk WA (pakai nomor yang
-      // ternormalisasi) maupun Chat Ace (pakai pickedLinkedUserId).
+      // ternormalisasi) maupun Ace Chat (pakai pickedLinkedUserId).
       if (autoSaveContact && (opts?.sendWa || opts?.sendChat)) {
         try {
           const nameForSave = (recipientName.trim() || pickedName.trim() || "").slice(0, 80);
@@ -3648,7 +3648,7 @@ function PrepEditorDialog({
           }
         } catch { /* opsional — jangan gagalkan flow utama */ }
       }
-      // Kirim via Chat Ace: buka DM dengan text prefill di composer.
+      // Kirim via Ace Chat: buka DM dengan text prefill di composer.
       // Foto sudah tersimpan di storage prep — sertakan signed URL supaya
       // pengguna tinggal tekan Send.
       if (opts?.sendChat && pickedLinkedUserId) {
@@ -3675,7 +3675,7 @@ function PrepEditorDialog({
           navigate({ to: "/chat/$conversationId", params: { conversationId: String(convId) } });
           return;
         } catch (err) {
-          toast.error("Gagal buka Chat Ace: " + (err as Error).message);
+          toast.error("Gagal buka Ace Chat: " + (err as Error).message);
         }
       }
       onSaved(); onClose();
@@ -3843,7 +3843,7 @@ function PrepEditorDialog({
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
 
           <div id="prep-sec-tujuan" className="space-ms-2">
-            <Label className="text-ms-xs">Tujuan (Chat Ace / Nomor WA)</Label>
+            <Label className="text-ms-xs">Tujuan (Ace Chat / Nomor WA)</Label>
             {/* Nama penerima — dipakai untuk auto-save ke buku alamat */}
             <Input
               value={recipientName}
@@ -3860,7 +3860,7 @@ function PrepEditorDialog({
                   setWaPhone(e.target.value);
                   setShowSuggest(true);
                   // Jika user mulai ubah nomor, reset user Ace yang di-pick
-                  // supaya tombol Chat Ace tidak salah kirim ke akun lama.
+                  // supaya tombol Ace Chat tidak salah kirim ke akun lama.
                   if (pickedLinkedUserId) setPickedLinkedUserId(null);
                 }}
                 onFocus={() => setShowSuggest(true)}
@@ -3893,7 +3893,7 @@ function PrepEditorDialog({
             </div>
             {pickedLinkedUserId ? (
               <p className="text-ms-2xs text-primary">
-                Kontak Ace terpilih: <span className="font-medium">{pickedName || "(tanpa nama)"}</span> — bisa kirim via Chat Ace.
+                Kontak Ace terpilih: <span className="font-medium">{pickedName || "(tanpa nama)"}</span> — bisa kirim via Ace Chat.
               </p>
             ) : waPhone.trim() === "" ? (
               <p className="text-ms-2xs text-muted-foreground">Ketik untuk cari kontak, atau isi nomor manual (awalan 0 → 62).</p>
@@ -3935,7 +3935,7 @@ function PrepEditorDialog({
             title={pickedLinkedUserId ? "Buka DM Ace dengan pesan siap kirim" : "Pilih kontak Ace dari daftar dulu"}
           >
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <MessageCircle className="mr-1 h-3 w-3" />}
-            Simpan &amp; Buka Chat Ace
+            Simpan &amp; Buka Ace Chat
           </Button>
           <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>

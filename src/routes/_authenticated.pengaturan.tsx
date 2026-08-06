@@ -164,7 +164,7 @@ const CATEGORIES: ReadonlyArray<SettingCategory> = [
         keywords: "push email notif pemberitahuan",
       },
       {
-        title: "Chat Ace",
+        title: "Ace Chat",
         description: "Preferensi chat, tampilan bubble, dan suara.",
         to: "/profil-chat",
         icon: MessageCircle,
