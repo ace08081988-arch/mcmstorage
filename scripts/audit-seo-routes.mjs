@@ -147,7 +147,11 @@ export function extractSitemapPaths(src) {
   const m = src.match(/entries\s*:\s*SitemapEntry\[\]\s*=\s*\[([\s\S]*?)\];/);
   if (!m) return paths;
   for (const p of m[1].matchAll(/path:\s*["'`]([^"'`]+)["'`]/g)) {
-    paths.add(p[1]);
+    // Normalisasi trailing slash: rute index (`/download/`) dan entri
+    // sitemap (`/download`) harus dianggap identik.
+    const raw = p[1];
+    paths.add(raw);
+    paths.add(raw.length > 1 ? raw.replace(/\/+$/, "") || "/" : raw);
   }
   return paths;
 }
