@@ -6,7 +6,7 @@
  * brand, dan tag `twitter:*` selalu dicerminkan dari `og:*` supaya tidak
  * jatuh ke nilai default root yang generik.
  */
-import { withAssetVersion } from "./asset-version";
+import { BRAND_ASSET_VERSION, withAssetVersion } from "./asset-version";
 
 export const BRAND = "Ace Storage";
 export const SITE_URL = "https://mcmstorage.app";
@@ -32,6 +32,13 @@ export type SocialMetaInput = {
   /** URL gambar absolut; default kartu brand Ace Storage. */
   image?: string | null;
   imageAlt?: string;
+  /**
+   * Cache-buster khusus gambar halaman (mis. `updated_at` foto produk).
+   * Default: versi aset brand.
+   */
+  imageVersion?: string | null;
+  /** MIME gambar bila tidak bisa ditebak dari ekstensi URL. */
+  imageType?: string;
   /** Dimensi gambar kustom (px). Wajib berpasangan agar tag dipancarkan. */
   imageWidth?: number;
   imageHeight?: number;
@@ -52,7 +59,9 @@ export function socialMeta(input: SocialMetaInput): MetaTag[] {
   const url = absoluteUrl(input.url);
   // Gambar milik sendiri diberi cache-buster versi supaya pratinjau
   // WhatsApp/X ikut berubah setelah publish; URL eksternal dibiarkan.
-  const image = input.image ? withAssetVersion(absoluteUrl(input.image)) : DEFAULT_OG_IMAGE;
+  const image = input.image
+    ? withAssetVersion(absoluteUrl(input.image), input.imageVersion || BRAND_ASSET_VERSION)
+    : DEFAULT_OG_IMAGE;
   const alt = input.imageAlt || `${title} — ${BRAND}`;
   // Dimensi: pakai nilai kustom bila lengkap, kalau tidak pakai ukuran kartu
   // default (hanya valid saat gambarnya memang kartu default).
@@ -62,11 +71,13 @@ export function socialMeta(input: SocialMetaInput): MetaTag[] {
       : input.image
         ? null
         : { w: DEFAULT_OG_IMAGE_WIDTH, h: DEFAULT_OG_IMAGE_HEIGHT };
-  const imageType = /\.(jpe?g)(\?|$)/i.test(image)
-    ? "image/jpeg"
-    : /\.webp(\?|$)/i.test(image)
-      ? "image/webp"
-      : "image/png";
+  const imageType =
+    input.imageType ??
+    (/\.(jpe?g)(\?|$)/i.test(image)
+      ? "image/jpeg"
+      : /\.webp(\?|$)/i.test(image)
+        ? "image/webp"
+        : "image/png");
   return [
     { title },
     { name: "description", content: input.description },
