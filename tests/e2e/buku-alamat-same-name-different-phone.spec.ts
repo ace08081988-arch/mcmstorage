@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import {
   requireAuthState,
   skipUnlessAuth,
+  trustTestDevice,
 } from "./_helpers/auth-state";
 
 /**
@@ -102,6 +103,8 @@ test.describe("Buku Alamat — nama sama, nomor berbeda tetap bisa disimpan", ()
     if (!cfg) return;
 
     await page.goto("/buku-alamat", { waitUntil: "domcontentloaded" });
+    // Lewati guard verifikasi device baru (OTP email) untuk browser test.
+    await trustTestDevice(page);
     const uid = await currentUserId(page);
     skipUnlessAuth(test, !uid, "Tidak ada sesi user aktif di storageState.");
 
