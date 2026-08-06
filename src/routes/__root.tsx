@@ -20,6 +20,7 @@ import { ConfirmHost } from "@/lib/confirm";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
 import { installChunkRecovery } from "@/lib/chunk-recovery";
+import { withAssetVersion, BRAND_ASSET_VERSION } from "@/lib/asset-version";
 
 // Layar hitam: entry/chunk gagal di-fetch di luar React → pulihkan sendiri.
 installChunkRecovery();
