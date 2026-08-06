@@ -69,7 +69,7 @@ function writeCopyHistory(list: CopyEntry[]) {
   }
 }
 
-export const Route = createFileRoute("/download")({
+export const Route = createFileRoute("/download/")({
   head: () => ({
     meta: socialMeta({
       title: "Unduh APK — Ace Storage & Ace Chat",
