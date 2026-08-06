@@ -2707,6 +2707,11 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
       email_bcc: emailBcc.trim() || null,
       notes: notes.trim() || null,
     };
+    const dup = findPartyDuplicate({ rows: suppliers, currentId: editingId, name, contact, email });
+    if (dup) {
+      toast.error(`${dup.label} sudah terdaftar`, { description: `${dup.reason}. Ubah data ini atau edit supplier yang sudah ada.` });
+      return;
+    }
     if (editingId) {
       const { error } = await supabase.from("suppliers").update(payload).eq("id", editingId);
       if (error) { notifyError(error); return; }

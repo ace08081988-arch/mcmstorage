@@ -265,6 +265,22 @@ export function DebtQuickActions({
         // Ambil uid dari sesi yang dipastikan segar: `uid` dari state bisa
         // basi setelah token rotate → RLS menolak insert (42501).
         const { userId: freshUid } = await ensureFreshSession();
+        // Cegah kontak kembar: nomor peer dinormalisasi lebih dulu, jadi
+        // 0812…, +62812…, dan 62812… tidak bisa terdaftar dua kali.
+        const { data: existing } = await supabase
+          .from(table)
+          .select("id,name,contact")
+          .eq("user_id", freshUid);
+        const dup = findPartyDuplicate({
+          rows: (existing ?? []) as { id: string; name: string; contact: string | null }[],
+          name: regName,
+          contact: peerPhone ?? null,
+        });
+        if (dup) {
+          toast.error(`${dup.label} sudah terdaftar`, { description: dup.reason });
+          await qc.invalidateQueries({ queryKey });
+          return;
+        }
         const payload: Record<string, unknown> = { user_id: freshUid, name: regName };
         if (peerPhone) payload.contact = peerPhone;
         const accId = data.accountUserId ?? peerAccountUserId ?? null;
