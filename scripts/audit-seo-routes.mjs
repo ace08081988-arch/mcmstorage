@@ -111,6 +111,13 @@ function extractRoutePath(src) {
   return m ? m[1] : null;
 }
 
+/** Samakan representasi URL untuk route ID, sitemap, dan allowlist. */
+export function normalizePath(path) {
+  if (!path || path === "/") return "/";
+  const withLeadingSlash = path.startsWith("/") ? path : `/${path}`;
+  return withLeadingSlash.replace(/\/+$/, "") || "/";
+}
+
 /** Konversi route id ke URL publik (drop segmen _layout). */
 function routeIdToUrl(routeId) {
   // /_authenticated/audit -> /audit
@@ -120,7 +127,7 @@ function routeIdToUrl(routeId) {
     .filter((seg) => !seg.startsWith("_"))
     .join("/") || "/";
   // /download/ (index route) -> /download
-  return url.length > 1 ? url.replace(/\/+$/, "") || "/" : url;
+  return normalizePath(url);
 }
 
 /** Apakah rute punya meta robots noindex di head()? */
@@ -147,13 +154,9 @@ export function extractSitemapPaths(src) {
   const m = src.match(/entries\s*:\s*SitemapEntry\[\]\s*=\s*\[([\s\S]*?)\];/);
   if (!m) return paths;
   for (const p of m[1].matchAll(/path:\s*["'`]([^"'`]+)["'`]/g)) {
-    // Normalisasi trailing slash: rute index (`/download/`) dan entri
-    // sitemap (`/download`) harus dianggap identik.
-    const raw = p[1];
-    paths.add(raw);
-    const noSlash = raw.length > 1 ? raw.replace(/\/+$/, "") || "/" : raw;
-    paths.add(noSlash);
-    if (noSlash !== "/") paths.add(`${noSlash}/`);
+    // Satu bentuk kanonis mencegah perbedaan `/download/` vs `/download`
+    // menghasilkan false positive pada build produksi.
+    paths.add(normalizePath(p[1]));
   }
   return paths;
 }
@@ -315,6 +318,12 @@ export function classifyRoute({
  * build — bukan menunggu scanner SEO menemukannya di produksi.
  */
 function runSelfTests() {
+  const extractedPaths = extractSitemapPaths(`
+    const entries: SitemapEntry[] = [
+      { path: "/", priority: "1.0" },
+      { path: "/download", priority: "0.6" },
+    ];
+  `);
   const cases = [
     {
       name: "/reset-password noindex + TIDAK di sitemap → noindex (ok)",
@@ -406,6 +415,12 @@ function runSelfTests() {
     },
   ];
   const failed = [];
+  if (
+    normalizePath("/download/") !== "/download" ||
+    !extractedPaths.has(normalizePath("/download/"))
+  ) {
+    failed.push("  ✗ trailing slash: /download/ harus cocok dengan sitemap /download");
+  }
   for (const c of cases) {
     const got = classifyRoute(c.input);
     const hasErr = Boolean(got.error);
