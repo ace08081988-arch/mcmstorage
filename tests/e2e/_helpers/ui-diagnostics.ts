@@ -37,15 +37,32 @@ const OBSERVER_SCRIPT = `(() => {
     try { window.__uiDiagPush && window.__uiDiagPush({ kind, detail }); } catch {}
   };
 
+  // Toast di-render bertahap (container ARIA dulu, teks menyusul), jadi
+  // teksnya dibaca setelah jeda pendek dan di-dedupe supaya log bersih.
+  const recent = new Map();
+  const reportToast = (el) => {
+    setTimeout(() => {
+      const t = text(el);
+      if (!t) return;
+      const now = Date.now();
+      const last = recent.get(t) || 0;
+      if (now - last < 1500) return;
+      recent.set(t, now);
+      report('toast', t);
+    }, 150);
+  };
+
   const scan = (root) => {
     if (!(root instanceof Element)) return;
     const check = (el) => {
       if (seen.has(el)) return;
       seen.add(el);
-      if (el.matches(TOAST_SEL)) report('toast', text(el));
+      if (el.matches(TOAST_SEL)) reportToast(el);
       else if (el.matches(DIALOG_SEL)) {
-        const title = el.querySelector('[data-slot="dialog-title"],h1,h2,h3');
-        report('dialog:open', (title ? text(title) : text(el)).slice(0, 160));
+        setTimeout(() => {
+          const title = el.querySelector('[data-slot="dialog-title"],h1,h2,h3');
+          report('dialog:open', (title ? text(title) : text(el)).slice(0, 160));
+        }, 50);
       }
     };
     check(root);
