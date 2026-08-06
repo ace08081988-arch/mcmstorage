@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { findAddressBookDuplicate } from "../address-book-duplicate";
+import { findEditorDuplicate } from "../address-book-duplicate";
 import { findPartyDuplicate } from "../party-duplicate";
 
 const VARIANTS = ["Budi@Mail.com", "  budi@mail.com  ", "BUDI@MAIL.COM"];
@@ -7,7 +7,7 @@ const VARIANTS = ["Budi@Mail.com", "  budi@mail.com  ", "BUDI@MAIL.COM"];
 describe("parity pesan duplikat email", () => {
   for (const email of VARIANTS) {
     it(`sama untuk varian "${email}"`, () => {
-      const ab = findAddressBookDuplicate({
+      const ab = findEditorDuplicate({
         rows: [{ id: "1", name: "Budi", phone: "", email: "budi@mail.com" }],
         name: "Budi Baru",
         phone: "",
