@@ -250,6 +250,7 @@ import { KemasanRumusPopover } from "@/components/KemasanRumusPopover";
 import { KemasanKonversiBadge } from "@/components/KemasanKonversiBadge";
 import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
 import { ReadyPrepPicker, type ReadyPrep } from "@/components/gudang/ReadyPrepPicker";
+import { logPartyWriteFailure } from "@/lib/contact-telemetry";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";

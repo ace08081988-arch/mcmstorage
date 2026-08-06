@@ -8,6 +8,7 @@ import { ensureFreshSession } from "@/lib/ensure-session";
 import { rupiah } from "@/lib/stock-format";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { assertDebtSource } from "@/lib/debt-source";
+import { logPartyWriteFailure } from "@/lib/contact-telemetry";
 import {
   appendDebtAction,
   useDebtActionLog,

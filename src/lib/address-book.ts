@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "./ensure-session";
 import { assertStorageAccess } from "./storage-access";
+import { logPartyWriteFailure } from "./contact-telemetry";
 import type { ImportedContact } from "./device-contacts";
 
 export type { AddressBookRow } from "./address-book.types";
