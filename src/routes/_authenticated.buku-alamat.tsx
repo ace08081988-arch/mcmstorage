@@ -240,7 +240,10 @@ function BukuAlamatPage() {
       toast.success("Kontak dihapus");
       setRows((rs) => rs.filter((r) => r.id !== row.id));
     } catch (e) {
-      notifyError(e);
+      const label = kind === "customer" ? "pelanggan" : "supplier";
+      if (!notifyRlsRelogin(e, { message: `Gagal menambahkan ${label}.`, onRetry: () => handlePromote(row, kind) })) {
+        notifyError(e);
+      }
     }
   };
 
