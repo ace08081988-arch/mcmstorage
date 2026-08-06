@@ -5,6 +5,7 @@ import {
   skipUnlessAuth,
   trustTestDevice,
 } from "./_helpers/auth-state";
+import { attachUiDiagnostics } from "./_helpers/ui-diagnostics";
 
 /**
  * E2E regresi: Buku Alamat PERNAH memblokir tombol "Simpan" ketika dua
@@ -97,10 +98,17 @@ async function currentUserId(page: Page): Promise<string | null> {
 test.describe("Buku Alamat — nama sama, nomor berbeda tetap bisa disimpan", () => {
   requireAuthState(test);
 
-  test("Simpan berhasil + toast benar; duplikat nomor tetap diblokir", async ({ page }) => {
+  test("Simpan berhasil + toast benar; duplikat nomor tetap diblokir", async ({ page }, testInfo) => {
+    // Rekam toast/dialog/console/HTTP sepanjang test — dilampirkan ke
+    // laporan sehingga penyebab "tombol Simpan tidak bekerja" langsung
+    // terbaca tanpa re-run manual.
+    const flushDiagnostics = await attachUiDiagnostics(page, testInfo);
     const cfg = readEnv();
     skipUnlessAuth(test, !cfg, "Kredensial Supabase tidak tersedia.");
-    if (!cfg) return;
+    if (!cfg) {
+      await flushDiagnostics();
+      return;
+    }
 
     await page.goto("/buku-alamat", { waitUntil: "domcontentloaded" });
     // Lewati guard verifikasi device baru (OTP email) untuk browser test.
@@ -125,7 +133,13 @@ test.describe("Buku Alamat — nama sama, nomor berbeda tetap bisa disimpan", ()
     const seeded = JSON.parse(seed.body) as Array<{ id: string }>;
     const cleanup = async () => {
       for (const r of seeded) {
-        await rest(page, cfg, `address_book?id=eq.${r.id}`, { method: "DELETE" });
+        // Jangan biarkan cleanup menutupi error asli (mis. saat page
+        // sudah tertutup karena timeout).
+        try {
+          await rest(page, cfg, `address_book?id=eq.${r.id}`, { method: "DELETE" });
+        } catch {
+          /* abaikan */
+        }
       }
     };
 
@@ -168,6 +182,7 @@ test.describe("Buku Alamat — nama sama, nomor berbeda tetap bisa disimpan", ()
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.keyboard.press("Escape");
     } finally {
+      await flushDiagnostics();
       await cleanup();
     }
   });
