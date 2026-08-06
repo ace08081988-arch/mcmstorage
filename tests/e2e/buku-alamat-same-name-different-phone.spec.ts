@@ -50,39 +50,47 @@ async function rest(
   path: string,
   init: { method: string; body?: unknown; headers?: Record<string, string> },
 ): Promise<{ status: number; body: string }> {
-  return page.evaluate(
-    async ({ cfg, path, init }) => {
-      const authKey = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k));
-      const token = authKey
-        ? (JSON.parse(localStorage.getItem(authKey) || "{}")?.access_token as string | undefined)
-        : undefined;
-      const res = await fetch(`${cfg.url}/rest/v1/${path}`, {
-        method: init.method,
-        headers: {
-          apikey: cfg.key,
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          "Content-Type": "application/json",
-          Prefer: "return=representation",
-          ...(init.headers ?? {}),
-        },
-        ...(init.body ? { body: JSON.stringify(init.body) } : {}),
-      });
-      return { status: res.status, body: await res.text() };
+  // Dijalankan lewat APIRequestContext (sisi Node), bukan `page.evaluate`,
+  // supaya seeding tidak gagal "Failed to fetch" ketika halaman kebetulan
+  // reload (cache-buster/HMR) di tengah permintaan.
+  const token = await accessToken(page);
+  const res = await page.request.fetch(`${cfg.url}/rest/v1/${path}`, {
+    method: init.method,
+    headers: {
+      apikey: cfg.key,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+      ...(init.headers ?? {}),
     },
-    { cfg, path, init },
-  );
+    ...(init.body ? { data: init.body } : {}),
+  });
+  return { status: res.status(), body: await res.text() };
 }
 
-async function currentUserId(page: Page): Promise<string | null> {
+/** Baca sesi Supabase dari localStorage (mendukung format `base64-…`). */
+async function readSession(page: Page): Promise<Record<string, any> | null> {
   return page.evaluate(() => {
     const authKey = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k));
     if (!authKey) return null;
     try {
-      return (JSON.parse(localStorage.getItem(authKey) || "{}")?.user?.id as string) ?? null;
+      let raw = localStorage.getItem(authKey) || "";
+      if (raw.startsWith("base64-")) raw = atob(raw.slice(7));
+      return JSON.parse(raw);
     } catch {
       return null;
     }
   });
+}
+
+async function accessToken(page: Page): Promise<string | undefined> {
+  const s = await readSession(page);
+  return (s?.access_token ?? s?.currentSession?.access_token) as string | undefined;
+}
+
+async function currentUserId(page: Page): Promise<string | null> {
+  const s = await readSession(page);
+  return (s?.user?.id ?? s?.currentSession?.user?.id ?? null) as string | null;
 }
 
 test.describe("Buku Alamat — nama sama, nomor berbeda tetap bisa disimpan", () => {
