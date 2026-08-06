@@ -1,4 +1,5 @@
 import type { Page, TestInfo } from "@playwright/test";
+import { writeFileSync } from "node:fs";
 
 /**
  * Diagnostik UI untuk spec E2E.
@@ -111,6 +112,13 @@ export async function attachUiDiagnostics(
       body: JSON.stringify(events, null, 2),
       contentType: "application/json",
     });
+    // Selalu tulis juga ke folder output test (test-results/<test>/) supaya
+    // bisa dibaca langsung tanpa membuka HTML report.
+    try {
+      writeFileSync(testInfo.outputPath("ui-diagnostics.log"), body, "utf8");
+    } catch {
+      /* abaikan */
+    }
 
     if (testInfo.status !== testInfo.expectedStatus) {
       // Ringkasan toast/dialog langsung ke stdout supaya terlihat di reporter list.
