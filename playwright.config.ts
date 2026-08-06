@@ -556,6 +556,12 @@ export default defineConfig({
         ...devices["Pixel 5"],
         viewport: { width: 411, height: 893 },
         storageState: "tests/visual/.auth/user.json",
+        // Artefak lengkap saat gagal: screenshot + video + trace, supaya
+        // penyebab "tombol Simpan tidak bekerja" (toast error, dialog
+        // yang tidak tertutup) bisa dilacak langsung dari laporan.
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
+        trace: "retain-on-failure",
       },
     },
     {
