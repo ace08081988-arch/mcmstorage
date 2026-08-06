@@ -113,7 +113,21 @@ async function renderPanel() {
       </QueryClientProvider>,
     );
   });
-  await act(async () => { await Promise.resolve(); });
+  await waitForRegisterButton();
+}
+
+async function waitForRegisterButton() {
+  for (let i = 0; i < 50; i++) {
+    await act(async () => { await new Promise((r) => setTimeout(r, 10)); });
+    const btns = Array.from(container.querySelectorAll("button")) as HTMLButtonElement[];
+    if (btns.some((b) => /pelanggan/i.test(b.textContent ?? ""))) return;
+  }
+}
+
+async function flush() {
+  for (let i = 0; i < 10; i++) {
+    await act(async () => { await new Promise((r) => setTimeout(r, 5)); });
+  }
 }
 
 function findRegisterButton(): HTMLButtonElement {
@@ -140,7 +154,7 @@ describe("DebtQuickActions.registerParty dengan sesi expired", () => {
   it("memanggil ensureFreshSession (refresh) sebelum insert customers", async () => {
     await renderPanel();
     await act(async () => { findRegisterButton().click(); });
-    await act(async () => { await Promise.resolve(); });
+    await flush();
 
     const ops = calls.map((c) => c.op);
     const iRefresh = ops.indexOf("refreshSession");
@@ -154,7 +168,7 @@ describe("DebtQuickActions.registerParty dengan sesi expired", () => {
   it("insert memakai uid hasil refresh, bukan uid basi dari state", async () => {
     await renderPanel();
     await act(async () => { findRegisterButton().click(); });
-    await act(async () => { await Promise.resolve(); });
+    await flush();
 
     const insert = calls.find((c) => c.op === "insert");
     expect(insert?.table).toBe("customers");
@@ -167,7 +181,7 @@ describe("DebtQuickActions.registerParty dengan sesi expired", () => {
     sessionMode = "gone";
     await renderPanel();
     await act(async () => { findRegisterButton().click(); });
-    await act(async () => { await Promise.resolve(); });
+    await flush();
 
     expect(calls.some((c) => c.op === "insert")).toBe(false);
     expect(toastCalls.some((t) => /Sesi berakhir/i.test(t))).toBe(true);
@@ -177,7 +191,7 @@ describe("DebtQuickActions.registerParty dengan sesi expired", () => {
     refreshFails = true;
     await renderPanel();
     await act(async () => { findRegisterButton().click(); });
-    await act(async () => { await Promise.resolve(); });
+    await flush();
 
     expect(calls.some((c) => c.op === "insert")).toBe(false);
   });
@@ -186,7 +200,7 @@ describe("DebtQuickActions.registerParty dengan sesi expired", () => {
     insertError = { code: "42501", message: "new row violates row-level security policy" };
     await renderPanel();
     await act(async () => { findRegisterButton().click(); });
-    await act(async () => { await Promise.resolve(); });
+    await flush();
 
     expect(calls.some((c) => c.op === "telemetry")).toBe(true);
     expect(toastCalls.some((t) => /^error:Gagal mendaftarkan pelanggan/.test(t))).toBe(true);
