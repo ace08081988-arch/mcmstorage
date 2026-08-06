@@ -36,7 +36,8 @@ const LIMITS: Record<keyof ScanOptions, { min: number; max: number }> = {
 
 /** Bulatkan nilai ke rentang aman; kembalikan fallback bila tidak valid. */
 export function clampOption(key: keyof ScanOptions, value: unknown, fallback: number): number {
-  const n = typeof value === "number" ? value : Number(String(value ?? "").trim());
+  if (value === undefined || value === null || String(value).trim() === "") return fallback;
+  const n = typeof value === "number" ? value : Number(String(value).trim());
   if (!Number.isFinite(n)) return fallback;
   const { min, max } = LIMITS[key];
   return Math.min(max, Math.max(min, Math.round(n)));
