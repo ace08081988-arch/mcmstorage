@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import {
   Boxes,
   CheckCircle2,
@@ -17,31 +18,8 @@ const DESC =
 
 export const Route = createFileRoute("/produk")({
   head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESC },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESC },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.app/produk" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.app/produk" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          name: "Ace Storage",
-          applicationCategory: "BusinessApplication",
-          operatingSystem: "Android, Web",
-          description: DESC,
-          publisher: { "@type": "Organization", name: "Ace Storage" },
-        }),
-      },
-    ],
-  }),
+    meta: socialMeta({ title: TITLE, description: DESC, url: "/produk" }),
+    links: [canonical("/produk")],
   component: ProdukPage,
 });
 
