@@ -21,7 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/admin-denial-log")({
   head: () => ({
     meta: [
-      { title: "Log Penolakan Admin · MCM Storage" },
+      { title: "Log Penolakan Admin · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

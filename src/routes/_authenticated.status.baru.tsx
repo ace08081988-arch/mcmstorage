@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/status/baru")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Buat Status · MCM Storage" },
+      { title: "Buat Status · Ace Storage" },
       { name: "description", content: "Unggah foto, video, atau tulis teks untuk status Anda." },
       { name: "robots", content: "noindex,nofollow" },
     ],

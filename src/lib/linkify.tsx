@@ -116,7 +116,7 @@ function labelFor(host: string): { kind: string; emoji: string } {
     return { kind: "Shopee", emoji: "🛒" };
   if (h.endsWith("tokopedia.com")) return { kind: "Tokopedia", emoji: "🛍️" };
   if (h.endsWith("mcmstorage.biz") || h.endsWith("mcmstorage.lovable.app"))
-    return { kind: "MCM Storage", emoji: "📦" };
+    return { kind: "Ace Storage", emoji: "📦" };
   return { kind: "Tautan", emoji: "🔗" };
 }
 

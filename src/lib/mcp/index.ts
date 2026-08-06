@@ -13,10 +13,10 @@ const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unse
 
 export default defineMcp({
   name: "mcm-storage-mcp",
-  title: "MCM Storage",
+  title: "Ace Storage",
   version: "0.1.0",
   instructions:
-    "Tools untuk MCM Storage / Toko Kifa. Setiap tool berjalan sebagai user MCM Storage yang sedang terhubung — data tenant lain tidak dapat diakses. Gunakan `whoami` untuk verifikasi koneksi, `list_produk` untuk melihat stok gudang, dan `ringkasan_piutang` untuk melihat total piutang.",
+    "Tools untuk Ace Storage / Toko Kifa. Setiap tool berjalan sebagai user Ace Storage yang sedang terhubung — data tenant lain tidak dapat diakses. Gunakan `whoami` untuk verifikasi koneksi, `list_produk` untuk melihat stok gudang, dan `ringkasan_piutang` untuk melihat total piutang.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",

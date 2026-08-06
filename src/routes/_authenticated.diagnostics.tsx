@@ -17,7 +17,7 @@ import reactQueryPkg from "@tanstack/react-query/package.json";
 export const Route = createFileRoute("/_authenticated/diagnostics")({
   head: () => ({
     meta: [
-      { title: "Diagnostik · MCM Storage" },
+      { title: "Diagnostik · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -81,7 +81,7 @@ async function runBrowserChecks(): Promise<Check[]> {
     ok: canShareFiles,
     detail: canShareFiles
       ? "Browser mengizinkan share file — foto bisa ikut terkirim."
-      : "Browser tidak mengizinkan share file. Foto perlu dilampirkan manual di MCM.",
+      : "Browser tidak mengizinkan share file. Foto perlu dilampirkan manual di Ace.",
   });
 
   const hasClipboard = typeof navigator !== "undefined" && !!navigator.clipboard?.writeText;
@@ -201,7 +201,7 @@ function DiagnosticsPage() {
   }
 
   async function testCopy() {
-    const res = await copyText("MCM Storage clipboard test " + new Date().toISOString());
+    const res = await copyText("Ace Storage clipboard test " + new Date().toISOString());
     if (res.ok) toast.success("Tes salin berhasil — clipboard berfungsi.");
     else if (res.reason === "denied") toast.error("Izin clipboard ditolak browser.");
     else toast.error("Browser tak mendukung salin otomatis.");
@@ -213,7 +213,7 @@ function DiagnosticsPage() {
       return;
     }
     try {
-      await navigator.share({ title: "MCM Storage", text: "Tes Web Share", url: window.location.origin });
+      await navigator.share({ title: "Ace Storage", text: "Tes Web Share", url: window.location.origin });
       toast.success("Web Share API berfungsi.");
     } catch (err) {
       const name = (err as DOMException)?.name;
@@ -224,7 +224,7 @@ function DiagnosticsPage() {
 
   function buildSummary(): string {
     return buildDiagnosticsSummary({
-      appName: "MCM Storage",
+      appName: "Ace Storage",
       timestamp: new Date(),
       packages: packages.map((p) => ({ name: p.name, version: p.version })),
       checks: [...checks, ...browserChecks].map((c) => ({ label: c.label, ok: c.ok, detail: c.detail })),

@@ -33,7 +33,7 @@ export default defineTool({
   name: "detail_piutang",
   title: "Detail piutang",
   description:
-    "Daftar piutang per pelanggan (bukan ringkasan) untuk user MCM Storage yang sedang terhubung. Menggabungkan sales (payment_method='hutang') dan debts (kind='piutang'), dikurangi pembayaran masing-masing. Mendukung filter rentang tanggal (from/to, ISO YYYY-MM-DD), status ('outstanding'|'paid'|'all'), pencarian nama pelanggan, dan limit hasil.",
+    "Daftar piutang per pelanggan (bukan ringkasan) untuk user Ace Storage yang sedang terhubung. Menggabungkan sales (payment_method='hutang') dan debts (kind='piutang'), dikurangi pembayaran masing-masing. Mendukung filter rentang tanggal (from/to, ISO YYYY-MM-DD), status ('outstanding'|'paid'|'all'), pencarian nama pelanggan, dan limit hasil.",
   inputSchema: {
     from: z
       .string()

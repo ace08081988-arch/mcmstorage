@@ -55,7 +55,7 @@ function formatCountdown(ms: number): { text: string; tone: "ok" | "warn" | "dan
 export const Route = createFileRoute("/_authenticated/link-pegawai")({
   head: () => ({
     meta: [
-      { title: "Link Pegawai · MCM Storage" },
+      { title: "Link Pegawai · Ace Storage" },
       { name: "description", content: "Daftar semua link tugas pegawai dengan status ketersediaan." },
     ],
   }),
@@ -992,7 +992,7 @@ function LinkPegawaiPage() {
                   <Copy className="h-4 w-4" /> Salin
                 </Button>
                 <Button className="flex-1 bg-success hover:bg-success/90" onClick={() => void sharePinToWa()}>
-                  <MessageCircle className="h-4 w-4" /> Kirim via MCM
+                  <MessageCircle className="h-4 w-4" /> Kirim via Ace
                 </Button>
               </div>
               <DialogFooter>

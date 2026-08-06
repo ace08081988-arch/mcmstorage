@@ -5,17 +5,17 @@ import { PublicHeader } from "@/components/PublicHeader";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Syarat & Ketentuan — MCM Storage" },
+      { title: "Syarat & Ketentuan — Ace Storage" },
       {
         name: "description",
         content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh Mcm. Aplikasi saat ini gratis tanpa pembayaran daring.",
+          "Syarat dan Ketentuan penggunaan Ace Storage, dioperasikan oleh Mcm. Aplikasi saat ini gratis tanpa pembayaran daring.",
       },
-      { property: "og:title", content: "Syarat & Ketentuan — MCM Storage" },
+      { property: "og:title", content: "Syarat & Ketentuan — Ace Storage" },
       {
         property: "og:description",
         content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh Mcm.",
+          "Syarat dan Ketentuan penggunaan Ace Storage, dioperasikan oleh Mcm.",
       },
     ],
     links: [{ rel: "canonical", href: "https://mcmstorage.app/terms" }],
@@ -51,7 +51,7 @@ function TermsPage() {
         <div className="space-ms-4">
           <Section title="1. Penjual">
             <p>
-              Layanan MCM Storage (selanjutnya "<strong>Layanan</strong>")
+              Layanan Ace Storage (selanjutnya "<strong>Layanan</strong>")
               disediakan dan dioperasikan oleh <strong>Mcm</strong>{" "}
               (selanjutnya "<strong>kami</strong>", "<strong>kita</strong>",
               atau "<strong>Penjual</strong>"). Dengan menggunakan Layanan,
@@ -70,7 +70,7 @@ function TermsPage() {
 
           <Section title="3. Deskripsi layanan">
             <p>
-              MCM Storage adalah aplikasi pengelolaan pesanan harian, stok
+              Ace Storage adalah aplikasi pengelolaan pesanan harian, stok
               gudang, hutang–piutang, dan komunikasi cepat ke pelanggan/
               pemasok melalui WhatsApp dan email. Akses dibatasi untuk
               pengguna yang sudah login.

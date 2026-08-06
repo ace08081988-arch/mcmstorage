@@ -137,7 +137,7 @@ export function buildAnchorLogExport(): AnchorLogExport {
 export function buildAnchorLogText(): string {
   const data = buildAnchorLogExport();
   const lines: string[] = [
-    "=== MCM · Log viewport-anchor ===",
+    "=== Ace · Log viewport-anchor ===",
     `Waktu   : ${new Date(data.generatedAt).toLocaleString("id-ID")}`,
     `Device  : ${data.device.deviceKey ?? "-"} · ${data.device.screen ?? "-"} @${data.device.dpr ?? "-"}x (${data.device.orientation ?? "-"})`,
     `UA      : ${data.device.userAgent ?? "-"}`,

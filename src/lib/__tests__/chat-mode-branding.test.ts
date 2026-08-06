@@ -17,8 +17,8 @@ const BASE_HEAD = `
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width" />
   <meta name="theme-color" content="#0f172a" />
-  <meta name="apple-mobile-web-app-title" content="MCM Storage" />
-  <meta name="application-name" content="MCM Storage" />
+  <meta name="apple-mobile-web-app-title" content="Ace Storage" />
+  <meta name="application-name" content="Ace Storage" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
@@ -29,7 +29,7 @@ const BASE_HEAD = `
 
 function resetHead() {
   document.head.innerHTML = BASE_HEAD;
-  document.title = "MCM Storage";
+  document.title = "Ace Storage";
 }
 
 function stripQuery(href: string | null): string | null {
@@ -59,10 +59,10 @@ describe("applyChatModeBranding — mode chat aktif", () => {
     window.localStorage.setItem("mcm.appMode", "chat");
   });
 
-  it("mengubah document.title menjadi 'MCM Chat'", async () => {
+  it("mengubah document.title menjadi 'Ace Chat'", async () => {
     const { applyChatModeBranding } = await loadModule();
     applyChatModeBranding();
-    expect(document.title).toBe("MCM Chat");
+    expect(document.title).toBe("Ace Chat");
   });
 
   it("menyetel meta apple-mobile-web-app-title, application-name, theme-color", async () => {
@@ -72,8 +72,8 @@ describe("applyChatModeBranding — mode chat aktif", () => {
       document
         .querySelector<HTMLMetaElement>(`meta[name="${name}"]`)
         ?.getAttribute("content");
-    expect(get("apple-mobile-web-app-title")).toBe("MCM Chat");
-    expect(get("application-name")).toBe("MCM Chat");
+    expect(get("apple-mobile-web-app-title")).toBe("Ace Chat");
+    expect(get("application-name")).toBe("Ace Chat");
     expect(get("theme-color")).toBe("#064e3b");
   });
 
@@ -187,13 +187,13 @@ describe("applyChatModeBranding — pindah balik ke mode full", () => {
     window.localStorage.setItem("mcm.appMode", "chat");
     const mod = await loadModule();
     mod.applyChatModeBranding();
-    expect(document.title).toBe("MCM Chat");
+    expect(document.title).toBe("Ace Chat");
 
     // Toggle balik ke full (nilai default saat key dihapus).
     window.localStorage.removeItem("mcm.appMode");
     mod.applyChatModeBranding();
 
-    expect(document.title).toBe("MCM Storage");
+    expect(document.title).toBe("Ace Storage");
     expect(
       document
         .querySelector<HTMLMetaElement>('meta[name="theme-color"]')

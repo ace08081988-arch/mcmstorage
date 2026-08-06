@@ -51,7 +51,7 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-info-soft: var(--info-soft);
-  /* Kanal WhatsApp / MCM — satu sumber warna untuk semua tombol kirim. */
+  /* Kanal WhatsApp / Ace — satu sumber warna untuk semua tombol kirim. */
   --color-wa: var(--wa);
   --color-wa-foreground: var(--wa-foreground);
   --color-wa-strong: var(--wa-strong);
@@ -846,13 +846,13 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
 }
 
 /* ==========================================================================
-   MCM chat surface (dark-first, light fallback).
+   Ace chat surface (dark-first, light fallback).
    Dipakai di halaman /chat, /chat/$conversationId, /profil-chat.
-   Palet aksen memakai warna brand MCM (teal) supaya konsisten dengan label
-   "MCM" — token --wa-* dipertahankan sebagai alias agar file lain tetap kompatibel.
+   Palet aksen memakai warna brand Ace (teal) supaya konsisten dengan label
+   "Ace" — token --wa-* dipertahankan sebagai alias agar file lain tetap kompatibel.
    ========================================================================== */
 :root {
-  /* Brand MCM mengikuti aksen aktif (--primary) supaya preset & pilihan
+  /* Brand Ace mengikuti aksen aktif (--primary) supaya preset & pilihan
      aksen di /pengaturan-tampilan juga mewarnai halaman chat & profil-chat. */
   --mcm-brand: var(--primary, #0f766e);
   --mcm-brand-strong: color-mix(in oklab, var(--primary, #0f766e) 80%, black 20%);

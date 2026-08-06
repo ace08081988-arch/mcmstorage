@@ -77,7 +77,7 @@ async function scrollToTop(page: import("@playwright/test").Page): Promise<void>
   });
 }
 
-test.describe("scroll-up load-more + reload berulang — PIN MCM stabil", () => {
+test.describe("scroll-up load-more + reload berulang — PIN Ace stabil", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("buka DM → wave load-more → reload×N: header/transkrip tetap PIN xxxx-xxxx, no phone", async ({

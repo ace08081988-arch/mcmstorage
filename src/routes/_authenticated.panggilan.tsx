@@ -18,8 +18,8 @@ export const Route = createFileRoute("/_authenticated/panggilan")({
   component: PanggilanPage,
   head: () => ({
     meta: [
-      { title: "Panggilan · MCM" },
-      { name: "description", content: "Riwayat panggilan suara & video MCM Chat." },
+      { title: "Panggilan · Ace" },
+      { name: "description", content: "Riwayat panggilan suara & video Ace Chat." },
     ],
   }),
 });

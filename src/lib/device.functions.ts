@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createHash, randomInt, randomUUID, timingSafeEqual } from "crypto";
 
 const SENDER_DOMAIN = "notify.mcmstorage.biz";
-const FROM_ADDRESS = `MCM Storage <noreply@${SENDER_DOMAIN}>`;
+const FROM_ADDRESS = `Ace Storage <noreply@${SENDER_DOMAIN}>`;
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -132,9 +132,9 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
       }
     }
 
-    const subject = "Kode verifikasi device — MCM Storage";
+    const subject = "Kode verifikasi device — Ace Storage";
     const html = renderOtpEmail(code, ip, ua);
-    const text = `Kode verifikasi device MCM Storage Anda: ${code}\nBerlaku 10 menit.\nIP: ${ip}\nDevice: ${ua}\nJika bukan Anda, segera ganti kata sandi.`;
+    const text = `Kode verifikasi device Ace Storage Anda: ${code}\nBerlaku 10 menit.\nIP: ${ip}\nDevice: ${ua}\nJika bukan Anda, segera ganti kata sandi.`;
 
     let emailSent = false;
     let emailError: string | null = null;
@@ -371,7 +371,7 @@ function renderOtpEmail(code: string, ip: string, ua: string) {
   <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px">
     <h1 style="font-size:18px;margin:0 0 8px">Verifikasi device baru</h1>
     <p style="font-size:14px;color:#475569;margin:0 0 16px">
-      Ada permintaan masuk MCM Storage dari device baru. Masukkan kode berikut untuk melanjutkan.
+      Ada permintaan masuk Ace Storage dari device baru. Masukkan kode berikut untuk melanjutkan.
     </p>
     <div style="font-size:34px;font-weight:700;letter-spacing:8px;text-align:center;background:#f1f5f9;border-radius:8px;padding:16px;margin:16px 0">
       ${code}

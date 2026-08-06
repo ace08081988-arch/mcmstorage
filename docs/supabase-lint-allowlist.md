@@ -8,7 +8,7 @@ The two Supabase lints
 - `0028_anon_security_definer_function_executable`
 - `0029_authenticated_security_definer_function_executable`
 
-fire on every `SECURITY DEFINER` function in `public` that has `EXECUTE` granted to `anon` / `authenticated`. Because MCM's architecture uses `SECURITY DEFINER` deliberately in several distinct roles, we suppress these findings **per architectural bucket**, not per function. Each bucket has a stable `category` key and its own `reason` field; adding a new function to an existing bucket is a routine change, adding a new bucket requires a documented architectural justification.
+fire on every `SECURITY DEFINER` function in `public` that has `EXECUTE` granted to `anon` / `authenticated`. Because Ace's architecture uses `SECURITY DEFINER` deliberately in several distinct roles, we suppress these findings **per architectural bucket**, not per function. Each bucket has a stable `category` key and its own `reason` field; adding a new function to an existing bucket is a routine change, adding a new bucket requires a documented architectural justification.
 
 ## Bucket catalogue
 

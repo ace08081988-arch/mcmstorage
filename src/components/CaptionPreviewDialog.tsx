@@ -56,7 +56,7 @@ export function CaptionPreviewDialog({
   onSaveLocation?: (url: string) => Promise<void>;
 }) {
   const Icon = channel === "chat" ? MessageCircle : Send;
-  const channelLabel = channel === "chat" ? "MCM Chat" : "WhatsApp";
+  const channelLabel = channel === "chat" ? "Ace Chat" : "WhatsApp";
   const defaultConfirm =
     channel === "chat" ? "Kirim Chat sekarang" : "Kirim WA sekarang";
 

@@ -80,7 +80,7 @@ function extractErrorFields(err: unknown): Pick<AccessDeniedTelemetry, "code" | 
  * True saat error berasal dari policy RLS / Postgres yang menolak akses
  * (kode 42501) atau PostgREST 301 (JWT tidak mengizinkan). Toast untuk
  * kasus ini seharusnya menampilkan tombol menuju halaman pengaturan akses
- * (`/profil`), tempat pengguna bisa upgrade akun MCM Chat → MCM Storage.
+ * (`/profil`), tempat pengguna bisa upgrade akun Ace Chat → Ace Storage.
  */
 export function isAccessDeniedError(err: unknown): boolean {
   if (!err) return false;
@@ -203,7 +203,7 @@ export function notifyError(
     });
     return toast.error(msg, {
       description:
-        "Akun Anda mungkin masih MCM Chat saja. Buka Profil untuk upgrade ke MCM Storage.",
+        "Akun Anda mungkin masih Ace Chat saja. Buka Profil untuk upgrade ke Ace Storage.",
       action: {
         label: "Perbaiki Akses",
         onClick: () => {

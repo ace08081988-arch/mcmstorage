@@ -44,13 +44,13 @@ import { getViewportAnchorConfig } from "@/lib/viewport-anchor-config";
 export const Route = createFileRoute("/_authenticated/diagnostik-viewport")({
   head: () => ({
     meta: [
-      { title: "Diagnostik viewport · MCM Storage" },
+      { title: "Diagnostik viewport · Ace Storage" },
       {
         name: "description",
         content:
           "Rekam dan ekspor log peristiwa viewport-anchor: penyusutan, klasifikasi mode, dan offset bar bawah.",
       },
-      { property: "og:title", content: "Diagnostik viewport · MCM Storage" },
+      { property: "og:title", content: "Diagnostik viewport · Ace Storage" },
       {
         property: "og:description",
         content: "Log shrink, klasifikasi, dan offset bar bawah untuk debugging perangkat low-end.",

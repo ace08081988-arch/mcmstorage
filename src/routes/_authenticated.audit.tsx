@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
     meta: [
-      { title: "Audit Rute · MCM Storage" },
+      { title: "Audit Rute · Ace Storage" },
       { name: "description", content: "Halaman audit internal: laporan otomatis status tiap menu/rute pada tampilan Ringkas & Normal. Tidak mengubah data atau environment." },
       { name: "robots", content: "noindex,nofollow" },
     ],
@@ -147,7 +147,7 @@ function AuditPage() {
 
   function exportReport() {
     const mode = currentMode();
-    const header = `MCM Storage — Laporan Audit Rute\nWaktu ekspor: ${nowIso()}\nMode saat ekspor: ${mode}\nOK: ${okCount} · Gagal: ${failCount} · Total: ${rows.length}\n\n`;
+    const header = `Ace Storage — Laporan Audit Rute\nWaktu ekspor: ${nowIso()}\nMode saat ekspor: ${mode}\nOK: ${okCount} · Gagal: ${failCount} · Total: ${rows.length}\n\n`;
     const rowsTxt = rows
       .map((r) =>
         `${(r.status.toUpperCase()).padEnd(7)} ${r.to.padEnd(22)} ${(r.ms ?? "-")}ms  mode=${r.mode ?? "-"}  at=${r.at ?? "-"}` +

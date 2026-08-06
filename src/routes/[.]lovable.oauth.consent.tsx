@@ -92,10 +92,10 @@ function Consent() {
     <main className="mx-auto max-w-md p-6">
       <div className="rounded-2xl border bg-card p-6 shadow-sm">
         <h1 className="text-lg font-semibold tracking-tight">
-          Hubungkan {clientName} ke akun MCM Storage Anda
+          Hubungkan {clientName} ke akun Ace Storage Anda
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {clientName} akan bisa memanggil tool MCM Storage sebagai Anda —
+          {clientName} akan bisa memanggil tool Ace Storage sebagai Anda —
           semua akses tetap tunduk pada aturan keamanan aplikasi (RLS
           multi-tenant), jadi data tenant lain tidak dapat diakses.
         </p>

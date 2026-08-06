@@ -48,7 +48,7 @@ export const Route = createFileRoute("/lovable/visual/menu-variants")({
   }),
   head: () => ({
     meta: [
-      { title: "Audit Visual Menu — MCM" },
+      { title: "Audit Visual Menu — Ace" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

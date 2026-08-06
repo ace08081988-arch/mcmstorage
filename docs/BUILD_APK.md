@@ -1,4 +1,4 @@
-# Build APK MCM Storage / MCM Chat
+# Build APK Ace Storage / Ace Chat
 
 Panduan cepat generate APK dari Android Studio dengan langkah minim error.
 Script `scripts/build-apk.mjs` men-cover semua pre-flight (typecheck, cek
@@ -26,13 +26,13 @@ karena error yang sebetulnya bisa ketahuan lebih awal.
 
 ## Build harian (2 perintah)
 
-### Varian MCM Storage (full)
+### Varian Ace Storage (full)
 ```bash
 bun run apk:build         # typecheck → vite build → cap sync android
 bun run apk:open          # buka Android Studio
 ```
 
-### Varian MCM Chat
+### Varian Ace Chat
 ```bash
 bun run apk:build:chat
 bun run apk:open

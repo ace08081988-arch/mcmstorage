@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/pengaturan-kunci")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Pengaturan Kunci Aplikasi · MCM Storage" },
+      { title: "Pengaturan Kunci Aplikasi · Ace Storage" },
       {
         name: "description",
         content:
@@ -257,7 +257,7 @@ function PengaturanKunci() {
     if (!opened) {
       toast.error(
         bioStatus.native
-          ? "Tidak bisa membuka halaman izin. Buka manual: Setelan → Aplikasi → MCM Storage → Izin."
+          ? "Tidak bisa membuka halaman izin. Buka manual: Setelan → Aplikasi → Ace Storage → Izin."
           : "Hanya tersedia di APK Android",
       );
     } else {
@@ -370,7 +370,7 @@ function PengaturanKunci() {
         <div>
           <div className="text-ms-sm font-medium">Nama Toko</div>
           <div className="text-ms-xs text-muted-foreground">
-            Dipakai otomatis di caption MCM saat mengirim paket
+            Dipakai otomatis di caption Ace saat mengirim paket
             (mis. <em>“PEMBAYARAN DIKONFIRMASI - {shopSaved || "NAMA TOKO"}”</em>).
           </div>
         </div>
@@ -684,7 +684,7 @@ function PengaturanKunci() {
               if (bioStatus.permission === "denied") {
                 recs.push({
                   key: "perm",
-                  text: "Izin sidik jari ditolak. Buka Pengaturan Sistem → Aplikasi → izinkan Biometrik untuk MCM Storage.",
+                  text: "Izin sidik jari ditolak. Buka Pengaturan Sistem → Aplikasi → izinkan Biometrik untuk Ace Storage.",
                   action: permAction,
                 });
               } else if (bioStatus.permission === "unknown") {

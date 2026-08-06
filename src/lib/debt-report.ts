@@ -91,6 +91,6 @@ export function buildDebtReport({
     }
   }
   lines.push("");
-  lines.push("_Sumber angka: buku Hutang & Piutang MCM Storage._");
+  lines.push("_Sumber angka: buku Hutang & Piutang Ace Storage._");
   return lines.join("\n");
 }

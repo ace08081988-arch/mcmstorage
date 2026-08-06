@@ -78,7 +78,7 @@ export function buildDebtReportCsv(p: DebtExportPayload): string {
     );
   }
   lines.push("");
-  lines.push(cell("Sumber angka: buku Hutang & Piutang MCM Storage (party_balance_v1)."));
+  lines.push(cell("Sumber angka: buku Hutang & Piutang Ace Storage (party_balance_v1)."));
   return lines.join("\n");
 }
 
@@ -153,7 +153,7 @@ export async function buildDebtReportPdf(p: DebtExportPayload): Promise<Blob> {
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
   doc.text(
-    "Sumber angka: buku Hutang & Piutang MCM Storage (party_balance_v1).",
+    "Sumber angka: buku Hutang & Piutang Ace Storage (party_balance_v1).",
     margin,
     y,
   );

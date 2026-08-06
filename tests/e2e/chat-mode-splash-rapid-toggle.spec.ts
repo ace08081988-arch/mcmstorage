@@ -16,7 +16,7 @@ import { test, expect } from "@playwright/test";
 
 const URL = "/download";
 const SESSION_KEY = "mcm.chat.splashShown";
-const SPLASH_NAME = "Memuat MCM Chat";
+const SPLASH_NAME = "Memuat Ace Chat";
 
 async function seedChatMode(context: import("@playwright/test").BrowserContext) {
   await context.addInitScript(() => {
@@ -44,7 +44,7 @@ test.describe("ChatModeSplash · rapid toggle prefers-reduced-motion", () => {
       (window as unknown as { __opacityLog: string[] }).__opacityLog = [];
       const obs = new MutationObserver(() => {
         const el = document.querySelector<HTMLElement>(
-          '[aria-label="Memuat MCM Chat"]',
+          '[aria-label="Memuat Ace Chat"]',
         );
         if (!el) return;
         const log = (window as unknown as { __opacityLog: string[] })
@@ -124,7 +124,7 @@ test.describe("ChatModeSplash · rapid toggle prefers-reduced-motion", () => {
       (window as unknown as { __opacityLog: string[] }).__opacityLog = [];
       const obs = new MutationObserver(() => {
         const el = document.querySelector<HTMLElement>(
-          '[aria-label="Memuat MCM Chat"]',
+          '[aria-label="Memuat Ace Chat"]',
         );
         if (!el) return;
         const log = (window as unknown as { __opacityLog: string[] })

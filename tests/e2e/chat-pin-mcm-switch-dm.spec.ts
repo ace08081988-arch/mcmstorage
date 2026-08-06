@@ -48,10 +48,10 @@ test.describe("switch DM — source guard", () => {
   });
 });
 
-test.describe("switch DM — runtime PIN MCM per percakapan", () => {
+test.describe("switch DM — runtime PIN Ace per percakapan", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
-  test("DM A → DM B → DM A: header & transkrip PIN MCM konsisten per konvo", async ({ page }) => {
+  test("DM A → DM B → DM A: header & transkrip PIN Ace konsisten per konvo", async ({ page }) => {
     await page.goto("/chat");
     await page.waitForLoadState("networkidle");
 

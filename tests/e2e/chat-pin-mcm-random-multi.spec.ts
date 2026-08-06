@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * E2E — Fuzz PIN MCM lintas beberapa percakapan acak: untuk setiap DM
+ * E2E — Fuzz PIN Ace lintas beberapa percakapan acak: untuk setiap DM
  * yang terpilih (hingga 5 acak) header dan transkrip wajib:
  *   - Bebas nomor telepon Indonesia mentah pada fase awal, setelah
  *     reload, dan setelah scroll load-more.
@@ -37,7 +37,7 @@ function hasAuthState(): boolean {
   }
 }
 
-test.describe("fuzz PIN MCM lintas DM acak — source guards", () => {
+test.describe("fuzz PIN Ace lintas DM acak — source guards", () => {
   test("chat.$conversationId: identitas terikat Route.useParams, tanpa fallback .phone", () => {
     const src = readFileSync(
       resolve(process.cwd(), "src/routes/_authenticated.chat.$conversationId.tsx"),
@@ -57,7 +57,7 @@ test.describe("fuzz PIN MCM lintas DM acak — source guards", () => {
   });
 });
 
-test.describe("fuzz PIN MCM lintas DM acak — runtime", () => {
+test.describe("fuzz PIN Ace lintas DM acak — runtime", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("hingga 5 DM acak: header + transkrip PIN xxxx-xxxx, tanpa nomor telp mentah, identitas unik per konvo", async ({

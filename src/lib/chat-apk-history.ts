@@ -1,5 +1,5 @@
 /**
- * Riwayat versi APK MCM Chat yang pernah diunduh dari perangkat ini.
+ * Riwayat versi APK Ace Chat yang pernah diunduh dari perangkat ini.
  * Disimpan di localStorage — per-perangkat, tidak lintas-device.
  *
  * Bentuk entri: { name, versionName, versionCode, url, sizeMB, downloadedAt }

@@ -75,10 +75,10 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Masuk atau Daftar — MCM Storage" },
-      { name: "description", content: "Masuk ke akun MCM Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
-      { property: "og:title", content: "Masuk atau Daftar — MCM Storage" },
-      { property: "og:description", content: "Masuk ke akun MCM Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
+      { title: "Masuk atau Daftar — Ace Storage" },
+      { name: "description", content: "Masuk ke akun Ace Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
+      { property: "og:title", content: "Masuk atau Daftar — Ace Storage" },
+      { property: "og:description", content: "Masuk ke akun Ace Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://mcmstorage.app/auth" },
     ],
@@ -428,9 +428,9 @@ function AuthPage() {
               onClick={() => { setIntent("storage"); setMode("login"); }}
               className="w-full rounded-md border bg-background p-ms-3 text-left hover:bg-accent"
             >
-              <div className="text-ms-sm font-semibold">Saya sudah pakai MCM Storage</div>
+              <div className="text-ms-sm font-semibold">Saya sudah pakai Ace Storage</div>
               <div className="text-ms-2xs text-muted-foreground">
-                Masuk dengan akun MCM Storage Anda — semua fitur (gudang, ecer, chat) aktif.
+                Masuk dengan akun Ace Storage Anda — semua fitur (gudang, ecer, chat) aktif.
               </div>
             </button>
             <button
@@ -440,11 +440,11 @@ function AuthPage() {
             >
               <div className="text-ms-sm font-semibold">Daftar akun chat baru</div>
               <div className="text-ms-2xs text-muted-foreground">
-                Buat akun untuk MCM Chat saja. Bisa upgrade ke Storage kapan pun tanpa daftar ulang.
+                Buat akun untuk Ace Chat saja. Bisa upgrade ke Storage kapan pun tanpa daftar ulang.
               </div>
             </button>
             <p className="text-center text-ms-2xs text-muted-foreground">
-              Satu akun berlaku di MCM Storage & MCM Chat.
+              Satu akun berlaku di Ace Storage & Ace Chat.
             </p>
           </div>
         ) : (
@@ -454,7 +454,7 @@ function AuthPage() {
           onClick={() => setIntent(null)}
           className="w-full text-left text-ms-2xs text-muted-foreground hover:underline"
         >
-          ← Ubah pilihan {intent === "chat" ? "(Akun chat baru)" : "(MCM Storage)"}
+          ← Ubah pilihan {intent === "chat" ? "(Akun chat baru)" : "(Ace Storage)"}
         </button>
 
         <div className="grid grid-cols-2 gap-ms-1 rounded-md border bg-muted/40 p-ms-1 text-ms-xs">

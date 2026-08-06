@@ -16,7 +16,7 @@ import { useAdminStatus } from "@/hooks/use-is-admin";
 export const Route = createFileRoute("/_authenticated/admin/portal-error-log")({
   head: () => ({
     meta: [
-      { title: "Log Error Portal Publik · MCM Storage" },
+      { title: "Log Error Portal Publik · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

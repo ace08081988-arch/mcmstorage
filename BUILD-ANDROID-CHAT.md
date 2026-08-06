@@ -1,15 +1,15 @@
-# Build APK MCM Chat (chat-only)
+# Build APK Ace Chat (chat-only)
 
-Codebase yang sama seperti MCM Storage, hanya UI storage disembunyikan
+Codebase yang sama seperti Ace Storage, hanya UI storage disembunyikan
 lewat flag `VITE_APP_MODE=chat`. Backend Lovable Cloud tetap SATU — user
-MCM Chat dan MCM Storage saling terhubung (kontak, pesan, notifikasi).
+Ace Chat dan Ace Storage saling terhubung (kontak, pesan, notifikasi).
 
 ## Perbedaan dengan APK penuh
 
-|                  | MCM Storage          | MCM Chat              |
+|                  | Ace Storage          | Ace Chat              |
 | ---------------- | -------------------- | --------------------- |
 | `appId`          | `biz.mcmstorage.app` | `biz.mcmstorage.chat` |
-| `appName`        | MCM Storage          | MCM Chat              |
+| `appName`        | Ace Storage          | Ace Chat              |
 | `VITE_APP_MODE`  | `full` (default)     | `chat`                |
 | Sidebar          | Semua grup           | Komunikasi/Akun/Sistem |
 | Beranda `/`      | Dashboard            | Redirect ke `/chat`   |
@@ -50,7 +50,7 @@ Setelah `bunx cap add android` / `bunx cap sync`, buka
   bisa mengakses mikrofon untuk panggilan audio/video.
 - **SYSTEM_ALERT_WINDOW** — supaya notifikasi panggilan masuk bisa
   tampil "melayang di atas aplikasi lain". Ini special permission —
-  user perlu meng-approve via Setelan → Aplikasi → MCM Chat →
+  user perlu meng-approve via Setelan → Aplikasi → Ace Chat →
   "Tampilkan di atas aplikasi lain". Deklarasi manifest saja tidak
   cukup.
 

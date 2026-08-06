@@ -1154,7 +1154,7 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
                   <span className="truncate font-medium">{s.name}</span>
                   <span className="flex flex-wrap gap-x-2 text-ms-2xs text-muted-foreground">
                     {s.wa_phone ? <span>WA: +{String(s.wa_phone).replace(/^\+?/, "")}</span> : null}
-                    {s.pin_chat_mcm ? <span className="font-mono text-primary">PIN MCM: {s.pin_chat_mcm}</span> : null}
+                    {s.pin_chat_mcm ? <span className="font-mono text-primary">PIN Ace: {s.pin_chat_mcm}</span> : null}
                   </span>
                 </button>
               ))}
@@ -1164,18 +1164,18 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
         <div className="space-ms-2">
           <div><Label>Nama</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
           <div>
-            <Label>PIN chat MCM</Label>
+            <Label>PIN chat Ace</Label>
             <Input
               value={pin} onChange={(e) => setPin(e.target.value)}
               placeholder="cth: ABCD-1234" autoCapitalize="characters" maxLength={10}
               className="font-mono tracking-widest"
             />
-            <p className="mt-1 text-ms-2xs text-muted-foreground">Kode PIN untuk berteman/dm di chat MCM (opsional).</p>
+            <p className="mt-1 text-ms-2xs text-muted-foreground">Kode PIN untuk berteman/dm di chat Ace (opsional).</p>
           </div>
           <div>
             <Label>Nomor HP / WhatsApp</Label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="cth: 62812xxxxxxx" inputMode="tel" />
-            <p className="mt-1 text-ms-2xs text-muted-foreground">Ini nomor telepon (untuk WhatsApp/telepon), bukan PIN chat MCM.</p>
+            <p className="mt-1 text-ms-2xs text-muted-foreground">Ini nomor telepon (untuk WhatsApp/telepon), bukan PIN chat Ace.</p>
           </div>
           <div><Label>Catatan (opsional)</Label><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></div>
         </div>

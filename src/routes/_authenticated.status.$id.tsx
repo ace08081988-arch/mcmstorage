@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/status/$id")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Status · MCM Storage" },
+      { title: "Status · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

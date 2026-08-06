@@ -26,13 +26,13 @@ import {
 export const Route = createFileRoute("/_authenticated/audit-saldo")({
   head: () => ({
     meta: [
-      { title: "Audit Saldo Kontak · MCM Storage" },
+      { title: "Audit Saldo Kontak · Ace Storage" },
       {
         name: "description",
         content:
           "Riwayat perubahan saldo hutang & piutang per kontak beserta sumber update dan waktu kejadiannya.",
       },
-      { property: "og:title", content: "Audit Saldo Kontak · MCM Storage" },
+      { property: "og:title", content: "Audit Saldo Kontak · Ace Storage" },
       {
         property: "og:description",
         content:

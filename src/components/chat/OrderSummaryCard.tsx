@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
  * Kartu ringkasan yang muncul di atas transkrip chat bila conversation
  * sudah ditautkan ke business object (customer / request prep / ecer
  * prep / prep task). Bertindak sebagai identitas utama percakapan
- * (Nomor Order) sesuai master workflow MCM Storage.
+ * (Nomor Order) sesuai master workflow Ace Storage.
  *
  * - Tidak mengubah RLS/data lain. Hanya membaca kolom link yang sudah
  *   ditambahkan pada Slice A.

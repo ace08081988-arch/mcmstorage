@@ -56,7 +56,7 @@ import {
 export const Route = createFileRoute("/_authenticated/hutang-piutang")({
   head: () => ({
     meta: [
-      { title: "Hutang & Piutang · MCM Storage" },
+      { title: "Hutang & Piutang · Ace Storage" },
       {
         name: "description",
         content:
@@ -937,7 +937,7 @@ function HutangPiutangPage() {
                             variant="waSoft"
                             className="h-8 shrink-0 rounded-lg"
                             onClick={() => void sendPartyReportWA(group)}
-                            title="Kirim laporan via MCM"
+                            title="Kirim laporan via Ace"
                           >
                             Kirim laporan
                           </Button>
@@ -1038,7 +1038,7 @@ function HutangPiutangPage() {
                               variant="waSoft"
                               className="h-8 rounded-lg"
                               onClick={() => setReminderFor(d)}
-                              title="Kirim pengingat via MCM"
+                              title="Kirim pengingat via Ace"
                             >
                               Tagih
                             </Button>
@@ -1315,9 +1315,9 @@ function PaymentsReport({
             variant="waSoft"
             className=""
             onClick={onSendWA}
-            title="Kirim laporan via MCM"
+            title="Kirim laporan via Ace"
           >
-            Kirim laporan MCM
+            Kirim laporan Ace
           </Button>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-ms-2 text-center text-ms-xs">

@@ -38,7 +38,7 @@ test.describe("ChatModeSplash · prefers-reduced-motion", () => {
     await page.goto(URL);
     await page.waitForLoadState("domcontentloaded");
 
-    const splash = page.getByRole("status", { name: "Memuat MCM Chat" });
+    const splash = page.getByRole("status", { name: "Memuat Ace Chat" });
     await expect(splash).toBeVisible({ timeout: 4000 });
 
     // 1) Class motion-reduce:transition-none WAJIB ada — itu yang mematikan
@@ -82,7 +82,7 @@ test.describe("ChatModeSplash · prefers-reduced-motion", () => {
     });
     await page.waitForTimeout(200);
     await expect(
-      page.getByRole("status", { name: "Memuat MCM Chat" }),
+      page.getByRole("status", { name: "Memuat Ace Chat" }),
     ).toHaveCount(0);
   });
 });

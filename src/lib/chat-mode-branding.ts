@@ -1,16 +1,16 @@
 import { isChatOnly } from "@/lib/app-mode";
 
 /**
- * Terapkan branding MCM Chat secara runtime saat mode chat aktif:
+ * Terapkan branding Ace Chat secara runtime saat mode chat aktif:
  * - Ganti judul dokumen + apple-mobile-web-app-title.
- * - Ganti favicon & apple-touch-icon ke ikon khusus MCM Chat.
+ * - Ganti favicon & apple-touch-icon ke ikon khusus Ace Chat.
  * - Ganti target manifest ke `manifest-chat.webmanifest` supaya
- *   PWA/Add-to-Home-Screen menampilkan nama & ikon MCM Chat.
+ *   PWA/Add-to-Home-Screen menampilkan nama & ikon Ace Chat.
  * - Warna theme + status bar tetap emerald tapi lebih gelap agar
- *   terasa terpisah dari MCM Storage.
+ *   terasa terpisah dari Ace Storage.
  *
  * Ketika pindah balik ke mode "full", branding di-restore ke default
- * MCM Storage (bukan no-op). Selain itu:
+ * Ace Storage (bukan no-op). Selain itu:
  * - `<link rel="manifest">` node-nya di-*replace* (bukan cuma diubah
  *   `href`-nya) supaya browser benar-benar re-parse manifest, dan
  *   query-string cache-buster ditambahkan agar WebView / HTTP cache /
@@ -29,7 +29,7 @@ type BrandingProfile = {
 };
 
 const CHAT_PROFILE: BrandingProfile = {
-  title: "MCM Chat",
+  title: "Ace Chat",
   themeColor: "#064e3b",
   manifest: "/manifest-chat.webmanifest",
   appleIcon: "/mcm-chat-icon.png",
@@ -37,7 +37,7 @@ const CHAT_PROFILE: BrandingProfile = {
 };
 
 const FULL_PROFILE: BrandingProfile = {
-  title: "MCM Storage",
+  title: "Ace Storage",
   themeColor: "#0f172a",
   manifest: "/manifest.webmanifest",
   appleIcon: "/apple-touch-icon.png",

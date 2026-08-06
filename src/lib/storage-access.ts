@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Akun "chat-only" (profiles.chat_only = true) diblokir oleh RLS pada tabel
- * MCM Storage:
+ * Ace Storage:
  *   USING/WITH CHECK: user_id = auth.uid() AND NOT is_chat_only(auth.uid())
  *
  * Tanpa pre-check, form tambah barang/pelanggan tetap mengirim INSERT dan
@@ -14,7 +14,7 @@ const CACHE_MS = 60_000;
 let cache: { uid: string; chatOnly: boolean; at: number } | null = null;
 
 export const STORAGE_UPGRADE_MESSAGE =
-  "Akun ini masih mode MCM Chat, jadi belum bisa menyimpan data Gudang/Pelanggan. Buka Profil → “Upgrade ke MCM Storage” lalu coba lagi.";
+  "Akun ini masih mode Ace Chat, jadi belum bisa menyimpan data Gudang/Pelanggan. Buka Profil → “Upgrade ke Ace Storage” lalu coba lagi.";
 
 export function clearStorageAccessCache() {
   cache = null;

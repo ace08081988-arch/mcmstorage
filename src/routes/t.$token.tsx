@@ -125,7 +125,7 @@ import { reportLovableError } from "@/lib/lovable-error-reporting";
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
     meta: [
-      { title: "Tugas Siapkan Barang · MCM Storage" },
+      { title: "Tugas Siapkan Barang · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -1638,7 +1638,7 @@ function PublicPrepPage() {
             <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
               <Package className="h-7 w-7 text-primary" />
             </div>
-            <div className="text-ms-lg font-semibold tracking-tight">MCM Storage</div>
+            <div className="text-ms-lg font-semibold tracking-tight">Ace Storage</div>
             <div className="text-ms-xs text-muted-foreground">Portal Tugas Pegawai</div>
           </div>
           <div className="w-full rounded-2xl border bg-card p-ms-6 shadow-lg shadow-black/5">
@@ -1952,7 +1952,7 @@ function PublicPrepPage() {
             )}
             {(isLocked || attempts > 0) && (
               <p className="mt-2 text-center text-ms-2xs leading-relaxed text-muted-foreground">
-                Tombol ini hanya membuka MCM dengan pesan siap kirim — pembatasan percobaan tetap
+                Tombol ini hanya membuka Ace dengan pesan siap kirim — pembatasan percobaan tetap
                 berlaku sampai hitungan mundur selesai.
               </p>
             )}
@@ -1960,7 +1960,7 @@ function PublicPrepPage() {
               <ShieldCheck className="h-3 w-3" /> Koneksi terenkripsi · Sesi terbatas waktu
             </div>
           </div>
-          <div className="mt-6 text-ms-2xs text-muted-foreground">© MCM Storage</div>
+          <div className="mt-6 text-ms-2xs text-muted-foreground">© Ace Storage</div>
         </div>
       </div>
     );
@@ -2033,7 +2033,7 @@ function PublicPrepPage() {
           </button>
           <div className="min-w-0 flex-1">
             <div className="text-ms-2xs font-medium uppercase tracking-wider text-muted-foreground">
-              MCM Storage
+              Ace Storage
             </div>
             <div className="truncate text-ms-sm font-semibold">Tugas Penyiapan Barang</div>
           </div>

@@ -14,7 +14,7 @@ export type PrefsBackup = {
   kind: typeof BACKUP_KIND;
   version: number;
   exportedAt: string; // ISO
-  app: "MCM Storage";
+  app: "Ace Storage";
   prefs: AppPrefs;
 };
 
@@ -23,7 +23,7 @@ export function buildBackup(): PrefsBackup {
     kind: BACKUP_KIND,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    app: "MCM Storage",
+    app: "Ace Storage",
     prefs: getAppPrefs(),
   };
 }
@@ -64,7 +64,7 @@ export function parseBackup(text: string): ParsedBackup {
     return { ok: false, error: "Struktur file tidak dikenali." };
   }
   if (r.kind !== BACKUP_KIND) {
-    return { ok: false, error: "Bukan cadangan preferensi MCM Storage." };
+    return { ok: false, error: "Bukan cadangan preferensi Ace Storage." };
   }
   if (typeof r.version !== "number" || r.version > BACKUP_VERSION) {
     return {
@@ -79,7 +79,7 @@ export function parseBackup(text: string): ParsedBackup {
     kind: BACKUP_KIND,
     version: r.version,
     exportedAt: typeof r.exportedAt === "string" ? r.exportedAt : new Date().toISOString(),
-    app: "MCM Storage",
+    app: "Ace Storage",
     prefs: { ...DEFAULT_APP_PREFS, ...(r.prefs as Partial<AppPrefs>) },
   };
   return { ok: true, backup };

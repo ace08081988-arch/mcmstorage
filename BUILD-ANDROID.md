@@ -1,6 +1,6 @@
 # Build APK Android (Capacitor)
 
-MCM Storage dibungkus dengan Capacitor sehingga bisa di-install sebagai APK
+Ace Storage dibungkus dengan Capacitor sehingga bisa di-install sebagai APK
 Android. Web app tetap berjalan seperti biasa — APK hanya menambahkan
 akses ke izin perangkat (Notifikasi, Kamera, Lokasi, Galeri) saat pertama
 kali dibuka.
@@ -46,14 +46,14 @@ lalu rebuild APK di Android Studio.
 
 ## Izin yang diminta otomatis
 
-Saat aplikasi pertama kali dibuka di device native, MCM Storage akan
+Saat aplikasi pertama kali dibuka di device native, Ace Storage akan
 meminta empat izin sekaligus: **Notifikasi, Kamera, Lokasi, dan
 Galeri/Foto**. User bisa menolak, dan dialog akan muncul lagi saat fitur
 terkait dipakai.
 
 ### Izin tambahan untuk panggilan (Mikrofon + Overlay)
 
-Fitur MCM Chat butuh dua izin ekstra yang **wajib dideklarasi manual** di
+Fitur Ace Chat butuh dua izin ekstra yang **wajib dideklarasi manual** di
 `android/app/src/main/AndroidManifest.xml` setelah `bunx cap add android`
 atau `bunx cap sync android` (Capacitor tidak menambahkannya sendiri).
 
@@ -72,7 +72,7 @@ sudah ada:
 ```
 
 > `SYSTEM_ALERT_WINDOW` di Android 6+ adalah **special permission**: user
-> harus meng-approve manual lewat Setelan → Aplikasi → MCM Storage →
+> harus meng-approve manual lewat Setelan → Aplikasi → Ace Storage →
 > "Tampilkan di atas aplikasi lain". Deklarasi manifest saja tidak cukup —
 > aplikasi harus mengarahkan user ke halaman itu dengan intent
 > `Settings.ACTION_MANAGE_OVERLAY_PERMISSION` saat pertama kali fitur

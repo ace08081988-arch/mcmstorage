@@ -46,10 +46,10 @@ test.describe("send-then-loadmore — source guard", () => {
   });
 });
 
-test.describe("send-then-loadmore — runtime PIN MCM", () => {
+test.describe("send-then-loadmore — runtime PIN Ace", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
-  test("kirim pesan lalu scroll ke atas untuk load-more: PIN MCM konsisten, no phone", async ({
+  test("kirim pesan lalu scroll ke atas untuk load-more: PIN Ace konsisten, no phone", async ({
     page,
   }) => {
     await page.goto("/chat");

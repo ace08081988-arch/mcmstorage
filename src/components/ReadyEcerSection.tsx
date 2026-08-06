@@ -554,7 +554,7 @@ export function ReadyEcerSection() {
   // Highlight kartu yang BARU dipindah ke Riwayat. Alur:
   //   1. Deteksi sentinel `max(sentMap.at)` bertambah dibanding baseline
   //      saat komponen mount → berarti ada shot yang baru saja ditandai
-  //      terkirim (baik dari toast /ecer, tombol MCM, atau tab lain).
+  //      terkirim (baik dari toast /ecer, tombol Ace, atau tab lain).
   //   2. Temukan row (Judul Ecer) yang memiliki shot tersebut.
   //   3. Kalau user belum di tab "Riwayat terkirim", buka tab-nya dulu
   //      (pending), lalu ketika view === "sent" — set justMovedRowId
@@ -923,7 +923,7 @@ export function ReadyEcerSection() {
               {view === "sent" ? (
                 <>
                   <History className="h-4 w-4" />
-                  <span>Belum ada riwayat terkirim. Tekan tombol MCM pada kartu aktif — kiriman akan pindah ke sini.</span>
+                  <span>Belum ada riwayat terkirim. Tekan tombol Ace pada kartu aktif — kiriman akan pindah ke sini.</span>
                 </>
               ) : (
                 <span>Semua kartu sudah dipindah ke Riwayat terkirim.</span>
@@ -1215,7 +1215,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onRe
           </button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-64 space-y-1 p-ms-2.5 text-ms-2xs" onClick={stop}>
-          <div className="font-semibold text-foreground">Gagal kirim via MCM</div>
+          <div className="font-semibold text-foreground">Gagal kirim via Ace</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
           {onResend ? (
             <button
@@ -1226,7 +1226,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onRe
               <RefreshCw className="h-3 w-3" /> {resendLabel || "Kirim ulang"}
             </button>
           ) : (
-            <p className="text-muted-foreground">Tekan tombol MCM lagi untuk mencoba ulang.</p>
+            <p className="text-muted-foreground">Tekan tombol Ace lagi untuk mencoba ulang.</p>
           )}
         </PopoverContent>
       </Popover>
@@ -1296,7 +1296,7 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
             <li key={shot.id} className="flex flex-wrap items-center gap-ms-1 text-ms-2xs leading-snug">
               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-success/10 text-success dark:text-success"}`}>
                 {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
-                {channel === "chat" ? "Chat" : "MCM"}
+                {channel === "chat" ? "Chat" : "Ace"}
               </span>
               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-success/10 text-success dark:text-success" : "bg-destructive/10 text-destructive"}`}>
                 {ok ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
@@ -1678,7 +1678,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             existing.summary ?? null,
             waSummary,
             prevFailed
-              ? "Kiriman MCM sebelumnya gagal — bandingkan payload"
+              ? "Kiriman Ace sebelumnya gagal — bandingkan payload"
               : "Sidik jari payload tidak cocok dengan kiriman WA sebelumnya",
           );
           previousLog = getSendLog(idemKey);

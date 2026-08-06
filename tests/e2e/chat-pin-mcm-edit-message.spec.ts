@@ -58,10 +58,10 @@ test.describe("edit pesan — source guard", () => {
   });
 });
 
-test.describe("edit pesan — runtime PIN MCM after refresh", () => {
+test.describe("edit pesan — runtime PIN Ace after refresh", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
-  test("reload → edit pesan sendiri → simpan → reload: PIN MCM konsisten, no phone", async ({
+  test("reload → edit pesan sendiri → simpan → reload: PIN Ace konsisten, no phone", async ({
     page,
   }) => {
     await page.goto("/chat");

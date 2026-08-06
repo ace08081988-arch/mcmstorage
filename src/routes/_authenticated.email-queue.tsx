@@ -22,7 +22,7 @@ import { useAdminStatus } from "@/hooks/use-is-admin";
 export const Route = createFileRoute("/_authenticated/email-queue")({
   head: () => ({
     meta: [
-      { title: "Status Antrian Email · MCM Storage" },
+      { title: "Status Antrian Email · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

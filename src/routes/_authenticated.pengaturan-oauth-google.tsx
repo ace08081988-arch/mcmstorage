@@ -37,7 +37,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-oauth-google")({
   head: () => ({
-    meta: [{ title: "OAuth Google (BYOK) · MCM Storage" }],
+    meta: [{ title: "OAuth Google (BYOK) · Ace Storage" }],
   }),
   component: OAuthGooglePage,
 });
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/pengaturan-oauth-google")(
  * Cloud dengan kredensial milik sendiri (BYOK). Alasan halaman ini panduan,
  * bukan form: broker OAuth Lovable tidak menerima Client ID/Secret dari
  * tabel aplikasi — nilai final harus dipaste di Backend → Users → Auth
- * Settings → Google agar layar consent tampil sebagai "MCM Storage" tanpa
+ * Settings → Google agar layar consent tampil sebagai "Ace Storage" tanpa
  * merek pihak ketiga. Halaman ini menyiapkan nilai eksak yang harus
  * ditempel ke Google Cloud Console + Backend, plus ceklis progres.
  */
@@ -460,7 +460,7 @@ function OAuthGooglePage() {
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
       <SettingsHeader
         title="OAuth Google (BYOK)"
-        subtitle="Ganti kredensial bawaan agar layar consent tampil sebagai MCM Storage"
+        subtitle="Ganti kredensial bawaan agar layar consent tampil sebagai Ace Storage"
         icon={KeyRound}
       />
       <div className="space-ms-4 px-ms-4 pt-2">
@@ -735,7 +735,7 @@ function OAuthGooglePage() {
             <CardTitle className="text-ms-base">Uji Login Google</CardTitle>
             <CardDescription className="text-ms-xs leading-snug">
               Jalankan flow consent nyata untuk memverifikasi Client ID & Secret sudah
-              aktif di Backend. Layar consent seharusnya bermerek <b>MCM Storage</b>.
+              aktif di Backend. Layar consent seharusnya bermerek <b>Ace Storage</b>.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-ms-3">

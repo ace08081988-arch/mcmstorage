@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Guardrail snapshot: memastikan branding "MCM" tidak bergeser kembali
+ * Guardrail snapshot: memastikan branding "Ace" tidak bergeser kembali
  * ke "WhatsApp"/"WA" pada permukaan chat utama.
  *
  * Cara kerja: ekstrak seluruh string literal user-facing (di dalam JSX text,
@@ -23,7 +23,7 @@ const FILES = {
   "forward (selection toolbar)": "src/components/chat/SelectionToolbar.tsx",
 } as const;
 
-const BRAND_RE = /\b(MCM|WhatsApp|WA)\b/;
+const BRAND_RE = /\b(Ace|WhatsApp|WA)\b/;
 
 // Baris yang jelas non-UI dan harus diabaikan meski mengandung token.
 const TECH_HINT_RE =
@@ -41,7 +41,7 @@ function extractBrandLabels(source: string): string[] {
   return [...out].sort();
 }
 
-describe("MCM branding — snapshot label chat kunci", () => {
+describe("Ace branding — snapshot label chat kunci", () => {
   for (const [label, relPath] of Object.entries(FILES)) {
     it(`${label} → ${relPath}`, () => {
       const src = readFileSync(resolve(process.cwd(), relPath), "utf8");
@@ -52,7 +52,7 @@ describe("MCM branding — snapshot label chat kunci", () => {
       const leaked = labels.filter((s) => /\b(WhatsApp|WA)\b/.test(s));
       expect(leaked, `Label WA/WhatsApp bocor di ${relPath}`).toEqual([]);
 
-      // Freeze daftar label MCM sebagai snapshot supaya pergeseran wording
+      // Freeze daftar label Ace sebagai snapshot supaya pergeseran wording
       // ketahuan lebih awal.
       expect(labels).toMatchSnapshot();
     });

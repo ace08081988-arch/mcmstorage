@@ -30,7 +30,7 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/web-vitals")({
   head: () => ({
     meta: [
-      { title: "Core Web Vitals Katalog · MCM Storage" },
+      { title: "Core Web Vitals Katalog · Ace Storage" },
       {
         name: "description",
         content:

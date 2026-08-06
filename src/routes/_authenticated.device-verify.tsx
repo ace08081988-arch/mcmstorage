@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/device-verify")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Verifikasi Perangkat · MCM Storage" },
+      { title: "Verifikasi Perangkat · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

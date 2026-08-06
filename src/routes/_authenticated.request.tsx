@@ -104,7 +104,7 @@ function requestPrepTaskStatusToneClass(tone: ReturnType<typeof requestPrepTaskS
 }
 
 export const Route = createFileRoute("/_authenticated/request")({
-  head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
+  head: () => ({ meta: [{ title: "Penyiapan Request · Ace Storage" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
@@ -767,9 +767,9 @@ function RequestPage() {
                     onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
                     className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-wa-strong hover:bg-wa/25"
-                    aria-label="Kirim via MCM"
+                    aria-label="Kirim via Ace"
                   >
-                    <MessageCircle className="h-3 w-3" /> Kirim via MCM
+                    <MessageCircle className="h-3 w-3" /> Kirim via Ace
                   </div>
                   <div
                     role="button"
@@ -2906,7 +2906,7 @@ function SendPrepToCustomerDialog({
   const [paidStr, setPaidStr] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  // State kanal Chat MCM: dialog picker + percakapan yang dipilih user.
+  // State kanal Chat Ace: dialog picker + percakapan yang dipilih user.
   // Hanya dipakai bila `channel === "chat"`.
   const [chatPickerOpen, setChatPickerOpen] = useState(false);
   const [chatConv, setChatConv] = useState<{ id: string; title: string } | null>(null);
@@ -3013,7 +3013,7 @@ function SendPrepToCustomerDialog({
     if (totalAmount <= 0) {
       if (!confirm("Total belum diisi (Rp 0). Lanjutkan tanpa mencatat penjualan?")) return;
     }
-    // Kanal Chat MCM: pastikan user memilih percakapan tujuan lebih dulu.
+    // Kanal Chat Ace: pastikan user memilih percakapan tujuan lebih dulu.
     // RPC pencatatan penjualan/piutang tidak dijalankan sampai target valid,
     // supaya tidak ada "tercatat tapi tidak terkirim".
     const conv = channel === "chat" ? (chosenConv ?? chatConv) : null;
@@ -3062,7 +3062,7 @@ function SendPrepToCustomerDialog({
         `Total: ${rupiah(payment.total)}`,
         `Metode: ${methodLabel}`,
         channel === "chat" && conv
-          ? `Tujuan: MCM Chat → ${conv.title}`
+          ? `Tujuan: Ace Chat → ${conv.title}`
           : `Tujuan: WhatsApp${resolvedParty.contact ? ` → ${resolvedParty.contact}` : ""}`,
       ].join("\n");
       toast.success(
@@ -3084,7 +3084,7 @@ function SendPrepToCustomerDialog({
           shots,
         });
         if (res.status !== "shared") {
-          throw new Error(res.error || "Gagal kirim ke MCM Chat");
+          throw new Error(res.error || "Gagal kirim ke Ace Chat");
         }
         toast.success(
           payment.method === "hutang"
@@ -3132,13 +3132,13 @@ function SendPrepToCustomerDialog({
           <div className="flex min-h-8 items-start justify-between gap-ms-2 pr-10">
             <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
               {channel === "chat" ? <MessageCircle className="h-4 w-4 text-primary" /> : <Send className="h-4 w-4 text-primary" />}
-              {channel === "chat" ? "Kirim via MCM Chat" : "Kirim ke pelanggan"}
+              {channel === "chat" ? "Kirim via Ace Chat" : "Kirim ke pelanggan"}
             </DialogTitle>
             <DialogSaveStatus status={sendStatus} className="shrink-0" />
           </div>
           <DialogDescription>
             {channel === "chat"
-              ? "Foto + lokasi dikirim ke percakapan MCM. Stok gudang & piutang otomatis tercatat."
+              ? "Foto + lokasi dikirim ke percakapan Ace. Stok gudang & piutang otomatis tercatat."
               : "Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui."}
           </DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
@@ -3446,13 +3446,13 @@ function PrepEditorDialog({
    */
   function normalizeWaPhone(raw: string): { digits: string; error: string | null } {
     let d = (raw || "").replace(/\D/g, "");
-    if (!d) return { digits: "", error: "Nomor MCM wajib diisi" };
+    if (!d) return { digits: "", error: "Nomor Ace wajib diisi" };
     if (d.startsWith("00")) d = d.slice(2);
     else if (d.startsWith("0")) d = "62" + d.slice(1);
     if (d.length < 8 || d.length > 15) {
-      return { digits: "", error: "Nomor MCM harus 8–15 digit (format internasional)" };
+      return { digits: "", error: "Nomor Ace harus 8–15 digit (format internasional)" };
     }
-    if (/^0+$/.test(d)) return { digits: "", error: "Nomor MCM tidak valid" };
+    if (/^0+$/.test(d)) return { digits: "", error: "Nomor Ace tidak valid" };
     return { digits: d, error: null };
   }
 
@@ -3470,7 +3470,7 @@ function PrepEditorDialog({
   }, [open, titleItems]);
 
   // Muat buku alamat saat dialog dibuka — dipakai untuk autocomplete
-  // tujuan (baik nomor WA maupun user MCM lewat linked_user_id).
+  // tujuan (baik nomor WA maupun user Ace lewat linked_user_id).
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -3487,7 +3487,7 @@ function PrepEditorDialog({
     const q = waPhone.trim().toLowerCase();
     const nq = normalizePhone(waPhone) ?? "";
     const base = contacts.slice().sort((a, b) => {
-      // Kontak dengan linked_user_id (bisa Chat MCM) di atas.
+      // Kontak dengan linked_user_id (bisa Chat Ace) di atas.
       const la = a.linked_user_id ? 0 : 1;
       const lb = b.linked_user_id ? 0 : 1;
       if (la !== lb) return la - lb;
@@ -3580,7 +3580,7 @@ function PrepEditorDialog({
     }
     if (opts?.sendChat) {
       if (!pickedLinkedUserId) {
-        toast.error("Pilih kontak MCM dari daftar dulu untuk kirim via Chat");
+        toast.error("Pilih kontak Ace dari daftar dulu untuk kirim via Chat");
         return;
       }
     }
@@ -3625,12 +3625,12 @@ function PrepEditorDialog({
           });
           notifyShareResult(res);
         } catch (err) {
-          toast.error("Gagal kirim via MCM: " + (err as Error).message);
+          toast.error("Gagal kirim via Ace: " + (err as Error).message);
         }
       }
       // Simpan otomatis ke buku alamat bila di-opt-in dan kontak yang
       // dipakai belum ada rownya. Berlaku untuk WA (pakai nomor yang
-      // ternormalisasi) maupun Chat MCM (pakai pickedLinkedUserId).
+      // ternormalisasi) maupun Chat Ace (pakai pickedLinkedUserId).
       if (autoSaveContact && (opts?.sendWa || opts?.sendChat)) {
         try {
           const nameForSave = (recipientName.trim() || pickedName.trim() || "").slice(0, 80);
@@ -3648,7 +3648,7 @@ function PrepEditorDialog({
           }
         } catch { /* opsional — jangan gagalkan flow utama */ }
       }
-      // Kirim via Chat MCM: buka DM dengan text prefill di composer.
+      // Kirim via Chat Ace: buka DM dengan text prefill di composer.
       // Foto sudah tersimpan di storage prep — sertakan signed URL supaya
       // pengguna tinggal tekan Send.
       if (opts?.sendChat && pickedLinkedUserId) {
@@ -3675,7 +3675,7 @@ function PrepEditorDialog({
           navigate({ to: "/chat/$conversationId", params: { conversationId: String(convId) } });
           return;
         } catch (err) {
-          toast.error("Gagal buka Chat MCM: " + (err as Error).message);
+          toast.error("Gagal buka Chat Ace: " + (err as Error).message);
         }
       }
       onSaved(); onClose();
@@ -3843,7 +3843,7 @@ function PrepEditorDialog({
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
 
           <div id="prep-sec-tujuan" className="space-ms-2">
-            <Label className="text-ms-xs">Tujuan (Chat MCM / Nomor WA)</Label>
+            <Label className="text-ms-xs">Tujuan (Chat Ace / Nomor WA)</Label>
             {/* Nama penerima — dipakai untuk auto-save ke buku alamat */}
             <Input
               value={recipientName}
@@ -3859,8 +3859,8 @@ function PrepEditorDialog({
                 onChange={(e) => {
                   setWaPhone(e.target.value);
                   setShowSuggest(true);
-                  // Jika user mulai ubah nomor, reset user MCM yang di-pick
-                  // supaya tombol Chat MCM tidak salah kirim ke akun lama.
+                  // Jika user mulai ubah nomor, reset user Ace yang di-pick
+                  // supaya tombol Chat Ace tidak salah kirim ke akun lama.
                   if (pickedLinkedUserId) setPickedLinkedUserId(null);
                 }}
                 onFocus={() => setShowSuggest(true)}
@@ -3884,7 +3884,7 @@ function PrepEditorDialog({
                         </div>
                       </div>
                       <div className="shrink-0 text-[9px] uppercase tracking-wide text-muted-foreground">
-                        {c.linked_user_id ? "MCM" : c.source}
+                        {c.linked_user_id ? "Ace" : c.source}
                       </div>
                     </button>
                   ))}
@@ -3893,7 +3893,7 @@ function PrepEditorDialog({
             </div>
             {pickedLinkedUserId ? (
               <p className="text-ms-2xs text-primary">
-                Kontak MCM terpilih: <span className="font-medium">{pickedName || "(tanpa nama)"}</span> — bisa kirim via Chat MCM.
+                Kontak Ace terpilih: <span className="font-medium">{pickedName || "(tanpa nama)"}</span> — bisa kirim via Chat Ace.
               </p>
             ) : waPhone.trim() === "" ? (
               <p className="text-ms-2xs text-muted-foreground">Ketik untuk cari kontak, atau isi nomor manual (awalan 0 → 62).</p>
@@ -3932,10 +3932,10 @@ function PrepEditorDialog({
             onClick={() => save({ sendChat: true })}
             disabled={busy || !pickedLinkedUserId}
             className="w-full"
-            title={pickedLinkedUserId ? "Buka DM MCM dengan pesan siap kirim" : "Pilih kontak MCM dari daftar dulu"}
+            title={pickedLinkedUserId ? "Buka DM Ace dengan pesan siap kirim" : "Pilih kontak Ace dari daftar dulu"}
           >
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <MessageCircle className="mr-1 h-3 w-3" />}
-            Simpan &amp; Buka Chat MCM
+            Simpan &amp; Buka Chat Ace
           </Button>
           <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>

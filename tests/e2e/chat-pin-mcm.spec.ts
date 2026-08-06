@@ -12,7 +12,7 @@ import { resolve } from "node:path";
  *  2. Runtime UI (butuh storageState, self-skip jika kosong):
  *     - `/chat` tidak menampilkan string nomor telepon Indonesia
  *       (`+62…`, `62…`, `08…`) sebagai judul percakapan.
- *     - Dialog "Chat baru" memakai placeholder "PIN MCM"; kolom teks
+ *     - Dialog "Chat baru" memakai placeholder "PIN Ace"; kolom teks
  *       hasil kontak memformat invite_code jadi `PIN xxxx-xxxx`.
  *     - Membuka percakapan DM: header memakai `PIN xxxx-xxxx` bila
  *       peer tidak punya display_name; mengirim pesan sukses dan
@@ -56,12 +56,12 @@ test.describe("chat surface — source guard: tidak boleh fallback ke phone untu
     });
   }
 
-  test("NewDmDialog: placeholder pencarian menyebut PIN MCM, bukan nomor telepon", () => {
+  test("NewDmDialog: placeholder pencarian menyebut PIN Ace, bukan nomor telepon", () => {
     const src = readFileSync(
       resolve(process.cwd(), "src/components/chat/NewDmDialog.tsx"),
       "utf8",
     );
-    expect(src).toMatch(/placeholder="Cari nama atau PIN MCM…"/);
+    expect(src).toMatch(/placeholder="Cari nama atau PIN Ace…"/);
     expect(src).not.toMatch(/placeholder="Cari nama atau nomor telepon/i);
     // Rendering item: harus memformat invite_code jadi `PIN xxxx-xxxx`.
     expect(src).toMatch(/PIN \$\{formatInviteCode\(c\.invite_code\)\}/);
@@ -84,7 +84,7 @@ test.describe("chat surface — source guard: tidak boleh fallback ke phone untu
 });
 
 // ── 2) Runtime UI (auth-gated) ────────────────────────────────────────
-test.describe("chat surface — runtime: PIN MCM di /chat, dialog DM baru, dan kirim pesan", () => {
+test.describe("chat surface — runtime: PIN Ace di /chat, dialog DM baru, dan kirim pesan", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("/chat: judul percakapan tidak menampilkan nomor telepon mentah", async ({ page }) => {
@@ -98,10 +98,10 @@ test.describe("chat surface — runtime: PIN MCM di /chat, dialog DM baru, dan k
       .not.toMatch(PHONE_LIKE);
   });
 
-  test("dialog 'Chat baru': placeholder PIN MCM & format PIN pada hasil", async ({ page }) => {
+  test("dialog 'Chat baru': placeholder PIN Ace & format PIN pada hasil", async ({ page }) => {
     await page.goto("/chat");
     await page.getByRole("button", { name: /chat baru/i }).click();
-    const input = page.getByPlaceholder("Cari nama atau PIN MCM…");
+    const input = page.getByPlaceholder("Cari nama atau PIN Ace…");
     await expect(input).toBeVisible();
     // Ketik apa pun; kalau ada hasil, minimal satu row memformat `PIN xxxx-xxxx`.
     await input.fill("PIN");

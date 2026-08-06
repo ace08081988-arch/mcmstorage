@@ -243,10 +243,10 @@ export const Route = createFileRoute("/_authenticated/")({
   },
   head: () => ({
     meta: [
-      { title: "Beranda — Kelola Pesanan & Kirim via MCM" },
-      { name: "description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via MCM dalam satu halaman." },
-      { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim via MCM" },
-      { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via MCM dalam satu halaman." },
+      { title: "Beranda — Kelola Pesanan & Kirim via Ace" },
+      { name: "description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via Ace dalam satu halaman." },
+      { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim via Ace" },
+      { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via Ace dalam satu halaman." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://mcmstorage.app/" },
     ],
@@ -1238,7 +1238,7 @@ function Index() {
               </span>
               <div className="min-w-0 leading-tight">
                 <p className="text-premium-heading truncate text-[1.0625rem] text-foreground">
-                  MCM Storage
+                  Ace Storage
                 </p>
                 <p className="truncate text-[0.5625rem] font-semibold uppercase tracking-[0.26em] text-primary/65">
                   Retail Operations
@@ -1270,7 +1270,7 @@ function Index() {
               pelanggan — satu alur, tanpa kebocoran.
             </h1>
             <p className="mt-3 max-w-prose text-[0.84375rem] leading-relaxed text-muted-foreground">
-              Empat langkah inti yang menjalankan MCM Storage setiap hari.
+              Empat langkah inti yang menjalankan Ace Storage setiap hari.
             </p>
             <div className="hairline mt-5" />
 
@@ -1279,7 +1279,7 @@ function Index() {
                 { n: "01", to: "/gudang", t: "Gudang", d: "Kelola stok, pembelian, dan harga modal." },
                 { n: "02", to: "/ecer", t: "Siapkan Pesanan", d: "Ecer & request — timbang, kemas, verifikasi." },
                 { n: "03", to: "/tugas", t: "Tugas Pegawai", d: "Bagikan link + PIN untuk penyiapan lapangan." },
-                { n: "04", to: "/chat", t: "Kirim via MCM Chat", d: "Rangkuman order otomatis ke pelanggan." },
+                { n: "04", to: "/chat", t: "Kirim via Ace Chat", d: "Rangkuman order otomatis ke pelanggan." },
               ].map((step) => (
                 <li key={step.n}>
                   <Link
@@ -1512,7 +1512,7 @@ function Index() {
           <div className="pt-4 text-center">
             <div className="mx-auto mb-3 h-px w-16 bg-primary/25" />
             <p className="text-[0.625rem] font-medium uppercase tracking-[0.3em] text-primary/45">
-              MCM · Barokah Rizki
+              Ace · Barokah Rizki
             </p>
           </div>
         </main>
@@ -1693,7 +1693,7 @@ function Index() {
               </button>
               <div className="min-w-0 flex-1">
                 <h1 className="truncate text-ms-base font-semibold tracking-tight">
-                  {activeCat} · MCM Storage
+                  {activeCat} · Ace Storage
                 </h1>
                 <p className="text-[0.6875rem] text-muted-foreground">
                   {scopedItems.length} pesanan · {rupiah(total)}
@@ -1959,7 +1959,7 @@ function Index() {
                       className="shrink-0 rounded-md bg-wa px-ms-2 py-1 text-[0.6875rem] font-semibold text-wa-foreground hover:opacity-90"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      MCM
+                      Ace
                     </a>
                   )}
                   {!selectMode && (
@@ -2242,7 +2242,7 @@ function Index() {
                           rel="noreferrer"
                           className="inline-flex items-center rounded-md bg-wa px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-wa-foreground hover:opacity-90"
                         >
-                          KIRIM MCM
+                          KIRIM Ace
                         </a>
                       )}
                       <button
@@ -2334,7 +2334,7 @@ function Index() {
                   selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
                 }`}
               >
-                KIRIM MCM MASSAL ({selected.size})
+                KIRIM Ace MASSAL ({selected.size})
               </a>
             </div>
           </div>

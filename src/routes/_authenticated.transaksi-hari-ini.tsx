@@ -17,13 +17,13 @@ export const Route = createFileRoute("/_authenticated/transaksi-hari-ini")({
   component: TransaksiHariIniPage,
   head: () => ({
     meta: [
-      { title: "Transaksi Hari Ini — MCM Storage" },
+      { title: "Transaksi Hari Ini — Ace Storage" },
       {
         name: "description",
         content:
           "Rincian penjualan hari ini: unit terjual, omzet, dan produk per transaksi.",
       },
-      { property: "og:title", content: "Transaksi Hari Ini — MCM Storage" },
+      { property: "og:title", content: "Transaksi Hari Ini — Ace Storage" },
       {
         property: "og:description",
         content: "Rincian penjualan hari ini yang menyusun metrik unit terjual.",

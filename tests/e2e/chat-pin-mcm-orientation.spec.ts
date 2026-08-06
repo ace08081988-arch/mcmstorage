@@ -37,7 +37,7 @@ function hasAuthState(): boolean {
   }
 }
 
-test.describe("orientation flip antar DM — PIN MCM stabil", () => {
+test.describe("orientation flip antar DM — PIN Ace stabil", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("multi-DM × multi-reload × rotate portrait↔landscape: identitas per DM tetap, no phone", async ({

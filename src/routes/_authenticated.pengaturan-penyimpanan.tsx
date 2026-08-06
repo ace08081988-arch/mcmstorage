@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-penyimpanan")({
-  head: () => ({ meta: [{ title: "Penyimpanan dan Data · MCM Storage" }] }),
+  head: () => ({ meta: [{ title: "Penyimpanan dan Data · Ace Storage" }] }),
   component: PenyimpananPage,
 });
 
@@ -457,9 +457,9 @@ function PenyimpananPage() {
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 Segarkan
               </Button>
-              <Button size="sm" variant="outline" onClick={() => requestClear("mcm.wa-sent", "Riwayat MCM")}>
+              <Button size="sm" variant="outline" onClick={() => requestClear("mcm.wa-sent", "Riwayat Ace")}>
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                Hapus riwayat MCM
+                Hapus riwayat Ace
               </Button>
               <Button size="sm" variant="outline" onClick={() => requestClear("mcm.sticker", "Cache stiker")}>
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
@@ -571,7 +571,7 @@ function PenyimpananPage() {
                 <li>Preferensi aksesibilitas (skala font, kontras, gerakan)</li>
                 <li>Bahasa aplikasi, URL Facebook / Instagram</li>
                 <li>Toggle auto-unduh Wi-Fi &amp; data seluler</li>
-                <li>Semua cache lokal MCM (riwayat kirim, stiker, log, filter, PIN memo)</li>
+                <li>Semua cache lokal Ace (riwayat kirim, stiker, log, filter, PIN memo)</li>
               </ul>
               <p className="mt-2">
                 Cadangan JSON akan otomatis diunduh sebelum reset supaya bisa dipulihkan manual.

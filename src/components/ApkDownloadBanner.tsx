@@ -95,7 +95,7 @@ export function ApkDownloadBanner() {
           <Download className="h-3.5 w-3.5" />
         </div>
         <div className="mt-0.5 text-ms-2xs text-success/80 dark:text-success/80">
-          MCM Storage untuk HP
+          Ace Storage untuk HP
           {apk.sizeMB ? ` · ${apk.sizeMB} MB` : ""}
           {apk.updatedAt
             ? ` · ${new Date(apk.updatedAt).toLocaleDateString("id-ID")}`

@@ -20,13 +20,13 @@ import {
 export const Route = createFileRoute("/_authenticated/diagnostik-list")({
   head: () => ({
     meta: [
-      { title: "Performa daftar · MCM Storage" },
+      { title: "Performa daftar · Ace Storage" },
       {
         name: "description",
         content:
           "Pantau render time dan jumlah re-render daftar virtual per halaman.",
       },
-      { property: "og:title", content: "Performa daftar · MCM Storage" },
+      { property: "og:title", content: "Performa daftar · Ace Storage" },
       {
         property: "og:description",
         content: "Metrik ringan VirtualizedList: render time & re-render per route.",

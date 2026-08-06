@@ -9,7 +9,7 @@ import { getApkVariantDetail } from "@/lib/apk.functions";
  * Tombol untuk menyalin SEMUA link unduhan APK varian "chat" (versi
  * terbaru → terlama) ke clipboard dalam satu klik. Format teks:
  *
- *   MCM Chat APK — daftar unduhan
+ *   Ace Chat APK — daftar unduhan
  *   • v1.2.3 (12 MB, 2025-01-02): https://...
  *   • v1.2.2 (12 MB, 2025-01-01): https://...
  */
@@ -58,7 +58,7 @@ export function CopyChatApkLinksButton({
         toast.dismiss(loadingId);
         return;
       }
-      const header = `MCM Chat APK — daftar unduhan (${releases.length} versi)`;
+      const header = `Ace Chat APK — daftar unduhan (${releases.length} versi)`;
       const lines = releases.map((r) => {
         const version = r.versionName || r.name;
         const size = r.sizeMB != null ? `${r.sizeMB} MB` : "?";
@@ -115,13 +115,13 @@ export function CopyChatApkLinksButton({
         disabled={busy || isChecking}
         aria-label={
           copied
-            ? "Tersalin: semua link APK MCM Chat sudah disalin ke clipboard"
+            ? "Tersalin: semua link APK Ace Chat sudah disalin ke clipboard"
             : busy
-              ? "Memproses: menyalin semua link APK MCM Chat, tombol dinonaktifkan sementara"
+              ? "Memproses: menyalin semua link APK Ace Chat, tombol dinonaktifkan sementara"
               : isChecking
-                ? "Memeriksa ketersediaan APK MCM Chat, tombol dinonaktifkan sementara"
+                ? "Memeriksa ketersediaan APK Ace Chat, tombol dinonaktifkan sementara"
                 : isUnavailable
-                  ? "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
+                  ? "APK Ace Chat belum tersedia — ketuk untuk cek ulang"
                   : "Salin semua link APK Chat"
         }
         className={
@@ -158,13 +158,13 @@ export function CopyChatApkLinksButton({
       aria-busy={busy || isChecking}
       aria-label={
         copied
-          ? "Tersalin: semua link APK MCM Chat sudah disalin ke clipboard"
+          ? "Tersalin: semua link APK Ace Chat sudah disalin ke clipboard"
           : busy
-            ? "Memproses: menyalin semua link APK MCM Chat, tombol dinonaktifkan sementara"
+            ? "Memproses: menyalin semua link APK Ace Chat, tombol dinonaktifkan sementara"
             : isChecking
-              ? "Memeriksa ketersediaan APK MCM Chat, tombol dinonaktifkan sementara"
+              ? "Memeriksa ketersediaan APK Ace Chat, tombol dinonaktifkan sementara"
               : isUnavailable
-                ? "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
+                ? "APK Ace Chat belum tersedia — ketuk untuk cek ulang"
                 : "Salin semua link APK Chat"
       }
       className={
@@ -206,7 +206,7 @@ export function CopyChatApkLinksButton({
             void availability.refetch();
           }}
           disabled={isChecking}
-          aria-label="Cek ulang ketersediaan APK MCM Chat"
+          aria-label="Cek ulang ketersediaan APK Ace Chat"
           title="Cek ulang"
           className="absolute right-0.5 top-0.5 grid h-11 w-11 place-items-center rounded-full text-foreground/80 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -215,13 +215,13 @@ export function CopyChatApkLinksButton({
       ) : null}
       <span className="sr-only" role="status" aria-live="polite">
         {copied
-          ? "Semua link APK MCM Chat sudah disalin"
+          ? "Semua link APK Ace Chat sudah disalin"
           : busy
-            ? "Menyalin link APK MCM Chat"
+            ? "Menyalin link APK Ace Chat"
             : isChecking
-              ? "Memeriksa ketersediaan APK MCM Chat"
+              ? "Memeriksa ketersediaan APK Ace Chat"
               : isUnavailable
-                ? "APK MCM Chat belum tersedia"
+                ? "APK Ace Chat belum tersedia"
                 : ""}
       </span>
     </div>

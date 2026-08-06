@@ -5,7 +5,7 @@
  *
  * Pemakaian:
  *   node scripts/install-apk.mjs                        # varian full, debug APK
- *   node scripts/install-apk.mjs --variant chat         # varian MCM Chat
+ *   node scripts/install-apk.mjs --variant chat         # varian Ace Chat
  *   node scripts/install-apk.mjs --release              # apk release (harus signed)
  *   node scripts/install-apk.mjs --apk path/to.apk      # override path APK
  *   node scripts/install-apk.mjs --device R58...        # pilih device spesifik

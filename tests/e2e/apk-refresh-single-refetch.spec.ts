@@ -43,7 +43,7 @@ test.describe("APK refresh · single refetch per tap", () => {
     await expect(storageDl.getByText("Belum tersedia")).toBeVisible();
 
     const storageRefresh = storageDl.getByRole("button", {
-      name: /Cek ulang ketersediaan APK MCM Storage/i,
+      name: /Cek ulang ketersediaan APK Ace Storage/i,
     });
 
     // === Tap #1: harus memicu tepat SATU refetch storage ===
@@ -76,7 +76,7 @@ test.describe("APK refresh · single refetch per tap", () => {
     // Setelah state aktif, tombol refresh tidak lagi dirender.
     await expect(
       storageDl.getByRole("button", {
-        name: /Cek ulang ketersediaan APK MCM Storage/i,
+        name: /Cek ulang ketersediaan APK Ace Storage/i,
       }),
     ).toHaveCount(0);
 

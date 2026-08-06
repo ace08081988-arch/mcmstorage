@@ -138,7 +138,7 @@ export const sendTestPushToContact = createServerFn({ method: "POST" })
     const result = await notifyUsers({
       userIds: [row.account_user_id],
       payload: {
-        title: "Uji notifikasi dari MCM Storage",
+        title: "Uji notifikasi dari Ace Storage",
         body: `Halo ${row.name}, ini notifikasi uji dari akun yang menautkan Anda.`,
         url: "/chat",
         tag: `test-contact:${row.id}`,
@@ -184,7 +184,7 @@ export const sendTestPushToAllContacts = createServerFn({ method: "POST" })
     const result = await notifyUsers({
       userIds: Array.from(userIds),
       payload: {
-        title: "Uji notifikasi dari MCM Storage",
+        title: "Uji notifikasi dari Ace Storage",
         body: "Ini notifikasi uji yang dikirim ke seluruh kontak Anda yang tertaut.",
         url: "/chat",
         tag: "test-contact-all",

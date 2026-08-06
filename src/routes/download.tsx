@@ -71,17 +71,17 @@ function writeCopyHistory(list: CopyEntry[]) {
 export const Route = createFileRoute("/download")({
   head: () => ({
     meta: [
-      { title: "Unduh APK — MCM Storage & MCM Chat" },
+      { title: "Unduh APK — Ace Storage & Ace Chat" },
       {
         name: "description",
         content:
-          "Unduh APK Android MCM Storage (fitur lengkap) atau MCM Chat (khusus komunikasi).",
+          "Unduh APK Android Ace Storage (fitur lengkap) atau Ace Chat (khusus komunikasi).",
       },
-      { property: "og:title", content: "Unduh APK — MCM Storage & MCM Chat" },
+      { property: "og:title", content: "Unduh APK — Ace Storage & Ace Chat" },
       {
         property: "og:description",
         content:
-          "Unduh APK Android MCM Storage (fitur lengkap) atau MCM Chat (khusus komunikasi).",
+          "Unduh APK Android Ace Storage (fitur lengkap) atau Ace Chat (khusus komunikasi).",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://mcmstorage.app/download" },
@@ -145,8 +145,8 @@ function QuickCopyBar({
   };
 
   const apkText = [
-    storageUrl ? `MCM Storage: ${storageUrl}` : null,
-    chatUrl ? `MCM Chat: ${chatUrl}` : null,
+    storageUrl ? `Ace Storage: ${storageUrl}` : null,
+    chatUrl ? `Ace Chat: ${chatUrl}` : null,
   ]
     .filter(Boolean)
     .join("\n");
@@ -156,7 +156,7 @@ function QuickCopyBar({
 
   // Pesan siap kirim: link unduhan tiap varian + link halaman (lokasi).
   const waText = [
-    "Halo! Berikut link aplikasi MCM:",
+    "Halo! Berikut link aplikasi Ace:",
     "",
     apkText || "(link APK belum tersedia)",
     "",
@@ -181,10 +181,10 @@ function QuickCopyBar({
           type="button"
           disabled={!storageUrl}
           onClick={() =>
-            void run("storage", storageUrl ?? "", "Link MCM Storage")
+            void run("storage", storageUrl ?? "", "Link Ace Storage")
           }
           className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-ms-2 text-ms-2xs font-semibold transition-colors hover:bg-emerald-500/20 disabled:opacity-50"
-          aria-label="Salin link APK MCM Storage saja"
+          aria-label="Salin link APK Ace Storage saja"
         >
           {copied === "storage" ? (
             <Check className="h-3.5 w-3.5 shrink-0 text-success" />
@@ -198,9 +198,9 @@ function QuickCopyBar({
         <button
           type="button"
           disabled={!chatUrl}
-          onClick={() => void run("chat", chatUrl ?? "", "Link MCM Chat")}
+          onClick={() => void run("chat", chatUrl ?? "", "Link Ace Chat")}
           className="flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg border border-sky-500/40 bg-sky-500/10 px-ms-2 text-ms-2xs font-semibold transition-colors hover:bg-sky-500/20 disabled:opacity-50"
-          aria-label="Salin link APK MCM Chat saja"
+          aria-label="Salin link APK Ace Chat saja"
         >
           {copied === "chat" ? (
             <Check className="h-3.5 w-3.5 shrink-0 text-success" />
@@ -385,7 +385,7 @@ function DownloadPage() {
         ) : (
           <>
             <ApkCard
-              title="MCM Storage"
+              title="Ace Storage"
               subtitle="Fitur lengkap: gudang, ecer, hutang piutang, chat."
               accent="emerald"
               icon={<Smartphone className="h-6 w-6" />}
@@ -394,7 +394,7 @@ function DownloadPage() {
               min={data?.minSupported.storage ?? null}
             />
             <ApkCard
-              title="MCM Chat"
+              title="Ace Chat"
               subtitle="Hanya komunikasi. Ringan, terpisah, akun sama."
               accent="sky"
               icon={<MessageCircle className="h-6 w-6" />}
@@ -421,7 +421,7 @@ const STEPS = [
   {
     icon: Smartphone,
     title: "1. Pilih varian",
-    body: "MCM Storage untuk operasional lengkap (gudang, ecer, hutang piutang, chat). MCM Chat kalau hanya butuh komunikasi. Keduanya boleh dipasang bersamaan di satu HP dengan akun yang sama.",
+    body: "Ace Storage untuk operasional lengkap (gudang, ecer, hutang piutang, chat). Ace Chat kalau hanya butuh komunikasi. Keduanya boleh dipasang bersamaan di satu HP dengan akun yang sama.",
   },
   {
     icon: Download,

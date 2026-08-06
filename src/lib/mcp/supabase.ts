@@ -5,7 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 /**
  * Buat Supabase client per-request memakai access token dari OAuth
  * bearer yang sudah diverifikasi mcp-js. Semua query berjalan sebagai
- * user MCM Storage tersebut, jadi RLS multi-tenant tetap berlaku persis
+ * user Ace Storage tersebut, jadi RLS multi-tenant tetap berlaku persis
  * seperti di aplikasi.
  */
 export function supabaseForCaller(ctx: ToolContext): SupabaseClient<Database> {

@@ -27,7 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dasbor — Ringkasan Bisnis MCM Storage" },
+      { title: "Dasbor — Ringkasan Bisnis Ace Storage" },
       {
         name: "description",
         content:

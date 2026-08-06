@@ -114,7 +114,7 @@ export function MediaLinksDialog({
     const dcs: Array<{ url: string; at: string }> = [];
     for (const m of messages) {
       if (m.deleted_at) continue;
-      // Payload card MCM (sentinel `[mcm-card:v1]` + JSON) bisa mengandung
+      // Payload card Ace (sentinel `[mcm-card:v1]` + JSON) bisa mengandung
       // string URL di field seperti `avatar_url`/`href` — jangan indeks
       // sebagai tautan chat, itu bocornya JSON internal.
       if (isCardBody(m.body)) continue;

@@ -5,17 +5,17 @@ import { PublicHeader } from "@/components/PublicHeader";
 export const Route = createFileRoute("/refund")({
   head: () => ({
     meta: [
-      { title: "Kebijakan Pengembalian Dana — MCM Storage" },
+      { title: "Kebijakan Pengembalian Dana — Ace Storage" },
       {
         name: "description",
         content:
-          "MCM Storage saat ini gratis dan tidak memproses pembayaran daring, sehingga tidak ada transaksi yang perlu dikembalikan.",
+          "Ace Storage saat ini gratis dan tidak memproses pembayaran daring, sehingga tidak ada transaksi yang perlu dikembalikan.",
       },
-      { property: "og:title", content: "Kebijakan Pengembalian Dana — MCM Storage" },
+      { property: "og:title", content: "Kebijakan Pengembalian Dana — Ace Storage" },
       {
         property: "og:description",
         content:
-          "Status kebijakan pengembalian dana MCM Storage: aplikasi gratis, tanpa pembayaran daring.",
+          "Status kebijakan pengembalian dana Ace Storage: aplikasi gratis, tanpa pembayaran daring.",
       },
     ],
     links: [{ rel: "canonical", href: "https://mcmstorage.app/refund" }],
@@ -52,7 +52,7 @@ function RefundPage() {
         <div className="space-ms-4">
           <Section title="Tidak ada pembayaran daring">
             <p>
-              Saat ini MCM Storage <strong>tidak memungut biaya</strong> dan
+              Saat ini Ace Storage <strong>tidak memungut biaya</strong> dan
               tidak memproses pembayaran daring di dalam aplikasi, sehingga
               tidak ada transaksi yang perlu dikembalikan.
             </p>

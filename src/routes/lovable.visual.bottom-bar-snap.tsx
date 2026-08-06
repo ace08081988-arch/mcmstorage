@@ -30,7 +30,7 @@ export const Route = createFileRoute("/lovable/visual/bottom-bar-snap")({
   },
   head: () => ({
     meta: [
-      { title: "Audit Bilah Bawah — MCM" },
+      { title: "Audit Bilah Bawah — Ace" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

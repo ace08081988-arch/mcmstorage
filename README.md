@@ -1,6 +1,6 @@
-# MCM Storage
+# Ace Storage
 
-Aplikasi gudang / retail internal untuk BAROKAH RIZKI / Toko Kifa. MCM Storage menggantikan koordinasi manual WhatsApp dengan satu alat yang membuat Ace tetap menguasai angka stok, hutang, dan produktivitas pegawai.
+Aplikasi gudang / retail internal untuk BAROKAH RIZKI / Toko Kifa. Ace Storage menggantikan koordinasi manual WhatsApp dengan satu alat yang membuat Ace tetap menguasai angka stok, hutang, dan produktivitas pegawai.
 
 ---
 

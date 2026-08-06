@@ -13,13 +13,13 @@
     "server": {
       "name": "mcm-storage-mcp",
       "version": "0.1.0",
-      "title": "MCM Storage"
+      "title": "Ace Storage"
     },
     "tools": [
       {
         "name": "whoami",
         "title": "Siapa saya",
-        "description": "Mengembalikan identitas user MCM Storage yang sedang terhubung via MCP (id, email, dan role admin bila ada). Berguna untuk verifikasi koneksi.",
+        "description": "Mengembalikan identitas user Ace Storage yang sedang terhubung via MCP (id, email, dan role admin bila ada). Berguna untuk verifikasi koneksi.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -35,7 +35,7 @@
       {
         "name": "list_produk",
         "title": "Daftar produk / stok",
-        "description": "Mengambil daftar produk (stok) milik user MCM Storage yang sedang terhubung. Filter opsional lewat query pencarian pada nama.",
+        "description": "Mengambil daftar produk (stok) milik user Ace Storage yang sedang terhubung. Filter opsional lewat query pencarian pada nama.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -64,7 +64,7 @@
       {
         "name": "ringkasan_piutang",
         "title": "Ringkasan piutang",
-        "description": "Mengembalikan ringkasan piutang (single source of truth) untuk user MCM Storage yang sedang terhubung — total outstanding, jumlah pelanggan berhutang, dan waktu perhitungan terakhir.",
+        "description": "Mengembalikan ringkasan piutang (single source of truth) untuk user Ace Storage yang sedang terhubung — total outstanding, jumlah pelanggan berhutang, dan waktu perhitungan terakhir.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -80,7 +80,7 @@
       {
         "name": "detail_piutang",
         "title": "Detail piutang",
-        "description": "Daftar piutang per pelanggan (bukan ringkasan) untuk user MCM Storage yang sedang terhubung. Menggabungkan sales (payment_method='hutang') dan debts (kind='piutang'), dikurangi pembayaran masing-masing. Mendukung filter rentang tanggal (from/to, ISO YYYY-MM-DD), status ('outstanding'|'paid'|'all'), pencarian nama pelanggan, dan limit hasil.",
+        "description": "Daftar piutang per pelanggan (bukan ringkasan) untuk user Ace Storage yang sedang terhubung. Menggabungkan sales (payment_method='hutang') dan debts (kind='piutang'), dikurangi pembayaran masing-masing. Mendukung filter rentang tanggal (from/to, ISO YYYY-MM-DD), status ('outstanding'|'paid'|'all'), pencarian nama pelanggan, dan limit hasil.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

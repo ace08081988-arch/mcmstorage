@@ -328,12 +328,12 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
     const BUCKET = "apk-releases";
     const meta: Record<ApkVariant, { title: string; subtitle: string }> = {
       storage: {
-        title: "MCM Storage",
+        title: "Ace Storage",
         subtitle:
           "APK fitur lengkap: gudang, penjualan, hutang piutang, ecer, chat.",
       },
       chat: {
-        title: "MCM Chat",
+        title: "Ace Chat",
         subtitle: "APK khusus komunikasi. Ringan, terpisah, akun sama.",
       },
     };

@@ -25,7 +25,7 @@
 
             <!-- Deep link: buka aplikasi lewat scheme biz.mcmstorage.app -->
             <!-- Contoh: biz.mcmstorage.app://t/<share_token>?p=<pin> -->
-            <intent-filter android:label="MCM Storage Deep Link">
+            <intent-filter android:label="Ace Storage Deep Link">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />

@@ -19,23 +19,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageContainer } from "@/components/shell";
 import { Bot, Check, Copy, ExternalLink, RefreshCw } from "lucide-react";
 
-const APP_NAME = "MCM Storage";
+const APP_NAME = "Ace Storage";
 const SERVER_SLUG = "mcm-storage";
 
 export const Route = createFileRoute("/_authenticated/hubungkan-agen")({
   head: () => ({
     meta: [
-      { title: "Hubungkan asisten AI · MCM Storage" },
+      { title: "Hubungkan asisten AI · Ace Storage" },
       {
         name: "description",
         content:
-          "Panduan menghubungkan ChatGPT, Claude, atau Claude Code ke MCM Storage lewat koneksi MCP, termasuk cara menyegarkan koneksi setelah aplikasi diperbarui.",
+          "Panduan menghubungkan ChatGPT, Claude, atau Claude Code ke Ace Storage lewat koneksi MCP, termasuk cara menyegarkan koneksi setelah aplikasi diperbarui.",
       },
-      { property: "og:title", content: "Hubungkan asisten AI · MCM Storage" },
+      { property: "og:title", content: "Hubungkan asisten AI · Ace Storage" },
       {
         property: "og:description",
         content:
-          "Salin URL server, ikuti langkah per aplikasi, dan segarkan koneksi saat MCM Storage diperbarui.",
+          "Salin URL server, ikuti langkah per aplikasi, dan segarkan koneksi saat Ace Storage diperbarui.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

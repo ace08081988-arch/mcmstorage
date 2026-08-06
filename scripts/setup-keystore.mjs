@@ -9,7 +9,7 @@
  *   node scripts/setup-keystore.mjs --force        # regenerate meskipun sudah ada
  *   node scripts/setup-keystore.mjs --non-interactive \
  *     --alias mcm --store ~/keys/mcm.keystore \
- *     --dname "CN=MCM Storage,O=BAROKAH RIZKI,C=ID" \
+ *     --dname "CN=Ace Storage,O=BAROKAH RIZKI,C=ID" \
  *     --validity 10000
  *     (password dibaca dari env: KEYSTORE_STORE_PASS & KEYSTORE_KEY_PASS)
  *
@@ -66,7 +66,7 @@ const NON_INTERACTIVE = args.has("--non-interactive");
 // Aman untuk CI / komputer bersama.
 const ENV_ONLY = args.has("--env-only");
 
-banner("Wizard signing keystore MCM");
+banner("Wizard signing keystore Ace");
 
 // ─── 1. keytool ada? ──────────────────────────────────────────────────
 step("1/6  Cek `keytool`");
@@ -95,8 +95,8 @@ const validity = flag("--validity") ?? (await ask("Validity (hari) [10000]: ", "
 const dname =
   flag("--dname") ??
   (await ask(
-    'Distinguished Name [CN=MCM Storage,O=BAROKAH RIZKI,L=Indonesia,C=ID]: ',
-    "CN=MCM Storage,O=BAROKAH RIZKI,L=Indonesia,C=ID",
+    'Distinguished Name [CN=Ace Storage,O=BAROKAH RIZKI,L=Indonesia,C=ID]: ',
+    "CN=Ace Storage,O=BAROKAH RIZKI,L=Indonesia,C=ID",
   ));
 
 let storePassword;

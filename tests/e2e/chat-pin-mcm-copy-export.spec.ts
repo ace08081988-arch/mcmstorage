@@ -60,7 +60,7 @@ test.describe("copy/export transkrip — source guard", () => {
   });
 });
 
-test.describe("copy/export transkrip — runtime PIN MCM", () => {
+test.describe("copy/export transkrip — runtime PIN Ace", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("reload DM → salin pesan: clipboard bebas nomor telp mentah", async ({

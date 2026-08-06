@@ -31,7 +31,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/debug/selector")({
   head: () => ({
     meta: [
-      { title: "Debug Selector · MCM Storage" },
+      { title: "Debug Selector · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

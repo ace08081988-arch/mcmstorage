@@ -22,7 +22,7 @@ import { useLiveStock, type LiveStockItem } from "@/lib/live-stock";
 import { openWhatsAppPreferBusiness } from "@/lib/share-wa";
 import { useEffect } from "react";
 
-const TITLE = "Katalog Produk — MCM Storage";
+const TITLE = "Katalog Produk — Ace Storage";
 const DESC =
   "Lihat katalog produk gudang lengkap dengan sisa stok, filter kategori, dan tombol pesan langsung lewat WhatsApp.";
 

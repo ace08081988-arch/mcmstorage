@@ -6,9 +6,9 @@ import { PageContainer } from "@/components/shell";
 export const Route = createFileRoute("/_authenticated/perf")({
   head: () => ({
     meta: [
-      { title: "Monitor Performa · MCM Storage" },
+      { title: "Monitor Performa · Ace Storage" },
       { name: "description", content: "Panel pemantauan performa aplikasi secara real-time: ukuran bundle, waktu render, FPS, memori, dan bottleneck (long task)." },
-      { property: "og:title", content: "Monitor Performa · MCM Storage" },
+      { property: "og:title", content: "Monitor Performa · Ace Storage" },
       { property: "og:description", content: "Pantau ukuran bundle, waktu render, FPS, memori, dan bottleneck aplikasi secara real-time." },
       { name: "robots", content: "noindex,nofollow" },
     ],

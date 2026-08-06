@@ -1,5 +1,5 @@
 /**
- * State machine + DB helper untuk panggilan MCM Chat.
+ * State machine + DB helper untuk panggilan Ace Chat.
  *
  * Sengaja tetap client-side (RLS) — user harus login sebagai peserta
  * konversasi untuk membuat/memperbarui row. Signaling media dipisah

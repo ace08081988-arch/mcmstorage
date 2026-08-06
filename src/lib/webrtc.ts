@@ -1,5 +1,5 @@
 /**
- * WebRTC helper untuk MCM Chat — panggilan 1‑ke‑1 (DM).
+ * WebRTC helper untuk Ace Chat — panggilan 1‑ke‑1 (DM).
  *
  * Signaling berjalan lewat Supabase Realtime *broadcast* di channel
  * `call:<callId>`. Kedua peserta bergabung ke channel yang sama, pihak

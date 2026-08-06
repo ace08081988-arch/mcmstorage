@@ -71,7 +71,7 @@ export async function pickDeviceContacts(): Promise<ImportedContact[]> {
   const nav = globalThis.navigator as any;
   if (!nav?.contacts?.select) {
     throw new Error(
-      "Akses kontak perangkat tidak tersedia di browser ini. Buka aplikasi MCM Storage di Android.",
+      "Akses kontak perangkat tidak tersedia di browser ini. Buka aplikasi Ace Storage di Android.",
     );
   }
   const supported: string[] = (await nav.contacts.getProperties?.()) ?? [

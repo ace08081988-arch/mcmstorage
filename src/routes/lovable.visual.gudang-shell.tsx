@@ -69,7 +69,7 @@ type Theme = (typeof THEMES)[number];
 export const Route = createFileRoute("/lovable/visual/gudang-shell")({
   head: () => ({
     meta: [
-      { title: "Gudang shell — QA · MCM" },
+      { title: "Gudang shell — QA · Ace" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

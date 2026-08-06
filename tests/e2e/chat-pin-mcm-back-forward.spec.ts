@@ -46,7 +46,7 @@ test.describe("back/forward antar DM — source guard", () => {
   });
 });
 
-test.describe("back/forward antar DM — runtime PIN MCM", () => {
+test.describe("back/forward antar DM — runtime PIN Ace", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("DM A → DM B → back (A) → forward (B): header/transkrip akurat per konvo, no phone", async ({

@@ -190,8 +190,8 @@ describe("/pengaturan-apk — rerender saat role berubah", () => {
     });
     expect(after).not.toContain("Hanya admin");
     expect(after).toContain("Minimum versi kompatibel");
-    expect(after).toContain("MCM Storage");
-    expect(after).toContain("MCM Chat");
+    expect(after).toContain("Ace Storage");
+    expect(after).toContain("Ace Chat");
 
     // Kontrol: dua snapshot tidak boleh identik — bukti komponen benar-benar
     // merespon perubahan role, bukan cache statis.

@@ -49,7 +49,7 @@ test.describe("deep link multi-DM — source guard", () => {
   });
 });
 
-test.describe("deep link multi-DM — runtime PIN MCM per conversationId", () => {
+test.describe("deep link multi-DM — runtime PIN Ace per conversationId", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("goto(/chat/idA) → goto(/chat/idB) → goto(/chat/idA): identitas akurat, no phone", async ({

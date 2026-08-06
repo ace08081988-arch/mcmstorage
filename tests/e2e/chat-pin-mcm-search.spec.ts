@@ -15,7 +15,7 @@ import { resolve } from "node:path";
  *    `m.created_at`, tidak menyentuh `phone`.
  * 2. Runtime (self-skip): buka DM pertama → menu titik-tiga → "Cari di
  *    percakapan" → ketik kata dari pesan yang sudah ada → assert hits
- *    muncul, bebas phone, header/transkrip tetap PIN MCM.
+ *    muncul, bebas phone, header/transkrip tetap PIN Ace.
  */
 
 const STORAGE = "tests/visual/.auth/user.json";
@@ -49,7 +49,7 @@ test.describe("chat search — source guard", () => {
     const body = src.slice(start, end > -1 ? end : undefined);
     expect(body, "SearchDialog tidak boleh mengakses kolom phone").not.toMatch(/\bm\.phone\b/);
     expect(body).toMatch(/\bm\.body\b/);
-    // Placeholder input harus copy PIN MCM friendly (bukan phone-branded).
+    // Placeholder input harus copy PIN Ace friendly (bukan phone-branded).
     expect(body).toMatch(/Ketik kata kunci/);
   });
 
@@ -63,7 +63,7 @@ test.describe("chat search — source guard", () => {
   });
 });
 
-test.describe("chat search — runtime PIN MCM", () => {
+test.describe("chat search — runtime PIN Ace", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("buka dialog Cari → ketik kata dari pesan → hits bebas phone, header tetap PIN", async ({
@@ -132,7 +132,7 @@ test.describe("chat search — runtime PIN MCM", () => {
     const dialogAfter = await dialog.innerText();
     expect(dialogAfter, "hasil pencarian tidak boleh mengandung phone").not.toMatch(PHONE_LIKE);
 
-    // Header dan area utama di belakang dialog tetap PIN MCM.
+    // Header dan area utama di belakang dialog tetap PIN Ace.
     const headerAfter = await readHeaderLine();
     expect(headerAfter, "header pasca-search tanpa phone").not.toMatch(PHONE_LIKE);
     expect(headerAfter).toBe(headerBefore);
