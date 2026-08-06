@@ -1,0 +1,73 @@
+name: Head & SEO Metadata Audit
+
+# Gate wajib sebelum merge: audit snapshot tag head (favicon, apple-touch-icon,
+# mask-icon, mstile, manifest, OG/Twitter card, cache-buster, header cache) plus
+# audit metadata SEO per rute publik. Mismatch = merge/publish diblokir.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  head-seo-audit:
+    name: Audit head & metadata SEO
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun global store
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-store-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-store-
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Audit head (favicon, manifest, mstile, OG/Twitter, cache header)
+        env:
+          CI: "true"
+        run: |
+          mkdir -p artifacts
+          bun run audit:head -- --reporter=verbose --no-color 2>&1 | tee artifacts/audit-head.log
+
+      - name: Audit metadata SEO rute publik
+        env:
+          CI: "true"
+        run: bun run audit:seo -- --reporter=verbose --no-color 2>&1 | tee artifacts/audit-seo.log
+
+      - name: Upload audit log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: head-seo-audit-log
+          path: artifacts/**
+          retention-days: 14
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## Head & SEO Metadata Audit";
+            echo "";
+            echo "- \`audit:head\` — tag head, manifest, ikon, cache-buster, header cache";
+            echo "- \`audit:seo\` — title/description/OG/Twitter/canonical tiap rute publik";
+          } >> "$GITHUB_STEP_SUMMARY"
