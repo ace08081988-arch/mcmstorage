@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import {
   BadgeCheck,
   CheckCircle2,
@@ -18,16 +19,8 @@ const DESC =
 
 export const Route = createFileRoute("/harga")({
   head: () => ({
-    meta: [
-      { title: TITLE },
-      { name: "description", content: DESC },
-      { property: "og:title", content: TITLE },
-      { property: "og:description", content: DESC },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.app/harga" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.app/harga" }],
+    meta: socialMeta({ title: TITLE, description: DESC, url: "/harga" }),
+    links: [canonical("/harga")],
   }),
   component: HargaPage,
 });
