@@ -699,7 +699,11 @@ export function AttachMenu({ conversationId, disabled, onSent, onStageFiles }: P
                     className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${selectMode ? "cursor-pointer" : ""} ${isSelected ? "ring-2 ring-primary" : st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-success/70" : ""}`}
                   >
                     {p.previewUrl && p.file.type.startsWith("image/") ? (
-                      <img src={p.previewUrl} alt={p.file.name} className="h-full w-full object-cover" />
+                      <img
+                        src={p.previewUrl}
+                        alt={`Pratinjau foto lampiran: ${p.file.name}`}
+                        className="h-full w-full object-cover"
+                      />
                     ) : p.previewUrl && p.file.type.startsWith("video/") ? (
                       <video src={p.previewUrl} className="h-full w-full object-cover" />
                     ) : (
