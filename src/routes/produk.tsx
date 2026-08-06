@@ -20,6 +20,21 @@ export const Route = createFileRoute("/produk")({
   head: () => ({
     meta: socialMeta({ title: TITLE, description: DESC, url: "/produk" }),
     links: [canonical("/produk")],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Ace Storage",
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Android, Web",
+          description: DESC,
+          publisher: { "@type": "Organization", name: "Ace Storage" },
+        }),
+      },
+    ],
+  }),
   component: ProdukPage,
 });
 
