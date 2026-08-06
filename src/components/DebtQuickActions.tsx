@@ -268,7 +268,10 @@ export function DebtQuickActions({
         const accId = data.accountUserId ?? peerAccountUserId ?? null;
         if (accId) payload.account_user_id = accId;
         const { error } = await supabase.from(table).insert(payload as never);
-        if (error) throw error;
+        if (error) {
+          logPartyWriteFailure({ table, op: "insert", error, source: "DebtQuickActions" });
+          throw error;
+        }
         toast.success(
           `${regName} terdaftar sebagai ${table === "customers" ? "pelanggan" : "supplier"}. Pencatatan hutang/piutang aktif.`,
         );
