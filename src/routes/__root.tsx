@@ -21,6 +21,7 @@ import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
 import { installChunkRecovery } from "@/lib/chunk-recovery";
 import { withAssetVersion } from "@/lib/asset-version";
+import { jsonLdScript, organizationSchema, websiteSchema } from "@/lib/structured-data";
 
 // Layar hitam: entry/chunk gagal di-fetch di luar React → pulihkan sendiri.
 installChunkRecovery();
@@ -321,6 +322,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", sizes: "180x180", href: withAssetVersion("/apple-touch-icon.png") },
       { rel: "mask-icon", href: withAssetVersion("/mask-icon.svg"), color: "#c9a227" },
     ],
+    // Identitas brand sitewide (beranda ikut memakainya) supaya hasil
+    // pencarian bisa menampilkan knowledge panel / rich preview Ace Storage.
+    scripts: [jsonLdScript([organizationSchema(), websiteSchema()])],
   }),
   shellComponent: RootShell,
   component: RootComponent,

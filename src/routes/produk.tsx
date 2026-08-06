@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { canonical, socialMeta } from "@/lib/seo-meta";
+import { jsonLdScript, organizationSchema } from "@/lib/structured-data";
 import {
   Boxes,
   CheckCircle2,
@@ -21,18 +22,18 @@ export const Route = createFileRoute("/produk")({
     meta: socialMeta({ title: TITLE, description: DESC, url: "/produk" }),
     links: [canonical("/produk")],
     scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
+      jsonLdScript([
+        {
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
           name: "Ace Storage",
           applicationCategory: "BusinessApplication",
           operatingSystem: "Android, Web",
           description: DESC,
-          publisher: { "@type": "Organization", name: "Ace Storage" },
-        }),
-      },
+          publisher: { "@id": "https://mcmstorage.app/#organization" },
+        },
+        organizationSchema(),
+      ]),
     ],
   }),
   component: ProdukPage,
