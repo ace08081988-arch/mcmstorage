@@ -4,6 +4,7 @@
  */
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,23 +36,21 @@ export const Route = createFileRoute("/katalog/$slug/")({
   loader: ({ params }) => getPublicCatalog({ data: { slug: params.slug } }),
   head: ({ params, loaderData }) => {
     const name = loaderData?.shop?.name ?? null;
-    const title = name ? `${name} — Katalog produk` : "Katalog produk tidak tersedia";
+    const title = name
+      ? `${name} — Katalog produk | Ace Storage`
+      : "Katalog produk tidak tersedia — Ace Storage";
     const desc =
       loaderData?.shop?.tagline?.trim() ||
       `Lihat daftar produk ${name ?? "toko"} lengkap dengan stok dan harga, lalu pesan langsung lewat WhatsApp.`;
-    const url = `https://mcmstorage.app/katalog/${params.slug}`;
+    const url = `/katalog/${params.slug}`;
     return {
-      meta: [
-        { title },
-        { name: "description", content: desc },
-        { property: "og:title", content: title },
-        { property: "og:description", content: desc },
-        { property: "og:type", content: "website" },
-        { property: "og:url", content: url },
-        { name: "twitter:card", content: "summary" },
-        ...(loaderData?.found ? [] : [{ name: "robots", content: "noindex" }]),
-      ],
-      links: [{ rel: "canonical", href: url }],
+      meta: socialMeta({
+        title,
+        description: desc,
+        url,
+        noindex: !loaderData?.found,
+      }),
+      links: [canonical(url)],
       scripts: loaderData?.found
         ? [
             {
@@ -61,7 +60,7 @@ export const Route = createFileRoute("/katalog/$slug/")({
                 "@type": "CollectionPage",
                 name: title,
                 description: desc,
-                url,
+                url: `https://mcmstorage.app${url}`,
               }),
             },
           ]
