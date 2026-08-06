@@ -126,13 +126,13 @@ const DuplicateNotice = memo(function DuplicateNotice({
           {dup.status === "in-flight"
             ? (crossChannel
                 ? "Kiriman Chat untuk paket ini sedang berjalan."
-                : "Klik ganda terdeteksi — kiriman Ace sebelumnya masih berjalan.")
-            : "Klik ganda terdeteksi — paket ini baru saja dikirim via Ace."}
+                : "Klik ganda terdeteksi — kiriman WA sebelumnya masih berjalan.")
+            : "Klik ganda terdeteksi — paket ini baru saja dikirim via WhatsApp."}
         </div>
         <div className="mt-0.5 opacity-90">
           {dup.status === "in-flight"
-            ? `Dimulai ${dupAgoLabel}. Tombol "Kirim via Ace" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
-            : `Dikirim ${dupAgoLabel}. Tombol "Kirim via Ace" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
+            ? `Dimulai ${dupAgoLabel}. Tombol "Kirim via WhatsApp" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
+            : `Dikirim ${dupAgoLabel}. Tombol "Kirim via WhatsApp" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
         </div>
         <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-ms-2xs">
           <dt className="font-medium opacity-80">Waktu</dt>
@@ -765,11 +765,11 @@ export function WaPreviewHost() {
             </div>
             <div className="min-w-0 flex-1 text-left">
               <DialogTitle className="flex min-w-0 flex-wrap items-center gap-ms-2 text-ms-sm sm:text-ms-base">
-                <span className="min-w-0 truncate">Pratinjau pesan Ace</span>
+                <span className="min-w-0 truncate">Pratinjau pesan WA</span>
                 <SyncSourceBadge source={liveLog.lastSource} active={liveLog.active} />
               </DialogTitle>
               <DialogDescription className="mt-0.5 text-ms-2xs leading-snug sm:text-ms-xs">
-                Tinjau teks dan foto yang akan dikirim sebelum membuka Ace.
+                Tinjau teks dan foto yang akan dikirim sebelum membuka WhatsApp.
               </DialogDescription>
             </div>
           </div>
@@ -835,7 +835,7 @@ export function WaPreviewHost() {
                 rows={8}
                 aria-label="Teks pesan yang akan dikirim"
                 className="min-h-[8rem] max-h-[45svh] resize-y bg-background font-sans text-ms-xs leading-relaxed"
-                placeholder="Tulis pesan untuk Ace…"
+                placeholder="Tulis pesan untuk WhatsApp…"
                 onKeyDown={(e) => {
                   // Ctrl/Cmd+Enter = selesai mengedit, sama seperti tombol
                   // "Selesai" — tanpa perlu men-Tab keluar dari textarea.
@@ -935,7 +935,7 @@ export function WaPreviewHost() {
                 className="min-h-11 min-w-0 bg-success text-white hover:bg-success sm:min-h-9"
               >
                 <Send className="mr-1.5 h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via Ace"}</span>
+                <span className="truncate">{live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via WhatsApp"}</span>
               </Button>
             )}
           </div>

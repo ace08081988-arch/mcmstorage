@@ -1952,7 +1952,7 @@ function PublicPrepPage() {
             )}
             {(isLocked || attempts > 0) && (
               <p className="mt-2 text-center text-ms-2xs leading-relaxed text-muted-foreground">
-                Tombol ini hanya membuka Ace dengan pesan siap kirim — pembatasan percobaan tetap
+                Tombol ini hanya membuka WhatsApp dengan pesan siap kirim — pembatasan percobaan tetap
                 berlaku sampai hitungan mundur selesai.
               </p>
             )}

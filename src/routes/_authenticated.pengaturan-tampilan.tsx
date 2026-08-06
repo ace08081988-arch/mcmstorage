@@ -140,7 +140,7 @@ function writeCompact(v: boolean) {
 export const Route = createFileRoute("/_authenticated/pengaturan-tampilan")({
   head: () => ({
     meta: [
-      { title: "Tampilan · Pengaturan Ace" },
+      { title: "Tampilan · Pengaturan — Ace Storage" },
       { name: "description", content: "Atur tema, aksen, font, kerapatan, latar, dan preset tampilan profesional." },
     ],
   }),
@@ -1717,7 +1717,7 @@ function PengaturanTampilanPage() {
                 <div>
                   <p className="text-ms-sm font-semibold">Impor dari clipboard / kode</p>
                   <p className="text-ms-2xs text-muted-foreground">
-                    Tempel kode preset (MCMTAMPILAN1:…) atau JSON pengaturan.
+                    Tempel kode preset (ACETAMPILAN1:…) atau JSON pengaturan.
                     Fallback prompt manual jika izin clipboard ditolak.
                   </p>
                 </div>

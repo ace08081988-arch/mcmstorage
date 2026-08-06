@@ -146,7 +146,7 @@ function QuickCopyBar({
 
   // Pesan siap kirim: link unduhan tiap varian + link halaman (lokasi).
   const waText = [
-    "Halo! Berikut link aplikasi Ace:",
+    "Halo! Berikut link aplikasi Ace Storage:",
     "",
     apkText || "(link APK belum tersedia)",
     "",

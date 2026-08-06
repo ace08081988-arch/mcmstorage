@@ -3,16 +3,15 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Guardrail snapshot: memastikan branding "Ace" tidak bergeser kembali
- * ke "WhatsApp"/"WA" pada permukaan chat utama.
+ * Guardrail snapshot: memastikan nama brand lama ("MCM") tidak muncul lagi
+ * pada permukaan chat utama setelah rebrand ke Ace Storage / Ace Chat.
  *
- * Cara kerja: ekstrak seluruh string literal user-facing (di dalam JSX text,
- * atribut placeholder/title/aria-label, dan template string) yang menyebut
- * salah satu token branding, lalu bekukan sebagai snapshot. Bila ada label
- * yang berubah/ditambah/dihapus, snapshot akan gagal dan wajib direview.
+ * Penting: "WhatsApp"/"WA" BUKAN nama brand kita — itu nama kanal pihak
+ * ketiga dan harus tetap apa adanya. Label seperti "Kirim via WhatsApp"
+ * sengaja dibiarkan; yang dilarang hanya sisa kata "MCM".
  *
  * Identifier teknis (URL `whatsapp://`, `wa.me`, package `com.whatsapp.*`,
- * nama variabel/impor, komentar) sengaja diabaikan.
+ * kolom `pin_chat_mcm`, nama variabel/impor, komentar) sengaja diabaikan.
  */
 
 const FILES = {
@@ -23,11 +22,11 @@ const FILES = {
   "forward (selection toolbar)": "src/components/chat/SelectionToolbar.tsx",
 } as const;
 
-const BRAND_RE = /\b(Ace|WhatsApp|WA)\b/;
+const BRAND_RE = /\b(Ace|MCM|Mcm|WhatsApp|WA)\b/;
 
 // Baris yang jelas non-UI dan harus diabaikan meski mengandung token.
 const TECH_HINT_RE =
-  /whatsapp:\/\/|wa\.me|com\.whatsapp|^\s*(\/\/|\*|\/\*)|\*\/|import\s|from\s+["']|require\(/i;
+  /whatsapp:\/\/|wa\.me|com\.whatsapp|pin_chat_mcm|mcmstorage|mcm[.:-]|^\s*(\/\/|\*|\/\*)|\*\/|import\s|from\s+["']|require\(/i;
 
 function extractBrandLabels(source: string): string[] {
   const out = new Set<string>();
@@ -47,10 +46,10 @@ describe("Ace branding — snapshot label chat kunci", () => {
       const src = readFileSync(resolve(process.cwd(), relPath), "utf8");
       const labels = extractBrandLabels(src);
 
-      // Hard assertion: tidak boleh ada label user-facing yang menyebut
-      // "WhatsApp" atau kata utuh "WA" lagi.
-      const leaked = labels.filter((s) => /\b(WhatsApp|WA)\b/.test(s));
-      expect(leaked, `Label WA/WhatsApp bocor di ${relPath}`).toEqual([]);
+      // Hard assertion: tidak boleh ada label user-facing yang masih
+      // menyebut nama brand lama "MCM".
+      const leaked = labels.filter((s) => /\bMCM\b|\bMcm\b/.test(s));
+      expect(leaked, `Nama brand lama "MCM" bocor di ${relPath}`).toEqual([]);
 
       // Freeze daftar label Ace sebagai snapshot supaya pergeseran wording
       // ketahuan lebih awal.

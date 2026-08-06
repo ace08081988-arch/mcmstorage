@@ -778,7 +778,7 @@ function TugasBaruForm() {
     const missingWid = items.filter((r) => !r.warehouse_item_id).length;
     if (missingWid > 0) {
       const ok = window.confirm(
-        `${missingWid} barang belum dipilih dari daftar produk. Tugas tetap bisa dibuat, tetapi foto pegawai tidak akan otomatis muncul di kartu Beranda (1g/ST/SPR/GS) dan tombol Kirim via Ace hanya aktif untuk barang yang cocok.\n\nLanjutkan tanpa cocokkan?`,
+        `${missingWid} barang belum dipilih dari daftar produk. Tugas tetap bisa dibuat, tetapi foto pegawai tidak akan otomatis muncul di kartu Beranda (1g/ST/SPR/GS) dan tombol Kirim via WhatsApp hanya aktif untuk barang yang cocok.\n\nLanjutkan tanpa cocokkan?`,
       );
       if (!ok) return null;
     }
@@ -1015,7 +1015,7 @@ function TugasBaruForm() {
               </div>
             </details>
           </Field>
-          <Field label="Kirim via Ace (opsional)">
+          <Field label="Kirim via WhatsApp (opsional)">
             <div className="flex items-center gap-ms-2">
               <input
                 inputMode="tel"
@@ -1228,7 +1228,7 @@ function TugasBaruForm() {
                   <div className="col-span-12">
                     <label className="block space-y-1">
                       <div className="text-ms-2xs font-medium text-muted-foreground">
-                        Pilih dari daftar produk (agar foto pegawai otomatis muncul di Beranda & tombol Kirim via Ace aktif)
+                        Pilih dari daftar produk (agar foto pegawai otomatis muncul di Beranda & tombol Kirim via WhatsApp aktif)
                       </div>
                       <select
                         value={r.title_id}

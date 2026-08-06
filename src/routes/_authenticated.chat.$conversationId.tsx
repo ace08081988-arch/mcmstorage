@@ -2256,7 +2256,7 @@ function ChatRoomPage() {
                               }}
                             >
                               <Share2 className="mr-2 h-4 w-4" />
-                              Teruskan via Ace
+                              Teruskan via WhatsApp
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() => {

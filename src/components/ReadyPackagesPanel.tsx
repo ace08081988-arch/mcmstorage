@@ -305,7 +305,7 @@ function PackageCard({
     const text = buildCaption("", "");
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Caption disalin — tinggal tempel di Ace.");
+      toast.success("Caption disalin — tinggal tempel di WhatsApp.");
     } catch {
       // Fallback for browsers without Clipboard API
       const ta = document.createElement("textarea");

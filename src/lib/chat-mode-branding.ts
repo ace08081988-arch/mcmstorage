@@ -57,6 +57,12 @@ const ASSETS_TO_INVALIDATE = [
 ];
 
 let lastAppliedMode: "chat" | "full" | null = null;
+/**
+ * Judul dokumen sebelum mode chat memaksa "Ace Chat". Dipakai untuk
+ * memulihkan judul saat kembali ke mode full tanpa menimpa judul SEO
+ * per-halaman yang belum pernah kita ubah.
+ */
+let titleBeforeChat: string | null = null;
 
 function stripQuery(href: string): string {
   const q = href.indexOf("?");
@@ -129,7 +135,16 @@ function applyProfile(profile: BrandingProfile, mode: "chat" | "full") {
   const bust = `${mode}-${Date.now()}`;
   // Judul dokumen di mode "full" dikelola oleh `head()` tiap route
   // (SEO per halaman). Hanya mode chat yang memaksa judul global.
-  if (mode === "chat") document.title = profile.title;
+  if (mode === "chat") {
+    if (titleBeforeChat === null) titleBeforeChat = document.title;
+    document.title = profile.title;
+  } else if (document.title === CHAT_PROFILE.title) {
+    // Hanya pulihkan bila judul saat ini masih judul chat yang kita set.
+    document.title = titleBeforeChat && titleBeforeChat !== CHAT_PROFILE.title
+      ? titleBeforeChat
+      : profile.title;
+    titleBeforeChat = null;
+  }
   setMeta("apple-mobile-web-app-title", profile.title);
   setMeta("application-name", profile.title);
   setMeta("theme-color", profile.themeColor);

@@ -38,16 +38,20 @@ describe("Request PrepCard — Kirim & Hapus tidak render/eksekusi saat sold", (
   });
 
   it("tombol Kirim hanya dirender di cabang !sold, bukan di sold", () => {
-    // Ternary: {!sold ? ( <button …Kirim… </button> ) : ( <span …Terkirim… </span> )}
+    // Ternary: {!sold ? ( <button …Kirim… </button> ) : ( <>…<span …Terkirim… )}
     expect(REQUEST).toMatch(
-      /\{\s*!sold\s*\?\s*\(\s*<button\b[\s\S]*?Kirim\s*<\/button>\s*\)\s*:\s*\(\s*<span\b[\s\S]*?Terkirim/,
+      /\{\s*!sold\s*\?\s*\(\s*<button\b[\s\S]*?Kirim\s*<\/button>\s*\)\s*:\s*\(\s*(?:<>\s*)?<span\b[\s\S]*?Terkirim/,
     );
   });
 
-  it("tombol Hapus (Trash2) dibungkus {!sold && ...}", () => {
+  it("tombol Hapus tetap tersedia saat sold, dengan label arsip", () => {
+    // Produk: arsip Terkirim HARUS bisa dihapus (permintaan user), jadi
+    // tombol tidak lagi disembunyikan — hanya labelnya yang berubah dan
+    // dialog konfirmasi menjelaskan konsekuensinya.
     expect(REQUEST).toMatch(
-      /\{\s*!sold\s*&&\s*\(\s*<button[\s\S]*?aria-label="Hapus penyiapan"[\s\S]*?<Trash2/,
+      /aria-label=\{sold\s*\?\s*"Hapus arsip penyiapan"\s*:\s*"Hapus penyiapan"\}/,
     );
+    expect(REQUEST).toMatch(/deleteTargetSold\s*\?\s*"Hapus arsip terkirim\?"/);
   });
 
   it("SendPrepToCustomerDialog hanya di-mount saat !sold (blok jalur kirim ulang)", () => {
@@ -70,10 +74,9 @@ describe("Request renderCard — guardedDelete/guardedSent memblokir aksi saat R
     expect(REQUEST_SRC).not.toMatch(/const isReadOnly\s*=\s*inSent\s*\|\|\s*!!p\.sold_at/);
   });
 
-  it("guardedDelete: if (isReadOnly) → toast.error + return SEBELUM onDelete", () => {
-    // Guard: bangun pesan lewat buildReadOnlyToast("delete", p) → toast.error(t.title, { description: t.description }) → return; onDelete(p).
+  it("guardedDelete meneruskan ke onDelete (hapus arsip diizinkan)", () => {
     expect(REQUEST).toMatch(
-      /const guardedDelete\s*=\s*\(\s*\)\s*=>\s*\{\s*if\s*\(\s*isReadOnly\s*\)\s*\{[\s\S]*?buildReadOnlyToast\(\s*["']delete["']\s*,\s*p\s*\)[\s\S]*?toast\.error\([\s\S]*?description[\s\S]*?\)\s*;\s*return\s*;\s*\}\s*onDelete\(p\)/,
+      /const guardedDelete\s*=\s*\(\s*\)\s*=>\s*\{\s*onDelete\(p\)\s*;\s*\}/,
     );
   });
 
@@ -105,10 +108,12 @@ describe("Ecer PrepBox — Edit/Hapus tidak render & onDelete diblokir saat sold
     expect(ECER).toMatch(/onClick=\{\s*selectionMode\s*&&\s*!readOnly\s*\?/);
   });
 
-  it("onDelete: guard if (readOnly) → toast.error + return SEBELUM hapus", () => {
+  it("onDelete membuka dialog konfirmasi, dengan salinan khusus arsip", () => {
+    // Hapus arsip Terkirim diizinkan; pengamannya dialog konfirmasi.
     expect(ECER).toMatch(
-      /async function onDelete\(\)\s*\{\s*if\s*\(\s*readOnly\s*\)\s*\{[\s\S]*?buildReadOnlyToast\(\s*["']delete["']\s*,\s*prep\s*\)[\s\S]*?toast\.error\([\s\S]*?description[\s\S]*?\)\s*;\s*return\s*;\s*\}/,
+      /async function onDelete\(\)\s*\{\s*setDeleteStep\("idle"\)\s*;\s*setDeleteOpen\(true\)\s*;\s*\}/,
     );
+    expect(ECER).toMatch(/readOnly\s*\?\s*"Hapus arsip terkirim\?"/);
   });
 
   it("kartu memiliki aria-readonly saat sold", () => {

@@ -330,9 +330,9 @@ function KontakPage() {
                             variant="secondary"
                             className="bg-wa/15 text-wa-strong hover:bg-wa/25"
                             onClick={() => void sendWa(r)}
-                            title={`Kirim via Ace ke ${r.contact}`}
+                            title={`Kirim via WhatsApp ke ${r.contact}`}
                           >
-                            Kirim via Ace
+                            Kirim via WhatsApp
                           </Button>
                         )}
                         {r.account_user_id && (

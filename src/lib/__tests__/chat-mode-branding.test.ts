@@ -203,12 +203,12 @@ describe("applyChatModeBranding — pindah balik ke mode full", () => {
       .querySelector<HTMLLinkElement>('link[rel="manifest"]')!
       .getAttribute("href")!;
     expect(stripQuery(manifest)).toBe("/manifest.webmanifest");
+    // Set favicon multi-ukuran dipulihkan ke href aslinya masing-masing,
+    // bukan disamakan jadi satu favicon.ico.
     const icons = Array.from(
       document.querySelectorAll<HTMLLinkElement>('link[rel="icon"]'),
-    );
-    for (const el of icons) {
-      expect(stripQuery(el.getAttribute("href"))).toBe("/favicon.ico");
-    }
+    ).map((el) => stripQuery(el.getAttribute("href")));
+    expect(icons).toEqual(["/favicon.ico", "/favicon-16.png", "/favicon-32.png"]);
     expect(
       stripQuery(
         document

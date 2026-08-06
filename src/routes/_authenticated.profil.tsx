@@ -113,7 +113,7 @@ function ProfilPage() {
     if (rawPhone) {
       const norm = normalizeWaNumber(rawPhone, countryCode);
       if (!norm) {
-        toast.error("Nomor Ace tidak valid untuk negara terpilih (8–15 digit)");
+        toast.error("Nomor WA tidak valid untuk negara terpilih (8–15 digit)");
         return;
       }
       phoneToSave = norm;
@@ -330,15 +330,15 @@ function ProfilPage() {
           <CardHeader className="space-y-1">
             <div className="flex items-center gap-ms-2">
               <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle className="text-ms-base">Kontak Ace</CardTitle>
+              <CardTitle className="text-ms-base">Kontak WhatsApp</CardTitle>
             </div>
             <CardDescription>
-              Nomor pengirim default untuk pesan Ace & link pegawai.
+              Nomor pengirim default untuk pesan WA & link pegawai.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-ms-3">
             <div className="space-y-1.5">
-              <Label htmlFor="profil-hp">Nomor Ace / HP</Label>
+              <Label htmlFor="profil-hp">Nomor WA / HP</Label>
               <div className="flex flex-col gap-ms-2 sm:flex-row">
                 <select
                   aria-label="Kode negara"
