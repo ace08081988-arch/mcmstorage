@@ -757,8 +757,13 @@ function EditDialog({
         };
       }
     }
-    if (n) {
-      const nameMatch = others.find((r) => normName(r.name) === n);
+    // Indeks unik nama di database bersifat parsial:
+    // hanya berlaku saat phone_norm DAN email_norm kosong. Jadi nama sama
+    // dengan nomor/email berbeda itu SAH — jangan blokir di klien.
+    if (n && !p && !e) {
+      const nameMatch = others.find(
+        (r) => normName(r.name) === n && !normalizePhone(r.phone) && !normalizeEmail(r.email),
+      );
       if (nameMatch)
         return {
           row: nameMatch,

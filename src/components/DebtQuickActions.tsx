@@ -259,7 +259,10 @@ export function DebtQuickActions({
       if (!canRegister) return;
       setRegistering(table);
       try {
-        const payload: Record<string, unknown> = { user_id: uid, name: regName };
+        // Ambil uid dari sesi yang dipastikan segar: `uid` dari state bisa
+        // basi setelah token rotate → RLS menolak insert (42501).
+        const { userId: freshUid } = await ensureFreshSession();
+        const payload: Record<string, unknown> = { user_id: freshUid, name: regName };
         if (peerPhone) payload.contact = peerPhone;
         const accId = data.accountUserId ?? peerAccountUserId ?? null;
         if (accId) payload.account_user_id = accId;
