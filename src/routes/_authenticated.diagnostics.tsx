@@ -81,7 +81,7 @@ async function runBrowserChecks(): Promise<Check[]> {
     ok: canShareFiles,
     detail: canShareFiles
       ? "Browser mengizinkan share file — foto bisa ikut terkirim."
-      : "Browser tidak mengizinkan share file. Foto perlu dilampirkan manual di Ace.",
+      : "Browser tidak mengizinkan share file. Foto perlu dilampirkan manual di WhatsApp.",
   });
 
   const hasClipboard = typeof navigator !== "undefined" && !!navigator.clipboard?.writeText;

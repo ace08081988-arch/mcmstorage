@@ -767,9 +767,9 @@ function RequestPage() {
                     onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
                     className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-ms-1 truncate sm:min-h-0 rounded-md border border-wa/40 bg-wa/15 px-ms-2 py-1.5 sm:py-0.5 text-ms-2xs text-wa-strong hover:bg-wa/25"
-                    aria-label="Kirim via Ace"
+                    aria-label="Kirim via WhatsApp"
                   >
-                    <MessageCircle className="h-3 w-3" /> Kirim via Ace
+                    <MessageCircle className="h-3 w-3" /> Kirim via WhatsApp
                   </div>
                   <div
                     role="button"
@@ -3132,13 +3132,13 @@ function SendPrepToCustomerDialog({
           <div className="flex min-h-8 items-start justify-between gap-ms-2 pr-10">
             <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
               {channel === "chat" ? <MessageCircle className="h-4 w-4 text-primary" /> : <Send className="h-4 w-4 text-primary" />}
-              {channel === "chat" ? "Kirim via Ace Chat" : "Kirim ke pelanggan"}
+              {channel === "chat" ? "Kirim via WhatsApp Chat" : "Kirim ke pelanggan"}
             </DialogTitle>
             <DialogSaveStatus status={sendStatus} className="shrink-0" />
           </div>
           <DialogDescription>
             {channel === "chat"
-              ? "Foto + lokasi dikirim ke percakapan Ace. Stok gudang & piutang otomatis tercatat."
+              ? "Foto + lokasi dikirim ke percakapan WA. Stok gudang & piutang otomatis tercatat."
               : "Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui."}
           </DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
@@ -3446,13 +3446,13 @@ function PrepEditorDialog({
    */
   function normalizeWaPhone(raw: string): { digits: string; error: string | null } {
     let d = (raw || "").replace(/\D/g, "");
-    if (!d) return { digits: "", error: "Nomor Ace wajib diisi" };
+    if (!d) return { digits: "", error: "Nomor WA wajib diisi" };
     if (d.startsWith("00")) d = d.slice(2);
     else if (d.startsWith("0")) d = "62" + d.slice(1);
     if (d.length < 8 || d.length > 15) {
-      return { digits: "", error: "Nomor Ace harus 8–15 digit (format internasional)" };
+      return { digits: "", error: "Nomor WA harus 8–15 digit (format internasional)" };
     }
-    if (/^0+$/.test(d)) return { digits: "", error: "Nomor Ace tidak valid" };
+    if (/^0+$/.test(d)) return { digits: "", error: "Nomor WA tidak valid" };
     return { digits: d, error: null };
   }
 
@@ -3580,7 +3580,7 @@ function PrepEditorDialog({
     }
     if (opts?.sendChat) {
       if (!pickedLinkedUserId) {
-        toast.error("Pilih kontak Ace dari daftar dulu untuk kirim via Chat");
+        toast.error("Pilih kontak WA dari daftar dulu untuk kirim via Chat");
         return;
       }
     }
@@ -3625,7 +3625,7 @@ function PrepEditorDialog({
           });
           notifyShareResult(res);
         } catch (err) {
-          toast.error("Gagal kirim via Ace: " + (err as Error).message);
+          toast.error("Gagal kirim via WhatsApp: " + (err as Error).message);
         }
       }
       // Simpan otomatis ke buku alamat bila di-opt-in dan kontak yang
@@ -3648,7 +3648,7 @@ function PrepEditorDialog({
           }
         } catch { /* opsional — jangan gagalkan flow utama */ }
       }
-      // Kirim via Ace Chat: buka DM dengan text prefill di composer.
+      // Kirim via WhatsApp Chat: buka DM dengan text prefill di composer.
       // Foto sudah tersimpan di storage prep — sertakan signed URL supaya
       // pengguna tinggal tekan Send.
       if (opts?.sendChat && pickedLinkedUserId) {
@@ -3860,7 +3860,7 @@ function PrepEditorDialog({
                   setWaPhone(e.target.value);
                   setShowSuggest(true);
                   // Jika user mulai ubah nomor, reset user Ace yang di-pick
-                  // supaya tombol Ace Chat tidak salah kirim ke akun lama.
+                  // supaya tombol WhatsApp Chat tidak salah kirim ke akun lama.
                   if (pickedLinkedUserId) setPickedLinkedUserId(null);
                 }}
                 onFocus={() => setShowSuggest(true)}
@@ -3932,10 +3932,10 @@ function PrepEditorDialog({
             onClick={() => save({ sendChat: true })}
             disabled={busy || !pickedLinkedUserId}
             className="w-full"
-            title={pickedLinkedUserId ? "Buka DM Ace dengan pesan siap kirim" : "Pilih kontak Ace dari daftar dulu"}
+            title={pickedLinkedUserId ? "Buka DM WhatsApp dengan pesan siap kirim" : "Pilih kontak WA dari daftar dulu"}
           >
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <MessageCircle className="mr-1 h-3 w-3" />}
-            Simpan &amp; Buka Ace Chat
+            Simpan &amp; Buka WhatsApp Chat
           </Button>
           <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>

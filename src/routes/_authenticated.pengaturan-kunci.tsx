@@ -370,7 +370,7 @@ function PengaturanKunci() {
         <div>
           <div className="text-ms-sm font-medium">Nama Toko</div>
           <div className="text-ms-xs text-muted-foreground">
-            Dipakai otomatis di caption Ace saat mengirim paket
+            Dipakai otomatis di caption WA saat mengirim paket
             (mis. <em>“PEMBAYARAN DIKONFIRMASI - {shopSaved || "NAMA TOKO"}”</em>).
           </div>
         </div>

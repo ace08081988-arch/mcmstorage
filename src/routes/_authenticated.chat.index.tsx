@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/chat/")({
       {
         name: "description",
         content:
-          "Daftar percakapan Ace Chat: pesan, grup, panggilan, dan pembaruan pelanggan dalam satu layar.",
+          "Daftar percakapan WA Chat: pesan, grup, panggilan, dan pembaruan pelanggan dalam satu layar.",
       },
       { property: "og:title", content: "Ace Chat · Daftar Percakapan" },
       {

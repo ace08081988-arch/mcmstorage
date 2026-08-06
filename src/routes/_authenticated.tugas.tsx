@@ -767,7 +767,7 @@ function TugasPage() {
               <ListTodo className="h-5 w-5 text-primary" /> Tugas untuk Pegawai
             </h2>
             <p className="mt-0.5 max-w-xl text-ms-2xs leading-snug text-muted-foreground">
-              Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via Ace. Foto & lokasi otomatis muncul di sini.
+              Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via WhatsApp. Foto & lokasi otomatis muncul di sini.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-ms-2">
@@ -1002,7 +1002,7 @@ function TugasPage() {
                 <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs font-medium hover:bg-accent" aria-label={`Buka tugas ${t.title}`}>Buka</button>
                 <button
                   onClick={() => setSharePinFor(t)}
-                  title="Bagikan link + PIN via Ace"
+                  title="Bagikan link + PIN via WhatsApp"
                   aria-label="Bagikan link dan PIN"
                   className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-wa/40 bg-wa/10 text-wa-strong hover:bg-wa/20"
                 >
@@ -1814,7 +1814,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         </div>
 
         <label className="block relative">
-          <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor Ace / HP pegawai (opsional, contoh: 6281234567890 — harus dari kontak tersimpan)</div>
+          <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor WA / HP pegawai (opsional, contoh: 6281234567890 — harus dari kontak tersimpan)</div>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, "").slice(0, 16))}
@@ -1938,7 +1938,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         {missingPhoto && (
                           <span
                             className="inline-flex shrink-0 items-center gap-0.5 rounded bg-destructive/10 px-1 py-0.5 text-[9px] font-medium text-destructive"
-                            title="Barang ini belum punya foto — tidak bisa dikirim via Ace"
+                            title="Barang ini belum punya foto — tidak bisa dikirim via WhatsApp"
                           >
                             <ImageIcon className="h-2.5 w-2.5" /> Tanpa foto
                           </span>
@@ -2514,7 +2514,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                           </span>
                           <button
                             onClick={() => previewWaForItem(r, p)}
-                            title={`Kirim detail item "${p.name}" via Ace`}
+                            title={`Kirim detail item "${p.name}" via WhatsApp`}
                             className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-wa/40 bg-wa/10 px-1.5 text-ms-2xs font-medium text-wa-strong hover:bg-wa/20"
                           >
                             <MessageCircle className="h-2.5 w-2.5" /> Ace
@@ -2541,7 +2541,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                       className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-wa/50 bg-wa/10 px-ms-2 text-ms-2xs font-medium text-wa-strong hover:bg-wa/20"
                       title="Kirim ringkasan lengkap tugas + semua item bermasalah"
                     >
-                      <MessageCircle className="h-3 w-3" /> Kirim via Ace
+                      <MessageCircle className="h-3 w-3" /> Kirim via WhatsApp
                     </button>
                     {hasIssues && (
                       isFixed ? (
@@ -2606,7 +2606,7 @@ function WaPreviewDialog({
     onClose();
   }
   return (
-    <Modal title="Pratinjau pesan Ace" onClose={onClose}>
+    <Modal title="Pratinjau pesan WA" onClose={onClose}>
       <div className="space-ms-3 text-ms-sm">
         <div className="text-ms-2xs text-muted-foreground">
           Cek isi pesan di bawah. Anda bisa mengedit sebelum mengirim.
@@ -2626,7 +2626,7 @@ function WaPreviewDialog({
             onClick={() => void send()}
             className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-wa px-ms-3 text-ms-xs font-semibold text-wa-foreground hover:opacity-90"
           >
-            <MessageCircle className="h-3.5 w-3.5" /> Kirim via Ace
+            <MessageCircle className="h-3.5 w-3.5" /> Kirim via WhatsApp
           </button>
         </div>
       </div>
@@ -2662,7 +2662,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
     const hasWebShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
     if (!hasWebShare) {
       toast.message("Browser ini tak mendukung tombol Bagikan langsung.", {
-        description: "Coba 'Buka Ace (WhatsApp Web)' atau Salin pesan lalu tempel di Ace.",
+        description: "Coba 'Buka WhatsApp (WhatsApp Web)' atau Salin pesan lalu tempel di Ace.",
         duration: 7000,
       });
     }
@@ -2671,7 +2671,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
       notifyShareResult(res);
     } catch (err) {
       toast.error(`Gagal membagikan: ${(err as Error)?.message ?? String(err)}`, {
-        description: "Salin pesan lalu tempel manual di Ace.",
+        description: "Salin pesan lalu tempel manual di WhatsApp.",
         duration: 9000,
       });
     }
@@ -2683,7 +2683,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
     if (win) return;
     // Popup diblokir (mis. iframe pratinjau) — coba buka di tab teratas.
     toast.message("Popup diblokir browser.", {
-      description: "Membuka Ace di tab ini. Izinkan popup untuk situs ini agar terbuka di tab baru.",
+      description: "Membuka WhatsApp di tab ini. Izinkan popup untuk situs ini agar terbuka di tab baru.",
       duration: 8000,
     });
     try { window.top!.location.href = waUrl; }
@@ -2713,7 +2713,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
           </button>
           <a href={waUrl} target="_blank" rel="noreferrer" onClick={onOpenWa}
             className="inline-flex h-10 items-center justify-center gap-ms-1 rounded-md border text-ms-sm">
-            <ExternalLink className="h-4 w-4" /> Buka Ace (WhatsApp Web)
+            <ExternalLink className="h-4 w-4" /> Buka WhatsApp (WhatsApp Web)
           </a>
         </div>
       </div>

@@ -1278,7 +1278,7 @@ function Index() {
                 { n: "01", to: "/gudang", t: "Gudang", d: "Kelola stok, pembelian, dan harga modal." },
                 { n: "02", to: "/ecer", t: "Siapkan Pesanan", d: "Ecer & request — timbang, kemas, verifikasi." },
                 { n: "03", to: "/tugas", t: "Tugas Pegawai", d: "Bagikan link + PIN untuk penyiapan lapangan." },
-                { n: "04", to: "/chat", t: "Kirim via Ace Chat", d: "Rangkuman order otomatis ke pelanggan." },
+                { n: "04", to: "/chat", t: "Kirim via WhatsApp Chat", d: "Rangkuman order otomatis ke pelanggan." },
               ].map((step) => (
                 <li key={step.n}>
                   <Link
@@ -2241,7 +2241,7 @@ function Index() {
                           rel="noreferrer"
                           className="inline-flex items-center rounded-md bg-wa px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-wa-foreground hover:opacity-90"
                         >
-                          KIRIM Ace
+                          KIRIM WA
                         </a>
                       )}
                       <button
@@ -2333,7 +2333,7 @@ function Index() {
                   selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
                 }`}
               >
-                KIRIM Ace MASSAL ({selected.size})
+                KIRIM WA MASSAL ({selected.size})
               </a>
             </div>
           </div>

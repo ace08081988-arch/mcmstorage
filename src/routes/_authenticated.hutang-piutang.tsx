@@ -937,7 +937,7 @@ function HutangPiutangPage() {
                             variant="waSoft"
                             className="h-8 shrink-0 rounded-lg"
                             onClick={() => void sendPartyReportWA(group)}
-                            title="Kirim laporan via Ace"
+                            title="Kirim laporan via WhatsApp"
                           >
                             Kirim laporan
                           </Button>
@@ -1038,7 +1038,7 @@ function HutangPiutangPage() {
                               variant="waSoft"
                               className="h-8 rounded-lg"
                               onClick={() => setReminderFor(d)}
-                              title="Kirim pengingat via Ace"
+                              title="Kirim pengingat via WhatsApp"
                             >
                               Tagih
                             </Button>
@@ -1315,7 +1315,7 @@ function PaymentsReport({
             variant="waSoft"
             className=""
             onClick={onSendWA}
-            title="Kirim laporan via Ace"
+            title="Kirim laporan via WhatsApp"
           >
             Kirim laporan Ace
           </Button>

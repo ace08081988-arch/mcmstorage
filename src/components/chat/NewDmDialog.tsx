@@ -28,7 +28,7 @@ function normalizeWaDigits(raw: string): string {
 const waPhoneSchema = z
   .string()
   .regex(/^[1-9]\d{7,14}$/, {
-    message: "Nomor Ace harus 8–15 digit dan diawali kode negara yang valid.",
+    message: "Nomor WA harus 8–15 digit dan diawali kode negara yang valid.",
   });
 
 type WaValidation =
@@ -149,7 +149,7 @@ export function NewDmDialog() {
                     onClick={inviteByWhatsApp}
                     disabled={!validation.ok}
                   >
-                    <Send className="h-4 w-4" /> Undang via Ace
+                    <Send className="h-4 w-4" /> Undang via WhatsApp
                   </Button>
                   {!validation.ok && (
                     <p className="text-ms-2xs text-destructive">
