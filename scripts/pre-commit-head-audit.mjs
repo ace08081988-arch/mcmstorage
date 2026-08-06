@@ -86,6 +86,7 @@ if (isMain) {
     ]);
   }
   if (code === 0) code = run("node", ["scripts/audit-seo-routes.mjs"]);
+  if (code === 0) code = run("bun", ["scripts/audit-asset-version.ts"]);
 
   if (code !== 0) {
     console.error(
