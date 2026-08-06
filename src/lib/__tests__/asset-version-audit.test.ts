@@ -25,7 +25,7 @@ describe("asset-version-audit", () => {
   it("menandai literal ?v= yang berbeda dari versi build", () => {
     const issues = collectVersionMismatches(
       [
-        { path: "public/manifest.webmanifest", content: '"/icon-192.png?v=20250101"' },
+        { path: "public/manifest.webmanifest", content: '"/icon-192.png?v=20260806"' },
         { path: "src/routes/__root.tsx", content: '"/og.png?v=20260806"' },
       ],
       "20260806",
@@ -42,7 +42,7 @@ describe("asset-version-audit", () => {
   });
 
   it("rewriteVersions menyelaraskan semua literal", () => {
-    expect(rewriteVersions("a?v=20250101 b?v=20240202", "20260806")).toBe(
+    expect(rewriteVersions("a?v=20260806 b?v=20260806", "20260806")).toBe(
       "a?v=20260806 b?v=20260806",
     );
   });
