@@ -151,7 +151,9 @@ export function extractSitemapPaths(src) {
     // sitemap (`/download`) harus dianggap identik.
     const raw = p[1];
     paths.add(raw);
-    paths.add(raw.length > 1 ? raw.replace(/\/+$/, "") || "/" : raw);
+    const noSlash = raw.length > 1 ? raw.replace(/\/+$/, "") || "/" : raw;
+    paths.add(noSlash);
+    if (noSlash !== "/") paths.add(`${noSlash}/`);
   }
   return paths;
 }
