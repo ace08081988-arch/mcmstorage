@@ -27,7 +27,7 @@ const BRAND_RE = /\b(Ace|WhatsApp|WA)\b/;
 
 // Baris yang jelas non-UI dan harus diabaikan meski mengandung token.
 const TECH_HINT_RE =
-  /whatsapp:\/\/|wa\.me|com\.whatsapp|^\s*(\/\/|\*|\/\*)|import\s|from\s+["']|require\(/i;
+  /whatsapp:\/\/|wa\.me|com\.whatsapp|^\s*(\/\/|\*|\/\*)|\*\/|import\s|from\s+["']|require\(/i;
 
 function extractBrandLabels(source: string): string[] {
   const out = new Set<string>();
