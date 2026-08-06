@@ -950,6 +950,7 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const { data: myProfile } = useMyProfile();
+  const [conflict, setConflict] = useState<{ hit: PartyDuplicateHit; ev: React.FormEvent } | null>(null);
   const normalizedMyPhone = normalizeWaNumber(myProfile?.phone, myProfile?.country_code);
   const canUseMyContact = !!(myProfile?.display_name || normalizedMyPhone);
   function useMyContact() {
@@ -1036,6 +1037,29 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
           {editingId && <button type="button" onClick={resetForm} className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">Batal</button>}
         </div>
       </form>
+      <DuplicateConflictDialog
+        open={!!conflict}
+        onOpenChange={(v) => { if (!v) setConflict(null); }}
+        info={
+          conflict
+            ? {
+                label: conflict.hit.label,
+                reason: conflict.hit.reason,
+                existing: {
+                  name: conflict.hit.row.name,
+                  phone: conflict.hit.row.contact,
+                  note: (conflict.hit.row as Customer).notes ?? null,
+                },
+                incoming: { name, phone: contact || null },
+              }
+            : null
+        }
+        onKeep={() => {
+          const ev = conflict?.ev;
+          setConflict(null);
+          if (ev) void submit(ev, { force: true });
+        }}
+      />
       {customers.length === 0 ? (
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada pelanggan.</div>
       ) : (
