@@ -10,6 +10,7 @@ import { emitDebtTx } from "@/lib/debt-tx-event";
 import { assertDebtSource } from "@/lib/debt-source";
 import { logPartyWriteFailure } from "@/lib/contact-telemetry";
 import { notifyRlsRelogin } from "@/lib/rls-relogin";
+import { findPartyDuplicate } from "@/lib/party-duplicate";
 import {
   appendDebtAction,
   useDebtActionLog,
