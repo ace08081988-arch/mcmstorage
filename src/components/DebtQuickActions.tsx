@@ -9,6 +9,7 @@ import { rupiah } from "@/lib/stock-format";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { assertDebtSource } from "@/lib/debt-source";
 import { logPartyWriteFailure } from "@/lib/contact-telemetry";
+import { notifyRlsRelogin } from "@/lib/rls-relogin";
 import {
   appendDebtAction,
   useDebtActionLog,
@@ -278,7 +279,14 @@ export function DebtQuickActions({
         );
         await qc.invalidateQueries({ queryKey });
       } catch (e) {
-        toast.error((e as { message?: string })?.message ?? "Gagal mendaftarkan kontak.");
+        const label = table === "customers" ? "pelanggan" : "supplier";
+        const handled = notifyRlsRelogin(e, {
+          message: `Gagal mendaftarkan ${label}.`,
+          onRetry: () => registerParty(table),
+        });
+        if (!handled) {
+          toast.error((e as { message?: string })?.message ?? "Gagal mendaftarkan kontak.");
+        }
       } finally {
         setRegistering(null);
       }
