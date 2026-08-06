@@ -8,10 +8,38 @@ const LS_BRAND = "app-org-brand";
 export const DEFAULT_ORG_NAME = "Ace Storage";
 export const DEFAULT_ORG_SHORT = "Ace";
 
+/**
+ * Nilai branding lama (pra-rebrand) yang masih tersimpan di localStorage /
+ * baris `org_branding`. Nilai-nilai ini dianggap "bukan pilihan user" dan
+ * di-reset ke default Ace supaya header, footer, dan badge tidak lagi
+ * menampilkan nama lama di perangkat yang sudah pernah dipakai.
+ */
+const LEGACY_FULL = new Set(["mcm", "mcm storage", "mcmstorage"]);
+const LEGACY_SHORT = new Set(["mcm"]);
+
+function isLegacy(value: string | null | undefined, set: Set<string>): boolean {
+  return !!value && set.has(value.trim().toLowerCase());
+}
+
+/** Bersihkan sisa branding lama sekali jalan (idempoten). */
+export function migrateLegacyOrgBranding(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const full = window.localStorage.getItem(LS_FULL);
+    if (isLegacy(full, LEGACY_FULL)) window.localStorage.removeItem(LS_FULL);
+    const short = window.localStorage.getItem(LS_SHORT);
+    if (isLegacy(short, LEGACY_SHORT)) window.localStorage.removeItem(LS_SHORT);
+  } catch { /* ignore */ }
+}
+
+migrateLegacyOrgBranding();
+
 function read(key: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
   try {
     const v = window.localStorage.getItem(key);
+    if (key === LS_FULL && isLegacy(v, LEGACY_FULL)) return fallback;
+    if (key === LS_SHORT && isLegacy(v, LEGACY_SHORT)) return fallback;
     return v && v.trim() ? v : fallback;
   } catch {
     return fallback;
@@ -71,8 +99,16 @@ export async function hydrateOrgBrandingFromRemote(): Promise<void> {
       org_name: string; org_short: string; logo_url: string; brand_color: string;
     };
     try {
-      if (row.org_name) window.localStorage.setItem(LS_FULL, row.org_name);
-      if (row.org_short) window.localStorage.setItem(LS_SHORT, row.org_short);
+      if (row.org_name && !isLegacy(row.org_name, LEGACY_FULL)) {
+        window.localStorage.setItem(LS_FULL, row.org_name);
+      } else {
+        window.localStorage.removeItem(LS_FULL);
+      }
+      if (row.org_short && !isLegacy(row.org_short, LEGACY_SHORT)) {
+        window.localStorage.setItem(LS_SHORT, row.org_short);
+      } else {
+        window.localStorage.removeItem(LS_SHORT);
+      }
       if (row.logo_url) window.localStorage.setItem(LS_LOGO, row.logo_url);
       else window.localStorage.removeItem(LS_LOGO);
       if (row.brand_color) window.localStorage.setItem(LS_BRAND, row.brand_color);

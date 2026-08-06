@@ -108,8 +108,8 @@ function TrustPage() {
         <Section title="Penjual & pengendali data">
           <p>
             Layanan Ace Storage dioperasikan oleh{" "}
-            <strong>Mcm</strong> (selanjutnya "kami"). Untuk
-            keperluan UU PDP dan GDPR, Mcm bertindak sebagai{" "}
+            <strong>Ace Storage</strong> (selanjutnya "kami"). Untuk
+            keperluan UU PDP dan GDPR, Ace Storage bertindak sebagai{" "}
             <strong>pengendali data (data controller)</strong> atas data
             pribadi pengguna Ace Storage. Pertanyaan terkait privasi dapat
             dikirim ke{" "}

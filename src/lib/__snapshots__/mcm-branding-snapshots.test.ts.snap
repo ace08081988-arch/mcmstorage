@@ -2,7 +2,11 @@
 
 exports[`Ace branding — snapshot label chat kunci > daftar percakapan → src/routes/_authenticated.chat.index.tsx 1`] = `
 [
+  ""Daftar percakapan Ace Chat: pesan, grup, panggilan, dan pembaruan pelanggan dalam satu layar.",",
+  ""Kelola pesan dan grup pelanggan lewat Ace Chat, terhubung langsung dengan Ace Storage.",",
   "<h1 className="truncate text-ms-lg font-semibold tracking-tight">Ace Chat</h1>",
+  "{ property: "og:title", content: "Ace Chat · Daftar Percakapan" },",
+  "{ title: "Ace Chat · Daftar Percakapan" },",
 ]
 `;
 

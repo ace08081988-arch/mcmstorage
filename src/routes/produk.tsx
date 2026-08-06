@@ -37,7 +37,7 @@ export const Route = createFileRoute("/produk")({
           applicationCategory: "BusinessApplication",
           operatingSystem: "Android, Web",
           description: DESC,
-          publisher: { "@type": "Organization", name: "Mcm" },
+          publisher: { "@type": "Organization", name: "Ace Storage" },
         }),
       },
     ],

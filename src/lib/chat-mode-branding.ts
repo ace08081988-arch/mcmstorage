@@ -113,7 +113,9 @@ function invalidateSwAssets(paths: string[]) {
 
 function applyProfile(profile: BrandingProfile, mode: "chat" | "full") {
   const bust = `${mode}-${Date.now()}`;
-  document.title = profile.title;
+  // Judul dokumen di mode "full" dikelola oleh `head()` tiap route
+  // (SEO per halaman). Hanya mode chat yang memaksa judul global.
+  if (mode === "chat") document.title = profile.title;
   setMeta("apple-mobile-web-app-title", profile.title);
   setMeta("application-name", profile.title);
   setMeta("theme-color", profile.themeColor);

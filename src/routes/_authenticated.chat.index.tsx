@@ -42,6 +42,24 @@ import { DomRaceBoundary } from "@/components/DomRaceBoundary";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
+  head: () => ({
+    meta: [
+      { title: "Ace Chat · Daftar Percakapan" },
+      {
+        name: "description",
+        content:
+          "Daftar percakapan Ace Chat: pesan, grup, panggilan, dan pembaruan pelanggan dalam satu layar.",
+      },
+      { property: "og:title", content: "Ace Chat · Daftar Percakapan" },
+      {
+        property: "og:description",
+        content:
+          "Kelola pesan dan grup pelanggan lewat Ace Chat, terhubung langsung dengan Ace Storage.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   // Terima query `?filter=unread` sebagai deep-link dari tab Chat di bottom
   // nav — supaya mengetuk badge chat langsung memfokuskan daftar pesan
   // belum dibaca. Nilai lain diabaikan (fallback ke "all").
