@@ -41,12 +41,15 @@ export type PublicCatalogItemPayload = {
   found: boolean;
   shop: { name: string; wa: string; tagline: string } | null;
   item: PublicCatalogItemDetail | null;
+  /** Kartu OG stabil (bebas token) untuk crawler sosial. */
+  og: CatalogOgImage | null;
 };
 
 export type PublicCatalogPayload = {
   found: boolean;
   shop: { name: string; wa: string; tagline: string } | null;
   items: PublicCatalogItem[];
+  og: CatalogOgImage | null;
 };
 
 export const getPublicCatalog = createServerFn({ method: "GET" })
