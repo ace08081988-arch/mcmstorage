@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -70,24 +71,13 @@ function writeCopyHistory(list: CopyEntry[]) {
 
 export const Route = createFileRoute("/download")({
   head: () => ({
-    meta: [
-      { title: "Unduh APK — Ace Storage & Ace Chat" },
-      {
-        name: "description",
-        content:
-          "Unduh APK Android Ace Storage (fitur lengkap) atau Ace Chat (khusus komunikasi).",
-      },
-      { property: "og:title", content: "Unduh APK — Ace Storage & Ace Chat" },
-      {
-        property: "og:description",
-        content:
-          "Unduh APK Android Ace Storage (fitur lengkap) atau Ace Chat (khusus komunikasi).",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://mcmstorage.app/download" },
-      { name: "twitter:card", content: "summary" },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.app/download" }],
+    meta: socialMeta({
+      title: "Unduh APK — Ace Storage & Ace Chat",
+      description:
+        "Unduh APK Android Ace Storage (fitur lengkap) atau Ace Chat (khusus komunikasi).",
+      url: "/download",
+    }),
+    links: [canonical("/download")],
   }),
   component: DownloadPage,
   errorComponent: () => (
