@@ -10,6 +10,8 @@
  * langsung terlihat sebelum publish.
  */
 
+import { BRAND_ASSET_VERSION, stripAssetQuery } from "./asset-version";
+
 export type HeadAuditInput = {
   /** Source `src/routes/__root.tsx` (dipakai untuk mengekstrak meta/link). */
   rootSource: string;
@@ -123,7 +125,7 @@ export function extractLinks(
   let m: RegExpExecArray | null;
   while ((m = re.exec(source))) {
     const body = m[2];
-    const href = /href:\s*"([^"]+)"/.exec(body)?.[1];
+    const href = /href:\s*(?:\w+\()?"([^"]+)"/.exec(body)?.[1];
     if (!href) continue;
     out.push({
       rel: m[1],
@@ -185,7 +187,7 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
   // Semua href lokal di head harus punya file-nya.
   for (const l of links) {
     if (!l.href.startsWith("/")) continue;
-    const file = l.href.slice(1);
+    const file = stripAssetQuery(l.href).slice(1);
     if (!files.has(file)) push("link", l.href, `Link <${l.rel}> menunjuk ${l.href} yang tidak ada di public/.`);
   }
 
@@ -210,7 +212,7 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
       if (!mf[field]) push("manifest", field, `Manifest kehilangan field "${field}".`);
     }
     for (const icon of mf.icons ?? []) {
-      const file = icon.src.replace(/^\//, "");
+      const file = stripAssetQuery(icon.src).replace(/^\//, "");
       if (!files.has(file)) {
         push("manifest", icon.src, `Ikon manifest ${icon.src} tidak ada di public/.`);
         continue;
@@ -255,7 +257,7 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
       push("mstile", t.tag, `browserconfig.xml kehilangan <${t.tag}>.`);
       continue;
     }
-    const file = src.replace(/^\//, "");
+    const file = stripAssetQuery(src).replace(/^\//, "");
     if (!files.has(file)) {
       push("mstile", t.tag, `Tile ${src} tidak ada di public/.`);
       continue;
