@@ -65,6 +65,7 @@ import {
 import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDialog";
 import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
 import { logAddressBookDuplicateBlock } from "@/lib/contact-telemetry";
+import { findEditorDuplicate, type DuplicateHit } from "@/lib/address-book-duplicate";
 import { notifyRlsRelogin } from "@/lib/rls-relogin";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
@@ -733,58 +734,13 @@ function EditDialog({
     };
   }, [pin, isNew]);
 
-  const normName = (s: string) => s.trim().toLowerCase();
   // Deteksi duplikat memakai normalisasi yang sama persis dengan database
   // (normalize_phone / normalize_email) supaya klien & server tidak beda hasil.
-  const duplicate = useMemo((): {
-    row: AddressBookRow;
-    field: "name" | "phone" | "email";
-    label: string;
-    value: string;
-    reason: string;
-  } | null => {
-    const others = rows.filter((r) => r.id !== row?.id);
-    const p = normalizePhone(phone);
-    const e = normalizeEmail(email);
-    const n = normName(name);
-    for (const r of others) {
-      if (p && normalizePhone(r.phone) === p) {
-        return {
-          row: r,
-          field: "phone",
-          label: "Nomor telepon",
-          value: phone.trim(),
-          reason: `Nomor telepon ${phone.trim()} sudah dipakai kontak "${r.name}"`,
-        };
-      }
-      if (e && normalizeEmail(r.email) === e) {
-        return {
-          row: r,
-          field: "email",
-          label: "Email",
-          value: email.trim(),
-          reason: `Email ${email.trim()} sudah dipakai kontak "${r.name}"`,
-        };
-      }
-    }
-    // Indeks unik nama di database bersifat parsial:
-    // hanya berlaku saat phone_norm DAN email_norm kosong. Jadi nama sama
-    // dengan nomor/email berbeda itu SAH — jangan blokir di klien.
-    if (n && !p && !e) {
-      const nameMatch = others.find(
-        (r) => normName(r.name) === n && !normalizePhone(r.phone) && !normalizeEmail(r.email),
-      );
-      if (nameMatch)
-        return {
-          row: nameMatch,
-          field: "name",
-          label: "Nama",
-          value: name.trim(),
-          reason: `Nama "${nameMatch.name}" sudah ada di buku alamat`,
-        };
-    }
-    return null;
-  }, [rows, row?.id, name, phone, email]);
+  const duplicate = useMemo(
+    (): DuplicateHit | null =>
+      findEditorDuplicate({ rows, currentId: row?.id ?? null, name, phone, email }),
+    [rows, row?.id, name, phone, email],
+  );
 
   const save = async () => {
     if (!name.trim()) {
