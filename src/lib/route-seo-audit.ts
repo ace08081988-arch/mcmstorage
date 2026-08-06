@@ -96,19 +96,23 @@ function hasTag(source: string, key: string, value: "property" | "name"): boolea
 export function extractHeadBlock(source: string): string | null {
   const idx = source.search(/\bhead\s*:\s*\(/);
   if (idx === -1) return null;
+  // Lewati daftar parameter arrow (`({ params, loaderData }) =>`) supaya
+  // destructuring tidak dianggap sebagai akhir blok.
+  const arrow = source.indexOf("=>", idx);
+  const start = arrow === -1 ? idx : arrow + 2;
   let depth = 0;
   let sawBrace = false;
-  for (let i = idx; i < source.length; i++) {
+  for (let i = start; i < source.length; i++) {
     const ch = source[i];
     if (ch === "(" || ch === "{") {
       depth++;
       if (ch === "{") sawBrace = true;
     } else if (ch === ")" || ch === "}") {
       depth--;
-      if (sawBrace && depth <= 0) return source.slice(idx, i + 1);
+      if (sawBrace && depth <= 0) return source.slice(start, i + 1);
     }
   }
-  return source.slice(idx);
+  return source.slice(start);
 }
 
 export function auditRouteSeo(routes: RouteSource[]): RouteSeoReport {
@@ -122,9 +126,16 @@ export function auditRouteSeo(routes: RouteSource[]): RouteSeoReport {
       continue;
     }
     const route = routePathFromFile(file);
-    audited.push(route);
-
     const head = extractHeadBlock(source);
+
+    // Rute layout (hanya membungkus <Outlet />) tidak punya metadata sendiri;
+    // anak `*.index.tsx`-nya yang diaudit.
+    if (!head && /<Outlet\s*\/?>/.test(source)) {
+      skipped.push(file);
+      continue;
+    }
+
+    audited.push(route);
     const add = (id: RouteSeoIssue["id"], message: string) =>
       issues.push({ route, file, id, message });
 
