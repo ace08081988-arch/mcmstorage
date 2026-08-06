@@ -5,6 +5,10 @@
  *   bun scripts/audit-rendered-head.ts                       # dev server lokal
  *   bun scripts/audit-rendered-head.ts --base https://mcmstorage.app
  *   bun scripts/audit-rendered-head.ts /katalog/toko/123 /harga
+ *   bun scripts/audit-rendered-head.ts --include "/katalog/**" --exclude "/harga"
+ *
+ * Whitelist/blacklist default dibaca dari `seo-audit.policy.json` (bila ada);
+ * flag --include/--exclude menimpanya untuk satu kali jalan.
  *
  * Tanpa daftar URL eksplisit, skrip membaca `sitemap.xml` dari base URL dan
  * memilih semua rute statis plus beberapa contoh per pola dinamis.
@@ -15,17 +19,35 @@ import {
   selectAuditUrls,
   urlsFromSitemap,
 } from "../src/lib/rendered-head-audit";
+import { loadAuditPolicy } from "../src/lib/seo-audit-policy.load";
+import { formatPolicy, resolvePolicy } from "../src/lib/seo-audit-policy";
 
 const args = process.argv.slice(2);
 const baseIdx = args.indexOf("--base");
 const base = baseIdx !== -1 ? args[baseIdx + 1] : "http://localhost:8080";
 const perIdx = args.indexOf("--per-pattern");
 const perDynamicPattern = perIdx !== -1 ? Number(args[perIdx + 1]) : 3;
+const listFlag = (name: string): string[] | undefined => {
+  const out: string[] = [];
+  args.forEach((a, i) => {
+    if (a === `--${name}` && args[i + 1]) out.push(...args[i + 1].split(",").filter(Boolean));
+  });
+  return out.length ? out : undefined;
+};
+const FLAGS_WITH_VALUE = new Set(["--base", "--per-pattern", "--include", "--exclude"]);
 const explicit = args.filter((a, i) => {
   if (a.startsWith("--")) return false;
-  if (args[i - 1] === "--base" || args[i - 1] === "--per-pattern") return false;
+  if (FLAGS_WITH_VALUE.has(args[i - 1] ?? "")) return false;
   return true;
 });
+
+const filePolicy = loadAuditPolicy();
+const policy = resolvePolicy({
+  ...filePolicy,
+  include: listFlag("include") ?? filePolicy.include,
+  exclude: listFlag("exclude") ?? filePolicy.exclude,
+});
+console.log(`Kebijakan audit — ${formatPolicy(policy)}`);
 
 function abs(u: string): string {
   return u.startsWith("http") ? u : `${base.replace(/\/$/, "")}${u.startsWith("/") ? u : `/${u}`}`;
@@ -42,7 +64,7 @@ async function collectUrls(): Promise<string[]> {
       return abs(u);
     }
   });
-  return selectAuditUrls(urls, { perDynamicPattern });
+  return selectAuditUrls(urls, { perDynamicPattern, policy });
 }
 
 const urls = await collectUrls();
@@ -57,6 +79,9 @@ const pages = await Promise.all(
   }),
 );
 
-const report = auditRenderedPages(pages, base);
+const report = auditRenderedPages(pages, base, policy);
+if (report.skipped.length) {
+  console.log(`↷ ${report.skipped.length} URL dilewati kebijakan: ${report.skipped.join(", ")}`);
+}
 console.log(formatRenderedHeadAudit(report));
 if (!report.ok) process.exit(1);
