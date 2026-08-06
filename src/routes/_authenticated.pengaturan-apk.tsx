@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-apk")({
-  head: () => ({ meta: [{ title: "Pengaturan rilis APK — MCM" }] }),
+  head: () => ({ meta: [{ title: "Pengaturan rilis APK — Ace" }] }),
   component: PengaturanApkPage,
 });
 
@@ -146,16 +146,16 @@ function PengaturanApkPage() {
           <UploadApkCard />
           <MinSupportedCard
             variant="storage"
-            title="MCM Storage"
+            title="Ace Storage"
             current={data?.minSupported.storage ?? null}
           />
-          <VariantSection title="MCM Storage" rows={grouped.storage} />
+          <VariantSection title="Ace Storage" rows={grouped.storage} />
           <MinSupportedCard
             variant="chat"
-            title="MCM Chat"
+            title="Ace Chat"
             current={data?.minSupported.chat ?? null}
           />
-          <VariantSection title="MCM Chat" rows={grouped.chat} />
+          <VariantSection title="Ace Chat" rows={grouped.chat} />
           <DownloadAnalyticsCard />
           {data && data.entries.length === 0 && (
             <div className="rounded-xl border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
@@ -713,20 +713,20 @@ function DownloadAnalyticsCard() {
         <>
           <div className="grid grid-cols-2 gap-ms-2">
             <StatTile
-              label="MCM Storage — tombol"
+              label="Ace Storage — tombol"
               value={storageBtn}
               totalHint={`Semua: ${totals?.storage.total ?? 0}`}
               tone="emerald"
             />
             <StatTile
-              label="MCM Chat — tombol"
+              label="Ace Chat — tombol"
               value={chatBtn}
               totalHint={`Semua: ${totals?.chat.total ?? 0}`}
               tone="sky"
             />
           </div>
           <p className="mt-2 text-ms-2xs text-muted-foreground">
-            Konversi klik tombol unduh: MCM Chat {chatShare}% dari total{" "}
+            Konversi klik tombol unduh: Ace Chat {chatShare}% dari total{" "}
             {btnTotal}. Data mencakup 30 hari terakhir.
           </p>
 
@@ -881,7 +881,7 @@ function UploadApkCard() {
                     : "border-input bg-background text-muted-foreground hover:bg-accent"
                 }`}
               >
-                {v === "chat" ? "MCM Chat" : "MCM Storage"}
+                {v === "chat" ? "Ace Chat" : "Ace Storage"}
               </button>
             ))}
           </div>

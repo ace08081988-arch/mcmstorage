@@ -13,7 +13,7 @@ import { test, expect } from "@playwright/test";
  *  4. Toggle ke mode chat (memanggil API yang sama seperti tombol UI).
  *  5. Verifikasi:
  *       - SW menerima `INVALIDATE_ASSETS` untuk path manifest+ikon.
- *       - href manifest/ikon di DOM sudah menunjuk ke aset MCM Chat
+ *       - href manifest/ikon di DOM sudah menunjuk ke aset Ace Chat
  *         (dengan cache-buster) — tanpa page reload.
  *       - Browser benar-benar melakukan request ulang ke
  *         `manifest-chat.webmanifest` sesudah invalidasi.
@@ -105,7 +105,7 @@ test.describe("Mode chat · service worker cache invalidation", () => {
           .querySelector<HTMLLinkElement>('link[rel="icon"]')
           ?.getAttribute("href") ?? null,
     }));
-    expect(before.title).not.toBe("MCM Chat");
+    expect(before.title).not.toBe("Ace Chat");
     expect(before.manifest ?? "").not.toContain("manifest-chat");
 
     // Rekam fetch manifest baru sesudah invalidasi.
@@ -124,7 +124,7 @@ test.describe("Mode chat · service worker cache invalidation", () => {
     // 1) DOM branding harus berubah TANPA reload manual.
     await expect
       .poll(() => page.evaluate(() => document.title), { timeout: 4000 })
-      .toBe("MCM Chat");
+      .toBe("Ace Chat");
 
     const after = await page.evaluate(() => {
       const stripQuery = (href: string | null) =>

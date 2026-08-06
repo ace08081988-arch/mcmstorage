@@ -10,7 +10,7 @@ import {
 export const Route = createFileRoute("/diagnostik/paket")({
   head: () => ({
     meta: [
-      { title: "Diagnostik Paket — MCM" },
+      { title: "Diagnostik Paket — Ace" },
       { name: "description", content: "Halaman diagnostik untuk melacak state packageType, displayBaseUnit, displayPackageType, dan label hasil render." },
       { name: "robots", content: "noindex,nofollow" },
     ],

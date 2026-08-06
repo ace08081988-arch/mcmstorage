@@ -55,10 +55,10 @@ test.describe("deep link chat — source guard", () => {
   });
 });
 
-test.describe("deep link chat — runtime PIN MCM & histori bertahan", () => {
+test.describe("deep link chat — runtime PIN Ace & histori bertahan", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
-  test("goto(/chat/$conversationId) langsung → PIN MCM; reload → histori tetap terbaca", async ({
+  test("goto(/chat/$conversationId) langsung → PIN Ace; reload → histori tetap terbaca", async ({
     browser,
   }) => {
     // Fase 0: ambil href DM pertama dari halaman list (butuh sesi login).

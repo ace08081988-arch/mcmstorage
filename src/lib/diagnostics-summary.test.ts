@@ -27,12 +27,12 @@ const FIXED_DATE = new Date("2026-06-22T15:30:00Z");
 describe("buildDiagnosticsSummary", () => {
   it("contains the title, timestamp, and OK status", () => {
     const text = buildDiagnosticsSummary({
-      appName: "MCM Storage",
+      appName: "Ace Storage",
       timestamp: FIXED_DATE,
       packages: PACKAGES,
       checks: OK_CHECKS,
     });
-    expect(text).toContain("DIAGNOSTIK MCM STORAGE");
+    expect(text).toContain("DIAGNOSTIK Ace STORAGE");
     expect(text).toContain("2026-06-22 15:30 UTC");
     expect(text).toContain("Status   : KOMPATIBEL");
     expect(text).toContain("Ringkas  : 2/2 cek lolos");

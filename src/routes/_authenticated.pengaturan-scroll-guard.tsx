@@ -24,7 +24,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/pengaturan-scroll-guard")({
   head: () => ({
-    meta: [{ title: "Pengaturan Scroll-Guard · MCM Storage" }],
+    meta: [{ title: "Pengaturan Scroll-Guard · Ace Storage" }],
   }),
   component: PengaturanScrollGuardPage,
 });

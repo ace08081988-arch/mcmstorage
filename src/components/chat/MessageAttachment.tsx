@@ -8,7 +8,7 @@ import { StickerView } from "@/components/chat/StickerView";
 import { VoiceNotePlayer } from "@/components/chat/VoiceNotePlayer";
 
 /**
- * Fallback yang ditampilkan saat body pesan berisi payload card MCM tapi
+ * Fallback yang ditampilkan saat body pesan berisi payload card Ace tapi
  * decodeCard gagal (payload rusak / versi baru yang belum dikenali).
  * Wajib dipakai agar JSON mentah tidak pernah bocor ke UI chat.
  */
@@ -192,7 +192,7 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
       <div className={`rounded-lg border px-ms-2 py-ms-2 text-ms-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
         <div className="font-semibold">👤 {card.name}</div>
         <div className="opacity-80">WA: {card.phone}</div>
-        {card.pin ? <div className="font-mono text-primary">PIN chat MCM: {card.pin}</div> : null}
+        {card.pin ? <div className="font-mono text-primary">PIN chat Ace: {card.pin}</div> : null}
         {card.note ? <div className="opacity-70">{card.note}</div> : null}
         <div className="mt-1 flex gap-ms-2">
           <a href={`tel:${card.phone}`} className="inline-flex items-center gap-ms-1 rounded-md border px-ms-2 py-0.5 hover:bg-accent">

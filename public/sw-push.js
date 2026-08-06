@@ -1,4 +1,4 @@
-/* MCM Storage — Web Push service worker (Play Store-grade UX) */
+/* Ace Storage — Web Push service worker (Play Store-grade UX) */
 // Ubah SW_VERSION untuk memaksa browser mengambil SW baru + memicu update
 // asset (manifest, ikon) tanpa harus uninstall aplikasi.
 const SW_VERSION = "2026-07-09-1";

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 /**
- * Tombol pintas di menu Pengaturan untuk langsung mengunduh APK MCM
+ * Tombol pintas di menu Pengaturan untuk langsung mengunduh APK Ace
  * Chat terbaru tanpa membuka halaman `/download`. Menampilkan toast
  * untuk status mulai/berhasil/gagal supaya pengguna tahu unduhan sudah
  * dimulai atau ada error.
@@ -62,7 +62,7 @@ export function DownloadChatApkShortcut() {
     setBusy(true);
     setStage("Menghubungi server…");
     const loadingId = toast.loading("Menghubungi server unduhan…", {
-      description: "Mengambil metadata APK MCM Chat terbaru.",
+      description: "Mengambil metadata APK Ace Chat terbaru.",
     });
     // Simpan info terakhir yang berhasil didapat supaya bila error terjadi
     // setelah metadata terbaca (mis. saat window.location.href), toast error
@@ -110,7 +110,7 @@ export function DownloadChatApkShortcut() {
       });
       const res = await triggerApkDownload(url, apk.name);
       downloadTriggered = true;
-      toast.success(`Mulai mengunduh APK MCM Chat v${version} • ${sizeLabel}`, {
+      toast.success(`Mulai mengunduh APK Ace Chat v${version} • ${sizeLabel}`, {
         id: loadingId,
         description:
           res.via === "capacitor-app-launcher"
@@ -130,7 +130,7 @@ export function DownloadChatApkShortcut() {
         detailParts.length > 0 ? detailParts.join(" • ") : "Penyebab tidak diketahui.";
       toast.error(
         attemptLabel
-          ? `Gagal mengunduh APK MCM Chat ${attemptLabel}`
+          ? `Gagal mengunduh APK Ace Chat ${attemptLabel}`
           : "Gagal memulai unduhan APK Chat.",
         {
           id: loadingId,
@@ -173,12 +173,12 @@ export function DownloadChatApkShortcut() {
         disabled={busy}
         aria-label={
           busy
-            ? `Unduhan APK MCM Chat sedang berjalan${stage ? `: ${stage}` : ""}${cooldown > 0 ? `, tunggu ${cooldown} detik` : ""}`
+            ? `Unduhan APK Ace Chat sedang berjalan${stage ? `: ${stage}` : ""}${cooldown > 0 ? `, tunggu ${cooldown} detik` : ""}`
             : isUnavailable
-              ? "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
+              ? "APK Ace Chat belum tersedia — ketuk untuk cek ulang"
               : isChecking
-                ? "Memeriksa ketersediaan APK MCM Chat"
-                : "Unduh APK MCM Chat versi terbaru"
+                ? "Memeriksa ketersediaan APK Ace Chat"
+                : "Unduh APK Ace Chat versi terbaru"
         }
         aria-busy={busy}
         aria-disabled={busy}
@@ -225,7 +225,7 @@ export function DownloadChatApkShortcut() {
             void availability.refetch();
           }}
           disabled={isChecking}
-          aria-label="Cek ulang ketersediaan APK MCM Chat"
+          aria-label="Cek ulang ketersediaan APK Ace Chat"
           title="Cek ulang"
           className="absolute right-0.5 top-0.5 grid h-11 w-11 place-items-center rounded-full text-foreground/80 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -234,19 +234,19 @@ export function DownloadChatApkShortcut() {
       ) : null}
       <span className="sr-only" role="status" aria-live="polite">
         {busy
-          ? `Unduhan APK MCM Chat berjalan${stage ? `: ${stage}` : ""}`
+          ? `Unduhan APK Ace Chat berjalan${stage ? `: ${stage}` : ""}`
           : isChecking
-            ? "Memeriksa ketersediaan APK MCM Chat"
+            ? "Memeriksa ketersediaan APK Ace Chat"
             : isUnavailable
-              ? "APK MCM Chat belum tersedia"
+              ? "APK Ace Chat belum tersedia"
               : ""}
       </span>
       </div>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Unduh APK MCM Chat?</AlertDialogTitle>
+          <AlertDialogTitle>Unduh APK Ace Chat?</AlertDialogTitle>
           <AlertDialogDescription>
-            Versi terbaru APK MCM Chat akan langsung diunduh ke perangkat Anda.
+            Versi terbaru APK Ace Chat akan langsung diunduh ke perangkat Anda.
             Lanjutkan?
           </AlertDialogDescription>
         </AlertDialogHeader>

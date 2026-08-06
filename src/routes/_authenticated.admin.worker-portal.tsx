@@ -21,7 +21,7 @@ import { saveWorkerPortalConfig } from "@/lib/worker-portal-admin.functions";
 export const Route = createFileRoute("/_authenticated/admin/worker-portal")({
   head: () => ({
     meta: [
-      { title: "Admin · Portal Pegawai · MCM Storage" },
+      { title: "Admin · Portal Pegawai · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

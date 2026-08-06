@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/lovable/visual/tap-targets")({
   head: () => ({
     meta: [
-      { title: "Tap Target Audit — MCM" },
+      { title: "Tap Target Audit — Ace" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

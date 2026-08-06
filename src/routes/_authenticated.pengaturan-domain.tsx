@@ -13,7 +13,7 @@ import { checkDomainDns, LOVABLE_IP, TXT_HOST_PREFIX, type DnsCheckResult } from
 export const Route = createFileRoute("/_authenticated/pengaturan-domain")({
   head: () => ({
     meta: [
-      { title: "Pengaturan Domain · MCM Storage" },
+      { title: "Pengaturan Domain · Ace Storage" },
       { name: "robots", content: "noindex" },
     ],
   }),

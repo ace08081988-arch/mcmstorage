@@ -260,7 +260,7 @@ export function AppHeader() {
       {/* Mobile: page title, centered, tracking tight untuk kesan premium */}
       <div className="flex min-w-0 flex-1 items-center justify-center sm:hidden">
         <span className="truncate text-ms-base font-semibold tracking-tight">
-          {crumbs[crumbs.length - 1]?.label ?? "MCM Storage"}
+          {crumbs[crumbs.length - 1]?.label ?? "Ace Storage"}
         </span>
       </div>
 

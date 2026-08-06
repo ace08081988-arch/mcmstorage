@@ -25,7 +25,7 @@ import {
  *      `PIN xxxx-xxxx` sesuai regex `PIN_MCM_FORMAT`.
  *
  * 2. Runtime UI (butuh storageState; self-skip bila kosong):
- *    - Buka `/chat`, klik FAB "Tambah kontak PIN MCM".
+ *    - Buka `/chat`, klik FAB "Tambah kontak PIN Ace".
  *    - Ketik beberapa variasi input; assert `input.value` selalu
  *      berupa `XXXX-XXXX` (atau prefix ≤4 karakter tanpa dash), tidak
  *      pernah mengandung lowercase / spasi / dash ganda.
@@ -104,7 +104,7 @@ test.describe("PIN input variations — runtime FAB di /chat", () => {
     await page.waitForLoadState("networkidle");
 
     // Buka FAB. Selector: aria-label eksplisit di komponen.
-    const fab = page.getByRole("button", { name: /Tambah kontak PIN MCM/i });
+    const fab = page.getByRole("button", { name: /Tambah kontak PIN Ace/i });
     if ((await fab.count()) === 0) {
       test.skip(true, "FAB tidak ditemukan — mungkin viewport/route berubah.");
       return;

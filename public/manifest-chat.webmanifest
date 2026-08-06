@@ -1,7 +1,7 @@
 {
-  "name": "MCM Chat",
-  "short_name": "MCM Chat",
-  "description": "MCM Chat — pesan cepat, panggilan, dan pembaruan dalam satu aplikasi.",
+  "name": "Ace Chat",
+  "short_name": "Ace Chat",
+  "description": "Ace Chat — pesan cepat, panggilan, dan pembaruan dalam satu aplikasi.",
   "start_url": "/chat",
   "scope": "/",
   "display": "standalone",

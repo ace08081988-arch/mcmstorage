@@ -1,5 +1,5 @@
 /**
- * Registrasi service worker MCM + mekanisme auto-update.
+ * Registrasi service worker Ace + mekanisme auto-update.
  *
  * - `updateViaCache: "none"` → browser TIDAK mem-cache berkas SW; setiap
  *   pengecekan pasti membaca versi terbaru dari server.
@@ -22,7 +22,7 @@ const CLEANUP_GUARD_KEY = "__mcm_sw_cleanup_at";
 /**
  * Nama cache yang MASIH dipakai versi terbaru. Semua cache lain akan
  * dibersihkan saat aplikasi dibuka supaya ikon/manifest lama tidak
- * tertahan di storage browser (mis. saat rebrand ke MCM).
+ * tertahan di storage browser (mis. saat rebrand ke Ace).
  */
 const KNOWN_CACHE_PREFIXES = ["mcm-"];
 
@@ -46,7 +46,7 @@ async function cleanupStaleServiceWorkers(currentScriptUrl: string) {
     await Promise.allSettled(
       regs.map(async (r) => {
         const active = r.active?.scriptURL || r.waiting?.scriptURL || r.installing?.scriptURL || "";
-        // Simpan hanya registrasi yang mengarah ke SW MCM saat ini.
+        // Simpan hanya registrasi yang mengarah ke SW Ace saat ini.
         if (active && active !== currentScriptUrl) {
           try { await r.unregister(); } catch { /* ignore */ }
         }

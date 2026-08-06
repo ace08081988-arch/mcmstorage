@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/pembaruan")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Pembaruan · MCM Storage" },
+      { title: "Pembaruan · Ace Storage" },
       {
         name: "description",
         content: "Status, saluran, dan rekomendasi pembaruan dari akun Anda.",

@@ -66,10 +66,10 @@ function UndangPage() {
 
   async function share() {
     const text =
-      `Tambahkan saya di MCM Chat. PIN: ${formatInviteCode(myCode)}\n` + `Atau buka: ${myUrl}`;
+      `Tambahkan saya di Ace Chat. PIN: ${formatInviteCode(myCode)}\n` + `Atau buka: ${myUrl}`;
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({ title: "Undangan MCM Chat", text, url: myUrl });
+        await navigator.share({ title: "Undangan Ace Chat", text, url: myUrl });
         return;
       }
       await copyText("url", text);

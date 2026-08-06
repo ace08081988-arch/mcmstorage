@@ -10,8 +10,8 @@ export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Atur Ulang Kata Sandi — MCM Storage" },
-      { name: "description", content: "Atur ulang kata sandi akun MCM Storage Anda." },
+      { title: "Atur Ulang Kata Sandi — Ace Storage" },
+      { name: "description", content: "Atur ulang kata sandi akun Ace Storage Anda." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

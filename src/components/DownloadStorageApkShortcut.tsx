@@ -7,7 +7,7 @@ import { getApkVariantDetail } from "@/lib/apk.functions";
 import { triggerApkDownload } from "@/lib/trigger-apk-download";
 
 /**
- * Tombol pintas di menu Pengaturan untuk langsung mengunduh APK MCM
+ * Tombol pintas di menu Pengaturan untuk langsung mengunduh APK Ace
  * Storage terbaru tanpa membuka halaman `/download`. Mengambil URL
  * signed langsung lewat server function `getApkVariantDetail` dan
  * memicu navigasi unduh di browser.
@@ -34,7 +34,7 @@ export function DownloadStorageApkShortcut() {
   async function onClick() {
     if (busy || !isAvailable) return;
     setBusy(true);
-    const loadingId = toast.loading("Menyiapkan unduhan APK MCM Storage…");
+    const loadingId = toast.loading("Menyiapkan unduhan APK Ace Storage…");
     try {
       const detail = await fetchDetail({ data: { variant: "storage" } });
       const apk = detail?.latest;
@@ -48,7 +48,7 @@ export function DownloadStorageApkShortcut() {
       const version =
         apk.versionName || apk.name || "terbaru";
       const res = await triggerApkDownload(url, apk.name);
-      toast.success(`Mulai mengunduh APK MCM Storage (${version})…`, {
+      toast.success(`Mulai mengunduh APK Ace Storage (${version})…`, {
         id: loadingId,
         description:
           res.via === "capacitor-app-launcher"
@@ -87,10 +87,10 @@ export function DownloadStorageApkShortcut() {
       aria-busy={busy || isChecking}
       aria-label={
         isUnavailable
-          ? "APK MCM Storage belum tersedia — ketuk untuk cek ulang"
+          ? "APK Ace Storage belum tersedia — ketuk untuk cek ulang"
           : isChecking
-            ? "Memeriksa ketersediaan APK MCM Storage"
-            : "Unduh APK MCM Storage"
+            ? "Memeriksa ketersediaan APK Ace Storage"
+            : "Unduh APK Ace Storage"
       }
       className="group flex h-full w-full flex-col gap-0.5 rounded-xl border bg-card px-ms-3 py-ms-3 pr-14 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
     >
@@ -120,7 +120,7 @@ export function DownloadStorageApkShortcut() {
           void availability.refetch();
         }}
         disabled={isChecking}
-        aria-label="Cek ulang ketersediaan APK MCM Storage"
+        aria-label="Cek ulang ketersediaan APK Ace Storage"
         title="Cek ulang"
         className="absolute right-0.5 top-0.5 grid h-11 w-11 place-items-center rounded-full text-foreground/80 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
       >
@@ -129,11 +129,11 @@ export function DownloadStorageApkShortcut() {
     ) : null}
     <span className="sr-only" role="status" aria-live="polite">
       {busy
-        ? "Unduhan APK MCM Storage sedang diproses"
+        ? "Unduhan APK Ace Storage sedang diproses"
         : isChecking
-          ? "Memeriksa ketersediaan APK MCM Storage"
+          ? "Memeriksa ketersediaan APK Ace Storage"
           : isUnavailable
-            ? "APK MCM Storage belum tersedia"
+            ? "APK Ace Storage belum tersedia"
             : ""}
     </span>
     </div>

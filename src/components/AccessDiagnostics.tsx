@@ -299,7 +299,7 @@ export function AccessDiagnostics() {
                       {denied && (
                         <div className="text-muted-foreground">
                           → Kemungkinan sebab: akun <b>chat_only</b> aktif, atau baris tidak
-                          ada dengan <code>user_id = auth.uid()</code>. Upgrade ke MCM
+                          ada dengan <code>user_id = auth.uid()</code>. Upgrade ke Ace
                           Storage untuk membuka.
                         </div>
                       )}

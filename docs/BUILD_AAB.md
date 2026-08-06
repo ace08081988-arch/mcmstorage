@@ -109,12 +109,12 @@ buildTypes {
 
 ## Build harian (1 perintah)
 
-### Varian MCM Storage (release)
+### Varian Ace Storage (release)
 ```bash
 bun run aab:build
 ```
 
-### Varian MCM Chat (release)
+### Varian Ace Chat (release)
 ```bash
 bun run aab:build:chat
 ```
@@ -131,8 +131,8 @@ node scripts/build-aab.mjs --variant chat --skip-typecheck
 
 | Flag              | Fungsi                                                      |
 | ----------------- | ----------------------------------------------------------- |
-| `--variant full`  | (default) MCM Storage                                        |
-| `--variant chat`  | MCM Chat (`VITE_APP_MODE=chat`, `appId` chat)                |
+| `--variant full`  | (default) Ace Storage                                        |
+| `--variant chat`  | Ace Chat (`VITE_APP_MODE=chat`, `appId` chat)                |
 | `--debug`         | `bundleDebug` — tidak butuh keystore, TIDAK bisa upload ke Play |
 | `--skip-typecheck`| Lewati tsgo (hanya kalau baru saja dicek manual)             |
 

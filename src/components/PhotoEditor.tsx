@@ -956,7 +956,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   // Simpan hasil edit ke galeri/berkas perangkat. Di Android (Capacitor) file
-  // ditulis ke folder Documents/MCM Storage supaya mudah ditemukan lewat
+  // ditulis ke folder Documents/Ace Storage supaya mudah ditemukan lewat
   // aplikasi Files bawaan; di web men-trigger unduhan browser.
   async function saveToGallery() {
     if (!img || exporting) return;
@@ -986,13 +986,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           }
           const b64 = btoa(bin);
           await Filesystem.writeFile({
-            path: `MCM Storage/${filename}`,
+            path: `Ace Storage/${filename}`,
             data: b64,
             directory: Directory.Documents,
             recursive: true,
           });
           toast.success("Foto tersimpan", {
-            description: `Documents › MCM Storage › ${filename}`,
+            description: `Documents › Ace Storage › ${filename}`,
           });
           return;
         } catch (err) {

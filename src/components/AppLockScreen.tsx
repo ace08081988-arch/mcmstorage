@@ -34,7 +34,7 @@ export function AppLockScreen({ uid, cfg }: Props) {
   const tryBiometric = async () => {
     if (!cfg.biometric) return;
     setBusy(true);
-    const ok = await authenticateBiometric("Buka kunci MCM Storage");
+    const ok = await authenticateBiometric("Buka kunci Ace Storage");
     setBusy(false);
     if (ok) unlock();
   };

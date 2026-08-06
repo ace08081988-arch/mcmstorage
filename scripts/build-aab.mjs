@@ -4,7 +4,7 @@
  *
  * Pemakaian:
  *   node scripts/build-aab.mjs                       # varian full, release AAB
- *   node scripts/build-aab.mjs --variant chat        # varian MCM Chat
+ *   node scripts/build-aab.mjs --variant chat        # varian Ace Chat
  *   node scripts/build-aab.mjs --debug               # bundleDebug (tanpa signing)
  *   node scripts/build-aab.mjs --skip-typecheck      # skip tsgo
  *

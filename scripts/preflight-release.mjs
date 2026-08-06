@@ -166,7 +166,7 @@ function runPreBuild() {
   } else if (/minifyEnabled\s+true/.test(releaseBlock)) {
     warn(
       `File tidak ada: ${pgPath}. Buat file kosong sebagai placeholder:\n` +
-        "      echo '# ProGuard rules MCM' > android/app/proguard-rules.pro",
+        "      echo '# ProGuard rules Ace' > android/app/proguard-rules.pro",
     );
   } else {
     console.log("    (skip; minifyEnabled false)");

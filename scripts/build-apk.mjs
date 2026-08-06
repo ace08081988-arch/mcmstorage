@@ -5,7 +5,7 @@
  *
  * Pemakaian:
  *   node scripts/build-apk.mjs                # default: varian full
- *   node scripts/build-apk.mjs --variant chat # varian MCM Chat
+ *   node scripts/build-apk.mjs --variant chat # varian Ace Chat
  *   node scripts/build-apk.mjs --open         # + buka Android Studio
  *   node scripts/build-apk.mjs --skip-typecheck  (kalau sudah dicek manual)
  *   node scripts/build-apk.mjs --assemble          # + ./gradlew assembleDebug

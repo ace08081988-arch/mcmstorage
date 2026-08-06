@@ -23,11 +23,11 @@ export const Route = createFileRoute("/_authenticated/fitur")({
   component: FiturPage,
   head: () => ({
     meta: [
-      { title: "Fitur · MCM Chat" },
+      { title: "Fitur · Ace Chat" },
       {
         name: "description",
         content:
-          "Kelola bisnis dan obrolan MCM Chat: verifikasi, katalog, iklan, order, daftar kontak, salam, dan pesan tidak di tempat.",
+          "Kelola bisnis dan obrolan Ace Chat: verifikasi, katalog, iklan, order, daftar kontak, salam, dan pesan tidak di tempat.",
       },
     ],
   }),

@@ -114,7 +114,7 @@ function ProfilChatPage() {
       } else if (res.reason === "unpublished") {
         toast.error("Versi ini sudah tidak dipublikasikan.");
       } else if (res.reason === "wrong_variant") {
-        toast.error("Link bukan APK MCM Chat.");
+        toast.error("Link bukan APK Ace Chat.");
       } else if (res.reason === "invalid_url") {
         toast.error("Format link tidak dikenali.");
       } else {
@@ -243,7 +243,7 @@ function ProfilChatPage() {
           >
             <Download className="h-6 w-6 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-ms-base font-medium">Unduh APK MCM Chat</div>
+              <div className="truncate text-ms-base font-medium">Unduh APK Ace Chat</div>
               <div className="truncate text-ms-sm text-muted-foreground">
                 Terbaru: {chatApk.versionName ? `v${chatApk.versionName}` : "?"}
                 {chatApk.sizeMB ? ` · ${chatApk.sizeMB} MB` : ""} · Pilih versi
@@ -259,7 +259,7 @@ function ProfilChatPage() {
               <Download className="h-6 w-6 shrink-0" />
             )}
             <div className="min-w-0 flex-1">
-              <div className="truncate text-ms-base font-medium">Unduh APK MCM Chat</div>
+              <div className="truncate text-ms-base font-medium">Unduh APK Ace Chat</div>
               <div className="truncate text-ms-sm">
                 {apkQuery.isLoading
                   ? "Memuat versi terbaru..."
@@ -323,7 +323,7 @@ function ProfilChatPage() {
       <Dialog open={apkPickerOpen} onOpenChange={setApkPickerOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Pilih versi MCM Chat</DialogTitle>
+            <DialogTitle>Pilih versi Ace Chat</DialogTitle>
             <DialogDescription>
               Unduh versi terbaru atau pilih rilis sebelumnya bila diperlukan.
             </DialogDescription>
@@ -377,7 +377,7 @@ function ProfilChatPage() {
                       : validation.reason === "unpublished"
                       ? "Versi sudah tidak dipublikasikan"
                       : validation.reason === "wrong_variant"
-                      ? "Link bukan APK MCM Chat"
+                      ? "Link bukan APK Ace Chat"
                       : validation.reason === "invalid_url"
                       ? "Format link tidak dikenali"
                       : "Gagal memvalidasi"}
@@ -594,7 +594,7 @@ function ProfilChatPage() {
                         onClick={(e) => {
                           e.preventDefault();
                           setQrTarget({
-                            label: r.versionName ? `MCM Chat v${r.versionName}` : r.name,
+                            label: r.versionName ? `Ace Chat v${r.versionName}` : r.name,
                             url: r.url,
                             meta: r.sizeMB ? `${r.sizeMB} MB` : undefined,
                           });

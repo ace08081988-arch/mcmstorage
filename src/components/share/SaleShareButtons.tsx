@@ -103,7 +103,7 @@ export const ChatShareButton = forwardRef<HTMLButtonElement, BaseProps>(
   ) {
     const isDisabled = !!disabled || !!busy;
     const defaultLabel = size === "md" ? "Kirim Chat" : "Chat";
-    const title = isDisabled && reason ? reason : "Kirim foto + rincian penjualan ke pembeli via MCM Chat";
+    const title = isDisabled && reason ? reason : "Kirim foto + rincian penjualan ke pembeli via Ace Chat";
     return (
       <button
         ref={ref}
@@ -111,7 +111,7 @@ export const ChatShareButton = forwardRef<HTMLButtonElement, BaseProps>(
         onClick={onClick}
         disabled={isDisabled}
         aria-disabled={isDisabled || undefined}
-        aria-label="Kirim ke MCM Chat"
+        aria-label="Kirim ke Ace Chat"
         title={title}
         data-testid={rest["data-testid"] ?? "share-chat-btn"}
         className={`${baseCls(size)} ${CHAT_CLS[variant]} ${className ?? ""}`}

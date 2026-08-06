@@ -80,7 +80,7 @@ export async function generateSaleReceipt(
   ctx.fillStyle = "#0f172a";
   ctx.font = "bold 32px system-ui, -apple-system, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(input.org_name?.trim() || "MCM Storage", PADDING, PADDING + 28);
+  ctx.fillText(input.org_name?.trim() || "Ace Storage", PADDING, PADDING + 28);
 
   ctx.fillStyle = "#64748b";
   ctx.font = "500 16px system-ui, -apple-system, sans-serif";

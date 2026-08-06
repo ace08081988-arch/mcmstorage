@@ -1,7 +1,7 @@
 # SECURITY DEFINER Inventory (public schema)
 
 Dokumen ini memetakan **setiap** `SECURITY DEFINER` di schema `public` yang
-dipakai MCM Storage / MCM Chat, cara masing-masing memvalidasi pemanggil,
+dipakai Ace Storage / Ace Chat, cara masing-masing memvalidasi pemanggil,
 dan hubungannya dengan warning Supabase linter
 (`function_search_path_mutable`, `security_definer_view`, `rls_disabled_in_public`).
 
@@ -51,7 +51,7 @@ SELECT p.proname
 ## 2. Aturan `search_path`
 
 Linter warn `function_search_path_mutable` muncul kalau `proconfig`
-**tidak** menyertakan `search_path=…`. Aturan MCM:
+**tidak** menyertakan `search_path=…`. Aturan Ace:
 
 | Kategori fungsi                                   | `SET search_path` wajib                    |
 | ------------------------------------------------- | ------------------------------------------ |
@@ -206,7 +206,7 @@ Daftar:
 
 ## 7. Skema validasi input (per RPC)
 
-RPC MCM tidak memakai Zod di sisi DB; validasi input dipatuhi di dua tempat:
+RPC Ace tidak memakai Zod di sisi DB; validasi input dipatuhi di dua tempat:
 
 1. **Client TS** (`src/lib/*.functions.ts`, `src/lib/rpc-*.ts`) — Zod schema
    sebelum `supabase.rpc(...)`.
@@ -232,7 +232,7 @@ before send" dan melanggar aturan explicit-state.
 
 ## 8. Warning linter yang biasa muncul & keputusan
 
-| Warning                          | Interpretasi MCM                                                     | Keputusan default                                                        |
+| Warning                          | Interpretasi Ace                                                     | Keputusan default                                                        |
 | -------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | `function_search_path_mutable`   | `proconfig` tidak set `search_path`.                                 | **Fix** — tambah `SET search_path`, jangan ignore.                       |
 | `security_definer_view`          | View publik `SECURITY DEFINER`.                                      | Ganti jadi function `SECURITY DEFINER` + predikat, view drop.            |

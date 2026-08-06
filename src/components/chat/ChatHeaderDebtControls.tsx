@@ -93,7 +93,7 @@ type AuditRow = {
  *   nomor telepon) milik pemilik akun (myId).
  * - Jika ditemukan minimal satu debt aktif, tampilkan chip saldo + kontrol
  *   [-] (catat pembayaran) & [+] (tambah tagihan) untuk masing2 kind.
- * - Semua tulisan sinkron langsung ke tabel debts/debt_payments MCM Storage.
+ * - Semua tulisan sinkron langsung ke tabel debts/debt_payments Ace Storage.
  */
 export function ChatHeaderDebtControls({
   myId,
@@ -984,7 +984,7 @@ export function ChatHeaderDebtControls({
         ) : null}
         <p className="mt-3 text-ms-2xs leading-snug text-muted-foreground">
           <ArrowRight className="mr-1 inline h-2.5 w-2.5" />
-          Tersinkron langsung ke Hutang & Piutang MCM Storage.
+          Tersinkron langsung ke Hutang & Piutang Ace Storage.
         </p>
         <div className="mt-3 border-t pt-2">
           <div className="mb-1.5 flex items-center justify-between gap-ms-2">

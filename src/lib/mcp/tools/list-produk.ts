@@ -6,7 +6,7 @@ export default defineTool({
   name: "list_produk",
   title: "Daftar produk / stok",
   description:
-    "Mengambil daftar produk (stok) milik user MCM Storage yang sedang terhubung. Filter opsional lewat query pencarian pada nama.",
+    "Mengambil daftar produk (stok) milik user Ace Storage yang sedang terhubung. Filter opsional lewat query pencarian pada nama.",
   inputSchema: {
     query: z
       .string()

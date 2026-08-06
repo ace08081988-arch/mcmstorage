@@ -113,7 +113,7 @@ function ProfilPage() {
     if (rawPhone) {
       const norm = normalizeWaNumber(rawPhone, countryCode);
       if (!norm) {
-        toast.error("Nomor MCM tidak valid untuk negara terpilih (8–15 digit)");
+        toast.error("Nomor Ace tidak valid untuk negara terpilih (8–15 digit)");
         return;
       }
       phoneToSave = norm;
@@ -289,7 +289,7 @@ function ProfilPage() {
               <Input
                 id="profil-nama"
                 type="text"
-                placeholder="Mis. Toko MCM / Budi"
+                placeholder="Mis. Toko Ace / Budi"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 maxLength={120}
@@ -330,15 +330,15 @@ function ProfilPage() {
           <CardHeader className="space-y-1">
             <div className="flex items-center gap-ms-2">
               <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle className="text-ms-base">Kontak MCM</CardTitle>
+              <CardTitle className="text-ms-base">Kontak Ace</CardTitle>
             </div>
             <CardDescription>
-              Nomor pengirim default untuk pesan MCM & link pegawai.
+              Nomor pengirim default untuk pesan Ace & link pegawai.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-ms-3">
             <div className="space-y-1.5">
-              <Label htmlFor="profil-hp">Nomor MCM / HP</Label>
+              <Label htmlFor="profil-hp">Nomor Ace / HP</Label>
               <div className="flex flex-col gap-ms-2 sm:flex-row">
                 <select
                   aria-label="Kode negara"
@@ -501,7 +501,7 @@ function ProfilPage() {
         <div>
           <h2 className="text-ms-sm font-semibold">Pintasan unduhan</h2>
           <p className="text-ms-2xs text-muted-foreground">
-            Unduh APK MCM Chat versi terbaru tanpa membuka halaman /download.
+            Unduh APK Ace Chat versi terbaru tanpa membuka halaman /download.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-ms-2 sm:max-w-sm">

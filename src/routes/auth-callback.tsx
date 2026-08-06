@@ -35,7 +35,7 @@ export const Route = createFileRoute("/auth-callback")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Memproses Verifikasi — MCM Storage" },
+      { title: "Memproses Verifikasi — Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

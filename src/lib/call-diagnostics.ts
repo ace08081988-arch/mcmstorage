@@ -96,7 +96,7 @@ export function formatTime(t: number): string {
 /** Teks siap salin/kirim ke WhatsApp untuk diagnosa. */
 export function formatCallLogs(entries: CallLogEntry[]): string {
   const head = [
-    "=== Log Diagnosa Panggilan (MCM) ===",
+    "=== Log Diagnosa Panggilan (Ace) ===",
     `Dibuat: ${new Date().toLocaleString("id-ID")}`,
     `UA: ${typeof navigator !== "undefined" ? navigator.userAgent : "-"}`,
     `Jumlah entri: ${entries.length}`,

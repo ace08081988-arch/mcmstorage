@@ -1,4 +1,4 @@
-# Release Checklist — MCM Storage / MCM Chat
+# Release Checklist — Ace Storage / Ace Chat
 
 > Copy-paste template untuk setiap upload AAB ke Google Play Console.
 > Ganti placeholder `{{ ... }}` sesuai rilis yang sedang dikerjakan, atau jalankan `bun run release:checklist` untuk mengisinya otomatis.

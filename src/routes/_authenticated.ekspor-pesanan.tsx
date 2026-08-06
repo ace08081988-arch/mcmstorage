@@ -18,13 +18,13 @@ import {
 export const Route = createFileRoute("/_authenticated/ekspor-pesanan")({
   head: () => ({
     meta: [
-      { title: "Ekspor Pesanan · MCM Storage" },
+      { title: "Ekspor Pesanan · Ace Storage" },
       {
         name: "description",
         content:
           "Unduh daftar pesanan Request, Ecer, dan Siapkan Sendiri beserta total penjualan dan piutang per status ke CSV atau Excel.",
       },
-      { property: "og:title", content: "Ekspor Pesanan · MCM Storage" },
+      { property: "og:title", content: "Ekspor Pesanan · Ace Storage" },
       {
         property: "og:description",
         content: "Rekap pesanan per status lengkap dengan total penjualan dan piutang.",

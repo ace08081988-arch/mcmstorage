@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/pengaturan-notifikasi-wa")({
   head: () => ({
     meta: [
-      { title: "Notifikasi WA Penyiapan · MCM Storage" },
+      { title: "Notifikasi WA Penyiapan · Ace Storage" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -225,13 +225,13 @@ function NotifikasiWaPage() {
         body: JSON.stringify({
           kind,
           wa_target: wa || null,
-          title: "Uji notifikasi MCM Storage",
+          title: "Uji notifikasi Ace Storage",
           item_name: variant === "success" ? "PSR 3 gr" : null,
           photo_count: variant === "success" ? 2 : 0,
           error: variant === "fail" ? "Uji: contoh pesan gagal" : undefined,
           message:
             variant === "wa"
-              ? "🔔 Uji notifikasi WA dari MCM Storage. Jika Anda menerima pesan ini, webhook & WA sudah berfungsi."
+              ? "🔔 Uji notifikasi WA dari Ace Storage. Jika Anda menerima pesan ini, webhook & WA sudah berfungsi."
               : undefined,
           submission_id: "test-" + Date.now(),
           submitted_at: new Date().toISOString(),
@@ -273,7 +273,7 @@ function NotifikasiWaPage() {
         <CardHeader>
           <CardTitle className="text-base">Alur</CardTitle>
           <CardDescription>
-            Server MCM meng-POST detail submit ke URL webhook Anda (mis. n8n / Make / Zapier). Workflow di sana
+            Server Ace meng-POST detail submit ke URL webhook Anda (mis. n8n / Make / Zapier). Workflow di sana
             meneruskan pesan ke nomor WA tujuan lewat WhatsApp Business Anda.
           </CardDescription>
         </CardHeader>

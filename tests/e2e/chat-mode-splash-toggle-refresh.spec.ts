@@ -10,7 +10,7 @@ import { test, expect } from "@playwright/test";
 
 const URL = "/download";
 const SESSION_KEY = "mcm.chat.splashShown";
-const SPLASH_NAME = "Memuat MCM Chat";
+const SPLASH_NAME = "Memuat Ace Chat";
 
 async function seedChatMode(context: import("@playwright/test").BrowserContext) {
   await context.addInitScript(() => {
@@ -122,7 +122,7 @@ test.describe("ChatModeSplash · toggle reduce-motion lalu refresh", () => {
       const seen: string[] = [];
       const check = () => {
         const el = document.querySelector<HTMLElement>(
-          '[aria-label="Memuat MCM Chat"]',
+          '[aria-label="Memuat Ace Chat"]',
         );
         seen.push(el ? "present" : "absent");
       };

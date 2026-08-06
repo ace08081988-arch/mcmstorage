@@ -417,7 +417,7 @@ export function AppSidebar() {
   // Chat-only bisa berasal dari (a) build/localStorage flag, atau (b)
   // profil akun (`profiles.chat_only`) — pengguna yang mendaftar via
   // pilihan "Chat" hanya boleh melihat fitur komunikasi walaupun sedang
-  // membuka build MCM Storage penuh.
+  // membuka build Ace Storage penuh.
   const [dbChatOnly, setDbChatOnly] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -789,7 +789,7 @@ export function AppSidebar() {
               boxShadow:
                 "inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 24px -12px rgba(16,185,129,0.65), 0 0 0 1px rgba(16,185,129,0.35)",
             }}
-            title="Unduh MCM Chat — APK khusus komunikasi, akun sama"
+            title="Unduh Ace Chat — APK khusus komunikasi, akun sama"
           >
             <span
               aria-hidden
@@ -805,7 +805,7 @@ export function AppSidebar() {
                 className="block truncate text-ms-base leading-ms-tight tracking-ms-tight text-white"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Coba MCM Chat
+                Coba Ace Chat
               </span>
               <span
                 className="mt-0.5 block truncate text-ms-2xs font-normal leading-ms-tight text-white/75"

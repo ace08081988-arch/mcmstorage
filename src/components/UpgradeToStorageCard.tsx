@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { upgradeChatOnlyToStorage } from "@/lib/upgrade-account.functions";
 
 /**
- * Kartu upgrade akun chat-only → akun MCM Storage penuh.
+ * Kartu upgrade akun chat-only → akun Ace Storage penuh.
  * Hanya tampil jika `profiles.chat_only=true`. Butuh verifikasi password
  * ulang sebelum flag di-set false.
  */
@@ -142,7 +142,7 @@ export function UpgradeToStorageCard() {
         });
         return;
       }
-      toast.success("Akun berhasil di-upgrade ke MCM Storage", {
+      toast.success("Akun berhasil di-upgrade ke Ace Storage", {
         id: attemptToast,
         description: "Semua fitur storage kini terbuka. Mengalihkan ke Beranda…",
       });
@@ -174,12 +174,12 @@ export function UpgradeToStorageCard() {
       <CardHeader>
         <div className="flex items-center gap-ms-2">
           <ArrowUpCircle className="h-5 w-5 text-primary" aria-hidden="true" />
-          <CardTitle className="text-ms-base">Upgrade ke MCM Storage</CardTitle>
+          <CardTitle className="text-ms-base">Upgrade ke Ace Storage</CardTitle>
           <Badge variant="secondary" className="ml-auto">Chat-only</Badge>
         </div>
         <CardDescription>
           Akun Anda saat ini hanya bisa mengakses fitur chat. Upgrade untuk
-          membuka semua fitur MCM Storage (gudang, penjualan, hutang piutang,
+          membuka semua fitur Ace Storage (gudang, penjualan, hutang piutang,
           penyiapan pegawai, dll). Data chat tetap utuh.
         </CardDescription>
       </CardHeader>
@@ -290,7 +290,7 @@ export function UpgradeToStorageCard() {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Upgrade ke MCM Storage?</AlertDialogTitle>
+            <AlertDialogTitle>Upgrade ke Ace Storage?</AlertDialogTitle>
             <AlertDialogDescription>
               Setelah upgrade, akun Anda bisa mengakses semua fitur storage.
               Perubahan ini tidak otomatis reversibel dari aplikasi. Lanjutkan?

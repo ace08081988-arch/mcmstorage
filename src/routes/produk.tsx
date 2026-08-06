@@ -11,9 +11,9 @@ import {
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { Button } from "@/components/ui/button";
-const TITLE = "MCM Storage — Aplikasi kasir, stok, & hutang-piutang dari HP";
+const TITLE = "Ace Storage — Aplikasi kasir, stok, & hutang-piutang dari HP";
 const DESC =
-  "MCM Storage membantu pemilik toko mencatat penjualan, stok gudang, penyiapan pesanan, dan hutang-piutang pelanggan langsung dari HP, terhubung ke WhatsApp.";
+  "Ace Storage membantu pemilik toko mencatat penjualan, stok gudang, penyiapan pesanan, dan hutang-piutang pelanggan langsung dari HP, terhubung ke WhatsApp.";
 
 export const Route = createFileRoute("/produk")({
   head: () => ({
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/produk")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          name: "MCM Storage",
+          name: "Ace Storage",
           applicationCategory: "BusinessApplication",
           operatingSystem: "Android, Web",
           description: DESC,
@@ -94,13 +94,13 @@ function ProdukPage() {
           <div className="lux-plate-sheen" aria-hidden="true" />
           <div className="relative">
             <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-ms-2.5 py-1 text-ms-2xs font-bold uppercase leading-none tracking-[0.2em] text-primary-foreground/85 backdrop-blur-sm">
-              MCM Storage
+              Ace Storage
             </span>
             <h1 className="mt-ms-3 text-ms-3xl font-extrabold leading-tight tracking-tight">
               Jalankan seluruh toko Anda dari satu aplikasi
             </h1>
             <p className="mx-auto mt-3 max-w-xl text-ms-base text-primary-foreground/85">
-              MCM Storage menyatukan kasir, stok gudang, penyiapan pesanan pegawai,
+              Ace Storage menyatukan kasir, stok gudang, penyiapan pesanan pegawai,
               dan catatan hutang-piutang pelanggan — semuanya bisa dijalankan dari
               HP dan dikirim ke pelanggan lewat WhatsApp.
             </p>

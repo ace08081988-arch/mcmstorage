@@ -45,14 +45,14 @@ export type InviteCodeValidation =
   | { ok: true; code: string }
   | { ok: false; code: ""; reason: string };
 
-/** Validasi format PIN MCM sebelum request dikirim. */
+/** Validasi format PIN Ace sebelum request dikirim. */
 export function validateInviteCode(raw: string): InviteCodeValidation {
   const clean = normalizeInviteCode(raw);
   if (!clean) {
-    return { ok: false, code: "", reason: "PIN MCM tidak boleh kosong." };
+    return { ok: false, code: "", reason: "PIN Ace tidak boleh kosong." };
   }
   if (!isLikelyInviteCode(clean)) {
-    return { ok: false, code: "", reason: "PIN MCM harus 6–16 karakter huruf atau angka." };
+    return { ok: false, code: "", reason: "PIN Ace harus 6–16 karakter huruf atau angka." };
   }
   return { ok: true, code: clean };
 }

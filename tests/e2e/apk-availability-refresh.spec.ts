@@ -56,13 +56,13 @@ test.describe("APK availability · refresh flow", () => {
 
     // Ikon refresh terlihat di ketiga tombol saat kondisi tidak tersedia.
     const chatRefresh = chatDl.getByRole("button", {
-      name: /Cek ulang ketersediaan APK MCM Chat/i,
+      name: /Cek ulang ketersediaan APK Ace Chat/i,
     });
     const storageRefresh = storageDl.getByRole("button", {
-      name: /Cek ulang ketersediaan APK MCM Storage/i,
+      name: /Cek ulang ketersediaan APK Ace Storage/i,
     });
     const copyRefresh = copyChat.getByRole("button", {
-      name: /Cek ulang ketersediaan APK MCM Chat/i,
+      name: /Cek ulang ketersediaan APK Ace Chat/i,
     });
     await expect(chatRefresh).toBeVisible();
     await expect(storageRefresh).toBeVisible();
@@ -120,17 +120,17 @@ test.describe("APK availability · refresh flow", () => {
 
     await expect(
       chatDl.getByRole("button", {
-        name: /Cek ulang ketersediaan APK MCM Chat/i,
+        name: /Cek ulang ketersediaan APK Ace Chat/i,
       }),
     ).toHaveCount(0);
     await expect(
       storageDl.getByRole("button", {
-        name: /Cek ulang ketersediaan APK MCM Storage/i,
+        name: /Cek ulang ketersediaan APK Ace Storage/i,
       }),
     ).toHaveCount(0);
     await expect(
       copyChat.getByRole("button", {
-        name: /Cek ulang ketersediaan APK MCM Chat/i,
+        name: /Cek ulang ketersediaan APK Ace Chat/i,
       }),
     ).toHaveCount(0);
 

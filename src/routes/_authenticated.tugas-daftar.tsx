@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/tugas-daftar")({
   head: () => ({
     meta: [
-      { title: "Daftar Tugas Penyiapan · MCM Storage" },
+      { title: "Daftar Tugas Penyiapan · Ace Storage" },
       { name: "description", content: "Ringkasan tugas penyiapan pegawai: tanggal dibuat, jadwal, dan catatan." },
     ],
   }),

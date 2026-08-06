@@ -57,7 +57,7 @@ export const Route = createFileRoute("/_authenticated/notifikasi")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Pengaturan Notifikasi · MCM Storage" },
+      { title: "Pengaturan Notifikasi · Ace Storage" },
       {
         name: "description",
         content:
@@ -300,7 +300,7 @@ function NotifikasiPage() {
               </div>
               {permission === "denied" && (
                 <div className="text-ms-2xs text-destructive">
-                  Buka Pengaturan situs/aplikasi di HP, izinkan Notifikasi untuk MCM Storage, lalu kembali.
+                  Buka Pengaturan situs/aplikasi di HP, izinkan Notifikasi untuk Ace Storage, lalu kembali.
                 </div>
               )}
             </CardDescription>

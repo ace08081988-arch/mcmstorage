@@ -449,7 +449,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
       }
     } catch (e) {
       toast.dismiss(tid);
-      toast.error((e as Error)?.message || "Gagal mengirim ke MCM Chat.");
+      toast.error((e as Error)?.message || "Gagal mengirim ke Ace Chat.");
     } finally {
       setChatSendingId(null);
     }
@@ -970,7 +970,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
       <PickChatConversationDialog
         open={!!chatPickTarget}
         onOpenChange={(v) => { if (!v) setChatPickTarget(null); }}
-        title="Kirim ke MCM Chat"
+        title="Kirim ke Ace Chat"
         onPick={(conversationId, displayTitle) => {
           const target = chatPickTarget;
           setChatPickTarget(null);

@@ -21,7 +21,7 @@ import {
 export const Route = createFileRoute("/_authenticated/admin/email-status")({
   head: () => ({
     meta: [
-      { title: "Status Verifikasi Email · MCM Storage" },
+      { title: "Status Verifikasi Email · Ace Storage" },
       {
         name: "description",
         content:

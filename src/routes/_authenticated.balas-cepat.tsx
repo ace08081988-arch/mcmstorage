@@ -11,7 +11,7 @@ import { useDeleteQuickReply, useQuickReplies, useSaveQuickReply, type QuickRepl
 export const Route = createFileRoute("/_authenticated/balas-cepat")({
   head: () => ({
     meta: [
-      { title: "Balas Cepat · MCM Storage" },
+      { title: "Balas Cepat · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

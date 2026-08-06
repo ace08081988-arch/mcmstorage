@@ -7,17 +7,17 @@ import { installApkStub, makeRelease } from "./_apk-availability-stub";
  * di setiap state (per spesifikasi komponen):
  *
  *   1. Idle · belum tersedia
- *      → "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
+ *      → "APK Ace Chat belum tersedia — ketuk untuk cek ulang"
  *   2. Disabled · checking (isFetching setelah tap refresh/main)
- *      → "Memeriksa ketersediaan APK MCM Chat, tombol dinonaktifkan sementara"
+ *      → "Memeriksa ketersediaan APK Ace Chat, tombol dinonaktifkan sementara"
  *      + attribute `disabled`
  *   3. Idle · tersedia (siap salin)
  *      → "Salin semua link APK Chat"
  *   4. Disabled · busy (proses menyalin, fetchDetail dalam onClick)
- *      → "Memproses: menyalin semua link APK MCM Chat, tombol dinonaktifkan sementara"
+ *      → "Memproses: menyalin semua link APK Ace Chat, tombol dinonaktifkan sementara"
  *      + attribute `disabled`
  *   5. Aktif · tersalin
- *      → "Tersalin: semua link APK MCM Chat sudah disalin ke clipboard"
+ *      → "Tersalin: semua link APK Ace Chat sudah disalin ke clipboard"
  *
  * Semua state diverifikasi lewat harness publik no-auth
  * /lovable/visual/apk-availability-shortcuts dengan stub server-fn
@@ -58,14 +58,14 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     await stub.waitForServed("storage", 1);
     await expect(
       mainByAria(
-        /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
+        /^APK Ace Chat belum tersedia — ketuk untuk cek ulang$/,
       ),
     ).toBeVisible();
     // Idle-unavailable: tombol utama TIDAK disabled (agar bisa ditap
     // untuk memicu refetch); hanya busy/checking yang men-disable.
     await expect(
       mainByAria(
-        /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
+        /^APK Ace Chat belum tersedia — ketuk untuk cek ulang$/,
       ),
     ).toBeEnabled();
 
@@ -81,7 +81,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     await stub.trackedAction(
       async () => {
         await mainByAria(
-          /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
+          /^APK Ace Chat belum tersedia — ketuk untuk cek ulang$/,
         ).click();
       },
       { variant: "storage" },
@@ -92,7 +92,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     await stub.waitForHold("chat");
 
     const checkingLabel =
-      /^Memeriksa ketersediaan APK MCM Chat, tombol dinonaktifkan sementara$/;
+      /^Memeriksa ketersediaan APK Ace Chat, tombol dinonaktifkan sementara$/;
     await expect(mainByAria(checkingLabel)).toBeVisible();
     await expect(mainByAria(checkingLabel)).toBeDisabled();
     // Guard: label idle/aktif tidak bocor ke state checking.
@@ -101,7 +101,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     ).toHaveCount(0);
     await expect(
       mainByAria(
-        /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
+        /^APK Ace Chat belum tersedia — ketuk untuk cek ulang$/,
       ),
     ).toHaveCount(0);
 
@@ -131,7 +131,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     await stub.waitForHold("chat");
 
     const busyLabel =
-      /^Memproses: menyalin semua link APK MCM Chat, tombol dinonaktifkan sementara$/;
+      /^Memproses: menyalin semua link APK Ace Chat, tombol dinonaktifkan sementara$/;
     await expect(mainByAria(busyLabel)).toBeVisible();
     await expect(mainByAria(busyLabel)).toBeDisabled();
     // Guard: bukan lagi label "Memeriksa…" (query sudah cache-hit,
@@ -141,15 +141,15 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // ============ (5) Aktif · tersalin ============
     stub.enqueue("chat", [makeRelease("chat")]);
     const copiedLabel =
-      /^Tersalin: semua link APK MCM Chat sudah disalin ke clipboard$/;
+      /^Tersalin: semua link APK Ace Chat sudah disalin ke clipboard$/;
     // `copied` di-reset setelah 2 detik — assertion default (5s) cukup
     // untuk menangkap window ini; batasi timeout eksplisit supaya
     // regresi (label tidak pernah muncul) gagal cepat.
     await expect(mainByAria(copiedLabel)).toBeVisible({ timeout: 3000 });
     // Clipboard benar-benar berisi header + baris versi.
     const clip = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clip).toContain("MCM Chat APK — daftar unduhan");
-    expect(clip).toContain("https://example.test/MCM-Chat-1.0.0.apk");
+    expect(clip).toContain("Ace Chat APK — daftar unduhan");
+    expect(clip).toContain("https://example.test/Ace-Chat-1.0.0.apk");
 
     // === Post-active quiescent guard ===
     // Setelah state "tersalin", TIDAK boleh ada request tambahan ke

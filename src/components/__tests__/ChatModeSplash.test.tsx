@@ -94,7 +94,7 @@ function mount(Component: React.ComponentType): { root: Root; host: HTMLDivEleme
 }
 
 function splashNode(): HTMLElement | null {
-  return document.querySelector<HTMLElement>('[aria-label="Memuat MCM Chat"]');
+  return document.querySelector<HTMLElement>('[aria-label="Memuat Ace Chat"]');
 }
 
 beforeEach(() => {

@@ -70,7 +70,7 @@ function TaskPinMemo({ shareToken }: { shareToken: string }) {
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
     meta: [
-      { title: "Penyiapan Produk · MCM Storage" },
+      { title: "Penyiapan Produk · Ace Storage" },
       { name: "description", content: "Siapkan produk sendiri atau lewat pegawai dengan link & PIN." },
     ],
   }),
@@ -767,7 +767,7 @@ function TugasPage() {
               <ListTodo className="h-5 w-5 text-primary" /> Tugas untuk Pegawai
             </h2>
             <p className="mt-0.5 max-w-xl text-ms-2xs leading-snug text-muted-foreground">
-              Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via MCM. Foto & lokasi otomatis muncul di sini.
+              Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via Ace. Foto & lokasi otomatis muncul di sini.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-ms-2">
@@ -1002,7 +1002,7 @@ function TugasPage() {
                 <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs font-medium hover:bg-accent" aria-label={`Buka tugas ${t.title}`}>Buka</button>
                 <button
                   onClick={() => setSharePinFor(t)}
-                  title="Bagikan link + PIN via MCM"
+                  title="Bagikan link + PIN via Ace"
                   aria-label="Bagikan link dan PIN"
                   className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-wa/40 bg-wa/10 text-wa-strong hover:bg-wa/20"
                 >
@@ -1664,13 +1664,13 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       const msg = String(error.message || "").toLowerCase();
       if (msg.includes("storage_account_required")) {
         return toast.error(
-          "Akun ini masih MCM Chat. Upgrade ke MCM Storage dulu untuk membuat tugas penyiapan.",
+          "Akun ini masih Ace Chat. Upgrade ke Ace Storage dulu untuk membuat tugas penyiapan.",
           { duration: 6000 },
         );
       }
       if (msg.includes("forbidden")) {
         return toast.error(
-          "Akun ini belum berwenang membuat tugas penyiapan. Pastikan akun sudah MCM Storage lalu coba lagi.",
+          "Akun ini belum berwenang membuat tugas penyiapan. Pastikan akun sudah Ace Storage lalu coba lagi.",
           { duration: 6000 },
         );
       }
@@ -1814,7 +1814,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         </div>
 
         <label className="block relative">
-          <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor MCM / HP pegawai (opsional, contoh: 6281234567890 — harus dari kontak tersimpan)</div>
+          <div className="mb-1 text-ms-2xs text-muted-foreground">Nomor Ace / HP pegawai (opsional, contoh: 6281234567890 — harus dari kontak tersimpan)</div>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, "").slice(0, 16))}
@@ -1885,7 +1885,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             if (!match) {
               return (
                 <div className="mt-1 text-ms-2xs text-muted-foreground">
-                  Jika diisi, MCM akan otomatis terbuka berisi link & PIN setelah tugas dibuat.
+                  Jika diisi, Ace akan otomatis terbuka berisi link & PIN setelah tugas dibuat.
                 </div>
               );
             }
@@ -1901,7 +1901,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                   </span>
                 </span>
                 {!match.linkedUserId && (
-                  <span className="text-muted-foreground">· belum terhubung akun MCM</span>
+                  <span className="text-muted-foreground">· belum terhubung akun Ace</span>
                 )}
               </div>
             );
@@ -1938,7 +1938,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         {missingPhoto && (
                           <span
                             className="inline-flex shrink-0 items-center gap-0.5 rounded bg-destructive/10 px-1 py-0.5 text-[9px] font-medium text-destructive"
-                            title="Barang ini belum punya foto — tidak bisa dikirim via MCM"
+                            title="Barang ini belum punya foto — tidak bisa dikirim via Ace"
                           >
                             <ImageIcon className="h-2.5 w-2.5" /> Tanpa foto
                           </span>
@@ -2514,10 +2514,10 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                           </span>
                           <button
                             onClick={() => previewWaForItem(r, p)}
-                            title={`Kirim detail item "${p.name}" via MCM`}
+                            title={`Kirim detail item "${p.name}" via Ace`}
                             className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-wa/40 bg-wa/10 px-1.5 text-ms-2xs font-medium text-wa-strong hover:bg-wa/20"
                           >
-                            <MessageCircle className="h-2.5 w-2.5" /> MCM
+                            <MessageCircle className="h-2.5 w-2.5" /> Ace
                           </button>
                         </li>
                       ))}
@@ -2541,7 +2541,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                       className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-wa/50 bg-wa/10 px-ms-2 text-ms-2xs font-medium text-wa-strong hover:bg-wa/20"
                       title="Kirim ringkasan lengkap tugas + semua item bermasalah"
                     >
-                      <MessageCircle className="h-3 w-3" /> Kirim via MCM
+                      <MessageCircle className="h-3 w-3" /> Kirim via Ace
                     </button>
                     {hasIssues && (
                       isFixed ? (
@@ -2606,7 +2606,7 @@ function WaPreviewDialog({
     onClose();
   }
   return (
-    <Modal title="Pratinjau pesan MCM" onClose={onClose}>
+    <Modal title="Pratinjau pesan Ace" onClose={onClose}>
       <div className="space-ms-3 text-ms-sm">
         <div className="text-ms-2xs text-muted-foreground">
           Cek isi pesan di bawah. Anda bisa mengedit sebelum mengirim.
@@ -2626,7 +2626,7 @@ function WaPreviewDialog({
             onClick={() => void send()}
             className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-wa px-ms-3 text-ms-xs font-semibold text-wa-foreground hover:opacity-90"
           >
-            <MessageCircle className="h-3.5 w-3.5" /> Kirim via MCM
+            <MessageCircle className="h-3.5 w-3.5" /> Kirim via Ace
           </button>
         </div>
       </div>
@@ -2662,7 +2662,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
     const hasWebShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
     if (!hasWebShare) {
       toast.message("Browser ini tak mendukung tombol Bagikan langsung.", {
-        description: "Coba 'Buka MCM (WhatsApp Web)' atau Salin pesan lalu tempel di MCM.",
+        description: "Coba 'Buka Ace (WhatsApp Web)' atau Salin pesan lalu tempel di Ace.",
         duration: 7000,
       });
     }
@@ -2671,7 +2671,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
       notifyShareResult(res);
     } catch (err) {
       toast.error(`Gagal membagikan: ${(err as Error)?.message ?? String(err)}`, {
-        description: "Salin pesan lalu tempel manual di MCM.",
+        description: "Salin pesan lalu tempel manual di Ace.",
         duration: 9000,
       });
     }
@@ -2683,7 +2683,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
     if (win) return;
     // Popup diblokir (mis. iframe pratinjau) — coba buka di tab teratas.
     toast.message("Popup diblokir browser.", {
-      description: "Membuka MCM di tab ini. Izinkan popup untuk situs ini agar terbuka di tab baru.",
+      description: "Membuka Ace di tab ini. Izinkan popup untuk situs ini agar terbuka di tab baru.",
       duration: 8000,
     });
     try { window.top!.location.href = waUrl; }
@@ -2713,7 +2713,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
           </button>
           <a href={waUrl} target="_blank" rel="noreferrer" onClick={onOpenWa}
             className="inline-flex h-10 items-center justify-center gap-ms-1 rounded-md border text-ms-sm">
-            <ExternalLink className="h-4 w-4" /> Buka MCM (WhatsApp Web)
+            <ExternalLink className="h-4 w-4" /> Buka Ace (WhatsApp Web)
           </a>
         </div>
       </div>
@@ -2877,7 +2877,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       {sub.note && <div className="mt-0.5 line-clamp-2 text-ms-2xs">{sub.note}</div>}
       <div className="mt-1 flex gap-ms-1">
         {sub.location_url && /^https:\/\//i.test(sub.location_url) && <a href={sub.location_url} target="_blank" rel="noreferrer" className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded border text-ms-2xs"><MapPin className="h-3 w-3" /> Lokasi</a>}
-        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-wa text-ms-2xs font-semibold text-wa-foreground"><MessageCircle className="h-3 w-3" /> MCM</button>
+        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-wa text-ms-2xs font-semibold text-wa-foreground"><MessageCircle className="h-3 w-3" /> Ace</button>
       </div>
     </div>
   );

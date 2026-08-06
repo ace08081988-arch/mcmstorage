@@ -34,7 +34,7 @@ function hasAuthState(): boolean {
   }
 }
 
-test.describe("multi-viewport — PIN MCM konsisten di semua lebar", () => {
+test.describe("multi-viewport — PIN Ace konsisten di semua lebar", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("buka DM pertama → verifikasi header + transkrip → reload → verifikasi ulang", async ({

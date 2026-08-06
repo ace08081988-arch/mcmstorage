@@ -167,7 +167,7 @@ cek atribut `data-pass="1"` pada tiap baris hasil.
 
 ---
 
-Utilitas press MCM memberi feedback taktil (skala + shading) untuk elemen
+Utilitas press Ace memberi feedback taktil (skala + shading) untuk elemen
 interaktif. Ada dua cara aktivasi:
 
 1. **Manual** — pasang kelas `press`, `press-card`, `press-row`, atau

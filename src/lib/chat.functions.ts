@@ -74,7 +74,7 @@ export const sendMessage = createServerFn({ method: "POST" })
         ? `${conv?.title ?? "Grup"} · ${senderName}`
         : senderName;
       // Notifikasi push tidak boleh menampilkan sentinel/JSON mentah dari
-      // payload card MCM. `previewText` menerjemahkan card jadi label
+      // payload card Ace. `previewText` menerjemahkan card jadi label
       // ramah pengguna (mis. "🛒 Keranjang · 3 item"); fallback ke teks
       // biasa untuk pesan non-card.
       const rawPreview = data.body ? (previewText(data.body) ?? data.body) : null;

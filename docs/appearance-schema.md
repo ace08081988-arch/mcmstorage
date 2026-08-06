@@ -1,7 +1,7 @@
 # Skema payload `mcm.appearance-settings`
 
 Dokumen ini adalah **kontrak antar rilis** untuk file ekspor/impor
-pengaturan tampilan MCM Storage (`/pengaturan-tampilan`). Setiap perubahan
+pengaturan tampilan Ace Storage (`/pengaturan-tampilan`). Setiap perubahan
 bentuk payload wajib memperbarui bagian yang relevan di sini SEBELUM naik
 versi.
 

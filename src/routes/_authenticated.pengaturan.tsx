@@ -88,7 +88,7 @@ const CATEGORIES: ReadonlyArray<SettingCategory> = [
       },
       {
         title: "Mode Aplikasi",
-        description: "Beralih antara MCM Storage penuh atau MCM Chat.",
+        description: "Beralih antara Ace Storage penuh atau Ace Chat.",
         to: "/pengaturan-app-mode",
         icon: Sparkles,
         keywords: "chat storage variant apk",
@@ -164,7 +164,7 @@ const CATEGORIES: ReadonlyArray<SettingCategory> = [
         keywords: "push email notif pemberitahuan",
       },
       {
-        title: "Chat MCM",
+        title: "Chat Ace",
         description: "Preferensi chat, tampilan bubble, dan suara.",
         to: "/profil-chat",
         icon: MessageCircle,
@@ -172,7 +172,7 @@ const CATEGORIES: ReadonlyArray<SettingCategory> = [
       },
       {
         title: "Unduh Aplikasi",
-        description: "APK MCM Storage & MCM Chat untuk Android.",
+        description: "APK Ace Storage & Ace Chat untuk Android.",
         to: "/download",
         icon: Download,
         keywords: "apk android unduh install",
@@ -253,11 +253,11 @@ const CATEGORIES: ReadonlyArray<SettingCategory> = [
 export const Route = createFileRoute("/_authenticated/pengaturan")({
   head: () => ({
     meta: [
-      { title: "Pengaturan · MCM Storage" },
+      { title: "Pengaturan · Ace Storage" },
       {
         name: "description",
         content:
-          "Semua pengaturan MCM Storage dalam satu tempat — tampilan, akun, privasi, notifikasi, integrasi, dan sistem.",
+          "Semua pengaturan Ace Storage dalam satu tempat — tampilan, akun, privasi, notifikasi, integrasi, dan sistem.",
       },
     ],
   }),

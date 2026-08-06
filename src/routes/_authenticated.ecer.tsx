@@ -81,7 +81,7 @@ import { PaintDeferred } from "@/components/PaintDeferred";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
-  head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
+  head: () => ({ meta: [{ title: "Penyiapan Ecer · Ace Storage" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,

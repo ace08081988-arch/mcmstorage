@@ -32,13 +32,13 @@ import { goBackOr } from "@/lib/back-nav";
 export const Route = createFileRoute("/_authenticated/kontak-mapping")({
   head: () => ({
     meta: [
-      { title: "Mapping Kontak Chat — MCM Storage" },
+      { title: "Mapping Kontak Chat — Ace Storage" },
       {
         name: "description",
         content:
           "Daftar kontak chat yang belum terdaftar sebagai pelanggan atau supplier, lengkap dengan tombol mapping cepat.",
       },
-      { property: "og:title", content: "Mapping Kontak Chat — MCM Storage" },
+      { property: "og:title", content: "Mapping Kontak Chat — Ace Storage" },
       {
         property: "og:description",
         content: "Petakan kontak chat menjadi pelanggan atau supplier dalam satu ketukan.",

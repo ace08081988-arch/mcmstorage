@@ -4,13 +4,13 @@ import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { Button } from "@/components/ui/button";
 
-const TITLE = "FAQ MCM Storage — Paket gratis, cara order, & kebijakan";
+const TITLE = "FAQ Ace Storage — Paket gratis, cara order, & kebijakan";
 const DESC =
-  "Jawaban singkat soal paket gratis MCM Storage, cara memesan akses lewat WhatsApp, dan kebijakan setelah pembayaran daring dihentikan.";
+  "Jawaban singkat soal paket gratis Ace Storage, cara memesan akses lewat WhatsApp, dan kebijakan setelah pembayaran daring dihentikan.";
 
 const FAQ: { q: string; a: string }[] = [
   {
-    q: "Apakah MCM Storage benar-benar gratis?",
+    q: "Apakah Ace Storage benar-benar gratis?",
     a: "Ya. Saat ini seluruh fitur terbuka tanpa biaya bulanan, tanpa kartu kredit, dan tanpa fitur yang dikunci paywall.",
   },
   {

@@ -35,7 +35,7 @@ function hasAuthState(): boolean {
   }
 }
 
-test.describe("back/forward + reload antar DM — PIN MCM tetap konsisten", () => {
+test.describe("back/forward + reload antar DM — PIN Ace tetap konsisten", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("DM A → reload → DM B → reload → back+reload → forward+reload: identitas per konvo stabil, no phone", async ({

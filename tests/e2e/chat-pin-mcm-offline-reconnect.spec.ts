@@ -23,7 +23,7 @@ import {
  *
  * Menjaga kontrak: bahkan di jalur offline (cache stale, retry gagal,
  * error boundary) tidak ada nomor telp mentah yang lolos ke DOM, dan
- * setelah reconnect identitas peer wajib diformat sebagai PIN MCM.
+ * setelah reconnect identitas peer wajib diformat sebagai PIN Ace.
  */
 
 const STORAGE = "tests/visual/.auth/user.json";
@@ -159,7 +159,7 @@ test.describe("offline → reconnect — PIN xxxx-xxxx tetap konsisten, bebas no
       await page.reload();
       await page.waitForLoadState("networkidle");
 
-      // (d) Final assertion — kontrak PIN MCM.
+      // (d) Final assertion — kontrak PIN Ace.
       const reconnectClean = await assertChatBrandingClean(
         page,
         `${href} RECONNECT`,

@@ -18,7 +18,7 @@ import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { DEFAULT_APP_PREFS, useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-aksesibilitas")({
-  head: () => ({ meta: [{ title: "Aksesibilitas · MCM Storage" }] }),
+  head: () => ({ meta: [{ title: "Aksesibilitas · Ace Storage" }] }),
   component: PengaturanAksesibilitasPage,
 });
 

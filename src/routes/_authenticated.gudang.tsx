@@ -55,7 +55,7 @@ import { DraftSafetyNotice } from "@/components/DraftSafetyNotice";
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
     meta: [
-      { title: "Gudang & Supplier · MCM Storage" },
+      { title: "Gudang & Supplier · Ace Storage" },
       { name: "description", content: "Kelola stok gudang, supplier, pembelian dan penjualan dengan perhitungan otomatis." },
     ],
   }),
@@ -957,9 +957,9 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
     if (!myProfile) return;
     const filled: string[] = [];
     if (myProfile.display_name) { setName(myProfile.display_name); filled.push("nama"); }
-    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. MCM"); }
+    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. Ace"); }
     else if (myProfile.phone) {
-      toast.warning("Nomor MCM di profil tidak valid — perbarui di halaman Profil Akun");
+      toast.warning("Nomor Ace di profil tidak valid — perbarui di halaman Profil Akun");
     }
     if (filled.length) toast.success(`Diisi dari akun Anda (${filled.join(" & ")})`);
   }
@@ -1021,14 +1021,14 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       <form onSubmit={submit} className="space-ms-2 rounded-lg border bg-card p-ms-3">
         <div className="text-ms-xs font-semibold">{editingId ? "Edit Pelanggan" : "Tambah Pelanggan"}</div>
         <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Nama pelanggan *" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
-        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. MCM / kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={50} />
+        <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. Ace / kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={50} />
         <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200} />
         <button
           type="button"
           onClick={useMyContact}
           disabled={!canUseMyContact}
           className="w-full rounded-md border border-dashed px-ms-3 py-1.5 text-[0.6875rem] text-muted-foreground hover:bg-accent disabled:opacity-50"
-          title={canUseMyContact ? "Isi nama & no. MCM dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
+          title={canUseMyContact ? "Isi nama & no. Ace dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
         >
           👤 Pakai kontak akun saya
         </button>
@@ -1359,7 +1359,7 @@ function PiutangCustomerHeader({
           placeholder="Nama pelanggan *" value={name} maxLength={100}
           onChange={(e) => setName(e.target.value)} />
         <input className="w-full rounded border bg-background px-ms-2 py-1 text-ms-xs"
-          placeholder="No. MCM / kontak (opsional)" value={contact} maxLength={50}
+          placeholder="No. Ace / kontak (opsional)" value={contact} maxLength={50}
           onChange={(e) => setContact(e.target.value)} />
         <input className="w-full rounded border bg-background px-ms-2 py-1 text-ms-xs"
           placeholder="Catatan (opsional)" value={notes} maxLength={200}
@@ -1823,7 +1823,7 @@ function ShareCustomer({
       }
       const payload: ShareData = { text: message, title: `Catatan ${customer.name}`, files };
       if (typeof navigator.canShare === "function" && !navigator.canShare(payload)) {
-        toast.error("Browser ini tidak mengizinkan berbagi file. Coba dari MCM/Chrome di HP.");
+        toast.error("Browser ini tidak mengizinkan berbagi file. Coba dari Ace/Chrome di HP.");
         return;
       }
       await navigator.share(payload);
@@ -1836,8 +1836,8 @@ function ShareCustomer({
   }
 
   const links = [
-    { label: "Kirim via MCM", emoji: "💬", href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`, cls: "border-success text-success hover:bg-success/10 dark:text-success" },
-    { label: "Kirim via MCM Business", emoji: "🏪", href: waPhone ? `whatsapp://send?phone=${waPhone}&text=${encoded}` : `whatsapp://send?text=${encoded}`, cls: "border-success text-success hover:bg-success/10 dark:text-success" },
+    { label: "Kirim via Ace", emoji: "💬", href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`, cls: "border-success text-success hover:bg-success/10 dark:text-success" },
+    { label: "Kirim via Ace Business", emoji: "🏪", href: waPhone ? `whatsapp://send?phone=${waPhone}&text=${encoded}` : `whatsapp://send?text=${encoded}`, cls: "border-success text-success hover:bg-success/10 dark:text-success" },
     { label: "Viber", emoji: "📞", href: waPhone ? `viber://chat?number=%2B${waPhone}&text=${encoded}` : `viber://forward?text=${encoded}`, cls: "border-purple-500 text-purple-600 hover:bg-purple-500/10 dark:text-purple-400" },
     { label: "Telegram", emoji: "✈️", href: `https://t.me/share/url?url=${encodeURIComponent(" ")}&text=${encoded}`, cls: "border-sky-500 text-sky-600 hover:bg-sky-500/10 dark:text-sky-400" },
     { label: "SMS", emoji: "✉️", href: waPhone ? `sms:+${waPhone}?body=${encoded}` : `sms:?body=${encoded}`, cls: "border-warning text-warning hover:bg-warning/10 dark:text-warning" },
@@ -1875,7 +1875,7 @@ function ShareCustomer({
           </div>
           {uniqueImagePaths.length > 0 && (
             <p className="text-[0.6875rem] text-muted-foreground">
-              Tombol "Bagikan + Foto" memakai berbagi bawaan HP (Android/iOS) sehingga foto barang ikut terkirim. Tombol MCM/Telegram di atas hanya mengirim teks karena tidak mendukung lampiran via link.
+              Tombol "Bagikan + Foto" memakai berbagi bawaan HP (Android/iOS) sehingga foto barang ikut terkirim. Tombol Ace/Telegram di atas hanya mengirim teks karena tidak mendukung lampiran via link.
             </p>
           )}
         </div>
@@ -1936,13 +1936,13 @@ function ShareDebt({
 
   const links: Array<{ label: string; emoji: string; href: string; cls: string }> = [
     {
-      label: "Kirim via MCM",
+      label: "Kirim via Ace",
       emoji: "💬",
       href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`,
       cls: "border-success text-success hover:bg-success/10 dark:text-success",
     },
     {
-      label: "Kirim via MCM Business",
+      label: "Kirim via Ace Business",
       emoji: "🏪",
       href: waPhone
         ? `whatsapp://send?phone=${waPhone}&text=${encoded}`
@@ -2703,9 +2703,9 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
     if (!myProfile) return;
     const filled: string[] = [];
     if (myProfile.display_name) { setName(myProfile.display_name); filled.push("nama"); }
-    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. MCM"); }
+    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. Ace"); }
     else if (myProfile.phone) {
-      toast.warning("Nomor MCM di profil tidak valid — perbarui di halaman Profil Akun");
+      toast.warning("Nomor Ace di profil tidak valid — perbarui di halaman Profil Akun");
     }
     if (filled.length) toast.success(`Diisi dari akun Anda (${filled.join(" & ")})`);
   }
@@ -2779,7 +2779,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
           onClick={useMyContact}
           disabled={!canUseMyContact}
           className="w-full rounded-md border border-dashed px-ms-3 py-1.5 text-[0.6875rem] text-muted-foreground hover:bg-accent disabled:opacity-50"
-          title={canUseMyContact ? "Isi nama & no. MCM dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
+          title={canUseMyContact ? "Isi nama & no. Ace dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
         >
           👤 Pakai kontak akun saya
         </button>
@@ -2847,7 +2847,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                               target="_blank"
                               rel="noopener noreferrer"
                               className="rounded border border-success px-1.5 py-0.5 text-[0.6875rem] font-semibold text-success hover:bg-success/10 dark:text-success"
-                              aria-label={`Kirim via MCM ke ${s.name}`}
+                              aria-label={`Kirim via Ace ke ${s.name}`}
                             >
                               💬 Chat
                             </a>
@@ -3806,8 +3806,8 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
           {customerId === "__new__" && (
             <div className="grid grid-cols-1 gap-ms-2 rounded-md border border-dashed bg-muted/30 p-ms-2">
               <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
-              <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. MCM / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
-              <div className="text-[0.6875rem] text-muted-foreground">Pelanggan & nomor MCM akan otomatis tersimpan ke daftar pelanggan.</div>
+              <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. Ace / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
+              <div className="text-[0.6875rem] text-muted-foreground">Pelanggan & nomor Ace akan otomatis tersimpan ke daftar pelanggan.</div>
             </div>
           )}
 
@@ -3816,7 +3816,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             if (!c) return null;
             return (
               <div className="rounded-md border border-dashed bg-muted/30 px-ms-2 py-1.5 text-[0.6875rem] text-muted-foreground">
-                No. MCM pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
+                No. Ace pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
               </div>
             );
           })()}
@@ -4554,8 +4554,8 @@ function PesananTab({
         {customerId === "__new__" && (
           <div className="grid grid-cols-1 gap-ms-2 rounded-md border border-dashed bg-muted/30 p-ms-2">
             <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
-            <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. MCM / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
-            <div className="text-[0.6875rem] text-muted-foreground">Pelanggan & nomor MCM akan otomatis tersimpan ke daftar pelanggan.</div>
+            <input className="w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" placeholder="No. Ace / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
+            <div className="text-[0.6875rem] text-muted-foreground">Pelanggan & nomor Ace akan otomatis tersimpan ke daftar pelanggan.</div>
           </div>
         )}
 
@@ -4564,7 +4564,7 @@ function PesananTab({
           if (!c) return null;
           return (
             <div className="rounded-md border border-dashed bg-muted/30 px-ms-2 py-1.5 text-[0.6875rem] text-muted-foreground">
-              No. MCM pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
+              No. Ace pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
             </div>
           );
         })()}

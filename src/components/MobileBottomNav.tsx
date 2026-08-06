@@ -38,7 +38,7 @@ export function MobileBottomNav() {
   // dipublikasikan ke `--app-bottom-nav-h` yang dipakai padding konten.
   const navRef = useRef<HTMLElement | null>(null);
 
-  // Area MCM Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
+  // Area Ace Chat (Chat/Panggilan/Pembaruan/Fitur) sudah punya bottom nav
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
   // Sembunyikan bottom nav global agar tidak menutupi sub-tab tersebut.
   // Semua hook dipanggil sebelum early-return (React error #310 kalau tidak).

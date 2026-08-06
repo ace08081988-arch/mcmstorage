@@ -19,7 +19,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
  */
 
 const URL = "/download";
-const SPLASH_SELECTOR = '[aria-label="Memuat MCM Chat"]';
+const SPLASH_SELECTOR = '[aria-label="Memuat Ace Chat"]';
 const SESSION_KEY = "mcm.chat.splashShown";
 
 async function seedChatMode(context: BrowserContext) {
@@ -49,7 +49,7 @@ async function watchSplashDuringLoad(page: Page, durationMs: number) {
     const start = performance.now();
     while (performance.now() - start < dur) {
       const el = document.querySelector<HTMLElement>(
-        '[aria-label="Memuat MCM Chat"]',
+        '[aria-label="Memuat Ace Chat"]',
       );
       const cs = el ? getComputedStyle(el) : null;
       seen.push({

@@ -51,7 +51,7 @@ test.describe("switch DM lewat daftar — source guard", () => {
   });
 });
 
-test.describe("switch DM lewat daftar — runtime PIN MCM per percakapan", () => {
+test.describe("switch DM lewat daftar — runtime PIN Ace per percakapan", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("Klik DM di /chat: identitas berpindah sesuai peer, tanpa nomor telp mentah", async ({ page }) => {

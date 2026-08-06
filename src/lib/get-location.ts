@@ -77,7 +77,7 @@ async function getNative(): Promise<GeoResult> {
         throw new GeoError(
           "denied",
           "Izin lokasi ditolak.",
-          "Buka Pengaturan aplikasi → Izin → Lokasi, lalu aktifkan untuk MCM Storage.",
+          "Buka Pengaturan aplikasi → Izin → Lokasi, lalu aktifkan untuk Ace Storage.",
         );
       }
       useHighAccuracy = req.location === "granted";

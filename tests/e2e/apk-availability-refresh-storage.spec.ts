@@ -48,7 +48,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
 
     // Ikon refresh Storage terlihat.
     const storageRefresh = storageDl.getByRole("button", {
-      name: /Cek ulang ketersediaan APK MCM Storage/i,
+      name: /Cek ulang ketersediaan APK Ace Storage/i,
     });
     await expect(storageRefresh).toBeVisible();
 
@@ -74,7 +74,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     await expect(storageDl.getByText("Belum tersedia")).toHaveCount(0);
     await expect(
       storageDl.getByRole("button", {
-        name: /Cek ulang ketersediaan APK MCM Storage/i,
+        name: /Cek ulang ketersediaan APK Ace Storage/i,
       }),
     ).toHaveCount(0);
 
@@ -84,7 +84,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     await expect(chatDl.getByText("Belum tersedia")).toBeVisible();
     await expect(
       chatDl.getByRole("button", {
-        name: /Cek ulang ketersediaan APK MCM Chat/i,
+        name: /Cek ulang ketersediaan APK Ace Chat/i,
       }),
     ).toBeVisible();
 
@@ -119,7 +119,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     await expect(storageDl.getByText("Belum tersedia")).toBeVisible();
 
     const storageRefresh = storageDl.getByRole("button", {
-      name: /Cek ulang ketersediaan APK MCM Storage/i,
+      name: /Cek ulang ketersediaan APK Ace Storage/i,
     });
     await expect(storageRefresh).toBeVisible();
     await expect(storageRefresh).toBeEnabled();
@@ -159,11 +159,11 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     // bukan label unduh — mencegah state "aktif palsu".
     await expect(
       storageDl.getByRole("button", {
-        name: /Memeriksa ketersediaan APK MCM Storage/i,
+        name: /Memeriksa ketersediaan APK Ace Storage/i,
       }),
     ).toBeVisible();
     await expect(
-      storageDl.getByRole("button", { name: /^Unduh APK MCM Storage$/i }),
+      storageDl.getByRole("button", { name: /^Unduh APK Ace Storage$/i }),
     ).toHaveCount(0);
 
     // === Rilis dirilis → tombol menjadi aktif ===
@@ -176,7 +176,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     // muncul saat isUnavailable), jadi tombol utama tidak lagi disabled.
     await expect(
       storageDl.getByRole("button", {
-        name: /Cek ulang ketersediaan APK MCM Storage/i,
+        name: /Cek ulang ketersediaan APK Ace Storage/i,
       }),
     ).toHaveCount(0);
     await expect(storageDl.getByText("Memeriksa…")).toHaveCount(0);

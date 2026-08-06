@@ -46,7 +46,7 @@ test.describe("chat list preview — source guard", () => {
   });
 });
 
-test.describe("chat list preview — runtime PIN MCM (with refresh)", () => {
+test.describe("chat list preview — runtime PIN Ace (with refresh)", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("daftar chat: setiap baris PIN-branded, bebas nomor telp, konsisten setelah reload", async ({

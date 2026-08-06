@@ -6,7 +6,7 @@ import { loadJsPDF, isJsPDFReady, prefetchJsPDF } from "@/lib/pdf-loader";
 export const Route = createFileRoute("/_authenticated/label-preview")({
   head: () => ({
     meta: [
-      { title: "Pratinjau Label · MCM Storage" },
+      { title: "Pratinjau Label · Ace Storage" },
     ],
   }),
   component: LabelPreviewPage,
@@ -160,7 +160,7 @@ function LabelPreviewInner() {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(30);
-    doc.text("Pratinjau Label · MCM Storage", PAGE.margin, PAGE.margin + 4);
+    doc.text("Pratinjau Label · Ace Storage", PAGE.margin, PAGE.margin + 4);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(120);

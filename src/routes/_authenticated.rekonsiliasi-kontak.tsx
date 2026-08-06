@@ -27,13 +27,13 @@ import {
 export const Route = createFileRoute("/_authenticated/rekonsiliasi-kontak")({
   head: () => ({
     meta: [
-      { title: "Rekonsiliasi Kontak · MCM Storage" },
+      { title: "Rekonsiliasi Kontak · Ace Storage" },
       {
         name: "description",
         content:
           "Deteksi transaksi lama dengan nama pihak yang belum cocok, lalu petakan ulang ke record kontak SSOT yang benar.",
       },
-      { property: "og:title", content: "Rekonsiliasi Kontak · MCM Storage" },
+      { property: "og:title", content: "Rekonsiliasi Kontak · Ace Storage" },
       {
         property: "og:description",
         content:

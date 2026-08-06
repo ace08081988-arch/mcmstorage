@@ -24,13 +24,13 @@ const StatusBarChart = lazy(() =>
 export const Route = createFileRoute("/_authenticated/ringkasan")({
   head: () => ({
     meta: [
-      { title: "Ringkasan Harian · MCM Storage" },
+      { title: "Ringkasan Harian · Ace Storage" },
       {
         name: "description",
         content:
           "Total penjualan hari ini, jumlah pesanan per status, dan estimasi piutang belum lunas dalam satu layar ringkas.",
       },
-      { property: "og:title", content: "Ringkasan Harian · MCM Storage" },
+      { property: "og:title", content: "Ringkasan Harian · Ace Storage" },
       {
         property: "og:description",
         content: "Penjualan hari ini, pesanan per status, dan piutang belum lunas.",

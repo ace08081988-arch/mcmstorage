@@ -3,11 +3,11 @@ import { createPortal } from "react-dom";
 import { isChatOnly } from "@/lib/app-mode";
 
 /**
- * Splash screen khusus mode MCM Chat.
+ * Splash screen khusus mode Ace Chat.
  *
  * Tampil sekali per session saat aplikasi dibuka di mode chat, meniru
  * splash APK native supaya varian Chat terasa seperti aplikasi terpisah
- * dari MCM Storage. Otomatis hilang setelah ~1.4 detik dengan animasi
+ * dari Ace Storage. Otomatis hilang setelah ~1.4 detik dengan animasi
  * fade-out. Tidak tampil di mode "full".
  *
  * Konsistensi:
@@ -72,7 +72,7 @@ export function ChatModeSplash() {
   const node = (
     <div
       role="status"
-      aria-label="Memuat MCM Chat"
+      aria-label="Memuat Ace Chat"
       aria-hidden={fading || undefined}
       className={
         "fixed inset-0 z-[100] flex flex-col items-center justify-center transition-opacity ease-out motion-reduce:transition-none " +
@@ -93,7 +93,7 @@ export function ChatModeSplash() {
         style={{ animation: "mcm-chat-splash-pop 700ms ease-out both" }}
       />
       <div className="mt-6 text-ms-2xl font-semibold tracking-tight text-white">
-        MCM Chat
+        Ace Chat
       </div>
       <div className="mt-1 text-ms-xs text-success/70">
         Pesan cepat & terhubung

@@ -19,7 +19,7 @@ import { test, expect } from "@playwright/test";
 
 const URL = "/download";
 const SESSION_KEY = "mcm.chat.splashShown";
-const SPLASH_NAME = "Memuat MCM Chat";
+const SPLASH_NAME = "Memuat Ace Chat";
 
 async function seedChatMode(context: import("@playwright/test").BrowserContext) {
   await context.addInitScript(() => {

@@ -12,9 +12,9 @@ import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { Button } from "@/components/ui/button";
 
-const TITLE = "Harga MCM Storage — Gratis, tanpa pembayaran daring";
+const TITLE = "Harga Ace Storage — Gratis, tanpa pembayaran daring";
 const DESC =
-  "MCM Storage dipakai gratis tanpa kartu kredit dan tanpa pembayaran daring. Pemesanan dan permintaan akses dilakukan lewat WhatsApp bersama admin.";
+  "Ace Storage dipakai gratis tanpa kartu kredit dan tanpa pembayaran daring. Pemesanan dan permintaan akses dilakukan lewat WhatsApp bersama admin.";
 
 export const Route = createFileRoute("/harga")({
   head: () => ({
@@ -77,7 +77,7 @@ function HargaPage() {
               Gratis dipakai, tanpa pembayaran daring
             </h1>
             <p className="mx-auto mt-3 max-w-xl text-ms-base text-primary-foreground/85">
-              MCM Storage tidak menjual paket langganan di dalam aplikasi. Semua
+              Ace Storage tidak menjual paket langganan di dalam aplikasi. Semua
               fitur terbuka penuh, dan pemesanan akses dilakukan langsung
               bersama admin lewat WhatsApp.
             </p>

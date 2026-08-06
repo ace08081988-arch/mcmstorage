@@ -10,7 +10,7 @@ import { AppWindow, MessageSquare, Layers, Info } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-app-mode")({
   head: () => ({
-    meta: [{ title: "Mode Aplikasi · MCM Storage" }],
+    meta: [{ title: "Mode Aplikasi · Ace Storage" }],
   }),
   component: AppModePage,
 });

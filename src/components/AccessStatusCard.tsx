@@ -1,7 +1,7 @@
 /**
  * Kartu status izin akun — tampil di halaman /profil di atas
  * <UpgradeToStorageCard/>. Tujuannya: sebelum meng-upgrade, pengguna
- * bisa melihat mode akses saat ini (MCM Chat vs MCM Storage) dan
+ * bisa melihat mode akses saat ini (Ace Chat vs Ace Storage) dan
  * daftar area yang diblokir/dibuka RLS beserta alasan penolakan yang
  * jelas — bukan sekadar toast "tidak memiliki akses" saat gagal.
  */
@@ -65,7 +65,7 @@ const AREAS: AreaSpec[] = [
   {
     key: "gudang",
     label: "Gudang & Stok",
-    hint: "Butuh akun MCM Storage — RLS memblokir akun Chat-only.",
+    hint: "Butuh akun Ace Storage — RLS memblokir akun Chat-only.",
     tables: [
       "warehouse_items",
       "warehouse_item_variants",
@@ -74,7 +74,7 @@ const AREAS: AreaSpec[] = [
     policy: "user_id = auth.uid() AND NOT is_chat_only(auth.uid())",
     steps: [
       "Verifikasi email dulu (lihat kartu ‘Status verifikasi email’ di bawah).",
-      "Buka kartu ‘Upgrade ke MCM Storage’ → tekan tombol upgrade.",
+      "Buka kartu ‘Upgrade ke Ace Storage’ → tekan tombol upgrade.",
       "Aplikasi memuat ulang otomatis; policy is_chat_only(uid) langsung menjadi false pada query berikutnya.",
       "Jika tetap 42501 setelah upgrade: keluar lalu masuk kembali agar token JWT segar.",
     ],
@@ -82,29 +82,29 @@ const AREAS: AreaSpec[] = [
   {
     key: "penjualan",
     label: "Penjualan & Pembelian",
-    hint: "Butuh akun MCM Storage — laporan & mutasi stok terkunci.",
+    hint: "Butuh akun Ace Storage — laporan & mutasi stok terkunci.",
     tables: ["sales", "purchases", "customers", "suppliers"],
     policy: "user_id = auth.uid() AND NOT is_chat_only(auth.uid())",
     steps: [
-      "Upgrade ke MCM Storage terlebih dulu (buka Gudang & Stok tidak cukup — semua tabel penjualan pakai policy yang sama).",
+      "Upgrade ke Ace Storage terlebih dulu (buka Gudang & Stok tidak cukup — semua tabel penjualan pakai policy yang sama).",
       "Setelah upgrade, coba catat 1 penjualan dummy. Jika 42501 tetap muncul, laporkan lewat menu bantuan — bukan hanya retry.",
     ],
   },
   {
     key: "hutang_piutang",
     label: "Hutang & Piutang",
-    hint: "Butuh akun MCM Storage — pencatatan debts terproteksi RLS.",
+    hint: "Butuh akun Ace Storage — pencatatan debts terproteksi RLS.",
     tables: ["debts", "debt_payments", "customer_payments", "supplier_payments"],
     policy: "user_id = auth.uid() AND NOT is_chat_only(auth.uid())",
     steps: [
-      "Upgrade ke MCM Storage.",
+      "Upgrade ke Ace Storage.",
       "Pastikan customer/supplier terkait juga milik Anda (kolom user_id sama) — RLS menolak baris milik akun lain, ini bukan bug.",
     ],
   },
   {
     key: "penyiapan",
     label: "Penyiapan Pegawai",
-    hint: "Butuh akun MCM Storage — RPC prep_* menolak akun Chat-only.",
+    hint: "Butuh akun Ace Storage — RPC prep_* menolak akun Chat-only.",
     tables: [
       "prep_tasks",
       "prep_task_items",
@@ -113,18 +113,18 @@ const AREAS: AreaSpec[] = [
     ],
     policy: "SECURITY DEFINER RPC memeriksa is_chat_only(auth.uid())",
     steps: [
-      "Upgrade ke MCM Storage — RPC prep_* menolak dengan 401/403 selama akun masih chat-only.",
-      "Untuk pegawai (worker portal): akun pemilik yang menerbitkan link harus MCM Storage, PIN pegawai tidak butuh upgrade.",
+      "Upgrade ke Ace Storage — RPC prep_* menolak dengan 401/403 selama akun masih chat-only.",
+      "Untuk pegawai (worker portal): akun pemilik yang menerbitkan link harus Ace Storage, PIN pegawai tidak butuh upgrade.",
     ],
   },
   {
     key: "pos_kasir",
     label: "POS Kasir",
-    hint: "Butuh akun MCM Storage — tergantung stok gudang.",
+    hint: "Butuh akun Ace Storage — tergantung stok gudang.",
     tables: ["warehouse_items (baca)", "sales (tulis)"],
     policy: "Bergantung pada policy Gudang & Penjualan di atas",
     steps: [
-      "Upgrade ke MCM Storage — POS membaca stok langsung dari warehouse_items.",
+      "Upgrade ke Ace Storage — POS membaca stok langsung dari warehouse_items.",
       "Jika total stok = 0 setelah upgrade, isi minimal 1 item di halaman Gudang, lalu buka ulang POS.",
     ],
   },
@@ -229,8 +229,8 @@ export function AccessStatusCard() {
     : chatOnly === null
       ? "Tidak diketahui"
       : isStorage
-        ? "MCM Storage (akses penuh)"
-        : "MCM Chat saja (akses terbatas)";
+        ? "Ace Storage (akses penuh)"
+        : "Ace Chat saja (akses terbatas)";
 
   const allowed = (key: AreaKey) => {
     if (key === "chat") return true;
@@ -318,8 +318,8 @@ export function AccessStatusCard() {
                 <div className="font-medium">{modeLabel}</div>
                 <div className="text-ms-2xs text-muted-foreground">
                   {isStorage
-                    ? "Semua fitur MCM Storage terbuka. Tidak ada aksi yang perlu Anda lakukan di sini."
-                    : "Akun ini didaftarkan sebagai MCM Chat. RLS di backend menolak tabel storage (warehouse_items, sales, purchases, debts, prep_*, dst). Upgrade di kartu di bawah untuk membuka semuanya."}
+                    ? "Semua fitur Ace Storage terbuka. Tidak ada aksi yang perlu Anda lakukan di sini."
+                    : "Akun ini didaftarkan sebagai Ace Chat. RLS di backend menolak tabel storage (warehouse_items, sales, purchases, debts, prep_*, dst). Upgrade di kartu di bawah untuk membuka semuanya."}
                 </div>
               </div>
             </div>

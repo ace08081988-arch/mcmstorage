@@ -4,7 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
  * E2E — dialog pratinjau WA saat perangkat dirotasi portrait ↔ landscape.
  *
  * Regresi yang dijaga: pada landscape (tinggi ~411px) dialog pernah
- * melampaui viewport sehingga footer (Batal / Kirim via MCM) dan baris
+ * melampaui viewport sehingga footer (Batal / Kirim via Ace) dan baris
  * "Lokasi ambil" terpotong. Kontrak yang diuji di SETIAP orientasi:
  *
  *  1. Kotak dialog berada penuh di dalam viewport (tidak ada bagian yang

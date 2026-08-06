@@ -71,7 +71,7 @@ test.describe("existing DM — source guard: identitas PIN & fetch stabil lintas
 });
 
 // ── 2) Runtime UI (auth-gated) ────────────────────────────────────────
-test.describe("existing DM — runtime: PIN MCM & histori bertahan setelah refresh", () => {
+test.describe("existing DM — runtime: PIN Ace & histori bertahan setelah refresh", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("buka DM pertama → snapshot pesan & header → reload → histori tetap terbaca & masih PIN", async ({ page }) => {

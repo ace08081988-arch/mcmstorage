@@ -59,7 +59,7 @@ export type ApkStubEvent = {
 };
 
 export function makeRelease(variant: ApkVariant): ApkRelease {
-  const label = variant === "chat" ? "MCM-Chat" : "MCM-Storage";
+  const label = variant === "chat" ? "Ace-Chat" : "Ace-Storage";
   return {
     name: `${label}-1.0.0.apk`,
     url: `https://example.test/${label}-1.0.0.apk`,
@@ -77,7 +77,7 @@ export function makeDetail(
 ): Record<string, unknown> {
   return {
     variant,
-    title: variant === "chat" ? "MCM Chat" : "MCM Storage",
+    title: variant === "chat" ? "Ace Chat" : "Ace Storage",
     subtitle: "Harness stub.",
     latest: releases[0] ?? null,
     releases,

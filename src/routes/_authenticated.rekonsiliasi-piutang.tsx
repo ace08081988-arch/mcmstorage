@@ -15,7 +15,7 @@ import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
 export const Route = createFileRoute("/_authenticated/rekonsiliasi-piutang")({
   head: () => ({
     meta: [
-      { title: "Rekonsiliasi Piutang · MCM Storage" },
+      { title: "Rekonsiliasi Piutang · Ace Storage" },
       {
         name: "description",
         content:

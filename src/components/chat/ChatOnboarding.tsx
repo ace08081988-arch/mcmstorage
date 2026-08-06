@@ -115,7 +115,7 @@ export function ChatOnboarding({ onStartDm, onNewGroup, onShowQr }: Props) {
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="text-ms-base font-semibold tracking-tight">
-            {chatMode ? "Selamat datang di MCM Chat" : "Selamat datang di chat"}
+            {chatMode ? "Selamat datang di Ace Chat" : "Selamat datang di chat"}
           </h2>
           <p className="mt-0.5 text-ms-xs text-muted-foreground">
             Ikuti 3 langkah singkat berikut supaya siap ngobrol, telepon, dan

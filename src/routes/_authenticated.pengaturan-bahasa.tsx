@@ -7,7 +7,7 @@ import { useAppPrefs } from "@/lib/app-prefs";
 import { Check, Languages } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-bahasa")({
-  head: () => ({ meta: [{ title: "Bahasa Aplikasi · MCM Storage" }] }),
+  head: () => ({ meta: [{ title: "Bahasa Aplikasi · Ace Storage" }] }),
   component: PengaturanBahasaPage,
 });
 

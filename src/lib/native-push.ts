@@ -67,7 +67,7 @@ export async function startNativePush(opts?: {
           : "system";
         await notifyLocal({
           kind,
-          title: n.title ?? "MCM Storage",
+          title: n.title ?? "Ace Storage",
           body: n.body ?? "",
           url: data.url,
           tag: data.tag ?? `push:${kind}:${n.title ?? ""}`,

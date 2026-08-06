@@ -16,7 +16,7 @@ import { KemasanRumusPopover } from "@/components/KemasanRumusPopover";
 export const Route = createFileRoute("/lovable/visual/kemasan-badge")({
   head: () => ({
     meta: [
-      { title: "Kemasan Badge (harness) — MCM" },
+      { title: "Kemasan Badge (harness) — Ace" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

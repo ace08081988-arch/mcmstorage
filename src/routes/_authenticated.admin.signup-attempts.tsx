@@ -8,7 +8,7 @@ import { ArrowLeft, ShieldAlert, RefreshCw, Search, CheckCircle2, XCircle } from
 export const Route = createFileRoute("/_authenticated/admin/signup-attempts")({
   head: () => ({
     meta: [
-      { title: "Log Signup Attempts · MCM Storage" },
+      { title: "Log Signup Attempts · Ace Storage" },
       { name: "description", content: "Audit percobaan pendaftaran (email, IP, status) untuk admin." },
     ],
   }),

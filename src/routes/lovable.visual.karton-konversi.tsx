@@ -13,7 +13,7 @@ import { fmtItemQty, BOTOL_PER_KARTON } from "@/lib/stock-format";
 export const Route = createFileRoute("/lovable/visual/karton-konversi")({
   head: () => ({
     meta: [
-      { title: "Karton Konversi (harness) — MCM" },
+      { title: "Karton Konversi (harness) — Ace" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

@@ -10,7 +10,7 @@ import { useAppPrefs } from "@/lib/app-prefs";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-integrasi-sosial")({
-  head: () => ({ meta: [{ title: "Facebook & Instagram · MCM Storage" }] }),
+  head: () => ({ meta: [{ title: "Facebook & Instagram · Ace Storage" }] }),
   component: IntegrasiSosialPage,
 });
 

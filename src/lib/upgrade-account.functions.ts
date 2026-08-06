@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
 /**
- * Upgrade akun chat-only ke akun MCM Storage penuh.
+ * Upgrade akun chat-only ke akun Ace Storage penuh.
  *
  * Verifikasi: user harus memasukkan ulang password. Password diverifikasi
  * lewat signInWithPassword pada client Supabase tanpa persist (tidak

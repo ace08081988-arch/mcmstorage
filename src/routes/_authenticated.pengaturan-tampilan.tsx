@@ -140,7 +140,7 @@ function writeCompact(v: boolean) {
 export const Route = createFileRoute("/_authenticated/pengaturan-tampilan")({
   head: () => ({
     meta: [
-      { title: "Tampilan · Pengaturan MCM" },
+      { title: "Tampilan · Pengaturan Ace" },
       { name: "description", content: "Atur tema, aksen, font, kerapatan, latar, dan preset tampilan profesional." },
     ],
   }),
@@ -741,7 +741,7 @@ function PengaturanTampilanPage() {
       if (!result.ok) {
         if (result.reason === "unknown_type") {
           toast.error(
-            `Payload tidak dikenali sebagai pengaturan tampilan MCM (${source}).`,
+            `Payload tidak dikenali sebagai pengaturan tampilan Ace (${source}).`,
           );
         } else {
           toast.error(
@@ -814,7 +814,7 @@ function PengaturanTampilanPage() {
     }
     if (text == null || text.trim() === "") {
       const manual = window.prompt(
-        "Tempel JSON pengaturan tampilan MCM di sini:",
+        "Tempel JSON pengaturan tampilan Ace di sini:",
         "",
       );
       if (manual == null) return;

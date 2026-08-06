@@ -6,7 +6,7 @@ export default defineTool({
   name: "whoami",
   title: "Siapa saya",
   description:
-    "Mengembalikan identitas user MCM Storage yang sedang terhubung via MCP (id, email, dan role admin bila ada). Berguna untuk verifikasi koneksi.",
+    "Mengembalikan identitas user Ace Storage yang sedang terhubung via MCP (id, email, dan role admin bila ada). Berguna untuk verifikasi koneksi.",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx: ToolContext) => {

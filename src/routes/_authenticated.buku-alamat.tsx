@@ -72,7 +72,7 @@ import { notifyRlsRelogin } from "@/lib/rls-relogin";
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
   head: () => ({
     meta: [
-      { title: "Buku Alamat · MCM Storage" },
+      { title: "Buku Alamat · Ace Storage" },
       {
         name: "description",
         content:
@@ -369,12 +369,12 @@ function BukuAlamatPage() {
             </span>
             {rows.length > 0 && (
               <span className="text-ms-2xs text-muted-foreground">
-                {linkedPct}% kontak sudah tertaut ke akun MCM
+                {linkedPct}% kontak sudah tertaut ke akun Ace
               </span>
             )}
           </div>
           <p className="mt-2 max-w-md text-[12.5px] leading-relaxed text-muted-foreground">
-            Kelola pelanggan &amp; supplier Anda: impor dari HP, tautkan otomatis ke akun MCM, dan
+            Kelola pelanggan &amp; supplier Anda: impor dari HP, tautkan otomatis ke akun Ace, dan
             promosikan menjadi pelanggan atau supplier.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-ms-2 sm:grid-cols-4">
@@ -426,7 +426,7 @@ function BukuAlamatPage() {
         )}
         {support === "unsupported" && (
           <p className="rounded-xl border border-warning/50 bg-warning px-ms-3 py-ms-2 text-ms-xs text-warning dark:bg-warning/40 dark:text-warning">
-            Akses kontak HP hanya tersedia di aplikasi Android MCM Storage, atau di Chrome Android
+            Akses kontak HP hanya tersedia di aplikasi Android Ace Storage, atau di Chrome Android
             (Contact Picker). Tambah manual tetap bisa di semua perangkat.
           </p>
         )}
@@ -566,7 +566,7 @@ function BukuAlamatPage() {
                             onClick={() => void handleWa(r)}
                             aria-label={`Kirim pesan WA ke ${r.name}`}
                           >
-                            MCM
+                            Ace
                           </Button>
                         )}
                         {r.linked_user_id && (
@@ -891,7 +891,7 @@ function EditDialog({
                 ) : pinPreview ? (
                   <p className="text-success">
                     Tertaut ke:{" "}
-                    <span className="font-medium">{pinPreview.display_name || "Pengguna MCM"}</span>
+                    <span className="font-medium">{pinPreview.display_name || "Pengguna Ace"}</span>
                     {" · "}PIN {formatInviteCode(pinPreview.invite_code)}
                   </p>
                 ) : (
@@ -995,7 +995,7 @@ function EditDialog({
               toast.success("PIN terisi dari QR.");
               return;
             }
-            toast.error("QR bukan undangan MCM yang dikenali.");
+            toast.error("QR bukan undangan Ace yang dikenali.");
           }}
         />
       )}

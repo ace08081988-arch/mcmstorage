@@ -10,7 +10,7 @@ import { resolve } from "node:path";
  *      `/kontak` memanggil `useStartDm` lalu `navigate({ to:
  *      "/chat/$conversationId", ... })` sehingga pesan yang dikirim
  *      pasti masuk ke ID percakapan yang sama dengan yang dibuat oleh
- *      RPC. Dan NewDmDialog global memakai placeholder PIN MCM.
+ *      RPC. Dan NewDmDialog global memakai placeholder PIN Ace.
  *   2. Runtime UI (butuh storageState + minimal 1 kontak `Tertaut`,
  *      self-skip bila tidak ada): buka `/kontak` → klik "Chat" di baris
  *      tertaut → URL berpindah ke `/chat/<uuid>` → header bebas nomor
@@ -18,7 +18,7 @@ import { resolve } from "node:path";
  *      reload halaman percakapan → token tetap ada (bukti pesan masuk
  *      ke percakapan yang benar, bukan sekadar optimistik lokal).
  *   3. Cross-check: kembali ke `/chat`, buka dialog "Chat baru", pastikan
- *      placeholder PIN MCM juga terlihat di flow ini — sehingga pintu
+ *      placeholder PIN Ace juga terlihat di flow ini — sehingga pintu
  *      masuk lain (dari daftar kontak → dari daftar chat) tetap konsisten.
  */
 
@@ -86,12 +86,12 @@ test.describe("kontak → DM: wiring startDm + navigate($conversationId)", () =>
     );
   });
 
-  test("NewDmDialog (dipakai oleh entry dari halaman chat): placeholder PIN MCM", () => {
+  test("NewDmDialog (dipakai oleh entry dari halaman chat): placeholder PIN Ace", () => {
     const src = readFileSync(
       resolve(process.cwd(), "src/components/chat/NewDmDialog.tsx"),
       "utf8",
     );
-    expect(src).toMatch(/placeholder="Cari nama atau PIN MCM…"/);
+    expect(src).toMatch(/placeholder="Cari nama atau PIN Ace…"/);
     expect(src).not.toMatch(/placeholder="Cari nama atau nomor telepon/i);
   });
 });
@@ -120,7 +120,7 @@ test.describe("kontak → DM: runtime flow (auth-gated)", () => {
     const convId = convUrl.match(UUID)?.[0] ?? "";
     expect(convId, "URL /chat/<uuid> harus punya UUID valid").toMatch(UUID);
 
-    // Header bebas nomor telepon mentah (fallback PIN MCM).
+    // Header bebas nomor telepon mentah (fallback PIN Ace).
     const header = page.locator("header, [role='banner']").first();
     const headerTxt = (await header.innerText().catch(() => "")) || "";
     expect(headerTxt, "header tidak boleh menampilkan nomor telp mentah")
@@ -151,13 +151,13 @@ test.describe("kontak → DM: runtime flow (auth-gated)", () => {
     expect(mainTxt).not.toMatch(PHONE_LIKE);
   });
 
-  test("balik ke /chat: dialog 'Chat baru' tetap pakai placeholder PIN MCM", async ({ page }) => {
+  test("balik ke /chat: dialog 'Chat baru' tetap pakai placeholder PIN Ace", async ({ page }) => {
     await page.goto("/chat");
     await page.waitForLoadState("networkidle");
     const newBtn = page.getByRole("button", { name: /chat baru/i });
     test.skip((await newBtn.count()) === 0, "Tombol Chat baru tidak ada — skip.");
     await newBtn.click();
-    const input = page.getByPlaceholder("Cari nama atau PIN MCM…");
+    const input = page.getByPlaceholder("Cari nama atau PIN Ace…");
     await expect(input).toBeVisible();
     // Isi tidak boleh membuka fallback nomor telp mentah di dialog.
     const dialogTxt = await page.getByRole("dialog").innerText();

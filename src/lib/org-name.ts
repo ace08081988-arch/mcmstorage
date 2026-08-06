@@ -5,8 +5,8 @@ const LS_FULL = "app-org-name";
 const LS_SHORT = "app-org-short";
 const LS_LOGO = "app-org-logo";
 const LS_BRAND = "app-org-brand";
-export const DEFAULT_ORG_NAME = "MCM Storage";
-export const DEFAULT_ORG_SHORT = "MCM";
+export const DEFAULT_ORG_NAME = "Ace Storage";
+export const DEFAULT_ORG_SHORT = "Ace";
 
 function read(key: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;

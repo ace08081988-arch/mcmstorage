@@ -36,9 +36,9 @@ import { useMyProfile, useUpdateMyProfile } from "@/lib/profile";
 export const Route = createFileRoute("/_authenticated/pengaturan-pesan-wa")({
   head: () => ({
     meta: [
-      { title: "Template Pesan WA · MCM Storage" },
+      { title: "Template Pesan WA · Ace Storage" },
       { name: "description", content: "Atur sendiri format caption WhatsApp (judul, harga, status pembayaran, lokasi, catatan, penutup) untuk paket ecer dan request." },
-      { property: "og:title", content: "Template Pesan WA · MCM Storage" },
+      { property: "og:title", content: "Template Pesan WA · Ace Storage" },
       { property: "og:description", content: "Sesuaikan urutan, label, dan penutup caption WhatsApp." },
       { name: "robots", content: "noindex" },
     ],

@@ -1026,7 +1026,7 @@ function ChatRoomPage() {
     } catch { /* ignore quota */ }
   }, [pendingProductsKey, pendingProducts]);
 
-  // Prefill komposer dari flow lain (mis. Penyiapan Request → Buka Chat MCM).
+  // Prefill komposer dari flow lain (mis. Penyiapan Request → Buka Chat Ace).
   // Handoff via localStorage key `mcm.chat.prefill.<convId>` supaya bisa
   // dipakai dari navigate tanpa mengubah tipe search params rute.
   useEffect(() => {
@@ -2256,7 +2256,7 @@ function ChatRoomPage() {
                               }}
                             >
                               <Share2 className="mr-2 h-4 w-4" />
-                              Teruskan via MCM
+                              Teruskan via Ace
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() => {

@@ -15,7 +15,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
  */
 
 const URL = "/download";
-const SPLASH_SELECTOR = '[aria-label="Memuat MCM Chat"]';
+const SPLASH_SELECTOR = '[aria-label="Memuat Ace Chat"]';
 
 async function seedChatMode(context: BrowserContext) {
   await context.addInitScript(() => {
@@ -65,7 +65,7 @@ async function sampleFrames(page: Page, durationMs: number): Promise<Sample[]> {
     const start = performance.now();
     const readSplash = () => {
       const el = document.querySelector<HTMLElement>(
-        '[aria-label="Memuat MCM Chat"]',
+        '[aria-label="Memuat Ace Chat"]',
       );
       if (!el) return null;
       const r = el.getBoundingClientRect();

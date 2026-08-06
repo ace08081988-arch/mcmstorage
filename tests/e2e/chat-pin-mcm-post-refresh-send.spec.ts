@@ -59,10 +59,10 @@ test.describe("post-refresh send — source guard", () => {
   });
 });
 
-test.describe("post-refresh send — runtime PIN MCM tetap konsisten", () => {
+test.describe("post-refresh send — runtime PIN Ace tetap konsisten", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
-  test("reload DM → kirim pesan → reload lagi: transkrip pakai PIN MCM tanpa phone", async ({ page }) => {
+  test("reload DM → kirim pesan → reload lagi: transkrip pakai PIN Ace tanpa phone", async ({ page }) => {
     await page.goto("/chat");
     await page.waitForLoadState("networkidle");
 

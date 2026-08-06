@@ -30,7 +30,7 @@ import { PinChip } from "@/components/chat/ContactIdentity";
 /**
  * Floating action button (+) di pojok kanan bawah daftar chat.
  *
- * Dialog "Tambah kontak" menerima PIN MCM 8-karakter atau URL undangan
+ * Dialog "Tambah kontak" menerima PIN Ace 8-karakter atau URL undangan
  * `/i/<code>`. Sumber PIN bisa diketik manual atau dipindai dari QR
  * via `QrScannerDialog` (menggunakan kamera perangkat — sama seperti
  * halaman /undang).
@@ -163,7 +163,7 @@ export function AddContactFab() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Tambah kontak PIN MCM"
+        aria-label="Tambah kontak PIN Ace"
         // Ukuran 44px di layar kecil (memenuhi tap-target minimum tanpa
         // menutupi label "Pembaruan"/"Panggilan" pada 360-390px), 48px
         // mulai 400px. Posisi bottom = tinggi nav (`--chat-nav-h`, sudah
@@ -187,14 +187,14 @@ export function AddContactFab() {
               <UserPlus className="h-4 w-4" /> Tambah kontak PIN
             </DialogTitle>
             <DialogDescription>
-              Masukkan PIN MCM 8-karakter atau pindai QR undangan teman.
+              Masukkan PIN Ace 8-karakter atau pindai QR undangan teman.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-ms-3">
             <div className="space-y-1.5">
               <Label htmlFor="fab-pin-input" className="text-ms-xs">
-                PIN MCM
+                PIN Ace
               </Label>
               <div className="flex items-center gap-ms-2">
                 <Input
@@ -251,7 +251,7 @@ export function AddContactFab() {
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">
-                      {preview.display_name || "Pengguna MCM"}
+                      {preview.display_name || "Pengguna Ace"}
                     </div>
                     <div className="mt-0.5 flex min-w-0 items-center gap-ms-2">
                       <PinChip code={preview.invite_code} />
@@ -310,7 +310,7 @@ export function AddContactFab() {
             toast.success("PIN terisi dari QR.");
             return;
           }
-          toast.error("QR bukan undangan MCM yang dikenali.");
+          toast.error("QR bukan undangan Ace yang dikenali.");
         }}
       />
     </>

@@ -33,7 +33,7 @@ import { Ruler, Type, Boxes, Palette } from "lucide-react";
 export const Route = createFileRoute("/lovable/visual/design-tokens")({
   head: () => ({
     meta: [
-      { title: "Design Tokens Preview — MCM Storage" },
+      { title: "Design Tokens Preview — Ace Storage" },
       { name: "robots", content: "noindex, nofollow" },
       { name: "description", content: "Internal QA untuk token --ms-* dan primitif shadcn pada berbagai lebar." },
     ],
@@ -249,7 +249,7 @@ function TypographySection() {
             className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-ms-3"
           >
             <span className={`min-w-0 truncate ${s.token}`}>
-              Toko Kifa · MCM Storage 1234567890
+              Toko Kifa · Ace Storage 1234567890
             </span>
             <span className="shrink-0 text-ms-2xs tabular-nums text-muted-foreground">
               {s.token} · {s.note}

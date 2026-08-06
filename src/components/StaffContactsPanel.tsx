@@ -191,7 +191,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
             className="h-9 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50 sm:row-span-2"
           >Simpan</button>
           <input
-            value={pinChatMcm} onChange={(e) => setPinChatMcm(e.target.value)} placeholder="PIN chat MCM (opsional)"
+            value={pinChatMcm} onChange={(e) => setPinChatMcm(e.target.value)} placeholder="PIN chat Ace (opsional)"
             inputMode="text" autoCapitalize="characters" maxLength={10}
             className="col-span-1 sm:col-span-2 h-9 rounded-md border bg-background px-ms-2 text-ms-sm font-mono tracking-widest"
           />
@@ -251,7 +251,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
                 <div className="truncate text-ms-sm font-semibold">{c.name}</div>
                 <div className="text-ms-2xs text-muted-foreground">WA: +{c.wa_phone}</div>
                 {c.pin_chat_mcm ? (
-                  <div className="text-ms-2xs font-mono text-primary">PIN MCM: {c.pin_chat_mcm}</div>
+                  <div className="text-ms-2xs font-mono text-primary">PIN Ace: {c.pin_chat_mcm}</div>
                 ) : null}
               </div>
               <a

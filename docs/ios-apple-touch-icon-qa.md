@@ -1,6 +1,6 @@
 # QA Ikon iOS (Apple Touch Icon)
 
-Panduan uji + cache-clear supaya ikon MCM konsisten di iPhone/iPad setelah
+Panduan uji + cache-clear supaya ikon Ace konsisten di iPhone/iPad setelah
 update branding. iOS sangat agresif meng-cache `apple-touch-icon` di level
 home screen — reload browser saja **tidak cukup**.
 
@@ -32,7 +32,7 @@ iOS tidak akan revalidate sebelum TTL habis.
    - (Kalau app sudah terpasang di Home Screen) tekan lama ikon → **Remove App → Delete from Home Screen**.
 2. Buka `https://mcmstorage.biz` di Safari (bukan Chrome iOS — Chrome pakai WebKit tapi cache terpisah).
 3. Tap **Share → Add to Home Screen**.
-4. Verifikasi di dialog preview: ikon harus versi MCM terbaru, bukan placeholder abu-abu / ikon lama.
+4. Verifikasi di dialog preview: ikon harus versi Ace terbaru, bukan placeholder abu-abu / ikon lama.
 5. Tap **Add**, lalu cek ikon di Home Screen (juga di folder App Library).
 6. Tap ikon → splash screen & status bar warna sesuai `theme_color` manifest.
 

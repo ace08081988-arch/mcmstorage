@@ -18,7 +18,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "MCM Storage"
+const SITE_NAME = "Ace Storage"
 const ROOT_DOMAIN = "mcmstorage.biz"
 
 // Sample data for preview mode ONLY (not used in actual email sending).

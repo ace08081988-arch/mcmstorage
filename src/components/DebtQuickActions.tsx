@@ -46,7 +46,7 @@ type PaymentRow = { id: string; debt_id: string; amount: number };
  * Tombol cepat Hutang / Bayar Sekian / Lunas untuk dipasang di pratinjau
  * kirim WA & Chat. Otomatis mencocokkan lawan (pelanggan / supplier)
  * berdasarkan nomor telepon atau `account_user_id`, lalu menyinkronkan
- * ke tabel debts & debt_payments MCM Storage.
+ * ke tabel debts & debt_payments Ace Storage.
  *
  * Bila peer belum terdaftar sebagai customer/supplier, komponen hanya
  * menampilkan hint singkat — tidak menghalangi alur kirim.
@@ -917,7 +917,7 @@ export function DebtQuickActions({
         </button>
       </div>
       <p className="mt-1.5 text-ms-2xs leading-snug text-muted-foreground">
-        Tersinkron ke Hutang & Piutang MCM Storage. <b>Harga Jual</b> = tambah piutang, <b>Kas</b> = jual langsung lunas, <b>Bayar/Lunas</b> = pelunasan piutang yang ada (dialokasi ke tagihan paling lama).
+        Tersinkron ke Hutang & Piutang Ace Storage. <b>Harga Jual</b> = tambah piutang, <b>Kas</b> = jual langsung lunas, <b>Bayar/Lunas</b> = pelunasan piutang yang ada (dialokasi ke tagihan paling lama).
       </p>
       {lastTx && (
         <div className="mt-2 flex flex-wrap items-center gap-ms-1.5 rounded-md border border-dashed bg-background/60 px-ms-2 py-1.5 text-ms-2xs">

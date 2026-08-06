@@ -5,7 +5,7 @@ export default defineTool({
   name: "ringkasan_piutang",
   title: "Ringkasan piutang",
   description:
-    "Mengembalikan ringkasan piutang (single source of truth) untuk user MCM Storage yang sedang terhubung — total outstanding, jumlah pelanggan berhutang, dan waktu perhitungan terakhir.",
+    "Mengembalikan ringkasan piutang (single source of truth) untuk user Ace Storage yang sedang terhubung — total outstanding, jumlah pelanggan berhutang, dan waktu perhitungan terakhir.",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx: ToolContext) => {

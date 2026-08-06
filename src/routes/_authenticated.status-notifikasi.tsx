@@ -25,7 +25,7 @@ import { diffJsonLines, type DiffLine } from "@/lib/json-line-diff";
 export const Route = createFileRoute("/_authenticated/status-notifikasi")({
   head: () => ({
     meta: [
-      { title: "Status Notifikasi — MCM Storage" },
+      { title: "Status Notifikasi — Ace Storage" },
       { name: "description", content: "Diagnostik izin notifikasi browser dan konteks tampilan (iframe atau tab utama)." },
     ],
   }),

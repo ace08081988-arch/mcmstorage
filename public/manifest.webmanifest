@@ -1,7 +1,7 @@
 {
-  "name": "MCM",
-  "short_name": "MCM",
-  "description": "MCM — kelola pesanan, chat, dan kirim cepat dalam satu aplikasi.",
+  "name": "Ace Storage",
+  "short_name": "Ace",
+  "description": "Ace Storage — kelola pesanan, chat, dan kirim cepat dalam satu aplikasi.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

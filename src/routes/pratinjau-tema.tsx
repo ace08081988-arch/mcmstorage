@@ -29,7 +29,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/pratinjau-tema")({
   head: () => ({
     meta: [
-      { title: "Pratinjau Tema & Komponen — MCM Storage" },
+      { title: "Pratinjau Tema & Komponen — Ace Storage" },
       {
         name: "description",
         content:
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/pratinjau-tema")({
       },
       { name: "robots", content: "noindex,nofollow" },
       { property: "og:type", content: "website" },
-      { property: "og:title", content: "Pratinjau Tema & Komponen — MCM Storage" },
+      { property: "og:title", content: "Pratinjau Tema & Komponen — Ace Storage" },
       {
         property: "og:description",
         content: "Verifikasi konsistensi warna tema dan komponen menu sebelum rilis.",

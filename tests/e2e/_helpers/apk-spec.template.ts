@@ -206,7 +206,7 @@ test.describe("APK <flow-name> — deterministic guard", () => {
     // (3) AKSI USER — WAJIB DIBUNGKUS GUARD PER-AKSI
     // ────────────────────────────────────────────────────────────
     const chatRefresh = chatDl.getByRole("button", {
-      name: /Cek ulang ketersediaan APK MCM Chat/i,
+      name: /Cek ulang ketersediaan APK Ace Chat/i,
     });
 
     // Enqueue respons refetch SEBELUM klik supaya handler dijamin

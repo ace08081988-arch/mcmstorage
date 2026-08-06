@@ -5,17 +5,17 @@ import { PublicHeader } from "@/components/PublicHeader";
 export const Route = createFileRoute("/trust")({
   head: () => ({
     meta: [
-      { title: "Trust & Privacy — MCM Storage" },
+      { title: "Trust & Privacy — Ace Storage" },
       {
         name: "description",
         content:
-          "Bagaimana MCM Storage menjaga data pesanan, pemasok, dan akun pengguna: autentikasi, akses, subprocessor, dan kontak.",
+          "Bagaimana Ace Storage menjaga data pesanan, pemasok, dan akun pengguna: autentikasi, akses, subprocessor, dan kontak.",
       },
-      { property: "og:title", content: "Trust & Privacy — MCM Storage" },
+      { property: "og:title", content: "Trust & Privacy — Ace Storage" },
       {
         property: "og:description",
         content:
-          "Bagaimana MCM Storage menjaga data pesanan, pemasok, dan akun pengguna.",
+          "Bagaimana Ace Storage menjaga data pesanan, pemasok, dan akun pengguna.",
       },
       { property: "og:url", content: "https://mcmstorage.app/trust" },
     ],
@@ -96,8 +96,8 @@ function TrustPage() {
           </div>
         </dl>
         <p className="mt-2 text-ms-sm text-muted-foreground">
-          Halaman ini dikelola oleh tim MCM Storage untuk menjawab pertanyaan
-          umum seputar keamanan dan privasi aplikasi MCM Storage. Konten di
+          Halaman ini dikelola oleh tim Ace Storage untuk menjawab pertanyaan
+          umum seputar keamanan dan privasi aplikasi Ace Storage. Konten di
           sini adalah deskripsi praktik kami sendiri dan{" "}
           <strong>bukan sertifikasi atau verifikasi independen</strong> dari
           pihak ketiga.
@@ -107,11 +107,11 @@ function TrustPage() {
       <div className="space-ms-4">
         <Section title="Penjual & pengendali data">
           <p>
-            Layanan MCM Storage dioperasikan oleh{" "}
+            Layanan Ace Storage dioperasikan oleh{" "}
             <strong>Mcm</strong> (selanjutnya "kami"). Untuk
             keperluan UU PDP dan GDPR, Mcm bertindak sebagai{" "}
             <strong>pengendali data (data controller)</strong> atas data
-            pribadi pengguna MCM Storage. Pertanyaan terkait privasi dapat
+            pribadi pengguna Ace Storage. Pertanyaan terkait privasi dapat
             dikirim ke{" "}
             <a href="mailto:admin@mcmstorage.biz" className="underline">
               admin@mcmstorage.biz
@@ -122,7 +122,7 @@ function TrustPage() {
 
         <Section title="Ringkasan kebijakan privasi">
           <p>
-            MCM Storage memproses data operasional bisnis Anda (pesanan,
+            Ace Storage memproses data operasional bisnis Anda (pesanan,
             stok, pemasok, pelanggan) hanya untuk menjalankan fitur
             aplikasi. Akses dibatasi ke akun pemilik melalui Row-Level
             Security, data tidak dijual atau dipakai untuk profil iklan,
@@ -133,7 +133,7 @@ function TrustPage() {
 
         <Section title="Tentang aplikasi">
           <p>
-            MCM Storage adalah aplikasi internal untuk mengelola pesanan
+            Ace Storage adalah aplikasi internal untuk mengelola pesanan
             harian, stok gudang, dan komunikasi cepat ke pelanggan/pemasok
             melalui WhatsApp dan email. Akses dibatasi untuk pengguna yang
             login.
@@ -220,7 +220,7 @@ function TrustPage() {
 
         <Section title="Subprocessor">
           <p>
-            Untuk menjalankan layanan, MCM Storage menggunakan penyedia pihak
+            Untuk menjalankan layanan, Ace Storage menggunakan penyedia pihak
             ketiga berikut:
           </p>
           <ul className="list-disc space-y-1 pl-5">
@@ -291,7 +291,7 @@ function TrustPage() {
             Tombol WhatsApp dan Email membuka aplikasi pesan/email di
             perangkat Anda dengan teks yang sudah disiapkan. Pengirimannya
             terjadi dari akun Anda sendiri di WhatsApp / klien email, bukan
-            dari server MCM Storage.
+            dari server Ace Storage.
           </p>
         </Section>
 
@@ -312,7 +312,7 @@ function TrustPage() {
               </a>
             </li>
             <li>
-              <strong>WhatsApp / kanal internal:</strong> hubungi admin MCM
+              <strong>WhatsApp / kanal internal:</strong> hubungi admin Ace
               Storage yang biasa Anda gunakan untuk operasional harian.
             </li>
           </ul>

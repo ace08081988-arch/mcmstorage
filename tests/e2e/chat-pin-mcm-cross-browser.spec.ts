@@ -6,7 +6,7 @@ import {
 } from "./_helpers/chat-pin-assertions";
 
 /**
- * E2E lintas-browser — skenario PIN MCM (buka `/chat`, buka DM pertama,
+ * E2E lintas-browser — skenario PIN Ace (buka `/chat`, buka DM pertama,
  * verifikasi header + transkrip, reload, verifikasi ulang) dijalankan
  * di tiga engine berbeda: Chromium, Firefox, dan WebKit.
  *
@@ -42,7 +42,7 @@ function hasAuthState(): boolean {
   }
 }
 
-test.describe("chat PIN MCM — lintas browser (Chromium/Firefox/WebKit)", () => {
+test.describe("chat PIN Ace — lintas browser (Chromium/Firefox/WebKit)", () => {
   test.skip(!hasAuthState(), "Storage state auth belum tersedia — skip.");
 
   test("daftar → DM pertama → reload: PIN xxxx-xxxx konsisten, bebas nomor telp mentah", async ({

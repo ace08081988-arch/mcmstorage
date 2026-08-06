@@ -18,7 +18,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
  */
 
 const URL = "/download";
-const SPLASH_SELECTOR = '[aria-label="Memuat MCM Chat"]';
+const SPLASH_SELECTOR = '[aria-label="Memuat Ace Chat"]';
 const SESSION_KEY = "mcm.chat.splashShown";
 
 async function seedChatMode(context: BrowserContext) {

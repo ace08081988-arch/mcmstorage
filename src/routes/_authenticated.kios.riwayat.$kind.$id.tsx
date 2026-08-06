@@ -18,7 +18,7 @@ import { notifyError } from "@/lib/friendly-error";
 export const Route = createFileRoute("/_authenticated/kios/riwayat/$kind/$id")({
   head: () => ({
     meta: [
-      { title: "Detail Transaksi Kios — MCM Storage" },
+      { title: "Detail Transaksi Kios — Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

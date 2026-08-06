@@ -28,7 +28,7 @@ import {
 export const Route = createFileRoute("/_authenticated/kontak/")({
   head: () => ({
     meta: [
-      { title: "Pelanggan & Supplier · MCM Storage" },
+      { title: "Pelanggan & Supplier · Ace Storage" },
       {
         name: "description",
         content:
@@ -330,9 +330,9 @@ function KontakPage() {
                             variant="secondary"
                             className="bg-wa/15 text-wa-strong hover:bg-wa/25"
                             onClick={() => void sendWa(r)}
-                            title={`Kirim via MCM ke ${r.contact}`}
+                            title={`Kirim via Ace ke ${r.contact}`}
                           >
-                            Kirim via MCM
+                            Kirim via Ace
                           </Button>
                         )}
                         {r.account_user_id && (
@@ -505,7 +505,7 @@ function LinkAccountDialog({
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">
-                        {c.display_name || c.phone || "Pengguna MCM"}
+                        {c.display_name || c.phone || "Pengguna Ace"}
                       </span>
                       {c.phone && (
                         <PhoneText phone={c.phone} className="mt-0.5 max-w-full" />

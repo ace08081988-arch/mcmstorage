@@ -584,7 +584,7 @@ export default defineConfig({
       // `/buku-alamat`) bukan dari `/chat`. Source guard mengunci wiring
       // `startDm.mutateAsync` + `navigate(/chat/$conversationId)` supaya
       // pesan mendarat di percakapan yang benar; runtime memverifikasi
-      // dialog "Chat baru" tetap memakai placeholder PIN MCM.
+      // dialog "Chat baru" tetap memakai placeholder PIN Ace.
       name: "chat-pin-mcm-from-kontak-e2e",
       testDir: "./tests/e2e",
       testMatch: /chat-pin-mcm-from-kontak\.spec\.ts/,
@@ -893,7 +893,7 @@ export default defineConfig({
       },
     },
     {
-      // E2E: fuzz PIN MCM lintas hingga 5 DM acak — header + transkrip
+      // E2E: fuzz PIN Ace lintas hingga 5 DM acak — header + transkrip
       // wajib bebas nomor telp Indonesia mentah pada fase awal, setelah
       // reload, dan setelah scroll load-more; setiap token "PIN <...>"
       // yang tampil wajib berformat `xxxx-xxxx`; identitas antar konvo
@@ -1030,7 +1030,7 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
-    // ── Lintas-browser: skenario PIN MCM inti dijalankan di Chromium,
+    // ── Lintas-browser: skenario PIN Ace inti dijalankan di Chromium,
     //   Firefox, dan WebKit untuk memastikan hasil rendering `PIN
     //   xxxx-xxxx` konsisten dan bebas nomor telp mentah di ketiga
     //   engine (perbedaan normalisasi innerText, whitespace, dan

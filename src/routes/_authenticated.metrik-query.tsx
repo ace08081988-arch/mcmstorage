@@ -6,7 +6,7 @@ import { RefreshCw } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/metrik-query")({
   component: MetrikQueryPage,
   head: () => ({
-    meta: [{ title: "Metrik Query — MCM Storage" }],
+    meta: [{ title: "Metrik Query — Ace Storage" }],
   }),
 });
 

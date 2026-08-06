@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/pengaturan-privasi")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Privasi · MCM Storage" },
+      { title: "Privasi · Ace Storage" },
       {
         name: "description",
         content: "Atur siapa yang dapat melihat status Anda secara default.",

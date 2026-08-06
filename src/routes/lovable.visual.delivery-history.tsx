@@ -13,7 +13,7 @@ import { useEffect } from "react";
 export const Route = createFileRoute("/lovable/visual/delivery-history")({
   head: () => ({
     meta: [
-      { title: "Delivery History Audit — MCM" },
+      { title: "Delivery History Audit — Ace" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

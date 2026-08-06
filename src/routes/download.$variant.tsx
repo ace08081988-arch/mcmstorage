@@ -34,8 +34,8 @@ export const Route = createFileRoute("/download/$variant")({
   head: ({ params }) => {
     const title =
       params.variant === "chat"
-        ? "Detail rilis MCM Chat"
-        : "Detail rilis MCM Storage";
+        ? "Detail rilis Ace Chat"
+        : "Detail rilis Ace Storage";
     return {
       meta: [
         { title: `${title} — Unduh APK` },
@@ -209,7 +209,7 @@ function HeaderCard({
             </a>
             <CopyLinkButton
               url={latest.url}
-              label={`MCM Chat${latest.versionName ? ` v${latest.versionName}` : ""}`}
+              label={`Ace Chat${latest.versionName ? ` v${latest.versionName}` : ""}`}
               variant="solid"
             />
           </div>
@@ -344,7 +344,7 @@ function ReleaseHistoryCard({
                 </a>
                 <CopyLinkButton
                   url={r.url}
-                  label={`MCM Chat${r.versionName ? ` v${r.versionName}` : ""}`}
+                  label={`Ace Chat${r.versionName ? ` v${r.versionName}` : ""}`}
                   variant="ghost"
                 />
               </div>
@@ -591,7 +591,7 @@ function ApkDownloadQr({
         <canvas
           ref={canvasRef}
           className="rounded bg-white p-ms-2"
-          aria-label="QR code unduh APK MCM Chat"
+          aria-label="QR code unduh APK Ace Chat"
         />
       </div>
       {err && (

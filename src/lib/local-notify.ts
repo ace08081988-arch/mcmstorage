@@ -277,7 +277,7 @@ export async function sendLocalTestNotification(): Promise<boolean> {
   return notifyLocal({
     kind: "system",
     title: "Notifikasi aktif",
-    body: "Begini tampilan notifikasi MCM di perangkat ini.",
+    body: "Begini tampilan notifikasi Ace di perangkat ini.",
     url: "/notifikasi",
     tag: "mcm:test",
     urgent: true,

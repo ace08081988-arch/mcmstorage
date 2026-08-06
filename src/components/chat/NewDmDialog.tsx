@@ -28,7 +28,7 @@ function normalizeWaDigits(raw: string): string {
 const waPhoneSchema = z
   .string()
   .regex(/^[1-9]\d{7,14}$/, {
-    message: "Nomor MCM harus 8–15 digit dan diawali kode negara yang valid.",
+    message: "Nomor Ace harus 8–15 digit dan diawali kode negara yang valid.",
   });
 
 type WaValidation =
@@ -70,7 +70,7 @@ export function NewDmDialog() {
     const origin =
       typeof window !== "undefined" ? window.location.origin : "https://mcmstorage.biz";
     const msg = [
-      "Halo! Saya mengundang Anda bergabung di aplikasi MCM Storage.",
+      "Halo! Saya mengundang Anda bergabung di aplikasi Ace Storage.",
       "",
       "Silakan daftar/masuk lewat tautan berikut, lalu kita bisa saling chat di dalam aplikasi:",
       origin,
@@ -82,7 +82,7 @@ export function NewDmDialog() {
       toast.error("Popup diblokir browser. Izinkan popup lalu coba lagi.");
       return;
     }
-    toast.success("Undangan MCM dibuka untuk " + invitePhone);
+    toast.success("Undangan Ace dibuka untuk " + invitePhone);
   }
 
   const onPick = async (uid: string) => {
@@ -117,7 +117,7 @@ export function NewDmDialog() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Cari nama atau PIN MCM…"
+            placeholder="Cari nama atau PIN Ace…"
             className="pl-8"
             autoFocus
           />
@@ -135,7 +135,7 @@ export function NewDmDialog() {
               {looksLikePhone ? (
                 <>
                   <div className="text-ms-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat MCM agar dapat diajak chat.
+                    <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat Ace agar dapat diajak chat.
                   </div>
                   {invitePhone && (
                     <div className="text-ms-2xs text-muted-foreground">
@@ -149,7 +149,7 @@ export function NewDmDialog() {
                     onClick={inviteByWhatsApp}
                     disabled={!validation.ok}
                   >
-                    <Send className="h-4 w-4" /> Undang via MCM
+                    <Send className="h-4 w-4" /> Undang via Ace
                   </Button>
                   {!validation.ok && (
                     <p className="text-ms-2xs text-destructive">
@@ -160,7 +160,7 @@ export function NewDmDialog() {
               ) : (
                 <>
                   <div className="text-ms-xs text-muted-foreground">
-                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik PIN MCM untuk mengundang.
+                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik PIN Ace untuk mengundang.
                   </div>
                   <Button
                     type="button"
@@ -192,7 +192,7 @@ export function NewDmDialog() {
                 <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-center gap-ms-2">
                     <span className="min-w-0 flex-1 truncate text-ms-sm font-medium">
-                      {c.display_name || "Pengguna MCM"}
+                      {c.display_name || "Pengguna Ace"}
                     </span>
                     <PinChip code={c.invite_code} />
                   </div>

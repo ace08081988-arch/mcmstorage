@@ -50,7 +50,7 @@ const ShipmentStatusUpdate: React.FC<ShipmentStatusUpdateProps> = ({
   storeName,
 }) => {
   const copy = STATUS_COPY[statusKey] ?? STATUS_COPY.dikirim;
-  const shop = storeName || "MCM Storage";
+  const shop = storeName || "Ace Storage";
   const salutation = customerName ? `Halo ${customerName},` : "Halo,";
   return (
     <Html lang="id" dir="ltr">
@@ -112,6 +112,6 @@ export const template = {
     itemName: "Karton Beras 5kg",
     qty: "2 pcs",
     statusKey: "dikirim",
-    storeName: "MCM Storage",
+    storeName: "Ace Storage",
   },
 } satisfies TemplateEntry;

@@ -4,7 +4,7 @@ import { formatInviteCode } from "@/lib/invite";
 import { formatWaDisplay } from "@/lib/phone";
 
 /**
- * Chip PIN MCM — tampilan seragam di semua permukaan chat
+ * Chip PIN Ace — tampilan seragam di semua permukaan chat
  * (dialog chat baru, tambah kontak, tautkan akun).
  */
 export function PinChip({
@@ -22,7 +22,7 @@ export function PinChip({
         "font-mono text-ms-2xs font-medium uppercase leading-none tracking-widest text-primary",
         className,
       )}
-      title={`PIN MCM ${formatInviteCode(code)}`}
+      title={`PIN Ace ${formatInviteCode(code)}`}
     >
       <Hash className="h-3 w-3 shrink-0" aria-hidden />
       {formatInviteCode(code)}

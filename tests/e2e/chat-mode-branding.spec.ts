@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 /**
  * E2E: toggle Mode aplikasi ke "chat" harus segera mengubah branding
  * dokumen di runtime (tanpa reload):
- *   - document.title -> "MCM Chat"
+ *   - document.title -> "Ace Chat"
  *   - <meta name="theme-color"> -> "#064e3b"
  *   - <link rel="icon">, <link rel="apple-touch-icon">, dan
  *     <link rel="shortcut icon"> -> "/mcm-chat-icon.png"
@@ -43,7 +43,7 @@ test.describe("Mode aplikasi · branding runtime", () => {
           .querySelector<HTMLLinkElement>('link[rel="manifest"]')
           ?.getAttribute("href") ?? null,
     }));
-    expect(before.title).not.toBe("MCM Chat");
+    expect(before.title).not.toBe("Ace Chat");
     expect(before.manifest ?? "").not.toContain("manifest-chat");
 
     // Toggle ke mode chat lewat API yang sama seperti tombol UI.
@@ -57,7 +57,7 @@ test.describe("Mode aplikasi · branding runtime", () => {
       .poll(async () => page.evaluate(() => document.title), {
         timeout: 4000,
       })
-      .toBe("MCM Chat");
+      .toBe("Ace Chat");
 
     const after = await page.evaluate(() => {
       const iconHrefs = Array.from(
@@ -91,12 +91,12 @@ test.describe("Mode aplikasi · branding runtime", () => {
       };
     });
 
-    expect(after.title).toBe("MCM Chat");
-    expect(after.appTitle).toBe("MCM Chat");
-    expect(after.applicationName).toBe("MCM Chat");
+    expect(after.title).toBe("Ace Chat");
+    expect(after.appTitle).toBe("Ace Chat");
+    expect(after.applicationName).toBe("Ace Chat");
     expect(after.themeColor).toBe("#064e3b");
     // Setiap <link rel="icon"> harus di-swap — tidak boleh ada yang
-    // masih menunjuk ikon MCM Storage.
+    // masih menunjuk ikon Ace Storage.
     // `applyChatModeBranding` menambahkan cache-buster (?v=chat-<ts>)
     // untuk memaksa fetch ulang di WebView & service worker. Bandingkan
     // pathname-nya, bukan href mentah.

@@ -6,7 +6,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
  * yang menempel di DOM — di kedua mode `prefers-reduced-motion`.
  *
  * Yang diperiksa (post-splash + post-nav):
- *   1. Node splash `[aria-label="Memuat MCM Chat"]` benar-benar 0.
+ *   1. Node splash `[aria-label="Memuat Ace Chat"]` benar-benar 0.
  *   2. Tidak ada `<style>` yang masih membawa keyframes splash
  *      (`mcm-chat-splash-pop` / `mcm-chat-splash-slide`) di document.
  *   3. Tidak ada elemen (langsung anak <body>) yang mewarisi opacity
@@ -19,7 +19,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
  */
 
 const URL = "/download";
-const SPLASH_SELECTOR = '[aria-label="Memuat MCM Chat"]';
+const SPLASH_SELECTOR = '[aria-label="Memuat Ace Chat"]';
 const SPLASH_KEYFRAMES = ["mcm-chat-splash-pop", "mcm-chat-splash-slide"] as const;
 
 async function seedChatMode(context: BrowserContext) {
@@ -37,7 +37,7 @@ async function collectResidue(page: Page) {
   return await page.evaluate((kf) => {
     // 1. Jumlah node splash yang tersisa.
     const splashCount = document.querySelectorAll(
-      '[aria-label="Memuat MCM Chat"]',
+      '[aria-label="Memuat Ace Chat"]',
     ).length;
 
     // 2. Cek <style> apapun yang masih memuat keyframes splash.

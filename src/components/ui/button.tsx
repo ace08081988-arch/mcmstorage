@@ -28,7 +28,7 @@ const buttonVariants = cva(
         outline:
           "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:bg-secondary/70",
-        // Kanal WhatsApp/MCM — dipakai untuk semua aksi "kirim ke WA".
+        // Kanal WhatsApp/Ace — dipakai untuk semua aksi "kirim ke WA".
         wa: "bg-wa text-wa-foreground shadow-sm hover:bg-wa/90 active:bg-wa/80",
         waSoft:
           "border border-wa/30 bg-wa-soft text-wa-strong shadow-none hover:bg-wa/20 active:bg-wa/25",
