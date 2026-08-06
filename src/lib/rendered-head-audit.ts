@@ -29,6 +29,10 @@ export type RenderedHeadIssueId =
   | "og:description"
   | "og:image"
   | "og:image-absolute"
+  | "og:image:secure_url"
+  | "og:image:width"
+  | "og:image:height"
+  | "og:image:type"
   | "og:url"
   | "twitter:card"
   | "canonical"
@@ -133,6 +137,31 @@ export function auditRenderedPage(page: RenderedPage, base = SITE_URL): Rendered
   if (!image?.trim()) add("og:image", "og:image kosong");
   else if (!/^https?:\/\//i.test(image))
     add("og:image-absolute", `og:image "${image}" harus URL absolut agar crawler bisa memuatnya`);
+  else {
+    const secure = meta["og:image:secure_url"];
+    if (!secure?.trim()) add("og:image:secure_url", "og:image:secure_url kosong");
+    else if (!/^https:\/\//i.test(secure))
+      add("og:image:secure_url", `og:image:secure_url "${secure}" harus memakai https`);
+    else if (secure !== image)
+      add(
+        "og:image:secure_url",
+        `og:image:secure_url "${secure}" ≠ og:image "${image}" — termasuk versi cache-buster`,
+      );
+
+    const width = Number(meta["og:image:width"]);
+    const height = Number(meta["og:image:height"]);
+    if (!Number.isFinite(width) || width < 200)
+      add("og:image:width", `og:image:width "${meta["og:image:width"] ?? ""}" tidak valid (≥200)`);
+    if (!Number.isFinite(height) || height < 200)
+      add(
+        "og:image:height",
+        `og:image:height "${meta["og:image:height"] ?? ""}" tidak valid (≥200)`,
+      );
+
+    const type = meta["og:image:type"];
+    if (!type || !/^image\/(png|jpeg|jpg|webp)$/i.test(type))
+      add("og:image:type", `og:image:type "${type ?? ""}" tidak valid (image/png|jpeg|webp)`);
+  }
 
   const expected = normalizeUrl(url, base);
   if (!canonical) add("canonical", "link rel=canonical tidak ada");
