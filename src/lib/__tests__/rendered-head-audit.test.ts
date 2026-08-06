@@ -126,3 +126,50 @@ describe("normalizeUrl", () => {
     );
   });
 });
+describe("validasi og:image lengkap", () => {
+  const ids = (p: ReturnType<typeof page>) => auditRenderedPage(p).map((i) => i.id);
+
+  it("lolos saat semua tag gambar konsisten", () => {
+    expect(ids(page())).toEqual([]);
+  });
+
+  it("menandai og:image:secure_url hilang atau beda dari og:image", () => {
+    const missing = page();
+    missing.html = missing.html.replace(/<meta property="og:image:secure_url"[^>]*>/, "");
+    expect(ids(missing)).toContain("og:image:secure_url");
+    expect(
+      ids(page({ ogImageSecure: "https://mcmstorage.app/og-ace-storage.png" })),
+    ).toContain("og:image:secure_url");
+  });
+
+  it("menandai dimensi tidak valid pada kartu brand default", () => {
+    expect(ids(page({ ogImageWidth: "0" }))).toContain("og:image:width");
+    expect(ids(page({ ogImageHeight: "" }))).toContain("og:image:height");
+  });
+
+  it("mewajibkan dimensi untuk kartu default meski tag tidak ada", () => {
+    const p = page();
+    p.html = p.html
+      .replace(/<meta property="og:image:width"[^>]*>/, "")
+      .replace(/<meta property="og:image:height"[^>]*>/, "");
+    expect(ids(p)).toEqual(
+      expect.arrayContaining(["og:image:width", "og:image:height"]),
+    );
+  });
+
+  it("menandai og:image:type tidak valid", () => {
+    expect(ids(page({ ogImageType: "png" }))).toContain("og:image:type");
+  });
+
+  it("memperbolehkan foto produk tanpa dimensi tetapi tetap butuh type & secure_url", () => {
+    const custom = page({
+      ogImage: "https://cdn.example.com/produk.jpg",
+      ogImageSecure: "https://cdn.example.com/produk.jpg",
+      ogImageType: "image/jpeg",
+    });
+    custom.html = custom.html
+      .replace(/<meta property="og:image:width"[^>]*>/, "")
+      .replace(/<meta property="og:image:height"[^>]*>/, "");
+    expect(ids(custom)).toEqual([]);
+  });
+});
