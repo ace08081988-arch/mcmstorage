@@ -120,17 +120,21 @@ export function extractMeta(source: string): Record<string, string> {
 /** Ambil daftar `{ rel, href, sizes?, color? }` dari source. */
 export function extractLinks(
   source: string,
-): { rel: string; href: string; sizes?: string; color?: string }[] {
-  const out: { rel: string; href: string; sizes?: string; color?: string }[] = [];
+): { rel: string; href: string; sizes?: string; color?: string; versioned: boolean }[] {
+  const out: { rel: string; href: string; sizes?: string; color?: string; versioned: boolean }[] = [];
   const re = /\{\s*rel:\s*"([^"]+)"([^}]*)\}/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(source))) {
     const body = m[2];
-    const href = /href:\s*(?:\w+\()?"([^"]+)"/.exec(body)?.[1];
+    const hrefMatch = /href:\s*(withAssetVersion\()?"([^"]+)"/.exec(body);
+    const href = hrefMatch?.[2];
     if (!href) continue;
     out.push({
       rel: m[1],
       href,
+      // Versi bisa datang dari helper `withAssetVersion(...)` di source atau
+      // dari query yang ditulis langsung.
+      versioned: Boolean(hrefMatch?.[1]) || /[?&]v=/.test(href),
       sizes: /sizes:\s*"([^"]+)"/.exec(body)?.[1],
       color: /color:\s*"([^"]+)"/.exec(body)?.[1],
     });
@@ -172,11 +176,11 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
       continue;
     }
     // Cache-buster wajib supaya ikon/manifest lama tidak nyangkut di cache.
-    if (!found.href.endsWith(expectedQuery)) {
+    if (!found.versioned) {
       push(
         "version",
         req.href,
-        `Link <${req.rel}> ${found.href} belum memakai cache-buster ${expectedQuery}.`,
+        `Link <${req.rel}> ${found.href} belum memakai cache-buster versi (withAssetVersion / ?v=).`,
       );
     }
   }
