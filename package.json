@@ -108,7 +108,9 @@
     "analyze:save": "node scripts/bundle-report.mjs --save",
     "test:contact-duplicate": "vitest run src/lib/__tests__/address-book-duplicate.test.ts src/lib/__tests__/party-duplicate.test.ts src/lib/__tests__/normalize-email.test.ts",
     "test:contact-same-name-e2e": "npx playwright install && playwright test --project=buku-alamat-nama-kembar-e2e",
-    "test:party-session": "vitest run src/components/__tests__/DebtQuickActions.expired-session.test.tsx"
+    "test:party-session": "vitest run src/components/__tests__/DebtQuickActions.expired-session.test.tsx",
+    "test:auth-setup": "bun -e \"const m = await import('./tests/visual/global-setup.ts'); await m.default({});\"",
+    "test:contact-same-name-e2e:auth": "npx playwright install && PWTEST_REQUIRE_AUTH=1 playwright test --project=buku-alamat-nama-kembar-e2e"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",

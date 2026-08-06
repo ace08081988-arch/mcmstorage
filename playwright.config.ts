@@ -545,12 +545,15 @@ export default defineConfig({
       // berbeda harus tetap bisa disimpan (indeks unik parsial hanya
       // melarang duplikat nomor/email), dengan toast "Kontak berhasil
       // diperbarui". Nomor identik (termasuk variasi +62/08) tetap
-      // diblokir. Self-skip bila storageState kosong.
+      // diblokir. Login otomatis lewat global-setup; dengan
+      // PWTEST_REQUIRE_AUTH=1 spec gagal (bukan skip) bila sesi kosong.
       name: "buku-alamat-nama-kembar-e2e",
       testDir: "./tests/e2e",
       testMatch: /buku-alamat-same-name-different-phone\.spec\.ts/,
       use: {
-        ...devices["iPhone 14"],
+        // Pakai basis Chromium (bukan iPhone/WebKit) supaya konsisten
+        // dengan proyek lain & override PWTEST_CHROMIUM_PATH berlaku.
+        ...devices["Pixel 5"],
         viewport: { width: 411, height: 893 },
         storageState: "tests/visual/.auth/user.json",
       },
