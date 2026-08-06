@@ -970,7 +970,10 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
     const payload = { name: name.trim(), contact: contact.trim() || null, notes: notes.trim() || null };
     if (editingId) {
       const { error } = await supabase.from("customers").update(payload).eq("id", editingId);
-      if (error) { notifyError(error); return; }
+      if (error) {
+        logPartyWriteFailure({ table: "customers", op: "update", error, source: "GudangCustomersForm" });
+        notifyError(error); return;
+      }
       toast.success("Pelanggan diperbarui");
     } else {
       let freshUid: string;
@@ -979,7 +982,10 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       try { await assertStorageAccess(freshUid); }
       catch (e) { notifyError(e); return; }
       const { error } = await supabase.from("customers").insert({ user_id: freshUid, ...payload });
-      if (error) { notifyError(error); return; }
+      if (error) {
+        logPartyWriteFailure({ table: "customers", op: "insert", error, source: "GudangCustomersForm" });
+        notifyError(error); return;
+      }
       toast.success("Pelanggan ditambahkan");
     }
     resetForm(); onChanged();
