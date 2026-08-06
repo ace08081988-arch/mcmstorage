@@ -98,17 +98,22 @@ async function currentUserId(page: Page): Promise<string | null> {
 test.describe("Buku Alamat — nama sama, nomor berbeda tetap bisa disimpan", () => {
   requireAuthState(test);
 
-  test("Simpan berhasil + toast benar; duplikat nomor tetap diblokir", async ({ page }, testInfo) => {
-    // Rekam toast/dialog/console/HTTP sepanjang test — dilampirkan ke
-    // laporan sehingga penyebab "tombol Simpan tidak bekerja" langsung
-    // terbaca tanpa re-run manual.
-    const flushDiagnostics = await attachUiDiagnostics(page, testInfo);
+  // Rekam toast/dialog/console/HTTP sepanjang test — dilampirkan ke laporan
+  // (+ screenshot & video saat gagal) sehingga penyebab "tombol Simpan tidak
+  // bekerja" langsung terbaca tanpa re-run manual.
+  let flushDiagnostics: (() => Promise<void>) | null = null;
+  test.beforeEach(async ({ page }, testInfo) => {
+    flushDiagnostics = await attachUiDiagnostics(page, testInfo);
+  });
+  test.afterEach(async () => {
+    await flushDiagnostics?.();
+    flushDiagnostics = null;
+  });
+
+  test("Simpan berhasil + toast benar; duplikat nomor tetap diblokir", async ({ page }) => {
     const cfg = readEnv();
     skipUnlessAuth(test, !cfg, "Kredensial Supabase tidak tersedia.");
-    if (!cfg) {
-      await flushDiagnostics();
-      return;
-    }
+    if (!cfg) return;
 
     await page.goto("/buku-alamat", { waitUntil: "domcontentloaded" });
     // Lewati guard verifikasi device baru (OTP email) untuk browser test.
@@ -182,7 +187,6 @@ test.describe("Buku Alamat — nama sama, nomor berbeda tetap bisa disimpan", ()
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.keyboard.press("Escape");
     } finally {
-      await flushDiagnostics();
       await cleanup();
     }
   });
