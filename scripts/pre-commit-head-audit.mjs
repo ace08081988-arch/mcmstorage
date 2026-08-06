@@ -32,6 +32,8 @@ const WATCHED = [
   /^src\/lib\/head-audit\.ts$/,
   /^src\/lib\/rendered-head-audit\.ts$/,
   /^src\/lib\/route-seo-audit\.ts$/,
+  /^src\/lib\/seo-audit-policy(\.load)?\.ts$/,
+  /^seo-audit\.policy\.json$/,
   /^public\/(_headers|robots\.txt|manifest\.webmanifest|browserconfig\.xml)$/,
   /^public\/.*\.(png|svg|ico|webmanifest|xml)$/,
 ];

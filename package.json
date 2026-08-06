@@ -112,7 +112,7 @@
     "test:auth-setup": "bun -e \"const m = await import('./tests/visual/global-setup.ts'); await m.default({});\"",
     "test:contact-same-name-e2e:auth": "npx playwright install && PWTEST_REQUIRE_AUTH=1 playwright test --project=buku-alamat-nama-kembar-e2e",
     "audit:head": "vitest run src/lib/__tests__/head-audit.test.ts src/lib/__tests__/rendered-head-audit.test.ts",
-    "audit:seo": "vitest run src/lib/__tests__/route-seo-audit.test.ts",
+    "audit:seo": "vitest run src/lib/__tests__/route-seo-audit.test.ts src/lib/__tests__/seo-audit-policy.test.ts",
     "audit:asset-version": "bun scripts/audit-asset-version.ts",
     "audit:asset-version:fix": "bun scripts/audit-asset-version.ts --fix",
     "audit:head:urls": "vitest run src/lib/__tests__/rendered-head-audit.test.ts",
