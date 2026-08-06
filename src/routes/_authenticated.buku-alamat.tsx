@@ -64,6 +64,7 @@ import {
 } from "@/lib/address-book";
 import { MergeDuplicatesDialog } from "@/components/contacts/MergeDuplicatesDialog";
 import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
+import { logAddressBookDuplicateBlock } from "@/lib/contact-telemetry";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
   head: () => ({
@@ -791,6 +792,7 @@ function EditDialog({
       validatedPin = v.code;
     }
     if (duplicate) {
+      logAddressBookDuplicateBlock({ field: duplicate.field, isNew });
       toast.error(`${duplicate.label} sudah terdaftar`, {
         description: `${duplicate.reason}. Ubah data ini atau buka kontak yang sudah ada.`,
         ...(onOpenExisting

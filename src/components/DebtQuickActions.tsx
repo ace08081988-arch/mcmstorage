@@ -8,6 +8,7 @@ import { ensureFreshSession } from "@/lib/ensure-session";
 import { rupiah } from "@/lib/stock-format";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { assertDebtSource } from "@/lib/debt-source";
+import { logPartyWriteFailure } from "@/lib/contact-telemetry";
 import {
   appendDebtAction,
   useDebtActionLog,
@@ -268,7 +269,10 @@ export function DebtQuickActions({
         const accId = data.accountUserId ?? peerAccountUserId ?? null;
         if (accId) payload.account_user_id = accId;
         const { error } = await supabase.from(table).insert(payload as never);
-        if (error) throw error;
+        if (error) {
+          logPartyWriteFailure({ table, op: "insert", error, source: "DebtQuickActions" });
+          throw error;
+        }
         toast.success(
           `${regName} terdaftar sebagai ${table === "customers" ? "pelanggan" : "supplier"}. Pencatatan hutang/piutang aktif.`,
         );

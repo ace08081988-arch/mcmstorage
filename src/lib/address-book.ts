@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "./ensure-session";
 import { assertStorageAccess } from "./storage-access";
+import { logPartyWriteFailure } from "./contact-telemetry";
 import type { ImportedContact } from "./device-contacts";
 
 export type { AddressBookRow } from "./address-book.types";
@@ -431,7 +432,10 @@ export async function promoteToCustomer(row: AddressBookRow): Promise<void> {
     contact: row.phone ?? row.email ?? null,
     account_user_id: row.linked_user_id ?? null,
   });
-  if (error) throw error;
+  if (error) {
+    logPartyWriteFailure({ table: "customers", op: "insert", error, source: "promoteToCustomer" });
+    throw error;
+  }
 }
 
 export async function promoteToSupplier(row: AddressBookRow): Promise<void> {
@@ -443,5 +447,8 @@ export async function promoteToSupplier(row: AddressBookRow): Promise<void> {
     contact: row.phone ?? row.email ?? null,
     account_user_id: row.linked_user_id ?? null,
   });
-  if (error) throw error;
+  if (error) {
+    logPartyWriteFailure({ table: "suppliers", op: "insert", error, source: "promoteToSupplier" });
+    throw error;
+  }
 }
