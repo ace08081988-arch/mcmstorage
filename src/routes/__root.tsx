@@ -21,6 +21,7 @@ import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
 import { installChunkRecovery } from "@/lib/chunk-recovery";
 import { withAssetVersion } from "@/lib/asset-version";
+import { jsonLdScript, organizationSchema, websiteSchema } from "@/lib/structured-data";
 
 // Layar hitam: entry/chunk gagal di-fetch di luar React → pulihkan sendiri.
 installChunkRecovery();
