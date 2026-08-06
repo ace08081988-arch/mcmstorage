@@ -17,6 +17,10 @@ function page(overrides: Partial<Record<string, string>> = {}, url = "/katalog/t
     ogTitle: "Beras Premium 5kg — Toko Ace — Ace Storage",
     ogDescription: "Beras premium kemasan 5kg, stok tersedia.",
     ogImage: "https://mcmstorage.app/og-ace-storage.png?v=20260806",
+    ogImageSecure: "https://mcmstorage.app/og-ace-storage.png?v=20260806",
+    ogImageWidth: "1200",
+    ogImageHeight: "630",
+    ogImageType: "image/png",
     ogUrl: "https://mcmstorage.app/katalog/toko/abc",
     twitterCard: "summary_large_image",
     canonical: "https://mcmstorage.app/katalog/toko/abc",
@@ -28,6 +32,10 @@ function page(overrides: Partial<Record<string, string>> = {}, url = "/katalog/t
     <meta property="og:title" content="${m.ogTitle}">
     <meta property="og:description" content="${m.ogDescription}">
     <meta property="og:image" content="${m.ogImage}">
+    <meta property="og:image:secure_url" content="${m.ogImageSecure}">
+    <meta property="og:image:width" content="${m.ogImageWidth}">
+    <meta property="og:image:height" content="${m.ogImageHeight}">
+    <meta property="og:image:type" content="${m.ogImageType}">
     <meta property="og:url" content="${m.ogUrl}">
     <meta name="twitter:card" content="${m.twitterCard}">
     <link rel="canonical" href="${m.canonical}">
@@ -116,5 +124,52 @@ describe("normalizeUrl", () => {
     expect(normalizeUrl("https://www.mcmstorage.app/harga?x=1")).toBe(
       "https://mcmstorage.app/harga",
     );
+  });
+});
+describe("validasi og:image lengkap", () => {
+  const ids = (p: ReturnType<typeof page>) => auditRenderedPage(p).map((i) => i.id);
+
+  it("lolos saat semua tag gambar konsisten", () => {
+    expect(ids(page())).toEqual([]);
+  });
+
+  it("menandai og:image:secure_url hilang atau beda dari og:image", () => {
+    const missing = page();
+    missing.html = missing.html.replace(/<meta property="og:image:secure_url"[^>]*>/, "");
+    expect(ids(missing)).toContain("og:image:secure_url");
+    expect(
+      ids(page({ ogImageSecure: "https://mcmstorage.app/og-ace-storage.png" })),
+    ).toContain("og:image:secure_url");
+  });
+
+  it("menandai dimensi tidak valid pada kartu brand default", () => {
+    expect(ids(page({ ogImageWidth: "0" }))).toContain("og:image:width");
+    expect(ids(page({ ogImageHeight: "" }))).toContain("og:image:height");
+  });
+
+  it("mewajibkan dimensi untuk kartu default meski tag tidak ada", () => {
+    const p = page();
+    p.html = p.html
+      .replace(/<meta property="og:image:width"[^>]*>/, "")
+      .replace(/<meta property="og:image:height"[^>]*>/, "");
+    expect(ids(p)).toEqual(
+      expect.arrayContaining(["og:image:width", "og:image:height"]),
+    );
+  });
+
+  it("menandai og:image:type tidak valid", () => {
+    expect(ids(page({ ogImageType: "png" }))).toContain("og:image:type");
+  });
+
+  it("memperbolehkan foto produk tanpa dimensi tetapi tetap butuh type & secure_url", () => {
+    const custom = page({
+      ogImage: "https://cdn.example.com/produk.jpg",
+      ogImageSecure: "https://cdn.example.com/produk.jpg",
+      ogImageType: "image/jpeg",
+    });
+    custom.html = custom.html
+      .replace(/<meta property="og:image:width"[^>]*>/, "")
+      .replace(/<meta property="og:image:height"[^>]*>/, "");
+    expect(ids(custom)).toEqual([]);
   });
 });

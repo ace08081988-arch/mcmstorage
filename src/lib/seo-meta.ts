@@ -62,6 +62,11 @@ export function socialMeta(input: SocialMetaInput): MetaTag[] {
       : input.image
         ? null
         : { w: DEFAULT_OG_IMAGE_WIDTH, h: DEFAULT_OG_IMAGE_HEIGHT };
+  const imageType = /\.(jpe?g)(\?|$)/i.test(image)
+    ? "image/jpeg"
+    : /\.webp(\?|$)/i.test(image)
+      ? "image/webp"
+      : "image/png";
   return [
     { title },
     { name: "description", content: input.description },
@@ -78,9 +83,9 @@ export function socialMeta(input: SocialMetaInput): MetaTag[] {
       ? [
           { property: "og:image:width", content: String(dims.w) },
           { property: "og:image:height", content: String(dims.h) },
-          { property: "og:image:type", content: image.includes(".jpg") || image.includes(".jpeg") ? "image/jpeg" : "image/png" },
         ]
       : []),
+    { property: "og:image:type", content: imageType },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: input.description },
