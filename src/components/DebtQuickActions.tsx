@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote, Undo2, Pencil, ScrollText, ChevronDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "@/lib/ensure-session";
 import { rupiah } from "@/lib/stock-format";
 import { emitDebtTx } from "@/lib/debt-tx-event";
 import { assertDebtSource } from "@/lib/debt-source";
@@ -259,7 +260,10 @@ export function DebtQuickActions({
       if (!canRegister) return;
       setRegistering(table);
       try {
-        const payload: Record<string, unknown> = { user_id: uid, name: regName };
+        // Ambil uid dari sesi yang dipastikan segar: `uid` dari state bisa
+        // basi setelah token rotate → RLS menolak insert (42501).
+        const { userId: freshUid } = await ensureFreshSession();
+        const payload: Record<string, unknown> = { user_id: freshUid, name: regName };
         if (peerPhone) payload.contact = peerPhone;
         const accId = data.accountUserId ?? peerAccountUserId ?? null;
         if (accId) payload.account_user_id = accId;
