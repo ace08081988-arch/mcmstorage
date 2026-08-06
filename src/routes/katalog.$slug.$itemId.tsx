@@ -4,6 +4,12 @@
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { canonical, socialMeta } from "@/lib/seo-meta";
+import {
+  breadcrumbSchema,
+  jsonLdScript,
+  productSchema,
+  storeSchema,
+} from "@/lib/structured-data";
 import { useEffect } from "react";
 import { ArrowLeft, MessageCircle, PackageSearch } from "lucide-react";
 
@@ -79,17 +85,30 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
       scripts:
         loaderData?.found && it
           ? [
-              {
-                type: "application/ld+json",
-                children: JSON.stringify({
-                  "@context": "https://schema.org",
-                  "@type": "Product",
+              jsonLdScript([
+                productSchema({
+                  id: it.id,
                   name: it.name,
                   description: desc,
-                  ...(it.image_url ? { image: it.image_url } : {}),
-                  url,
+                  url: path,
+                  image: it.image_url,
+                  category: it.category,
+                  price: it.selling_price_per_base,
+                  unit: it.base_unit,
+                  stock: it.stock_base,
+                  seller: { name: shopName, url: `/katalog/${params.slug}` },
                 }),
-              },
+                storeSchema({
+                  name: shopName,
+                  url: `/katalog/${params.slug}`,
+                  description: loaderData?.shop?.tagline ?? null,
+                  telephone: loaderData?.shop?.wa ?? null,
+                }),
+                breadcrumbSchema([
+                  { name: shopName, url: `/katalog/${params.slug}` },
+                  { name: it.name, url: path },
+                ]),
+              ]),
             ]
           : [],
     };

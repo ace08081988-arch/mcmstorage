@@ -5,6 +5,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { canonical, socialMeta } from "@/lib/seo-meta";
+import { jsonLdScript, productListSchema, storeSchema } from "@/lib/structured-data";
 import { Check, Copy, MessageCircle, Minus, PackageSearch, Plus, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -53,16 +54,37 @@ export const Route = createFileRoute("/katalog/$slug/")({
       links: [canonical(url)],
       scripts: loaderData?.found
         ? [
-            {
-              type: "application/ld+json",
-              children: JSON.stringify({
+            jsonLdScript([
+              {
                 "@context": "https://schema.org",
                 "@type": "CollectionPage",
                 name: title,
                 description: desc,
                 url: `https://mcmstorage.app${url}`,
+              },
+              storeSchema({
+                name: name ?? "Toko",
+                url,
+                description: loaderData?.shop?.tagline ?? null,
+                telephone: loaderData?.shop?.wa ?? null,
               }),
-            },
+              productListSchema({
+                name: title,
+                url,
+                products: (loaderData?.items ?? []).map((it) => ({
+                  id: it.id,
+                  name: it.name,
+                  description: `${it.name}${it.category ? ` (${it.category})` : ""} di ${name ?? "toko"}.`,
+                  url: `${url}/${it.id}`,
+                  image: it.image_url,
+                  category: it.category,
+                  price: it.selling_price_per_base,
+                  unit: it.base_unit,
+                  stock: it.stock_base,
+                  seller: { name: name ?? "Toko", url },
+                })),
+              }),
+            ]),
           ]
         : [],
     };
