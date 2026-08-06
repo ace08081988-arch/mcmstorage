@@ -191,3 +191,51 @@ describe("cache-buster aset brand", () => {
     );
   });
 });
+
+describe("cache-control aset ikon & manifest (public/_headers)", () => {
+  const headers = readFileSync(resolve(process.cwd(), "public/_headers"), "utf8");
+  const rules = headers
+    .split(/\n(?=\/)/)
+    .map((block) => block.trim())
+    .filter((block) => block.startsWith("/"));
+
+  const patterns = rules.map((block) => ({
+    path: block.split("\n")[0].trim(),
+    body: block.toLowerCase(),
+  }));
+
+  const matches = (file: string) =>
+    patterns.find(({ path }) => {
+      if (path.includes("*")) {
+        const re = new RegExp(`^${path.replace(/[.]/g, "\\.").replace(/\*/g, "[^/]*")}$`);
+        return re.test(file);
+      }
+      return path === file;
+    });
+
+  const mustBeNoCache = [
+    "/manifest.webmanifest",
+    "/manifest-chat.webmanifest",
+    "/browserconfig.xml",
+    "/mask-icon.svg",
+    "/favicon.ico",
+    "/favicon-32.png",
+    "/apple-touch-icon.png",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/icon-maskable-512.png",
+    "/mstile-150x150.png",
+    "/og-ace-storage.png",
+  ];
+
+  it.each(mustBeNoCache)("%s disajikan no-cache", (file) => {
+    const rule = matches(file);
+    expect(rule, `tidak ada aturan _headers untuk ${file}`).toBeTruthy();
+    expect(rule!.body).toContain("cache-control: no-cache");
+  });
+
+  it("manifest memakai content-type manifest+json", () => {
+    expect(matches("/manifest.webmanifest")!.body).toContain("application/manifest+json");
+    expect(matches("/manifest-chat.webmanifest")!.body).toContain("application/manifest+json");
+  });
+});
