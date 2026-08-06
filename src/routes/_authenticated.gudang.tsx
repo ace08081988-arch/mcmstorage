@@ -2794,8 +2794,31 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
           )}
         </div>
       </form>
+      <DuplicateConflictDialog
+        open={!!supConflict}
+        onOpenChange={(v) => { if (!v) setSupConflict(null); }}
+        info={
+          supConflict
+            ? {
+                label: supConflict.hit.label,
+                reason: supConflict.hit.reason,
+                existing: {
+                  name: supConflict.hit.row.name,
+                  phone: supConflict.hit.row.contact,
+                  email: supConflict.hit.row.email,
+                  note: (supConflict.hit.row as Supplier).notes ?? null,
+                },
+                incoming: { name, phone: contact || null, email: email || null },
+              }
+            : null
+        }
+        onKeep={() => {
+          const ev = supConflict?.ev;
+          setSupConflict(null);
+          if (ev) void submit(ev, { force: true });
+        }}
+      />
       {suppliers.length === 0 ? (
-      <></>
         <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">Belum ada supplier.</div>
       ) : (
         <ul className="space-ms-2">
