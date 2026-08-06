@@ -43,6 +43,7 @@ export type HeadAuditReport = {
     manifestIcons: string[];
     ogImageSize: string | null;
     twitterCard: string | null;
+    assetVersion: string;
   };
 };
 
@@ -332,6 +333,7 @@ export function auditHead(input: HeadAuditInput): HeadAuditReport {
           ? `${meta["og:image:width"]}x${meta["og:image:height"]}`
           : null,
       twitterCard: meta["twitter:card"] ?? null,
+      assetVersion: BRAND_ASSET_VERSION,
     },
   };
 }
