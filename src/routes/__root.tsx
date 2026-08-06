@@ -321,6 +321,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", sizes: "180x180", href: withAssetVersion("/apple-touch-icon.png") },
       { rel: "mask-icon", href: withAssetVersion("/mask-icon.svg"), color: "#c9a227" },
     ],
+    // Identitas brand sitewide (beranda ikut memakainya) supaya hasil
+    // pencarian bisa menampilkan knowledge panel / rich preview Ace Storage.
+    scripts: [jsonLdScript([organizationSchema(), websiteSchema()])],
   }),
   shellComponent: RootShell,
   component: RootComponent,
