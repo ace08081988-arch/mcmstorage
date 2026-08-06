@@ -117,6 +117,8 @@
     "audit:asset-version:fix": "bun scripts/audit-asset-version.ts --fix",
     "audit:head:urls": "vitest run src/lib/__tests__/rendered-head-audit.test.ts",
     "audit:head:live": "bun scripts/audit-rendered-head.ts",
+    "audit:head:live:ci": "bun scripts/audit-rendered-head.ts --max-urls 20 --timeout 10000 --concurrency 8 --retries 2 --per-pattern 2",
+    "test:audit:scan": "vitest run src/lib/__tests__/audit-scan-options.test.ts",
     "rescrape:social": "bun scripts/social-rescrape.ts",
     "rescrape:social:live": "bun scripts/social-rescrape.ts --base https://mcmstorage.app",
     "postpublish": "bun scripts/social-rescrape.ts --base https://mcmstorage.app || true",
