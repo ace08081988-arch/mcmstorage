@@ -34,7 +34,17 @@ const staticAssets = BRAND_ASSET_PATTERNS.filter((p) => !p.includes("*")).map(ab
 
 // 2) og:image dari halaman publik.
 const html = await fetchPagesPooled(pages.map(abs), scan);
-const ogUrls = [...new Set(html.flatMap((p) => ogImageUrlsFromHtml(p.html)))].map(abs);
+// og:image selalu absolut ke domain produksi; saat mengaudit base lain
+// (dev/preview) pathnya dipetakan ke base tersebut agar yang diuji benar.
+const toBase = (u: string) => {
+  try {
+    const parsed = new URL(u, base);
+    return `${base}${parsed.pathname}${parsed.search}`;
+  } catch {
+    return abs(u);
+  }
+};
+const ogUrls = [...new Set(html.flatMap((p) => ogImageUrlsFromHtml(p.html)))].map(toBase);
 if (!ogUrls.length) console.log("⚠ tidak ada og:image ditemukan pada halaman contoh.");
 
 const targets = [...new Set([...staticAssets, ...ogUrls])];

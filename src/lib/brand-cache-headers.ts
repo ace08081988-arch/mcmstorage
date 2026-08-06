@@ -119,7 +119,13 @@ export function auditBrandCacheHeaders(probes: HeaderProbe[]): {
       });
     }
     const expectCt = BRAND_CONTENT_TYPES[pathnameOf(p.url)];
-    if (expectCt && !(p.contentType ?? "").startsWith(expectCt.split(";")[0])) {
+    // XML boleh disajikan sebagai text/xml maupun application/xml.
+    const ctOk =
+      !expectCt ||
+      (expectCt.startsWith("application/xml")
+        ? /(application|text)\/xml/.test(p.contentType ?? "")
+        : (p.contentType ?? "").startsWith(expectCt.split(";")[0]));
+    if (!ctOk) {
       issues.push({
         url: p.url,
         id: "content-type",
