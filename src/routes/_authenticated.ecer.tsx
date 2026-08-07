@@ -3814,7 +3814,7 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [detail, setDetail] = useState<EcerSendEvent | null>(null);
   const [pendingDelete, setPendingDelete] = useState<EcerSendEvent | null>(null);
   const [deleting, setDeleting] = useState(false);
   // Pengurutan & filter dipegang di state komponen, jadi tetap konsisten
@@ -3956,14 +3956,6 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
     );
   }, [rows, total]);
 
-  const toggleExpand = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
   const confirmDeleteEvent = async () => {
     if (!pendingDelete) return;
     setDeleting(true);
@@ -3974,6 +3966,7 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
         .eq("id", pendingDelete.id);
       if (error) throw error;
       setRows((prev) => prev.filter((x) => x.id !== pendingDelete.id));
+      setDetail((d) => (d && d.id === pendingDelete.id ? null : d));
       setPendingDelete(null);
       toast.success("Riwayat pengiriman dihapus");
       // Ambil ulang dari server supaya daftar & badge jumlah selalu sinkron
