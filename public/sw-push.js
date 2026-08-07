@@ -1,7 +1,7 @@
 /* Ace Storage — Web Push service worker (Play Store-grade UX) */
 // Ubah SW_VERSION untuk memaksa browser mengambil SW baru + memicu update
 // asset (manifest, ikon) tanpa harus uninstall aplikasi.
-const SW_VERSION = "2026-08-07-1";
+const SW_VERSION = "2026-08-07-2";
 const ASSET_CACHE = `mcm-assets-${SW_VERSION}`;
 // Aset yang wajib selalu segar setelah SW baru aktif (manifest & ikon).
 const FRESH_ASSETS = [
@@ -74,6 +74,88 @@ self.addEventListener("fetch", (event) => {
 
 const FALLBACK_ICON = "/icon-512.png";
 
+// ---------------------------------------------------------------------------
+// Dedup + prioritas notifikasi.
+// Saat langganan dipulihkan (pushsubscriptionchange) atau perangkat kembali
+// online, push provider bisa mengirim ulang payload yang sama beberapa kali.
+// Kita simpan sidik jari notifikasi yang sudah tampil di Cache Storage (tahan
+// restart service worker) dan menolak duplikat dalam jendela waktu tertentu.
+// ---------------------------------------------------------------------------
+const DEDUP_CACHE = "mcm-notif-dedup";
+const DEDUP_URL = "https://sw-notif-dedup.local/seen";
+const DEDUP_TTL_MS = 10 * 60 * 1000; // duplikat dalam 10 menit ditolak
+const DEDUP_MAX = 200;
+
+// Prioritas: makin besar makin penting. Notifikasi dengan tag sama hanya
+// digantikan oleh notifikasi berprioritas >= yang sedang tampil.
+const PRIORITY = { chat: 30, order: 25, tugas: 20, system: 10 };
+function priorityOf(kind, urgent) {
+  return (PRIORITY[kind] ?? 10) + (urgent ? 100 : 0);
+}
+
+function dedupKeyFor(data, kind) {
+  if (data.dedupKey) return String(data.dedupKey);
+  if (data.messageId) return `msg:${data.messageId}`;
+  return `${kind}:${data.conversationId || ""}:${data.title || ""}:${data.body || ""}`;
+}
+
+async function readSeen() {
+  try {
+    const cache = await caches.open(DEDUP_CACHE);
+    const res = await cache.match(DEDUP_URL);
+    if (!res) return {};
+    const json = await res.json();
+    return json && typeof json === "object" ? json : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+async function writeSeen(map) {
+  try {
+    const cache = await caches.open(DEDUP_CACHE);
+    await cache.put(
+      DEDUP_URL,
+      new Response(JSON.stringify(map), { headers: { "content-type": "application/json" } }),
+    );
+  } catch (_) {}
+}
+
+/**
+ * Kembalikan true bila notifikasi ini duplikat (sudah pernah tampil dalam
+ * jendela TTL) — sekaligus mencatat sidik jarinya bila belum ada.
+ */
+async function isDuplicateNotification(key, priority) {
+  const now = Date.now();
+  const seen = await readSeen();
+  const prev = seen[key];
+  if (prev && now - prev.at < DEDUP_TTL_MS && priority <= (prev.p ?? 0)) return true;
+  seen[key] = { at: now, p: priority };
+  // Buang entri kedaluwarsa & batasi ukuran.
+  const entries = Object.entries(seen)
+    .filter(([, v]) => now - (v?.at ?? 0) < DEDUP_TTL_MS)
+    .sort((a, b) => (b[1].at ?? 0) - (a[1].at ?? 0))
+    .slice(0, DEDUP_MAX);
+  await writeSeen(Object.fromEntries(entries));
+  return false;
+}
+
+/**
+ * Aturan prioritas untuk tag yang sama: notifikasi baru hanya boleh
+ * menggantikan yang sedang tampil bila prioritasnya tidak lebih rendah.
+ */
+async function blockedByHigherPriority(tag, priority) {
+  if (!tag) return false;
+  try {
+    const existing = await self.registration.getNotifications({ tag });
+    for (const n of existing) {
+      const p = (n.data && n.data.priority) ?? 0;
+      if (p > priority) return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
 // Cache preferensi notifikasi dari klien (di-broadcast via postMessage)
 self.__notifPrefs = {
   enabledKinds: { chat: true, tugas: true, order: true, system: true },
@@ -142,6 +224,7 @@ self.addEventListener("push", (event) => {
   const allowUrgent = inDnd && dnd.allowUrgent && !!data.urgent;
   if (inDnd && !allowUrgent) return;
   const vibrateOn = prefs.vibrate !== false && !inDnd;
+  const priority = priorityOf(kind, data.urgent);
   const actions = Array.isArray(data.actions) && data.actions.length
     ? data.actions
     : isChat
@@ -168,6 +251,8 @@ self.addEventListener("push", (event) => {
       conversationId: data.conversationId,
       messageId: data.messageId,
       kind,
+      priority,
+      dedupKey: dedupKeyFor(data, kind),
     },
   };
 
@@ -175,6 +260,11 @@ self.addEventListener("push", (event) => {
     (async () => {
       // Jangan ganggu pengguna saat percakapan terkait sedang dibuka & difokuskan
       if (isChat && (await appAlreadyFocusedFor(data.conversationId))) return;
+      // Tolak kiriman ulang yang identik (pemulihan langganan / kembali online).
+      if (await isDuplicateNotification(options.data.dedupKey, priority)) return;
+      // Jangan turunkan kualitas: tag yang sama tidak boleh ditimpa notifikasi
+      // berprioritas lebih rendah.
+      if (await blockedByHigherPriority(options.tag, priority)) return;
       await self.registration.showNotification(title, options);
     })(),
   );
