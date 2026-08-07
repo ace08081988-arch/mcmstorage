@@ -1,6 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { useOrgName } from "@/lib/org-name";
 
+const NAV = [
+  { to: "/produk", label: "Produk" },
+  { to: "/harga", label: "Harga" },
+  { to: "/faq", label: "FAQ" },
+] as const;
+
 /**
  * Compact branded strip for public pages (auth, terms, trust, refund, dll).
  * Menampilkan logo (atau badge singkatan) + nama organisasi dengan aksen
