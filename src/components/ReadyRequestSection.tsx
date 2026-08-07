@@ -173,12 +173,48 @@ export function ReadyRequestSection() {
     }
   }, [pendingDelete, pendingPrepTotal, pendingBreakdown, load]);
 
+  /**
+   * Nonaktifkan / aktifkan kembali judul. Dipakai untuk judul yang sudah
+   * pernah dipakai paket penyiapan: menghapusnya ditolak database (FK
+   * ON DELETE RESTRICT), jadi judul cukup disembunyikan tanpa kehilangan
+   * riwayat.
+   */
+  const setArchived = useCallback(async (r: Row, archived: boolean) => {
+    setArchiving(true);
+    try {
+      const { error } = await sb
+        .from("request_titles")
+        .update({ archived_at: archived ? new Date().toISOString() : null })
+        .eq("id", r.id);
+      if (error) throw error;
+      toast.success(archived ? "Judul dinonaktifkan" : "Judul diaktifkan kembali", {
+        description: archived
+          ? `${r.name} disembunyikan dari daftar. Riwayat paket tetap tersimpan.`
+          : r.name,
+      });
+      setPendingDelete(null);
+      await load();
+    } catch (e) {
+      toast.error("Gagal mengubah status judul", {
+        description: e instanceof Error ? e.message : "Coba lagi sebentar.",
+      });
+    } finally {
+      setArchiving(false);
+    }
+  }, [load]);
+
+  const archivedCount = useMemo(
+    () => (rows ?? []).filter((r) => r.archived_at).length,
+    [rows],
+  );
+
   const filtered = useMemo(() => {
     if (!rows) return null;
+    const base = showArchived ? rows : rows.filter((r) => !r.archived_at);
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => r.name.toLowerCase().includes(q) || r.items_summary.toLowerCase().includes(q));
-  }, [rows, query]);
+    if (!q) return base;
+    return base.filter((r) => r.name.toLowerCase().includes(q) || r.items_summary.toLowerCase().includes(q));
+  }, [rows, query, showArchived]);
 
   return (
     <section className="space-ms-2">
@@ -192,6 +228,16 @@ export function ReadyRequestSection() {
           <div className="inline-flex">
             <LayoutModeToggle mode={layout} onChange={setLayout} />
           </div>
+          {archivedCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowArchived((v) => !v)}
+              aria-pressed={showArchived}
+              className="rounded-md border px-ms-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground hover:bg-accent"
+            >
+              {showArchived ? "Sembunyikan nonaktif" : `Nonaktif (${archivedCount})`}
+            </button>
+          )}
           <Link to="/request" search={{ title: undefined, highlight: undefined, send: undefined }} className="text-ms-2xs font-medium text-primary hover:underline">Kelola →</Link>
         </div>
       </div>
