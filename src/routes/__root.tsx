@@ -513,18 +513,20 @@ function RootComponent() {
       const d = event.data as { type?: string; url?: string; conversationId?: string } | undefined;
       if (!d || typeof d.type !== "string") return;
       if (d.type === "navigate" && d.url) {
-        try { router.navigate({ to: d.url }); } catch { window.location.href = d.url; }
+        import("@/lib/notification-nav")
+          .then(({ navigateFromNotification }) =>
+            navigateFromNotification(router, queryClient, d.url!),
+          )
+          .catch(() => {
+            window.location.href = d.url!;
+          });
       } else if (d.type === "mark-read" && d.conversationId) {
-        import("@/integrations/supabase/client").then(async ({ supabase }) => {
-          const { data: u } = await supabase.auth.getUser();
-          if (!u.user) return;
-          await supabase
-            .from("conversation_members")
-            .update({ last_read_at: new Date().toISOString() })
-            .eq("conversation_id", d.conversationId!)
-            .eq("user_id", u.user.id);
-          queryClient.invalidateQueries({ queryKey: ["chat"] });
-        }).catch(() => {});
+        import("@/lib/notification-nav")
+          .then(async ({ markConversationRead }) => {
+            await markConversationRead(d.conversationId!);
+            queryClient.invalidateQueries({ queryKey: ["chat"] });
+          })
+          .catch(() => {});
       }
     };
     navigator.serviceWorker.addEventListener("message", onMsg);
