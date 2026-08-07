@@ -39,6 +39,7 @@ type Row = {
   items_summary: string;
   product_count: number;
   prep_count: number;
+  archived_at: string | null;
 };
 
 export function ReadyRequestSection() {
@@ -48,6 +49,9 @@ export function ReadyRequestSection() {
   const [layout, setLayout] = useLayoutMode("readyRequest", "list");
   const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  // Tampilkan judul yang sudah dinonaktifkan (default: disembunyikan).
+  const [showArchived, setShowArchived] = useState(false);
   // Total prep (aktif + Riwayat Terkirim) untuk judul yang akan dihapus.
   // Badge kartu hanya menghitung prep aktif, padahal FK
   // request_preparations.title_id memakai ON DELETE RESTRICT — jadi prep
@@ -93,7 +97,7 @@ export function ReadyRequestSection() {
 
   const load = useCallback(async () => {
     const [tRes, tiRes, wRes, pRes] = await Promise.all([
-      sb.from("request_titles").select("id,name").order("position").order("created_at"),
+      sb.from("request_titles").select("id,name,archived_at").order("position").order("created_at"),
       sb.from("request_title_items").select("id,title_id,warehouse_item_id,target_grams,unit_label,position").order("position"),
       supabase.from("warehouse_items").select("id,name"),
       // Badge "N paket" hanya menghitung prep AKTIF (belum Riwayat Terkirim).
@@ -105,7 +109,7 @@ export function ReadyRequestSection() {
         ),
       ),
     ]);
-    const titles = (tRes.data ?? []) as Array<{ id: string; name: string }>;
+    const titles = (tRes.data ?? []) as Array<{ id: string; name: string; archived_at: string | null }>;
     const items = (tiRes.data ?? []) as Array<{ title_id: string; warehouse_item_id: string; target_grams: number; unit_label: string }>;
     const wis = (wRes.data ?? []) as Array<{ id: string; name: string }>;
     const preps = (pRes.data ?? []) as Array<{ title_id: string; sold_at: string | null }>;
@@ -125,6 +129,7 @@ export function ReadyRequestSection() {
         }).join(" · "),
         product_count: tItems.length,
         prep_count: activeCountByTitle.get(t.id) ?? 0,
+        archived_at: t.archived_at ?? null,
       };
     });
     setRows(out);
