@@ -9,6 +9,7 @@ import {
   selectAuditUrls,
   urlsFromSitemap,
 } from "../rendered-head-audit";
+import { DEFAULT_OG_IMAGE } from "../seo-meta";
 
 function page(overrides: Partial<Record<string, string>> = {}, url = "/katalog/toko/abc") {
   const m = {
@@ -16,8 +17,8 @@ function page(overrides: Partial<Record<string, string>> = {}, url = "/katalog/t
     description: "Beras premium kemasan 5kg, stok tersedia.",
     ogTitle: "Beras Premium 5kg — Toko Ace — Ace Storage",
     ogDescription: "Beras premium kemasan 5kg, stok tersedia.",
-    ogImage: "https://mcmstorage.app/og-ace-storage.png?v=20260806",
-    ogImageSecure: "https://mcmstorage.app/og-ace-storage.png?v=20260806",
+    ogImage: DEFAULT_OG_IMAGE,
+    ogImageSecure: DEFAULT_OG_IMAGE,
     ogImageWidth: "1200",
     ogImageHeight: "630",
     ogImageType: "image/png",
