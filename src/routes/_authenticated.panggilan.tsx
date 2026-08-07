@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X, ArrowDownWideNarrow, ArrowUpWideNarrow, FileSpreadsheet, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X, ArrowDownWideNarrow, ArrowUpWideNarrow, FileSpreadsheet, FileText, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { CallDetailSheet } from "@/components/chat/CallDetailSheet";
 import { toExportRows, exportCallsCsv, exportCallsPdf } from "@/lib/call-export";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ function PanggilanPage() {
   const [callingId, setCallingId] = useState<string | null>(null);
   const qc = useQueryClient();
   const [pendingDelete, setPendingDelete] = useState<CallRow | null>(null);
+  const [detailRow, setDetailRow] = useState<CallRow | null>(null);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
@@ -405,6 +407,7 @@ function PanggilanPage() {
                 nameMap={nameMap}
                 isCalling={callingId === c.id}
                 onDelete={(r) => setPendingDelete(r)}
+                onDetail={(r) => setDetailRow(r)}
                 onStartCall={async (r) => {
                   if (!myId) return;
                   const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
@@ -485,6 +488,14 @@ function PanggilanPage() {
       </div>
 
       <ChatBottomNav />
+
+      <CallDetailSheet
+        row={detailRow}
+        myId={myId ?? null}
+        nameMap={nameMap}
+        onOpenChange={(o) => { if (!o) setDetailRow(null); }}
+        onDelete={(r) => { setDetailRow(null); setPendingDelete(r); }}
+      />
 
       <AlertDialog
         open={!!pendingDelete}
