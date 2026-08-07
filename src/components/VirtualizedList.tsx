@@ -173,13 +173,14 @@ export function VirtualizedList<T>({
   const measure = React.useCallback(
     (el: HTMLElement | null) => {
       if (!el) return;
-      virtualizer.measureElement(el);
       const idx = Number(el.getAttribute("data-index"));
+      const key = Number.isFinite(idx) ? keys[idx] : undefined;
+      // Saat fling di WebView, pengukuran ulang baris yang tingginya sudah
+      // diketahui memicu layout sinkron per frame. Lewati selama scroll.
+      if (virtualizer.isScrolling && key && cache.has(key)) return;
+      virtualizer.measureElement(el);
       const h = el.getBoundingClientRect().height;
-      if (Number.isFinite(idx) && h > 0) {
-        const key = keys[idx];
-        if (key && cache.get(key) !== h) cache.set(key, h);
-      }
+      if (key && h > 0 && cache.get(key) !== h) cache.set(key, h);
     },
     [virtualizer, keys, cache],
   );
@@ -234,6 +235,9 @@ export function VirtualizedList<T>({
                 width: "100%",
                 transform: `translateY(${v.start - virtualizer.options.scrollMargin}px)`,
                 paddingBottom: gap,
+                // Batasi dampak layout/paint tiap baris ke dirinya sendiri
+                // supaya scroll tidak memicu reflow seluruh daftar.
+                contain: "layout paint style",
               }}
             >
               <Row deps={item}>{renderItem(item, v.index)}</Row>

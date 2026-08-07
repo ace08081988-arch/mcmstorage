@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import * as React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X, ArrowDownWideNarrow, ArrowUpWideNarrow, FileSpreadsheet, FileText, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { CallDetailSheet } from "@/components/chat/CallDetailSheet";
@@ -33,6 +34,7 @@ import { useMyUserId } from "@/lib/chat";
 import { formatInviteCode } from "@/lib/invite";
 import type { CallVisualStatus } from "@/lib/call-status-visual";
 import { CallStatusButton } from "@/components/chat/CallStatusButton";
+import { VirtualizedList } from "@/components/VirtualizedList";
 
 export const Route = createFileRoute("/_authenticated/panggilan")({
   component: PanggilanPage,
@@ -187,6 +189,42 @@ function PanggilanPage() {
   );
   const rangeStart = rows.length === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, rows.length);
+  // Handler stabil supaya `CallRowItem` (memo) tidak re-render tiap scroll.
+  const handleDelete = useCallback((r: CallRow) => setPendingDelete(r), []);
+  const handleDetail = useCallback((r: CallRow) => setDetailRow(r), []);
+  const handleStartCall = useCallback(
+    async (r: CallRow) => {
+      if (!myId) return;
+      const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
+      if (!peerId) return;
+      const peerName = nameMap[peerId] || "Kontak";
+      setCallingId(r.id);
+      try {
+        const row = await createCallRow({
+          conversationId: r.conversation_id,
+          callerId: myId,
+          calleeId: peerId,
+          kind: r.kind,
+        });
+        dispatchStartCall({ callId: row.id, kind: r.kind, peerName });
+        void ringUser({
+          calleeId: peerId,
+          callId: row.id,
+          callerId: myId,
+          kind: r.kind,
+          conversationId: r.conversation_id,
+          callerName: peerName,
+        }).catch(() => { /* ring gagal — UI tetap jalan */ });
+      } catch (e) {
+        const { describeCallError } = await import("@/lib/call-errors");
+        const info = describeCallError(e, r.kind === "video" ? "video" : "audio");
+        toast.error(info.title, { description: info.hint, duration: 8000 });
+      } finally {
+        setCallingId(null);
+      }
+    },
+    [myId, nameMap],
+  );
   const FILTERS: { key: typeof filter; label: string }[] = [
     { key: "all", label: "Semua" },
     { key: "missed", label: "Tak terjawab" },
@@ -398,49 +436,27 @@ function PanggilanPage() {
           </div>
         ) : (
           <>
-          <ul className="divide-y pb-2">
-            {pageRows.map((c) => (
-              <CallRowItem
-                key={c.id}
-                row={c}
-                myId={myId ?? null}
-                nameMap={nameMap}
-                isCalling={callingId === c.id}
-                onDelete={(r) => setPendingDelete(r)}
-                onDetail={(r) => setDetailRow(r)}
-                onStartCall={async (r) => {
-                  if (!myId) return;
-                  const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
-                  if (!peerId) return;
-                  const peerName = nameMap[peerId] || "Kontak";
-                  setCallingId(r.id);
-                  try {
-                    const row = await createCallRow({
-                      conversationId: r.conversation_id,
-                      callerId: myId,
-                      calleeId: peerId,
-                      kind: r.kind,
-                    });
-                    dispatchStartCall({ callId: row.id, kind: r.kind, peerName });
-                    void ringUser({
-                      calleeId: peerId,
-                      callId: row.id,
-                      callerId: myId,
-                      kind: r.kind,
-                      conversationId: r.conversation_id,
-                      callerName: peerName,
-                    }).catch(() => { /* ring gagal — UI tetap jalan */ });
-                  } catch (e) {
-                    const { describeCallError } = await import("@/lib/call-errors");
-                    const info = describeCallError(e, r.kind === "video" ? "video" : "audio");
-                    toast.error(info.title, { description: info.hint, duration: 8000 });
-                  } finally {
-                    setCallingId(null);
-                  }
-                }}
-              />
-            ))}
-          </ul>
+          <div role="list" className="pb-2">
+            <VirtualizedList
+              cacheKey="call-list"
+              items={pageRows}
+              getKey={(c) => c.id}
+              estimateSize={64}
+              gap={0}
+              threshold={12}
+              renderItem={(c) => (
+                <CallRowItem
+                  row={c}
+                  myId={myId ?? null}
+                  nameMap={nameMap}
+                  isCalling={callingId === c.id}
+                  onDelete={handleDelete}
+                  onDetail={handleDetail}
+                  onStartCall={handleStartCall}
+                />
+              )}
+            />
+          </div>
           {rows.length > pageSize || pageSize !== 20 ? (
             <nav
               aria-label="Navigasi halaman panggilan"
@@ -601,7 +617,7 @@ function PanggilanPage() {
   );
 }
 
-function CallRowItem({
+const CallRowItem = React.memo(function CallRowItem({
   row, myId, nameMap, isCalling, onStartCall, onDelete, onDetail,
 }: {
   row: CallRow;
@@ -622,7 +638,7 @@ function CallRowItem({
     row.status === "ended" ? formatCallDuration(row.duration_sec) : undefined;
 
   return (
-    <li className="flex items-center gap-ms-1 px-ms-2 py-1">
+    <div role="listitem" className="flex items-center gap-ms-1 border-b px-ms-2 py-1">
       <Link
         to="/chat/$conversationId"
         params={{ conversationId: row.conversation_id }}
@@ -688,6 +704,6 @@ function CallRowItem({
       >
         <Trash2 className="h-[18px] w-[18px]" />
       </button>
-    </li>
+    </div>
   );
-}
+});
