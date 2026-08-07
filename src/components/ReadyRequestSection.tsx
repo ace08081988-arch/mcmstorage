@@ -39,6 +39,7 @@ type Row = {
   items_summary: string;
   product_count: number;
   prep_count: number;
+  archived_at: string | null;
 };
 
 export function ReadyRequestSection() {
@@ -48,6 +49,9 @@ export function ReadyRequestSection() {
   const [layout, setLayout] = useLayoutMode("readyRequest", "list");
   const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  // Tampilkan judul yang sudah dinonaktifkan (default: disembunyikan).
+  const [showArchived, setShowArchived] = useState(false);
   // Total prep (aktif + Riwayat Terkirim) untuk judul yang akan dihapus.
   // Badge kartu hanya menghitung prep aktif, padahal FK
   // request_preparations.title_id memakai ON DELETE RESTRICT — jadi prep
@@ -93,7 +97,7 @@ export function ReadyRequestSection() {
 
   const load = useCallback(async () => {
     const [tRes, tiRes, wRes, pRes] = await Promise.all([
-      sb.from("request_titles").select("id,name").order("position").order("created_at"),
+      sb.from("request_titles").select("id,name,archived_at").order("position").order("created_at"),
       sb.from("request_title_items").select("id,title_id,warehouse_item_id,target_grams,unit_label,position").order("position"),
       supabase.from("warehouse_items").select("id,name"),
       // Badge "N paket" hanya menghitung prep AKTIF (belum Riwayat Terkirim).
@@ -105,7 +109,7 @@ export function ReadyRequestSection() {
         ),
       ),
     ]);
-    const titles = (tRes.data ?? []) as Array<{ id: string; name: string }>;
+    const titles = (tRes.data ?? []) as Array<{ id: string; name: string; archived_at: string | null }>;
     const items = (tiRes.data ?? []) as Array<{ title_id: string; warehouse_item_id: string; target_grams: number; unit_label: string }>;
     const wis = (wRes.data ?? []) as Array<{ id: string; name: string }>;
     const preps = (pRes.data ?? []) as Array<{ title_id: string; sold_at: string | null }>;
@@ -125,6 +129,7 @@ export function ReadyRequestSection() {
         }).join(" · "),
         product_count: tItems.length,
         prep_count: activeCountByTitle.get(t.id) ?? 0,
+        archived_at: t.archived_at ?? null,
       };
     });
     setRows(out);
@@ -168,12 +173,48 @@ export function ReadyRequestSection() {
     }
   }, [pendingDelete, pendingPrepTotal, pendingBreakdown, load]);
 
+  /**
+   * Nonaktifkan / aktifkan kembali judul. Dipakai untuk judul yang sudah
+   * pernah dipakai paket penyiapan: menghapusnya ditolak database (FK
+   * ON DELETE RESTRICT), jadi judul cukup disembunyikan tanpa kehilangan
+   * riwayat.
+   */
+  const setArchived = useCallback(async (r: Row, archived: boolean) => {
+    setArchiving(true);
+    try {
+      const { error } = await sb
+        .from("request_titles")
+        .update({ archived_at: archived ? new Date().toISOString() : null })
+        .eq("id", r.id);
+      if (error) throw error;
+      toast.success(archived ? "Judul dinonaktifkan" : "Judul diaktifkan kembali", {
+        description: archived
+          ? `${r.name} disembunyikan dari daftar. Riwayat paket tetap tersimpan.`
+          : r.name,
+      });
+      setPendingDelete(null);
+      await load();
+    } catch (e) {
+      toast.error("Gagal mengubah status judul", {
+        description: e instanceof Error ? e.message : "Coba lagi sebentar.",
+      });
+    } finally {
+      setArchiving(false);
+    }
+  }, [load]);
+
+  const archivedCount = useMemo(
+    () => (rows ?? []).filter((r) => r.archived_at).length,
+    [rows],
+  );
+
   const filtered = useMemo(() => {
     if (!rows) return null;
+    const base = showArchived ? rows : rows.filter((r) => !r.archived_at);
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => r.name.toLowerCase().includes(q) || r.items_summary.toLowerCase().includes(q));
-  }, [rows, query]);
+    if (!q) return base;
+    return base.filter((r) => r.name.toLowerCase().includes(q) || r.items_summary.toLowerCase().includes(q));
+  }, [rows, query, showArchived]);
 
   return (
     <section className="space-ms-2">
@@ -187,6 +228,16 @@ export function ReadyRequestSection() {
           <div className="inline-flex">
             <LayoutModeToggle mode={layout} onChange={setLayout} />
           </div>
+          {archivedCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowArchived((v) => !v)}
+              aria-pressed={showArchived}
+              className="rounded-md border px-ms-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground hover:bg-accent"
+            >
+              {showArchived ? "Sembunyikan nonaktif" : `Nonaktif (${archivedCount})`}
+            </button>
+          )}
           <Link to="/request" search={{ title: undefined, highlight: undefined, send: undefined }} className="text-ms-2xs font-medium text-primary hover:underline">Kelola →</Link>
         </div>
       </div>
@@ -310,6 +361,11 @@ export function ReadyRequestSection() {
                   </li>
                   <li>• Hapus atau pindahkan paket-paket itu dulu lewat halaman Request, baru judul bisa dihapus.</li>
                   <li>• Hutang, piutang, dan stok tidak berubah oleh aksi ini.</li>
+                  <li>
+                    • Alternatif: <strong className="text-foreground">Nonaktifkan</strong> — judul
+                    disembunyikan dari daftar, semua riwayat paket tetap utuh, dan bisa diaktifkan
+                    lagi kapan saja.
+                  </li>
                 </>
               ) : (
                 <>
@@ -329,6 +385,20 @@ export function ReadyRequestSection() {
             <AlertDialogCancel disabled={deleting}>
               {pendingPrepTotal !== null && pendingPrepTotal > 0 ? "Tutup" : "Batal"}
             </AlertDialogCancel>
+            {pendingPrepTotal !== null && pendingPrepTotal > 0 && pendingDelete && (
+              <button
+                type="button"
+                disabled={archiving}
+                onClick={() => { void setArchived(pendingDelete, !pendingDelete.archived_at); }}
+                className="inline-flex min-h-[var(--ms-tap)] items-center justify-center rounded-md border border-primary/40 bg-primary/10 px-ms-3 text-ms-xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-60"
+              >
+                {archiving
+                  ? "Menyimpan…"
+                  : pendingDelete.archived_at
+                    ? "Aktifkan kembali"
+                    : "Nonaktifkan"}
+              </button>
+            )}
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleting || pendingPrepTotal === null || pendingPrepTotal > 0}
@@ -364,7 +434,8 @@ function RequestCard({
       data-testid={`ready-request-card-${r.id}`}
       className={
         "flex flex-col gap-ms-1.5 rounded-md border bg-card " +
-        (compact ? "px-ms-2.5 py-1.5" : "p-ms-2.5")
+        (compact ? "px-ms-2.5 py-1.5" : "p-ms-2.5") +
+        (r.archived_at ? " border-dashed opacity-70" : "")
       }
     >
       <Link
@@ -381,6 +452,11 @@ function RequestCard({
           >
             {r.name}
           </span>
+          {r.archived_at && (
+            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground">
+              Nonaktif
+            </span>
+          )}
           <span
             data-testid={`ready-request-badge-${r.id}`}
             data-badge-count={r.prep_count}

@@ -2860,6 +2860,7 @@ export type Database = {
       }
       request_titles: {
         Row: {
+          archived_at: string | null
           created_at: string
           id: string
           name: string
@@ -2870,6 +2871,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           name: string
@@ -2880,6 +2882,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           name?: string
