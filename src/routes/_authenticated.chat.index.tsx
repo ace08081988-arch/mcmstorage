@@ -403,9 +403,11 @@ function ChatListPage() {
           : undefined
       }
     >
-      {/* Blok atas dikunci di bawah header aplikasi (h-14) supaya judul,
-          pencarian, dan filter tidak ikut naik-turun saat daftar digulir. */}
-      <div className="sticky top-14 z-20 wa-surface border-b border-[var(--wa-border)]">
+      {/* AppHeader disembunyikan pada rute ini (layar penuh), jadi blok atas
+          dikunci langsung di puncak layar + safe-area notch supaya judul,
+          pencarian, dan filter tidak terpotong maupun naik-turun saat
+          daftar digulir. */}
+      <div className="app-safe-top sticky top-0 z-20 wa-surface border-b border-[var(--wa-border)]">
       {selecting ? (
         <header
           className="flex items-center justify-between gap-ms-2 bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
