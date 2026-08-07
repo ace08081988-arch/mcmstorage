@@ -4025,6 +4025,73 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
       </button>
       {open && (
         <div className="mt-ms-2 space-y-ms-1.5">
+          {/* Filter kategori (kanal) + rentang tanggal — dikirim ke server
+              sehingga hitungan total & infinite scroll ikut terfilter. */}
+          <div className="rounded-md border bg-muted/20 p-ms-1.5 space-y-ms-1.5">
+            <div className="flex flex-wrap items-center gap-ms-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Kategori
+              </span>
+              {([
+                { key: "all", label: "Semua" },
+                { key: "wa", label: "WA" },
+                { key: "chat", label: "Chat" },
+                { key: "copy", label: "Salin" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setChannelFilter(opt.key)}
+                  aria-pressed={channelFilter === opt.key}
+                  className={`rounded-full border px-ms-1.5 py-0.5 text-[10px] font-medium transition ${
+                    channelFilter === opt.key
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-ms-1 sm:flex sm:flex-wrap">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Tanggal
+              </span>
+              <div className="flex min-w-0 flex-wrap items-center gap-ms-1">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  aria-label="Tanggal mulai histori"
+                  className="h-7 min-w-0 rounded-md border border-border bg-background px-1 text-[10px]"
+                />
+                <span className="text-[10px] text-muted-foreground">–</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  aria-label="Tanggal akhir histori"
+                  className="h-7 min-w-0 rounded-md border border-border bg-background px-1 text-[10px]"
+                />
+                {(channelFilter !== "all" || dateFrom || dateTo || statusFilter !== "all") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChannelFilter("all");
+                      setDateFrom("");
+                      setDateTo("");
+                      setStatusFilter("all");
+                    }}
+                    className="rounded-md border border-border bg-background px-ms-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                  >
+                    Reset filter
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
           {rows.length > 0 && (
             <div className="flex flex-wrap items-center gap-ms-1">
               {statusOptions.map((opt) => (
