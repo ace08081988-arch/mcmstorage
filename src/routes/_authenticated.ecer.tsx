@@ -3814,6 +3814,10 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [pendingDelete, setPendingDelete] = useState<EcerSendEvent | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Pengurutan & filter dipegang di state komponen, jadi tetap konsisten
+  // setelah refresh otomatis (fokus window / event kirim / setelah hapus).
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "status">("newest");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -3867,6 +3871,35 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
     : "bg-muted text-muted-foreground border-border";
   const outcomeLabel = (o: string) =>
     o === "sent" ? "Terkirim" : o === "failed" ? "Gagal" : o === "cancelled" ? "Dibatalkan" : o === "copied" ? "Disalin" : o;
+
+  const outcomeRank = (o: string) =>
+    o === "failed" ? 0 : o === "cancelled" ? 1 : o === "sent" ? 2 : 3;
+
+  const visibleRows = useMemo(() => {
+    const filtered = statusFilter === "all" ? rows : rows.filter((r) => r.outcome === statusFilter);
+    const sorted = [...filtered].sort((a, b) => {
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      if (sortBy === "oldest") return ta - tb;
+      if (sortBy === "status") {
+        const d = outcomeRank(a.outcome) - outcomeRank(b.outcome);
+        if (d !== 0) return d;
+        return tb - ta;
+      }
+      return tb - ta;
+    });
+    return sorted;
+  }, [rows, sortBy, statusFilter]);
+
+  const statusOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of rows) counts.set(r.outcome, (counts.get(r.outcome) ?? 0) + 1);
+    return [{ key: "all", label: "Semua", count: rows.length }].concat(
+      Array.from(counts.entries())
+        .sort((a, b) => outcomeRank(a[0]) - outcomeRank(b[0]))
+        .map(([key, count]) => ({ key, label: outcomeLabel(key), count })),
+    );
+  }, [rows]);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -3932,14 +3965,47 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
       </button>
       {open && (
         <div className="mt-ms-2 space-y-ms-1.5">
+          {rows.length > 0 && (
+            <div className="flex flex-wrap items-center gap-ms-1">
+              {statusOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setStatusFilter(opt.key)}
+                  aria-pressed={statusFilter === opt.key}
+                  className={`rounded-full border px-ms-1.5 py-0.5 text-[10px] font-medium transition ${
+                    statusFilter === opt.key
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-muted/30 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label} ({opt.count})
+                </button>
+              ))}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "newest" | "oldest" | "status")}
+                aria-label="Urutkan histori"
+                className="ml-auto h-6 rounded-md border border-border bg-background px-1 text-[10px] text-muted-foreground"
+              >
+                <option value="newest">Terbaru dulu</option>
+                <option value="oldest">Terlama dulu</option>
+                <option value="status">Status</option>
+              </select>
+            </div>
+          )}
           {loading && rows.length === 0 ? (
             <div className="text-ms-2xs text-muted-foreground">Memuat histori…</div>
           ) : rows.length === 0 ? (
             <div className="rounded-md border border-dashed bg-muted/20 px-ms-3 py-ms-3 text-center text-ms-2xs text-muted-foreground">
               Belum ada histori pengiriman untuk paket ini.
             </div>
+          ) : visibleRows.length === 0 ? (
+            <div className="rounded-md border border-dashed bg-muted/20 px-ms-3 py-ms-3 text-center text-ms-2xs text-muted-foreground">
+              Tidak ada histori dengan status ini.
+            </div>
           ) : (
-            rows.map((r) => {
+            visibleRows.map((r) => {
               const isOpen = expanded.has(r.id);
               const dt = new Date(r.created_at);
               return (
