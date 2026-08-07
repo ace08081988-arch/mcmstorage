@@ -161,6 +161,10 @@ function debtStatusLine(total: number, paid: number): string {
 
 function HutangPiutangPage() {
   const [uid, setUid] = useState<string | null>(null);
+  // Tinggi header halaman diukur nyata (font besar / WebView bisa berbeda)
+  // supaya baris header kolom yang sticky berhenti tepat di bawahnya.
+  const pageHeaderRef = useRef<HTMLElement | null>(null);
+  const [headerH, setHeaderH] = useState(64);
   const [tab, setTab] = useState<"hutang" | "piutang" | "laporan">("hutang");
   const [debts, setDebts] = useState<Debt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
