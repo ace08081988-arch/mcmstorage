@@ -643,6 +643,7 @@ function GudangPage() {
   }
 
   useEffect(() => {
+    if (!uidReady) return;
     if (uid) {
     // Hidrasi sinkron dari cache sesi bila ada — paint instan.
     // `reloadAllNow` kemudian tetap dijalankan sebagai revalidasi (SWR).
@@ -662,7 +663,8 @@ function GudangPage() {
       }
     }
     reloadAllNow();
-  }, [uid]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, uidReady]);
 
   useEffect(() => {
     return () => {
