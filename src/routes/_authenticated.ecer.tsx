@@ -4237,7 +4237,7 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
                       variant="outline"
                       onClick={() => {
                         window.open(
-                          buildWhatsAppUrl(detail.party_contact ?? "", detail.caption_preview ?? ""),
+                          buildWhatsAppUrl(detail.caption_preview ?? "", detail.party_contact ?? ""),
                           "_blank",
                           "noopener",
                         );
