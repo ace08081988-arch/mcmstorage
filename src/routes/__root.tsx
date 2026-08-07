@@ -406,6 +406,11 @@ function RootComponent() {
     import("@/lib/push-client")
       .then(({ startPushKeepAlive }) => startPushKeepAlive())
       .catch(() => {});
+    // Cold start dari ketukan notifikasi (SW membuka jendela baru):
+    // jalankan aksi yang menempel di URL lalu segarkan datanya.
+    import("@/lib/notification-nav")
+      .then(({ handleColdStartNotification }) => handleColdStartNotification(queryClient))
+      .catch(() => {});
     // Bersihkan draft nama pegawai `mcm:sendPrepLink:workerName:*` yang
     // tertinggal dari sesi sebelumnya (mis. app di-force-stop sebelum
     // dialog sempat unmount). Hanya dijalankan sekali per boot.
