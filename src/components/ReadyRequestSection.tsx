@@ -196,11 +196,19 @@ export function ReadyRequestSection() {
 
   const confirmDelete = useCallback(async () => {
     if (!pendingDelete) return;
+    const openTitlePackages = () => {
+      setPendingDelete(null);
+      void navigate({
+        to: "/request",
+        search: { title: pendingDelete.id, highlight: undefined, send: undefined },
+      });
+    };
     if (pendingPrepTotal && pendingPrepTotal > 0) {
       toast.error("Judul tidak bisa dihapus", {
         description: `Masih terhubung ke ${pendingPrepTotal} paket penyiapan${
           pendingBreakdown ? ` (${pendingBreakdown.active} aktif, ${pendingBreakdown.sent} riwayat terkirim)` : ""
         }. Hapus atau pindahkan paket-paket itu dulu.`,
+        action: { label: "Buka daftar paket", onClick: openTitlePackages },
       });
       return;
     }
@@ -240,6 +248,7 @@ export function ReadyRequestSection() {
         toast.error("Judul masih terpakai, belum bisa dihapus", {
           description: `${rincian} Hapus atau pindahkan paket-paket itu dulu di halaman Request, atau pilih “Nonaktifkan” untuk menyembunyikan judul tanpa kehilangan riwayat.`,
           duration: 8000,
+          action: { label: "Buka daftar paket", onClick: openTitlePackages },
         });
       } else if (isPerm) {
         toast.error("Tidak punya akses menghapus judul ini", {
@@ -253,7 +262,7 @@ export function ReadyRequestSection() {
     } finally {
       setDeleting(false);
     }
-  }, [pendingDelete, pendingPrepTotal, pendingBreakdown, load]);
+  }, [pendingDelete, pendingPrepTotal, pendingBreakdown, load, navigate]);
 
   /**
    * Nonaktifkan / aktifkan kembali judul. Dipakai untuk judul yang sudah
