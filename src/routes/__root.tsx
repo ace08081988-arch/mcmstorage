@@ -400,6 +400,11 @@ function RootComponent() {
     bootstrapNativePermissions().catch((e) =>
       console.warn("[perm-bootstrap]", e),
     );
+    // Jaga langganan notifikasi web tetap hidup supaya pesan tetap masuk
+    // walau aplikasi sedang tertutup (endpoint push bisa dirotasi browser).
+    import("@/lib/push-client")
+      .then(({ startPushKeepAlive }) => startPushKeepAlive())
+      .catch(() => {});
     // Bersihkan draft nama pegawai `mcm:sendPrepLink:workerName:*` yang
     // tertinggal dari sesi sebelumnya (mis. app di-force-stop sebelum
     // dialog sempat unmount). Hanya dijalankan sekali per boot.
