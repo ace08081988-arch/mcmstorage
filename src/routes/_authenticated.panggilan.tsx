@@ -395,8 +395,9 @@ function PanggilanPage() {
             Tidak ada panggilan yang cocok dengan pencarian atau filter ini.
           </div>
         ) : (
+          <>
           <ul className="divide-y pb-2">
-            {rows.map((c) => (
+            {pageRows.map((c) => (
               <CallRowItem
                 key={c.id}
                 row={c}
@@ -437,6 +438,49 @@ function PanggilanPage() {
               />
             ))}
           </ul>
+          {rows.length > pageSize || pageSize !== 20 ? (
+            <nav
+              aria-label="Navigasi halaman panggilan"
+              className="flex items-center gap-ms-1.5 border-t px-ms-3 py-ms-3"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1 rounded-full text-ms-xs"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                aria-label="Halaman sebelumnya"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Sebelumnya
+              </Button>
+              <span className="text-ms-xs text-muted-foreground" aria-live="polite">
+                Hal {page}/{totalPages}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1 rounded-full text-ms-xs"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                aria-label="Halaman berikutnya"
+              >
+                Berikutnya <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                aria-label="Jumlah entri per halaman"
+                className="ml-auto h-9 rounded-full border bg-background px-3 text-ms-xs"
+              >
+                {[10, 20, 50, 100].map((n) => (
+                  <option key={n} value={n}>{n}/hal</option>
+                ))}
+              </select>
+            </nav>
+          ) : null}
+          </>
         )}
       </div>
 
