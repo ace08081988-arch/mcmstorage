@@ -4085,3 +4085,26 @@ html[data-display-mode="fullscreen"] {
 html[data-app-installed="1"] body {
   overscroll-behavior-y: none;
 }
+
+/* ==========================================================================
+   Tinggi viewport efektif (--app-vh)
+   --------------------------------------------------------------------------
+   Diisi oleh src/lib/viewport-height.ts dengan tinggi layar nyata sehingga
+   munculnya bilah alamat tidak lagi memotong layout. Fallback `100dvh`
+   dipakai saat SSR / sebelum skrip berjalan.
+   ========================================================================== */
+:root {
+  --app-vh: 100dvh;
+}
+
+@utility h-app-vh {
+  height: var(--app-vh, 100dvh);
+}
+
+@utility min-h-app-vh {
+  min-height: var(--app-vh, 100dvh);
+}
+
+@utility max-h-app-vh {
+  max-height: var(--app-vh, 100dvh);
+}

@@ -1450,10 +1450,10 @@ function ChatRoomPage() {
       // soft-keyboard muncul/tertutup — daftar pesan & composer bergerak
       // ke posisi baru dengan easing 200ms, bukan snap. Dihormati
       // preferensi reduce-motion pengguna.
-      className="mx-auto flex h-full max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden wa-surface transition-[height] duration-200 ease-out motion-reduce:transition-none"
+      className="mx-auto flex h-app-vh max-h-app-vh w-full max-w-2xl flex-col overflow-hidden wa-surface transition-[height] duration-200 ease-out motion-reduce:transition-none"
       style={
         kbInset > 0
-          ? { height: `calc(100dvh - ${kbInset}px)` }
+          ? { height: `calc(var(--app-vh, 100dvh) - ${kbInset}px)` }
           : undefined
       }
     >
