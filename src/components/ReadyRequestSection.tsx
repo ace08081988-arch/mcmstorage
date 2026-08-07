@@ -48,6 +48,21 @@ export function ReadyRequestSection() {
   const [layout, setLayout] = useLayoutMode("readyRequest", "list");
   const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Total prep (aktif + Riwayat Terkirim) untuk judul yang akan dihapus.
+  // Badge kartu hanya menghitung prep aktif, padahal FK
+  // request_preparations.title_id memakai ON DELETE RESTRICT — jadi prep
+  // historis pun memblokir penghapusan.
+  const [pendingPrepTotal, setPendingPrepTotal] = useState<number | null>(null);
+
+  const openDelete = useCallback(async (r: Row) => {
+    setPendingDelete(r);
+    setPendingPrepTotal(null);
+    const { count } = await sb
+      .from("request_preparations")
+      .select("id", { count: "exact", head: true })
+      .eq("title_id", r.id);
+    setPendingPrepTotal(typeof count === "number" ? count : 0);
+  }, []);
   const gridClass = layoutGridClass(layout);
   const compact = layout === "compact";
   const navigate = useNavigate();
@@ -115,6 +130,12 @@ export function ReadyRequestSection() {
 
   const confirmDelete = useCallback(async () => {
     if (!pendingDelete) return;
+    if (pendingPrepTotal && pendingPrepTotal > 0) {
+      toast.error("Judul tidak bisa dihapus", {
+        description: `Masih terhubung ke ${pendingPrepTotal} paket penyiapan (termasuk Riwayat Terkirim). Hapus atau pindahkan paket-paket itu dulu.`,
+      });
+      return;
+    }
     setDeleting(true);
     try {
       const { error } = await sb.from("request_titles").delete().eq("id", pendingDelete.id);
@@ -123,13 +144,17 @@ export function ReadyRequestSection() {
       setPendingDelete(null);
       await load();
     } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      const isFk = /foreign key|violates|23503/i.test(msg);
       toast.error("Gagal menghapus", {
-        description: e instanceof Error ? e.message : "Coba lagi sebentar.",
+        description: isFk
+          ? "Judul ini masih dipakai oleh data paket penyiapan (termasuk Riwayat Terkirim), jadi tidak bisa dihapus."
+          : msg || "Coba lagi sebentar.",
       });
     } finally {
       setDeleting(false);
     }
-  }, [pendingDelete, load]);
+  }, [pendingDelete, pendingPrepTotal, load]);
 
   const filtered = useMemo(() => {
     if (!rows) return null;
@@ -211,7 +236,7 @@ export function ReadyRequestSection() {
               refreshing={refreshing}
               onRefresh={handleRefresh}
               onSendWa={() => openSendFlow(r, "wa")}
-              onDelete={() => setPendingDelete(r)}
+              onDelete={() => { void openDelete(r); }}
             />
           ))}
         </div>
@@ -223,15 +248,17 @@ export function ReadyRequestSection() {
             <AlertDialogTitle>Hapus judul request?</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDelete?.name}
-              {pendingDelete && pendingDelete.prep_count > 0
-                ? ` — masih ada ${pendingDelete.prep_count} paket aktif. Menghapus judul ini bisa memutus data paket tersebut.`
-                : " — daftar produk pada judul ini ikut terhapus."}
+              {pendingPrepTotal === null
+                ? " — memeriksa data paket terkait…"
+                : pendingPrepTotal > 0
+                  ? ` — judul ini masih terhubung ke ${pendingPrepTotal} paket penyiapan (termasuk Riwayat Terkirim), jadi belum bisa dihapus. Hapus paket-paket itu dulu.`
+                  : " — daftar produk pada judul ini ikut terhapus."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              disabled={deleting}
+              disabled={deleting || pendingPrepTotal === null || pendingPrepTotal > 0}
               onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
             >
               {deleting ? "Menghapus…" : "Hapus"}
