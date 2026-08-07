@@ -6,7 +6,7 @@
  * SSOT yang sama dengan `party_balance_v1` (`party_balance_events_v1`).
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownCircle, ArrowUpCircle, ChevronRight, RefreshCw, Search, X } from "lucide-react";
 import { rupiah } from "@/lib/stock-format";
