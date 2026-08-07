@@ -60,6 +60,7 @@ function PanggilanPage() {
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "missed" | "incoming" | "outgoing" | "video">("all");
+  const [sort, setSort] = useState<"newest" | "oldest">("newest");
   const calls = useQuery({
     queryKey: ["chat-calls", myId ?? "_"],
     queryFn: () => listMyCalls(100),
