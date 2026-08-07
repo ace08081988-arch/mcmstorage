@@ -35,6 +35,11 @@ function AuthLock() {
   // padding bottom nav supaya dokumen tidak ikut men-scroll — inilah
   // penyebab header percakapan terlihat naik-turun saat menggulir.
   const immersive = /^\/chat\/[^/]+/.test(pathname);
+  // Daftar percakapan (/chat) juga tampil layar penuh: AppHeader
+  // disembunyikan supaya tidak ada header ganda ("Chat" + "Ace Chat")
+  // yang memangkas tinggi layar. Bedanya dengan `immersive`: halaman ini
+  // TETAP memakai scroll dokumen normal.
+  const chatListFull = /^\/chat\/?$/.test(pathname);
   const [locked, setLockedState] = useState(false);
   const [cfgVer, setCfgVer] = useState(0);
   // H23: keep an always-current uid in a ref so pagehide/beforeunload
@@ -132,7 +137,7 @@ function AuthLock() {
       <div className={immersive ? "flex h-[100dvh] w-full overflow-hidden" : "flex min-h-[100dvh] w-full"}>
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
-          {immersive ? null : <AppHeader />}
+          {immersive || chatListFull ? null : <AppHeader />}
           <div
             id="konten-utama"
             tabIndex={-1}
