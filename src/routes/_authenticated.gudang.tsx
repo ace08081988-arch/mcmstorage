@@ -354,9 +354,12 @@ function GudangLoadingSkeleton() {
 function GudangLoadProgress({
   wave1Done,
   wave2Done,
+  subtle = false,
 }: {
   wave1Done: boolean;
   wave2Done: boolean;
+  /** Data lama sudah tampil — cukup garis tipis, jangan banner yang menggeser layout. */
+  subtle?: boolean;
 }) {
   if (wave1Done && wave2Done) return null;
   const step = wave1Done ? 2 : 1;
@@ -364,6 +367,18 @@ function GudangLoadProgress({
   const label = wave1Done
     ? "Gel-2 · memuat pembelian, piutang, pesanan…"
     : "Gel-1 · memuat stok & supplier…";
+  if (subtle) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Menyegarkan data"
+        className="h-0.5 w-full overflow-hidden rounded-full bg-muted/50"
+      >
+        <div className="h-full w-1/3 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-primary/70" />
+      </div>
+    );
+  }
   return (
     <div
       role="status"
@@ -490,6 +505,9 @@ function GudangPage() {
   // di gelombang 2. Sebelum gelombang 2 selesai kita tampilkan skeleton di
   // tab tersebut supaya user tidak menyimpulkan datanya kosong.
   const [secondaryLoading, setSecondaryLoading] = useState(true);
+  // `uid` awalnya null lalu terisi setelah sesi terbaca. Tanpa penanda ini,
+  // efek pemuatan jalan dua kali (null → uid) sehingga skeleton berkedip.
+  const [uidReady, setUidReady] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -497,10 +515,13 @@ function GudangPage() {
       .then(({ data }) => {
         if (!alive) return;
         setUid(data.session?.user?.id ?? null);
+        setUidReady(true);
       })
       .catch((err) => {
         console.warn("[gudang] session lookup timeout, load tanpa cache user", err);
-        if (alive) setUid(null);
+        if (!alive) return;
+        setUid(null);
+        setUidReady(true);
       });
     return () => { alive = false; };
   }, []);
@@ -637,6 +658,7 @@ function GudangPage() {
   }
 
   useEffect(() => {
+    if (!uidReady) return;
     if (uid) {
     // Hidrasi sinkron dari cache sesi bila ada — paint instan.
     // `reloadAllNow` kemudian tetap dijalankan sebagai revalidasi (SWR).
@@ -656,7 +678,8 @@ function GudangPage() {
       }
     }
     reloadAllNow();
-  }, [uid]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, uidReady]);
 
   useEffect(() => {
     return () => {
@@ -714,6 +737,25 @@ function GudangPage() {
     { k: "piutang", label: "Piutang", icon: Wallet },
     { k: "riwayat", label: "Riwayat", icon: History },
   ] as const;
+
+  // Skeleton hanya untuk kondisi "belum ada apa-apa". Saat revalidasi
+  // (SWR / setelah mutasi) data lama tetap tampil supaya tidak berkedip.
+  const hasPrimaryData = items.length > 0 || suppliers.length > 0 || sales.length > 0;
+  const hasSecondaryData =
+    purchases.length > 0 ||
+    payments.length > 0 ||
+    customers.length > 0 ||
+    custPayments.length > 0 ||
+    orders.length > 0;
+  const showPrimarySkeleton = loading && !hasPrimaryData;
+  const isSecondaryTab =
+    tab === "jual" || tab === "pesanan" || tab === "hutang" ||
+    tab === "pelanggan" || tab === "piutang" || tab === "riwayat";
+  const showSecondarySkeleton =
+    !showPrimarySkeleton && isSecondaryTab && secondaryLoading && !hasSecondaryData;
+  const showSkeleton = showPrimarySkeleton || showSecondarySkeleton;
+  // Data lama tetap dipakai selama revalidasi; hanya indikator halus.
+  const revalidating = !showSkeleton && (loading || (isSecondaryTab && secondaryLoading));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground md:flex">
@@ -778,32 +820,36 @@ function GudangPage() {
             label="Total Produk"
             value={invSummary.totalProducts}
             tone="primary"
-            loading={loading}
+            loading={showPrimarySkeleton}
           />
           <SummaryCard
             icon={AlertTriangle}
             label="Stok Menipis"
             value={invSummary.lowStock}
             tone="warning"
-            loading={loading}
+            loading={showPrimarySkeleton}
           />
           <SummaryCard
             icon={PackageX}
             label="Stok Habis"
             value={invSummary.outOfStock}
             tone="danger"
-            loading={loading}
+            loading={showPrimarySkeleton}
           />
           <SummaryCard
             icon={Truck}
             label="Supplier"
             value={invSummary.totalSuppliers}
             tone="info"
-            loading={loading}
+            loading={showPrimarySkeleton}
           />
         </section>
 
-        <GudangLoadProgress wave1Done={!loading} wave2Done={!secondaryLoading} />
+        <GudangLoadProgress
+          wave1Done={!loading}
+          wave2Done={!secondaryLoading}
+          subtle={revalidating}
+        />
 
         {lastCrash && (
           <div
@@ -852,13 +898,17 @@ function GudangPage() {
           </div>
         )}
 
-        {loading && <GudangLoadingSkeleton />}
-        {!loading && secondaryLoading &&
-          (tab === "jual" || tab === "pesanan" || tab === "hutang" ||
-            tab === "pelanggan" || tab === "piutang" || tab === "riwayat") && (
-          <GudangLoadingSkeleton />
-        )}
+        {showSkeleton && <GudangLoadingSkeleton />}
 
+        <div
+          className={
+            showSkeleton
+              ? "hidden"
+              : "animate-in fade-in duration-200 space-ms-3" +
+                (revalidating ? " opacity-90 transition-opacity" : "")
+          }
+          aria-busy={revalidating || undefined}
+        >
         {tab === "stok" && (
           <StokTab
             items={items}
@@ -874,12 +924,12 @@ function GudangPage() {
           <BeliTab key={beliPresetKey} suppliers={suppliers} items={items} uid={uid} onChanged={reloadAll} defaultPayment={beliDefaultPayment} />
         )}
         {tab === "jual" && (
-          !secondaryLoading && <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
+          <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "pesanan" && (
-          !secondaryLoading && <PesananTab orders={orders} items={items} customers={customers} uid={uid} onChanged={reloadAll} />
+          <PesananTab orders={orders} items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
-        {tab === "hutang" && !secondaryLoading && (
+        {tab === "hutang" && (
           <HutangTab
             purchases={purchases}
             payments={payments}
@@ -900,9 +950,9 @@ function GudangPage() {
           />
         )}
         {tab === "pelanggan" && (
-          !secondaryLoading && <CustomerTab customers={customers} uid={uid} onChanged={reloadAll} />
+          <CustomerTab customers={customers} uid={uid} onChanged={reloadAll} />
         )}
-        {tab === "piutang" && !secondaryLoading && (
+        {tab === "piutang" && (
           <PiutangTab
             customers={customers}
             sales={sales}
@@ -926,7 +976,7 @@ function GudangPage() {
             }
           />
         )}
-        {tab === "riwayat" && !secondaryLoading && (
+        {tab === "riwayat" && (
           <RiwayatTab
             purchases={purchases}
             sales={sales}
@@ -937,6 +987,7 @@ function GudangPage() {
             totalCost={totalCost}
           />
         )}
+        </div>
         </PageContainer>
       </div>
     </div>
