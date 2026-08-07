@@ -9,7 +9,7 @@
   "background_color": "#064e3b",
   "theme_color": "#0a7a4a",
   "icons": [
-    { "src": "/mcm-chat-icon.png?v=20260806", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/mcm-chat-icon.png?v=20260806", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/mcm-chat-icon.png?v=20260807", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/mcm-chat-icon.png?v=20260807", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
