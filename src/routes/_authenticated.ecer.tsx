@@ -4129,11 +4129,145 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
         </div>
       )}
 
+      <Dialog open={!!detail} onOpenChange={(o) => { if (!o) setDetail(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-ms-2">
+              <Send className="h-4 w-4 text-primary" aria-hidden />
+              Detail histori pengiriman
+            </DialogTitle>
+            <DialogDescription>
+              Rincian lengkap catatan verifikasi &amp; pengiriman paket ecer ini.
+            </DialogDescription>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-ms-2 text-ms-2xs">
+              <div className="flex flex-wrap items-center gap-ms-1">
+                <span className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${outcomeStyle(detail.outcome)}`}>
+                  {outcomeLabel(detail.outcome)}
+                </span>
+                <span className="rounded border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {channelLabel(detail.channel)}
+                </span>
+                <span className="text-muted-foreground">
+                  {new Date(detail.created_at).toLocaleString("id-ID", {
+                    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-ms-2 space-y-ms-1">
+                <div className="flex justify-between gap-ms-2">
+                  <span className="text-muted-foreground">Penerima</span>
+                  <span className="font-medium text-right">{detail.party_name || "Tanpa nama"}</span>
+                </div>
+                {detail.party_contact && (
+                  <div className="flex justify-between gap-ms-2">
+                    <span className="text-muted-foreground">Kontak</span>
+                    <span className="text-right tabular-nums">{detail.party_contact}</span>
+                  </div>
+                )}
+                <div className="flex justify-between gap-ms-2">
+                  <span className="text-muted-foreground">Isi paket</span>
+                  <span className="text-right">{detail.prep_count} kotak · {detail.photo_count} foto</span>
+                </div>
+                {detail.total_amount != null && (
+                  <div className="flex justify-between gap-ms-2">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="text-right font-semibold tabular-nums">{rupiah(Number(detail.total_amount))}</span>
+                  </div>
+                )}
+                {detail.paid_amount != null && (
+                  <div className="flex justify-between gap-ms-2">
+                    <span className="text-muted-foreground">Dibayar</span>
+                    <span className="text-right tabular-nums">{rupiah(Number(detail.paid_amount))}</span>
+                  </div>
+                )}
+                {detail.payment_method && (
+                  <div className="flex justify-between gap-ms-2">
+                    <span className="text-muted-foreground">Pembayaran</span>
+                    <span className="text-right">
+                      {detail.payment_method === "hutang" ? "Hutang"
+                        : detail.payment_method === "partial" ? "Bayar sebagian"
+                        : detail.payment_method === "kas" ? "Lunas" : detail.payment_method}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {detail.note && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Catatan</div>
+                  <div className="whitespace-pre-wrap break-words">{detail.note}</div>
+                </div>
+              )}
+              {detail.error_message && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-destructive">Error</div>
+                  <div className="whitespace-pre-wrap break-words text-destructive">{detail.error_message}</div>
+                </div>
+              )}
+              {detail.caption_preview && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Pesan terkirim</div>
+                  <pre className="mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-muted/40 p-ms-1.5 font-sans text-[11px] leading-relaxed">
+{detail.caption_preview}
+                  </pre>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-ms-1.5 pt-ms-1">
+                {detail.caption_preview && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => { void copyText(detail.caption_preview ?? ""); toast.success("Pesan disalin"); }}
+                  >
+                    Salin pesan
+                  </Button>
+                )}
+                {detail.party_contact && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => { void copyText(detail.party_contact ?? ""); toast.success("Kontak disalin"); }}
+                    >
+                      Salin kontak
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        window.open(
+                          buildWhatsAppUrl(detail.party_contact ?? "", detail.caption_preview ?? ""),
+                          "_blank",
+                          "noopener",
+                        );
+                      }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Buka WhatsApp
+                    </Button>
+                  </>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setPendingDelete(detail)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Hapus
+                </Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDetail(null)}>Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog
         open={!!pendingDelete}
         onOpenChange={(o) => { if (!o && !deleting) setPendingDelete(null); }}
       >
-        {/* dialog hapus di bawah */}
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-ms-2">
