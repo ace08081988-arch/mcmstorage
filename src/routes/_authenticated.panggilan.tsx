@@ -61,6 +61,8 @@ function PanggilanPage() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "missed" | "incoming" | "outgoing" | "video">("all");
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const calls = useQuery({
     queryKey: ["chat-calls", myId ?? "_"],
     queryFn: () => listMyCalls(100),
@@ -142,8 +144,13 @@ function PanggilanPage() {
   const nameMap = profiles.data ?? {};
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
+    const fromTs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+    const toTs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
     const filtered = allRows.filter((c) => {
       const outgoing = c.caller_id === myId;
+      const ts = new Date(c.started_at).getTime();
+      if (fromTs !== null && ts < fromTs) return false;
+      if (toTs !== null && ts > toTs) return false;
       if (filter === "missed" && !(c.status === "missed" || (c.status === "declined" && !outgoing))) return false;
       if (filter === "incoming" && outgoing) return false;
       if (filter === "outgoing" && !outgoing) return false;
@@ -158,8 +165,8 @@ function PanggilanPage() {
       const tb = new Date(b.started_at).getTime();
       return sort === "newest" ? tb - ta : ta - tb;
     });
-  }, [allRows, myId, filter, q, nameMap, sort]);
-  const isFiltered = q.trim().length > 0 || filter !== "all";
+  }, [allRows, myId, filter, q, nameMap, sort, dateFrom, dateTo]);
+  const isFiltered = q.trim().length > 0 || filter !== "all" || !!dateFrom || !!dateTo;
   const FILTERS: { key: typeof filter; label: string }[] = [
     { key: "all", label: "Semua" },
     { key: "missed", label: "Tak terjawab" },
@@ -247,6 +254,38 @@ function PanggilanPage() {
               )}
               {sort === "newest" ? "Terbaru" : "Terlama"}
             </button>
+          </div>
+          <div className="flex items-center gap-ms-1.5 pt-ms-2">
+            <Input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              aria-label="Tanggal mulai"
+              className="h-10 flex-1 rounded-full text-ms-xs"
+            />
+            <span className="text-ms-xs text-muted-foreground">–</span>
+            <Input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              aria-label="Tanggal akhir"
+              className="h-10 flex-1 rounded-full text-ms-xs"
+            />
+            {dateFrom || dateTo ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                aria-label="Bersihkan rentang tanggal"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted touch-manipulation"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
