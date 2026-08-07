@@ -161,6 +161,20 @@ function debtStatusLine(total: number, paid: number): string {
 
 function HutangPiutangPage() {
   const [uid, setUid] = useState<string | null>(null);
+  // Tinggi header halaman diukur nyata (font besar / WebView bisa berbeda)
+  // supaya baris header kolom yang sticky berhenti tepat di bawahnya.
+  const pageHeaderRef = useRef<HTMLElement | null>(null);
+  const [headerH, setHeaderH] = useState(64);
+  useEffect(() => {
+    const el = pageHeaderRef.current;
+    if (!el) return;
+    const apply = () => setHeaderH(Math.round(el.getBoundingClientRect().height));
+    apply();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [tab, setTab] = useState<"hutang" | "piutang" | "laporan">("hutang");
   const [debts, setDebts] = useState<Debt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -576,8 +590,9 @@ function HutangPiutangPage() {
     <div
       className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30"
       data-press-scope="on"
+      style={{ ["--hp-sticky-top" as string]: `${headerH}px` }}
     >
-      <header className="app-sticky-header">
+      <header className="app-sticky-header" ref={pageHeaderRef}>
         <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
           <Link
             to="/"
@@ -858,6 +873,19 @@ function HutangPiutangPage() {
                   </Button>
                 </div>
               ) : (
+                <>
+                  {/* Header kolom ala tabel — sticky di bawah header halaman
+                      supaya arti kolom tetap terbaca saat daftar panjang
+                      digulir (penting di WebView layar kecil). */}
+                  <div
+                    role="row"
+                    aria-hidden="true"
+                    className="sticky z-20 -mx-ms-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-3 rounded-xl border bg-card/95 px-ms-3.5 py-ms-2 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground shadow-xs backdrop-blur supports-[backdrop-filter]:bg-card/80"
+                    style={{ top: "var(--hp-sticky-top, 64px)" }}
+                  >
+                    <span className="truncate">Kontak / catatan</span>
+                    <span className="shrink-0 text-right">Jumlah · sisa</span>
+                  </div>
                 <VirtualizedList
                   cacheKey="hutang-parties"
                   items={groupedByParty}
@@ -957,13 +985,16 @@ function HutangPiutangPage() {
                         key={d.id}
                         className={
                           "px-ms-3.5 py-ms-3 text-ms-sm transition-colors " +
+                          "min-h-[3.5rem] " +
                           (overdue
                             ? "bg-destructive/[0.04] hover:bg-destructive/[0.07]"
                             : "hover:bg-muted/30")
                         }
                       >
-                        <div className="flex items-start gap-ms-3">
-                          <div className="min-w-0 flex-1">
+                        {/* Kolom nilai turun ke bawah pada layar sangat sempit
+                            (<360px) supaya nominal tidak terpotong. */}
+                        <div className="grid grid-cols-1 items-start gap-x-ms-3 gap-y-ms-1.5 min-[360px]:grid-cols-[minmax(0,1fr)_auto]">
+                          <div className="min-w-0">
                             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                               <span className="min-w-0 max-w-full truncate font-medium">
                                 {d.party_name}
@@ -998,7 +1029,7 @@ function HutangPiutangPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="shrink-0 whitespace-nowrap text-right leading-tight">
+                          <div className="min-w-0 shrink-0 whitespace-nowrap leading-tight max-[359px]:flex max-[359px]:flex-wrap max-[359px]:items-baseline max-[359px]:gap-x-ms-2 min-[360px]:text-right">
                             <div className="font-semibold tabular-nums tracking-tight">
                               {rupiah(Number(d.amount))}
                             </div>
@@ -1076,6 +1107,7 @@ function HutangPiutangPage() {
                     );
                   }}
                 />
+                </>
               )}
 
               <TxOnlyPartyCards
