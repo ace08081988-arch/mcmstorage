@@ -3949,12 +3949,12 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const statusOptions = useMemo(() => {
     const counts = new Map<string, number>();
     for (const r of rows) counts.set(r.outcome, (counts.get(r.outcome) ?? 0) + 1);
-    return [{ key: "all", label: "Semua", count: rows.length }].concat(
+    return [{ key: "all", label: "Semua", count: total ?? rows.length }].concat(
       Array.from(counts.entries())
         .sort((a, b) => outcomeRank(a[0]) - outcomeRank(b[0]))
         .map(([key, count]) => ({ key, label: outcomeLabel(key), count })),
     );
-  }, [rows]);
+  }, [rows, total]);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -3998,9 +3998,9 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
       >
         <ChevronRight className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
         Histori Verifikasi & Pengiriman
-        {rows.length > 0 && (
+        {(total ?? rows.length) > 0 && (
           <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium normal-case text-muted-foreground">
-            {rows.length}
+            {total ?? rows.length}
           </span>
         )}
         <span className="ml-auto flex items-center gap-ms-1 normal-case">
@@ -4137,6 +4137,25 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
                 </div>
               );
             })
+          )}
+          {rows.length > 0 && (
+            <div ref={sentinelRef} className="pt-ms-1">
+              {hasMore ? (
+                <button
+                  type="button"
+                  onClick={() => void loadMore()}
+                  disabled={loadingMore}
+                  className="flex w-full items-center justify-center gap-ms-1 rounded-md border border-dashed bg-muted/20 px-ms-2 py-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+                >
+                  {loadingMore ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                  {loadingMore ? "Memuat…" : "Muat lebih banyak"}
+                </button>
+              ) : (
+                <div className="text-center text-[10px] text-muted-foreground">
+                  Menampilkan semua {total ?? rows.length} catatan.
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
