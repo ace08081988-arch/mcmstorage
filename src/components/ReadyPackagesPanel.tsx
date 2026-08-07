@@ -126,9 +126,18 @@ export function ReadyPackagesPanel({
   });
   const list = tab === "ready" ? pkgs.filter((p) => p.status === "ready") : historyFiltered;
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-ms-3" onClick={onClose}>
-      <div className="flex h-[95vh] w-full max-w-2xl flex-col rounded-t-lg sm:rounded-lg border bg-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Paket siap kirim"
+        className="flex h-[95vh] w-full max-w-2xl flex-col rounded-t-lg sm:rounded-lg border bg-card"
+        onClick={(e) => e.stopPropagation()}
+      >
         <header className="flex items-center gap-ms-2 border-b px-ms-4 py-ms-3">
           <div className="min-w-0 flex-1">
             <div className="truncate text-ms-sm font-semibold">📦 Paket Siap Kirim</div>
