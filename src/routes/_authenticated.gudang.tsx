@@ -490,6 +490,9 @@ function GudangPage() {
   // di gelombang 2. Sebelum gelombang 2 selesai kita tampilkan skeleton di
   // tab tersebut supaya user tidak menyimpulkan datanya kosong.
   const [secondaryLoading, setSecondaryLoading] = useState(true);
+  // `uid` awalnya null lalu terisi setelah sesi terbaca. Tanpa penanda ini,
+  // efek pemuatan jalan dua kali (null → uid) sehingga skeleton berkedip.
+  const [uidReady, setUidReady] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -497,10 +500,13 @@ function GudangPage() {
       .then(({ data }) => {
         if (!alive) return;
         setUid(data.session?.user?.id ?? null);
+        setUidReady(true);
       })
       .catch((err) => {
         console.warn("[gudang] session lookup timeout, load tanpa cache user", err);
-        if (alive) setUid(null);
+        if (!alive) return;
+        setUid(null);
+        setUidReady(true);
       });
     return () => { alive = false; };
   }, []);
