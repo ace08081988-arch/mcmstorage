@@ -1,10 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
-import { listMyCalls, formatCallDuration, createCallRow, type CallRow } from "@/lib/calls";
+import {
+  listMyCalls,
+  formatCallDuration,
+  createCallRow,
+  hideCalls,
+  hideAllCalls,
+  type CallRow,
+} from "@/lib/calls";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { dispatchStartCall } from "@/components/chat/CallHost";
 import { ringUser } from "@/lib/webrtc";
 import { toast } from "sonner";
@@ -36,6 +53,10 @@ function timeLabel(iso: string): string {
 function PanggilanPage() {
   const { data: myId } = useMyUserId();
   const [callingId, setCallingId] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const [pendingDelete, setPendingDelete] = useState<CallRow | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
+  const [busy, setBusy] = useState(false);
   const calls = useQuery({
     queryKey: ["chat-calls", myId ?? "_"],
     queryFn: () => listMyCalls(100),
@@ -130,6 +151,17 @@ function PanggilanPage() {
           <Link to="/chat"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
         <h1 className="text-ms-lg font-semibold">Panggilan</h1>
+        {rowsCount > 0 ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-auto h-11 w-11 rounded-full touch-manipulation"
+            aria-label="Hapus semua riwayat panggilan"
+            onClick={() => setConfirmClearAll(true)}
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        ) : null}
       </header>
 
       <div className="flex-1 pb-[var(--chat-nav-h)]">
@@ -160,6 +192,7 @@ function PanggilanPage() {
                 myId={myId ?? null}
                 nameMap={profiles.data ?? {}}
                 isCalling={callingId === c.id}
+                onDelete={(r) => setPendingDelete(r)}
                 onStartCall={async (r) => {
                   if (!myId) return;
                   const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
@@ -197,18 +230,92 @@ function PanggilanPage() {
       </div>
 
       <ChatBottomNav />
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus riwayat panggilan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Entri ini hanya dihapus dari daftar Anda. Lawan bicara tetap
+              melihat riwayat panggilannya.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={async (e) => {
+                e.preventDefault();
+                const row = pendingDelete;
+                if (!row) return;
+                setBusy(true);
+                try {
+                  await hideCalls([row.id]);
+                  await qc.invalidateQueries({ queryKey: ["chat-calls"] });
+                  toast.success("Riwayat panggilan dihapus");
+                  setPendingDelete(null);
+                } catch {
+                  toast.error("Gagal menghapus riwayat");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmClearAll} onOpenChange={setConfirmClearAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus semua riwayat panggilan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Seluruh daftar panggilan Anda akan dikosongkan. Tindakan ini tidak
+              memengaruhi riwayat milik lawan bicara.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={async (e) => {
+                e.preventDefault();
+                setBusy(true);
+                try {
+                  await hideAllCalls();
+                  await qc.invalidateQueries({ queryKey: ["chat-calls"] });
+                  toast.success("Riwayat panggilan dikosongkan");
+                  setConfirmClearAll(false);
+                } catch {
+                  toast.error("Gagal mengosongkan riwayat");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Hapus semua
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
 
 function CallRowItem({
-  row, myId, nameMap, isCalling, onStartCall,
+  row, myId, nameMap, isCalling, onStartCall, onDelete,
 }: {
   row: CallRow;
   myId: string | null;
   nameMap: Record<string, string>;
   isCalling: boolean;
   onStartCall: (row: CallRow) => void | Promise<void>;
+  onDelete: (row: CallRow) => void;
 }) {
   const outgoing = row.caller_id === myId;
   const peerId = outgoing ? row.callee_id : row.caller_id;
@@ -269,6 +376,14 @@ function CallRowItem({
         ) : (
           <Icon className={`h-5 w-5 ${row.kind === "video" ? "text-primary" : "text-muted-foreground"}`} />
         )}
+      </button>
+      <button
+        type="button"
+        onClick={() => onDelete(row)}
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors touch-manipulation hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20"
+        aria-label={`Hapus riwayat panggilan dengan ${peerName}`}
+      >
+        <Trash2 className="h-[18px] w-[18px]" />
       </button>
     </li>
   );
