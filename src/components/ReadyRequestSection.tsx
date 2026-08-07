@@ -361,6 +361,11 @@ export function ReadyRequestSection() {
                   </li>
                   <li>• Hapus atau pindahkan paket-paket itu dulu lewat halaman Request, baru judul bisa dihapus.</li>
                   <li>• Hutang, piutang, dan stok tidak berubah oleh aksi ini.</li>
+                  <li>
+                    • Alternatif: <strong className="text-foreground">Nonaktifkan</strong> — judul
+                    disembunyikan dari daftar, semua riwayat paket tetap utuh, dan bisa diaktifkan
+                    lagi kapan saja.
+                  </li>
                 </>
               ) : (
                 <>
@@ -380,6 +385,20 @@ export function ReadyRequestSection() {
             <AlertDialogCancel disabled={deleting}>
               {pendingPrepTotal !== null && pendingPrepTotal > 0 ? "Tutup" : "Batal"}
             </AlertDialogCancel>
+            {pendingPrepTotal !== null && pendingPrepTotal > 0 && pendingDelete && (
+              <button
+                type="button"
+                disabled={archiving}
+                onClick={() => { void setArchived(pendingDelete, !pendingDelete.archived_at); }}
+                className="inline-flex min-h-[var(--ms-tap)] items-center justify-center rounded-md border border-primary/40 bg-primary/10 px-ms-3 text-ms-xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-60"
+              >
+                {archiving
+                  ? "Menyimpan…"
+                  : pendingDelete.archived_at
+                    ? "Aktifkan kembali"
+                    : "Nonaktifkan"}
+              </button>
+            )}
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleting || pendingPrepTotal === null || pendingPrepTotal > 0}
