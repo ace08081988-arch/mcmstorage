@@ -77,6 +77,7 @@ vi.mock("@/integrations/supabase/client", () => {
 
 // Import HARUS setelah vi.mock supaya hook memakai supabase yang di-mock.
 import { useAdminStatus } from "../use-is-admin";
+import { __resetCurrentUserCacheForTests } from "@/lib/current-user";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function emitAuth(event: AuthEvent, userId: string | null) {
@@ -104,6 +105,9 @@ beforeEach(() => {
   listeners = [];
   rpcImpl = async () => ({ data: true, error: null });
   document.body.innerHTML = "";
+  // Cache identitas user hidup di level modul — reset supaya hasil test
+  // sebelumnya (mis. SIGNED_OUT) tidak bocor ke test berikutnya.
+  __resetCurrentUserCacheForTests();
 });
 
 afterEach(() => {

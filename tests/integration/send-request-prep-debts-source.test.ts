@@ -40,32 +40,32 @@ function latestDebtsSourceCheck(): string | null {
   return last;
 }
 
-/** Ambil body RPC `send_request_prep_to_customer` versi terbaru. */
-function latestRpcBody(): string | null {
-  const re =
-    /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.send_request_prep_to_customer[\s\S]*?\$function\$([\s\S]*?)\$function\$/gi;
-  const re2 =
-    /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.send_request_prep_to_customer[\s\S]*?AS\s+\$\$([\s\S]*?)\$\$/gi;
+/**
+ * Ambil body RPC versi terbaru — mendukung delimiter dollar-quote apa pun
+ * (`$$`, `$fn$`, `$function$`) dan memastikan nama fungsi cocok persis
+ * (diikuti `(`), supaya tidak keliru menangkap fungsi lain di migrasi
+ * yang kebetulan menyebut nama ini di komentar/GRANT.
+ */
+function latestFunctionBody(fnName: string): string | null {
+  const re = new RegExp(
+    String.raw`CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.${fnName}\s*\(` +
+      String.raw`[\s\S]*?AS\s+(\$[A-Za-z_]*\$)([\s\S]*?)\1`,
+    "gi",
+  );
   let last: string | null = null;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(allSql)) !== null) last = m[1];
-  if (last) return last;
-  while ((m = re2.exec(allSql)) !== null) last = m[1];
+  while ((m = re.exec(allSql)) !== null) last = m[2];
   return last;
+}
+
+/** Ambil body RPC `send_request_prep_to_customer` versi terbaru. */
+function latestRpcBody(): string | null {
+  return latestFunctionBody("send_request_prep_to_customer");
 }
 
 /** Ambil body RPC `send_ecer_preps_to_customer` versi terbaru. */
 function latestEcerRpcBody(): string | null {
-  const re =
-    /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.send_ecer_preps_to_customer[\s\S]*?\$function\$([\s\S]*?)\$function\$/gi;
-  const re2 =
-    /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.send_ecer_preps_to_customer[\s\S]*?AS\s+\$\$([\s\S]*?)\$\$/gi;
-  let last: string | null = null;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(allSql)) !== null) last = m[1];
-  if (last) return last;
-  while ((m = re2.exec(allSql)) !== null) last = m[1];
-  return last;
+  return latestFunctionBody("send_ecer_preps_to_customer");
 }
 
 describe("send_request_prep_to_customer × debts_source_check", () => {
