@@ -53,15 +53,25 @@ export function ReadyRequestSection() {
   // request_preparations.title_id memakai ON DELETE RESTRICT — jadi prep
   // historis pun memblokir penghapusan.
   const [pendingPrepTotal, setPendingPrepTotal] = useState<number | null>(null);
+  // Rincian: paket aktif (belum terkirim) vs Riwayat Terkirim, supaya dialog
+  // menyebut angka tepat, bukan sekadar total gabungan.
+  const [pendingBreakdown, setPendingBreakdown] = useState<{
+    active: number;
+    sent: number;
+  } | null>(null);
 
   const openDelete = useCallback(async (r: Row) => {
     setPendingDelete(r);
     setPendingPrepTotal(null);
-    const { count } = await sb
+    setPendingBreakdown(null);
+    const { data } = await sb
       .from("request_preparations")
-      .select("id", { count: "exact", head: true })
+      .select("id,sold_at")
       .eq("title_id", r.id);
-    setPendingPrepTotal(typeof count === "number" ? count : 0);
+    const preps = (data ?? []) as Array<{ sold_at: string | null }>;
+    const active = countActivePreps(preps);
+    setPendingBreakdown({ active, sent: preps.length - active });
+    setPendingPrepTotal(preps.length);
   }, []);
   const gridClass = layoutGridClass(layout);
   const compact = layout === "compact";
