@@ -212,13 +212,44 @@ export function ReadyRequestSection() {
       setPendingDelete(null);
       await load();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      const isFk = /foreign key|violates|23503/i.test(msg);
-      toast.error("Gagal menghapus", {
-        description: isFk
-          ? "Judul ini masih dipakai oleh data paket penyiapan (termasuk Riwayat Terkirim), jadi tidak bisa dihapus."
-          : msg || "Coba lagi sebentar.",
-      });
+      const raw = e as { code?: string; message?: string } | null;
+      const msg = String(raw?.message ?? "");
+      const code = String(raw?.code ?? "");
+      const isFk = code === "23503" || /foreign key|violates/i.test(msg);
+      const isPerm = code === "42501" || /permission|row-level security|rls/i.test(msg);
+      if (isFk) {
+        // Angka bisa berubah sejak dialog dibuka (paket baru masuk) — segarkan
+        // hitungan supaya pesannya akurat, bukan sekadar generik.
+        let recheck: { active: number; sent: number; total: number } | null = null;
+        try {
+          const { data } = await sb
+            .from("request_preparations")
+            .select("id,sold_at")
+            .eq("title_id", pendingDelete.id);
+          const preps = (data ?? []) as Array<{ sold_at: string | null }>;
+          const active = countActivePreps(preps);
+          recheck = { active, sent: preps.length - active, total: preps.length };
+          setPendingBreakdown({ active, sent: recheck.sent });
+          setPendingPrepTotal(preps.length);
+        } catch {
+          recheck = null;
+        }
+        const rincian = recheck
+          ? `${recheck.total} paket masih memakai judul ini (${recheck.active} paket aktif, ${recheck.sent} riwayat terkirim).`
+          : "Masih ada paket penyiapan yang memakai judul ini.";
+        toast.error("Judul masih terpakai, belum bisa dihapus", {
+          description: `${rincian} Hapus atau pindahkan paket-paket itu dulu di halaman Request, atau pilih “Nonaktifkan” untuk menyembunyikan judul tanpa kehilangan riwayat.`,
+          duration: 8000,
+        });
+      } else if (isPerm) {
+        toast.error("Tidak punya akses menghapus judul ini", {
+          description: "Coba keluar lalu masuk lagi. Kalau masih sama, hubungi admin akun.",
+        });
+      } else {
+        toast.error("Gagal menghapus judul", {
+          description: "Sambungan ke server bermasalah. Coba lagi sebentar lagi.",
+        });
+      }
     } finally {
       setDeleting(false);
     }
