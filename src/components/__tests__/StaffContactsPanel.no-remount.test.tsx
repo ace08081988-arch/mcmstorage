@@ -140,7 +140,10 @@ describe("StaffContactsPanel — refresh manual", () => {
     act(() => refreshBtn.click());
 
     // Saat async load berjalan, skeleton UI muncul supaya tidak terlihat reload "terus".
-    const skeletons = document.querySelectorAll('[class*="animate-pulse"]');
+    // Skeleton memakai kelas `skeleton-a11y` (denyut mati saat reduce-motion).
+    const skeletons = document.querySelectorAll(
+      '[class*="skeleton-a11y"], [class*="animate-pulse"]',
+    );
     expect(skeletons.length).toBeGreaterThan(0);
 
     await flush();

@@ -83,6 +83,17 @@ export function peekCachedUserId(): string | null {
   return null;
 }
 
+/**
+ * Reset cache + listener flag. Khusus dipakai test agar state modul tidak
+ * bocor antar-kasus uji (di produksi cache sengaja hidup selama sesi).
+ */
+export function __resetCurrentUserCacheForTests(): void {
+  cached = undefined;
+  inflight = null;
+  listenersInstalled = false;
+  subscribers.clear();
+}
+
 /** Hook praktis: `{ userId, ready }`. */
 export function useCurrentUserId(): { userId: string | null; ready: boolean } {
   const [userId, setUserId] = useState<string | null>(() => peekCachedUserId());

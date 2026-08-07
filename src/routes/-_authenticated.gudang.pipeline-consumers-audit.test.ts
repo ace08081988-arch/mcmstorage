@@ -39,7 +39,7 @@ function isProductionFile(p: string): boolean {
   if (/\.test\.(ts|tsx)$/.test(p)) return false;
   if (/[\\/]beli-(derived|warnings)\.ts$/.test(p)) return false;
   // Test helper / spy — bukan konsumen produksi walaupun bukan file `.test.ts`.
-  if (/[\\/]_authenticated\.gudang\.strict-compute-spy\.ts$/.test(p)) return false;
+  if (/[\\/]-?_authenticated\.gudang\.strict-compute-spy\.ts$/.test(p)) return false;
   return true;
 }
 
@@ -56,10 +56,10 @@ function pipelineConsumers(): string[] {
 
 /** Suite refetch-stability yang WAJIB ada untuk setiap konsumen. */
 const REQUIRED_SUITES = [
-  "src/routes/_authenticated.gudang.effective-fields-refetch.test.ts",
-  "src/routes/_authenticated.gudang.effective-fields-deepequal-refetch.test.ts",
-  "src/routes/_authenticated.gudang.selecteditem-burst-refetch.test.ts",
-  "src/routes/_authenticated.gudang.warnings-only-recompute.test.ts",
+  "src/routes/-_authenticated.gudang.effective-fields-refetch.test.ts",
+  "src/routes/-_authenticated.gudang.effective-fields-deepequal-refetch.test.ts",
+  "src/routes/-_authenticated.gudang.selecteditem-burst-refetch.test.ts",
+  "src/routes/-_authenticated.gudang.warnings-only-recompute.test.ts",
 ];
 
 describe("audit konsumen pipeline derived+warnings", () => {
