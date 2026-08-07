@@ -805,28 +805,28 @@ function GudangPage() {
             label="Total Produk"
             value={invSummary.totalProducts}
             tone="primary"
-            loading={loading}
+            loading={showPrimarySkeleton}
           />
           <SummaryCard
             icon={AlertTriangle}
             label="Stok Menipis"
             value={invSummary.lowStock}
             tone="warning"
-            loading={loading}
+            loading={showPrimarySkeleton}
           />
           <SummaryCard
             icon={PackageX}
             label="Stok Habis"
             value={invSummary.outOfStock}
             tone="danger"
-            loading={loading}
+            loading={showPrimarySkeleton}
           />
           <SummaryCard
             icon={Truck}
             label="Supplier"
             value={invSummary.totalSuppliers}
             tone="info"
-            loading={loading}
+            loading={showPrimarySkeleton}
           />
         </section>
 
