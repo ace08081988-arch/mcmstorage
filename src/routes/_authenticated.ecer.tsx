@@ -4133,6 +4133,7 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
         open={!!pendingDelete}
         onOpenChange={(o) => { if (!o && !deleting) setPendingDelete(null); }}
       >
+        {/* dialog hapus di bawah */}
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-ms-2">
