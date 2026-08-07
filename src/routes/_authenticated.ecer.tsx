@@ -3888,6 +3888,9 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
       setRows((prev) => prev.filter((x) => x.id !== pendingDelete.id));
       setPendingDelete(null);
       toast.success("Riwayat pengiriman dihapus");
+      // Ambil ulang dari server supaya daftar & badge jumlah selalu sinkron
+      // (mis. ada baris baru dari perangkat lain, atau hapus gagal diam-diam).
+      await load();
     } catch (e) {
       toast.error("Gagal menghapus riwayat", {
         description: e instanceof Error ? e.message : "Coba lagi sebentar.",
