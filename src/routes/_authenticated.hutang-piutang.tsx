@@ -985,7 +985,7 @@ function HutangPiutangPage() {
                         key={d.id}
                         className={
                           "px-ms-3.5 py-ms-3 text-ms-sm transition-colors " +
-                          "min-h-[3.5rem] [content-visibility:auto] [contain-intrinsic-size:auto_5.5rem] " +
+                          "min-h-[3.5rem] " +
                           (overdue
                             ? "bg-destructive/[0.04] hover:bg-destructive/[0.07]"
                             : "hover:bg-muted/30")
