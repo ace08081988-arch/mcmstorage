@@ -434,7 +434,8 @@ function RequestCard({
       data-testid={`ready-request-card-${r.id}`}
       className={
         "flex flex-col gap-ms-1.5 rounded-md border bg-card " +
-        (compact ? "px-ms-2.5 py-1.5" : "p-ms-2.5")
+        (compact ? "px-ms-2.5 py-1.5" : "p-ms-2.5") +
+        (r.archived_at ? " border-dashed opacity-70" : "")
       }
     >
       <Link
@@ -451,6 +452,11 @@ function RequestCard({
           >
             {r.name}
           </span>
+          {r.archived_at && (
+            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground">
+              Nonaktif
+            </span>
+          )}
           <span
             data-testid={`ready-request-badge-${r.id}`}
             data-badge-count={r.prep_count}
