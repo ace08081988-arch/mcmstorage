@@ -3810,6 +3810,9 @@ type EcerSendEvent = {
 function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const [rows, setRows] = useState<EcerSendEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [pendingDelete, setPendingDelete] = useState<EcerSendEvent | null>(null);
@@ -3818,29 +3821,81 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   // setelah refresh otomatis (fokus window / event kirim / setelah hapus).
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "status">("newest");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Halaman kecil supaya histori tetap ringan walau datanya ribuan baris.
+  const PAGE_SIZE = 20;
+
+  const fetchPage = useCallback(async (offset: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return withSupabaseQueryTimeout<SupabaseQueryResult<EcerSendEvent[]> & { count: number | null }>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (signal) => (supabase.from as any)("ecer_send_events")
+        .select(
+          "id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message",
+          { count: "exact" },
+        )
+        .eq("title_id", titleId)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1)
+        .abortSignal(signal),
+      "ecer_send_events",
+    );
+  }, [titleId]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     try {
-      const { data, error } = await withSupabaseQueryTimeout<SupabaseQueryResult<EcerSendEvent[]>>(
-        (signal) => (supabase.from as any)("ecer_send_events")
-          .select("id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message")
-          .eq("title_id", titleId)
-          .order("created_at", { ascending: false })
-          .limit(50)
-          .abortSignal(signal),
-        "ecer_send_events",
-      );
-      if (!error) setRows((data ?? []) as EcerSendEvent[]);
+      const { data, error, count } = await fetchPage(0);
+      if (!error) {
+        const page = (data ?? []) as EcerSendEvent[];
+        setRows(page);
+        setTotal(typeof count === "number" ? count : null);
+        setHasMore(page.length === PAGE_SIZE && (typeof count !== "number" || count > page.length));
+      }
     } finally {
       setLoading(false);
     }
-  }, [titleId]);
+  }, [fetchPage]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || loading || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const { data, error, count } = await fetchPage(rows.length);
+      if (!error) {
+        const page = (data ?? []) as EcerSendEvent[];
+        setRows((prev) => {
+          const seen = new Set(prev.map((x) => x.id));
+          const merged = prev.concat(page.filter((x) => !seen.has(x.id)));
+          setHasMore(
+            page.length === PAGE_SIZE &&
+            (typeof count !== "number" || count > merged.length),
+          );
+          return merged;
+        });
+        if (typeof count === "number") setTotal(count);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchPage, hasMore, loading, loadingMore, rows.length]);
 
   // Muat sekali saat mount supaya badge jumlah histori langsung terlihat
   // tanpa harus membuka panel dulu.
   useEffect(() => { void load(); }, [load]);
+
+  // Infinite scroll: muat halaman berikutnya saat sentinel terlihat.
+  useEffect(() => {
+    if (!open || !hasMore) return;
+    const el = sentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) void loadMore();
+    }, { rootMargin: "200px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [open, hasMore, loadMore]);
 
   useEffect(() => {
     // Refresh saat window fokus lagi + saat SendEcerPrepsDialog memancarkan
