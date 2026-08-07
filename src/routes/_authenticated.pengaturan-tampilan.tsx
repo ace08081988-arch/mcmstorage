@@ -54,6 +54,7 @@ import {
   type AppearanceBackup,
 } from "@/lib/appearance-backup";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
+import { FullscreenModeToggle } from "@/components/FullscreenModeToggle";
 import {
   migrateImportedAppearance,
   EXPORT_SCHEMA_TYPE,
@@ -1237,6 +1238,22 @@ function PengaturanTampilanPage() {
                 onCheckedChange={(v) => patch({ highContrast: v })}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Mode layar penuh (PWA iOS/Android) */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
+              <Layers className="h-4 w-4" /> Mode layar penuh
+            </CardTitle>
+            <CardDescription className="text-ms-xs">
+              Atur agar aplikasi tampil benar-benar penuh saat dipasang di HP —
+              tanpa header ganda atau ruang kosong di atas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FullscreenModeToggle />
           </CardContent>
         </Card>
 

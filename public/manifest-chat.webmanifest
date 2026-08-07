@@ -5,11 +5,26 @@
   "start_url": "/chat",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "fullscreen",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
   "background_color": "#064e3b",
   "theme_color": "#0a7a4a",
   "icons": [
-    { "src": "/mcm-chat-icon.png?v=20260807", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/mcm-chat-icon.png?v=20260807", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/mcm-chat-icon.png?v=20260807",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/mcm-chat-icon.png?v=20260807",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
