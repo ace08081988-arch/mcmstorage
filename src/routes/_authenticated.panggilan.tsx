@@ -151,7 +151,7 @@ function PanggilanPage() {
           <Link to="/chat"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
         <h1 className="text-ms-lg font-semibold">Panggilan</h1>
-        {rowsCount > 0 ? (
+        {(calls.data ?? []).length > 0 ? (
           <Button
             variant="ghost"
             size="icon"
