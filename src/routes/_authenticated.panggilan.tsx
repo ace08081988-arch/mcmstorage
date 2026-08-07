@@ -255,6 +255,38 @@ function PanggilanPage() {
               {sort === "newest" ? "Terbaru" : "Terlama"}
             </button>
           </div>
+          <div className="flex items-center gap-ms-1.5 pt-ms-2">
+            <Input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => setDateFrom(e.target.value)}
+              aria-label="Tanggal mulai"
+              className="h-10 flex-1 rounded-full text-ms-xs"
+            />
+            <span className="text-ms-xs text-muted-foreground">–</span>
+            <Input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => setDateTo(e.target.value)}
+              aria-label="Tanggal akhir"
+              className="h-10 flex-1 rounded-full text-ms-xs"
+            />
+            {dateFrom || dateTo ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+                aria-label="Bersihkan rentang tanggal"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted touch-manipulation"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
