@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X } from "lucide-react";
+import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
@@ -141,7 +141,7 @@ function PanggilanPage() {
   const nameMap = profiles.data ?? {};
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return allRows.filter((c) => {
+    const filtered = allRows.filter((c) => {
       const outgoing = c.caller_id === myId;
       if (filter === "missed" && !(c.status === "missed" || (c.status === "declined" && !outgoing))) return false;
       if (filter === "incoming" && outgoing) return false;
@@ -152,7 +152,12 @@ function PanggilanPage() {
       const peerName = (peerId && nameMap[peerId]) || "Kontak";
       return peerName.toLowerCase().includes(needle);
     });
-  }, [allRows, myId, filter, q, nameMap]);
+    return filtered.sort((a, b) => {
+      const ta = new Date(a.started_at).getTime();
+      const tb = new Date(b.started_at).getTime();
+      return sort === "newest" ? tb - ta : ta - tb;
+    });
+  }, [allRows, myId, filter, q, nameMap, sort]);
   const isFiltered = q.trim().length > 0 || filter !== "all";
   const FILTERS: { key: typeof filter; label: string }[] = [
     { key: "all", label: "Semua" },
