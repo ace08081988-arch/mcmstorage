@@ -255,23 +255,84 @@ export function ReadyRequestSection() {
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o && !deleting) setPendingDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus judul request?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {pendingPrepTotal !== null && pendingPrepTotal > 0
+                ? "Judul ini belum bisa dihapus"
+                : "Hapus judul request?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDelete?.name}
               {pendingPrepTotal === null
-                ? " — memeriksa data paket terkait…"
+                ? "Memeriksa paket yang terhubung ke judul ini…"
                 : pendingPrepTotal > 0
-                  ? ` — judul ini masih terhubung ke ${pendingPrepTotal} paket penyiapan (termasuk Riwayat Terkirim), jadi belum bisa dihapus. Hapus paket-paket itu dulu.`
-                  : " — daftar produk pada judul ini ikut terhapus."}
+                  ? "Judul masih dipakai data paket penyiapan, jadi penghapusan akan ditolak database."
+                  : "Tindakan ini permanen dan tidak bisa dibatalkan."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {/* Ringkasan record + rincian angka tepat */}
+          <div className="rounded-md border bg-muted/40 p-ms-2.5 text-ms-xs">
+            <div className="font-semibold text-foreground break-words">{pendingDelete?.name}</div>
+            {pendingDelete?.items_summary ? (
+              <div className="mt-0.5 text-muted-foreground break-words">{pendingDelete.items_summary}</div>
+            ) : null}
+            <dl className="mt-ms-2 grid grid-cols-3 gap-ms-1.5 text-center">
+              <div className="rounded-md bg-background p-ms-1.5">
+                <dt className="text-ms-2xs text-muted-foreground">Produk</dt>
+                <dd className="font-semibold tabular-nums">{pendingDelete?.product_count ?? 0}</dd>
+              </div>
+              <div className="rounded-md bg-background p-ms-1.5">
+                <dt className="text-ms-2xs text-muted-foreground">Paket aktif</dt>
+                <dd className="font-semibold tabular-nums">
+                  {pendingBreakdown ? pendingBreakdown.active : "…"}
+                </dd>
+              </div>
+              <div className="rounded-md bg-background p-ms-1.5">
+                <dt className="text-ms-2xs text-muted-foreground">Riwayat terkirim</dt>
+                <dd className="font-semibold tabular-nums">
+                  {pendingBreakdown ? pendingBreakdown.sent : "…"}
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          {/* Konsekuensi sebenarnya dari aksi ini */}
+          {pendingPrepTotal !== null && (
+            <ul className="space-ms-1 text-ms-xs text-muted-foreground">
+              {pendingPrepTotal > 0 ? (
+                <>
+                  <li>
+                    • Tidak ada data yang dihapus sekarang — {pendingPrepTotal} paket masih
+                    memakai judul ini{pendingBreakdown && pendingBreakdown.sent > 0
+                      ? ` (${pendingBreakdown.active} aktif, ${pendingBreakdown.sent} sudah di Riwayat Terkirim)`
+                      : ""}.
+                  </li>
+                  <li>• Hapus atau pindahkan paket-paket itu dulu lewat halaman Request, baru judul bisa dihapus.</li>
+                  <li>• Hutang, piutang, dan stok tidak berubah oleh aksi ini.</li>
+                </>
+              ) : (
+                <>
+                  <li>• Judul ini hilang dari daftar “Paket Request Siap Kirim”.</li>
+                  <li>
+                    • {pendingDelete?.product_count ?? 0} baris produk (target berat/satuan) pada
+                    judul ikut terhapus permanen.
+                  </li>
+                  <li>• Link pegawai yang memakai judul ini tidak bisa dipakai lagi untuk kirim paket baru.</li>
+                  <li>• Stok gudang, hutang, piutang, dan riwayat penjualan tidak ikut terhapus.</li>
+                </>
+              )}
+            </ul>
+          )}
+
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>
+              {pendingPrepTotal !== null && pendingPrepTotal > 0 ? "Tutup" : "Batal"}
+            </AlertDialogCancel>
             <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleting || pendingPrepTotal === null || pendingPrepTotal > 0}
               onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
             >
-              {deleting ? "Menghapus…" : "Hapus"}
+              {deleting ? "Menghapus…" : "Hapus permanen"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
