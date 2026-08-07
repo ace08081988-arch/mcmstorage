@@ -3821,6 +3821,11 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   // setelah refresh otomatis (fokus window / event kirim / setelah hapus).
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "status">("newest");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  // Filter kategori (kanal kirim) + rentang tanggal. Diterapkan server-side
+  // supaya paging & hitungan total tetap benar walau histori ribuan baris.
+  const [channelFilter, setChannelFilter] = useState<"all" | "wa" | "chat" | "copy">("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Halaman kecil supaya histori tetap ringan walau datanya ribuan baris.
@@ -3830,18 +3835,25 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return withSupabaseQueryTimeout<SupabaseQueryResult<EcerSendEvent[]> & { count: number | null }>(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (signal) => (supabase.from as any)("ecer_send_events")
-        .select(
-          "id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message",
-          { count: "exact" },
-        )
-        .eq("title_id", titleId)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1)
-        .abortSignal(signal),
+      (signal) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let q = (supabase.from as any)("ecer_send_events")
+          .select(
+            "id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message",
+            { count: "exact" },
+          )
+          .eq("title_id", titleId);
+        if (channelFilter !== "all") q = q.eq("channel", channelFilter);
+        if (dateFrom) q = q.gte("created_at", new Date(`${dateFrom}T00:00:00`).toISOString());
+        if (dateTo) q = q.lte("created_at", new Date(`${dateTo}T23:59:59.999`).toISOString());
+        return q
+          .order("created_at", { ascending: false })
+          .range(offset, offset + PAGE_SIZE - 1)
+          .abortSignal(signal);
+      },
       "ecer_send_events",
     );
-  }, [titleId]);
+  }, [titleId, channelFilter, dateFrom, dateTo]);
 
   const load = useCallback(async () => {
     setLoading(true);
