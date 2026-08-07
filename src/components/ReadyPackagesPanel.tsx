@@ -782,9 +782,18 @@ function PackageForm({
     onCreated();
   }
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 p-ms-3" onClick={onClose}>
-      <div className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border bg-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Paket baru"
+        className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border bg-card"
+        onClick={(e) => e.stopPropagation()}
+      >
         <header className="border-b px-ms-4 py-ms-3 text-ms-sm font-semibold">Paket baru — {item.name}</header>
         <div className="flex-1 overflow-y-auto px-ms-4 py-ms-3 space-ms-3 text-ms-sm">
           {/* Judul Ecer + preset */}
