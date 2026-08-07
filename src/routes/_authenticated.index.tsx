@@ -1278,7 +1278,7 @@ function Index() {
                 { n: "01", to: "/gudang", t: "Gudang", d: "Kelola stok, pembelian, dan harga modal." },
                 { n: "02", to: "/ecer", t: "Siapkan Pesanan", d: "Ecer & request — timbang, kemas, verifikasi." },
                 { n: "03", to: "/tugas", t: "Tugas Pegawai", d: "Bagikan link + PIN untuk penyiapan lapangan." },
-                { n: "04", to: "/chat", t: "Kirim via WhatsApp Chat", d: "Rangkuman order otomatis ke pelanggan." },
+                { n: "04", to: "/chat", t: "Kirim via Ace Chat", d: "Rangkuman order otomatis ke pelanggan." },
               ].map((step) => (
                 <li key={step.n}>
                   <Link

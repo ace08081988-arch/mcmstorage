@@ -3132,13 +3132,13 @@ function SendPrepToCustomerDialog({
           <div className="flex min-h-8 items-start justify-between gap-ms-2 pr-10">
             <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
               {channel === "chat" ? <MessageCircle className="h-4 w-4 text-primary" /> : <Send className="h-4 w-4 text-primary" />}
-              {channel === "chat" ? "Kirim via WhatsApp Chat" : "Kirim ke pelanggan"}
+              {channel === "chat" ? "Kirim via Ace Chat" : "Kirim ke pelanggan"}
             </DialogTitle>
             <DialogSaveStatus status={sendStatus} className="shrink-0" />
           </div>
           <DialogDescription>
             {channel === "chat"
-              ? "Foto + lokasi dikirim ke percakapan WA. Stok gudang & piutang otomatis tercatat."
+              ? "Foto + lokasi dikirim ke percakapan Ace Chat. Stok gudang & piutang otomatis tercatat."
               : "Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui."}
           </DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
@@ -3932,10 +3932,10 @@ function PrepEditorDialog({
             onClick={() => save({ sendChat: true })}
             disabled={busy || !pickedLinkedUserId}
             className="w-full"
-            title={pickedLinkedUserId ? "Buka DM WhatsApp dengan pesan siap kirim" : "Pilih kontak WA dari daftar dulu"}
+            title={pickedLinkedUserId ? "Buka DM Ace Chat dengan pesan siap kirim" : "Pilih kontak dari daftar dulu"}
           >
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <MessageCircle className="mr-1 h-3 w-3" />}
-            Simpan &amp; Buka WhatsApp Chat
+            Simpan &amp; Buka Ace Chat
           </Button>
           <div className="grid w-full grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
