@@ -165,6 +165,16 @@ function HutangPiutangPage() {
   // supaya baris header kolom yang sticky berhenti tepat di bawahnya.
   const pageHeaderRef = useRef<HTMLElement | null>(null);
   const [headerH, setHeaderH] = useState(64);
+  useEffect(() => {
+    const el = pageHeaderRef.current;
+    if (!el) return;
+    const apply = () => setHeaderH(Math.round(el.getBoundingClientRect().height));
+    apply();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [tab, setTab] = useState<"hutang" | "piutang" | "laporan">("hutang");
   const [debts, setDebts] = useState<Debt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
