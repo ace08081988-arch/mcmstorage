@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X, ArrowDownWideNarrow, ArrowUpWideNarrow, FileSpreadsheet, FileText } from "lucide-react";
+import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X, ArrowDownWideNarrow, ArrowUpWideNarrow, FileSpreadsheet, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { toExportRows, exportCallsCsv, exportCallsPdf } from "@/lib/call-export";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,8 @@ function PanggilanPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [exporting, setExporting] = useState<null | "csv" | "pdf">(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const calls = useQuery({
     queryKey: ["chat-calls", myId ?? "_"],
     queryFn: () => listMyCalls(100),
@@ -169,6 +171,20 @@ function PanggilanPage() {
     });
   }, [allRows, myId, filter, q, nameMap, sort, dateFrom, dateTo]);
   const isFiltered = q.trim().length > 0 || filter !== "all" || !!dateFrom || !!dateTo;
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  // Reset ke halaman 1 setiap pencarian/filter/urutan berubah.
+  useEffect(() => {
+    setPage(1);
+  }, [q, filter, sort, dateFrom, dateTo, pageSize]);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+  const pageRows = useMemo(
+    () => rows.slice((page - 1) * pageSize, page * pageSize),
+    [rows, page, pageSize],
+  );
+  const rangeStart = rows.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = Math.min(page * pageSize, rows.length);
   const FILTERS: { key: typeof filter; label: string }[] = [
     { key: "all", label: "Semua" },
     { key: "missed", label: "Tak terjawab" },
@@ -290,7 +306,9 @@ function PanggilanPage() {
             ) : null}
           </div>
           <div className="flex items-center gap-ms-1.5 pt-ms-2">
-            <span className="text-ms-xs text-muted-foreground">{rows.length} entri</span>
+            <span className="text-ms-xs text-muted-foreground">
+              {rows.length === 0 ? "0 entri" : `${rangeStart}–${rangeEnd} dari ${rows.length} entri`}
+            </span>
             <Button
               type="button"
               variant="outline"
