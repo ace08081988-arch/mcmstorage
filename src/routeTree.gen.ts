@@ -139,6 +139,7 @@ import { Route as LovableVisualAccessDeniedToastRouteImport } from './routes/lov
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as KatalogSlugItemIdRouteImport } from './routes/katalog.$slug.$itemId'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
+import { Route as ApiPublicPushResubscribeRouteImport } from './routes/api/public/push-resubscribe'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
@@ -894,6 +895,12 @@ const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
   path: '/api/public/web-vitals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPushResubscribeRoute =
+  ApiPublicPushResubscribeRouteImport.update({
+    id: '/api/public/push-resubscribe',
+    path: '/api/public/push-resubscribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPrepRealtimeTokenRoute =
   ApiPublicPrepRealtimeTokenRouteImport.update({
     id: '/api/public/prep-realtime-token',
@@ -1220,6 +1227,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/api/public/push-resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -1386,6 +1394,7 @@ export interface FileRoutesByTo {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/api/public/push-resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -1557,6 +1566,7 @@ export interface FileRoutesById {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/api/public/push-resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/katalog/$slug/$itemId': typeof KatalogSlugItemIdRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
@@ -1728,6 +1738,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/api/public/push-resubscribe'
     | '/api/public/web-vitals'
     | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
@@ -1894,6 +1905,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/api/public/push-resubscribe'
     | '/api/public/web-vitals'
     | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
@@ -2064,6 +2076,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/api/public/push-resubscribe'
     | '/api/public/web-vitals'
     | '/katalog/$slug/$itemId'
     | '/lovable/email/suppression'
@@ -2159,6 +2172,7 @@ export interface RootRouteChildren {
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
+  ApiPublicPushResubscribeRoute: typeof ApiPublicPushResubscribeRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   KatalogSlugItemIdRoute: typeof KatalogSlugItemIdRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -3131,6 +3145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebVitalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push-resubscribe': {
+      id: '/api/public/push-resubscribe'
+      path: '/api/public/push-resubscribe'
+      fullPath: '/api/public/push-resubscribe'
+      preLoaderRoute: typeof ApiPublicPushResubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/prep-realtime-token': {
       id: '/api/public/prep-realtime-token'
       path: '/api/public/prep-realtime-token'
@@ -3681,6 +3702,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
+  ApiPublicPushResubscribeRoute: ApiPublicPushResubscribeRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   KatalogSlugItemIdRoute: KatalogSlugItemIdRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
