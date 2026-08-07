@@ -406,6 +406,11 @@ function RootComponent() {
     import("@/lib/push-client")
       .then(({ startPushKeepAlive }) => startPushKeepAlive())
       .catch(() => {});
+    // Cold start dari ketukan notifikasi (SW membuka jendela baru):
+    // jalankan aksi yang menempel di URL lalu segarkan datanya.
+    import("@/lib/notification-nav")
+      .then(({ handleColdStartNotification }) => handleColdStartNotification(queryClient))
+      .catch(() => {});
     // Bersihkan draft nama pegawai `mcm:sendPrepLink:workerName:*` yang
     // tertinggal dari sesi sebelumnya (mis. app di-force-stop sebelum
     // dialog sempat unmount). Hanya dijalankan sekali per boot.
@@ -419,11 +424,11 @@ function RootComponent() {
     import("@/lib/native-push").then(({ startNativePush }) => {
       startNativePush({
         onOpenUrl: (url) => {
-          try {
-            router.navigate({ to: url.startsWith("/") ? url : `/${url}` });
-          } catch {
-            window.location.assign(url);
-          }
+          import("@/lib/notification-nav")
+            .then(({ navigateFromNotification }) =>
+              navigateFromNotification(router, queryClient, url),
+            )
+            .catch(() => window.location.assign(url));
         },
       }).catch((e) => console.warn("[native-push]", e));
     }).catch(() => {});
@@ -513,18 +518,20 @@ function RootComponent() {
       const d = event.data as { type?: string; url?: string; conversationId?: string } | undefined;
       if (!d || typeof d.type !== "string") return;
       if (d.type === "navigate" && d.url) {
-        try { router.navigate({ to: d.url }); } catch { window.location.href = d.url; }
+        import("@/lib/notification-nav")
+          .then(({ navigateFromNotification }) =>
+            navigateFromNotification(router, queryClient, d.url!),
+          )
+          .catch(() => {
+            window.location.href = d.url!;
+          });
       } else if (d.type === "mark-read" && d.conversationId) {
-        import("@/integrations/supabase/client").then(async ({ supabase }) => {
-          const { data: u } = await supabase.auth.getUser();
-          if (!u.user) return;
-          await supabase
-            .from("conversation_members")
-            .update({ last_read_at: new Date().toISOString() })
-            .eq("conversation_id", d.conversationId!)
-            .eq("user_id", u.user.id);
-          queryClient.invalidateQueries({ queryKey: ["chat"] });
-        }).catch(() => {});
+        import("@/lib/notification-nav")
+          .then(async ({ markConversationRead }) => {
+            await markConversationRead(d.conversationId!);
+            queryClient.invalidateQueries({ queryKey: ["chat"] });
+          })
+          .catch(() => {});
       }
     };
     navigator.serviceWorker.addEventListener("message", onMsg);
