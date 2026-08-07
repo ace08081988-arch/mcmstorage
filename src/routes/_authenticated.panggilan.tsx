@@ -234,6 +234,19 @@ function PanggilanPage() {
                 {f.label}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setSort((s) => (s === "newest" ? "oldest" : "newest"))}
+              aria-label={sort === "newest" ? "Urutkan: terbaru dulu (ketuk untuk terlama)" : "Urutkan: terlama dulu (ketuk untuk terbaru)"}
+              className="ml-auto flex shrink-0 items-center gap-1 rounded-full border bg-background px-3 py-1.5 text-ms-xs font-medium text-muted-foreground transition-colors hover:bg-muted touch-manipulation"
+            >
+              {sort === "newest" ? (
+                <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowUpWideNarrow className="h-3.5 w-3.5" />
+              )}
+              {sort === "newest" ? "Terbaru" : "Terlama"}
+            </button>
           </div>
         </div>
       ) : null}
