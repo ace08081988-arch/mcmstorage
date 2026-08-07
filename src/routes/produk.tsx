@@ -72,13 +72,9 @@ const FEATURES = [
   },
 ];
 
-const AUDIENCE = [
-  "Toko grosir dan sembako yang melayani pesanan harian",
-] as unknown as string[];
-
 const HERO_POINTS = ["Tanpa biaya", "Jalan di HP", "Kirim lewat WhatsApp"];
 
-const AUDIENCE_LIST = [
+const AUDIENCE = [
   "Toko grosir dan sembako yang melayani pesanan harian",
   "Pemilik usaha yang memakai WhatsApp sebagai kanal utama pelanggan",
   "Usaha dengan pegawai lapangan yang menyiapkan dan mengantar barang",
