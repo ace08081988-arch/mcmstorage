@@ -255,10 +255,18 @@ function PanggilanPage() {
                 try {
                   await hideCalls([row.id]);
                   await qc.invalidateQueries({ queryKey: ["chat-calls"] });
-                  toast.success("Riwayat panggilan dihapus");
+                  toast.success("Riwayat panggilan dihapus", {
+                    description:
+                      "Entri dihapus dari daftar Anda. Riwayat lawan bicara tidak terpengaruh.",
+                  });
                   setPendingDelete(null);
-                } catch {
-                  toast.error("Gagal menghapus riwayat");
+                } catch (err) {
+                  toast.error("Gagal menghapus riwayat panggilan", {
+                    description:
+                      err instanceof Error
+                        ? err.message
+                        : "Periksa koneksi internet lalu coba lagi.",
+                  });
                 } finally {
                   setBusy(false);
                 }
@@ -287,12 +295,22 @@ function PanggilanPage() {
                 e.preventDefault();
                 setBusy(true);
                 try {
-                  await hideAllCalls();
+                  const removed = await hideAllCalls();
                   await qc.invalidateQueries({ queryKey: ["chat-calls"] });
-                  toast.success("Riwayat panggilan dikosongkan");
+                  toast.success("Riwayat panggilan dikosongkan", {
+                    description:
+                      typeof removed === "number" && removed > 0
+                        ? `${removed} entri dihapus dari daftar Anda.`
+                        : "Daftar panggilan Anda kini kosong.",
+                  });
                   setConfirmClearAll(false);
-                } catch {
-                  toast.error("Gagal mengosongkan riwayat");
+                } catch (err) {
+                  toast.error("Gagal mengosongkan riwayat panggilan", {
+                    description:
+                      err instanceof Error
+                        ? err.message
+                        : "Periksa koneksi internet lalu coba lagi.",
+                  });
                 } finally {
                   setBusy(false);
                 }
