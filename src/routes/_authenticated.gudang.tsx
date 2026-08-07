@@ -68,23 +68,6 @@ export const Route = createFileRoute("/_authenticated/gudang")({
  * ter-commit ulang). Boundary retry diam-diam, tidak reload halaman penuh.
  */
 function GudangRoute() {
-  // Skeleton hanya untuk kondisi "belum ada apa-apa". Saat revalidasi
-  // (SWR / setelah mutasi) data lama tetap tampil supaya tidak berkedip.
-  const hasPrimaryData = items.length > 0 || suppliers.length > 0 || sales.length > 0;
-  const hasSecondaryData =
-    purchases.length > 0 ||
-    payments.length > 0 ||
-    customers.length > 0 ||
-    custPayments.length > 0 ||
-    orders.length > 0;
-  const showPrimarySkeleton = loading && !hasPrimaryData;
-  const secondaryTab =
-    tab === "jual" || tab === "pesanan" || tab === "hutang" ||
-    tab === "pelanggan" || tab === "piutang" || tab === "riwayat";
-  const showSecondarySkeleton =
-    !showPrimarySkeleton && secondaryTab && secondaryLoading && !hasSecondaryData;
-  const showSkeleton = showPrimarySkeleton || showSecondarySkeleton;
-
   return (
     <DomRaceBoundary
       label="gudang"
