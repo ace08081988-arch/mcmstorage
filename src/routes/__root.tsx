@@ -419,11 +419,11 @@ function RootComponent() {
     import("@/lib/native-push").then(({ startNativePush }) => {
       startNativePush({
         onOpenUrl: (url) => {
-          try {
-            router.navigate({ to: url.startsWith("/") ? url : `/${url}` });
-          } catch {
-            window.location.assign(url);
-          }
+          import("@/lib/notification-nav")
+            .then(({ navigateFromNotification }) =>
+              navigateFromNotification(router, queryClient, url),
+            )
+            .catch(() => window.location.assign(url));
         },
       }).catch((e) => console.warn("[native-push]", e));
     }).catch(() => {});
