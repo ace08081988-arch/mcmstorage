@@ -10,9 +10,20 @@ import {
   RefreshCw,
   Search,
   Send,
+  Trash2,
   X,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { displayUnit } from "@/lib/unit-label";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
@@ -35,6 +46,8 @@ export function ReadyRequestSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [layout, setLayout] = useLayoutMode("readyRequest", "list");
+  const [pendingDelete, setPendingDelete] = useState<Row | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const gridClass = layoutGridClass(layout);
   const compact = layout === "compact";
   const navigate = useNavigate();
@@ -99,6 +112,24 @@ export function ReadyRequestSection() {
     setRefreshing(true);
     try { await load(); } finally { setRefreshing(false); }
   }, [load]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      const { error } = await sb.from("request_titles").delete().eq("id", pendingDelete.id);
+      if (error) throw error;
+      toast.success("Judul request dihapus", { description: pendingDelete.name });
+      setPendingDelete(null);
+      await load();
+    } catch (e) {
+      toast.error("Gagal menghapus", {
+        description: e instanceof Error ? e.message : "Coba lagi sebentar.",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  }, [pendingDelete, load]);
 
   const filtered = useMemo(() => {
     if (!rows) return null;
@@ -180,10 +211,34 @@ export function ReadyRequestSection() {
               refreshing={refreshing}
               onRefresh={handleRefresh}
               onSendWa={() => openSendFlow(r, "wa")}
+              onDelete={() => setPendingDelete(r)}
             />
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o && !deleting) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus judul request?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.name}
+              {pendingDelete && pendingDelete.prep_count > 0
+                ? ` — masih ada ${pendingDelete.prep_count} paket aktif. Menghapus judul ini bisa memutus data paket tersebut.`
+                : " — daftar produk pada judul ini ikut terhapus."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
+            >
+              {deleting ? "Menghapus…" : "Hapus"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
@@ -194,12 +249,14 @@ function RequestCard({
   refreshing,
   onRefresh,
   onSendWa,
+  onDelete,
 }: {
   row: Row;
   compact: boolean;
   refreshing: boolean;
   onRefresh: () => void;
   onSendWa: () => void;
+  onDelete: () => void;
 }) {
   const hasPrep = r.prep_count > 0;
   return (
@@ -258,15 +315,18 @@ function RequestCard({
           Alur verifikasi & tes `send=wa` tetap sama; hanya dua tombol WA/Chat
           yang digabung. Pilihan Chat tetap tersedia di dialog /request. */}
       {hasPrep ? (
-        <button
-          type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSendWa(); }}
-          aria-label={`Kirim ${r.prep_count} paket ke pembeli untuk ${r.name}`}
-          title="Verifikasi bayar dulu → kirim ke pembeli"
-          className="inline-flex h-8 w-full items-center justify-center gap-ms-1 rounded-md bg-wa px-ms-2 text-ms-2xs font-semibold text-wa-foreground shadow-sm transition hover:bg-wa/90"
-        >
-          <Send className="h-3 w-3" /> Kirim ke pembeli
-        </button>
+        <div className="flex items-center gap-ms-1.5">
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSendWa(); }}
+            aria-label={`Kirim ${r.prep_count} paket ke pembeli untuk ${r.name}`}
+            title="Verifikasi bayar dulu → kirim ke pembeli"
+            className="inline-flex h-8 flex-1 items-center justify-center gap-ms-1 rounded-md bg-wa px-ms-2 text-ms-2xs font-semibold text-wa-foreground shadow-sm transition hover:bg-wa/90"
+          >
+            <Send className="h-3 w-3" /> Kirim ke pembeli
+          </button>
+          <DeleteButton name={r.name} onDelete={onDelete} />
+        </div>
       ) : (
         <div className="flex items-center gap-ms-1.5">
           <Link
@@ -293,8 +353,23 @@ function RequestCard({
           >
             <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
           </button>
+          <DeleteButton name={r.name} onDelete={onDelete} />
         </div>
       )}
     </div>
+  );
+}
+
+function DeleteButton({ name, onDelete }: { name: string; onDelete: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={`Hapus judul request ${name}`}
+      title="Hapus"
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+    >
+      <Trash2 className="h-3 w-3" />
+    </button>
   );
 }
