@@ -537,6 +537,7 @@ function RootComponent() {
       <ChatModeSplash />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <PushPermissionPrompt />
       <Toaster
         // Ikuti tema aplikasi (Noir & Gold) — token semantik, bukan putih bawaan.
         theme="system"
