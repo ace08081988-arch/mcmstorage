@@ -704,6 +704,6 @@ const CallRowItem = React.memo(function CallRowItem({
       >
         <Trash2 className="h-[18px] w-[18px]" />
       </button>
-    </li>
+    </div>
   );
-}
+});
