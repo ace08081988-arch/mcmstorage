@@ -436,7 +436,7 @@ function PanggilanPage() {
           </div>
         ) : (
           <>
-          <div role="list" className="pb-2 [&>div>div>*]:border-b">
+          <div role="list" className="pb-2">
             <VirtualizedList
               cacheKey="call-list"
               items={pageRows}
@@ -617,7 +617,7 @@ function PanggilanPage() {
   );
 }
 
-function CallRowItem({
+const CallRowItem = React.memo(function CallRowItem({
   row, myId, nameMap, isCalling, onStartCall, onDelete, onDetail,
 }: {
   row: CallRow;
@@ -638,7 +638,7 @@ function CallRowItem({
     row.status === "ended" ? formatCallDuration(row.duration_sec) : undefined;
 
   return (
-    <li className="flex items-center gap-ms-1 px-ms-2 py-1">
+    <div role="listitem" className="flex items-center gap-ms-1 border-b px-ms-2 py-1">
       <Link
         to="/chat/$conversationId"
         params={{ conversationId: row.conversation_id }}
