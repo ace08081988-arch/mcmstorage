@@ -436,49 +436,27 @@ function PanggilanPage() {
           </div>
         ) : (
           <>
-          <ul className="divide-y pb-2">
-            {pageRows.map((c) => (
-              <CallRowItem
-                key={c.id}
-                row={c}
-                myId={myId ?? null}
-                nameMap={nameMap}
-                isCalling={callingId === c.id}
-                onDelete={(r) => setPendingDelete(r)}
-                onDetail={(r) => setDetailRow(r)}
-                onStartCall={async (r) => {
-                  if (!myId) return;
-                  const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
-                  if (!peerId) return;
-                  const peerName = nameMap[peerId] || "Kontak";
-                  setCallingId(r.id);
-                  try {
-                    const row = await createCallRow({
-                      conversationId: r.conversation_id,
-                      callerId: myId,
-                      calleeId: peerId,
-                      kind: r.kind,
-                    });
-                    dispatchStartCall({ callId: row.id, kind: r.kind, peerName });
-                    void ringUser({
-                      calleeId: peerId,
-                      callId: row.id,
-                      callerId: myId,
-                      kind: r.kind,
-                      conversationId: r.conversation_id,
-                      callerName: peerName,
-                    }).catch(() => { /* ring gagal — UI tetap jalan */ });
-                  } catch (e) {
-                    const { describeCallError } = await import("@/lib/call-errors");
-                    const info = describeCallError(e, r.kind === "video" ? "video" : "audio");
-                    toast.error(info.title, { description: info.hint, duration: 8000 });
-                  } finally {
-                    setCallingId(null);
-                  }
-                }}
-              />
-            ))}
-          </ul>
+          <div role="list" className="pb-2 [&>div>div>*]:border-b">
+            <VirtualizedList
+              cacheKey="call-list"
+              items={pageRows}
+              getKey={(c) => c.id}
+              estimateSize={64}
+              gap={0}
+              threshold={12}
+              renderItem={(c) => (
+                <CallRowItem
+                  row={c}
+                  myId={myId ?? null}
+                  nameMap={nameMap}
+                  isCalling={callingId === c.id}
+                  onDelete={handleDelete}
+                  onDetail={handleDetail}
+                  onStartCall={handleStartCall}
+                />
+              )}
+            />
+          </div>
           {rows.length > pageSize || pageSize !== 20 ? (
             <nav
               aria-label="Navigasi halaman panggilan"
