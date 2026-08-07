@@ -471,7 +471,7 @@ function AuditSaldoPage() {
         </div>
       ) : (
         <ul className="space-y-2">
-          {groups.map((g) => {
+          {visibleGroups.map((g) => {
             const isOpen = open === g.key;
             return (
               <li
