@@ -14,7 +14,7 @@ export type ExportCall = {
   durasi: string;
 };
 
-const STATUS_LABEL: Record<string, string> = {
+export const CALL_STATUS_LABEL: Record<string, string> = {
   ringing: "Berdering",
   accepted: "Terjawab",
   declined: "Ditolak",
@@ -23,6 +23,8 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "Dibatalkan",
   failed: "Gagal",
 };
+
+const STATUS_LABEL = CALL_STATUS_LABEL;
 
 const HEADERS = ["Waktu", "Kontak", "Arah", "Jenis", "Status", "Durasi"];
 
