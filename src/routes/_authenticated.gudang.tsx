@@ -28,6 +28,7 @@ import { logStorageError } from "@/lib/storage-log";
 import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
 import { NumericTextField } from "@/components/NumericDraftInput";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
 import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
