@@ -27,7 +27,7 @@ import {
 import { displayUnit } from "@/lib/unit-label";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
-import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
+import { countActiveByTitle, countActivePreps, withActivePrepsFilter } from "@/lib/prep-active-selector";
 import { measureQuery, QueryMetricNames } from "@/lib/query-metrics";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
