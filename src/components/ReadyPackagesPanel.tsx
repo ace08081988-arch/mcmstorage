@@ -559,9 +559,18 @@ function WAPicker({
     ? customers.filter((c) => (c.name + " " + (c.contact ?? "")).toLowerCase().includes(query.toLowerCase()))
     : customers.slice(0, 10);
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 p-ms-3" onClick={onClose}>
-      <div className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Kirim ke pelanggan"
+        className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-ms-sm font-semibold">Kirim ke pelanggan</div>
         <input
           value={query}
