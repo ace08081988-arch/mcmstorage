@@ -723,6 +723,25 @@ function GudangPage() {
     { k: "riwayat", label: "Riwayat", icon: History },
   ] as const;
 
+  // Skeleton hanya untuk kondisi "belum ada apa-apa". Saat revalidasi
+  // (SWR / setelah mutasi) data lama tetap tampil supaya tidak berkedip.
+  const hasPrimaryData = items.length > 0 || suppliers.length > 0 || sales.length > 0;
+  const hasSecondaryData =
+    purchases.length > 0 ||
+    payments.length > 0 ||
+    customers.length > 0 ||
+    custPayments.length > 0 ||
+    orders.length > 0;
+  const showPrimarySkeleton = loading && !hasPrimaryData;
+  const isSecondaryTab =
+    tab === "jual" || tab === "pesanan" || tab === "hutang" ||
+    tab === "pelanggan" || tab === "piutang" || tab === "riwayat";
+  const showSecondarySkeleton =
+    !showPrimarySkeleton && isSecondaryTab && secondaryLoading && !hasSecondaryData;
+  const showSkeleton = showPrimarySkeleton || showSecondarySkeleton;
+  // Data lama tetap dipakai selama revalidasi; hanya indikator halus.
+  const revalidating = !showSkeleton && (loading || (isSecondaryTab && secondaryLoading));
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground md:flex">
       {/* Sidebar — md+ */}
