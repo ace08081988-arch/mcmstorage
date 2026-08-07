@@ -354,9 +354,12 @@ function GudangLoadingSkeleton() {
 function GudangLoadProgress({
   wave1Done,
   wave2Done,
+  subtle = false,
 }: {
   wave1Done: boolean;
   wave2Done: boolean;
+  /** Data lama sudah tampil — cukup garis tipis, jangan banner yang menggeser layout. */
+  subtle?: boolean;
 }) {
   if (wave1Done && wave2Done) return null;
   const step = wave1Done ? 2 : 1;
@@ -364,6 +367,18 @@ function GudangLoadProgress({
   const label = wave1Done
     ? "Gel-2 · memuat pembelian, piutang, pesanan…"
     : "Gel-1 · memuat stok & supplier…";
+  if (subtle) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Menyegarkan data"
+        className="h-0.5 w-full overflow-hidden rounded-full bg-muted/50"
+      >
+        <div className="h-full w-1/3 animate-[pulse_1.2s_ease-in-out_infinite] rounded-full bg-primary/70" />
+      </div>
+    );
+  }
   return (
     <div
       role="status"
