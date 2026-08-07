@@ -142,7 +142,9 @@ export function ReadyRequestSection() {
     if (!pendingDelete) return;
     if (pendingPrepTotal && pendingPrepTotal > 0) {
       toast.error("Judul tidak bisa dihapus", {
-        description: `Masih terhubung ke ${pendingPrepTotal} paket penyiapan (termasuk Riwayat Terkirim). Hapus atau pindahkan paket-paket itu dulu.`,
+        description: `Masih terhubung ke ${pendingPrepTotal} paket penyiapan${
+          pendingBreakdown ? ` (${pendingBreakdown.active} aktif, ${pendingBreakdown.sent} riwayat terkirim)` : ""
+        }. Hapus atau pindahkan paket-paket itu dulu.`,
       });
       return;
     }
@@ -164,7 +166,7 @@ export function ReadyRequestSection() {
     } finally {
       setDeleting(false);
     }
-  }, [pendingDelete, pendingPrepTotal, load]);
+  }, [pendingDelete, pendingPrepTotal, pendingBreakdown, load]);
 
   const filtered = useMemo(() => {
     if (!rows) return null;
