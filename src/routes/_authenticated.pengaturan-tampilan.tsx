@@ -54,6 +54,7 @@ import {
   type AppearanceBackup,
 } from "@/lib/appearance-backup";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
+import { FullscreenModeToggle } from "@/components/FullscreenModeToggle";
 import {
   migrateImportedAppearance,
   EXPORT_SCHEMA_TYPE,
