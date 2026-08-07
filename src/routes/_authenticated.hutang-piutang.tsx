@@ -873,6 +873,19 @@ function HutangPiutangPage() {
                   </Button>
                 </div>
               ) : (
+                <>
+                  {/* Header kolom ala tabel — sticky di bawah header halaman
+                      supaya arti kolom tetap terbaca saat daftar panjang
+                      digulir (penting di WebView layar kecil). */}
+                  <div
+                    role="row"
+                    aria-hidden="true"
+                    className="sticky z-20 -mx-ms-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-3 rounded-xl border bg-card/95 px-ms-3.5 py-ms-2 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground shadow-xs backdrop-blur supports-[backdrop-filter]:bg-card/80"
+                    style={{ top: "var(--hp-sticky-top, 64px)" }}
+                  >
+                    <span className="truncate">Kontak / catatan</span>
+                    <span className="shrink-0 text-right">Jumlah · sisa</span>
+                  </div>
                 <VirtualizedList
                   cacheKey="hutang-parties"
                   items={groupedByParty}
@@ -1091,6 +1104,7 @@ function HutangPiutangPage() {
                     );
                   }}
                 />
+                </>
               )}
 
               <TxOnlyPartyCards
