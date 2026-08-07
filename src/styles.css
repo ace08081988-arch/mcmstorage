@@ -4108,3 +4108,37 @@ html[data-app-installed="1"] body {
 @utility max-h-app-vh {
   max-height: var(--app-vh, 100dvh);
 }
+
+/* ==========================================================================
+ * Focus ring global (keyboard-first)
+ * Baseline konsisten untuk SEMUA elemen interaktif di seluruh aplikasi,
+ * tidak bergantung pada `[data-press-scope="on"]`. Hanya aktif pada
+ * :focus-visible sehingga klik mouse/tap tidak memunculkan ring.
+ * ========================================================================== */
+:where(
+  a[href], button, summary, select, textarea,
+  input:not([type="hidden"]),
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="combobox"],
+  [contenteditable="true"], [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--ring);
+  outline-offset: var(--focus-ring-offset, 2px);
+  border-radius: inherit;
+}
+
+/* Jangan pernah menghapus indikator fokus keyboard. */
+:focus-visible { outline-color: var(--ring); }
+
+/* Baris/kartu yang bisa "diklik" tapi bukan elemen native: beri ring penuh
+ * agar target keyboard terlihat jelas di daftar padat (chat, panggilan, histori). */
+[data-row-interactive]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 var(--focus-ring-offset, 2px) var(--background),
+    0 0 0 calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px)) var(--ring);
+}
+
+/* Overlay manual (bukan Radix) yang sedang menahan fokus. */
+[data-focus-trap="on"] { scroll-margin: 1rem; }

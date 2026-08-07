@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { notifyError } from "@/lib/friendly-error";
@@ -125,9 +126,18 @@ export function ReadyPackagesPanel({
   });
   const list = tab === "ready" ? pkgs.filter((p) => p.status === "ready") : historyFiltered;
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-ms-3" onClick={onClose}>
-      <div className="flex h-[95vh] w-full max-w-2xl flex-col rounded-t-lg sm:rounded-lg border bg-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Paket siap kirim"
+        className="flex h-[95vh] w-full max-w-2xl flex-col rounded-t-lg sm:rounded-lg border bg-card"
+        onClick={(e) => e.stopPropagation()}
+      >
         <header className="flex items-center gap-ms-2 border-b px-ms-4 py-ms-3">
           <div className="min-w-0 flex-1">
             <div className="truncate text-ms-sm font-semibold">📦 Paket Siap Kirim</div>
@@ -549,9 +559,18 @@ function WAPicker({
     ? customers.filter((c) => (c.name + " " + (c.contact ?? "")).toLowerCase().includes(query.toLowerCase()))
     : customers.slice(0, 10);
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 p-ms-3" onClick={onClose}>
-      <div className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Kirim ke pelanggan"
+        className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-ms-sm font-semibold">Kirim ke pelanggan</div>
         <input
           value={query}
@@ -763,9 +782,18 @@ function PackageForm({
     onCreated();
   }
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 p-ms-3" onClick={onClose}>
-      <div className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border bg-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Paket baru"
+        className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border bg-card"
+        onClick={(e) => e.stopPropagation()}
+      >
         <header className="border-b px-ms-4 py-ms-3 text-ms-sm font-semibold">Paket baru — {item.name}</header>
         <div className="flex-1 overflow-y-auto px-ms-4 py-ms-3 space-ms-3 text-ms-sm">
           {/* Judul Ecer + preset */}

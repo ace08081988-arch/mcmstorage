@@ -28,6 +28,7 @@ import { logStorageError } from "@/lib/storage-log";
 import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
 import { NumericTextField } from "@/components/NumericDraftInput";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
 import { fetchPiutangSummary, type PiutangSummary } from "@/lib/piutang";
@@ -2610,9 +2611,18 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
     onSaved();
   }
 
+  const editTrapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-ms-3" onClick={onClose}>
-      <div className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={editTrapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit barang"
+        className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-ms-sm font-semibold">Edit Barang</div>
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">Nama</span>
