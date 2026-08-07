@@ -935,9 +935,9 @@ function GudangPage() {
           />
         )}
         {tab === "pelanggan" && (
-          !secondaryLoading && <CustomerTab customers={customers} uid={uid} onChanged={reloadAll} />
+          <CustomerTab customers={customers} uid={uid} onChanged={reloadAll} />
         )}
-        {tab === "piutang" && !secondaryLoading && (
+        {tab === "piutang" && (
           <PiutangTab
             customers={customers}
             sales={sales}
@@ -961,7 +961,7 @@ function GudangPage() {
             }
           />
         )}
-        {tab === "riwayat" && !secondaryLoading && (
+        {tab === "riwayat" && (
           <RiwayatTab
             purchases={purchases}
             sales={sales}
@@ -972,6 +972,7 @@ function GudangPage() {
             totalCost={totalCost}
           />
         )}
+        </div>
         </PageContainer>
       </div>
     </div>
