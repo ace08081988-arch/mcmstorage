@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
 import {
   listMyCalls,
@@ -57,6 +58,8 @@ function PanggilanPage() {
   const [pendingDelete, setPendingDelete] = useState<CallRow | null>(null);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<"all" | "missed" | "incoming" | "outgoing" | "video">("all");
   const calls = useQuery({
     queryKey: ["chat-calls", myId ?? "_"],
     queryFn: () => listMyCalls(100),
@@ -134,7 +137,30 @@ function PanggilanPage() {
     enabled: peerIds.length > 0,
   });
 
-  const rows = calls.data ?? [];
+  const allRows = calls.data ?? [];
+  const nameMap = profiles.data ?? {};
+  const rows = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return allRows.filter((c) => {
+      const outgoing = c.caller_id === myId;
+      if (filter === "missed" && !(c.status === "missed" || (c.status === "declined" && !outgoing))) return false;
+      if (filter === "incoming" && outgoing) return false;
+      if (filter === "outgoing" && !outgoing) return false;
+      if (filter === "video" && c.kind !== "video") return false;
+      if (!needle) return true;
+      const peerId = outgoing ? c.callee_id : c.caller_id;
+      const peerName = (peerId && nameMap[peerId]) || "Kontak";
+      return peerName.toLowerCase().includes(needle);
+    });
+  }, [allRows, myId, filter, q, nameMap]);
+  const isFiltered = q.trim().length > 0 || filter !== "all";
+  const FILTERS: { key: typeof filter; label: string }[] = [
+    { key: "all", label: "Semua" },
+    { key: "missed", label: "Tak terjawab" },
+    { key: "incoming", label: "Masuk" },
+    { key: "outgoing", label: "Keluar" },
+    { key: "video", label: "Video" },
+  ];
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]">
       <header
@@ -151,12 +177,12 @@ function PanggilanPage() {
           <Link to="/chat"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
         <h1 className="text-ms-lg font-semibold">Panggilan</h1>
-        {(calls.data ?? []).length > 0 ? (
+        {allRows.length > 0 ? (
           <Button
             variant="ghost"
             size="icon"
             className="ml-auto h-11 w-11 rounded-full touch-manipulation"
-            aria-label="Hapus semua riwayat panggilan"
+            aria-label={isFiltered ? "Hapus riwayat panggilan hasil filter" : "Hapus semua riwayat panggilan"}
             onClick={() => setConfirmClearAll(true)}
           >
             <Trash2 className="h-5 w-5" />
@@ -164,10 +190,52 @@ function PanggilanPage() {
         ) : null}
       </header>
 
+      {allRows.length > 0 ? (
+        <div className="space-ms-2 border-b bg-background/60 px-ms-3 py-ms-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Cari nama kontak…"
+              aria-label="Cari riwayat panggilan"
+              className="h-11 rounded-full pl-9 pr-9"
+            />
+            {q ? (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                aria-label="Bersihkan pencarian"
+                className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
+          <div className="flex gap-ms-1.5 overflow-x-auto pt-ms-2 [scrollbar-width:none]">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                aria-pressed={filter === f.key}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-ms-xs font-medium transition-colors touch-manipulation ${
+                  filter === f.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex-1 pb-[var(--chat-nav-h)]">
         {calls.isLoading ? (
           <div className="px-ms-4 py-ms-6 text-center text-ms-xs text-muted-foreground">Memuat riwayat…</div>
-        ) : rows.length === 0 ? (
+        ) : allRows.length === 0 ? (
           <div className="px-ms-4 py-8">
             <div className="mx-auto max-w-sm space-ms-3 rounded-2xl border bg-card p-ms-6 text-center">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-primary">
@@ -183,6 +251,10 @@ function PanggilanPage() {
               </Button>
             </div>
           </div>
+        ) : rows.length === 0 ? (
+          <div className="px-ms-4 py-8 text-center text-ms-xs text-muted-foreground">
+            Tidak ada panggilan yang cocok dengan pencarian atau filter ini.
+          </div>
         ) : (
           <ul className="divide-y pb-2">
             {rows.map((c) => (
@@ -190,14 +262,14 @@ function PanggilanPage() {
                 key={c.id}
                 row={c}
                 myId={myId ?? null}
-                nameMap={profiles.data ?? {}}
+                nameMap={nameMap}
                 isCalling={callingId === c.id}
                 onDelete={(r) => setPendingDelete(r)}
                 onStartCall={async (r) => {
                   if (!myId) return;
                   const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
                   if (!peerId) return;
-                  const peerName = (profiles.data ?? {})[peerId] || "Kontak";
+                  const peerName = nameMap[peerId] || "Kontak";
                   setCallingId(r.id);
                   try {
                     const row = await createCallRow({
@@ -281,21 +353,31 @@ function PanggilanPage() {
       <AlertDialog open={confirmClearAll} onOpenChange={setConfirmClearAll}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus semua riwayat panggilan?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isFiltered ? `Hapus ${rows.length} panggilan hasil filter?` : "Hapus semua riwayat panggilan?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Seluruh daftar panggilan Anda akan dikosongkan. Tindakan ini tidak
-              memengaruhi riwayat milik lawan bicara.
+              {isFiltered
+                ? "Hanya entri yang sedang tampil yang dihapus dari daftar Anda."
+                : "Seluruh daftar panggilan Anda akan dikosongkan."}{" "}
+              Tindakan ini tidak memengaruhi riwayat milik lawan bicara.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              disabled={busy}
+              disabled={busy || (isFiltered && rows.length === 0)}
               onClick={async (e) => {
                 e.preventDefault();
                 setBusy(true);
                 try {
-                  const removed = await hideAllCalls();
+                  let removed: number | undefined;
+                  if (isFiltered) {
+                    await hideCalls(rows.map((r) => r.id));
+                    removed = rows.length;
+                  } else {
+                    removed = await hideAllCalls();
+                  }
                   await qc.invalidateQueries({ queryKey: ["chat-calls"] });
                   toast.success("Riwayat panggilan dikosongkan", {
                     description:
@@ -316,7 +398,7 @@ function PanggilanPage() {
                 }
               }}
             >
-              Hapus semua
+              {isFiltered ? "Hapus hasil filter" : "Hapus semua"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
