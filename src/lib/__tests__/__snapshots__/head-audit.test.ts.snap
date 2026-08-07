@@ -2,12 +2,12 @@
 
 exports[`audit head + manifest + aset brand > mengunci nilai brand yang terbaca 1`] = `
 [
-  "/favicon-16.png?v=20260806 16x16",
-  "/favicon-32.png?v=20260806 32x32",
-  "/favicon-48.png?v=20260806 48x48",
-  "/apple-touch-icon.png?v=20260806 180x180",
-  "/icon-192.png?v=20260806 192x192 (any)",
-  "/icon-512.png?v=20260806 512x512 (any)",
-  "/icon-maskable-512.png?v=20260806 512x512 (any maskable)",
+  "/favicon-16.png?v=20260807 16x16",
+  "/favicon-32.png?v=20260807 32x32",
+  "/favicon-48.png?v=20260807 48x48",
+  "/apple-touch-icon.png?v=20260807 180x180",
+  "/icon-192.png?v=20260807 192x192 (any)",
+  "/icon-512.png?v=20260807 512x512 (any)",
+  "/icon-maskable-512.png?v=20260807 512x512 (any maskable)",
 ]
 `;
