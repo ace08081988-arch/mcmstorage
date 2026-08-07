@@ -3812,6 +3812,8 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [pendingDelete, setPendingDelete] = useState<EcerSendEvent | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -3872,6 +3874,27 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from as any)("ecer_send_events")
+        .delete()
+        .eq("id", pendingDelete.id);
+      if (error) throw error;
+      setRows((prev) => prev.filter((x) => x.id !== pendingDelete.id));
+      setPendingDelete(null);
+      toast.success("Riwayat pengiriman dihapus");
+    } catch (e) {
+      toast.error("Gagal menghapus riwayat", {
+        description: e instanceof Error ? e.message : "Coba lagi sebentar.",
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -3945,6 +3968,17 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
                     </div>
                     <ChevronRight className={`mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
                   </button>
+                  <div className="mt-ms-1 flex justify-end">
+                    <button
+                      type="button"
+                      aria-label={`Hapus riwayat pengiriman ${r.party_name || "tanpa nama"}`}
+                      title="Hapus riwayat"
+                      onClick={(e) => { e.stopPropagation(); setPendingDelete(r); }}
+                      className="inline-flex h-7 items-center gap-ms-1 rounded-md px-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" /> Hapus
+                    </button>
+                  </div>
                   {isOpen && (
                     <div className="mt-ms-2 border-t pt-ms-1.5 space-y-ms-1">
                       {r.note && (
@@ -3982,6 +4016,33 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
           )}
         </div>
       )}
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o && !deleting) setPendingDelete(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus riwayat pengiriman?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.party_name || "Tanpa nama"} —{" "}
+              {pendingDelete
+                ? new Date(pendingDelete.created_at).toLocaleString("id-ID")
+                : ""}
+              . Baris ini hanya catatan histori; paket & pembayaran tidak ikut terhapus.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); void confirmDeleteEvent(); }}
+            >
+              {deleting ? "Menghapus…" : "Hapus"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
