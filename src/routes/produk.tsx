@@ -72,6 +72,8 @@ const FEATURES = [
   },
 ];
 
+const HERO_POINTS = ["Tanpa biaya", "Jalan di HP", "Kirim lewat WhatsApp"];
+
 const AUDIENCE = [
   "Toko grosir dan sembako yang melayani pesanan harian",
   "Pemilik usaha yang memakai WhatsApp sebagai kanal utama pelanggan",
@@ -102,10 +104,26 @@ function ProdukPage() {
               <Button asChild size="lg" variant="secondary" className="rounded-full px-ms-5 font-semibold shadow-sm">
                 <Link to="/auth">Coba gratis</Link>
               </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="rounded-full border-primary-foreground/35 bg-transparent px-ms-5 font-semibold text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              >
+                <Link to="/download">Unduh aplikasi</Link>
+              </Button>
             </div>
             <p className="mt-3 text-ms-xs text-primary-foreground/75">
               Semua fitur tersedia gratis untuk saat ini.
             </p>
+            <ul className="mx-auto mt-5 flex max-w-md flex-wrap items-center justify-center gap-x-4 gap-y-2 text-ms-2xs font-medium text-primary-foreground/80">
+              {HERO_POINTS.map((h) => (
+                <li key={h} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {h}
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -119,15 +137,15 @@ function ProdukPage() {
             {FEATURES.map((f) => (
               <article
                 key={f.title}
-                className="lux-card p-ms-4 transition-transform duration-200 hover:-translate-y-0.5"
+                className="lux-card group h-full p-ms-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_18px_40px_-28px_rgba(0,0,0,0.7)]"
               >
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-inset ring-primary/25">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-inset ring-primary/25 transition-colors group-hover:bg-primary/20">
                   <f.icon className="h-5 w-5" aria-hidden="true" />
                 </span>
-                <h3 className="mt-2 text-ms-sm font-semibold text-foreground">
+                <h3 className="mt-2.5 text-ms-sm font-semibold leading-snug text-foreground">
                   {f.title}
                 </h3>
-                <p className="mt-1 text-ms-sm text-muted-foreground">{f.body}</p>
+                <p className="mt-1 text-ms-sm leading-relaxed text-muted-foreground">{f.body}</p>
               </article>
             ))}
           </div>

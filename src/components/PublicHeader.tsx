@@ -1,6 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { useOrgName } from "@/lib/org-name";
 
+const NAV = [
+  { to: "/produk", label: "Produk" },
+  { to: "/harga", label: "Harga" },
+  { to: "/faq", label: "FAQ" },
+] as const;
+
 /**
  * Compact branded strip for public pages (auth, terms, trust, refund, dll).
  * Menampilkan logo (atau badge singkatan) + nama organisasi dengan aksen
@@ -10,7 +16,7 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
   const { full, short, logo } = useOrgName();
   return (
     <header
-      className="app-safe-top app-safe-x w-full border-b bg-background/80 backdrop-blur"
+      className="app-safe-top app-safe-x sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
       style={{ borderBottomColor: "var(--primary)" }}
     >
       <div
@@ -20,7 +26,7 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
       >
         <Link
           to="/"
-          className="group flex min-w-0 shrink items-center gap-ms-2"
+          className="group flex min-w-0 shrink items-center gap-ms-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           aria-label={full}
         >
           {logo ? (
@@ -49,27 +55,19 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
           </span>
         </Link>
         <nav className="ml-auto flex shrink-0 items-center gap-x-1 text-ms-xs font-medium sm:gap-x-2">
-          <Link
-            to="/produk"
-            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
-          >
-            Produk
-          </Link>
-          <Link
-            to="/harga"
-            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
-          >
-            Harga
-          </Link>
-          <Link
-            to="/faq"
-            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl px-ms-2 transition-colors hover:bg-primary/10 hover:text-primary sm:px-ms-2.5"
-          >
-            FAQ
-          </Link>
+          {NAV.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              activeProps={{ className: "bg-primary/12 text-primary" }}
+              className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl px-ms-2 outline-none transition-colors hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/60 sm:px-ms-2.5"
+            >
+              {item.label}
+            </Link>
+          ))}
           <Link
             to="/auth"
-            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl border border-primary/40 bg-primary/10 px-ms-2.5 font-semibold text-primary transition-colors hover:bg-primary/20 sm:px-ms-3"
+            className="inline-flex min-h-[var(--ms-tap)] items-center rounded-xl border border-primary/40 bg-primary/10 px-ms-2.5 font-semibold text-primary outline-none transition-colors hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-primary/60 sm:px-ms-3"
           >
             Masuk
           </Link>
