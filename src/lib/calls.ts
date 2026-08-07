@@ -133,10 +133,11 @@ export async function hideCalls(callIds: string[]): Promise<void> {
   if (error) throw error;
 }
 
-/** Kosongkan seluruh riwayat panggilan milik user saat ini. */
-export async function hideAllCalls(): Promise<void> {
+/** Kosongkan seluruh riwayat panggilan milik user saat ini. Mengembalikan jumlah entri yang dihapus. */
+export async function hideAllCalls(): Promise<number> {
   const rows = await listMyCalls(500);
   await hideCalls(rows.map((r) => r.id));
+  return rows.length;
 }
 
 export function formatCallDuration(sec: number): string {
