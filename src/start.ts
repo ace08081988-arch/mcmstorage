@@ -22,6 +22,18 @@ const errorMiddleware = createMiddleware().server(async ({ request, next }) => {
     if (error != null && typeof error === "object" && "statusCode" in error) {
       throw error;
     }
+    // Build/chunk basi: klien memanggil ID server function dari bundel lama
+    // yang sudah tidak ada di server. Ini bukan crash aplikasi — balas JSON
+    // 410 dengan pesan aslinya supaya `chunk-recovery.ts` mengenalinya dan
+    // melakukan hard reload, bukan menampilkan layar error 500.
+    const message = error instanceof Error ? error.message : String(error);
+    if (/Invalid server function ID|Server function info not found/i.test(message)) {
+      console.warn(message);
+      return new Response(JSON.stringify({ error: message, stale: true }), {
+        status: 410,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      });
+    }
     console.error(error);
     return new Response(renderErrorPage(), {
       status: 500,
