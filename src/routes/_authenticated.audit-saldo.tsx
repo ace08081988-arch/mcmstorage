@@ -146,6 +146,13 @@ function AuditSaldoPage() {
   }, [query.data, kind, q, from, to]);
 
   const groups = useMemo(() => groupByParty(filtered), [filtered]);
+  // Render bertahap: daftar kontak bisa panjang, jadi tampilkan 20 dulu
+  // lalu tambah otomatis saat sentinel terlihat (infinite scroll).
+  const [visible, setVisible] = useState(20);
+  useEffect(() => {
+    setVisible(20);
+  }, [q, kind, from, to, rankBy]);
+  const visibleGroups = useMemo(() => groups.slice(0, visible), [groups, visible]);
   const summaries = useMemo(() => summarizeDeltas(filtered), [filtered]);
   const totals = useMemo(
     () =>
