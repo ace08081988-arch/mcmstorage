@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { InfiniteSentinel } from "@/components/InfiniteSentinel";
 import { VirtualizedList } from "@/components/VirtualizedList";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyError } from "@/lib/friendly-error";
@@ -58,6 +59,12 @@ type Row =
 
 type Filter = "semua" | "terima" | "jual";
 
+/** Halaman kecil per kanal supaya histori tetap ringan saat data membesar. */
+const PAGE_SIZE = 40;
+
+const sortRows = (list: Row[]) =>
+  [...list].sort((a, b) => b.created_at.localeCompare(a.created_at));
+
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -86,131 +93,185 @@ function fmtWaktu(iso: string) {
 
 function RiwayatKiosPage() {
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [filter, setFilter] = useState<Filter>("semua");
+  const pageRef = useRef(0);
+  const aliveRef = useRef(true);
+  const lookupRef = useRef<{
+    items: Map<string, { name: string; base_unit: string | null }>;
+    cust: Map<string, string>;
+    supp: Map<string, string>;
+  } | null>(null);
+
+  // Ambil peta referensi (barang/pelanggan/supplier) sekali saja, lalu
+  // setiap halaman histori cukup query 2 tabel transaksi.
+  const ensureLookups = useCallback(async () => {
+    if (lookupRef.current) return lookupRef.current;
+    const [itemsRes, customersRes, suppliersRes] = await Promise.all([
+      supabase.from("warehouse_items").select("id,name,base_unit"),
+      supabase.from("customers").select("id,name"),
+      supabase.from("suppliers").select("id,name"),
+    ]);
+    const items = new Map<string, { name: string; base_unit: string | null }>();
+    for (const it of (itemsRes.data ?? []) as Array<{
+      id: string;
+      name: string;
+      base_unit: string | null;
+    }>) {
+      items.set(it.id, { name: it.name, base_unit: it.base_unit });
+    }
+    const cust = new Map<string, string>();
+    for (const c of (customersRes.data ?? []) as Array<{ id: string; name: string }>) {
+      cust.set(c.id, c.name);
+    }
+    const supp = new Map<string, string>();
+    for (const s of (suppliersRes.data ?? []) as Array<{ id: string; name: string }>) {
+      supp.set(s.id, s.name);
+    }
+    lookupRef.current = { items, cust, supp };
+    return lookupRef.current;
+  }, []);
+
+  const loadPage = useCallback(
+    async (page: number) => {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const maps = await ensureLookups();
+      const [purchasesRes, salesRes] = await Promise.all([
+        supabase
+          .from("purchases")
+          .select(
+            "id,created_at,item_id,base_added,total_cost,payment_method,supplier_id",
+          )
+          .order("created_at", { ascending: false })
+          .range(from, to),
+        supabase
+          .from("sales")
+          .select(
+            "id,created_at,item_id,qty_base,total_revenue,payment_method,customer_id,note",
+          )
+          .order("created_at", { ascending: false })
+          .range(from, to),
+      ]);
+      if (purchasesRes.error) throw purchasesRes.error;
+      if (salesRes.error) throw salesRes.error;
+
+      const saleIds = ((salesRes.data ?? []) as Array<{ id: string }>).map((r) => r.id);
+      const paidBySaleId = new Map<string, number>();
+      if (saleIds.length > 0) {
+        const paidRes = await supabase
+          .from("customer_payments")
+          .select("sale_id,amount")
+          .in("sale_id", saleIds);
+        for (const p of (paidRes.data ?? []) as Array<{
+          sale_id: string | null;
+          amount: number;
+        }>) {
+          if (!p.sale_id) continue;
+          paidBySaleId.set(
+            p.sale_id,
+            (paidBySaleId.get(p.sale_id) ?? 0) + Number(p.amount || 0),
+          );
+        }
+      }
+
+      const purchaseRows: Row[] = (purchasesRes.data ?? []).map((p) => {
+        const info = maps.items.get(p.item_id as string);
+        return {
+          kind: "terima" as const,
+          id: p.id as string,
+          created_at: p.created_at as string,
+          item_name: info?.name ?? "(barang dihapus)",
+          base_unit: info?.base_unit ?? null,
+          qty_base: Number(p.base_added || 0),
+          total: Number(p.total_cost || 0),
+          payment_method: (p.payment_method as "kas" | "hutang") ?? "kas",
+          supplier_name: p.supplier_id
+            ? (maps.supp.get(p.supplier_id as string) ?? null)
+            : null,
+        };
+      });
+
+      const saleRows: Row[] = (salesRes.data ?? []).map((s) => {
+        const info = maps.items.get(s.item_id as string);
+        const method = (s.payment_method as "kas" | "hutang") ?? "kas";
+        const total = Number(s.total_revenue || 0);
+        const paid = paidBySaleId.get(s.id as string) ?? 0;
+        return {
+          kind: "jual" as const,
+          id: s.id as string,
+          created_at: s.created_at as string,
+          item_name: info?.name ?? "(barang dihapus)",
+          base_unit: info?.base_unit ?? null,
+          qty_base: Number(s.qty_base || 0),
+          total,
+          payment_method: method,
+          // Lunas → dianggap paid=total; hutang → paid = jumlah customer_payments
+          paid_amount: method === "kas" ? total : paid,
+          customer_name: s.customer_id
+            ? (maps.cust.get(s.customer_id as string) ?? null)
+            : null,
+          customer_id: (s.customer_id as string | null) ?? null,
+          note: (s.note as string | null) ?? null,
+        };
+      });
+
+      return {
+        rows: [...purchaseRows, ...saleRows],
+        // Masih ada halaman berikutnya bila salah satu kanal penuh.
+        more:
+          purchaseRows.length === PAGE_SIZE || saleRows.length === PAGE_SIZE,
+      };
+    },
+    [ensureLookups],
+  );
 
   useEffect(() => {
-    let on = true;
+    aliveRef.current = true;
     (async () => {
       setLoading(true);
       try {
-        // Ambil 150 baris terbaru tiap kanal — cukup untuk halaman pertama.
-        const [purchasesRes, salesRes, itemsRes, customersRes, suppliersRes] =
-          await Promise.all([
-            supabase
-              .from("purchases")
-              .select(
-                "id,created_at,item_id,base_added,total_cost,payment_method,supplier_id",
-              )
-              .order("created_at", { ascending: false })
-              .limit(150),
-            supabase
-              .from("sales")
-              .select(
-                "id,created_at,item_id,qty_base,total_revenue,payment_method,customer_id,note",
-              )
-              .order("created_at", { ascending: false })
-              .limit(150),
-            supabase.from("warehouse_items").select("id,name,base_unit"),
-            supabase.from("customers").select("id,name"),
-            supabase.from("suppliers").select("id,name"),
-          ]);
-        if (!on) return;
-        if (purchasesRes.error) throw purchasesRes.error;
-        if (salesRes.error) throw salesRes.error;
-
-        const itemMap = new Map<string, { name: string; base_unit: string | null }>();
-        for (const it of (itemsRes.data ?? []) as Array<{
-          id: string;
-          name: string;
-          base_unit: string | null;
-        }>) {
-          itemMap.set(it.id, { name: it.name, base_unit: it.base_unit });
-        }
-        const custMap = new Map<string, string>();
-        for (const c of (customersRes.data ?? []) as Array<{ id: string; name: string }>) {
-          custMap.set(c.id, c.name);
-        }
-        const suppMap = new Map<string, string>();
-        for (const s of (suppliersRes.data ?? []) as Array<{ id: string; name: string }>) {
-          suppMap.set(s.id, s.name);
-        }
-
-        const saleIds = ((salesRes.data ?? []) as Array<{ id: string }>).map(
-          (r) => r.id,
-        );
-        const paidBySaleId = new Map<string, number>();
-        if (saleIds.length > 0) {
-          const paidRes = await supabase
-            .from("customer_payments")
-            .select("sale_id,amount")
-            .in("sale_id", saleIds);
-          if (!on) return;
-          for (const p of (paidRes.data ?? []) as Array<{
-            sale_id: string | null;
-            amount: number;
-          }>) {
-            if (!p.sale_id) continue;
-            paidBySaleId.set(
-              p.sale_id,
-              (paidBySaleId.get(p.sale_id) ?? 0) + Number(p.amount || 0),
-            );
-          }
-        }
-
-        const purchaseRows: Row[] = (purchasesRes.data ?? []).map((p) => {
-          const info = itemMap.get(p.item_id as string);
-          return {
-            kind: "terima" as const,
-            id: p.id as string,
-            created_at: p.created_at as string,
-            item_name: info?.name ?? "(barang dihapus)",
-            base_unit: info?.base_unit ?? null,
-            qty_base: Number(p.base_added || 0),
-            total: Number(p.total_cost || 0),
-            payment_method: (p.payment_method as "kas" | "hutang") ?? "kas",
-            supplier_name: p.supplier_id ? (suppMap.get(p.supplier_id as string) ?? null) : null,
-          };
-        });
-
-        const saleRows: Row[] = (salesRes.data ?? []).map((s) => {
-          const info = itemMap.get(s.item_id as string);
-          const method = (s.payment_method as "kas" | "hutang") ?? "kas";
-          const total = Number(s.total_revenue || 0);
-          const paid = paidBySaleId.get(s.id as string) ?? 0;
-          return {
-            kind: "jual" as const,
-            id: s.id as string,
-            created_at: s.created_at as string,
-            item_name: info?.name ?? "(barang dihapus)",
-            base_unit: info?.base_unit ?? null,
-            qty_base: Number(s.qty_base || 0),
-            total,
-            payment_method: method,
-            // Lunas → dianggap paid=total; hutang → paid = jumlah customer_payments
-            paid_amount: method === "kas" ? total : paid,
-            customer_name: s.customer_id
-              ? (custMap.get(s.customer_id as string) ?? null)
-              : null,
-            customer_id: (s.customer_id as string | null) ?? null,
-            note: (s.note as string | null) ?? null,
-          };
-        });
-
-        const merged = [...purchaseRows, ...saleRows].sort((a, b) =>
-          b.created_at.localeCompare(a.created_at),
-        );
-        setRows(merged);
+        const res = await loadPage(0);
+        if (!aliveRef.current) return;
+        pageRef.current = 0;
+        setRows(sortRows(res.rows));
+        setHasMore(res.more);
       } catch (e) {
         notifyError(e, { fallback: "Gagal memuat riwayat kios" });
       } finally {
-        if (on) setLoading(false);
+        if (aliveRef.current) setLoading(false);
       }
     })();
     return () => {
-      on = false;
+      aliveRef.current = false;
     };
-  }, []);
+  }, [loadPage]);
+
+  const loadMore = useCallback(() => {
+    if (loading || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    void (async () => {
+      try {
+        const next = pageRef.current + 1;
+        const res = await loadPage(next);
+        if (!aliveRef.current) return;
+        pageRef.current = next;
+        setRows((prev) => {
+          const seen = new Set(prev.map((r) => `${r.kind}:${r.id}`));
+          return sortRows(
+            prev.concat(res.rows.filter((r) => !seen.has(`${r.kind}:${r.id}`))),
+          );
+        });
+        setHasMore(res.more);
+      } catch (e) {
+        notifyError(e, { fallback: "Gagal memuat riwayat berikutnya" });
+      } finally {
+        if (aliveRef.current) setLoadingMore(false);
+      }
+    })();
+  }, [hasMore, loadPage, loading, loadingMore]);
 
   const filtered = useMemo(() => {
     if (filter === "semua") return rows;
@@ -324,14 +385,23 @@ function RiwayatKiosPage() {
             .
           </div>
         ) : (
-          <VirtualizedList
-            cacheKey="kios-riwayat"
-            items={filtered}
-            getKey={(r) => `${r.kind}:${r.id}`}
-            estimateSize={96}
-            gap={8}
-            renderItem={(r) => <HistoryCard r={r} />}
-          />
+          <>
+            <VirtualizedList
+              cacheKey="kios-riwayat"
+              items={filtered}
+              getKey={(r) => `${r.kind}:${r.id}`}
+              estimateSize={96}
+              gap={8}
+              renderItem={(r) => <HistoryCard r={r} />}
+            />
+            <InfiniteSentinel
+              hasMore={hasMore}
+              loading={loadingMore}
+              onLoadMore={loadMore}
+              label="Memuat transaksi lama…"
+              doneLabel={`Semua riwayat termuat (${rows.length} transaksi)`}
+            />
+          </>
         )}
       </main>
     </div>

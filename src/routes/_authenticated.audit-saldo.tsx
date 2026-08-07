@@ -6,9 +6,10 @@
  * SSOT yang sama dengan `party_balance_v1` (`party_balance_events_v1`).
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownCircle, ArrowUpCircle, ChevronRight, RefreshCw, Search, X } from "lucide-react";
+import { InfiniteSentinel } from "@/components/InfiniteSentinel";
 import { rupiah } from "@/lib/stock-format";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { useDebtSyncMap } from "@/lib/chat-debt-sync";
@@ -146,6 +147,13 @@ function AuditSaldoPage() {
   }, [query.data, kind, q, from, to]);
 
   const groups = useMemo(() => groupByParty(filtered), [filtered]);
+  // Render bertahap: daftar kontak bisa panjang, jadi tampilkan 20 dulu
+  // lalu tambah otomatis saat sentinel terlihat (infinite scroll).
+  const [visible, setVisible] = useState(20);
+  useEffect(() => {
+    setVisible(20);
+  }, [q, kind, from, to, rankBy]);
+  const visibleGroups = useMemo(() => groups.slice(0, visible), [groups, visible]);
   const summaries = useMemo(() => summarizeDeltas(filtered), [filtered]);
   const totals = useMemo(
     () =>
@@ -464,7 +472,7 @@ function AuditSaldoPage() {
         </div>
       ) : (
         <ul className="space-y-2">
-          {groups.map((g) => {
+          {visibleGroups.map((g) => {
             const isOpen = open === g.key;
             return (
               <li
@@ -515,6 +523,15 @@ function AuditSaldoPage() {
             );
           })}
         </ul>
+      )}
+
+      {!query.isLoading && groups.length > 0 && (
+        <InfiniteSentinel
+          hasMore={visible < groups.length}
+          loading={false}
+          onLoadMore={() => setVisible((v) => v + 20)}
+          doneLabel={`Semua kontak termuat (${groups.length})`}
+        />
       )}
 
       <p className="text-[0.6875rem] text-muted-foreground">
