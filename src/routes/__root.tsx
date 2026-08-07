@@ -12,6 +12,7 @@ import { useEffect, useState, Suspense, lazy, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
+import { PushPermissionPrompt } from "@/components/chat/PushPermissionPrompt";
 import { AppearanceInit } from "@/components/appearance-init";
 import { FullscreenModeInit } from "@/components/FullscreenModeInit";
 import { applyCompactMode } from "@/components/CompactModeToggle";
