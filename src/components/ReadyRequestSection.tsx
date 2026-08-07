@@ -114,8 +114,9 @@ export function ReadyRequestSection() {
           Paket Request Siap Kirim
         </h2>
         <div className="flex items-center gap-ms-2">
-          {/* Layout toggle desktop-only — mobile default ke list. */}
-          <div className="hidden sm:inline-flex">
+          {/* Setelan tata letak tampil juga di mobile, sama seperti bagian
+              "Siapkan Sendiri — Siap Dikirim". */}
+          <div className="inline-flex">
             <LayoutModeToggle mode={layout} onChange={setLayout} />
           </div>
           <Link to="/request" search={{ title: undefined, highlight: undefined, send: undefined }} className="text-ms-2xs font-medium text-primary hover:underline">Kelola →</Link>
