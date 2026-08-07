@@ -524,6 +524,15 @@ function AuditSaldoPage() {
         </ul>
       )}
 
+      {!query.isLoading && groups.length > 0 && (
+        <InfiniteSentinel
+          hasMore={visible < groups.length}
+          loading={false}
+          onLoadMore={() => setVisible((v) => v + 20)}
+          doneLabel={`Semua kontak termuat (${groups.length})`}
+        />
+      )}
+
       <p className="text-[0.6875rem] text-muted-foreground">
         Total saldo per kontak di atas diambil langsung dari SSOT{" "}
         <code>party_balance_v1</code> — angkanya persis sama dengan chip chat, kartu total,
