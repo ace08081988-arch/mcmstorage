@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
 import { AppearanceInit } from "@/components/appearance-init";
+import { FullscreenModeInit } from "@/components/FullscreenModeInit";
 import { applyCompactMode } from "@/components/CompactModeToggle";
 import { applyReduceMotion } from "@/components/ReduceMotionToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
@@ -527,6 +528,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppearanceInit />
+      <FullscreenModeInit />
       <ChatModeSplash />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />

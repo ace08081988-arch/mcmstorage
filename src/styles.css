@@ -4062,3 +4062,26 @@ html[data-high-contrast="on"] {
   --ring: var(--foreground);
   --sidebar-ring: var(--sidebar-foreground);
 }
+
+/* ==========================================================================
+   Mode layar penuh PWA (iOS/Android)
+   --------------------------------------------------------------------------
+   `data-display-mode` diisi oleh src/lib/fullscreen-mode.ts.
+   - fullscreen : bilah sistem disembunyikan → tidak ada notch/status bar,
+     jadi inset atas dinolkan supaya tidak muncul ruang kosong di puncak.
+   - standalone : status bar masih ada (iOS memakai
+     `apple-mobile-web-app-status-bar-style: black-translucent`, konten
+     merambat ke belakang status bar) → inset atas TETAP dipakai.
+   `100dvh` sudah otomatis mengikuti tinggi layar efektif, jadi tidak ada
+   penyesuaian tinggi manual di sini.
+   ========================================================================== */
+html[data-display-mode="fullscreen"] {
+  --app-safe-top: 0px;
+  --app-safe-bottom: 0px;
+}
+
+/* Saat aplikasi terpasang (tanpa bilah alamat) hilangkan ruang ekstra yang
+   hanya masuk akal di tab browser. */
+html[data-app-installed="1"] body {
+  overscroll-behavior-y: none;
+}
