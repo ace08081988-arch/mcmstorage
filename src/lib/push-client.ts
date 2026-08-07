@@ -102,10 +102,16 @@ export async function sendTestNotification(): Promise<{ sent: number; message: s
  * worker dipastikan terdaftar, langganan dibuat ulang bila hilang, lalu
  * didaftarkan ulang ke server supaya baris di database tetap segar.
  */
+let keepAliveInFlight: Promise<{ ok: boolean; reason?: string }> | null = null;
+
 export async function keepPushAlive(): Promise<{ ok: boolean; reason?: string }> {
   if (!isPushSupported()) return { ok: false, reason: "unsupported" };
   if (Notification.permission !== "granted") return { ok: false, reason: "no-permission" };
-  try {
+  // Dedup: `visibilitychange` dan `online` sering menyala bersamaan sehingga
+  // pendaftaran ulang bisa terkirim berkali-kali. Bagikan satu proses saja.
+  if (keepAliveInFlight) return keepAliveInFlight;
+  keepAliveInFlight = (async () => {
+   try {
     const reg = await getOrRegisterSW();
     await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
@@ -124,9 +130,15 @@ export async function keepPushAlive(): Promise<{ ok: boolean; reason?: string }>
       },
     });
     return { ok: true };
-  } catch (e) {
+   } catch (e) {
     console.warn("[push] keepPushAlive gagal", e);
     return { ok: false, reason: "error" };
+   }
+  })();
+  try {
+    return await keepAliveInFlight;
+  } finally {
+    keepAliveInFlight = null;
   }
 }
 
@@ -141,8 +153,13 @@ export function startPushKeepAlive(): void {
   pushKeepAliveStarted = true;
   let lastRun = 0;
   const MIN_GAP_MS = 6 * 60 * 60 * 1000;
+  // Jeda pendek khusus untuk burst event (visible + online bersamaan).
+  const BURST_GAP_MS = 30 * 1000;
+  let lastAnyRun = 0;
   const run = (force = false) => {
     const now = Date.now();
+    if (now - lastAnyRun < BURST_GAP_MS) return;
+    lastAnyRun = now;
     if (!force && now - lastRun < MIN_GAP_MS) return;
     lastRun = now;
     void keepPushAlive();
