@@ -4061,13 +4061,13 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
             </div>
           ) : (
             visibleRows.map((r) => {
-              const isOpen = expanded.has(r.id);
               const dt = new Date(r.created_at);
               return (
-                <div key={r.id} className="rounded-md border bg-card px-ms-2 py-ms-1.5 text-ms-2xs">
+                <div key={r.id} className="rounded-md border bg-card px-ms-2 py-ms-1.5 text-ms-2xs transition hover:border-primary/40 hover:bg-muted/30">
                   <button
                     type="button"
-                    onClick={() => toggleExpand(r.id)}
+                    onClick={() => setDetail(r)}
+                    aria-label={`Lihat detail histori ${r.party_name || "tanpa nama"}`}
                     className="flex w-full items-start gap-ms-2 text-left"
                   >
                     <div className="min-w-0 flex-1">
@@ -4090,9 +4090,16 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
                         {r.payment_method === "kas" && <> · Lunas</>}
                       </div>
                     </div>
-                    <ChevronRight className={`mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                    <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   </button>
-                  <div className="mt-ms-1 flex justify-end">
+                  <div className="mt-ms-1 flex justify-end gap-ms-1">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setDetail(r); }}
+                      className="inline-flex h-7 items-center gap-ms-1 rounded-md px-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      Detail
+                    </button>
                     <button
                       type="button"
                       aria-label={`Hapus riwayat pengiriman ${r.party_name || "tanpa nama"}`}
@@ -4103,37 +4110,6 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
                       <Trash2 className="h-3 w-3" /> Hapus
                     </button>
                   </div>
-                  {isOpen && (
-                    <div className="mt-ms-2 border-t pt-ms-1.5 space-y-ms-1">
-                      {r.note && (
-                        <div>
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Catatan</div>
-                          <div className="whitespace-pre-wrap break-words">{r.note}</div>
-                        </div>
-                      )}
-                      {r.error_message && (
-                        <div>
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-destructive">Error</div>
-                          <div className="text-destructive whitespace-pre-wrap break-words">{r.error_message}</div>
-                        </div>
-                      )}
-                      {r.caption_preview && (
-                        <div>
-                          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Pesan terkirim</div>
-                          <pre className="mt-0.5 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded bg-muted/40 p-ms-1.5 font-sans text-[11px] leading-relaxed">
-{r.caption_preview}
-                          </pre>
-                          <button
-                            type="button"
-                            onClick={() => { void copyText(r.caption_preview ?? ""); toast.success("Pesan disalin"); }}
-                            className="mt-0.5 text-[10px] text-primary hover:underline"
-                          >
-                            Salin pesan
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               );
             })
