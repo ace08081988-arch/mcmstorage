@@ -1240,6 +1240,22 @@ function PengaturanTampilanPage() {
           </CardContent>
         </Card>
 
+        {/* Mode layar penuh (PWA iOS/Android) */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-ms-2 text-ms-base">
+              <Layers className="h-4 w-4" /> Mode layar penuh
+            </CardTitle>
+            <CardDescription className="text-ms-xs">
+              Atur agar aplikasi tampil benar-benar penuh saat dipasang di HP —
+              tanpa header ganda atau ruang kosong di atas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FullscreenModeToggle />
+          </CardContent>
+        </Card>
+
         {/* Latar & transparansi */}
         {/* Transparansi & efek kaca */}
         <Card>
