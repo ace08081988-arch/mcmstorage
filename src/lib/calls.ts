@@ -128,7 +128,7 @@ export async function hideCalls(callIds: string[]): Promise<void> {
     .from("chat_call_hidden")
     .upsert(
       callIds.map((call_id) => ({ user_id: uid, call_id })),
-      { onConflict: "user_id,call_id" },
+      { onConflict: "user_id,call_id", ignoreDuplicates: true },
     );
   if (error) throw error;
 }
