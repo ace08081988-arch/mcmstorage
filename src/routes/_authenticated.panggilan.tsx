@@ -289,6 +289,67 @@ function PanggilanPage() {
               </button>
             ) : null}
           </div>
+          <div className="flex items-center gap-ms-1.5 pt-ms-2">
+            <span className="text-ms-xs text-muted-foreground">{rows.length} entri</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={rows.length === 0 || exporting !== null}
+              className="ml-auto h-9 gap-1.5 rounded-full text-ms-xs"
+              onClick={() => {
+                try {
+                  setExporting("csv");
+                  const name = exportCallsCsv(toExportRows(rows, myId ?? null, nameMap));
+                  toast.success("CSV diunduh", { description: name });
+                } catch (e) {
+                  toast.error("Gagal mengekspor CSV", {
+                    description: e instanceof Error ? e.message : undefined,
+                  });
+                } finally {
+                  setExporting(null);
+                }
+              }}
+            >
+              {exporting === "csv" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+              )}
+              CSV
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={rows.length === 0 || exporting !== null}
+              className="h-9 gap-1.5 rounded-full text-ms-xs"
+              onClick={async () => {
+                try {
+                  setExporting("pdf");
+                  const label = isFiltered ? "hasil filter" : "semua entri";
+                  const name = await exportCallsPdf(
+                    toExportRows(rows, myId ?? null, nameMap),
+                    label,
+                  );
+                  toast.success("PDF diunduh", { description: name });
+                } catch (e) {
+                  toast.error("Gagal mengekspor PDF", {
+                    description: e instanceof Error ? e.message : undefined,
+                  });
+                } finally {
+                  setExporting(null);
+                }
+              }}
+            >
+              {exporting === "pdf" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileText className="h-3.5 w-3.5" />
+              )}
+              PDF
+            </Button>
+          </div>
         </div>
       ) : null}
 
