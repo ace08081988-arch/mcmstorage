@@ -293,6 +293,32 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_call_hidden: {
+        Row: {
+          call_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          call_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          call_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_call_hidden_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "chat_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_calls: {
         Row: {
           accepted_at: string | null

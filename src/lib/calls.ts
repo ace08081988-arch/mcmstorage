@@ -99,14 +99,44 @@ export async function listMyCalls(limit = 50): Promise<CallRow[]> {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
   if (!uid) return [];
-  const { data, error } = await supabase
-    .from("chat_calls")
-    .select("*")
-    .or(`caller_id.eq.${uid},callee_id.eq.${uid}`)
-    .order("started_at", { ascending: false })
-    .limit(limit);
+  const [callsRes, hiddenRes] = await Promise.all([
+    supabase
+      .from("chat_calls")
+      .select("*")
+      .or(`caller_id.eq.${uid},callee_id.eq.${uid}`)
+      .order("started_at", { ascending: false })
+      .limit(limit),
+    supabase.from("chat_call_hidden").select("call_id").eq("user_id", uid),
+  ]);
+  if (callsRes.error) throw callsRes.error;
+  const hidden = new Set(
+    ((hiddenRes.data ?? []) as { call_id: string }[]).map((h) => h.call_id),
+  );
+  return ((callsRes.data ?? []) as CallRow[]).filter((c) => !hidden.has(c.id));
+}
+
+/**
+ * Sembunyikan (hapus) entri riwayat panggilan untuk user saat ini saja —
+ * lawan bicara tetap punya salinan riwayatnya.
+ */
+export async function hideCalls(callIds: string[]): Promise<void> {
+  if (callIds.length === 0) return;
+  const { data: auth } = await supabase.auth.getUser();
+  const uid = auth.user?.id;
+  if (!uid) throw new Error("Belum login");
+  const { error } = await supabase
+    .from("chat_call_hidden")
+    .upsert(
+      callIds.map((call_id) => ({ user_id: uid, call_id })),
+      { onConflict: "user_id,call_id", ignoreDuplicates: true },
+    );
   if (error) throw error;
-  return (data ?? []) as CallRow[];
+}
+
+/** Kosongkan seluruh riwayat panggilan milik user saat ini. */
+export async function hideAllCalls(): Promise<void> {
+  const rows = await listMyCalls(500);
+  await hideCalls(rows.map((r) => r.id));
 }
 
 export function formatCallDuration(sec: number): string {
