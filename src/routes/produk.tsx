@@ -116,9 +116,9 @@ function ProdukPage() {
             <p className="mt-3 text-ms-xs text-primary-foreground/75">
               Semua fitur tersedia gratis untuk saat ini.
             </p>
-            <ul className="mx-auto mt-5 flex max-w-md flex-wrap items-center justify-center gap-x-ms-3 gap-y-ms-1.5 text-ms-2xs font-medium text-primary-foreground/80">
+            <ul className="mx-auto mt-5 flex max-w-md flex-wrap items-center justify-center gap-x-4 gap-y-2 text-ms-2xs font-medium text-primary-foreground/80">
               {HERO_POINTS.map((h) => (
-                <li key={h} className="inline-flex items-center gap-ms-1">
+                <li key={h} className="inline-flex items-center gap-1.5 whitespace-nowrap">
                   <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   {h}
                 </li>
