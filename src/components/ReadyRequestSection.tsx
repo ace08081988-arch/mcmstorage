@@ -520,6 +520,22 @@ export function ReadyRequestSection() {
             {pendingPrepTotal !== null && pendingPrepTotal > 0 && pendingDelete && (
               <button
                 type="button"
+                onClick={() => {
+                  const id = pendingDelete.id;
+                  setPendingDelete(null);
+                  void navigate({
+                    to: "/request",
+                    search: { title: id, highlight: undefined, send: undefined },
+                  });
+                }}
+                className="inline-flex min-h-[var(--ms-tap)] items-center justify-center rounded-md border px-ms-3 text-ms-xs font-semibold hover:bg-muted"
+              >
+                Buka daftar paket
+              </button>
+            )}
+            {pendingPrepTotal !== null && pendingPrepTotal > 0 && pendingDelete && (
+              <button
+                type="button"
                 disabled={archiving}
                 onClick={() => { void setArchived(pendingDelete, !pendingDelete.archived_at); }}
                 className="inline-flex min-h-[var(--ms-tap)] items-center justify-center rounded-md border border-primary/40 bg-primary/10 px-ms-3 text-ms-xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-60"
