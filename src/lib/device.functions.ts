@@ -312,12 +312,17 @@ export const isDeviceTrusted = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("user_devices")
-      .select("id, trusted_at")
+      .select("id, trusted_at, last_seen_at")
       .eq("user_id", userId)
       .eq("device_hash", fullHash)
       .maybeSingle();
     const trusted = !!row?.trusted_at;
-    if (trusted && row) {
+    // Heartbeat di-throttle: `isDeviceTrusted` dipanggil tiap navigasi, dan
+    // UPDATE tanpa rem membanjiri PostgREST (penyebab antrean/timeout).
+    // Cukup segarkan `last_seen_at` maksimal sekali per 5 menit.
+    const lastSeenMs = row?.last_seen_at ? Date.parse(row.last_seen_at) : 0;
+    const staleHeartbeat = !lastSeenMs || Date.now() - lastSeenMs > 5 * 60_000;
+    if (trusted && row && staleHeartbeat) {
       await supabaseAdmin
         .from("user_devices")
         .update({
