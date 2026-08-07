@@ -3810,6 +3810,9 @@ type EcerSendEvent = {
 function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const [rows, setRows] = useState<EcerSendEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [pendingDelete, setPendingDelete] = useState<EcerSendEvent | null>(null);
@@ -3818,29 +3821,81 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   // setelah refresh otomatis (fokus window / event kirim / setelah hapus).
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "status">("newest");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Halaman kecil supaya histori tetap ringan walau datanya ribuan baris.
+  const PAGE_SIZE = 20;
+
+  const fetchPage = useCallback(async (offset: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return withSupabaseQueryTimeout<SupabaseQueryResult<EcerSendEvent[]> & { count: number | null }>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (signal) => (supabase.from as any)("ecer_send_events")
+        .select(
+          "id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message",
+          { count: "exact" },
+        )
+        .eq("title_id", titleId)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1)
+        .abortSignal(signal),
+      "ecer_send_events",
+    );
+  }, [titleId]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     try {
-      const { data, error } = await withSupabaseQueryTimeout<SupabaseQueryResult<EcerSendEvent[]>>(
-        (signal) => (supabase.from as any)("ecer_send_events")
-          .select("id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message")
-          .eq("title_id", titleId)
-          .order("created_at", { ascending: false })
-          .limit(50)
-          .abortSignal(signal),
-        "ecer_send_events",
-      );
-      if (!error) setRows((data ?? []) as EcerSendEvent[]);
+      const { data, error, count } = await fetchPage(0);
+      if (!error) {
+        const page = (data ?? []) as EcerSendEvent[];
+        setRows(page);
+        setTotal(typeof count === "number" ? count : null);
+        setHasMore(page.length === PAGE_SIZE && (typeof count !== "number" || count > page.length));
+      }
     } finally {
       setLoading(false);
     }
-  }, [titleId]);
+  }, [fetchPage]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || loading || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const { data, error, count } = await fetchPage(rows.length);
+      if (!error) {
+        const page = (data ?? []) as EcerSendEvent[];
+        setRows((prev) => {
+          const seen = new Set(prev.map((x) => x.id));
+          const merged = prev.concat(page.filter((x) => !seen.has(x.id)));
+          setHasMore(
+            page.length === PAGE_SIZE &&
+            (typeof count !== "number" || count > merged.length),
+          );
+          return merged;
+        });
+        if (typeof count === "number") setTotal(count);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchPage, hasMore, loading, loadingMore, rows.length]);
 
   // Muat sekali saat mount supaya badge jumlah histori langsung terlihat
   // tanpa harus membuka panel dulu.
   useEffect(() => { void load(); }, [load]);
+
+  // Infinite scroll: muat halaman berikutnya saat sentinel terlihat.
+  useEffect(() => {
+    if (!open || !hasMore) return;
+    const el = sentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) void loadMore();
+    }, { rootMargin: "200px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [open, hasMore, loadMore]);
 
   useEffect(() => {
     // Refresh saat window fokus lagi + saat SendEcerPrepsDialog memancarkan
@@ -3894,12 +3949,12 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
   const statusOptions = useMemo(() => {
     const counts = new Map<string, number>();
     for (const r of rows) counts.set(r.outcome, (counts.get(r.outcome) ?? 0) + 1);
-    return [{ key: "all", label: "Semua", count: rows.length }].concat(
+    return [{ key: "all", label: "Semua", count: total ?? rows.length }].concat(
       Array.from(counts.entries())
         .sort((a, b) => outcomeRank(a[0]) - outcomeRank(b[0]))
         .map(([key, count]) => ({ key, label: outcomeLabel(key), count })),
     );
-  }, [rows]);
+  }, [rows, total]);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -3943,9 +3998,9 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
       >
         <ChevronRight className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
         Histori Verifikasi & Pengiriman
-        {rows.length > 0 && (
+        {(total ?? rows.length) > 0 && (
           <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium normal-case text-muted-foreground">
-            {rows.length}
+            {total ?? rows.length}
           </span>
         )}
         <span className="ml-auto flex items-center gap-ms-1 normal-case">
@@ -4082,6 +4137,25 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
                 </div>
               );
             })
+          )}
+          {rows.length > 0 && (
+            <div ref={sentinelRef} className="pt-ms-1">
+              {hasMore ? (
+                <button
+                  type="button"
+                  onClick={() => void loadMore()}
+                  disabled={loadingMore}
+                  className="flex w-full items-center justify-center gap-ms-1 rounded-md border border-dashed bg-muted/20 px-ms-2 py-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+                >
+                  {loadingMore ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                  {loadingMore ? "Memuat…" : "Muat lebih banyak"}
+                </button>
+              ) : (
+                <div className="text-center text-[10px] text-muted-foreground">
+                  Menampilkan semua {total ?? rows.length} catatan.
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
