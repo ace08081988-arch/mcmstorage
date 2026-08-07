@@ -59,6 +59,12 @@ type Row =
 
 type Filter = "semua" | "terima" | "jual";
 
+/** Halaman kecil per kanal supaya histori tetap ringan saat data membesar. */
+const PAGE_SIZE = 40;
+
+const sortRows = (list: Row[]) =>
+  [...list].sort((a, b) => b.created_at.localeCompare(a.created_at));
+
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
