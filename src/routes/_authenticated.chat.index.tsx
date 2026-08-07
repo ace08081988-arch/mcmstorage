@@ -396,10 +396,13 @@ function ChatListPage() {
       // 200ms mendekati kurva animasi keyboard Android/iOS tanpa
       // membuatnya terasa lambat. `motion-reduce:transition-none`
       // menghormati preferensi pengguna.
-      className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
+      className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
       style={
         kbInset > 0
-          ? { minHeight: `calc(100dvh - ${kbInset}px)`, height: `calc(100dvh - ${kbInset}px)` }
+          ? {
+              minHeight: `calc(var(--app-vh, 100dvh) - ${kbInset}px)`,
+              height: `calc(var(--app-vh, 100dvh) - ${kbInset}px)`,
+            }
           : undefined
       }
     >
