@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { notifyError } from "@/lib/friendly-error";
