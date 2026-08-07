@@ -1,7 +1,7 @@
 /* Ace Storage — Web Push service worker (Play Store-grade UX) */
 // Ubah SW_VERSION untuk memaksa browser mengambil SW baru + memicu update
 // asset (manifest, ikon) tanpa harus uninstall aplikasi.
-const SW_VERSION = "2026-07-09-1";
+const SW_VERSION = "2026-08-07-1";
 const ASSET_CACHE = `mcm-assets-${SW_VERSION}`;
 // Aset yang wajib selalu segar setelah SW baru aktif (manifest & ikon).
 const FRESH_ASSETS = [
@@ -289,4 +289,61 @@ self.addEventListener("message", (event) => {
       } catch (_) {}
     })());
   }
+});
+// ---------------------------------------------------------------------------
+// Pemulihan langganan otomatis.
+// Browser sesekali merotasi/mencabut langganan push (update aplikasi, storage
+// dibersihkan, kunci kedaluwarsa). Tanpa penanganan, notifikasi berhenti diam-
+// diam saat aplikasi tidak dibuka. Handler ini langsung berlangganan ulang dan
+// melaporkan endpoint baru ke server memakai endpoint lama sebagai bukti.
+// ---------------------------------------------------------------------------
+const VAPID_PUBLIC_KEY_SW =
+  "BPu9dnY_SQKEYY_G9tz1YjsBWMuoYZbHPa0lDz0oSsH35dtczBKPIPCxXEF4UuMnDHH_ln-agOhpJwQLmcgNEHw";
+
+function swUrlB64ToUint8Array(base64) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(b64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+function swKeyToBase64(buf) {
+  if (!buf) return "";
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+
+async function resubscribePush(oldSubscription) {
+  const fresh = await self.registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: swUrlB64ToUint8Array(VAPID_PUBLIC_KEY_SW),
+  });
+  const oldEndpoint = oldSubscription && oldSubscription.endpoint;
+  if (!oldEndpoint) return;
+  await fetch("/api/public/push-resubscribe", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      oldEndpoint,
+      endpoint: fresh.endpoint,
+      p256dh: swKeyToBase64(fresh.getKey("p256dh")),
+      auth: swKeyToBase64(fresh.getKey("auth")),
+    }),
+  });
+}
+
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        await resubscribePush(event.oldSubscription);
+      } catch (_) {
+        // Gagal senyap: klien akan memperbaiki saat aplikasi dibuka lagi.
+      }
+    })(),
+  );
 });
