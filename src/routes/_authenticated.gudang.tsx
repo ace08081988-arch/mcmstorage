@@ -830,7 +830,11 @@ function GudangPage() {
           />
         </section>
 
-        <GudangLoadProgress wave1Done={!loading} wave2Done={!secondaryLoading} />
+        <GudangLoadProgress
+          wave1Done={!loading}
+          wave2Done={!secondaryLoading}
+          subtle={revalidating}
+        />
 
         {lastCrash && (
           <div
@@ -879,13 +883,17 @@ function GudangPage() {
           </div>
         )}
 
-        {loading && <GudangLoadingSkeleton />}
-        {!loading && secondaryLoading &&
-          (tab === "jual" || tab === "pesanan" || tab === "hutang" ||
-            tab === "pelanggan" || tab === "piutang" || tab === "riwayat") && (
-          <GudangLoadingSkeleton />
-        )}
+        {showSkeleton && <GudangLoadingSkeleton />}
 
+        <div
+          className={
+            showSkeleton
+              ? "hidden"
+              : "animate-in fade-in duration-200 space-ms-3" +
+                (revalidating ? " opacity-90 transition-opacity" : "")
+          }
+          aria-busy={revalidating || undefined}
+        >
         {tab === "stok" && (
           <StokTab
             items={items}
@@ -901,12 +909,12 @@ function GudangPage() {
           <BeliTab key={beliPresetKey} suppliers={suppliers} items={items} uid={uid} onChanged={reloadAll} defaultPayment={beliDefaultPayment} />
         )}
         {tab === "jual" && (
-          !secondaryLoading && <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
+          <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "pesanan" && (
-          !secondaryLoading && <PesananTab orders={orders} items={items} customers={customers} uid={uid} onChanged={reloadAll} />
+          <PesananTab orders={orders} items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
-        {tab === "hutang" && !secondaryLoading && (
+        {tab === "hutang" && (
           <HutangTab
             purchases={purchases}
             payments={payments}
