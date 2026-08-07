@@ -4021,24 +4021,76 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
         open={!!pendingDelete}
         onOpenChange={(o) => { if (!o && !deleting) setPendingDelete(null); }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus riwayat pengiriman?</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-ms-2">
+              <Trash2 className="h-4 w-4 text-destructive" aria-hidden />
+              Hapus catatan histori ini?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDelete?.party_name || "Tanpa nama"} —{" "}
-              {pendingDelete
-                ? new Date(pendingDelete.created_at).toLocaleString("id-ID")
-                : ""}
-              . Baris ini hanya catatan histori; paket & pembayaran tidak ikut terhapus.
+              Periksa dulu detail catatan di bawah. Tindakan ini tidak bisa dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {pendingDelete && (
+            <div className="space-y-ms-3">
+              <div className="space-y-ms-1 rounded-lg border bg-muted/30 p-ms-3 text-ms-xs">
+                <div className="flex flex-wrap items-center gap-ms-1">
+                  <span className={`rounded border px-1 py-0.5 text-[10px] font-medium ${outcomeStyle(pendingDelete.outcome)}`}>
+                    {outcomeLabel(pendingDelete.outcome)}
+                  </span>
+                  <span className="rounded border border-border bg-muted/40 px-1 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {channelLabel(pendingDelete.channel)}
+                  </span>
+                  <span className="font-semibold">{pendingDelete.party_name || "Tanpa nama"}</span>
+                  {pendingDelete.party_contact && (
+                    <span className="text-muted-foreground">· {pendingDelete.party_contact}</span>
+                  )}
+                </div>
+                <div className="text-muted-foreground">
+                  {new Date(pendingDelete.created_at).toLocaleString("id-ID", {
+                    day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  })}
+                </div>
+                <div className="text-muted-foreground">
+                  {pendingDelete.prep_count} kotak · {pendingDelete.photo_count} foto
+                  {pendingDelete.total_amount != null && (
+                    <> · <span className="tabular-nums font-medium text-foreground">{rupiah(Number(pendingDelete.total_amount))}</span></>
+                  )}
+                  {pendingDelete.payment_method === "hutang" && <> · Hutang</>}
+                  {pendingDelete.payment_method === "partial" && <> · Bayar sebagian</>}
+                  {pendingDelete.payment_method === "kas" && <> · Lunas</>}
+                </div>
+              </div>
+
+              <div className="space-y-ms-1 text-ms-xs">
+                <p className="font-semibold text-muted-foreground">Dampak penghapusan</p>
+                <ul className="space-y-ms-1">
+                  <li className="flex gap-ms-2">
+                    <span className="text-destructive" aria-hidden>−</span>
+                    <span>Baris histori ini hilang permanen, termasuk salinan pesan yang terkirim dan catatan error.</span>
+                  </li>
+                  <li className="flex gap-ms-2">
+                    <span className="text-success" aria-hidden>✓</span>
+                    <span>Paket penyiapan, stok, foto, dan data pembayaran/piutang <strong>tidak</strong> ikut terhapus.</span>
+                  </li>
+                  <li className="flex gap-ms-2">
+                    <span className="text-success" aria-hidden>✓</span>
+                    <span>Pesan yang sudah dikirim ke pelanggan tetap ada di WhatsApp/chat mereka.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
             <AlertDialogAction
               disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={(e) => { e.preventDefault(); void confirmDeleteEvent(); }}
             >
-              {deleting ? "Menghapus…" : "Hapus"}
+              {deleting ? "Menghapus…" : "Hapus histori"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
