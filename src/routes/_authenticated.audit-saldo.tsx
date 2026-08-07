@@ -9,6 +9,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownCircle, ArrowUpCircle, ChevronRight, RefreshCw, Search, X } from "lucide-react";
+import { InfiniteSentinel } from "@/components/InfiniteSentinel";
 import { rupiah } from "@/lib/stock-format";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { useDebtSyncMap } from "@/lib/chat-debt-sync";
