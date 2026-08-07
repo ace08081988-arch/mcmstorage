@@ -602,7 +602,7 @@ function PanggilanPage() {
 }
 
 function CallRowItem({
-  row, myId, nameMap, isCalling, onStartCall, onDelete,
+  row, myId, nameMap, isCalling, onStartCall, onDelete, onDetail,
 }: {
   row: CallRow;
   myId: string | null;
@@ -610,6 +610,7 @@ function CallRowItem({
   isCalling: boolean;
   onStartCall: (row: CallRow) => void | Promise<void>;
   onDelete: (row: CallRow) => void;
+  onDetail: (row: CallRow) => void;
 }) {
   const outgoing = row.caller_id === myId;
   const peerId = outgoing ? row.callee_id : row.caller_id;
@@ -670,6 +671,14 @@ function CallRowItem({
         ) : (
           <Icon className={`h-5 w-5 ${row.kind === "video" ? "text-primary" : "text-muted-foreground"}`} />
         )}
+      </button>
+      <button
+        type="button"
+        onClick={() => onDetail(row)}
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors touch-manipulation hover:bg-muted/60 active:bg-muted"
+        aria-label={`Lihat detail panggilan dengan ${peerName}`}
+      >
+        <Info className="h-[18px] w-[18px]" />
       </button>
       <button
         type="button"
