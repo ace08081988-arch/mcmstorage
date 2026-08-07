@@ -63,19 +63,70 @@ export function ReadyRequestSection() {
     active: number;
     sent: number;
   } | null>(null);
+  // Daftar Riwayat Terkirim (tanggal + produk) supaya pengguna tahu persis
+  // data apa yang memblokir/terkait sebelum menghapus judul.
+  const [pendingSentHistory, setPendingSentHistory] = useState<
+    Array<{ id: string; soldAt: string; party: string | null; products: string }> | null
+  >(null);
 
   const openDelete = useCallback(async (r: Row) => {
     setPendingDelete(r);
     setPendingPrepTotal(null);
     setPendingBreakdown(null);
+    setPendingSentHistory(null);
     const { data } = await sb
       .from("request_preparations")
-      .select("id,sold_at")
+      .select("id,sold_at,sold_party_name")
       .eq("title_id", r.id);
-    const preps = (data ?? []) as Array<{ sold_at: string | null }>;
+    const preps = (data ?? []) as Array<{
+      id: string;
+      sold_at: string | null;
+      sold_party_name: string | null;
+    }>;
     const active = countActivePreps(preps);
     setPendingBreakdown({ active, sent: preps.length - active });
     setPendingPrepTotal(preps.length);
+
+    // Rincian produk per paket terkirim (urut terbaru).
+    const sent = preps
+      .filter((p) => !!p.sold_at)
+      .sort((a, b) => (b.sold_at ?? "").localeCompare(a.sold_at ?? ""));
+    if (sent.length === 0) {
+      setPendingSentHistory([]);
+      return;
+    }
+    const ids = sent.map((p) => p.id);
+    const [itemsRes, whRes] = await Promise.all([
+      sb
+        .from("request_preparation_items")
+        .select("preparation_id,warehouse_item_id,actual_grams")
+        .in("preparation_id", ids),
+      supabase.from("warehouse_items").select("id,name"),
+    ]);
+    const names = new Map<string, string>(
+      ((whRes.data ?? []) as Array<{ id: string; name: string }>).map((w) => [w.id, w.name]),
+    );
+    const byPrep = new Map<string, string[]>();
+    for (const it of (itemsRes.data ?? []) as Array<{
+      preparation_id: string;
+      warehouse_item_id: string | null;
+      actual_grams: number | null;
+    }>) {
+      const label = `${names.get(it.warehouse_item_id ?? "") ?? "Produk"}${
+        it.actual_grams != null ? ` ${Number(it.actual_grams).toLocaleString("id-ID")} g` : ""
+      }`;
+      const arr = byPrep.get(it.preparation_id) ?? [];
+      arr.push(label);
+      byPrep.set(it.preparation_id, arr);
+    }
+    setPendingSentHistory(
+      sent.map((p) => ({
+        id: p.id,
+        soldAt: p.sold_at as string,
+        party: p.sold_party_name,
+        products: (byPrep.get(p.id) ?? []).join(", ") || "—",
+      })),
+    );
   }, []);
   const gridClass = layoutGridClass(layout);
   const compact = layout === "compact";
@@ -347,6 +398,47 @@ export function ReadyRequestSection() {
               </div>
             </dl>
           </div>
+
+          {/* Daftar Riwayat Terkirim yang terkait judul ini */}
+          {pendingBreakdown && pendingBreakdown.sent > 0 && (
+            <div className="rounded-md border">
+              <div className="border-b px-ms-2.5 py-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Riwayat terkirim ({pendingBreakdown.sent})
+              </div>
+              {pendingSentHistory === null ? (
+                <div className="p-ms-2.5 text-ms-xs text-muted-foreground">Memuat rincian…</div>
+              ) : (
+                <ul className="max-h-48 overflow-y-auto divide-y">
+                  {pendingSentHistory.slice(0, 20).map((h) => (
+                    <li key={h.id} className="px-ms-2.5 py-ms-1.5 text-ms-xs">
+                      <div className="flex items-baseline justify-between gap-ms-2">
+                        <span className="font-medium tabular-nums">
+                          {new Date(h.soldAt).toLocaleString("id-ID", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {h.party ? (
+                          <span className="shrink-0 truncate text-muted-foreground max-w-[45%]">
+                            {h.party}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-0.5 break-words text-muted-foreground">{h.products}</div>
+                    </li>
+                  ))}
+                  {pendingSentHistory.length > 20 ? (
+                    <li className="px-ms-2.5 py-ms-1.5 text-ms-2xs text-muted-foreground">
+                      +{pendingSentHistory.length - 20} riwayat lainnya
+                    </li>
+                  ) : null}
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* Konsekuensi sebenarnya dari aksi ini */}
           {pendingPrepTotal !== null && (
