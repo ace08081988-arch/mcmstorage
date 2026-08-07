@@ -4125,7 +4125,9 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
             <div className="text-ms-2xs text-muted-foreground">Memuat histori…</div>
           ) : rows.length === 0 ? (
             <div className="rounded-md border border-dashed bg-muted/20 px-ms-3 py-ms-3 text-center text-ms-2xs text-muted-foreground">
-              Belum ada histori pengiriman untuk paket ini.
+              {channelFilter !== "all" || dateFrom || dateTo
+                ? "Tidak ada histori pada kategori/rentang tanggal ini."
+                : "Belum ada histori pengiriman untuk paket ini."}
             </div>
           ) : visibleRows.length === 0 ? (
             <div className="rounded-md border border-dashed bg-muted/20 px-ms-3 py-ms-3 text-center text-ms-2xs text-muted-foreground">
