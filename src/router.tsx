@@ -22,6 +22,10 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // Prefetch chunk + loader rute saat pointer/tap mendekat, jadi pindah
+    // halaman terasa instan (terutama di WebView Android yang lambat).
+    defaultPreload: "intent",
+    defaultPreloadDelay: 60,
     defaultPreloadStaleTime: 0,
   });
 
