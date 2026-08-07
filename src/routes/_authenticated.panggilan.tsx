@@ -144,8 +144,13 @@ function PanggilanPage() {
   const nameMap = profiles.data ?? {};
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
+    const fromTs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+    const toTs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
     const filtered = allRows.filter((c) => {
       const outgoing = c.caller_id === myId;
+      const ts = new Date(c.started_at).getTime();
+      if (fromTs !== null && ts < fromTs) return false;
+      if (toTs !== null && ts > toTs) return false;
       if (filter === "missed" && !(c.status === "missed" || (c.status === "declined" && !outgoing))) return false;
       if (filter === "incoming" && outgoing) return false;
       if (filter === "outgoing" && !outgoing) return false;
@@ -160,8 +165,8 @@ function PanggilanPage() {
       const tb = new Date(b.started_at).getTime();
       return sort === "newest" ? tb - ta : ta - tb;
     });
-  }, [allRows, myId, filter, q, nameMap, sort]);
-  const isFiltered = q.trim().length > 0 || filter !== "all";
+  }, [allRows, myId, filter, q, nameMap, sort, dateFrom, dateTo]);
+  const isFiltered = q.trim().length > 0 || filter !== "all" || !!dateFrom || !!dateTo;
   const FILTERS: { key: typeof filter; label: string }[] = [
     { key: "all", label: "Semua" },
     { key: "missed", label: "Tak terjawab" },
