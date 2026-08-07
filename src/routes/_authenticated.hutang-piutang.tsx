@@ -580,6 +580,7 @@ function HutangPiutangPage() {
     <div
       className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30"
       data-press-scope="on"
+      style={{ ["--hp-sticky-top" as string]: `${headerH}px` }}
     >
       <header className="app-sticky-header" ref={pageHeaderRef}>
         <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
