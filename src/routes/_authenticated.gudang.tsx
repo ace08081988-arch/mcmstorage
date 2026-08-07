@@ -2611,6 +2611,8 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
     onSaved();
   }
 
+  const editTrapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-ms-3" onClick={onClose}>
       <div
