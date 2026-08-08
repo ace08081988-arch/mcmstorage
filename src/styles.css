@@ -4281,7 +4281,7 @@ html[data-app-installed="1"] body {
 }
 
 /* Permukaan "lux" (beranda/marketing) ikut kedalaman yang sama. */
-:where(.lux-card, .lux-plate, .surface-quiet, .surface-editorial) {
+.lux-card, .lux-plate, .surface-quiet, .surface-editorial {
   box-shadow:
     inset 0 1px 0 0 var(--d3-light),
     0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
