@@ -31,6 +31,9 @@ jobs:
       - name: Typecheck (tsgo)
         run: bunx tsgo --noEmit
 
+      - name: Audit kompatibilitas versi router
+        run: bun run audit:router-versions
+
       - name: Audit dependensi (gagal pada high/critical)
         run: bun run audit:deps:ci
 
