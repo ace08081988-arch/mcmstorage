@@ -41,6 +41,9 @@ import {
   DEPTH_QUALITY_OPTIONS,
   readDepthQuality,
   writeDepthQuality,
+  readLiteFullscreen,
+  writeLiteFullscreen,
+  isLowPerfDevice,
   type DepthQuality,
 } from "@/lib/depth-quality";
 import { useMidnightPreview, useMidnightScope, useThemeVariant } from "@/lib/midnight-preview";
@@ -404,6 +407,13 @@ function PengaturanTampilanPage() {
   // menyangkut performa hardware, bukan selera visual.
   const [depthQuality, setDepthQuality] = useState<DepthQuality>("high");
   useEffect(() => { setDepthQuality(readDepthQuality()); }, []);
+  // Mode hemat saat layar penuh (per perangkat).
+  const [liteFs, setLiteFs] = useState(true);
+  const [lowPerf, setLowPerf] = useState(false);
+  useEffect(() => {
+    setLiteFs(readLiteFullscreen());
+    setLowPerf(isLowPerfDevice());
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -1390,6 +1400,30 @@ function PengaturanTampilanPage() {
               </div>
               <p className="mt-1 text-ms-2xs text-muted-foreground">
                 {DEPTH_QUALITY_OPTIONS.find((o) => o.id === depthQuality)?.hint}
+              </p>
+            </div>
+
+            <div className="rounded-lg border p-ms-3">
+              <div className="flex items-start justify-between gap-ms-3">
+                <div>
+                  <p className="text-ms-sm font-medium">Hemat efek saat layar penuh</p>
+                  <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
+                    Saat mode layar penuh aktif di perangkat berperforma rendah, animasi 3D
+                    dan microinteraction otomatis diturunkan satu tingkat agar tetap lancar.
+                  </p>
+                </div>
+                <Switch
+                  checked={liteFs}
+                  onCheckedChange={(v) => {
+                    setLiteFs(v);
+                    writeLiteFullscreen(v);
+                    toast.success(v ? "Mode hemat layar penuh aktif" : "Mode hemat dimatikan");
+                  }}
+                  aria-label="Hemat efek saat layar penuh"
+                />
+              </div>
+              <p className="mt-1 text-ms-2xs text-muted-foreground">
+                Perangkat ini terdeteksi {lowPerf ? "berperforma rendah — mode hemat akan dipakai" : "cukup kuat — mode hemat tidak akan aktif"}.
               </p>
             </div>
 
