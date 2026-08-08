@@ -4624,3 +4624,80 @@ html[data-d3-quality="low"] :is(.depth-lift, .depth-lift-lg, .depth-hover, .dept
 html[data-d3-quality="low"] :is(.depth-lift, .depth-lift-lg, .depth-hover):hover { transform: none; }
 html[data-d3-quality="low"] :is(.depth-lift, .depth-tap):active { transform: scale(0.98); filter: none; }
 html[data-d3-quality="low"] .depth-rail { background-image: none; }
+
+/* --------------------------------------------------------------------------
+   Kontras otomatis untuk teks & ikon di atas permukaan 3D.
+   Bevel, kilau, dan bayangan tidak boleh menurunkan keterbacaan: blok ini
+   menaikkan kontras teks/ikon secara otomatis pada permukaan berkedalaman,
+   dan makin agresif saat user meminta kontras tinggi / forced-colors.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Ambang minimal untuk teks sekunder di atas permukaan 3D. */
+  --d3-ink: var(--foreground);
+  --d3-ink-muted: color-mix(in oklab, var(--foreground) 78%, var(--muted-foreground));
+  --d3-icon-opacity: 0.92;
+}
+.dark {
+  --d3-ink-muted: color-mix(in oklab, var(--foreground) 82%, var(--muted-foreground));
+  --d3-icon-opacity: 0.95;
+}
+
+/* Teks sekunder di dalam permukaan berkedalaman diangkat ke ambang aman.
+ * `:where()` = spesifisitas 0, jadi warna eksplisit di komponen tetap menang. */
+:where(.depth-3d, .depth-3d-sm, .depth-3d-lg, .depth-press, .depth-hover, .depth-table, .depth-rail, .depth-chip, .depth-inset)
+  :where(.text-muted-foreground) {
+  color: var(--d3-ink-muted);
+}
+
+/* Ikon dekoratif jangan terlalu pudar di atas gradien bevel. */
+:where(.depth-3d, .depth-3d-sm, .depth-3d-lg, .depth-press, .depth-hover, .depth-table, .depth-rail, .depth-chip)
+  :where(svg) {
+  opacity: var(--d3-icon-opacity);
+}
+
+/* Kilau cahaya tidak boleh menyapu tepat di belakang teks: turunkan intensitas
+ * dan pastikan konten selalu berada di lapisan atas. */
+.depth-sheen::before { opacity: 0; }
+.depth-sheen:hover::before,
+.depth-sheen:focus-visible::before { mix-blend-mode: soft-light; }
+.depth-sheen > *,
+.depth-sheen svg { position: relative; z-index: 2; }
+
+/* Penekanan: jangan gelapkan teks, hanya permukaannya. */
+.depth-lift:active:not(:disabled) { filter: brightness(0.985); }
+
+/* Disabled tetap ≥ 4.5:1 untuk label penting: pakai warna redup, bukan opacity
+ * ekstrem yang membuat teks nyaris hilang. */
+:where(.depth-3d, .depth-press, .depth-hover, .depth-chip, .depth-table):is([aria-disabled="true"], [data-disabled], :disabled) {
+  opacity: 0.6;
+}
+
+/* Kontras tinggi diminta sistem → ratakan efek 3D, tegaskan tepi & teks. */
+@media (prefers-contrast: more) {
+  :root,
+  .dark {
+    --d3-ink-muted: var(--foreground);
+    --d3-icon-opacity: 1;
+    --d3-light: transparent;
+  }
+  :where(.depth-3d, .depth-3d-sm, .depth-3d-lg, .depth-press, .depth-hover, .depth-table, .depth-rail, .depth-chip, .lux-card, .lux-plate) {
+    background-image: none;
+    border-color: color-mix(in oklab, var(--foreground) 45%, transparent);
+  }
+  .depth-sheen::before { display: none; }
+  :where(.depth-3d, .depth-press, .depth-hover, .depth-chip):is([aria-disabled="true"], [data-disabled], :disabled) {
+    opacity: 0.7;
+  }
+}
+
+/* Mode kontras paksa (Windows/Android high contrast): bayangan & gradien
+ * diabaikan OS, jadi tepi eksplisit yang menjaga bentuk permukaan. */
+@media (forced-colors: active) {
+  :where(.depth-3d, .depth-3d-sm, .depth-3d-lg, .depth-press, .depth-hover, .depth-table, .depth-rail, .depth-chip) {
+    border: 1px solid CanvasText;
+    box-shadow: none;
+    background-image: none;
+  }
+  .depth-sheen::before { display: none; }
+  :where(.depth-3d, .depth-press, .depth-hover) :where(svg) { forced-color-adjust: auto; opacity: 1; }
+}
