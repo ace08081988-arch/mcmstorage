@@ -4811,7 +4811,7 @@ html[data-display-mode="fullscreen"] body {
   }
 
   /* Dialog/sheet tidak boleh melebihi tinggi layar; isinya menggulir. */
-  :where([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
+  :where([role="dialog"], [role="alertdialog"]) {
     max-height: calc(var(--app-vh, 100dvh) - 1.5rem);
     overflow-y: auto;
     overscroll-behavior: contain;
