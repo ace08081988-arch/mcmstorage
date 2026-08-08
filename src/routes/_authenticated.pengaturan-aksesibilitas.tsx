@@ -279,6 +279,9 @@ function PengaturanAksesibilitasPage() {
         className={`fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur transition-transform app-safe-bottom ${dirty ? "translate-y-0" : "translate-y-full"}`}
         role="region"
         aria-label="Simpan preferensi aksesibilitas"
+        // Saat tersembunyi (belum ada perubahan) bar tidak boleh ikut urutan Tab.
+        inert={!dirty}
+        aria-hidden={!dirty}
       >
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-ms-2 px-ms-4 py-ms-3">
           <p className="text-ms-xs text-muted-foreground">
