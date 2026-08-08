@@ -133,3 +133,36 @@ export function startDisplayModeWatch(): () => void {
     window.removeEventListener(FULLSCREEN_EVENT, sync);
   };
 }
+
+/**
+ * Saat aplikasi dibuka sebagai PWA terpasang di Android, bilah status sistem
+ * tetap tampil (display: standalone) sehingga menyisakan pita kosong di atas
+ * header. Fullscreen API hanya boleh dipanggil dari gesture pengguna, jadi
+ * kita minta layar penuh pada sentuhan pertama — sekali saja, dan hanya bila
+ * preferensi bukan "off" serta belum berada di mode layar penuh.
+ */
+export function startAutoFullscreenOnInstalled(): () => void {
+  if (typeof window === "undefined") return () => {};
+  if (!canRequestFullscreen()) return () => {};
+
+  const shouldRequest = () =>
+    readFullscreenPref() !== "off" &&
+    isAppInstalledDisplay() &&
+    currentDisplayMode() !== "fullscreen";
+
+  const onGesture = async () => {
+    if (!shouldRequest()) return;
+    cleanup();
+    await enterFullscreen();
+    applyDisplayMode();
+  };
+
+  const cleanup = () => {
+    window.removeEventListener("pointerdown", onGesture);
+    window.removeEventListener("keydown", onGesture);
+  };
+
+  window.addEventListener("pointerdown", onGesture, { passive: true });
+  window.addEventListener("keydown", onGesture);
+  return cleanup;
+}
