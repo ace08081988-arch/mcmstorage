@@ -1,0 +1,678 @@
+{
+  "generatedAt": "2026-08-08T05:54:27.054Z",
+  "gitAvailable": true,
+  "weeks": [
+    {
+      "week": "2026-W25",
+      "start": "2026-06-15",
+      "tanstack": 0,
+      "router-plugin": 0,
+      "lainnya": 19,
+      "changes": [
+        {
+          "name": "@supabase/supabase-js",
+          "from": null,
+          "to": "^2.108.2",
+          "group": "lainnya",
+          "date": "2026-06-18T12:20:09.000Z"
+        },
+        {
+          "name": "vitest",
+          "from": null,
+          "to": "^4.1.9",
+          "group": "lainnya",
+          "date": "2026-06-18T15:37:56.000Z"
+        },
+        {
+          "name": "@capacitor/android",
+          "from": null,
+          "to": "^8.4.0",
+          "group": "lainnya",
+          "date": "2026-06-18T16:31:41.000Z"
+        },
+        {
+          "name": "@capacitor/camera",
+          "from": null,
+          "to": "^8.2.0",
+          "group": "lainnya",
+          "date": "2026-06-18T16:31:41.000Z"
+        },
+        {
+          "name": "@capacitor/core",
+          "from": null,
+          "to": "^8.4.0",
+          "group": "lainnya",
+          "date": "2026-06-18T16:31:41.000Z"
+        },
+        {
+          "name": "@capacitor/filesystem",
+          "from": null,
+          "to": "^8.1.2",
+          "group": "lainnya",
+          "date": "2026-06-18T16:31:41.000Z"
+        },
+        {
+          "name": "@capacitor/geolocation",
+          "from": null,
+          "to": "^8.2.0",
+          "group": "lainnya",
+          "date": "2026-06-18T16:31:41.000Z"
+        },
+        {
+          "name": "@capacitor/preferences",
+          "from": null,
+          "to": "^8.0.1",
+          "group": "lainnya",
+          "date": "2026-06-18T16:31:41.000Z"
+        },
+        {
+          "name": "@capacitor/push-notifications",
+          "from": null,
+          "to": "^8.1.1",
+          "group": "lainnya",
+          "date": "2026-06-18T16:31:41.000Z"
+        },
+        {
+          "name": "@capacitor/cli",
+          "from": null,
+          "to": "^8.4.0",
+          "group": "lainnya",
+          "date": "2026-06-18T16:31:41.000Z"
+        },
+        {
+          "name": "@lovable.dev/email-js",
+          "from": null,
+          "to": "^0.0.4",
+          "group": "lainnya",
+          "date": "2026-06-18T16:42:12.000Z"
+        },
+        {
+          "name": "@lovable.dev/webhooks-js",
+          "from": null,
+          "to": "^0.0.1",
+          "group": "lainnya",
+          "date": "2026-06-18T16:42:12.000Z"
+        },
+        {
+          "name": "@aparajita/capacitor-biometric-auth",
+          "from": null,
+          "to": "^10.0.0",
+          "group": "lainnya",
+          "date": "2026-06-18T17:40:12.000Z"
+        },
+        {
+          "name": "jspdf",
+          "from": null,
+          "to": "^4.2.1",
+          "group": "lainnya",
+          "date": "2026-06-19T00:56:46.000Z"
+        },
+        {
+          "name": "web-push",
+          "from": null,
+          "to": "^3.6.7",
+          "group": "lainnya",
+          "date": "2026-06-21T05:15:47.000Z"
+        },
+        {
+          "name": "@types/web-push",
+          "from": null,
+          "to": "^3.6.4",
+          "group": "lainnya",
+          "date": "2026-06-21T05:15:47.000Z"
+        },
+        {
+          "name": "@paddle/paddle-node-sdk",
+          "from": null,
+          "to": "^3.8.0",
+          "group": "lainnya",
+          "date": "2026-06-21T11:59:16.000Z"
+        },
+        {
+          "name": "@paddle/paddle-node-sdk",
+          "from": "^3.8.0",
+          "to": null,
+          "group": "lainnya",
+          "date": "2026-06-21T12:01:16.000Z"
+        },
+        {
+          "name": "@playwright/test",
+          "from": null,
+          "to": "^1.61.0",
+          "group": "lainnya",
+          "date": "2026-06-21T19:22:02.000Z"
+        }
+      ]
+    },
+    {
+      "week": "2026-W26",
+      "start": "2026-06-22",
+      "tanstack": 3,
+      "router-plugin": 1,
+      "lainnya": 12,
+      "changes": [
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "^2.5.2",
+          "to": "2.5.3",
+          "group": "lainnya",
+          "date": "2026-06-22T14:04:48.000Z"
+        },
+        {
+          "name": "@tanstack/react-router",
+          "from": "^1.168.25",
+          "to": "1.168.25",
+          "group": "tanstack",
+          "date": "2026-06-22T15:33:51.000Z"
+        },
+        {
+          "name": "@tanstack/react-start",
+          "from": "^1.167.50",
+          "to": "1.168.25",
+          "group": "tanstack",
+          "date": "2026-06-22T15:33:51.000Z"
+        },
+        {
+          "name": "@tanstack/router-plugin",
+          "from": "^1.167.28",
+          "to": "1.168.18",
+          "group": "router-plugin",
+          "date": "2026-06-22T15:33:51.000Z"
+        },
+        {
+          "name": "@tanstack/react-router",
+          "from": "1.168.25",
+          "to": "1.170.15",
+          "group": "tanstack",
+          "date": "2026-06-22T15:35:42.000Z"
+        },
+        {
+          "name": "@lovable.dev/cloud-auth-js",
+          "from": null,
+          "to": "^1.1.2",
+          "group": "lainnya",
+          "date": "2026-06-23T07:12:00.000Z"
+        },
+        {
+          "name": "jose",
+          "from": null,
+          "to": "^6.2.3",
+          "group": "lainnya",
+          "date": "2026-06-23T10:54:09.000Z"
+        },
+        {
+          "name": "@capacitor/share",
+          "from": null,
+          "to": "^8",
+          "group": "lainnya",
+          "date": "2026-06-25T10:33:18.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.5.3",
+          "to": "2.6.2",
+          "group": "lainnya",
+          "date": "2026-06-26T03:06:39.000Z"
+        },
+        {
+          "name": "qrcode",
+          "from": null,
+          "to": "^1.5.4",
+          "group": "lainnya",
+          "date": "2026-06-26T09:19:15.000Z"
+        },
+        {
+          "name": "@types/qrcode",
+          "from": null,
+          "to": "^1.5.6",
+          "group": "lainnya",
+          "date": "2026-06-26T09:19:15.000Z"
+        },
+        {
+          "name": "@capacitor/app-launcher",
+          "from": null,
+          "to": "^8.0.1",
+          "group": "lainnya",
+          "date": "2026-06-26T15:15:09.000Z"
+        },
+        {
+          "name": "@react-email/components",
+          "from": null,
+          "to": "^1.0.12",
+          "group": "lainnya",
+          "date": "2026-06-26T15:37:13.000Z"
+        },
+        {
+          "name": "react-email",
+          "from": null,
+          "to": "^6.6.5",
+          "group": "lainnya",
+          "date": "2026-06-26T15:37:13.000Z"
+        },
+        {
+          "name": "@react-email/components",
+          "from": "^1.0.12",
+          "to": null,
+          "group": "lainnya",
+          "date": "2026-06-26T16:14:15.000Z"
+        },
+        {
+          "name": "react-email",
+          "from": "^6.6.5",
+          "to": null,
+          "group": "lainnya",
+          "date": "2026-06-26T16:14:15.000Z"
+        }
+      ]
+    },
+    {
+      "week": "2026-W27",
+      "start": "2026-06-29",
+      "tanstack": 0,
+      "router-plugin": 0,
+      "lainnya": 4,
+      "changes": [
+        {
+          "name": "react-email",
+          "from": null,
+          "to": "^6.6.5",
+          "group": "lainnya",
+          "date": "2026-06-29T19:32:16.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.6.2",
+          "to": "2.6.4",
+          "group": "lainnya",
+          "date": "2026-06-30T09:36:36.000Z"
+        },
+        {
+          "name": "@capacitor-community/contacts",
+          "from": null,
+          "to": "^7.2.0",
+          "group": "lainnya",
+          "date": "2026-06-30T12:34:31.000Z"
+        },
+        {
+          "name": "html-to-image",
+          "from": null,
+          "to": "^1.11.13",
+          "group": "lainnya",
+          "date": "2026-06-30T23:35:45.000Z"
+        }
+      ]
+    },
+    {
+      "week": "2026-W31",
+      "start": "2026-07-27",
+      "tanstack": 1,
+      "router-plugin": 0,
+      "lainnya": 38,
+      "changes": [
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.6.4",
+          "to": "2.8.2",
+          "group": "lainnya",
+          "date": "2026-07-31T04:12:07.000Z"
+        },
+        {
+          "name": "zod",
+          "from": "^3.24.2",
+          "to": "^3",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.8.2",
+          "to": "2.8.1",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@capacitor/app",
+          "from": null,
+          "to": "^8.1.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@capacitor/clipboard",
+          "from": null,
+          "to": "^8.0.1",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@capacitor/local-notifications",
+          "from": null,
+          "to": "^8",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@dnd-kit/core",
+          "from": null,
+          "to": "^6.3.1",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@dnd-kit/sortable",
+          "from": null,
+          "to": "^10.0.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@dnd-kit/utilities",
+          "from": null,
+          "to": "^3.2.2",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@lovable.dev/mcp-js",
+          "from": null,
+          "to": "^0.24.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@react-email/components",
+          "from": null,
+          "to": "^1.0.12",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@react-email/render",
+          "from": null,
+          "to": "^2.0.10",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@tanstack/react-virtual",
+          "from": null,
+          "to": "^3.14.6",
+          "group": "tanstack",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "heic2any",
+          "from": null,
+          "to": "^0.0.4",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "jspdf-autotable",
+          "from": null,
+          "to": "^5.0.8",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "jsqr",
+          "from": null,
+          "to": "^1.4.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "konva",
+          "from": null,
+          "to": "^10.3.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "pdfjs-dist",
+          "from": null,
+          "to": "4.10.38",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "react-konva",
+          "from": null,
+          "to": "^19.2.5",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "use-image",
+          "from": null,
+          "to": "^1.1.4",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@testing-library/dom",
+          "from": null,
+          "to": "^10.4.1",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@testing-library/react",
+          "from": null,
+          "to": "^16.3.2",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "ajv",
+          "from": null,
+          "to": "^8.20.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "cross-env",
+          "from": null,
+          "to": "^10.1.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "fake-indexeddb",
+          "from": null,
+          "to": "^6.2.5",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "fast-check",
+          "from": null,
+          "to": "^4.9.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "happy-dom",
+          "from": null,
+          "to": "^20.10.6",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "pixelmatch",
+          "from": null,
+          "to": "^7.2.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "pngjs",
+          "from": null,
+          "to": "^7.0.0",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "rollup-plugin-visualizer",
+          "from": null,
+          "to": "^7.0.1",
+          "group": "lainnya",
+          "date": "2026-07-31T07:55:02.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.8.1",
+          "to": "2.8.2",
+          "group": "lainnya",
+          "date": "2026-07-31T08:11:15.000Z"
+        },
+        {
+          "name": "@paddle/paddle-node-sdk",
+          "from": null,
+          "to": "^3.8.0",
+          "group": "lainnya",
+          "date": "2026-07-31T09:28:07.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.8.2",
+          "to": "2.8.3",
+          "group": "lainnya",
+          "date": "2026-07-31T12:24:20.000Z"
+        },
+        {
+          "name": "@paddle/paddle-node-sdk",
+          "from": "^3.8.0",
+          "to": null,
+          "group": "lainnya",
+          "date": "2026-07-31T14:48:21.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.8.3",
+          "to": "2.8.4",
+          "group": "lainnya",
+          "date": "2026-07-31T20:09:43.000Z"
+        },
+        {
+          "name": "react-email",
+          "from": "^6.6.5",
+          "to": "^6.9.1",
+          "group": "lainnya",
+          "date": "2026-08-01T05:41:19.000Z"
+        },
+        {
+          "name": "brace-expansion",
+          "from": null,
+          "to": "^5.0.9",
+          "group": "lainnya",
+          "date": "2026-08-01T05:44:42.000Z"
+        },
+        {
+          "name": "brace-expansion",
+          "from": "^5.0.9",
+          "to": null,
+          "group": "lainnya",
+          "date": "2026-08-01T05:45:46.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.8.4",
+          "to": "2.8.5",
+          "group": "lainnya",
+          "date": "2026-08-01T10:45:52.000Z"
+        }
+      ]
+    },
+    {
+      "week": "2026-W32",
+      "start": "2026-08-03",
+      "tanstack": 3,
+      "router-plugin": 1,
+      "lainnya": 3,
+      "changes": [
+        {
+          "name": "web-vitals",
+          "from": null,
+          "to": "^6.0.1",
+          "group": "lainnya",
+          "date": "2026-08-05T02:03:53.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.8.5",
+          "to": "2.9.0",
+          "group": "lainnya",
+          "date": "2026-08-06T11:37:02.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.9.0",
+          "to": "2.9.1",
+          "group": "lainnya",
+          "date": "2026-08-07T11:59:08.000Z"
+        },
+        {
+          "name": "@tanstack/react-start",
+          "from": "1.168.25",
+          "to": "1.168.40",
+          "group": "tanstack",
+          "date": "2026-08-08T04:44:01.000Z"
+        },
+        {
+          "name": "@tanstack/react-start",
+          "from": "1.168.40",
+          "to": "1.168.38",
+          "group": "tanstack",
+          "date": "2026-08-08T04:44:30.000Z"
+        },
+        {
+          "name": "@tanstack/react-router",
+          "from": "1.170.15",
+          "to": "1.170.21",
+          "group": "tanstack",
+          "date": "2026-08-08T04:45:58.000Z"
+        },
+        {
+          "name": "@tanstack/router-plugin",
+          "from": "1.168.18",
+          "to": "1.168.26",
+          "group": "router-plugin",
+          "date": "2026-08-08T04:45:58.000Z"
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": "tanstack",
+      "label": "@tanstack/* (router suite)"
+    },
+    {
+      "id": "router-plugin",
+      "label": "@tanstack/router-plugin"
+    },
+    {
+      "id": "lainnya",
+      "label": "Paket lain"
+    }
+  ],
+  "audits": {
+    "routerVersions": {
+      "ok": true,
+      "versions": {
+        "@tanstack/react-router": "1.170.21",
+        "@tanstack/react-start": "1.168.38",
+        "@tanstack/router-plugin": "1.168.26",
+        "@tanstack/router-core": "1.171.18"
+      },
+      "errors": [],
+      "warnings": []
+    },
+    "dependencies": {
+      "ok": true,
+      "skipped": true,
+      "output": "⚠️  Lewati audit dependensi: `bun audit --json` tidak mengembalikan JSON.\n[0.03ms] \".env\"\n\u001b[0m\u001b[1mbun audit \u001b[0m\u001b[2mv1.3.3 (274e01c7)\u001b[0m\nerror: audit request failed (status 404)"
+    }
+  }
+}
