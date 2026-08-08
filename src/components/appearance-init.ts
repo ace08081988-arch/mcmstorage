@@ -14,7 +14,11 @@
  */
 import { useEffect } from "react";
 import { applyMidnightPreview } from "@/lib/midnight-preview";
-import { applyDepthQuality, readDepthQuality } from "@/lib/depth-quality";
+import {
+  applyDepthQuality,
+  readDepthQuality,
+  startDepthQualityWatch,
+} from "@/lib/depth-quality";
 
 type Theme = "light" | "dark" | "system";
 type FontFamily = "sans" | "serif" | "mono" | "display" | "editorial";
@@ -186,5 +190,7 @@ export function AppearanceInit() {
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
+  // Turunkan kualitas 3D otomatis saat layar penuh aktif di perangkat lemah.
+  useEffect(() => startDepthQualityWatch(), []);
   return null;
 }
