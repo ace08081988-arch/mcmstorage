@@ -1,0 +1,74 @@
+name: Dependency PR Changelog
+
+# Menempelkan ringkasan versi + changelog advisory pada PR update dependency
+# (Dependabot/Renovate atau PR manual yang menyentuh package.json / bun.lock).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "bun.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: dep-pr-changelog-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changelog:
+    name: Ringkasan update dependency
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Audit sebelum (base branch)
+        run: |
+          set +e
+          git worktree add /tmp/base "origin/${{ github.event.pull_request.base.ref || 'main' }}"
+          cd /tmp/base
+          bun install --frozen-lockfile >/dev/null 2>&1
+          bun audit --json > "${GITHUB_WORKSPACE}/audit-before.json" 2>/dev/null
+          exit 0
+
+      - name: Install dependencies (head)
+        run: bun install --frozen-lockfile
+
+      - name: Audit sesudah (PR)
+        run: |
+          set +e
+          bun audit --json > audit-after.json 2>/dev/null
+          exit 0
+
+      - name: Susun ringkasan
+        run: |
+          node scripts/dep-pr-changelog.mjs \
+            --base "origin/${{ github.event.pull_request.base.ref || 'main' }}" \
+            --audit-before audit-before.json \
+            --audit-after audit-after.json \
+            --out dep-changelog.md
+
+      - name: Komentari PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: dependency-changelog
+          path: dep-changelog.md
+
+      - name: Gate audit (fail on high/critical)
+        run: bun run audit:deps:ci
+
+      - name: Gate versi router
+        run: bun run audit:router-versions

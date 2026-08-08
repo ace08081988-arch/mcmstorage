@@ -143,7 +143,8 @@
     "hooks:install": "node scripts/install-git-hooks.mjs",
     "audit:head:staged": "node scripts/pre-commit-head-audit.mjs",
     "audit:head:staged:all": "node scripts/pre-commit-head-audit.mjs --all",
-    "audit:seo:fix": "node scripts/audit-seo-routes.mjs --fix"
+    "audit:seo:fix": "node scripts/audit-seo-routes.mjs --fix",
+    "deps:changelog": "node scripts/dep-pr-changelog.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
