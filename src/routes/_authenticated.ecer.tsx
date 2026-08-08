@@ -3390,9 +3390,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               (notably iOS Safari & in-app webviews) ignore programmatic .click() on
               hidden inputs, leaving the Kamera/Galeri buttons unresponsive. */}
           <input ref={cameraRef} type="file" accept="image/*" capture="environment"
-            className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
+            tabIndex={-1} aria-hidden className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
           <input ref={galleryRef} type="file" accept="image/*"
-            className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
+            tabIndex={-1} aria-hidden className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
 
           <div>
             <Label className="text-ms-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>

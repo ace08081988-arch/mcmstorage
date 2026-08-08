@@ -1898,6 +1898,8 @@ function PengaturanTampilanPage() {
       {/* Sticky action bar — muncul saat ada perubahan belum disimpan */}
       <div
         className={`fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur transition-transform app-safe-bottom ${dirty ? "translate-y-0" : "translate-y-full"}`}
+        inert={!dirty}
+        aria-hidden={!dirty}
         role="region"
         aria-label="Simpan pengaturan tampilan"
       >
