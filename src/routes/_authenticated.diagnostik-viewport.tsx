@@ -40,6 +40,7 @@ import {
 } from "@/lib/viewport-anchor-log";
 import { useViewportAnchor, useViewportAnchorState } from "@/lib/use-viewport-anchor";
 import { getViewportAnchorConfig } from "@/lib/viewport-anchor-config";
+import { ScrollPerfCard } from "@/components/ScrollPerfCard";
 
 export const Route = createFileRoute("/_authenticated/diagnostik-viewport")({
   head: () => ({
@@ -216,6 +217,8 @@ function ViewportDiagnosticsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ScrollPerfCard />
 
       <Card>
         <CardHeader className="pb-2">

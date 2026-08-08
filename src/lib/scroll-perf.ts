@@ -57,12 +57,11 @@ const emptyMetrics: ScrollPerfMetrics = {
   fpsMin: 0,
   latencyMs: 0,
   latencyWorstMs: 0,
-  latencyWorstMs2: 0,
   jankFrames: 0,
   peakSpeed: 0,
   samples: 0,
   scrolling: false,
-} as unknown as ScrollPerfMetrics;
+};
 
 let metrics: ScrollPerfMetrics = { ...emptyMetrics };
 const listeners = new Set<() => void>();
