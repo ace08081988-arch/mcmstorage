@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   issues: write
 
@@ -112,3 +112,34 @@ jobs:
 
       - name: Gate versi router
         run: bun run audit:router-versions
+
+      # Auto-merge hanya untuk PR dependency berisiko rendah:
+      #  - dibuat oleh Dependabot
+      #  - label severity/low atau severity/moderate (atau tanpa severity sama sekali)
+      #  - TIDAK ada type/breaking, severity/high, severity/critical
+      # `gh pr merge --auto` tetap menunggu SEMUA required check (termasuk
+      # Typecheck & Build + kedua gate audit di job ini) lulus sebelum merge.
+      - name: Auto-merge PR dependency berisiko rendah
+        if: github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          labels="$( [ -f dep-labels.txt ] && cat dep-labels.txt || true )"
+
+          blocked=""
+          for bad in type/breaking severity/high severity/critical; do
+            if printf '%s\n' "$labels" | grep -qxF "$bad"; then blocked="$bad"; fi
+          done
+
+          if [ -n "$blocked" ]; then
+            echo "Auto-merge dilewati: label \"$blocked\" butuh review manual."
+            exit 0
+          fi
+
+          echo "Mengaktifkan auto-merge (squash) — menunggu semua required check lulus."
+          gh pr merge "$PR" --auto --squash || {
+            echo "Auto-merge tidak bisa diaktifkan (cek setting 'Allow auto-merge' di repo)."
+            exit 0
+          }
