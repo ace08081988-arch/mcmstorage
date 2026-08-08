@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { SkipToContent } from "@/components/SkipToContent";
 import {
   Search,
   ChevronRight,
