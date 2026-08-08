@@ -141,6 +141,10 @@ export function startScrollPerf(): () => void {
       metrics.jankFrames = jank;
       metrics.peakSpeed = Math.round(peakV * 1000);
       metrics.samples += 1;
+      // Akumulasi ke ringkasan sesi (riwayat di halaman Diagnostik).
+      void import("./scroll-perf-sessions")
+        .then(({ recordScrollPerfPhase }) => recordScrollPerfPhase(metrics))
+        .catch(() => {});
     }
     metrics.scrolling = false;
     emit();
