@@ -4583,3 +4583,44 @@ html[data-app-installed="1"] body {
   .depth-tap:active { transform: none; filter: none; }
   .depth-sheen::before { display: none; }
 }
+
+/* --------------------------------------------------------------------------
+   Kualitas 3D — dikontrol dari Pengaturan Tampilan (`data-d3-quality`).
+   low    : datar & paling ringan (tanpa kilau, tanpa transform, 1 lapis bayangan)
+   medium : bayangan lembut + tekan, tanpa kilau & tanpa rotateX
+   high   : semua efek (default)
+   -------------------------------------------------------------------------- */
+
+/* --- Sedang: matikan kilau & miringan perspektif, ringankan ambient. ------- */
+html[data-d3-quality="medium"] {
+  --d3-strength: clamp(0.3, calc(var(--app-shadow, 1) * 0.6), 1.1);
+  --d3-ambient-lg:
+    0 10px 20px -10px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent);
+  --d3-ambient-md:
+    0 6px 14px -8px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent);
+  --d3-lift-lg: -2px;
+}
+html[data-d3-quality="medium"] .depth-sheen::before { display: none; }
+html[data-d3-quality="medium"] .depth-lift-lg:hover { transform: translate3d(0, var(--d3-lift-lg), 0); }
+html[data-d3-quality="medium"] .depth-hover:hover { transform: translate3d(0, -2px, 0); }
+
+/* --- Rendah: permukaan datar, hanya garis tepi + feedback tekan. ---------- */
+html[data-d3-quality="low"] {
+  --d3-strength: 0.25;
+  --d3-contact: 0 1px 0 0 color-mix(in oklab, var(--d3-dark) 35%, transparent);
+  --d3-ambient-sm: none;
+  --d3-ambient-md: none;
+  --d3-ambient-lg: 0 6px 14px -10px color-mix(in oklab, var(--d3-dark) 60%, transparent);
+  --d3-ambient-hover: none;
+}
+html[data-d3-quality="low"] .depth-sheen::before { display: none; }
+html[data-d3-quality="low"] :is(.depth-3d, .depth-3d-lg, .depth-3d-sm, .depth-table, .lux-card, .lux-plate) {
+  background-image: none;
+}
+html[data-d3-quality="low"] :is(.depth-lift, .depth-lift-lg, .depth-hover, .depth-tap) {
+  transition: background-color 120ms ease, color 120ms ease;
+  will-change: auto;
+}
+html[data-d3-quality="low"] :is(.depth-lift, .depth-lift-lg, .depth-hover):hover { transform: none; }
+html[data-d3-quality="low"] :is(.depth-lift, .depth-tap):active { transform: scale(0.98); filter: none; }
+html[data-d3-quality="low"] .depth-rail { background-image: none; }

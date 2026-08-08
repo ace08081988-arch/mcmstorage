@@ -14,6 +14,7 @@
  */
 import { useEffect } from "react";
 import { applyMidnightPreview } from "@/lib/midnight-preview";
+import { applyDepthQuality, readDepthQuality } from "@/lib/depth-quality";
 
 type Theme = "light" | "dark" | "system";
 type FontFamily = "sans" | "serif" | "mono" | "display" | "editorial";
@@ -166,6 +167,7 @@ export function applyAppearance() {
   if (bgImage) root.dataset.hasBg = "1";
   else delete root.dataset.hasBg;
   applySurfaceFx(readSurfaceFx());
+  applyDepthQuality(readDepthQuality());
   applyMidnightPreview();
 }
 

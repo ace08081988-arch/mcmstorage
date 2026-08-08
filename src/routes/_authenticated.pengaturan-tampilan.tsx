@@ -37,6 +37,12 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
+import {
+  DEPTH_QUALITY_OPTIONS,
+  readDepthQuality,
+  writeDepthQuality,
+  type DepthQuality,
+} from "@/lib/depth-quality";
 import { useMidnightPreview, useMidnightScope, useThemeVariant } from "@/lib/midnight-preview";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
@@ -394,6 +400,10 @@ function PengaturanTampilanPage() {
 
   // Draft yang sedang dipratinjau (belum disimpan).
   const [draft, setDraft] = useState<Draft>(snapshot);
+  // Kualitas 3D disimpan per perangkat (bukan ikut preset akun) karena
+  // menyangkut performa hardware, bukan selera visual.
+  const [depthQuality, setDepthQuality] = useState<DepthQuality>("high");
+  useEffect(() => { setDepthQuality(readDepthQuality()); }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -1348,6 +1358,39 @@ function PengaturanTampilanPage() {
                 aria-label="Kedalaman bayangan"
               />
               <p className="mt-1 text-ms-2xs text-muted-foreground">0 = datar (flat), 3 = melayang dramatis.</p>
+            </div>
+
+            <div>
+              <p className="text-ms-sm font-medium">Kualitas efek 3D</p>
+              <p className="mb-2 text-ms-2xs leading-ms-snug text-muted-foreground">
+                Turunkan bila aplikasi terasa berat atau tersendat di perangkat ini.
+                Pengaturan ini hanya berlaku di perangkat ini.
+              </p>
+              <div role="radiogroup" aria-label="Kualitas efek 3D" className="grid grid-cols-3 gap-ms-2">
+                {DEPTH_QUALITY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={depthQuality === opt.id}
+                    onClick={() => {
+                      setDepthQuality(opt.id);
+                      writeDepthQuality(opt.id);
+                      toast.success(`Kualitas 3D: ${opt.label}`);
+                    }}
+                    className={
+                      depthQuality === opt.id
+                        ? "rounded-lg border border-primary bg-primary/10 px-ms-2 py-ms-2 text-ms-xs font-semibold depth-chip"
+                        : "rounded-lg border px-ms-2 py-ms-2 text-ms-xs text-muted-foreground depth-tap hover:bg-accent"
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-ms-2xs text-muted-foreground">
+                {DEPTH_QUALITY_OPTIONS.find((o) => o.id === depthQuality)?.hint}
+              </p>
             </div>
 
             <div>
