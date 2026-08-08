@@ -132,6 +132,11 @@ jobs:
 
           echo "Label diterapkan:"; cat dep-labels.txt
 
+      # Gate wajib: komentar changelog harus mengikuti template — tabel versi
+      # lama→baru dan daftar advisory dengan severity + link — sebelum merge.
+      - name: Gate format changelog
+        run: node scripts/check-dep-pr-changelog.mjs dep-changelog.md
+
       - name: Gate audit (fail on high/critical)
         run: bun run audit:deps:ci
 
