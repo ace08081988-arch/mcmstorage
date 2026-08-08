@@ -417,7 +417,10 @@ function PackageCard({
   async function deleteHistory() {
     if (!(await confirm({
       title: "Hapus dari riwayat?",
-      description: "Foto dan link lokasi ikut terhapus permanen.",
+      description:
+        pkg.status === "sent" || pkg.status === "archived"
+          ? "Paket ini sudah dikirim ke pembeli, jadi stok TIDAK dikembalikan ke gudang. Foto dan link lokasi ikut terhapus permanen."
+          : "Paket belum terkirim ke pembeli, jadi stok dikembalikan ke gudang. Foto dan link lokasi ikut terhapus permanen.",
       confirmText: "Hapus",
     }))) return;
     if (pkg.photo_path) {
@@ -426,7 +429,14 @@ function PackageCard({
     }
     const { error } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
     if (error) notifyError(error);
-    else { toast.success("Riwayat dihapus"); onChanged(); }
+    else {
+      toast.success(
+        pkg.status === "sent" || pkg.status === "archived"
+          ? "Riwayat dihapus (stok tetap terpotong)"
+          : "Riwayat dihapus, stok dikembalikan",
+      );
+      onChanged();
+    }
   }
 
   async function setStatus(next: Pkg["status"]) {
