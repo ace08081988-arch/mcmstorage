@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Arahkan git ke folder hook yang ikut ter-commit (`.githooks/`), supaya
- * pre-commit audit head aktif otomatis setelah `bun install`.
+ * Arahkan git ke folder hook yang ikut ter-commit (`.githooks/`), supaya hook
+ * pre-commit & pre-push aktif otomatis setelah `bun install`.
  *
  * Aman dijalankan berulang, dan tidak melakukan apa-apa di CI atau di luar
  * repo git (mis. saat paket dipakai sebagai dependency).
@@ -37,4 +37,6 @@ for (const file of readdirSync(dir)) {
 }
 
 execFileSync("git", ["config", "core.hooksPath", dir], { stdio: "inherit" });
-console.log(`✓ Git hooks aktif dari ${dir}/ (pre-commit: audit head).`);
+console.log(
+  `✓ Git hooks aktif dari ${dir}/ (pre-commit: lockfile + audit head, pre-push: cek lockfile).`,
+);
