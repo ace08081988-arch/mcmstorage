@@ -1361,6 +1361,39 @@ function PengaturanTampilanPage() {
             </div>
 
             <div>
+              <p className="text-ms-sm font-medium">Kualitas efek 3D</p>
+              <p className="mb-2 text-ms-2xs leading-ms-snug text-muted-foreground">
+                Turunkan bila aplikasi terasa berat atau tersendat di perangkat ini.
+                Pengaturan ini hanya berlaku di perangkat ini.
+              </p>
+              <div role="radiogroup" aria-label="Kualitas efek 3D" className="grid grid-cols-3 gap-ms-2">
+                {DEPTH_QUALITY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={depthQuality === opt.id}
+                    onClick={() => {
+                      setDepthQuality(opt.id);
+                      writeDepthQuality(opt.id);
+                      toast.success(`Kualitas 3D: ${opt.label}`);
+                    }}
+                    className={
+                      depthQuality === opt.id
+                        ? "rounded-lg border border-primary bg-primary/10 px-ms-2 py-ms-2 text-ms-xs font-semibold depth-chip"
+                        : "rounded-lg border px-ms-2 py-ms-2 text-ms-xs text-muted-foreground depth-tap hover:bg-accent"
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-ms-2xs text-muted-foreground">
+                {DEPTH_QUALITY_OPTIONS.find((o) => o.id === depthQuality)?.hint}
+              </p>
+            </div>
+
+            <div>
               <div className="mb-1 flex items-center justify-between">
                 <p className="text-ms-xs text-muted-foreground">Saturasi warna antarmuka</p>
                 <span className="text-ms-xs font-semibold tabular-nums">{Math.round(draft.fx.saturation * 100)}%</span>
