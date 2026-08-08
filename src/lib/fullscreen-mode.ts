@@ -134,12 +134,24 @@ export function startDisplayModeWatch(): () => void {
   };
 }
 
+/** Perangkat layar sentuh berukuran ponsel/tablet. */
+export function isMobileViewport(): boolean {
+  if (typeof window === "undefined") return false;
+  const coarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+  return coarse && Math.min(window.innerWidth, window.innerHeight) <= 900;
+}
+
 /**
  * Saat aplikasi dibuka sebagai PWA terpasang di Android, bilah status sistem
  * tetap tampil (display: standalone) sehingga menyisakan pita kosong di atas
  * header. Fullscreen API hanya boleh dipanggil dari gesture pengguna, jadi
  * kita minta layar penuh pada sentuhan pertama — sekali saja, dan hanya bila
  * preferensi bukan "off" serta belum berada di mode layar penuh.
+ *
+ * Di ponsel, ini juga berlaku saat aplikasi dibuka lewat tab browser: bilah
+ * alamat & bilah sistem ikut disembunyikan supaya layar benar-benar penuh.
+ * Listener dipasang ulang setelah pengguna keluar dari layar penuh, jadi
+ * sentuhan berikutnya mengembalikan mode penuh tanpa perlu muat ulang.
  */
 export function startAutoFullscreenOnInstalled(): () => void {
   if (typeof window === "undefined") return () => {};
@@ -147,22 +159,37 @@ export function startAutoFullscreenOnInstalled(): () => void {
 
   const shouldRequest = () =>
     readFullscreenPref() !== "off" &&
-    isAppInstalledDisplay() &&
+    (isAppInstalledDisplay() || isMobileViewport()) &&
     currentDisplayMode() !== "fullscreen";
 
   const onGesture = async () => {
     if (!shouldRequest()) return;
-    cleanup();
+    detach();
     await enterFullscreen();
     applyDisplayMode();
   };
 
-  const cleanup = () => {
+  const detach = () => {
     window.removeEventListener("pointerdown", onGesture);
     window.removeEventListener("keydown", onGesture);
   };
 
-  window.addEventListener("pointerdown", onGesture, { passive: true });
-  window.addEventListener("keydown", onGesture);
-  return cleanup;
+  const attach = () => {
+    detach();
+    window.addEventListener("pointerdown", onGesture, { passive: true });
+    window.addEventListener("keydown", onGesture);
+  };
+
+  // Pengguna menekan tombol kembali / swipe keluar dari layar penuh →
+  // siapkan lagi supaya sentuhan berikutnya memulihkan tampilan penuh.
+  const onFullscreenChange = () => {
+    if (!document.fullscreenElement) attach();
+  };
+
+  attach();
+  document.addEventListener("fullscreenchange", onFullscreenChange);
+  return () => {
+    detach();
+    document.removeEventListener("fullscreenchange", onFullscreenChange);
+  };
 }

@@ -4701,3 +4701,43 @@ html[data-d3-quality="low"] .depth-rail { background-image: none; }
   .depth-sheen::before { display: none; }
   :where(.depth-3d, .depth-press, .depth-hover) :where(svg) { forced-color-adjust: auto; opacity: 1; }
 }
+
+/* ==========================================================================
+   Layar penuh maksimal di ponsel
+   --------------------------------------------------------------------------
+   Tujuan: konten memakai seluruh tinggi & lebar layar — tanpa pita kosong,
+   tanpa gutter berlebih, dan tanpa "bounce" yang memunculkan latar kosong.
+   ========================================================================== */
+@media (max-width: 640px) {
+  html,
+  body {
+    /* Ikuti tinggi layar efektif, bukan 100vh yang salah saat bilah alamat
+       muncul/hilang. */
+    min-height: var(--app-vh, 100dvh);
+    overscroll-behavior-y: none;
+    scrollbar-width: none;
+  }
+  body::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* Gutter horizontal dirapatkan supaya kartu hampir edge-to-edge. */
+  :where(.container) {
+    padding-left: max(0.625rem, var(--app-safe-left, env(safe-area-inset-left, 0px)));
+    padding-right: max(0.625rem, var(--app-safe-right, env(safe-area-inset-right, 0px)));
+  }
+}
+
+/* Benar-benar layar penuh (bilah sistem tersembunyi): tidak ada padding
+   tambahan di puncak. Inset notch tetap diukur safe-area-recalc.ts — di
+   sebagian Android cutout masih nyata walau bilah sistem hilang. */
+html[data-display-mode="fullscreen"] body {
+  padding-top: 0;
+}
+
+/* Utilitas untuk layar yang memang harus menutupi seluruh viewport
+   (chat, kamera, editor foto). */
+@utility screen-full {
+  height: var(--app-vh, 100dvh);
+  max-height: var(--app-vh, 100dvh);
+  width: 100%;
+  overflow: hidden;
+}
