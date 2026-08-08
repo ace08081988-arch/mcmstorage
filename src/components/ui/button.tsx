@@ -23,13 +23,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90 active:bg-primary/80",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 active:bg-destructive/80",
+        default: "bg-primary text-primary-foreground depth-press hover:bg-primary/90 active:bg-primary/80",
+        destructive: "bg-destructive text-destructive-foreground depth-press hover:bg-destructive/90 active:bg-destructive/80",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:bg-secondary/70",
+          "border border-input bg-background depth-press hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
+        secondary: "bg-secondary text-secondary-foreground depth-press hover:bg-secondary/80 active:bg-secondary/70",
         // Kanal WhatsApp/Ace — dipakai untuk semua aksi "kirim ke WA".
-        wa: "bg-wa text-wa-foreground shadow-sm hover:bg-wa/90 active:bg-wa/80",
+        wa: "bg-wa text-wa-foreground depth-press hover:bg-wa/90 active:bg-wa/80",
         waSoft:
           "border border-wa/30 bg-wa-soft text-wa-strong shadow-none hover:bg-wa/20 active:bg-wa/25",
         ghost: "hover:bg-accent hover:text-accent-foreground active:bg-accent/80",

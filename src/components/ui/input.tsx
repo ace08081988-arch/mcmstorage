@@ -32,7 +32,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           // TIDAK diskalakan oleh app-font-scale) — bukan `text-ms-base`
           // (15px) — agar batas anti-zoom iOS tetap terjaga. ≥sm & md
           // turun ke `text-ms-sm` untuk kepadatan desktop.
-          "flex h-11 w-full rounded-md border border-input bg-transparent px-ms-3 py-1 text-ms-md shadow-sm transition-colors file:border-0 file:bg-transparent file:text-ms-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 md:text-ms-sm",
+          "flex h-11 w-full rounded-md border border-input bg-transparent px-ms-3 py-1 text-ms-md depth-inset transition-colors file:border-0 file:bg-transparent file:text-ms-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 md:text-ms-sm",
           className,
         )}
         ref={ref}
