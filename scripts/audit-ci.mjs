@@ -3,6 +3,12 @@
  * CI guard: jalankan `bun audit --json` dan gagalkan build bila ada
  * temuan severity high/critical.
  *
+ * Flag:
+ *   --soft   audit tidak bisa dijalankan (offline / registry tanpa endpoint
+ *            audit) => peringatan saja, exit 0. Temuan high/critical TETAP
+ *            menggagalkan build. Dipakai di `prebuild` lokal.
+ *   (default / --strict) audit yang gagal dijalankan = build gagal. Dipakai di CI.
+ *
  * Bun mengeluarkan format bulk-advisory ala npm:
  *   { "<package>": [ { severity, title, url, vulnerable_versions, ... } ] }
  * Beberapa versi membungkusnya dalam { advisories: {...} }, jadi kedua
@@ -12,6 +18,19 @@
 import { spawnSync } from "node:child_process";
 
 const BLOCKING = new Set(["high", "critical"]);
+const argv = process.argv.slice(2);
+const SOFT = argv.includes("--soft") && !argv.includes("--strict");
+
+function unavailable(message, detail) {
+  if (SOFT) {
+    console.warn(`⚠️  Lewati audit dependensi: ${message}`);
+    if (detail) console.warn(detail.slice(0, 500));
+    process.exit(0);
+  }
+  console.error(`❌ ${message}`);
+  if (detail) console.error(detail.slice(0, 2000));
+  process.exit(1);
+}
 
 const res = spawnSync("bun", ["audit", "--json"], { encoding: "utf8" });
 const raw = `${res.stdout ?? ""}`;
@@ -19,18 +38,17 @@ const stderr = `${res.stderr ?? ""}`;
 
 const start = raw.indexOf("{");
 if (start === -1) {
-  console.error("❌ `bun audit --json` tidak mengembalikan JSON.");
-  console.error(raw.trim() || stderr.trim() || "(tidak ada output)");
-  process.exit(1);
+  unavailable(
+    "`bun audit --json` tidak mengembalikan JSON.",
+    raw.trim() || stderr.trim() || "(tidak ada output)",
+  );
 }
 
 let parsed;
 try {
   parsed = JSON.parse(raw.slice(start));
 } catch (err) {
-  console.error("❌ Gagal mem-parse output `bun audit --json`:", err.message);
-  console.error(raw.slice(start, start + 2000));
-  process.exit(1);
+  unavailable(`Gagal mem-parse output \`bun audit --json\`: ${err.message}`, raw.slice(start));
 }
 
 const advisories = parsed.advisories ?? parsed;
