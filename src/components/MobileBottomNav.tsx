@@ -90,7 +90,7 @@ export function MobileBottomNav() {
         // toolbar browser, FAB, atau notifikasi.
         "fixed inset-x-0 bottom-0 md:hidden",
         "app-static-bottom-bar",
-        "border-t border-primary/15",
+        "border-t border-primary/15 depth-3d-bar",
         "bg-background/92 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78",
       )}
       style={{
