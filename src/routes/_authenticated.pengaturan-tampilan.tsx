@@ -43,6 +43,8 @@ import {
   writeDepthQuality,
   readLiteFullscreen,
   writeLiteFullscreen,
+  readEcoScroll,
+  writeEcoScroll,
   isLowPerfDevice,
   type DepthQuality,
 } from "@/lib/depth-quality";
@@ -410,8 +412,11 @@ function PengaturanTampilanPage() {
   // Mode hemat saat layar penuh (per perangkat).
   const [liteFs, setLiteFs] = useState(true);
   const [lowPerf, setLowPerf] = useState(false);
+  // Hemat energi saat scroll (per perangkat).
+  const [ecoScroll, setEcoScroll] = useState(true);
   useEffect(() => {
     setLiteFs(readLiteFullscreen());
+    setEcoScroll(readEcoScroll());
     setLowPerf(isLowPerfDevice());
   }, []);
 
@@ -1425,6 +1430,28 @@ function PengaturanTampilanPage() {
               <p className="mt-1 text-ms-2xs text-muted-foreground">
                 Perangkat ini terdeteksi {lowPerf ? "berperforma rendah — mode hemat akan dipakai" : "cukup kuat — mode hemat tidak akan aktif"}.
               </p>
+            </div>
+
+            <div className="rounded-lg border p-ms-3">
+              <div className="flex items-start justify-between gap-ms-3">
+                <div>
+                  <p className="text-ms-sm font-medium">Hemat energi saat scroll</p>
+                  <p className="text-ms-2xs leading-ms-snug text-muted-foreground">
+                    Selama menggulir atau menyentuh layar, efek berat (kilau, bayangan
+                    berlapis, blur) diturunkan satu tingkat di perangkat berperforma rendah,
+                    lalu pulih otomatis setelah gulir berhenti.
+                  </p>
+                </div>
+                <Switch
+                  checked={ecoScroll}
+                  onCheckedChange={(v) => {
+                    setEcoScroll(v);
+                    writeEcoScroll(v);
+                    toast.success(v ? "Hemat energi saat scroll aktif" : "Hemat energi saat scroll dimatikan");
+                  }}
+                  aria-label="Hemat energi saat scroll"
+                />
+              </div>
             </div>
 
             <div>
