@@ -32,7 +32,10 @@ harus bisa dibaca langsung dari commit — jadi teks menang.
 Tiga lapis pengaman, dari paling awal:
 
 1. **pre-commit** (`.githooks/pre-commit`) — menolak commit yang men-stage
-   `bun.lockb` atau melanggar format lockfile.
+   `bun.lockb`. Kalau format lockfile belum sesuai, hook otomatis menjalankan
+   `bun run fix:lockfile` lalu men-stage `bun.lock`/`bunfig.toml` hasil
+   perbaikannya ke commit yang sedang berjalan. Lewati auto-fix dengan
+   `SKIP_LOCKFILE_FIX=1`, atau seluruh cek dengan `SKIP_LOCKFILE_CHECK=1`.
 2. **pre-push** (`.githooks/pre-push`) — menjalankan `bun run check:lockfile`
    sebelum push, jadi masalah ketahuan sebelum PR dibuat. Lewati hanya kalau
    benar-benar perlu: `SKIP_LOCKFILE_CHECK=1 git push`.
