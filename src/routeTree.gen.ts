@@ -98,6 +98,7 @@ import { Route as PosKasirRingkasanRouteImport } from './routes/pos-kasir.ringka
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as AuthenticatedAdminDependensiRouteImport } from './routes/_authenticated.admin.dependensi'
 import { Route as AuthenticatedAdminEmailStatusRouteImport } from './routes/_authenticated.admin.email-status'
 import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
@@ -657,6 +658,12 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAdminDependensiRoute =
+  AuthenticatedAdminDependensiRouteImport.update({
+    id: '/admin/dependensi',
+    path: '/admin/dependensi',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminEmailStatusRoute =
   AuthenticatedAdminEmailStatusRouteImport.update({
     id: '/admin/email-status',
@@ -1211,6 +1218,7 @@ export interface FileRoutesByFullPath {
   '/pos-kasir/': typeof PosKasirIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/dependensi': typeof AuthenticatedAdminDependensiRoute
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
@@ -1378,6 +1386,7 @@ export interface FileRoutesByTo {
   '/pos-kasir': typeof PosKasirIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/dependensi': typeof AuthenticatedAdminDependensiRoute
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
@@ -1550,6 +1559,7 @@ export interface FileRoutesById {
   '/pos-kasir/': typeof PosKasirIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/admin/dependensi': typeof AuthenticatedAdminDependensiRoute
   '/_authenticated/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/_authenticated/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
@@ -1722,6 +1732,7 @@ export interface FileRouteTypes {
     | '/pos-kasir/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/dependensi'
     | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
@@ -1889,6 +1900,7 @@ export interface FileRouteTypes {
     | '/pos-kasir'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/dependensi'
     | '/admin/email-status'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
@@ -2060,6 +2072,7 @@ export interface FileRouteTypes {
     | '/pos-kasir/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/admin/dependensi'
     | '/_authenticated/admin/email-status'
     | '/_authenticated/admin/portal-error-log'
     | '/_authenticated/admin/signup-attempts'
@@ -2858,6 +2871,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/dependensi': {
+      id: '/_authenticated/admin/dependensi'
+      path: '/admin/dependensi'
+      fullPath: '/admin/dependensi'
+      preLoaderRoute: typeof AuthenticatedAdminDependensiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/email-status': {
       id: '/_authenticated/admin/email-status'
       path: '/admin/email-status'
@@ -3561,6 +3581,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTugasDaftarRoute: typeof AuthenticatedTugasDaftarRoute
   AuthenticatedUndangRoute: typeof AuthenticatedUndangRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminDependensiRoute: typeof AuthenticatedAdminDependensiRoute
   AuthenticatedAdminEmailStatusRoute: typeof AuthenticatedAdminEmailStatusRoute
   AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
   AuthenticatedAdminSignupAttemptsRoute: typeof AuthenticatedAdminSignupAttemptsRoute
@@ -3641,6 +3662,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTugasDaftarRoute: AuthenticatedTugasDaftarRoute,
   AuthenticatedUndangRoute: AuthenticatedUndangRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminDependensiRoute: AuthenticatedAdminDependensiRoute,
   AuthenticatedAdminEmailStatusRoute: AuthenticatedAdminEmailStatusRoute,
   AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
   AuthenticatedAdminSignupAttemptsRoute: AuthenticatedAdminSignupAttemptsRoute,
