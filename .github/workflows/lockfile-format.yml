@@ -1,0 +1,79 @@
+name: Lockfile Format
+
+# Job khusus: memastikan lockfile tetap format teks (`bun.lock`) sesuai
+# docs/dependency-lockfile.md. Sengaja TIDAK menjalankan `bun install`
+# supaya status check muncul cepat di setiap PR.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: lockfile-format-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-lockfile:
+    name: check:lockfile (format lockfile teks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Jalankan check:lockfile
+        id: check
+        run: |
+          set +e
+          bun run check:lockfile > /tmp/lockfile-check.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/lockfile-check.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Ringkasan sukses
+        if: success()
+        run: |
+          {
+            echo "## ✅ Format lockfile valid";
+            echo "";
+            echo '`bun.lock` berformat teks dan `saveTextLockfile = true` aktif di `bunfig.toml`.';
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Ringkasan kegagalan
+        if: failure()
+        run: |
+          {
+            echo "## ❌ Format lockfile melanggar aturan";
+            echo "";
+            echo "Aturan: [docs/dependency-lockfile.md](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/docs/dependency-lockfile.md)";
+            echo "";
+            echo "### Output \`bun run check:lockfile\`";
+            echo "";
+            echo '```text';
+            cat /tmp/lockfile-check.log 2>/dev/null || echo "(tidak ada output)";
+            echo '```';
+            echo "";
+            echo "### Cara memperbaiki";
+            echo "";
+            echo '```bash';
+            echo "bun run fix:lockfile   # otomatis: hapus bun.lockb, set saveTextLockfile, regenerasi bun.lock";
+            echo "git add bun.lock bunfig.toml";
+            echo '```';
+            echo "";
+            echo "Lalu commit ulang. Jangan commit \`bun.lockb\` (lockfile biner).";
+            echo "";
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}";
+          } >> "$GITHUB_STEP_SUMMARY"
