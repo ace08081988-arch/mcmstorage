@@ -48,7 +48,7 @@
     "release:checklist": "node scripts/fill-release-checklist.mjs",
     "release:checklist:in-place": "node scripts/fill-release-checklist.mjs --in-place",
     "release:checklist:print": "node scripts/fill-release-checklist.mjs --print",
-    "prebuild": "node scripts/audit-router-versions.mjs && bun scripts/audit-ci.mjs --soft && bun scripts/audit-asset-version.ts && node scripts/audit-seo-routes.mjs --fix && node scripts/audit-seo-routes.mjs && vitest run src/lib/__tests__/head-audit.test.ts src/lib/__tests__/rendered-head-audit.test.ts src/lib/__tests__/og-image-validate.test.ts src/lib/__tests__/wa-preview-audit.test.ts",
+    "prebuild": "node scripts/build-dependency-trend.mjs && node scripts/audit-router-versions.mjs && bun scripts/audit-ci.mjs --soft && bun scripts/audit-asset-version.ts && node scripts/audit-seo-routes.mjs --fix && node scripts/audit-seo-routes.mjs && vitest run src/lib/__tests__/head-audit.test.ts src/lib/__tests__/rendered-head-audit.test.ts src/lib/__tests__/og-image-validate.test.ts src/lib/__tests__/wa-preview-audit.test.ts",
     "prebuild:dev": "node scripts/audit-router-versions.mjs && bun scripts/audit-ci.mjs --soft && bun scripts/audit-asset-version.ts && node scripts/audit-seo-routes.mjs --fix && node scripts/audit-seo-routes.mjs && vitest run src/lib/__tests__/head-audit.test.ts src/lib/__tests__/rendered-head-audit.test.ts src/lib/__tests__/og-image-validate.test.ts src/lib/__tests__/wa-preview-audit.test.ts",
     "prebuild:chat": "node scripts/audit-router-versions.mjs && bun scripts/audit-ci.mjs --soft && bun scripts/audit-asset-version.ts && node scripts/audit-seo-routes.mjs && vitest run src/lib/__tests__/head-audit.test.ts src/lib/__tests__/rendered-head-audit.test.ts src/lib/__tests__/og-image-validate.test.ts src/lib/__tests__/wa-preview-audit.test.ts",
     "preview": "vite preview",
@@ -145,7 +145,8 @@
     "audit:head:staged:all": "node scripts/pre-commit-head-audit.mjs --all",
     "audit:seo:fix": "node scripts/audit-seo-routes.mjs --fix",
     "deps:changelog": "node scripts/dep-pr-changelog.mjs",
-    "check:lockfile": "node scripts/check-text-lockfile.mjs"
+    "check:lockfile": "node scripts/check-text-lockfile.mjs",
+    "build:dep-trend": "node scripts/build-dependency-trend.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
