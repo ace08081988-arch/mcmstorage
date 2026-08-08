@@ -4652,7 +4652,7 @@ html[data-d3-quality="low"] .depth-rail { background-image: none; }
 /* Ikon dekoratif jangan terlalu pudar di atas gradien bevel. */
 :where(.depth-3d, .depth-3d-sm, .depth-3d-lg, .depth-press, .depth-hover, .depth-table, .depth-rail, .depth-chip)
   :where(svg) {
-  opacity: max(var(--d3-icon-opacity), 1 * 0);
+  opacity: var(--d3-icon-opacity);
 }
 
 /* Kilau cahaya tidak boleh menyapu tepat di belakang teks: turunkan intensitas
@@ -4669,7 +4669,7 @@ html[data-d3-quality="low"] .depth-rail { background-image: none; }
 /* Disabled tetap ≥ 4.5:1 untuk label penting: pakai warna redup, bukan opacity
  * ekstrem yang membuat teks nyaris hilang. */
 :where(.depth-3d, .depth-press, .depth-hover, .depth-chip, .depth-table):is([aria-disabled="true"], [data-disabled], :disabled) {
-  opacity: max(var(--d3-disabled-opacity), 0.55);
+  opacity: 0.6;
 }
 
 /* Kontras tinggi diminta sistem → ratakan efek 3D, tegaskan tepi & teks. */
