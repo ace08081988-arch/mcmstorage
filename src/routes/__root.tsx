@@ -563,6 +563,11 @@ function RootComponent() {
         // bawah. Header dan kontrol atas (judul, lonceng, avatar) tidak
         // pernah tertutup berapa pun jumlah toast yang menumpuk.
         position="bottom-center"
+        // Batasi tumpukan + selalu ada tombol tutup supaya notifikasi
+        // tidak pernah menumpuk menutupi layar.
+        visibleToasts={3}
+        closeButton
+        duration={4000}
         offset={{
           bottom: "calc(var(--app-bottom-nav-h, 0px) + 16px)",
           left: 16,
