@@ -10,10 +10,13 @@
  * Pemakaian:
  *   node scripts/dep-pr-changelog.mjs --base origin/main \
  *     [--audit-before before.json] [--audit-after after.json] [--out body.md] \
- *     [--labels-out labels.txt]
+ *     [--labels-out labels.txt] [--slack-out slack.json] [--pr-url <url>] [--pr-title <judul>]
  *
  * --labels-out menulis daftar label (satu per baris) untuk PR Dependabot:
  *   severity/<low|moderate|high|critical> dan type/<security|fix|breaking>.
+ *
+ * --slack-out menulis payload Slack (Block Kit) HANYA jika PR ini menutup
+ *   advisory keamanan baru. Kalau tidak ada security fix, file tidak ditulis.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, appendFileSync, existsSync } from "node:fs";
@@ -29,6 +32,9 @@ const outFile = flag("--out");
 const auditBeforePath = flag("--audit-before");
 const auditAfterPath = flag("--audit-after");
 const labelsOut = flag("--labels-out");
+const slackOut = flag("--slack-out");
+const prUrl = flag("--pr-url");
+const prTitle = flag("--pr-title", "PR dependency");
 
 const FIELDS = ["dependencies", "devDependencies", "overrides"];
 
@@ -179,6 +185,73 @@ function deriveLabels({ changed, added, fixed, introduced }) {
 }
 
 let derivedLabels = [];
+let slackPayload = null;
+
+const SEVERITY_EMOJI = {
+  critical: ":red_circle:",
+  high: ":large_orange_circle:",
+  moderate: ":large_yellow_circle:",
+  medium: ":large_yellow_circle:",
+  low: ":large_blue_circle:",
+};
+
+/** Payload Slack Block Kit untuk PR yang menutup advisory keamanan. */
+function buildSlackPayload({ fixed, introduced, remaining, changed }) {
+  if (!fixed.length) return null;
+
+  const top = fixed[0]?.severity ?? "unknown";
+  const advisoryLines = fixed
+    .slice(0, 10)
+    .map((a) => {
+      const emoji = SEVERITY_EMOJI[a.severity] ?? ":white_circle:";
+      const patched = a.patched ? ` — aman di \`${a.patched}\`` : "";
+      const title = a.url ? `<${a.url}|${a.title}>` : a.title;
+      return `${emoji} *${a.severity}* \`${a.name}\`: ${title}${patched}`;
+    })
+    .join("\n");
+  const more = fixed.length > 10 ? `\n_+${fixed.length - 10} advisory lainnya_` : "";
+
+  const versionLines = changed
+    .slice(0, 10)
+    .map((c) => `• \`${c.name}\` \`${c.from}\` → \`${c.to}\``)
+    .join("\n");
+
+  const blocks = [
+    {
+      type: "header",
+      text: { type: "plain_text", text: `🛡️ Security fix dependency (${fixed.length})`, emoji: true },
+    },
+    {
+      type: "section",
+      text: { type: "mrkdwn", text: prUrl ? `<${prUrl}|${prTitle}>` : prTitle },
+    },
+    { type: "section", text: { type: "mrkdwn", text: `*Advisory yang ditutup*\n${advisoryLines}${more}` } },
+  ];
+
+  if (versionLines) {
+    blocks.push({ type: "section", text: { type: "mrkdwn", text: `*Perubahan versi*\n${versionLines}` } });
+  }
+  if (introduced.length) {
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: `:warning: *${introduced.length} advisory baru muncul* — butuh review manual.` },
+    });
+  }
+
+  blocks.push({
+    type: "context",
+    elements: [
+      {
+        type: "mrkdwn",
+        text: `Severity tertinggi: *${top}* • Sisa advisory: ${remaining.length} • Label: ${
+          derivedLabels.join(", ") || "—"
+        }`,
+      },
+    ],
+  });
+
+  return { text: `Security fix dependency (${fixed.length}) — ${prTitle}`, blocks };
+}
 
 function buildMarkdown() {
   const headPkg = readJsonFile("package.json");
@@ -194,6 +267,7 @@ function buildMarkdown() {
   const remaining = after.filter((a) => beforeKeys.has(a.key)).sort(bySeverity);
 
   derivedLabels = deriveLabels({ changed, added, fixed, introduced });
+  slackPayload = buildSlackPayload({ fixed, introduced, remaining, changed });
 
   const lines = [];
   lines.push("## 📦 Ringkasan update dependency");
@@ -274,4 +348,5 @@ const markdown = buildMarkdown();
 process.stdout.write(`${markdown}\n`);
 if (outFile) writeFileSync(outFile, `${markdown}\n`, "utf8");
 if (labelsOut) writeFileSync(labelsOut, `${derivedLabels.join("\n")}${derivedLabels.length ? "\n" : ""}`, "utf8");
+if (slackOut && slackPayload) writeFileSync(slackOut, `${JSON.stringify(slackPayload, null, 2)}\n`, "utf8");
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n`);
