@@ -4858,3 +4858,33 @@ html[data-scroll-smooth="1"] {
     scroll-behavior: auto;
   }
 }
+
+/* ── Respons scroll: matikan efek berat selama menggulir ──────────────
+   Atribut ditulis oleh src/lib/scroll-perf.ts. Tujuannya menghindari
+   repaint mahal (blur, kilau, bayangan besar) di tengah gesture. */
+html[data-scrolling="1"] * {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
+
+html[data-scrolling="1"] .depth-sheen::after,
+html[data-scrolling="1"] .depth-sheen::before {
+  opacity: 0 !important;
+}
+
+html[data-scrolling="1"] [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-scrolling="1"] .depth-3d,
+html[data-scrolling="1"] .depth-lift {
+  will-change: transform;
+}
+
+@media (hover: none) {
+  html[data-scrolling="1"] .depth-3d,
+  html[data-scrolling="1"] .depth-lift {
+    box-shadow: 0 1px 2px hsl(0 0% 0% / 0.28) !important;
+  }
+}
