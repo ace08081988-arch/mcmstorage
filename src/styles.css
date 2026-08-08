@@ -4471,3 +4471,115 @@ html[data-app-installed="1"] body {
   box-shadow: var(--d3-bevel-bottom);
   opacity: var(--d3-disabled-opacity);
 }
+
+/* --------------------------------------------------------------------------
+   Microinteractions 3D — angkat kecil, pantulan cahaya, dan penekanan.
+   Semua memakai token `--d3-*` yang sama supaya intensitasnya sinkron dengan
+   lapisan kedalaman, dan seluruhnya dimatikan saat `prefers-reduced-motion`.
+   -------------------------------------------------------------------------- */
+:root {
+  --d3-lift: -1.5px;
+  --d3-lift-lg: -3px;
+  --d3-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Angkat kecil saat hover, tenggelam saat ditekan. */
+@utility depth-lift {
+  transition:
+    transform 200ms var(--d3-ease),
+    box-shadow 200ms ease,
+    filter 200ms ease;
+  will-change: transform;
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover:not(:disabled):not([aria-disabled="true"]):not([data-disabled]) {
+      transform: translate3d(0, var(--d3-lift), 0);
+    }
+  }
+  &:active:not(:disabled):not([aria-disabled="true"]):not([data-disabled]) {
+    transform: translate3d(0, 0.5px, 0) scale(0.985);
+    filter: brightness(0.97);
+    transition-duration: 90ms;
+  }
+}
+
+@utility depth-lift-lg {
+  transition:
+    transform 260ms var(--d3-ease),
+    box-shadow 260ms ease;
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover:not([aria-disabled="true"]):not([data-disabled]) {
+      transform: perspective(1000px) translate3d(0, var(--d3-lift-lg), 0) rotateX(1.4deg);
+    }
+  }
+  &:active:not([aria-disabled="true"]):not([data-disabled]) {
+    transform: translate3d(0, 0, 0) scale(0.995);
+    transition-duration: 110ms;
+  }
+}
+
+/* Pantulan cahaya: kilau diagonal yang menyapu permukaan saat hover/fokus. */
+@utility depth-sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -40% -60%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-70%) rotate(14deg);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, white 26%, transparent) 45%,
+      color-mix(in oklab, white 8%, transparent) 60%,
+      transparent 100%
+    );
+    transition: opacity 180ms ease;
+  }
+  & > * { position: relative; z-index: 1; }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover:not(:disabled):not([aria-disabled="true"]):not([data-disabled])::before,
+    &:focus-visible::before {
+      opacity: 1;
+      animation: d3-sheen 700ms var(--d3-ease) 1;
+    }
+  }
+}
+.dark .depth-sheen::before {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, white 14%, transparent) 45%,
+    color-mix(in oklab, white 4%, transparent) 60%,
+    transparent 100%
+  );
+}
+
+@keyframes d3-sheen {
+  from { transform: translateX(-70%) rotate(14deg); }
+  to { transform: translateX(70%) rotate(14deg); }
+}
+
+/* Riak penekanan halus di titik sentuh (dipakai bar/nav & row). */
+@utility depth-tap {
+  transition: transform 120ms var(--d3-ease), background-color 120ms ease;
+  &:active:not(:disabled):not([aria-disabled="true"]):not([data-disabled]) {
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .depth-lift,
+  .depth-lift-lg,
+  .depth-tap,
+  .depth-sheen { transition: none; }
+  .depth-lift:hover,
+  .depth-lift-lg:hover,
+  .depth-lift:active,
+  .depth-lift-lg:active,
+  .depth-tap:active { transform: none; filter: none; }
+  .depth-sheen::before { display: none; }
+}
