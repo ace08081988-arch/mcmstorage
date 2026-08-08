@@ -86,6 +86,7 @@
     "e2e:apk:table:check": "node scripts/generate-apk-readme-table.mjs --check",
     "e2e:apk:validate": "node scripts/validate-apk-scaffolds.mjs",
     "fix:lockfile": "node scripts/fix-lockfile.mjs",
+    "fix:lockfile:dry": "node scripts/fix-lockfile.mjs --dry-run",
     "format": "prettier --write .",
     "hooks:install": "node scripts/install-git-hooks.mjs",
     "lint": "eslint .",
