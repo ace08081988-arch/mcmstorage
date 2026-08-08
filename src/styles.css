@@ -4267,3 +4267,15 @@ html[data-app-installed="1"] body {
 @media (prefers-reduced-motion: reduce) {
   .depth-hover:hover { transform: none; }
 }
+
+/* Sapuan global: setiap permukaan kartu/popover/sidebar mendapat kedalaman
+ * yang sama walau komponennya tidak memakai utility `depth-3d` secara
+ * eksplisit. `:where()` = spesifisitas 0, jadi `shadow-*`/`depth-*` lokal
+ * tetap menang bila sebuah komponen ingin tampilan lain. */
+:where(.bg-card, .bg-popover, .bg-sidebar, .bg-muted\/40, .bg-background\/80) {
+  box-shadow:
+    inset 0 1px 0 0 var(--d3-light),
+    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
+    0 4px 10px -4px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
+    0 14px 28px -14px color-mix(in oklab, var(--d3-dark) calc(80% * var(--d3-strength)), transparent);
+}
