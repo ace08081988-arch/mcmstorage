@@ -31,6 +31,61 @@ const FAST_VELOCITY = 2.5;
 /** Di bawah ini dianggap praktis diam (inersia habis). */
 const STILL_VELOCITY = 0.02;
 
+/* ── Metrik performa (dibaca halaman diagnostik) ──────────────────── */
+
+export type ScrollPerfMetrics = {
+  /** FPS rata-rata selama fase gulir terakhir. */
+  fps: number;
+  /** FPS terendah (frame terlama) pada fase gulir terakhir. */
+  fpsMin: number;
+  /** Latensi input→frame pertama saat gulir dimulai (ms). */
+  latencyMs: number;
+  /** Latensi terburuk yang pernah tercatat pada sesi ini (ms). */
+  latencyWorstMs: number;
+  /** Jumlah frame yang melewati 16.7ms x2 (jank) pada fase terakhir. */
+  jankFrames: number;
+  /** Kecepatan puncak fase terakhir (px/detik). */
+  peakSpeed: number;
+  /** Berapa kali fase gulir sudah diukur. */
+  samples: number;
+  /** Sedang menggulir? */
+  scrolling: boolean;
+};
+
+const emptyMetrics: ScrollPerfMetrics = {
+  fps: 0,
+  fpsMin: 0,
+  latencyMs: 0,
+  latencyWorstMs: 0,
+  latencyWorstMs2: 0,
+  jankFrames: 0,
+  peakSpeed: 0,
+  samples: 0,
+  scrolling: false,
+} as unknown as ScrollPerfMetrics;
+
+let metrics: ScrollPerfMetrics = { ...emptyMetrics };
+const listeners = new Set<() => void>();
+
+function emit() {
+  metrics = { ...metrics };
+  listeners.forEach((l) => l());
+}
+
+export function subscribeScrollPerf(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+export function getScrollPerfMetrics(): ScrollPerfMetrics {
+  return metrics;
+}
+
+export function resetScrollPerfMetrics() {
+  metrics = { ...emptyMetrics };
+  emit();
+}
+
 export function startScrollPerf(): () => void {
   if (typeof window === "undefined") return () => {};
 
@@ -45,6 +100,14 @@ export function startScrollPerf(): () => void {
   let velocity = 0; // px/ms, dihaluskan (EMA)
   let stillSince = 0; // timestamp frame pertama saat dianggap diam
 
+  // Instrumentasi metrik fase gulir.
+  let wakeAt = 0; // waktu event input pertama yang membangunkan loop
+  let phaseStart = 0;
+  let frames = 0;
+  let worstFrame = 0;
+  let jank = 0;
+  let peakV = 0;
+
   const begin = (t: number) => {
     active = true;
     lastY = window.scrollY;
@@ -53,6 +116,16 @@ export function startScrollPerf(): () => void {
     stillSince = 0;
     root.setAttribute("data-scrolling", "1");
     setScrollEcoActive(true);
+
+    phaseStart = t;
+    frames = 0;
+    worstFrame = 0;
+    jank = 0;
+    peakV = 0;
+    metrics.latencyMs = wakeAt ? Math.max(0, Math.round((t - wakeAt) * 10) / 10) : 0;
+    metrics.latencyWorstMs = Math.max(metrics.latencyWorstMs, metrics.latencyMs);
+    metrics.scrolling = true;
+    emit();
   };
 
   const end = () => {
@@ -61,6 +134,17 @@ export function startScrollPerf(): () => void {
     stillSince = 0;
     root.removeAttribute("data-scrolling");
     setScrollEcoActive(false);
+
+    const dur = lastT - phaseStart;
+    if (dur > 80 && frames > 3) {
+      metrics.fps = Math.round((frames / dur) * 1000);
+      metrics.fpsMin = worstFrame > 0 ? Math.round(1000 / worstFrame) : 0;
+      metrics.jankFrames = jank;
+      metrics.peakSpeed = Math.round(peakV * 1000);
+      metrics.samples += 1;
+    }
+    metrics.scrolling = false;
+    emit();
   };
 
   /** Ambang diam berdasar kecepatan terakhir. */
@@ -84,6 +168,10 @@ export function startScrollPerf(): () => void {
       const v = Math.abs(y - lastY) / dt;
       // EMA: responsif terhadap perubahan, tapi tidak gugup pada satu frame anomali.
       velocity = velocity * 0.6 + v * 0.4;
+      if (velocity > peakV) peakV = velocity;
+      frames += 1;
+      if (dt > worstFrame) worstFrame = dt;
+      if (dt > 33.4) jank += 1;
       lastY = y;
       lastT = t;
     }
@@ -105,7 +193,10 @@ export function startScrollPerf(): () => void {
 
   /** Listener super-ringan: hanya membangunkan loop. */
   const wake = () => {
-    if (!raf) raf = requestAnimationFrame(frame);
+    if (!raf) {
+      wakeAt = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
     if (active) stillSince = 0;
   };
 
