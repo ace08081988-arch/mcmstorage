@@ -31,6 +31,9 @@ jobs:
       - name: Typecheck (tsgo)
         run: bunx tsgo --noEmit
 
+      - name: Audit dependensi (gagal pada high/critical)
+        run: bun run audit:deps:ci
+
       - name: Build (production)
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
