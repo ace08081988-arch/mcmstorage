@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Maximize, Minimize, Smartphone } from "lucide-react";
+import { Maximize, Minimize, MousePointerClick, Rocket, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   applyDisplayMode,
@@ -11,10 +11,12 @@ import {
   type FullscreenPref,
 } from "@/lib/fullscreen-mode";
 
-const OPTIONS: { id: FullscreenPref; label: string; hint: string }[] = [
-  { id: "auto", label: "Otomatis", hint: "Ikut cara aplikasi dibuka" },
-  { id: "on", label: "Layar penuh", hint: "Sembunyikan bilah sistem" },
-  { id: "off", label: "Normal", hint: "Tampilkan bilah sistem" },
+const OPTIONS: { id: FullscreenPref; label: string; hint: string; Icon: typeof Maximize }[] = [
+  { id: "auto", label: "Otomatis", hint: "Ikut cara aplikasi dibuka", Icon: Smartphone },
+  { id: "on", label: "Selalu", hint: "Kembali penuh tiap kali keluar", Icon: Maximize },
+  { id: "launch", label: "Saat membuka", hint: "Sekali di awal, lalu bebas", Icon: Rocket },
+  { id: "scroll", label: "Saat scroll", hint: "Penuh begitu mulai menggulir", Icon: MousePointerClick },
+  { id: "off", label: "Normal", hint: "Tampilkan bilah sistem", Icon: Minimize },
 ];
 
 /** Pengaturan mode layar penuh untuk PWA (iOS & Android). */
@@ -45,9 +47,10 @@ export function FullscreenModeToggle() {
 
   return (
     <div className="space-ms-3">
-      <div className="grid grid-cols-3 gap-ms-2">
+      <div className="grid grid-cols-2 gap-ms-2 sm:grid-cols-3">
         {OPTIONS.map((o) => {
           const active = pref === o.id;
+          const Icon = o.Icon;
           return (
             <Button
               key={o.id}
@@ -58,13 +61,7 @@ export function FullscreenModeToggle() {
               onClick={() => choose(o.id)}
             >
               <span className="flex items-center gap-ms-1 text-ms-sm font-medium">
-                {o.id === "on" ? (
-                  <Maximize className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                ) : o.id === "off" ? (
-                  <Minimize className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                ) : (
-                  <Smartphone className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                )}
+                <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="truncate">{o.label}</span>
               </span>
               <span className="text-ms-2xs opacity-80">{o.hint}</span>

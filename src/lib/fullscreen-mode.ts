@@ -15,7 +15,16 @@
  *     layar penuh atau memutar layar.
  */
 
-export type FullscreenPref = "auto" | "on" | "off";
+/**
+ * - `auto`   : ikut cara aplikasi dibuka (bawaan)
+ * - `on`     : selalu — kembali layar penuh setiap kali keluar
+ * - `launch` : hanya saat membuka aplikasi (sekali per sesi/muat)
+ * - `scroll` : otomatis saat mulai menggulir halaman
+ * - `off`    : jangan pernah meminta layar penuh
+ */
+export type FullscreenPref = "auto" | "on" | "launch" | "scroll" | "off";
+
+const PREFS: FullscreenPref[] = ["auto", "on", "launch", "scroll", "off"];
 
 export const FULLSCREEN_LS_KEY = "app-fullscreen-mode";
 export const FULLSCREEN_EVENT = "app-fullscreen-change";
@@ -27,7 +36,7 @@ export function readFullscreenPref(): FullscreenPref {
   if (typeof window === "undefined") return "auto";
   try {
     const raw = localStorage.getItem(FULLSCREEN_LS_KEY);
-    return raw === "on" || raw === "off" ? raw : "auto";
+    return PREFS.includes(raw as FullscreenPref) ? (raw as FullscreenPref) : "auto";
   } catch {
     return "auto";
   }
@@ -109,7 +118,9 @@ export async function exitFullscreen(): Promise<void> {
  */
 export async function applyFullscreenPref(fromUserGesture = false) {
   const pref = readFullscreenPref();
-  if (pref === "on" && fromUserGesture) await enterFullscreen();
+  if ((pref === "on" || pref === "launch" || pref === "scroll") && fromUserGesture) {
+    await enterFullscreen();
+  }
   if (pref === "off") await exitFullscreen();
   applyDisplayMode();
 }
@@ -157,39 +168,70 @@ export function startAutoFullscreenOnInstalled(): () => void {
   if (typeof window === "undefined") return () => {};
   if (!canRequestFullscreen()) return () => {};
 
-  const shouldRequest = () =>
-    readFullscreenPref() !== "off" &&
-    (isAppInstalledDisplay() || isMobileViewport()) &&
-    currentDisplayMode() !== "fullscreen";
+  let done = false; // dipakai mode "launch": cukup sekali per muat halaman
 
-  const onGesture = async () => {
+  const shouldRequest = () => {
+    const pref = readFullscreenPref();
+    if (pref === "off") return false;
+    if (pref === "launch" && done) return false;
+    return (
+      (isAppInstalledDisplay() || isMobileViewport()) &&
+      currentDisplayMode() !== "fullscreen"
+    );
+  };
+
+  const request = async () => {
     if (!shouldRequest()) return;
+    done = true;
     detach();
     await enterFullscreen();
     applyDisplayMode();
   };
 
+  const onGesture = () => {
+    // Mode "scroll" menunggu gulir, bukan sentuhan biasa.
+    if (readFullscreenPref() === "scroll") return;
+    void request();
+  };
+
+  const onScroll = () => {
+    if (readFullscreenPref() !== "scroll") return;
+    void request();
+  };
+
   const detach = () => {
     window.removeEventListener("pointerdown", onGesture);
     window.removeEventListener("keydown", onGesture);
+    window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("touchmove", onScroll);
   };
 
   const attach = () => {
     detach();
     window.addEventListener("pointerdown", onGesture, { passive: true });
     window.addEventListener("keydown", onGesture);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("touchmove", onScroll, { passive: true });
   };
 
-  // Pengguna menekan tombol kembali / swipe keluar dari layar penuh →
-  // siapkan lagi supaya sentuhan berikutnya memulihkan tampilan penuh.
+  // Keluar dari layar penuh: mode "selalu" & "scroll" memasang listener lagi,
+  // mode "hanya saat membuka" membiarkan pengguna tetap di tampilan normal.
   const onFullscreenChange = () => {
-    if (!document.fullscreenElement) attach();
+    if (document.fullscreenElement) return;
+    if (readFullscreenPref() === "launch") return;
+    attach();
   };
 
   attach();
   document.addEventListener("fullscreenchange", onFullscreenChange);
+  const onPrefChange = () => {
+    done = false;
+    if (!document.fullscreenElement) attach();
+  };
+  window.addEventListener(FULLSCREEN_EVENT, onPrefChange);
   return () => {
     detach();
     document.removeEventListener("fullscreenchange", onFullscreenChange);
+    window.removeEventListener(FULLSCREEN_EVENT, onPrefChange);
   };
 }
