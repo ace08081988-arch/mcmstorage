@@ -250,8 +250,9 @@ export function startAutoFullscreenOnInstalled(): () => void {
 
   let lastY = typeof window !== "undefined" ? window.scrollY : 0;
   let anchorY = lastY;
+  let scrollRaf = 0;
 
-  const onScroll = () => {
+  const evalScroll = () => {
     if (readFullscreenPref() !== "scroll") return;
     const { threshold, direction } = readScrollSettings();
     const y = window.scrollY;
@@ -264,11 +265,24 @@ export function startAutoFullscreenOnInstalled(): () => void {
     void request();
   };
 
+  // Throttle ke satu frame: handler scroll tidak boleh membaca layout
+  // berkali-kali per gesture, itu yang membuat gulir terasa telat.
+  const onScroll = () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = 0;
+      evalScroll();
+    });
+  };
+
   const detach = () => {
     window.removeEventListener("pointerdown", onGesture);
     window.removeEventListener("keydown", onGesture);
     window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("touchmove", onScroll);
+    if (scrollRaf) {
+      cancelAnimationFrame(scrollRaf);
+      scrollRaf = 0;
+    }
   };
 
   const attach = () => {
@@ -276,7 +290,6 @@ export function startAutoFullscreenOnInstalled(): () => void {
     window.addEventListener("pointerdown", onGesture, { passive: true });
     window.addEventListener("keydown", onGesture);
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("touchmove", onScroll, { passive: true });
   };
 
   // Keluar dari layar penuh: mode "selalu" & "scroll" memasang listener lagi,
