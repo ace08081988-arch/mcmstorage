@@ -4279,3 +4279,12 @@ html[data-app-installed="1"] body {
     0 4px 10px -4px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
     0 14px 28px -14px color-mix(in oklab, var(--d3-dark) calc(80% * var(--d3-strength)), transparent);
 }
+
+/* Permukaan "lux" (beranda/marketing) ikut kedalaman yang sama. */
+:where(.lux-card, .lux-plate, .surface-quiet, .surface-editorial) {
+  box-shadow:
+    inset 0 1px 0 0 var(--d3-light),
+    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
+    0 6px 14px -6px color-mix(in oklab, var(--d3-dark) calc(65% * var(--d3-strength)), transparent),
+    0 20px 40px -18px color-mix(in oklab, var(--d3-dark) calc(85% * var(--d3-strength)), transparent);
+}
