@@ -305,10 +305,14 @@ function buildMarkdown() {
       lines.push(`- **${SEVERITY_BADGE[a.severity] ?? a.severity}** \`${a.name}\`: ${a.title}${patched}${link}`);
     }
     lines.push("");
-  } else if (auditBeforePath && auditAfterPath) {
+  } else {
     lines.push("### 🛡️ Security fix");
     lines.push("");
-    lines.push("Tidak ada advisory yang hilang karena PR ini (update rutin, bukan security fix).");
+    lines.push(
+      auditBeforePath && auditAfterPath
+        ? "Tidak ada advisory yang hilang karena PR ini (update rutin, bukan security fix)."
+        : "Tidak ada advisory yang bisa dibandingkan (hasil `bun audit` tidak tersedia untuk PR ini).",
+    );
     lines.push("");
   }
 
