@@ -43,6 +43,20 @@ bun run build
 
 ## Migrasi kalau terlanjur ada `bun.lockb`
 
+Cara cepat (otomatis):
+
+```bash
+bun run fix:lockfile
+```
+
+Script `scripts/fix-lockfile.mjs` melakukan semuanya sesuai aturan di dokumen
+ini: menyetel `saveTextLockfile = true` di `bunfig.toml` bila belum ada,
+menghapus `bun.lockb` (termasuk dari index git kalau terlacak), meregenerasi
+`bun.lock` teks lewat `bun install --save-text-lockfile`, lalu memverifikasi
+hasilnya dengan `check:lockfile`. Exit code non-nol kalau masih gagal.
+
+Cara manual:
+
 ```bash
 rm -f bun.lockb
 bun install            # menulis ulang bun.lock (teks)
