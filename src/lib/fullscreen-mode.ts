@@ -24,6 +24,12 @@
  */
 export type FullscreenPref = "auto" | "on" | "launch" | "scroll" | "off";
 
+import {
+  applyScrollSettings,
+  freezeScrollPosition,
+  readScrollSettings,
+} from "./fullscreen-scroll";
+
 const PREFS: FullscreenPref[] = ["auto", "on", "launch", "scroll", "off"];
 
 export const FULLSCREEN_LS_KEY = "app-fullscreen-mode";
@@ -92,6 +98,7 @@ export function applyDisplayMode() {
   // header, sehingga halaman tidak perlu offset chrome browser.
   root.dataset.appInstalled = isAppInstalledDisplay() ? "1" : "0";
   root.dataset.fullscreenPref = readFullscreenPref();
+  applyScrollSettings();
 }
 
 export async function enterFullscreen(): Promise<boolean> {
@@ -211,6 +218,8 @@ export function startAutoFullscreenOnInstalled(): () => void {
     if (!shouldRequest()) return;
     done = true;
     detach();
+    const s = readScrollSettings();
+    if (s.freezeOnEnter) freezeScrollPosition();
     await enterFullscreen();
     applyDisplayMode();
   };
@@ -221,8 +230,19 @@ export function startAutoFullscreenOnInstalled(): () => void {
     void request();
   };
 
+  let lastY = typeof window !== "undefined" ? window.scrollY : 0;
+  let anchorY = lastY;
+
   const onScroll = () => {
     if (readFullscreenPref() !== "scroll") return;
+    const { threshold, direction } = readScrollSettings();
+    const y = window.scrollY;
+    const goingDown = y > lastY;
+    // Ganti arah → hitung jarak dari titik balik terbaru.
+    if (direction === "down" && !goingDown) anchorY = y;
+    lastY = y;
+    if (direction === "down" && !goingDown) return;
+    if (Math.abs(y - anchorY) < threshold) return;
     void request();
   };
 
@@ -253,6 +273,8 @@ export function startAutoFullscreenOnInstalled(): () => void {
   document.addEventListener("fullscreenchange", onFullscreenChange);
   const onPrefChange = () => {
     done = false;
+    lastY = window.scrollY;
+    anchorY = lastY;
     if (!document.fullscreenElement) attach();
   };
   window.addEventListener(FULLSCREEN_EVENT, onPrefChange);
