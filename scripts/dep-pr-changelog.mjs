@@ -9,7 +9,11 @@
  *
  * Pemakaian:
  *   node scripts/dep-pr-changelog.mjs --base origin/main \
- *     [--audit-before before.json] [--audit-after after.json] [--out body.md]
+ *     [--audit-before before.json] [--audit-after after.json] [--out body.md] \
+ *     [--labels-out labels.txt]
+ *
+ * --labels-out menulis daftar label (satu per baris) untuk PR Dependabot:
+ *   severity/<low|moderate|high|critical> dan type/<security|fix|breaking>.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, appendFileSync, existsSync } from "node:fs";
@@ -24,6 +28,7 @@ const baseRef = flag("--base", "origin/main");
 const outFile = flag("--out");
 const auditBeforePath = flag("--audit-before");
 const auditAfterPath = flag("--audit-after");
+const labelsOut = flag("--labels-out");
 
 const FIELDS = ["dependencies", "devDependencies", "overrides"];
 
@@ -121,6 +126,60 @@ function changelogLink(name) {
   return `[changelog](https://www.npmjs.com/package/${name}?activeTab=versions)`;
 }
 
+/** Ambil [major, minor, patch] pertama dari sebuah range semver (^1.2.3, ~1.2, >=1.2.3 ...). */
+function parseVersion(range) {
+  const m = String(range ?? "").match(/(\d+)\.(\d+)\.(\d+)|(\d+)\.(\d+)|(\d+)/);
+  if (!m) return null;
+  if (m[1]) return [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (m[4]) return [Number(m[4]), Number(m[5]), 0];
+  return [Number(m[6]), 0, 0];
+}
+
+/** "major" | "minor" | "patch" | null untuk satu perubahan range. */
+function bumpKind(from, to) {
+  const a = parseVersion(from);
+  const b = parseVersion(to);
+  if (!a || !b) return null;
+  if (b[0] !== a[0]) return "major";
+  if (b[1] !== a[1]) return "minor";
+  if (b[2] !== a[2]) return "patch";
+  return null;
+}
+
+const SEVERITY_LABEL = {
+  critical: "severity/critical",
+  high: "severity/high",
+  moderate: "severity/moderate",
+  medium: "severity/moderate",
+  low: "severity/low",
+};
+
+/**
+ * Label otomatis untuk PR dependency.
+ * - severity/*: severity tertinggi dari advisory yang diperbaiki, atau (kalau
+ *   tidak ada yang diperbaiki) dari advisory baru yang muncul.
+ * - type/security: PR ini menutup minimal satu advisory.
+ * - type/breaking: ada bump major.
+ * - type/fix: hanya bump patch (perbaikan rutin, risiko rendah).
+ */
+function deriveLabels({ changed, added, fixed, introduced }) {
+  const labels = new Set();
+  const severitySource = fixed.length ? fixed : introduced;
+  const top = [...severitySource].sort(bySeverity)[0];
+  if (top && SEVERITY_LABEL[top.severity]) labels.add(SEVERITY_LABEL[top.severity]);
+
+  if (fixed.length) labels.add("type/security");
+
+  const kinds = changed.map((c) => bumpKind(c.from, c.to)).filter(Boolean);
+  if (kinds.includes("major")) labels.add("type/breaking");
+  else if (kinds.length && kinds.every((k) => k === "patch")) labels.add("type/fix");
+  else if (!kinds.length && !added.length && fixed.length) labels.add("type/fix");
+
+  return [...labels].sort();
+}
+
+let derivedLabels = [];
+
 function buildMarkdown() {
   const headPkg = readJsonFile("package.json");
   const basePkg = readBasePackageJson();
@@ -133,6 +192,8 @@ function buildMarkdown() {
   const fixed = before.filter((a) => !afterKeys.has(a.key)).sort(bySeverity);
   const introduced = after.filter((a) => !beforeKeys.has(a.key)).sort(bySeverity);
   const remaining = after.filter((a) => beforeKeys.has(a.key)).sort(bySeverity);
+
+  derivedLabels = deriveLabels({ changed, added, fixed, introduced });
 
   const lines = [];
   lines.push("## 📦 Ringkasan update dependency");
@@ -199,6 +260,10 @@ function buildMarkdown() {
   }
 
   lines.push("---");
+  if (derivedLabels.length) {
+    lines.push(`Label otomatis: ${derivedLabels.map((l) => `\`${l}\``).join(", ")}`);
+    lines.push("");
+  }
   lines.push(
     "Gate yang harus lolos sebelum merge: `Typecheck & Build`, `bun run audit:deps:ci`, dan `bun run audit:router-versions`.",
   );
@@ -208,4 +273,5 @@ function buildMarkdown() {
 const markdown = buildMarkdown();
 process.stdout.write(`${markdown}\n`);
 if (outFile) writeFileSync(outFile, `${markdown}\n`, "utf8");
+if (labelsOut) writeFileSync(labelsOut, `${derivedLabels.join("\n")}${derivedLabels.length ? "\n" : ""}`, "utf8");
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n`);

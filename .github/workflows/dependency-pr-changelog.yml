@@ -13,6 +13,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  issues: write
 
 concurrency:
   group: dep-pr-changelog-${{ github.event.pull_request.number || github.ref }}
@@ -58,7 +59,8 @@ jobs:
             --base "origin/${{ github.event.pull_request.base.ref || 'main' }}" \
             --audit-before audit-before.json \
             --audit-after audit-after.json \
-            --out dep-changelog.md
+            --out dep-changelog.md \
+            --labels-out dep-labels.txt
 
       - name: Komentari PR
         if: github.event_name == 'pull_request'
@@ -66,6 +68,44 @@ jobs:
         with:
           header: dependency-changelog
           path: dep-changelog.md
+
+      # Label otomatis: severity/* (low|moderate|high|critical) + type/* (security|fix|breaking).
+      - name: Label otomatis PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          [ -s dep-labels.txt ] || { echo "Tidak ada label yang perlu ditambahkan."; exit 0; }
+
+          color_for() {
+            case "$1" in
+              severity/critical) echo "b60205" ;;
+              severity/high)     echo "d93f0b" ;;
+              severity/moderate) echo "fbca04" ;;
+              severity/low)      echo "0e8a16" ;;
+              type/security)     echo "5319e7" ;;
+              type/breaking)     echo "e11d48" ;;
+              type/fix)          echo "0366d6" ;;
+              *)                 echo "ededed" ;;
+            esac
+          }
+
+          # Bersihkan label lama agar tidak menumpuk saat PR di-update.
+          for old in severity/critical severity/high severity/moderate severity/low type/security type/fix type/breaking; do
+            if ! grep -qxF "$old" dep-labels.txt; then
+              gh pr edit "$PR" --remove-label "$old" >/dev/null 2>&1 || true
+            fi
+          done
+
+          while IFS= read -r label; do
+            [ -n "$label" ] || continue
+            gh label create "$label" --color "$(color_for "$label")" --description "Auto: PR dependency" >/dev/null 2>&1 || true
+            gh pr edit "$PR" --add-label "$label" >/dev/null 2>&1 || echo "Gagal menambah label $label"
+          done < dep-labels.txt
+
+          echo "Label diterapkan:"; cat dep-labels.txt
 
       - name: Gate audit (fail on high/critical)
         run: bun run audit:deps:ci
