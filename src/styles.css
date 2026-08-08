@@ -4322,11 +4322,6 @@ html[data-app-installed="1"] body {
     inset 0 1px 0 0 var(--d3-light),
     0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
     0 8px 20px -12px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent);
-  & thead {
-    box-shadow:
-      inset 0 1px 0 0 var(--d3-light),
-      0 4px 10px -8px color-mix(in oklab, var(--d3-dark) calc(90% * var(--d3-strength)), transparent);
-  }
   & tbody tr {
     box-shadow: inset 0 1px 0 0 color-mix(in oklab, white 4%, transparent);
   }

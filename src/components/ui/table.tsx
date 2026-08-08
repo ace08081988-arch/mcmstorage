@@ -33,7 +33,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
       <table
         ref={ref}
         className={cn(
-          "w-full caption-bottom text-ms-sm leading-ms-normal [font-variant-numeric:tabular-nums]",
+          "w-full caption-bottom depth-table text-ms-sm leading-ms-normal [font-variant-numeric:tabular-nums]",
           className,
         )}
         style={style}
