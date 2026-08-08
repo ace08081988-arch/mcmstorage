@@ -2304,7 +2304,49 @@ html[data-reduce-motion="on"] .skeleton-a11y {
 /* Spacer otomatis untuk konten halaman: menyesuaikan sendiri dengan ada /
    tidaknya bar bawah dan tinggi nyatanya (badge, landscape, safe-area). */
 @utility app-bottom-spacer {
-  padding-bottom: calc(var(--app-bottom-bar-space, 0px) + 0.5rem);
+  /* Saat tidak ada bar bawah, gesture/home-indicator tetap harus dihindari,
+     jadi ambil nilai terbesar antara tinggi bar dan safe-area bawah. */
+  padding-bottom: calc(
+    max(
+      var(--app-bottom-bar-space, 0px),
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    ) + 0.5rem
+  );
+}
+
+/* ------------------------------------------------------------------
+   Elemen melayang (FAB, toast inline, badge) — satu aturan posisi.
+   Selalu di atas bar bawah + gesture area, dan tidak menabrak cutout
+   samping saat landscape.
+*/
+@utility app-fab-bottom {
+  bottom: calc(
+    max(
+      var(--app-bottom-bar-space, 0px),
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    ) + 0.75rem
+  );
+}
+
+@utility app-fab-bottom-stacked {
+  bottom: calc(
+    max(
+      var(--app-bottom-bar-space, 0px),
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    ) + 4.75rem
+  );
+}
+
+@utility app-fab-right {
+  right: calc(
+    var(--app-safe-right, env(safe-area-inset-right, 0px)) + 0.75rem
+  );
+}
+
+@utility app-fab-left {
+  left: calc(
+    var(--app-safe-left, env(safe-area-inset-left, 0px)) + 0.75rem
+  );
 }
 @media (orientation: landscape) and (max-height: 520px) {
   :root {

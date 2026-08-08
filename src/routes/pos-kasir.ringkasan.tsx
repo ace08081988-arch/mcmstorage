@@ -320,7 +320,7 @@ function PosKasirRingkasanPage() {
         </section>
 
         {toast && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-background border border-border px-ms-4 py-ms-2.5 text-ms-sm text-foreground shadow-lg">
+          <div className="fixed app-fab-bottom left-1/2 -translate-x-1/2 z-50 rounded-lg bg-background border border-border px-ms-4 py-ms-2.5 text-ms-sm text-foreground shadow-lg">
             {toast}
           </div>
         )}

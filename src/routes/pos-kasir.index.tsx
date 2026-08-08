@@ -1490,7 +1490,7 @@ function PosKasirPage() {
         </section>
 
         {toast && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-background border border-success/50 rounded-xl px-ms-5 py-ms-3 shadow-2xl text-ms-sm z-50 animate-in fade-in slide-in-from-bottom-4">
+          <div className="fixed app-fab-bottom left-1/2 -translate-x-1/2 bg-background border border-success/50 rounded-xl px-ms-5 py-ms-3 shadow-2xl text-ms-sm z-50 animate-in fade-in slide-in-from-bottom-4">
             {toast}
           </div>
         )}

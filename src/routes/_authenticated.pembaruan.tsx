@@ -622,7 +622,7 @@ function PembaruanPage() {
         aria-label="Tulis status teks baru"
         onClick={() => (window.location.href = "/status/baru")}
         onPointerDown={onPressStart("light")}
-        className={`fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md hover:bg-muted/80 ${PRESS_FAB}`}
+        className={`fixed app-fab-bottom-stacked app-fab-right z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md hover:bg-muted/80 ${PRESS_FAB}`}
       >
         <Edit3 className="size-5" aria-hidden="true" focusable="false" />
       </button>
@@ -630,7 +630,7 @@ function PembaruanPage() {
         to="/status/baru"
         aria-label="Ambil foto atau video untuk status baru"
         onPointerDown={onPressStart("medium")}
-        className={`fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110 active:shadow-md ${PRESS_FAB}`}
+        className={`fixed app-fab-bottom app-fab-right z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110 active:shadow-md ${PRESS_FAB}`}
       >
         <Camera className="size-6" aria-hidden="true" focusable="false" />
       </Link>
