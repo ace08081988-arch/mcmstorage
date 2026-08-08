@@ -11,6 +11,8 @@ export type DepthQuality = "low" | "medium" | "high";
 export const DEPTH_QUALITY_KEY = "app-3d-quality";
 /** Ringankan efek saat mode layar penuh aktif di perangkat lemah. */
 export const DEPTH_LITE_FS_KEY = "app-3d-lite-fullscreen";
+/** Hemat energi saat scroll: turunkan efek berat selama gulir. */
+export const DEPTH_ECO_SCROLL_KEY = "app-3d-eco-scroll";
 
 export const DEPTH_QUALITY_OPTIONS: { id: DepthQuality; label: string; hint: string }[] = [
   { id: "low", label: "Rendah", hint: "Datar & paling ringan — tanpa kilau, tanpa animasi angkat." },
@@ -75,6 +77,37 @@ export function writeLiteFullscreen(on: boolean) {
   applyDepthQuality(readDepthQuality());
 }
 
+export function readEcoScroll(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return localStorage.getItem(DEPTH_ECO_SCROLL_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+export function writeEcoScroll(on: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(DEPTH_ECO_SCROLL_KEY, on ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  if (!on) setScrollEcoActive(false);
+  applyDepthQuality(readDepthQuality());
+}
+
+/** True saat gulir sedang berlangsung dan mode hemat scroll berlaku. */
+let scrollEcoActive = false;
+
+/** Dipanggil scroll-perf: tandai fase gulir aktif/berhenti. */
+export function setScrollEcoActive(active: boolean) {
+  const next = active && readEcoScroll() && isLowPerfDevice();
+  if (next === scrollEcoActive) return;
+  scrollEcoActive = next;
+  applyDepthQuality(readDepthQuality());
+}
+
 function isFullscreenNow(): boolean {
   if (typeof document === "undefined") return false;
   if (document.fullscreenElement) return true;
@@ -90,8 +123,10 @@ function downgrade(q: DepthQuality): DepthQuality {
  * tingkat saat layar penuh aktif di perangkat berperforma rendah.
  */
 export function effectiveDepthQuality(q: DepthQuality = readDepthQuality()): DepthQuality {
-  if (readLiteFullscreen() && isLowPerfDevice() && isFullscreenNow()) return downgrade(q);
-  return q;
+  let eff = q;
+  if (readLiteFullscreen() && isLowPerfDevice() && isFullscreenNow()) eff = downgrade(eff);
+  if (scrollEcoActive) eff = downgrade(eff);
+  return eff;
 }
 
 export function applyDepthQuality(q: DepthQuality) {
