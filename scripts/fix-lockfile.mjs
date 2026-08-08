@@ -9,6 +9,9 @@
  *
  * Mode `--dry-run` (alias `-n` / `--check`): hanya menampilkan rencana + diff,
  * tanpa menulis `bunfig.toml`, tanpa menghapus `bun.lockb`, dan tanpa menimpa `bun.lock`.
+ *
+ * Selalu mencetak ringkasan audit: file yang diubah, dependensi yang berubah
+ * (tambah/hapus/naik-turun versi), dan status verifikasi.
  */
 import { existsSync, readFileSync, writeFileSync, rmSync, mkdtempSync, copyFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -19,7 +22,71 @@ const DRY = process.argv.slice(2).some((a) => ["--dry-run", "-n", "--check"].inc
 const steps = [];
 const log = (m) => { steps.push(m); console.log(m); };
 const plan = [];
+const changedFiles = [];
 if (DRY) console.log("🔎 Mode dry-run: tidak ada file yang diubah.\n");
+
+/** Baca peta dependensi (nama → versi) dari bun.lock teks. */
+function readLockDeps(path) {
+  const map = new Map();
+  if (!path || !existsSync(path)) return map;
+  let text;
+  try {
+    text = readFileSync(path, "utf8");
+  } catch {
+    return map;
+  }
+  const re = /"((?:@[^"/@]+\/)?[^"@\s]+)@([^"]+)"/g;
+  let m;
+  while ((m = re.exec(text))) {
+    const [, name, version] = m;
+    if (!/^[\d]/.test(version)) continue; // lewati range/spesifier non-versi
+    if (!map.has(name)) map.set(name, version);
+  }
+  return map;
+}
+
+function diffDeps(before, after) {
+  const added = [];
+  const removed = [];
+  const updated = [];
+  for (const [name, v] of after) {
+    if (!before.has(name)) added.push({ name, to: v });
+    else if (before.get(name) !== v) updated.push({ name, from: before.get(name), to: v });
+  }
+  for (const [name, v] of before) if (!after.has(name)) removed.push({ name, from: v });
+  const byName = (a, b) => a.name.localeCompare(b.name);
+  return { added: added.sort(byName), removed: removed.sort(byName), updated: updated.sort(byName) };
+}
+
+function printSummary({ depDiff, verified, dirty }) {
+  const cap = (list, n = 25) =>
+    list.length > n ? [...list.slice(0, n), { name: `…dan ${list.length - n} lainnya`, meta: true }] : list;
+  console.log("\n════ RINGKASAN AUDIT LOCKFILE ════");
+  console.log(`Mode           : ${DRY ? "dry-run (tanpa menulis)" : "apply (menulis perubahan)"}`);
+
+  console.log("\n1) File yang diubah");
+  if (changedFiles.length === 0) console.log("   • (tidak ada)");
+  else changedFiles.forEach((f) => console.log(`   • ${f}`));
+
+  console.log("\n2) Dependensi yang berubah");
+  const { added, removed, updated } = depDiff;
+  const total = added.length + removed.length + updated.length;
+  if (total === 0) {
+    console.log("   • Tidak ada perubahan dependensi.");
+  } else {
+    console.log(`   Total: ${total} (tambah ${added.length}, naik/turun versi ${updated.length}, hapus ${removed.length})`);
+    cap(updated).forEach((d) => console.log(d.meta ? `   ~ ${d.name}` : `   ~ ${d.name}: ${d.from} → ${d.to}`));
+    cap(added).forEach((d) => console.log(d.meta ? `   + ${d.name}` : `   + ${d.name}@${d.to}`));
+    cap(removed).forEach((d) => console.log(d.meta ? `   - ${d.name}` : `   - ${d.name}@${d.from}`));
+  }
+
+  console.log("\n3) Status verifikasi");
+  console.log(`   • check:lockfile : ${verified ? "LULUS ✅" : "GAGAL ❌"}`);
+  console.log(`   • Hasil          : ${dirty ? (DRY ? "perlu diperbaiki ⚠️" : "perubahan diterapkan ✅") : "sudah sinkron ✅"}`);
+  console.log("══════════════════════════════════\n");
+}
+
+const depsBefore = readLockDeps("bun.lock");
 
 // 1. bunfig.toml
 let bunfig = existsSync("bunfig.toml") ? readFileSync("bunfig.toml", "utf8") : "";
@@ -37,6 +104,7 @@ if (!/save[-_]?[Tt]ext[-_]?[Ll]ockfile\s*=\s*true/.test(bunfig)) {
     log("• [dry-run] bunfig.toml: akan menyetel saveTextLockfile = true");
   } else {
     writeFileSync("bunfig.toml", bunfig.endsWith("\n") ? bunfig : `${bunfig}\n`);
+    changedFiles.push("bunfig.toml (saveTextLockfile = true ditambahkan)");
     log("• bunfig.toml: menyetel saveTextLockfile = true");
   }
 } else {
@@ -52,6 +120,7 @@ if (existsSync("bun.lockb")) {
     const tracked = spawnSync("git", ["ls-files", "--error-unmatch", "bun.lockb"], { stdio: "ignore" });
     if (tracked.status === 0) spawnSync("git", ["rm", "--cached", "-q", "bun.lockb"], { stdio: "inherit" });
     rmSync("bun.lockb", { force: true });
+    changedFiles.push("bun.lockb (dihapus)");
     log("• bun.lockb (biner) dihapus");
   }
 }
@@ -82,6 +151,7 @@ if (DRY) {
     { encoding: "utf8" },
   );
   const hasDiff = (diff.stdout ?? "").trim().length > 0;
+  const depDiff = diffDeps(depsBefore, readLockDeps(generated));
   console.log("\n── Rencana perubahan ──");
   if (plan.length === 0) console.log("• Tidak ada perubahan file konfigurasi.");
   else plan.forEach((p) => console.log(`• ${p}`));
@@ -89,6 +159,10 @@ if (DRY) {
   console.log(hasDiff ? diff.stdout : "• bun.lock sudah sinkron (tidak ada perubahan).");
   rmSync(dir, { recursive: true, force: true });
   const dirty = hasDiff || plan.length > 0;
+  if (hasDiff) plan.unshift("bun.lock → diregenerasi");
+  changedFiles.push(...plan.map((p) => `${p} (rencana)`));
+  const dryCheck = spawnSync(process.execPath, ["scripts/check-text-lockfile.mjs"], { stdio: "ignore" });
+  printSummary({ depDiff, verified: dryCheck.status === 0, dirty });
   console.log(
     dirty
       ? "\n⚠️  Ada perubahan yang perlu diterapkan. Jalankan `bun run fix:lockfile` untuk menulisnya."
@@ -108,6 +182,14 @@ if (install.status !== 0) {
 
 // 4. verifikasi
 const check = spawnSync(process.execPath, ["scripts/check-text-lockfile.mjs"], { stdio: "inherit" });
+const lockChanged = spawnSync("git", ["diff", "--quiet", "--", "bun.lock"], { stdio: "ignore" }).status !== 0;
+if (lockChanged) changedFiles.push("bun.lock (diregenerasi)");
+const depDiffApplied = diffDeps(depsBefore, readLockDeps("bun.lock"));
+printSummary({
+  depDiff: depDiffApplied,
+  verified: check.status === 0,
+  dirty: changedFiles.length > 0,
+});
 if (check.status !== 0) {
   console.error("\n❌ Lockfile masih belum sesuai aturan docs/dependency-lockfile.md.");
   process.exit(check.status ?? 1);
