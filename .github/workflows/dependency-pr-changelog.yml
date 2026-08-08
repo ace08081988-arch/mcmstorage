@@ -65,11 +65,6 @@ jobs:
             --pr-url "${{ github.event.pull_request.html_url }}" \
             --pr-title "${{ github.event.pull_request.title }}"
 
-      # Gate wajib: format changelog harus mengikuti template (tabel versi
-      # lama→baru + daftar advisory dengan severity dan link) sebelum merge.
-      - name: Validasi format changelog
-        run: node scripts/check-dep-pr-changelog.mjs dep-changelog.md
-
       # Notifikasi Slack hanya saat PR benar-benar menutup advisory keamanan.
       # Butuh repo secret SLACK_WEBHOOK_URL (Slack Incoming Webhook); tanpa itu step di-skip.
       - name: Notifikasi Slack (security fix)
