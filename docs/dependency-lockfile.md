@@ -29,6 +29,18 @@ harus bisa dibaca langsung dari commit — jadi teks menang.
 
 ## Gate CI
 
+Tiga lapis pengaman, dari paling awal:
+
+1. **pre-commit** (`.githooks/pre-commit`) — menolak commit yang men-stage
+   `bun.lockb` atau melanggar format lockfile.
+2. **pre-push** (`.githooks/pre-push`) — menjalankan `bun run check:lockfile`
+   sebelum push, jadi masalah ketahuan sebelum PR dibuat. Lewati hanya kalau
+   benar-benar perlu: `SKIP_LOCKFILE_CHECK=1 git push`.
+3. **CI** — workflow di bawah.
+
+Aktifkan hook dengan `bun run hooks:install` (otomatis lewat `prepare` saat
+`bun install`).
+
 Workflow **Lockfile Format** (`.github/workflows/lockfile-format.yml`) menjalankan
 `bun run check:lockfile` pada setiap PR ke `main` (dan push ke `main`) sebagai
 status check tersendiri bernama **check:lockfile (format lockfile teks)**.
