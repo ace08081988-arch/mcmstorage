@@ -10,6 +10,8 @@
  * tidak ada pembacaan layout di dalam handler.
  */
 
+import { setScrollEcoActive } from "@/lib/depth-quality";
+
 const IDLE_MS = 140;
 
 export function startScrollPerf(): () => void {
@@ -23,6 +25,7 @@ export function startScrollPerf(): () => void {
   const stop = () => {
     scrolling = false;
     root.removeAttribute("data-scrolling");
+    setScrollEcoActive(false);
   };
 
   const markIdle = () => {
@@ -36,7 +39,10 @@ export function startScrollPerf(): () => void {
       if (!raf) {
         raf = requestAnimationFrame(() => {
           raf = 0;
-          if (scrolling) root.setAttribute("data-scrolling", "1");
+          if (scrolling) {
+            root.setAttribute("data-scrolling", "1");
+            setScrollEcoActive(true);
+          }
         });
       }
     }
