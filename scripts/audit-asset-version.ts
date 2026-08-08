@@ -43,12 +43,18 @@ function walk(dir: string, out: string[] = []): string[] {
 const scanRoots = [join(ROOT, "src"), join(ROOT, "public")];
 const files: AuditFile[] = [];
 const assets: AuditAsset[] = [];
+// Saat checkout/CI, semua berkas mendapat mtime yang sama (waktu clone), jadi
+// perbandingan mtime vs tanggal versi selalu "basi" secara palsu. Aset hanya
+// dianggap berubah kalau lebih baru dari `asset-version.ts` itu sendiri.
+const versionFileMtime = statSync(VERSION_FILE).mtimeMs;
+const MTIME_SLACK_MS = 5_000;
 
 for (const root of scanRoots) {
   for (const full of walk(root)) {
     const rel = relative(ROOT, full);
     if (BRAND_ASSET_RE.test(full) && rel.startsWith("public/")) {
-      assets.push({ path: rel, mtimeMs: statSync(full).mtimeMs });
+      const mtimeMs = statSync(full).mtimeMs;
+      if (mtimeMs > versionFileMtime + MTIME_SLACK_MS) assets.push({ path: rel, mtimeMs });
       continue;
     }
     if (!SCAN_EXT.test(full) || SKIP_FILE.test(rel)) continue;
