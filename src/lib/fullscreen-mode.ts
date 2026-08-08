@@ -37,8 +37,13 @@ export const FULLSCREEN_EVENT = "app-fullscreen-change";
 
 export type DisplayMode = "browser" | "minimal-ui" | "standalone" | "fullscreen";
 
-/** Baca preferensi tersimpan (default: "auto"). */
-export function readFullscreenPref(): FullscreenPref {
+/**
+ * Cache preferensi: dibaca dari handler scroll, jadi harus bebas
+ * `localStorage` (akses sinkron itu penyebab lag saat menggulir).
+ */
+let prefCache: FullscreenPref | null = null;
+
+function loadFullscreenPref(): FullscreenPref {
   if (typeof window === "undefined") return "auto";
   try {
     const raw = localStorage.getItem(FULLSCREEN_LS_KEY);
@@ -48,8 +53,21 @@ export function readFullscreenPref(): FullscreenPref {
   }
 }
 
+/** Baca preferensi tersimpan (default: "auto"). */
+export function readFullscreenPref(): FullscreenPref {
+  if (!prefCache) prefCache = loadFullscreenPref();
+  return prefCache;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (!e.key || e.key === FULLSCREEN_LS_KEY) prefCache = null;
+  });
+}
+
 export function writeFullscreenPref(pref: FullscreenPref) {
   if (typeof window === "undefined") return;
+  prefCache = pref;
   try {
     localStorage.setItem(FULLSCREEN_LS_KEY, pref);
   } catch {
