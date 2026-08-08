@@ -98,6 +98,15 @@ dibandingkan dengan yang ada di repo, sehingga kamu melihat daftar rencana
 perubahan plus diff `bun.lock`. Exit code `0` bila sudah sinkron, `1` bila masih
 ada yang perlu diperbaiki — cocok dipakai sebagai pengecekan cepat sebelum commit.
 
+### Ringkasan audit
+
+Baik mode apply maupun dry-run selalu menutup dengan blok
+**RINGKASAN AUDIT LOCKFILE** berisi tiga bagian: (1) file yang diubah, (2)
+dependensi yang berubah — `+` tambah, `~` naik/turun versi (`lama → baru`), `-`
+hapus, dengan total per kategori, dan (3) status verifikasi `check:lockfile`
+beserta kesimpulan sinkron/perlu diperbaiki. Blok ini bisa langsung ditempel ke
+PR atau log audit.
+
 Cara manual:
 
 ```bash
