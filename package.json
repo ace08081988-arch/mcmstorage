@@ -146,7 +146,8 @@
     "audit:seo:fix": "node scripts/audit-seo-routes.mjs --fix",
     "deps:changelog": "node scripts/dep-pr-changelog.mjs",
     "check:lockfile": "node scripts/check-text-lockfile.mjs",
-    "build:dep-trend": "node scripts/build-dependency-trend.mjs"
+    "build:dep-trend": "node scripts/build-dependency-trend.mjs",
+    "check:dep-changelog": "node scripts/check-dep-pr-changelog.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
