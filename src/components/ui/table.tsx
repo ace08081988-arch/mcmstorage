@@ -33,7 +33,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
       <table
         ref={ref}
         className={cn(
-          "w-full caption-bottom text-ms-sm leading-ms-normal [font-variant-numeric:tabular-nums]",
+          "w-full caption-bottom depth-table text-ms-sm leading-ms-normal [font-variant-numeric:tabular-nums]",
           className,
         )}
         style={style}
@@ -56,7 +56,7 @@ const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
       className={cn(
         "[&_tr]:border-b [&_tr]:hover:bg-transparent",
         sticky &&
-          "sticky top-0 z-20 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 [&_tr]:border-b-0 [&_th]:after:absolute [&_th]:after:inset-x-0 [&_th]:after:bottom-0 [&_th]:after:h-px [&_th]:after:bg-border [&_th]:after:content-['']",
+          "sticky top-0 z-20 depth-3d-bar bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 [&_tr]:border-b-0 [&_th]:after:absolute [&_th]:after:inset-x-0 [&_th]:after:bottom-0 [&_th]:after:h-px [&_th]:after:bg-border [&_th]:after:content-['']",
         className,
       )}
       {...props}
