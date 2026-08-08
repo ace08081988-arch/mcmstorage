@@ -113,6 +113,32 @@ export async function exitFullscreen(): Promise<void> {
 }
 
 /**
+ * Jeda permintaan layar penuh otomatis. Dipakai saat pengguna sengaja
+ * keluar lewat tombol/gesture: tanpa jeda, sentuhan berikutnya akan
+ * langsung menariknya kembali ke layar penuh.
+ */
+let suspendUntil = 0;
+
+export function suspendAutoFullscreen(ms = 5 * 60_000) {
+  suspendUntil = Date.now() + ms;
+}
+
+export function isAutoFullscreenSuspended(): boolean {
+  return Date.now() < suspendUntil;
+}
+
+export function resumeAutoFullscreen() {
+  suspendUntil = 0;
+}
+
+/** Keluar dari layar penuh atas permintaan pengguna. */
+export async function exitFullscreenByUser(ms?: number): Promise<void> {
+  suspendAutoFullscreen(ms);
+  await exitFullscreen();
+  applyDisplayMode();
+}
+
+/**
  * Terapkan preferensi. Fullscreen API hanya boleh dipanggil dari gesture
  * pengguna, jadi `fromUserGesture` menandai kapan boleh meminta.
  */
@@ -173,6 +199,7 @@ export function startAutoFullscreenOnInstalled(): () => void {
   const shouldRequest = () => {
     const pref = readFullscreenPref();
     if (pref === "off") return false;
+    if (isAutoFullscreenSuspended()) return false;
     if (pref === "launch" && done) return false;
     return (
       (isAppInstalledDisplay() || isMobileViewport()) &&
