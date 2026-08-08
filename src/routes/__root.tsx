@@ -393,6 +393,16 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  // Toast loading yang pemanggilnya keburu unmount tidak boleh menempel
+  // selamanya; bersihkan juga sisa toast setiap pindah halaman.
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    void import("@/lib/toast-watchdog").then(({ installToastWatchdog, dismissAllToasts }) => {
+      installToastWatchdog();
+      stop = router.subscribe("onBeforeNavigate", () => dismissAllToasts());
+    });
+    return () => stop?.();
+  }, [router]);
   // Lacak perangkat tempat login + auto-signOut bila sesi dicabut dari
   // halaman "Sesi & Perangkat" di tempat lain.
   useDeviceSessionGuard();
@@ -553,6 +563,11 @@ function RootComponent() {
         // bawah. Header dan kontrol atas (judul, lonceng, avatar) tidak
         // pernah tertutup berapa pun jumlah toast yang menumpuk.
         position="bottom-center"
+        // Batasi tumpukan + selalu ada tombol tutup supaya notifikasi
+        // tidak pernah menumpuk menutupi layar.
+        visibleToasts={3}
+        closeButton
+        duration={4000}
         offset={{
           bottom: "calc(var(--app-bottom-nav-h, 0px) + 16px)",
           left: 16,

@@ -61,7 +61,16 @@ function toolbarOverlap(): number {
 function apply(): boolean {
   const el = ensureProbe();
   const cs = getComputedStyle(el);
-  const top = Math.round(parseFloat(cs.paddingTop) || 0);
+  const rawTop = Math.round(parseFloat(cs.paddingTop) || 0);
+  // Saat benar-benar layar penuh (bilah sistem disembunyikan), sebagian
+  // Android TETAP melaporkan inset atas sebesar status bar. Inset itu
+  // membuat pita kosong di puncak layar padahal ruangnya sudah dipakai
+  // aplikasi. Nolkan di mode fullscreen; notch nyata tetap aman karena
+  // konten di puncak hanya header dengan padding sendiri.
+  const isFullscreen =
+    document.documentElement.dataset["displayMode"] === "fullscreen" ||
+    !!document.fullscreenElement;
+  const top = isFullscreen ? 0 : rawTop;
   const bottomInset = parseFloat(cs.paddingBottom) || 0;
   const left = Math.round(parseFloat(cs.paddingLeft) || 0);
   const right = Math.round(parseFloat(cs.paddingRight) || 0);
@@ -112,6 +121,9 @@ export function startSafeAreaRecalc(): () => void {
 
   window.addEventListener("orientationchange", onOrientation);
   window.addEventListener("resize", onResize);
+  // Masuk/keluar layar penuh mengubah inset atas → ukur ulang.
+  document.addEventListener("fullscreenchange", onOrientation);
+  window.addEventListener("app-fullscreen-change", onOrientation);
   window.visualViewport?.addEventListener("resize", onResize);
   window.visualViewport?.addEventListener("scroll", onResize);
   const mq = window.matchMedia?.("(orientation: landscape)");
@@ -123,6 +135,8 @@ export function startSafeAreaRecalc(): () => void {
     retryTimer = null;
     window.removeEventListener("orientationchange", onOrientation);
     window.removeEventListener("resize", onResize);
+    document.removeEventListener("fullscreenchange", onOrientation);
+    window.removeEventListener("app-fullscreen-change", onOrientation);
     window.visualViewport?.removeEventListener("resize", onResize);
     window.visualViewport?.removeEventListener("scroll", onResize);
     mq?.removeEventListener?.("change", onOrientation);
