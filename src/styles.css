@@ -4726,11 +4726,9 @@ html[data-d3-quality="low"] .depth-rail { background-image: none; }
   }
 }
 
-/* Benar-benar layar penuh (bilah sistem tersembunyi): buang sisa ruang atas
-   dan biarkan konten menyentuh tepi layar. */
-html[data-display-mode="fullscreen"] {
-  --app-safe-top: 0px;
-}
+/* Benar-benar layar penuh (bilah sistem tersembunyi): tidak ada padding
+   tambahan di puncak. Inset notch tetap diukur safe-area-recalc.ts — di
+   sebagian Android cutout masih nyata walau bilah sistem hilang. */
 html[data-display-mode="fullscreen"] body {
   padding-top: 0;
 }
