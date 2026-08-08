@@ -32,7 +32,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Audit dependencies (fail on high/critical)
-        run: bun scripts/audit-ci.mjs
+        run: bun run audit:deps:ci
 
       - name: Job summary on failure
         if: failure()
