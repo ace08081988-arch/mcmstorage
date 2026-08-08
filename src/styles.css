@@ -4169,6 +4169,39 @@ html[data-app-installed="1"] body {
   --d3-dark: color-mix(in oklab, black 55%, transparent);
 }
 
+/* --------------------------------------------------------------------------
+   Skala tunggal untuk bevel / kontak / ambient.
+   Semua utility depth memakai token ini, jadi intensitas antar-permukaan dan
+   antar-state (rest, hover, focus, active, disabled) selalu sinkron.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Bevel (garis tepi 1px) */
+  --d3-bevel-top: inset 0 1px 0 0 var(--d3-light);
+  --d3-bevel-bottom: inset 0 -1px 0 0 var(--d3-dark);
+
+  /* Kontak rapat + ambient lebar, tiga tingkat: sm / md / lg */
+  --d3-contact: 0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(65% * var(--d3-strength)), transparent);
+  --d3-ambient-sm: 0 6px 14px -6px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent);
+  --d3-ambient-md:
+    0 4px 10px -4px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
+    0 14px 28px -14px color-mix(in oklab, var(--d3-dark) calc(80% * var(--d3-strength)), transparent);
+  --d3-ambient-lg:
+    0 12px 24px -8px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
+    0 32px 60px -24px color-mix(in oklab, var(--d3-dark) calc(85% * var(--d3-strength)), transparent);
+
+  /* Delta state: dipakai seragam oleh semua permukaan interaktif. */
+  --d3-ambient-hover:
+    0 6px 14px -6px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
+    0 20px 40px -16px color-mix(in oklab, var(--d3-dark) calc(90% * var(--d3-strength)), transparent);
+  --d3-pressed:
+    inset 0 2px 4px 0 color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
+    inset 0 1px 0 0 color-mix(in oklab, var(--d3-dark) calc(45% * var(--d3-strength)), transparent);
+  --d3-focus:
+    0 0 0 var(--focus-ring-offset, 2px) var(--background),
+    0 0 0 calc(var(--focus-ring-offset, 2px) + var(--focus-ring-width, 2px)) var(--ring);
+  --d3-disabled-opacity: 0.45;
+}
+
 @utility depth-3d {
   position: relative;
   background-image: linear-gradient(
@@ -4178,11 +4211,10 @@ html[data-app-installed="1"] body {
     color-mix(in oklab, var(--foreground) 4%, transparent)
   );
   box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
-    inset 0 -1px 0 0 var(--d3-dark),
-    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
-    0 3px 6px -2px color-mix(in oklab, var(--d3-dark) calc(55% * var(--d3-strength)), transparent),
-    0 10px 22px -10px color-mix(in oklab, var(--d3-dark) calc(75% * var(--d3-strength)), transparent);
+    var(--d3-bevel-top),
+    var(--d3-bevel-bottom),
+    var(--d3-contact),
+    var(--d3-ambient-md);
 }
 
 @utility depth-3d-lg {
@@ -4193,32 +4225,55 @@ html[data-app-installed="1"] body {
     color-mix(in oklab, var(--foreground) 5%, transparent)
   );
   box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
-    inset 0 -1px 0 0 var(--d3-dark),
-    0 2px 3px -1px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
-    0 12px 24px -8px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
-    0 32px 60px -24px color-mix(in oklab, var(--d3-dark) calc(85% * var(--d3-strength)), transparent);
+    var(--d3-bevel-top),
+    var(--d3-bevel-bottom),
+    var(--d3-contact),
+    var(--d3-ambient-lg);
 }
 
 /* Permukaan "melayang" dengan pantulan bawah — dipakai bar bawah & header. */
 @utility depth-3d-bar {
   box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
+    var(--d3-bevel-top),
     0 -8px 24px -12px color-mix(in oklab, var(--d3-dark) calc(80% * var(--d3-strength)), transparent),
     0 8px 24px -12px color-mix(in oklab, var(--d3-dark) calc(80% * var(--d3-strength)), transparent);
 }
 
 /* Tombol: bevel atas + bayangan kontak, lalu "tertekan" ke dalam saat aktif. */
 @utility depth-press {
+  transition: box-shadow 160ms ease, transform 160ms ease, opacity 160ms ease;
   box-shadow:
-    inset 0 1px 0 0 color-mix(in oklab, white 26%, transparent),
-    inset 0 -1px 0 0 color-mix(in oklab, black 18%, transparent),
-    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
-    0 4px 10px -4px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent);
-  &:active {
+    var(--d3-bevel-top),
+    var(--d3-bevel-bottom),
+    var(--d3-contact),
+    var(--d3-ambient-sm);
+  @media (hover: hover) {
+    &:hover:not(:disabled):not([aria-disabled="true"]):not([data-disabled]) {
+      box-shadow:
+        var(--d3-bevel-top),
+        var(--d3-bevel-bottom),
+        var(--d3-contact),
+        var(--d3-ambient-hover);
+    }
+  }
+  &:focus-visible {
+    outline: none;
     box-shadow:
-      inset 0 2px 4px 0 color-mix(in oklab, black 22%, transparent),
-      inset 0 1px 0 0 color-mix(in oklab, black 12%, transparent);
+      var(--d3-bevel-top),
+      var(--d3-bevel-bottom),
+      var(--d3-contact),
+      var(--d3-ambient-sm),
+      var(--d3-focus);
+  }
+  &:active:not(:disabled):not([aria-disabled="true"]):not([data-disabled]) {
+    box-shadow: var(--d3-pressed);
+  }
+  &:disabled,
+  &[aria-disabled="true"],
+  &[data-disabled] {
+    box-shadow: var(--d3-bevel-bottom);
+    opacity: var(--d3-disabled-opacity);
+    transform: none;
   }
 }
 
@@ -4227,37 +4282,80 @@ html[data-app-installed="1"] body {
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
   transform-style: preserve-3d;
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    &:hover {
+    &:hover:not([aria-disabled="true"]):not([data-disabled]) {
       transform: perspective(900px) translateY(-2px) rotateX(1.6deg) scale(1.006);
       box-shadow:
-        inset 0 1px 0 0 var(--d3-light),
-        0 4px 8px -2px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
-        0 20px 40px -14px color-mix(in oklab, var(--d3-dark) calc(85% * var(--d3-strength)), transparent);
+        var(--d3-bevel-top),
+        var(--d3-bevel-bottom),
+        var(--d3-contact),
+        var(--d3-ambient-hover);
     }
   }
-  &:active { transform: translateY(0) scale(0.997); }
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      var(--d3-bevel-top),
+      var(--d3-bevel-bottom),
+      var(--d3-contact),
+      var(--d3-ambient-md),
+      var(--d3-focus);
+  }
+  &:active:not([aria-disabled="true"]):not([data-disabled]) {
+    transform: translateY(0) scale(0.997);
+    box-shadow:
+      var(--d3-bevel-top),
+      var(--d3-contact);
+  }
+  &[aria-disabled="true"],
+  &[data-disabled] {
+    box-shadow: var(--d3-bevel-bottom);
+    opacity: var(--d3-disabled-opacity);
+    transform: none;
+  }
 }
 
 /* Permukaan cekung (input, well, track) — cahaya dari atas berarti bayangan
  * jatuh di sisi dalam atas. */
 @utility depth-inset {
+  transition: box-shadow 160ms ease, opacity 160ms ease;
   box-shadow:
     inset 0 2px 4px -1px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
     inset 0 -1px 0 0 var(--d3-light);
+  @media (hover: hover) {
+    &:hover:not(:disabled):not([aria-disabled="true"]):not([data-disabled]) {
+      box-shadow:
+        inset 0 2px 5px -1px color-mix(in oklab, var(--d3-dark) calc(80% * var(--d3-strength)), transparent),
+        inset 0 -1px 0 0 var(--d3-light);
+    }
+  }
+  &:focus-visible,
+  &:focus-within {
+    outline: none;
+    box-shadow:
+      inset 0 2px 4px -1px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
+      inset 0 -1px 0 0 var(--d3-light),
+      var(--d3-focus);
+  }
+  &:disabled,
+  &[aria-disabled="true"],
+  &[data-disabled] {
+    box-shadow: inset 0 1px 2px -1px color-mix(in oklab, var(--d3-dark) calc(40% * var(--d3-strength)), transparent);
+    opacity: var(--d3-disabled-opacity);
+  }
 }
 
 /* Naikkan utility premium lama ke rendering 3D yang sama supaya seluruh
  * halaman lama ikut berubah tanpa menyentuh tiap komponen. */
 .surface-elevated { box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
-    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
-    0 3px 6px -2px color-mix(in oklab, var(--d3-dark) calc(55% * var(--d3-strength)), transparent),
-    0 10px 22px -10px color-mix(in oklab, var(--d3-dark) calc(75% * var(--d3-strength)), transparent); }
+    var(--d3-bevel-top),
+    var(--d3-bevel-bottom),
+    var(--d3-contact),
+    var(--d3-ambient-md); }
 .surface-elevated-lg { box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
-    0 2px 3px -1px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
-    0 12px 24px -8px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent),
-    0 32px 60px -24px color-mix(in oklab, var(--d3-dark) calc(85% * var(--d3-strength)), transparent); }
+    var(--d3-bevel-top),
+    var(--d3-bevel-bottom),
+    var(--d3-contact),
+    var(--d3-ambient-lg); }
 
 /* Sticky header & bar bawah ikut mengambang. */
 .app-sticky-header { box-shadow:
@@ -4274,19 +4372,17 @@ html[data-app-installed="1"] body {
  * tetap menang bila sebuah komponen ingin tampilan lain. */
 :where([class*="bg-card"][class*="rounded"], [class*="bg-popover"][class*="rounded"], [class*="bg-sidebar"][class*="rounded"], [class*="bg-secondary"][class*="rounded"], [class*="bg-muted"][class*="rounded"]) {
   box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
-    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
-    0 4px 10px -4px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
-    0 14px 28px -14px color-mix(in oklab, var(--d3-dark) calc(80% * var(--d3-strength)), transparent);
+    var(--d3-bevel-top),
+    var(--d3-contact),
+    var(--d3-ambient-md);
 }
 
 /* Permukaan "lux" (beranda/marketing) ikut kedalaman yang sama. */
 .lux-card, .lux-plate, .surface-quiet, .surface-editorial {
   box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
-    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
-    0 6px 14px -6px color-mix(in oklab, var(--d3-dark) calc(65% * var(--d3-strength)), transparent),
-    0 20px 40px -18px color-mix(in oklab, var(--d3-dark) calc(85% * var(--d3-strength)), transparent);
+    var(--d3-bevel-top),
+    var(--d3-contact),
+    var(--d3-ambient-md);
 }
 
 /* --------------------------------------------------------------------------
@@ -4296,9 +4392,9 @@ html[data-app-installed="1"] body {
 /* Popover ringan (tooltip, hover-card, submenu) — lebih rapat dari depth-3d. */
 @utility depth-3d-sm {
   box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
-    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
-    0 6px 14px -6px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent);
+    var(--d3-bevel-top),
+    var(--d3-contact),
+    var(--d3-ambient-sm);
 }
 
 /* Panel vertikal (sidebar / drawer samping): cahaya di tepi dalam, bayangan
@@ -4319,11 +4415,24 @@ html[data-app-installed="1"] body {
 /* Tabel: kepala tabel terangkat di atas badan, badan sedikit cekung. */
 @utility depth-table {
   box-shadow:
-    inset 0 1px 0 0 var(--d3-light),
-    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
-    0 8px 20px -12px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent);
+    var(--d3-bevel-top),
+    var(--d3-contact),
+    var(--d3-ambient-sm);
   & tbody tr {
     box-shadow: inset 0 1px 0 0 color-mix(in oklab, white 4%, transparent);
+    transition: box-shadow 160ms ease;
+  }
+  @media (hover: hover) {
+    & tbody tr:hover {
+      box-shadow:
+        var(--d3-bevel-top),
+        var(--d3-contact);
+    }
+  }
+  & tbody tr[aria-disabled="true"],
+  & tbody tr[data-disabled] {
+    opacity: var(--d3-disabled-opacity);
+    box-shadow: none;
   }
   & tfoot {
     box-shadow: inset 0 2px 4px -2px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent);
@@ -4332,8 +4441,33 @@ html[data-app-installed="1"] body {
 
 /* Chip/tab aktif yang menonjol keluar dari track cekung. */
 @utility depth-chip {
+  transition: box-shadow 160ms ease, opacity 160ms ease;
   box-shadow:
-    inset 0 1px 0 0 color-mix(in oklab, white 24%, transparent),
-    0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(65% * var(--d3-strength)), transparent),
-    0 4px 10px -5px color-mix(in oklab, var(--d3-dark) calc(70% * var(--d3-strength)), transparent);
+    var(--d3-bevel-top),
+    var(--d3-bevel-bottom),
+    var(--d3-contact),
+    var(--d3-ambient-sm);
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      var(--d3-bevel-top),
+      var(--d3-contact),
+      var(--d3-focus);
+  }
+  &:active:not(:disabled):not([aria-disabled="true"]):not([data-disabled]) {
+    box-shadow: var(--d3-pressed);
+  }
+  &:disabled,
+  &[aria-disabled="true"],
+  &[data-disabled] {
+    box-shadow: none;
+    opacity: var(--d3-disabled-opacity);
+  }
+}
+
+/* Guard global: permukaan berkedalaman apa pun yang dinonaktifkan tampil
+ * rata & redup dengan intensitas yang sama di seluruh aplikasi. */
+:where(.depth-3d, .depth-3d-sm, .depth-3d-lg, .depth-table, .depth-rail):is([aria-disabled="true"], [data-disabled], :disabled) {
+  box-shadow: var(--d3-bevel-bottom);
+  opacity: var(--d3-disabled-opacity);
 }
