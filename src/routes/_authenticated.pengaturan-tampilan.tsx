@@ -37,6 +37,12 @@ import {
   type SurfaceFx,
 } from "@/components/appearance-init";
 import { useAppPrefs, setAppPrefs, getAppPrefs } from "@/lib/app-prefs";
+import {
+  DEPTH_QUALITY_OPTIONS,
+  readDepthQuality,
+  writeDepthQuality,
+  type DepthQuality,
+} from "@/lib/depth-quality";
 import { useMidnightPreview, useMidnightScope, useThemeVariant } from "@/lib/midnight-preview";
 import { encodePresetCode, decodeShareText } from "@/lib/appearance-share-code";
 import {
@@ -394,6 +400,10 @@ function PengaturanTampilanPage() {
 
   // Draft yang sedang dipratinjau (belum disimpan).
   const [draft, setDraft] = useState<Draft>(snapshot);
+  // Kualitas 3D disimpan per perangkat (bukan ikut preset akun) karena
+  // menyangkut performa hardware, bukan selera visual.
+  const [depthQuality, setDepthQuality] = useState<DepthQuality>("high");
+  useEffect(() => { setDepthQuality(readDepthQuality()); }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
