@@ -4078,10 +4078,11 @@ html[data-high-contrast="on"] {
    `100dvh` sudah otomatis mengikuti tinggi layar efektif, jadi tidak ada
    penyesuaian tinggi manual di sini.
    ========================================================================== */
-html[data-display-mode="fullscreen"] {
-  --app-safe-top: 0px;
-  --app-safe-bottom: 0px;
-}
+/* Catatan: inset TIDAK dinolkan paksa di sini. Sebagian Android tetap
+   melaporkan inset cutout walau bilah sistem disembunyikan; menolkannya
+   membuat puncak header tersembunyi di balik notch. Nilai sebenarnya
+   diukur ulang oleh src/lib/safe-area-recalc.ts (yang memang menghasilkan
+   0px saat benar-benar layar penuh tanpa cutout). */
 
 /* Saat aplikasi terpasang (tanpa bilah alamat) hilangkan ruang ekstra yang
    hanya masuk akal di tab browser. */
