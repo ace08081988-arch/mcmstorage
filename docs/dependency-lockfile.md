@@ -27,6 +27,15 @@ harus bisa dibaca langsung dari commit — jadi teks menang.
 - **Kapan `bun.lockb` boleh dipakai?** Hanya lokal dan sementara — misalnya
   eksperimen install cepat di mesin sendiri. Hapus sebelum commit.
 
+## Gate CI
+
+Workflow **Lockfile Format** (`.github/workflows/lockfile-format.yml`) menjalankan
+`bun run check:lockfile` pada setiap PR ke `main` (dan push ke `main`) sebagai
+status check tersendiri bernama **check:lockfile (format lockfile teks)**.
+Kalau gagal, job summary menampilkan output pemeriksaan plus perintah perbaikan
+(`bun run fix:lockfile`). Jadikan check ini required di branch protection agar PR
+dengan lockfile biner tidak bisa di-merge.
+
 ## Prosedur update dependency
 
 ```bash
