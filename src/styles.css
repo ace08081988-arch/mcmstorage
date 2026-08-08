@@ -4783,3 +4783,55 @@ html[data-display-mode="fullscreen"] body {
   width: 100%;
   overflow: hidden;
 }
+
+/* ==========================================================================
+   Rotasi otomatis & layout lanskap
+   --------------------------------------------------------------------------
+   Ponsel boleh diputar (manifest `orientation: any`). Saat lanskap tinggi
+   layar jadi sempit, jadi elemen vertikal dirampingkan dan konten diberi
+   batas lebar supaya baris teks tidak terlalu panjang. Semua nilai tetap
+   memakai token safe-area agar aman dari cutout di sisi kiri/kanan.
+   ========================================================================== */
+@media (orientation: landscape) and (max-height: 560px) {
+  /* Header sticky lebih ramping supaya konten dapat ruang. */
+  .app-sticky-header {
+    padding-top: calc(
+      var(--app-safe-top, env(safe-area-inset-top, 0px)) + 0.125rem
+    );
+  }
+  .app-sticky-header :where(h1) {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  /* Baris teks tetap nyaman dibaca pada layar sangat lebar & pendek. */
+  :where(.container) {
+    max-width: 56rem;
+    margin-inline: auto;
+  }
+
+  /* Dialog/sheet tidak boleh melebihi tinggi layar; isinya menggulir. */
+  :where([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
+    max-height: calc(var(--app-vh, 100dvh) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Elemen melayang mengikuti bar yang sudah dirampingkan. */
+  .app-fab-bottom-stacked {
+    bottom: calc(
+      max(
+        var(--app-bottom-bar-space, 0px),
+        var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+      ) + 3.75rem
+    );
+  }
+}
+
+/* Lanskap pada tablet / layar lebih tinggi: manfaatkan lebar ekstra. */
+@media (orientation: landscape) and (min-height: 561px) {
+  :where(.container) {
+    max-width: 72rem;
+    margin-inline: auto;
+  }
+}
