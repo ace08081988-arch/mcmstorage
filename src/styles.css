@@ -739,7 +739,10 @@ html:not(.dark) .summary-tone-info    { --tone: color-mix(in oklab, var(--info) 
     font-family: var(--app-font-family, "Inter", system-ui, sans-serif);
     /* Warisi dari <html> — biar preferensi font-size cascade lewat rem. */
     position: relative;
-    min-height: 100vh;
+    /* `100vh` = tinggi layar TERBESAR (bilah alamat tersembunyi) sehingga
+       konten paling bawah/atas bisa terpotong. `--app-vh` diisi tinggi
+       viewport nyata oleh src/lib/viewport-height.ts. */
+    min-height: var(--app-vh, 100dvh);
     /* Cegah efek "bounce"/overscroll Android & iOS yang membuat elemen
        `fixed` terlihat ikut bergeser saat scroll melewati ujung konten. */
     overscroll-behavior-y: none;
@@ -4075,10 +4078,11 @@ html[data-high-contrast="on"] {
    `100dvh` sudah otomatis mengikuti tinggi layar efektif, jadi tidak ada
    penyesuaian tinggi manual di sini.
    ========================================================================== */
-html[data-display-mode="fullscreen"] {
-  --app-safe-top: 0px;
-  --app-safe-bottom: 0px;
-}
+/* Catatan: inset TIDAK dinolkan paksa di sini. Sebagian Android tetap
+   melaporkan inset cutout walau bilah sistem disembunyikan; menolkannya
+   membuat puncak header tersembunyi di balik notch. Nilai sebenarnya
+   diukur ulang oleh src/lib/safe-area-recalc.ts (yang memang menghasilkan
+   0px saat benar-benar layar penuh tanpa cutout). */
 
 /* Saat aplikasi terpasang (tanpa bilah alamat) hilangkan ruang ekstra yang
    hanya masuk akal di tab browser. */
