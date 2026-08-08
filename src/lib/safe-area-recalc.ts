@@ -121,6 +121,9 @@ export function startSafeAreaRecalc(): () => void {
 
   window.addEventListener("orientationchange", onOrientation);
   window.addEventListener("resize", onResize);
+  // Masuk/keluar layar penuh mengubah inset atas → ukur ulang.
+  document.addEventListener("fullscreenchange", onOrientation);
+  window.addEventListener("app-fullscreen-change", onOrientation);
   window.visualViewport?.addEventListener("resize", onResize);
   window.visualViewport?.addEventListener("scroll", onResize);
   const mq = window.matchMedia?.("(orientation: landscape)");
@@ -132,6 +135,8 @@ export function startSafeAreaRecalc(): () => void {
     retryTimer = null;
     window.removeEventListener("orientationchange", onOrientation);
     window.removeEventListener("resize", onResize);
+    document.removeEventListener("fullscreenchange", onOrientation);
+    window.removeEventListener("app-fullscreen-change", onOrientation);
     window.visualViewport?.removeEventListener("resize", onResize);
     window.visualViewport?.removeEventListener("scroll", onResize);
     mq?.removeEventListener?.("change", onOrientation);
