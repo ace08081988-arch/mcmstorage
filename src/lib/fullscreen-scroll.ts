@@ -33,7 +33,6 @@ export const DEFAULT_SCROLL_SETTINGS: FullscreenScrollSettings = {
   smoothScroll: false,
 };
 
-export function readScrollSettings(): FullscreenScrollSettings {
 /**
  * Cache in-memory: handler scroll dipanggil puluhan kali per detik, dan
  * `localStorage.getItem` + `JSON.parse` di jalur itu terasa sebagai lag.
