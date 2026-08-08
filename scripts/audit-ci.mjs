@@ -79,5 +79,23 @@ for (const f of findings) {
   console.error(`  [${f.severity.toUpperCase()}] ${f.pkg} — ${f.title}`);
   console.error(`      patched: ${f.patched}${f.url ? `  ${f.url}` : ""}`);
 }
+
+if (process.env.GITHUB_STEP_SUMMARY) {
+  const lines = [
+    "## ❌ Audit dependensi gagal",
+    "",
+    "| Paket | Severity | Masalah | Patched |",
+    "| --- | --- | --- | --- |",
+    ...findings.map((f) => `| \`${f.pkg}\` | ${f.severity} | ${String(f.title).replace(/\|/g, "\\|")} | ${f.patched} |`),
+    "",
+  ];
+  try {
+    const { appendFileSync } = await import("node:fs");
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
+  } catch {
+    /* summary opsional */
+  }
+}
+
 console.error("\nPerbaiki dengan menaikkan versi paket di package.json (atau `overrides`), lalu regenerasi bun.lock.");
 process.exit(1);
