@@ -83,6 +83,18 @@ menghapus `bun.lockb` (termasuk dari index git kalau terlacak), meregenerasi
 `bun.lock` teks lewat `bun install --save-text-lockfile`, lalu memverifikasi
 hasilnya dengan `check:lockfile`. Exit code non-nol kalau masih gagal.
 
+### Pratinjau tanpa menulis apa pun (dry-run)
+
+```bash
+bun run fix:lockfile:dry     # sama dengan: bun run fix:lockfile -- --dry-run
+```
+
+Mode ini **tidak** menulis `bunfig.toml`, **tidak** menghapus `bun.lockb`, dan
+**tidak** menimpa `bun.lock`. Lockfile diregenerasi di direktori sementara lalu
+dibandingkan dengan yang ada di repo, sehingga kamu melihat daftar rencana
+perubahan plus diff `bun.lock`. Exit code `0` bila sudah sinkron, `1` bila masih
+ada yang perlu diperbaiki — cocok dipakai sebagai pengecekan cepat sebelum commit.
+
 Cara manual:
 
 ```bash
