@@ -204,12 +204,7 @@ export function AppHeader() {
       }}
     >
       {/* Skip link — target Tab pertama, memudahkan lompat ke konten */}
-      <a
-        href="#konten-utama"
-        className="absolute left-2 top-2 z-50 -translate-y-[150%] rounded-md bg-primary px-ms-3 py-2 text-ms-sm font-medium text-primary-foreground shadow-lg transition-transform focus-visible:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        Lewati ke konten
-      </a>
+      <SkipToContent />
       <SidebarTrigger className="h-9 w-9 shrink-0 rounded-lg hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:inline-flex hidden" />
       {/* Mobile: no sidebar trigger here (moved to bottom nav "Menu"), spacer for balance */}
       <span aria-hidden className="ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg md:hidden">
