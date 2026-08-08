@@ -4835,3 +4835,26 @@ html[data-display-mode="fullscreen"] body {
     margin-inline: auto;
   }
 }
+
+/* ── Perilaku scroll saat layar penuh ─────────────────────────────────
+   Diatur dari Pengaturan Tampilan → "Perilaku scroll". Atribut ditulis
+   oleh src/lib/fullscreen-scroll.ts. */
+html[data-scroll-lock="1"],
+html[data-scroll-lock="1"] body {
+  overscroll-behavior: none;
+}
+
+html[data-scroll-lock="1"] body {
+  /* Cegah bilah sistem muncul-hilang saat gulir melewati ujung konten. */
+  overscroll-behavior-y: none;
+}
+
+html[data-scroll-smooth="1"] {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-scroll-smooth="1"] {
+    scroll-behavior: auto;
+  }
+}
