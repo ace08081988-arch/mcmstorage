@@ -36,6 +36,12 @@ updates:
           - "@react-email/*"
           - "brace-expansion"
           - "fast-uri"
+      # TanStack harus naik bersamaan (router/react-start/router-plugin saling pin);
+      # dipisah = build gagal di `audit:router-versions`.
+      tanstack:
+        applies-to: version-updates
+        patterns:
+          - "@tanstack/*"
       # Sisanya: patch & minor digabung agar noise PR rendah.
       minor-and-patch:
         applies-to: version-updates
@@ -45,6 +51,7 @@ updates:
         exclude-patterns:
           - "react-email"
           - "@react-email/*"
+          - "@tanstack/*"
 
   # Pin/refresh action di workflow CI (termasuk gate audit).
   - package-ecosystem: "github-actions"
