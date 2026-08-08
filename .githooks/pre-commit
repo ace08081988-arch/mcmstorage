@@ -1,9 +1,25 @@
 #!/bin/sh
-# Pre-commit hook Ace Storage — cegah mismatch tag head masuk ke commit.
+# Pre-commit hook Ace Storage — cegah mismatch tag head & lockfile salah format.
 # Aktifkan dengan: bun run hooks:install  (otomatis lewat `prepare`).
 set -e
 
-if [ -n "$SKIP_HEAD_AUDIT" ] && [ "$SKIP_HEAD_AUDIT" = "1" ]; then
+# 1) Aturan lockfile (docs/dependency-lockfile.md): wajib `bun.lock` teks.
+if [ "$SKIP_LOCKFILE_CHECK" = "1" ]; then
+  echo "↷ Cek lockfile dilewati (SKIP_LOCKFILE_CHECK=1)."
+else
+  # Tolak lockfile biner yang ikut ter-stage, sekalipun belum ada di worktree.
+  staged_binary=$(git diff --cached --name-only --diff-filter=ACMR | grep -x 'bun.lockb' || true)
+  if [ -n "$staged_binary" ]; then
+    echo "❌ Commit ditolak: \`bun.lockb\` (lockfile biner) ada di staging area."
+    echo "   Jalankan: git rm --cached bun.lockb && rm -f bun.lockb && bun install"
+    echo "   Panduan: docs/dependency-lockfile.md"
+    exit 1
+  fi
+  node scripts/check-text-lockfile.mjs
+fi
+
+# 2) Audit tag head.
+if [ "$SKIP_HEAD_AUDIT" = "1" ]; then
   echo "↷ Audit head dilewati (SKIP_HEAD_AUDIT=1)."
   exit 0
 fi
