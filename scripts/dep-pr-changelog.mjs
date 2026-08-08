@@ -9,7 +9,11 @@
  *
  * Pemakaian:
  *   node scripts/dep-pr-changelog.mjs --base origin/main \
- *     [--audit-before before.json] [--audit-after after.json] [--out body.md]
+ *     [--audit-before before.json] [--audit-after after.json] [--out body.md] \
+ *     [--labels-out labels.txt]
+ *
+ * --labels-out menulis daftar label (satu per baris) untuk PR Dependabot:
+ *   severity/<low|moderate|high|critical> dan type/<security|fix|breaking>.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, appendFileSync, existsSync } from "node:fs";
@@ -24,6 +28,7 @@ const baseRef = flag("--base", "origin/main");
 const outFile = flag("--out");
 const auditBeforePath = flag("--audit-before");
 const auditAfterPath = flag("--audit-after");
+const labelsOut = flag("--labels-out");
 
 const FIELDS = ["dependencies", "devDependencies", "overrides"];
 
