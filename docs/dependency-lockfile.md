@@ -52,3 +52,25 @@ bun run check:lockfile
 Jangan menghapus `bun.lock` hanya karena install gagal 401/403 — itu biasanya
 token registry yang kedaluwarsa, bukan lockfile-nya. Hapus lockfile hanya saat
 registry/scope di `bunfig.toml` benar-benar berubah.
+
+## Format changelog PR dependency (wajib)
+
+Komentar changelog pada PR dependency dihasilkan otomatis oleh
+`node scripts/dep-pr-changelog.mjs` dan divalidasi oleh gate
+`node scripts/check-dep-pr-changelog.mjs` (job **Dependency PR Changelog**).
+PR tidak boleh di-merge sebelum gate ini lulus.
+
+Template yang diwajibkan:
+
+1. Judul `## 📦 Ringkasan update dependency`.
+2. Tabel versi `| Paket | Perubahan | Info |` dengan tiap baris memuat
+   `lama` → `baru` (atau penanda `baru`/`dihapus`). Bila PR hanya menyentuh
+   lockfile, wajib ada kalimat "Tidak ada perubahan versi di `package.json`".
+3. Bagian `### 🛡️ Security fix` selalu ada; tiap butir advisory (termasuk di
+   `### ⚠️ Advisory baru muncul`) wajib menyebut **severity** dan menyertakan
+   link advisory.
+4. Baris gate merge yang menyebut `bun run audit:deps:ci` dan
+   `bun run audit:router-versions`.
+
+Jangan mengedit komentar secara manual — jalankan ulang generatornya, lalu cek
+lokal dengan `bun run check:dep-changelog dep-changelog.md`.
