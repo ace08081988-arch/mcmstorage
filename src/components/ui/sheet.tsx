@@ -34,7 +34,7 @@ const sheetVariants = cva(
   // Mobile-first: padding kompak di HP, generous di ≥sm. `overflow-y-auto` +
   // `overscroll-contain` supaya konten panjang bisa discroll tanpa menular
   // ke halaman di belakangnya. Safe-area disuntik lewat variant per-side.
-  "fixed z-50 flex flex-col gap-4 bg-background p-4 shadow-lg transition ease-in-out overflow-y-auto overscroll-contain data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out sm:p-6",
+  "fixed z-50 flex flex-col gap-4 bg-background p-4 depth-3d-lg transition ease-in-out overflow-y-auto overscroll-contain data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out sm:p-6",
   {
     variants: {
       side: {
