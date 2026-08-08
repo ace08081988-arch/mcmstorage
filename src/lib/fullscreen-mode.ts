@@ -37,8 +37,13 @@ export const FULLSCREEN_EVENT = "app-fullscreen-change";
 
 export type DisplayMode = "browser" | "minimal-ui" | "standalone" | "fullscreen";
 
-/** Baca preferensi tersimpan (default: "auto"). */
-export function readFullscreenPref(): FullscreenPref {
+/**
+ * Cache preferensi: dibaca dari handler scroll, jadi harus bebas
+ * `localStorage` (akses sinkron itu penyebab lag saat menggulir).
+ */
+let prefCache: FullscreenPref | null = null;
+
+function loadFullscreenPref(): FullscreenPref {
   if (typeof window === "undefined") return "auto";
   try {
     const raw = localStorage.getItem(FULLSCREEN_LS_KEY);
@@ -48,8 +53,21 @@ export function readFullscreenPref(): FullscreenPref {
   }
 }
 
+/** Baca preferensi tersimpan (default: "auto"). */
+export function readFullscreenPref(): FullscreenPref {
+  if (!prefCache) prefCache = loadFullscreenPref();
+  return prefCache;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (!e.key || e.key === FULLSCREEN_LS_KEY) prefCache = null;
+  });
+}
+
 export function writeFullscreenPref(pref: FullscreenPref) {
   if (typeof window === "undefined") return;
+  prefCache = pref;
   try {
     localStorage.setItem(FULLSCREEN_LS_KEY, pref);
   } catch {
@@ -232,8 +250,9 @@ export function startAutoFullscreenOnInstalled(): () => void {
 
   let lastY = typeof window !== "undefined" ? window.scrollY : 0;
   let anchorY = lastY;
+  let scrollRaf = 0;
 
-  const onScroll = () => {
+  const evalScroll = () => {
     if (readFullscreenPref() !== "scroll") return;
     const { threshold, direction } = readScrollSettings();
     const y = window.scrollY;
@@ -246,11 +265,24 @@ export function startAutoFullscreenOnInstalled(): () => void {
     void request();
   };
 
+  // Throttle ke satu frame: handler scroll tidak boleh membaca layout
+  // berkali-kali per gesture, itu yang membuat gulir terasa telat.
+  const onScroll = () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = 0;
+      evalScroll();
+    });
+  };
+
   const detach = () => {
     window.removeEventListener("pointerdown", onGesture);
     window.removeEventListener("keydown", onGesture);
     window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("touchmove", onScroll);
+    if (scrollRaf) {
+      cancelAnimationFrame(scrollRaf);
+      scrollRaf = 0;
+    }
   };
 
   const attach = () => {
@@ -258,7 +290,6 @@ export function startAutoFullscreenOnInstalled(): () => void {
     window.addEventListener("pointerdown", onGesture, { passive: true });
     window.addEventListener("keydown", onGesture);
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("touchmove", onScroll, { passive: true });
   };
 
   // Keluar dari layar penuh: mode "selalu" & "scroll" memasang listener lagi,

@@ -33,7 +33,14 @@ export const DEFAULT_SCROLL_SETTINGS: FullscreenScrollSettings = {
   smoothScroll: false,
 };
 
-export function readScrollSettings(): FullscreenScrollSettings {
+/**
+ * Cache in-memory: handler scroll dipanggil puluhan kali per detik, dan
+ * `localStorage.getItem` + `JSON.parse` di jalur itu terasa sebagai lag.
+ * Cache dibatalkan saat pengaturan berubah (dalam tab maupun tab lain).
+ */
+let cache: FullscreenScrollSettings | null = null;
+
+function loadScrollSettings(): FullscreenScrollSettings {
   if (typeof window === "undefined") return DEFAULT_SCROLL_SETTINGS;
   try {
     const raw = localStorage.getItem(FULLSCREEN_SCROLL_LS_KEY);
@@ -54,9 +61,21 @@ export function readScrollSettings(): FullscreenScrollSettings {
   }
 }
 
+export function readScrollSettings(): FullscreenScrollSettings {
+  if (!cache) cache = loadScrollSettings();
+  return cache;
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (!e.key || e.key === FULLSCREEN_SCROLL_LS_KEY) cache = null;
+  });
+}
+
 export function writeScrollSettings(next: Partial<FullscreenScrollSettings>) {
   if (typeof window === "undefined") return;
   const merged = { ...readScrollSettings(), ...next };
+  cache = merged;
   try {
     localStorage.setItem(FULLSCREEN_SCROLL_LS_KEY, JSON.stringify(merged));
   } catch {
