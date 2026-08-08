@@ -9,239 +9,178 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TrustRouteImport } from './routes/trust'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RefundRouteImport } from './routes/refund'
-import { Route as ProdukRouteImport } from './routes/produk'
-import { Route as PratinjauTemaRouteImport } from './routes/pratinjau-tema'
-import { Route as PosKasirRouteImport } from './routes/pos-kasir'
-import { Route as McpRouteImport } from './routes/mcp'
-import { Route as HargaRouteImport } from './routes/harga'
-import { Route as FaqRouteImport } from './routes/faq'
-import { Route as ErrorRouteImport } from './routes/error'
-import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as PosKasirIndexRouteImport } from './routes/pos-kasir.index'
-import { Route as DownloadIndexRouteImport } from './routes/download.index'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
-import { Route as TTokenRouteImport } from './routes/t.$token'
-import { Route as PosKasirRingkasanRouteImport } from './routes/pos-kasir.ringkasan'
-import { Route as ICodeRouteImport } from './routes/i.$code'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
-import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
-import { Route as DiagnostikPaketRouteImport } from './routes/diagnostik.paket'
-import { Route as ApiVersionRouteImport } from './routes/api/version'
-import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
-import { Route as AuthenticatedTugasDaftarRouteImport } from './routes/_authenticated.tugas-daftar'
-import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
-import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
-import { Route as AuthenticatedTransaksiHariIniRouteImport } from './routes/_authenticated.transaksi-hari-ini'
-import { Route as AuthenticatedStatusNotifikasiRouteImport } from './routes/_authenticated.status-notifikasi'
-import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
-import { Route as AuthenticatedRingkasanRouteImport } from './routes/_authenticated.ringkasan'
-import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
-import { Route as AuthenticatedRekonsiliasiPiutangRouteImport } from './routes/_authenticated.rekonsiliasi-piutang'
-import { Route as AuthenticatedRekonsiliasiKontakRouteImport } from './routes/_authenticated.rekonsiliasi-kontak'
-import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
-import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
-import { Route as AuthenticatedPerfRouteImport } from './routes/_authenticated.perf'
-import { Route as AuthenticatedPengaturanTampilanRouteImport } from './routes/_authenticated.pengaturan-tampilan'
-import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
-import { Route as AuthenticatedPengaturanPrivasiRouteImport } from './routes/_authenticated.pengaturan-privasi'
-import { Route as AuthenticatedPengaturanPesanWaRouteImport } from './routes/_authenticated.pengaturan-pesan-wa'
-import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes/_authenticated.pengaturan-penyimpanan'
-import { Route as AuthenticatedPengaturanOauthGoogleRouteImport } from './routes/_authenticated.pengaturan-oauth-google'
-import { Route as AuthenticatedPengaturanNotifikasiWaRouteImport } from './routes/_authenticated.pengaturan-notifikasi-wa'
-import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
-import { Route as AuthenticatedPengaturanIntegrasiSosialRouteImport } from './routes/_authenticated.pengaturan-integrasi-sosial'
-import { Route as AuthenticatedPengaturanDomainRouteImport } from './routes/_authenticated.pengaturan-domain'
-import { Route as AuthenticatedPengaturanBahasaRouteImport } from './routes/_authenticated.pengaturan-bahasa'
-import { Route as AuthenticatedPengaturanAppModeRouteImport } from './routes/_authenticated.pengaturan-app-mode'
-import { Route as AuthenticatedPengaturanApkRouteImport } from './routes/_authenticated.pengaturan-apk'
-import { Route as AuthenticatedPengaturanAksesibilitasRouteImport } from './routes/_authenticated.pengaturan-aksesibilitas'
-import { Route as AuthenticatedPengaturanRouteImport } from './routes/_authenticated.pengaturan'
-import { Route as AuthenticatedPembaruanRouteImport } from './routes/_authenticated.pembaruan'
-import { Route as AuthenticatedPanggilanRouteImport } from './routes/_authenticated.panggilan'
-import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
-import { Route as AuthenticatedMetrikQueryRouteImport } from './routes/_authenticated.metrik-query'
-import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
-import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
-import { Route as AuthenticatedKontakMappingRouteImport } from './routes/_authenticated.kontak-mapping'
-import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
-import { Route as AuthenticatedKiosRouteImport } from './routes/_authenticated.kios'
-import { Route as AuthenticatedKatalogRouteImport } from './routes/_authenticated.katalog'
-import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
-import { Route as AuthenticatedHubungkanAgenRouteImport } from './routes/_authenticated.hubungkan-agen'
-import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
-import { Route as AuthenticatedFiturRouteImport } from './routes/_authenticated.fitur'
-import { Route as AuthenticatedEmailQueueRouteImport } from './routes/_authenticated.email-queue'
-import { Route as AuthenticatedEksporPesananRouteImport } from './routes/_authenticated.ekspor-pesanan'
-import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
-import { Route as AuthenticatedDiagnostikViewportRouteImport } from './routes/_authenticated.diagnostik-viewport'
-import { Route as AuthenticatedDiagnostikListRouteImport } from './routes/_authenticated.diagnostik-list'
-import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
-import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
-import { Route as AuthenticatedDaftarRouteImport } from './routes/_authenticated.daftar'
-import { Route as AuthenticatedChatAuditRouteImport } from './routes/_authenticated.chat-audit'
-import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
-import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticated.catatan'
-import { Route as AuthenticatedBukuAlamatRouteImport } from './routes/_authenticated.buku-alamat'
-import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
-import { Route as AuthenticatedAuditSaldoRouteImport } from './routes/_authenticated.audit-saldo'
-import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
-import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthCallbackRouteImport } from './routes/auth-callback'
+import { Route as ErrorRouteImport } from './routes/error'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as HargaRouteImport } from './routes/harga'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as PosKasirRouteImport } from './routes/pos-kasir'
+import { Route as PratinjauTemaRouteImport } from './routes/pratinjau-tema'
+import { Route as ProdukRouteImport } from './routes/produk'
+import { Route as RefundRouteImport } from './routes/refund'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TrustRouteImport } from './routes/trust'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as KatalogSlugIndexRouteImport } from './routes/katalog.$slug.index'
-import { Route as AuthenticatedKontakIndexRouteImport } from './routes/_authenticated.kontak.index'
-import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
-import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lovable.visual.worker-shot-marksent'
-import { Route as LovableVisualWaPreviewRotateRouteImport } from './routes/lovable.visual.wa-preview-rotate'
-import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
-import { Route as LovableVisualTwoUserDraftsRouteImport } from './routes/lovable.visual.two-user-drafts'
-import { Route as LovableVisualToastLayoutRouteImport } from './routes/lovable.visual.toast-layout'
-import { Route as LovableVisualToastActionsRouteImport } from './routes/lovable.visual.toast-actions'
-import { Route as LovableVisualTapTargetsRouteImport } from './routes/lovable.visual.tap-targets'
-import { Route as LovableVisualReadyBadgesSelectorRouteImport } from './routes/lovable.visual.ready-badges-selector'
-import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
-import { Route as LovableVisualPressScopeRouteImport } from './routes/lovable.visual.press-scope'
-import { Route as LovableVisualPressAuditRouteImport } from './routes/lovable.visual.press-audit'
-import { Route as LovableVisualPrepLocButtonsRouteImport } from './routes/lovable.visual.prep-loc-buttons'
-import { Route as LovableVisualPhotoEditorRouteImport } from './routes/lovable.visual.photo-editor'
-import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lovable.visual.min-supported-form'
-import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lovable.visual.message-hidden-rls'
-import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/lovable.visual.message-hidden-persist'
-import { Route as LovableVisualMenuVariantsRouteImport } from './routes/lovable.visual.menu-variants'
-import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
-import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.visual.kemasan-badge'
-import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
-import { Route as LovableVisualGudangShellRouteImport } from './routes/lovable.visual.gudang-shell'
-import { Route as LovableVisualFocusPortalStackRouteImport } from './routes/lovable.visual.focus-portal-stack'
-import { Route as LovableVisualEcerReturnFromWaRouteImport } from './routes/lovable.visual.ecer-return-from-wa'
-import { Route as LovableVisualDialogViewportRouteImport } from './routes/lovable.visual.dialog-viewport'
-import { Route as LovableVisualDesignTokensRouteImport } from './routes/lovable.visual.design-tokens'
-import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
-import { Route as LovableVisualDebtSsotConsistencyRouteImport } from './routes/lovable.visual.debt-ssot-consistency'
-import { Route as LovableVisualChatQueueNetworkDropRouteImport } from './routes/lovable.visual.chat-queue-network-drop'
-import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
-import { Route as LovableVisualCallVideoStageRouteImport } from './routes/lovable.visual.call-video-stage'
-import { Route as LovableVisualBottomBarSnapRouteImport } from './routes/lovable.visual.bottom-bar-snap'
-import { Route as LovableVisualAutoSendCancelRouteImport } from './routes/lovable.visual.auto-send-cancel'
-import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
-import { Route as LovableVisualAppearanceImportRouteImport } from './routes/lovable.visual.appearance-import'
-import { Route as LovableVisualApkAvailabilityShortcutsRouteImport } from './routes/lovable.visual.apk-availability-shortcuts'
-import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
-import { Route as LovableVisualAccessDeniedToastRouteImport } from './routes/lovable.visual.access-denied-toast'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
-import { Route as KatalogSlugItemIdRouteImport } from './routes/katalog.$slug.$itemId'
-import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
-import { Route as ApiPublicPushResubscribeRouteImport } from './routes/api/public/push-resubscribe'
-import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
-import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
-import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
-import { Route as AuthenticatedStatusBaruRouteImport } from './routes/_authenticated.status.baru'
-import { Route as AuthenticatedStatusIdRouteImport } from './routes/_authenticated.status.$id'
-import { Route as AuthenticatedKontakPermintaanRouteImport } from './routes/_authenticated.kontak.permintaan'
-import { Route as AuthenticatedKiosRiwayatRouteImport } from './routes/_authenticated.kios.riwayat'
-import { Route as AuthenticatedDevPressAuditDemoRouteImport } from './routes/_authenticated.dev.press-audit-demo'
-import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_authenticated.dev.press-audit-codes'
-import { Route as AuthenticatedDebugSelectorRouteImport } from './routes/_authenticated.debug.selector'
-import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
-import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
-import { Route as AuthenticatedAdminWebVitalsRouteImport } from './routes/_authenticated.admin.web-vitals'
-import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
-import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
-import { Route as AuthenticatedAdminEmailStatusRouteImport } from './routes/_authenticated.admin.email-status'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
+import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
+import { Route as AuthenticatedAuditSaldoRouteImport } from './routes/_authenticated.audit-saldo'
+import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
+import { Route as AuthenticatedBukuAlamatRouteImport } from './routes/_authenticated.buku-alamat'
+import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticated.catatan'
+import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
+import { Route as AuthenticatedChatAuditRouteImport } from './routes/_authenticated.chat-audit'
+import { Route as AuthenticatedDaftarRouteImport } from './routes/_authenticated.daftar'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
+import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
+import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
+import { Route as AuthenticatedDiagnostikListRouteImport } from './routes/_authenticated.diagnostik-list'
+import { Route as AuthenticatedDiagnostikViewportRouteImport } from './routes/_authenticated.diagnostik-viewport'
+import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
+import { Route as AuthenticatedEksporPesananRouteImport } from './routes/_authenticated.ekspor-pesanan'
+import { Route as AuthenticatedEmailQueueRouteImport } from './routes/_authenticated.email-queue'
+import { Route as AuthenticatedFiturRouteImport } from './routes/_authenticated.fitur'
+import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
+import { Route as AuthenticatedHubungkanAgenRouteImport } from './routes/_authenticated.hubungkan-agen'
+import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
+import { Route as AuthenticatedKatalogRouteImport } from './routes/_authenticated.katalog'
+import { Route as AuthenticatedKiosRouteImport } from './routes/_authenticated.kios'
+import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
+import { Route as AuthenticatedKontakMappingRouteImport } from './routes/_authenticated.kontak-mapping'
+import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
+import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
+import { Route as AuthenticatedMetrikQueryRouteImport } from './routes/_authenticated.metrik-query'
+import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
+import { Route as AuthenticatedPanggilanRouteImport } from './routes/_authenticated.panggilan'
+import { Route as AuthenticatedPembaruanRouteImport } from './routes/_authenticated.pembaruan'
+import { Route as AuthenticatedPengaturanRouteImport } from './routes/_authenticated.pengaturan'
+import { Route as AuthenticatedPengaturanAksesibilitasRouteImport } from './routes/_authenticated.pengaturan-aksesibilitas'
+import { Route as AuthenticatedPengaturanApkRouteImport } from './routes/_authenticated.pengaturan-apk'
+import { Route as AuthenticatedPengaturanAppModeRouteImport } from './routes/_authenticated.pengaturan-app-mode'
+import { Route as AuthenticatedPengaturanBahasaRouteImport } from './routes/_authenticated.pengaturan-bahasa'
+import { Route as AuthenticatedPengaturanDomainRouteImport } from './routes/_authenticated.pengaturan-domain'
+import { Route as AuthenticatedPengaturanIntegrasiSosialRouteImport } from './routes/_authenticated.pengaturan-integrasi-sosial'
+import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
+import { Route as AuthenticatedPengaturanNotifikasiWaRouteImport } from './routes/_authenticated.pengaturan-notifikasi-wa'
+import { Route as AuthenticatedPengaturanOauthGoogleRouteImport } from './routes/_authenticated.pengaturan-oauth-google'
+import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes/_authenticated.pengaturan-penyimpanan'
+import { Route as AuthenticatedPengaturanPesanWaRouteImport } from './routes/_authenticated.pengaturan-pesan-wa'
+import { Route as AuthenticatedPengaturanPrivasiRouteImport } from './routes/_authenticated.pengaturan-privasi'
+import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
+import { Route as AuthenticatedPengaturanTampilanRouteImport } from './routes/_authenticated.pengaturan-tampilan'
+import { Route as AuthenticatedPerfRouteImport } from './routes/_authenticated.perf'
+import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
+import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
+import { Route as AuthenticatedRekonsiliasiKontakRouteImport } from './routes/_authenticated.rekonsiliasi-kontak'
+import { Route as AuthenticatedRekonsiliasiPiutangRouteImport } from './routes/_authenticated.rekonsiliasi-piutang'
+import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
+import { Route as AuthenticatedRingkasanRouteImport } from './routes/_authenticated.ringkasan'
+import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
+import { Route as AuthenticatedStatusNotifikasiRouteImport } from './routes/_authenticated.status-notifikasi'
+import { Route as AuthenticatedTransaksiHariIniRouteImport } from './routes/_authenticated.transaksi-hari-ini'
+import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
+import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
+import { Route as AuthenticatedTugasDaftarRouteImport } from './routes/_authenticated.tugas-daftar'
+import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
+import { Route as ApiVersionRouteImport } from './routes/api/version'
+import { Route as DiagnostikPaketRouteImport } from './routes/diagnostik.paket'
+import { Route as DownloadIndexRouteImport } from './routes/download.index'
+import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as ICodeRouteImport } from './routes/i.$code'
+import { Route as PosKasirIndexRouteImport } from './routes/pos-kasir.index'
+import { Route as PosKasirRingkasanRouteImport } from './routes/pos-kasir.ringkasan'
+import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
-import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as ApiPublicImgOgRouteImport } from './routes/api/public/img/og'
-import { Route as ApiPublicImgAvifRouteImport } from './routes/api/public/img/avif'
-import { Route as ApiPublicHooksWebVitalsMonitorRouteImport } from './routes/api/public/hooks/web-vitals-monitor'
-import { Route as ApiPublicHooksSocialRescrapeRouteImport } from './routes/api/public/hooks/social-rescrape'
-import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
-import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
-import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
-import { Route as ApiPublicHooksPrepSubmitFailRouteImport } from './routes/api/public/hooks/prep-submit-fail'
-import { Route as ApiPublicHooksOrderEventNotifyRouteImport } from './routes/api/public/hooks/order-event-notify'
-import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
-import { Route as ApiPublicHooksFriendNotifyRouteImport } from './routes/api/public/hooks/friend-notify'
-import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as AuthenticatedAdminEmailStatusRouteImport } from './routes/_authenticated.admin.email-status'
+import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
+import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
+import { Route as AuthenticatedAdminWebVitalsRouteImport } from './routes/_authenticated.admin.web-vitals'
+import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
+import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
+import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
+import { Route as AuthenticatedDebugSelectorRouteImport } from './routes/_authenticated.debug.selector'
+import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_authenticated.dev.press-audit-codes'
+import { Route as AuthenticatedDevPressAuditDemoRouteImport } from './routes/_authenticated.dev.press-audit-demo'
+import { Route as AuthenticatedKiosRiwayatRouteImport } from './routes/_authenticated.kios.riwayat'
+import { Route as AuthenticatedKontakIndexRouteImport } from './routes/_authenticated.kontak.index'
+import { Route as AuthenticatedKontakPermintaanRouteImport } from './routes/_authenticated.kontak.permintaan'
+import { Route as AuthenticatedStatusIdRouteImport } from './routes/_authenticated.status.$id'
+import { Route as AuthenticatedStatusBaruRouteImport } from './routes/_authenticated.status.baru'
+import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
+import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
+import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
+import { Route as ApiPublicPushResubscribeRouteImport } from './routes/api/public/push-resubscribe'
+import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
+import { Route as KatalogSlugIndexRouteImport } from './routes/katalog.$slug.index'
+import { Route as KatalogSlugItemIdRouteImport } from './routes/katalog.$slug.$itemId'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableVisualAccessDeniedToastRouteImport } from './routes/lovable.visual.access-denied-toast'
+import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
+import { Route as LovableVisualApkAvailabilityShortcutsRouteImport } from './routes/lovable.visual.apk-availability-shortcuts'
+import { Route as LovableVisualAppearanceImportRouteImport } from './routes/lovable.visual.appearance-import'
+import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
+import { Route as LovableVisualAutoSendCancelRouteImport } from './routes/lovable.visual.auto-send-cancel'
+import { Route as LovableVisualBottomBarSnapRouteImport } from './routes/lovable.visual.bottom-bar-snap'
+import { Route as LovableVisualCallVideoStageRouteImport } from './routes/lovable.visual.call-video-stage'
+import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
+import { Route as LovableVisualChatQueueNetworkDropRouteImport } from './routes/lovable.visual.chat-queue-network-drop'
+import { Route as LovableVisualDebtSsotConsistencyRouteImport } from './routes/lovable.visual.debt-ssot-consistency'
+import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
+import { Route as LovableVisualDesignTokensRouteImport } from './routes/lovable.visual.design-tokens'
+import { Route as LovableVisualDialogViewportRouteImport } from './routes/lovable.visual.dialog-viewport'
+import { Route as LovableVisualEcerReturnFromWaRouteImport } from './routes/lovable.visual.ecer-return-from-wa'
+import { Route as LovableVisualFocusPortalStackRouteImport } from './routes/lovable.visual.focus-portal-stack'
+import { Route as LovableVisualGudangShellRouteImport } from './routes/lovable.visual.gudang-shell'
+import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
+import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.visual.kemasan-badge'
+import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
+import { Route as LovableVisualMenuVariantsRouteImport } from './routes/lovable.visual.menu-variants'
+import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/lovable.visual.message-hidden-persist'
+import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lovable.visual.message-hidden-rls'
+import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lovable.visual.min-supported-form'
+import { Route as LovableVisualPhotoEditorRouteImport } from './routes/lovable.visual.photo-editor'
+import { Route as LovableVisualPrepLocButtonsRouteImport } from './routes/lovable.visual.prep-loc-buttons'
+import { Route as LovableVisualPressAuditRouteImport } from './routes/lovable.visual.press-audit'
+import { Route as LovableVisualPressScopeRouteImport } from './routes/lovable.visual.press-scope'
+import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
+import { Route as LovableVisualReadyBadgesSelectorRouteImport } from './routes/lovable.visual.ready-badges-selector'
+import { Route as LovableVisualTapTargetsRouteImport } from './routes/lovable.visual.tap-targets'
+import { Route as LovableVisualToastActionsRouteImport } from './routes/lovable.visual.toast-actions'
+import { Route as LovableVisualToastLayoutRouteImport } from './routes/lovable.visual.toast-layout'
+import { Route as LovableVisualTwoUserDraftsRouteImport } from './routes/lovable.visual.two-user-drafts'
+import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
+import { Route as LovableVisualWaPreviewRotateRouteImport } from './routes/lovable.visual.wa-preview-rotate'
+import { Route as LovableVisualWorkerShotMarksentRouteImport } from './routes/lovable.visual.worker-shot-marksent'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
-import { Route as AuthenticatedKiosRiwayatKindIdRouteImport } from './routes/_authenticated.kios.riwayat.$kind.$id'
+import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
+import { Route as ApiPublicHooksFriendNotifyRouteImport } from './routes/api/public/hooks/friend-notify'
+import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
+import { Route as ApiPublicHooksOrderEventNotifyRouteImport } from './routes/api/public/hooks/order-event-notify'
+import { Route as ApiPublicHooksPrepSubmitFailRouteImport } from './routes/api/public/hooks/prep-submit-fail'
+import { Route as ApiPublicHooksPrepTaskNotifyRouteImport } from './routes/api/public/hooks/prep-task-notify'
+import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
+import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
+import { Route as ApiPublicHooksSocialRescrapeRouteImport } from './routes/api/public/hooks/social-rescrape'
+import { Route as ApiPublicHooksWebVitalsMonitorRouteImport } from './routes/api/public/hooks/web-vitals-monitor'
+import { Route as ApiPublicImgAvifRouteImport } from './routes/api/public/img/avif'
+import { Route as ApiPublicImgOgRouteImport } from './routes/api/public/img/og'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
+import { Route as AuthenticatedKiosRiwayatKindIdRouteImport } from './routes/_authenticated.kios.riwayat.$kind.$id'
 
-const TrustRoute = TrustRouteImport.update({
-  id: '/trust',
-  path: '/trust',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RefundRoute = RefundRouteImport.update({
-  id: '/refund',
-  path: '/refund',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProdukRoute = ProdukRouteImport.update({
-  id: '/produk',
-  path: '/produk',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PratinjauTemaRoute = PratinjauTemaRouteImport.update({
-  id: '/pratinjau-tema',
-  path: '/pratinjau-tema',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PosKasirRoute = PosKasirRouteImport.update({
-  id: '/pos-kasir',
-  path: '/pos-kasir',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HargaRoute = HargaRouteImport.update({
-  id: '/harga',
-  path: '/harga',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FaqRoute = FaqRouteImport.update({
-  id: '/faq',
-  path: '/faq',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ErrorRoute = ErrorRouteImport.update({
-  id: '/error',
-  path: '/error',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth-callback',
-  path: '/auth-callback',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -249,383 +188,86 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth-callback',
+  path: '/auth-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PosKasirIndexRoute = PosKasirIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => PosKasirRoute,
-} as any)
-const DownloadIndexRoute = DownloadIndexRouteImport.update({
-  id: '/download/',
-  path: '/download/',
+const ErrorRoute = ErrorRouteImport.update({
+  id: '/error',
+  path: '/error',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HargaRoute = HargaRouteImport.update({
+  id: '/harga',
+  path: '/harga',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosKasirRoute = PosKasirRouteImport.update({
+  id: '/pos-kasir',
+  path: '/pos-kasir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PratinjauTemaRoute = PratinjauTemaRouteImport.update({
+  id: '/pratinjau-tema',
+  path: '/pratinjau-tema',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProdukRoute = ProdukRouteImport.update({
+  id: '/produk',
+  path: '/produk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundRoute = RefundRouteImport.update({
+  id: '/refund',
+  path: '/refund',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const TTokenRoute = TTokenRouteImport.update({
-  id: '/t/$token',
-  path: '/t/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PosKasirRingkasanRoute = PosKasirRingkasanRouteImport.update({
-  id: '/ringkasan',
-  path: '/ringkasan',
-  getParentRoute: () => PosKasirRoute,
-} as any)
-const ICodeRoute = ICodeRouteImport.update({
-  id: '/i/$code',
-  path: '/i/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DownloadVariantRoute = DownloadVariantRouteImport.update({
-  id: '/download/$variant',
-  path: '/download/$variant',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiagnostikPaketRoute = DiagnostikPaketRouteImport.update({
-  id: '/diagnostik/paket',
-  path: '/diagnostik/paket',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiVersionRoute = ApiVersionRouteImport.update({
-  id: '/api/version',
-  path: '/api/version',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedUndangRoute = AuthenticatedUndangRouteImport.update({
-  id: '/undang',
-  path: '/undang',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedTugasDaftarRoute =
-  AuthenticatedTugasDaftarRouteImport.update({
-    id: '/tugas-daftar',
-    path: '/tugas-daftar',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedTugasBaruRoute = AuthenticatedTugasBaruRouteImport.update({
-  id: '/tugas-baru',
-  path: '/tugas-baru',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
-  id: '/tugas',
-  path: '/tugas',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedTransaksiHariIniRoute =
-  AuthenticatedTransaksiHariIniRouteImport.update({
-    id: '/transaksi-hari-ini',
-    path: '/transaksi-hari-ini',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedStatusNotifikasiRoute =
-  AuthenticatedStatusNotifikasiRouteImport.update({
-    id: '/status-notifikasi',
-    path: '/status-notifikasi',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedSesiRoute = AuthenticatedSesiRouteImport.update({
-  id: '/sesi',
-  path: '/sesi',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedRingkasanRoute = AuthenticatedRingkasanRouteImport.update({
-  id: '/ringkasan',
-  path: '/ringkasan',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
-  id: '/request',
-  path: '/request',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedRekonsiliasiPiutangRoute =
-  AuthenticatedRekonsiliasiPiutangRouteImport.update({
-    id: '/rekonsiliasi-piutang',
-    path: '/rekonsiliasi-piutang',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedRekonsiliasiKontakRoute =
-  AuthenticatedRekonsiliasiKontakRouteImport.update({
-    id: '/rekonsiliasi-kontak',
-    path: '/rekonsiliasi-kontak',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedProfilChatRoute = AuthenticatedProfilChatRouteImport.update({
-  id: '/profil-chat',
-  path: '/profil-chat',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedProfilRoute = AuthenticatedProfilRouteImport.update({
-  id: '/profil',
-  path: '/profil',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedPerfRoute = AuthenticatedPerfRouteImport.update({
-  id: '/perf',
-  path: '/perf',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedPengaturanTampilanRoute =
-  AuthenticatedPengaturanTampilanRouteImport.update({
-    id: '/pengaturan-tampilan',
-    path: '/pengaturan-tampilan',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanScrollGuardRoute =
-  AuthenticatedPengaturanScrollGuardRouteImport.update({
-    id: '/pengaturan-scroll-guard',
-    path: '/pengaturan-scroll-guard',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanPrivasiRoute =
-  AuthenticatedPengaturanPrivasiRouteImport.update({
-    id: '/pengaturan-privasi',
-    path: '/pengaturan-privasi',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanPesanWaRoute =
-  AuthenticatedPengaturanPesanWaRouteImport.update({
-    id: '/pengaturan-pesan-wa',
-    path: '/pengaturan-pesan-wa',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanPenyimpananRoute =
-  AuthenticatedPengaturanPenyimpananRouteImport.update({
-    id: '/pengaturan-penyimpanan',
-    path: '/pengaturan-penyimpanan',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanOauthGoogleRoute =
-  AuthenticatedPengaturanOauthGoogleRouteImport.update({
-    id: '/pengaturan-oauth-google',
-    path: '/pengaturan-oauth-google',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanNotifikasiWaRoute =
-  AuthenticatedPengaturanNotifikasiWaRouteImport.update({
-    id: '/pengaturan-notifikasi-wa',
-    path: '/pengaturan-notifikasi-wa',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanKunciRoute =
-  AuthenticatedPengaturanKunciRouteImport.update({
-    id: '/pengaturan-kunci',
-    path: '/pengaturan-kunci',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanIntegrasiSosialRoute =
-  AuthenticatedPengaturanIntegrasiSosialRouteImport.update({
-    id: '/pengaturan-integrasi-sosial',
-    path: '/pengaturan-integrasi-sosial',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanDomainRoute =
-  AuthenticatedPengaturanDomainRouteImport.update({
-    id: '/pengaturan-domain',
-    path: '/pengaturan-domain',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanBahasaRoute =
-  AuthenticatedPengaturanBahasaRouteImport.update({
-    id: '/pengaturan-bahasa',
-    path: '/pengaturan-bahasa',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanAppModeRoute =
-  AuthenticatedPengaturanAppModeRouteImport.update({
-    id: '/pengaturan-app-mode',
-    path: '/pengaturan-app-mode',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanApkRoute =
-  AuthenticatedPengaturanApkRouteImport.update({
-    id: '/pengaturan-apk',
-    path: '/pengaturan-apk',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanAksesibilitasRoute =
-  AuthenticatedPengaturanAksesibilitasRouteImport.update({
-    id: '/pengaturan-aksesibilitas',
-    path: '/pengaturan-aksesibilitas',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPengaturanRoute = AuthenticatedPengaturanRouteImport.update({
-  id: '/pengaturan',
-  path: '/pengaturan',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedPembaruanRoute = AuthenticatedPembaruanRouteImport.update({
-  id: '/pembaruan',
-  path: '/pembaruan',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedPanggilanRoute = AuthenticatedPanggilanRouteImport.update({
-  id: '/panggilan',
-  path: '/panggilan',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedNotifikasiRoute = AuthenticatedNotifikasiRouteImport.update({
-  id: '/notifikasi',
-  path: '/notifikasi',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedMetrikQueryRoute =
-  AuthenticatedMetrikQueryRouteImport.update({
-    id: '/metrik-query',
-    path: '/metrik-query',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedLinkPegawaiRoute =
-  AuthenticatedLinkPegawaiRouteImport.update({
-    id: '/link-pegawai',
-    path: '/link-pegawai',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedLabelPreviewRoute =
-  AuthenticatedLabelPreviewRouteImport.update({
-    id: '/label-preview',
-    path: '/label-preview',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedKontakMappingRoute =
-  AuthenticatedKontakMappingRouteImport.update({
-    id: '/kontak-mapping',
-    path: '/kontak-mapping',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedKontakRoute = AuthenticatedKontakRouteImport.update({
-  id: '/kontak',
-  path: '/kontak',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedKiosRoute = AuthenticatedKiosRouteImport.update({
-  id: '/kios',
-  path: '/kios',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedKatalogRoute = AuthenticatedKatalogRouteImport.update({
-  id: '/katalog',
-  path: '/katalog',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedHutangPiutangRoute =
-  AuthenticatedHutangPiutangRouteImport.update({
-    id: '/hutang-piutang',
-    path: '/hutang-piutang',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedHubungkanAgenRoute =
-  AuthenticatedHubungkanAgenRouteImport.update({
-    id: '/hubungkan-agen',
-    path: '/hubungkan-agen',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedGudangRoute = AuthenticatedGudangRouteImport.update({
-  id: '/gudang',
-  path: '/gudang',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedFiturRoute = AuthenticatedFiturRouteImport.update({
-  id: '/fitur',
-  path: '/fitur',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedEmailQueueRoute = AuthenticatedEmailQueueRouteImport.update({
-  id: '/email-queue',
-  path: '/email-queue',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedEksporPesananRoute =
-  AuthenticatedEksporPesananRouteImport.update({
-    id: '/ekspor-pesanan',
-    path: '/ekspor-pesanan',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedEcerRoute = AuthenticatedEcerRouteImport.update({
-  id: '/ecer',
-  path: '/ecer',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedDiagnostikViewportRoute =
-  AuthenticatedDiagnostikViewportRouteImport.update({
-    id: '/diagnostik-viewport',
-    path: '/diagnostik-viewport',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedDiagnostikListRoute =
-  AuthenticatedDiagnostikListRouteImport.update({
-    id: '/diagnostik-list',
-    path: '/diagnostik-list',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedDiagnosticsRoute =
-  AuthenticatedDiagnosticsRouteImport.update({
-    id: '/diagnostics',
-    path: '/diagnostics',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedDeviceVerifyRoute =
-  AuthenticatedDeviceVerifyRouteImport.update({
-    id: '/device-verify',
-    path: '/device-verify',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedDaftarRoute = AuthenticatedDaftarRouteImport.update({
-  id: '/daftar',
-  path: '/daftar',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedChatAuditRoute = AuthenticatedChatAuditRouteImport.update({
-  id: '/chat-audit',
-  path: '/chat-audit',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedCatatanRoute = AuthenticatedCatatanRouteImport.update({
-  id: '/catatan',
-  path: '/catatan',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedBukuAlamatRoute = AuthenticatedBukuAlamatRouteImport.update({
-  id: '/buku-alamat',
-  path: '/buku-alamat',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedBalasCepatRoute = AuthenticatedBalasCepatRouteImport.update({
-  id: '/balas-cepat',
-  path: '/balas-cepat',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedAuditSaldoRoute = AuthenticatedAuditSaldoRouteImport.update({
-  id: '/audit-saldo',
-  path: '/audit-saldo',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAdminDenialLogRoute =
@@ -634,352 +276,391 @@ const AuthenticatedAdminDenialLogRoute =
     path: '/admin-denial-log',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAuditSaldoRoute = AuthenticatedAuditSaldoRouteImport.update({
+  id: '/audit-saldo',
+  path: '/audit-saldo',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBalasCepatRoute = AuthenticatedBalasCepatRouteImport.update({
+  id: '/balas-cepat',
+  path: '/balas-cepat',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBukuAlamatRoute = AuthenticatedBukuAlamatRouteImport.update({
+  id: '/buku-alamat',
+  path: '/buku-alamat',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCatatanRoute = AuthenticatedCatatanRouteImport.update({
+  id: '/catatan',
+  path: '/catatan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedChatAuditRoute = AuthenticatedChatAuditRouteImport.update({
+  id: '/chat-audit',
+  path: '/chat-audit',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDaftarRoute = AuthenticatedDaftarRouteImport.update({
+  id: '/daftar',
+  path: '/daftar',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDeviceVerifyRoute =
+  AuthenticatedDeviceVerifyRouteImport.update({
+    id: '/device-verify',
+    path: '/device-verify',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedDiagnosticsRoute =
+  AuthenticatedDiagnosticsRouteImport.update({
+    id: '/diagnostics',
+    path: '/diagnostics',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
-const KatalogSlugIndexRoute = KatalogSlugIndexRouteImport.update({
-  id: '/katalog/$slug/',
-  path: '/katalog/$slug/',
+const AuthenticatedDiagnostikListRoute =
+  AuthenticatedDiagnostikListRouteImport.update({
+    id: '/diagnostik-list',
+    path: '/diagnostik-list',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDiagnostikViewportRoute =
+  AuthenticatedDiagnostikViewportRouteImport.update({
+    id: '/diagnostik-viewport',
+    path: '/diagnostik-viewport',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEcerRoute = AuthenticatedEcerRouteImport.update({
+  id: '/ecer',
+  path: '/ecer',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedEksporPesananRoute =
+  AuthenticatedEksporPesananRouteImport.update({
+    id: '/ekspor-pesanan',
+    path: '/ekspor-pesanan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEmailQueueRoute = AuthenticatedEmailQueueRouteImport.update({
+  id: '/email-queue',
+  path: '/email-queue',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFiturRoute = AuthenticatedFiturRouteImport.update({
+  id: '/fitur',
+  path: '/fitur',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedGudangRoute = AuthenticatedGudangRouteImport.update({
+  id: '/gudang',
+  path: '/gudang',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedHubungkanAgenRoute =
+  AuthenticatedHubungkanAgenRouteImport.update({
+    id: '/hubungkan-agen',
+    path: '/hubungkan-agen',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedHutangPiutangRoute =
+  AuthenticatedHutangPiutangRouteImport.update({
+    id: '/hutang-piutang',
+    path: '/hutang-piutang',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKatalogRoute = AuthenticatedKatalogRouteImport.update({
+  id: '/katalog',
+  path: '/katalog',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedKiosRoute = AuthenticatedKiosRouteImport.update({
+  id: '/kios',
+  path: '/kios',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedKontakRoute = AuthenticatedKontakRouteImport.update({
+  id: '/kontak',
+  path: '/kontak',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedKontakMappingRoute =
+  AuthenticatedKontakMappingRouteImport.update({
+    id: '/kontak-mapping',
+    path: '/kontak-mapping',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedLabelPreviewRoute =
+  AuthenticatedLabelPreviewRouteImport.update({
+    id: '/label-preview',
+    path: '/label-preview',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedLinkPegawaiRoute =
+  AuthenticatedLinkPegawaiRouteImport.update({
+    id: '/link-pegawai',
+    path: '/link-pegawai',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMetrikQueryRoute =
+  AuthenticatedMetrikQueryRouteImport.update({
+    id: '/metrik-query',
+    path: '/metrik-query',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedNotifikasiRoute = AuthenticatedNotifikasiRouteImport.update({
+  id: '/notifikasi',
+  path: '/notifikasi',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPanggilanRoute = AuthenticatedPanggilanRouteImport.update({
+  id: '/panggilan',
+  path: '/panggilan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPembaruanRoute = AuthenticatedPembaruanRouteImport.update({
+  id: '/pembaruan',
+  path: '/pembaruan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPengaturanRoute = AuthenticatedPengaturanRouteImport.update({
+  id: '/pengaturan',
+  path: '/pengaturan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPengaturanAksesibilitasRoute =
+  AuthenticatedPengaturanAksesibilitasRouteImport.update({
+    id: '/pengaturan-aksesibilitas',
+    path: '/pengaturan-aksesibilitas',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanApkRoute =
+  AuthenticatedPengaturanApkRouteImport.update({
+    id: '/pengaturan-apk',
+    path: '/pengaturan-apk',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanAppModeRoute =
+  AuthenticatedPengaturanAppModeRouteImport.update({
+    id: '/pengaturan-app-mode',
+    path: '/pengaturan-app-mode',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanBahasaRoute =
+  AuthenticatedPengaturanBahasaRouteImport.update({
+    id: '/pengaturan-bahasa',
+    path: '/pengaturan-bahasa',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanDomainRoute =
+  AuthenticatedPengaturanDomainRouteImport.update({
+    id: '/pengaturan-domain',
+    path: '/pengaturan-domain',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanIntegrasiSosialRoute =
+  AuthenticatedPengaturanIntegrasiSosialRouteImport.update({
+    id: '/pengaturan-integrasi-sosial',
+    path: '/pengaturan-integrasi-sosial',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanKunciRoute =
+  AuthenticatedPengaturanKunciRouteImport.update({
+    id: '/pengaturan-kunci',
+    path: '/pengaturan-kunci',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanNotifikasiWaRoute =
+  AuthenticatedPengaturanNotifikasiWaRouteImport.update({
+    id: '/pengaturan-notifikasi-wa',
+    path: '/pengaturan-notifikasi-wa',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanOauthGoogleRoute =
+  AuthenticatedPengaturanOauthGoogleRouteImport.update({
+    id: '/pengaturan-oauth-google',
+    path: '/pengaturan-oauth-google',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanPenyimpananRoute =
+  AuthenticatedPengaturanPenyimpananRouteImport.update({
+    id: '/pengaturan-penyimpanan',
+    path: '/pengaturan-penyimpanan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanPesanWaRoute =
+  AuthenticatedPengaturanPesanWaRouteImport.update({
+    id: '/pengaturan-pesan-wa',
+    path: '/pengaturan-pesan-wa',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanPrivasiRoute =
+  AuthenticatedPengaturanPrivasiRouteImport.update({
+    id: '/pengaturan-privasi',
+    path: '/pengaturan-privasi',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanScrollGuardRoute =
+  AuthenticatedPengaturanScrollGuardRouteImport.update({
+    id: '/pengaturan-scroll-guard',
+    path: '/pengaturan-scroll-guard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanTampilanRoute =
+  AuthenticatedPengaturanTampilanRouteImport.update({
+    id: '/pengaturan-tampilan',
+    path: '/pengaturan-tampilan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPerfRoute = AuthenticatedPerfRouteImport.update({
+  id: '/perf',
+  path: '/perf',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProfilRoute = AuthenticatedProfilRouteImport.update({
+  id: '/profil',
+  path: '/profil',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProfilChatRoute = AuthenticatedProfilChatRouteImport.update({
+  id: '/profil-chat',
+  path: '/profil-chat',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRekonsiliasiKontakRoute =
+  AuthenticatedRekonsiliasiKontakRouteImport.update({
+    id: '/rekonsiliasi-kontak',
+    path: '/rekonsiliasi-kontak',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRekonsiliasiPiutangRoute =
+  AuthenticatedRekonsiliasiPiutangRouteImport.update({
+    id: '/rekonsiliasi-piutang',
+    path: '/rekonsiliasi-piutang',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
+  id: '/request',
+  path: '/request',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRingkasanRoute = AuthenticatedRingkasanRouteImport.update({
+  id: '/ringkasan',
+  path: '/ringkasan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSesiRoute = AuthenticatedSesiRouteImport.update({
+  id: '/sesi',
+  path: '/sesi',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedStatusNotifikasiRoute =
+  AuthenticatedStatusNotifikasiRouteImport.update({
+    id: '/status-notifikasi',
+    path: '/status-notifikasi',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTransaksiHariIniRoute =
+  AuthenticatedTransaksiHariIniRouteImport.update({
+    id: '/transaksi-hari-ini',
+    path: '/transaksi-hari-ini',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
+  id: '/tugas',
+  path: '/tugas',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTugasBaruRoute = AuthenticatedTugasBaruRouteImport.update({
+  id: '/tugas-baru',
+  path: '/tugas-baru',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTugasDaftarRoute =
+  AuthenticatedTugasDaftarRouteImport.update({
+    id: '/tugas-daftar',
+    path: '/tugas-daftar',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedUndangRoute = AuthenticatedUndangRouteImport.update({
+  id: '/undang',
+  path: '/undang',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiVersionRoute = ApiVersionRouteImport.update({
+  id: '/api/version',
+  path: '/api/version',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedKontakIndexRoute =
-  AuthenticatedKontakIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedKontakRoute,
-  } as any)
-const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
+const DiagnostikPaketRoute = DiagnostikPaketRouteImport.update({
+  id: '/diagnostik/paket',
+  path: '/diagnostik/paket',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadIndexRoute = DownloadIndexRouteImport.update({
+  id: '/download/',
+  path: '/download/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadVariantRoute = DownloadVariantRouteImport.update({
+  id: '/download/$variant',
+  path: '/download/$variant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ICodeRoute = ICodeRouteImport.update({
+  id: '/i/$code',
+  path: '/i/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosKasirIndexRoute = PosKasirIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedChatRoute,
+  getParentRoute: () => PosKasirRoute,
 } as any)
-const LovableVisualWorkerShotMarksentRoute =
-  LovableVisualWorkerShotMarksentRouteImport.update({
-    id: '/lovable/visual/worker-shot-marksent',
-    path: '/lovable/visual/worker-shot-marksent',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualWaPreviewRotateRoute =
-  LovableVisualWaPreviewRotateRouteImport.update({
-    id: '/lovable/visual/wa-preview-rotate',
-    path: '/lovable/visual/wa-preview-rotate',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualVoiceNotePlayerRoute =
-  LovableVisualVoiceNotePlayerRouteImport.update({
-    id: '/lovable/visual/voice-note-player',
-    path: '/lovable/visual/voice-note-player',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualTwoUserDraftsRoute =
-  LovableVisualTwoUserDraftsRouteImport.update({
-    id: '/lovable/visual/two-user-drafts',
-    path: '/lovable/visual/two-user-drafts',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualToastLayoutRoute =
-  LovableVisualToastLayoutRouteImport.update({
-    id: '/lovable/visual/toast-layout',
-    path: '/lovable/visual/toast-layout',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualToastActionsRoute =
-  LovableVisualToastActionsRouteImport.update({
-    id: '/lovable/visual/toast-actions',
-    path: '/lovable/visual/toast-actions',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualTapTargetsRoute = LovableVisualTapTargetsRouteImport.update({
-  id: '/lovable/visual/tap-targets',
-  path: '/lovable/visual/tap-targets',
+const PosKasirRingkasanRoute = PosKasirRingkasanRouteImport.update({
+  id: '/ringkasan',
+  path: '/ringkasan',
+  getParentRoute: () => PosKasirRoute,
+} as any)
+const TTokenRoute = TTokenRouteImport.update({
+  id: '/t/$token',
+  path: '/t/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableVisualReadyBadgesSelectorRoute =
-  LovableVisualReadyBadgesSelectorRouteImport.update({
-    id: '/lovable/visual/ready-badges-selector',
-    path: '/lovable/visual/ready-badges-selector',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualProdukListRoute = LovableVisualProdukListRouteImport.update({
-  id: '/lovable/visual/produk-list',
-  path: '/lovable/visual/produk-list',
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableVisualPressScopeRoute = LovableVisualPressScopeRouteImport.update({
-  id: '/lovable/visual/press-scope',
-  path: '/lovable/visual/press-scope',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableVisualPressAuditRoute = LovableVisualPressAuditRouteImport.update({
-  id: '/lovable/visual/press-audit',
-  path: '/lovable/visual/press-audit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableVisualPrepLocButtonsRoute =
-  LovableVisualPrepLocButtonsRouteImport.update({
-    id: '/lovable/visual/prep-loc-buttons',
-    path: '/lovable/visual/prep-loc-buttons',
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableVisualPhotoEditorRoute =
-  LovableVisualPhotoEditorRouteImport.update({
-    id: '/lovable/visual/photo-editor',
-    path: '/lovable/visual/photo-editor',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualMinSupportedFormRoute =
-  LovableVisualMinSupportedFormRouteImport.update({
-    id: '/lovable/visual/min-supported-form',
-    path: '/lovable/visual/min-supported-form',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualMessageHiddenRlsRoute =
-  LovableVisualMessageHiddenRlsRouteImport.update({
-    id: '/lovable/visual/message-hidden-rls',
-    path: '/lovable/visual/message-hidden-rls',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualMessageHiddenPersistRoute =
-  LovableVisualMessageHiddenPersistRouteImport.update({
-    id: '/lovable/visual/message-hidden-persist',
-    path: '/lovable/visual/message-hidden-persist',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualMenuVariantsRoute =
-  LovableVisualMenuVariantsRouteImport.update({
-    id: '/lovable/visual/menu-variants',
-    path: '/lovable/visual/menu-variants',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualKomponenReviewRoute =
-  LovableVisualKomponenReviewRouteImport.update({
-    id: '/lovable/visual/komponen-review',
-    path: '/lovable/visual/komponen-review',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualKemasanBadgeRoute =
-  LovableVisualKemasanBadgeRouteImport.update({
-    id: '/lovable/visual/kemasan-badge',
-    path: '/lovable/visual/kemasan-badge',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualKartonKonversiRoute =
-  LovableVisualKartonKonversiRouteImport.update({
-    id: '/lovable/visual/karton-konversi',
-    path: '/lovable/visual/karton-konversi',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualGudangShellRoute =
-  LovableVisualGudangShellRouteImport.update({
-    id: '/lovable/visual/gudang-shell',
-    path: '/lovable/visual/gudang-shell',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualFocusPortalStackRoute =
-  LovableVisualFocusPortalStackRouteImport.update({
-    id: '/lovable/visual/focus-portal-stack',
-    path: '/lovable/visual/focus-portal-stack',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualEcerReturnFromWaRoute =
-  LovableVisualEcerReturnFromWaRouteImport.update({
-    id: '/lovable/visual/ecer-return-from-wa',
-    path: '/lovable/visual/ecer-return-from-wa',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualDialogViewportRoute =
-  LovableVisualDialogViewportRouteImport.update({
-    id: '/lovable/visual/dialog-viewport',
-    path: '/lovable/visual/dialog-viewport',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualDesignTokensRoute =
-  LovableVisualDesignTokensRouteImport.update({
-    id: '/lovable/visual/design-tokens',
-    path: '/lovable/visual/design-tokens',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualDeliveryHistoryRoute =
-  LovableVisualDeliveryHistoryRouteImport.update({
-    id: '/lovable/visual/delivery-history',
-    path: '/lovable/visual/delivery-history',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualDebtSsotConsistencyRoute =
-  LovableVisualDebtSsotConsistencyRouteImport.update({
-    id: '/lovable/visual/debt-ssot-consistency',
-    path: '/lovable/visual/debt-ssot-consistency',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualChatQueueNetworkDropRoute =
-  LovableVisualChatQueueNetworkDropRouteImport.update({
-    id: '/lovable/visual/chat-queue-network-drop',
-    path: '/lovable/visual/chat-queue-network-drop',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualChatDeletedRoute =
-  LovableVisualChatDeletedRouteImport.update({
-    id: '/lovable/visual/chat-deleted',
-    path: '/lovable/visual/chat-deleted',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualCallVideoStageRoute =
-  LovableVisualCallVideoStageRouteImport.update({
-    id: '/lovable/visual/call-video-stage',
-    path: '/lovable/visual/call-video-stage',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualBottomBarSnapRoute =
-  LovableVisualBottomBarSnapRouteImport.update({
-    id: '/lovable/visual/bottom-bar-snap',
-    path: '/lovable/visual/bottom-bar-snap',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualAutoSendCancelRoute =
-  LovableVisualAutoSendCancelRouteImport.update({
-    id: '/lovable/visual/auto-send-cancel',
-    path: '/lovable/visual/auto-send-cancel',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualAttachmentDurationConsistencyRoute =
-  LovableVisualAttachmentDurationConsistencyRouteImport.update({
-    id: '/lovable/visual/attachment-duration-consistency',
-    path: '/lovable/visual/attachment-duration-consistency',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualAppearanceImportRoute =
-  LovableVisualAppearanceImportRouteImport.update({
-    id: '/lovable/visual/appearance-import',
-    path: '/lovable/visual/appearance-import',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualApkAvailabilityShortcutsRoute =
-  LovableVisualApkAvailabilityShortcutsRouteImport.update({
-    id: '/lovable/visual/apk-availability-shortcuts',
-    path: '/lovable/visual/apk-availability-shortcuts',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualAdminVisibilityRoute =
-  LovableVisualAdminVisibilityRouteImport.update({
-    id: '/lovable/visual/admin-visibility',
-    path: '/lovable/visual/admin-visibility',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableVisualAccessDeniedToastRoute =
-  LovableVisualAccessDeniedToastRouteImport.update({
-    id: '/lovable/visual/access-denied-toast',
-    path: '/lovable/visual/access-denied-toast',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KatalogSlugItemIdRoute = KatalogSlugItemIdRouteImport.update({
-  id: '/katalog/$slug/$itemId',
-  path: '/katalog/$slug/$itemId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
-  id: '/api/public/web-vitals',
-  path: '/api/public/web-vitals',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicPushResubscribeRoute =
-  ApiPublicPushResubscribeRouteImport.update({
-    id: '/api/public/push-resubscribe',
-    path: '/api/public/push-resubscribe',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicPrepRealtimeTokenRoute =
-  ApiPublicPrepRealtimeTokenRouteImport.update({
-    id: '/api/public/prep-realtime-token',
-    path: '/api/public/prep-realtime-token',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicApkDownloadTrackRoute =
-  ApiPublicApkDownloadTrackRouteImport.update({
-    id: '/api/public/apk-download-track',
-    path: '/api/public/apk-download-track',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAiPingRoute = ApiPublicAiPingRouteImport.update({
-  id: '/api/public/ai-ping',
-  path: '/api/public/ai-ping',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedStatusBaruRoute = AuthenticatedStatusBaruRouteImport.update({
-  id: '/status/baru',
-  path: '/status/baru',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedStatusIdRoute = AuthenticatedStatusIdRouteImport.update({
-  id: '/status/$id',
-  path: '/status/$id',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedKontakPermintaanRoute =
-  AuthenticatedKontakPermintaanRouteImport.update({
-    id: '/permintaan',
-    path: '/permintaan',
-    getParentRoute: () => AuthenticatedKontakRoute,
-  } as any)
-const AuthenticatedKiosRiwayatRoute =
-  AuthenticatedKiosRiwayatRouteImport.update({
-    id: '/riwayat',
-    path: '/riwayat',
-    getParentRoute: () => AuthenticatedKiosRoute,
-  } as any)
-const AuthenticatedDevPressAuditDemoRoute =
-  AuthenticatedDevPressAuditDemoRouteImport.update({
-    id: '/dev/press-audit-demo',
-    path: '/dev/press-audit-demo',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedDevPressAuditCodesRoute =
-  AuthenticatedDevPressAuditCodesRouteImport.update({
-    id: '/dev/press-audit-codes',
-    path: '/dev/press-audit-codes',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedDebugSelectorRoute =
-  AuthenticatedDebugSelectorRouteImport.update({
-    id: '/debug/selector',
-    path: '/debug/selector',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedChatConversationIdRoute =
-  AuthenticatedChatConversationIdRouteImport.update({
-    id: '/$conversationId',
-    path: '/$conversationId',
-    getParentRoute: () => AuthenticatedChatRoute,
-  } as any)
-const AuthenticatedAdminWorkerPortalRoute =
-  AuthenticatedAdminWorkerPortalRouteImport.update({
-    id: '/admin/worker-portal',
-    path: '/admin/worker-portal',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedAdminWebVitalsRoute =
-  AuthenticatedAdminWebVitalsRouteImport.update({
-    id: '/admin/web-vitals',
-    path: '/admin/web-vitals',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedAdminSignupAttemptsRoute =
-  AuthenticatedAdminSignupAttemptsRouteImport.update({
-    id: '/admin/signup-attempts',
-    path: '/admin/signup-attempts',
+const AuthenticatedAdminEmailStatusRoute =
+  AuthenticatedAdminEmailStatusRouteImport.update({
+    id: '/admin/email-status',
+    path: '/admin/email-status',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminPortalErrorLogRoute =
@@ -988,119 +669,340 @@ const AuthenticatedAdminPortalErrorLogRoute =
     path: '/admin/portal-error-log',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedAdminEmailStatusRoute =
-  AuthenticatedAdminEmailStatusRouteImport.update({
-    id: '/admin/email-status',
-    path: '/admin/email-status',
+const AuthenticatedAdminSignupAttemptsRoute =
+  AuthenticatedAdminSignupAttemptsRouteImport.update({
+    id: '/admin/signup-attempts',
+    path: '/admin/signup-attempts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAdminWebVitalsRoute =
+  AuthenticatedAdminWebVitalsRouteImport.update({
+    id: '/admin/web-vitals',
+    path: '/admin/web-vitals',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
+const AuthenticatedAdminWorkerPortalRoute =
+  AuthenticatedAdminWorkerPortalRouteImport.update({
+    id: '/admin/worker-portal',
+    path: '/admin/worker-portal',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedChatRoute,
+} as any)
+const AuthenticatedChatConversationIdRoute =
+  AuthenticatedChatConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => AuthenticatedChatRoute,
+  } as any)
+const AuthenticatedDebugSelectorRoute =
+  AuthenticatedDebugSelectorRouteImport.update({
+    id: '/debug/selector',
+    path: '/debug/selector',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDevPressAuditCodesRoute =
+  AuthenticatedDevPressAuditCodesRouteImport.update({
+    id: '/dev/press-audit-codes',
+    path: '/dev/press-audit-codes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDevPressAuditDemoRoute =
+  AuthenticatedDevPressAuditDemoRouteImport.update({
+    id: '/dev/press-audit-demo',
+    path: '/dev/press-audit-demo',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKiosRiwayatRoute =
+  AuthenticatedKiosRiwayatRouteImport.update({
+    id: '/riwayat',
+    path: '/riwayat',
+    getParentRoute: () => AuthenticatedKiosRoute,
+  } as any)
+const AuthenticatedKontakIndexRoute =
+  AuthenticatedKontakIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedKontakRoute,
+  } as any)
+const AuthenticatedKontakPermintaanRoute =
+  AuthenticatedKontakPermintaanRouteImport.update({
+    id: '/permintaan',
+    path: '/permintaan',
+    getParentRoute: () => AuthenticatedKontakRoute,
+  } as any)
+const AuthenticatedStatusIdRoute = AuthenticatedStatusIdRouteImport.update({
+  id: '/status/$id',
+  path: '/status/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedStatusBaruRoute = AuthenticatedStatusBaruRouteImport.update({
+  id: '/status/baru',
+  path: '/status/baru',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiPublicAiPingRoute = ApiPublicAiPingRouteImport.update({
+  id: '/api/public/ai-ping',
+  path: '/api/public/ai-ping',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
+const ApiPublicApkDownloadTrackRoute =
+  ApiPublicApkDownloadTrackRouteImport.update({
+    id: '/api/public/apk-download-track',
+    path: '/api/public/apk-download-track',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailTransactionalPreviewRoute =
-  LovableEmailTransactionalPreviewRouteImport.update({
-    id: '/lovable/email/transactional/preview',
-    path: '/lovable/email/transactional/preview',
+const ApiPublicPrepRealtimeTokenRoute =
+  ApiPublicPrepRealtimeTokenRouteImport.update({
+    id: '/api/public/prep-realtime-token',
+    path: '/api/public/prep-realtime-token',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
+const ApiPublicPushResubscribeRoute =
+  ApiPublicPushResubscribeRouteImport.update({
+    id: '/api/public/push-resubscribe',
+    path: '/api/public/push-resubscribe',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
+const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
+  id: '/api/public/web-vitals',
+  path: '/api/public/web-vitals',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
+const KatalogSlugIndexRoute = KatalogSlugIndexRouteImport.update({
+  id: '/katalog/$slug/',
+  path: '/katalog/$slug/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicImgOgRoute = ApiPublicImgOgRouteImport.update({
-  id: '/api/public/img/og',
-  path: '/api/public/img/og',
+const KatalogSlugItemIdRoute = KatalogSlugItemIdRouteImport.update({
+  id: '/katalog/$slug/$itemId',
+  path: '/katalog/$slug/$itemId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicImgAvifRoute = ApiPublicImgAvifRouteImport.update({
-  id: '/api/public/img/avif',
-  path: '/api/public/img/avif',
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicHooksWebVitalsMonitorRoute =
-  ApiPublicHooksWebVitalsMonitorRouteImport.update({
-    id: '/api/public/hooks/web-vitals-monitor',
-    path: '/api/public/hooks/web-vitals-monitor',
+const LovableVisualAccessDeniedToastRoute =
+  LovableVisualAccessDeniedToastRouteImport.update({
+    id: '/lovable/visual/access-denied-toast',
+    path: '/lovable/visual/access-denied-toast',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksSocialRescrapeRoute =
-  ApiPublicHooksSocialRescrapeRouteImport.update({
-    id: '/api/public/hooks/social-rescrape',
-    path: '/api/public/hooks/social-rescrape',
+const LovableVisualAdminVisibilityRoute =
+  LovableVisualAdminVisibilityRouteImport.update({
+    id: '/lovable/visual/admin-visibility',
+    path: '/lovable/visual/admin-visibility',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksShipmentStatusChangeRoute =
-  ApiPublicHooksShipmentStatusChangeRouteImport.update({
-    id: '/api/public/hooks/shipment-status-change',
-    path: '/api/public/hooks/shipment-status-change',
+const LovableVisualApkAvailabilityShortcutsRoute =
+  LovableVisualApkAvailabilityShortcutsRouteImport.update({
+    id: '/lovable/visual/apk-availability-shortcuts',
+    path: '/lovable/visual/apk-availability-shortcuts',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksSecurityScanDailyRoute =
-  ApiPublicHooksSecurityScanDailyRouteImport.update({
-    id: '/api/public/hooks/security-scan-daily',
-    path: '/api/public/hooks/security-scan-daily',
+const LovableVisualAppearanceImportRoute =
+  LovableVisualAppearanceImportRouteImport.update({
+    id: '/lovable/visual/appearance-import',
+    path: '/lovable/visual/appearance-import',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksPrepTaskNotifyRoute =
-  ApiPublicHooksPrepTaskNotifyRouteImport.update({
-    id: '/api/public/hooks/prep-task-notify',
-    path: '/api/public/hooks/prep-task-notify',
+const LovableVisualAttachmentDurationConsistencyRoute =
+  LovableVisualAttachmentDurationConsistencyRouteImport.update({
+    id: '/lovable/visual/attachment-duration-consistency',
+    path: '/lovable/visual/attachment-duration-consistency',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksPrepSubmitFailRoute =
-  ApiPublicHooksPrepSubmitFailRouteImport.update({
-    id: '/api/public/hooks/prep-submit-fail',
-    path: '/api/public/hooks/prep-submit-fail',
+const LovableVisualAutoSendCancelRoute =
+  LovableVisualAutoSendCancelRouteImport.update({
+    id: '/lovable/visual/auto-send-cancel',
+    path: '/lovable/visual/auto-send-cancel',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksOrderEventNotifyRoute =
-  ApiPublicHooksOrderEventNotifyRouteImport.update({
-    id: '/api/public/hooks/order-event-notify',
-    path: '/api/public/hooks/order-event-notify',
+const LovableVisualBottomBarSnapRoute =
+  LovableVisualBottomBarSnapRouteImport.update({
+    id: '/lovable/visual/bottom-bar-snap',
+    path: '/lovable/visual/bottom-bar-snap',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksLogPortalErrorRoute =
-  ApiPublicHooksLogPortalErrorRouteImport.update({
-    id: '/api/public/hooks/log-portal-error',
-    path: '/api/public/hooks/log-portal-error',
+const LovableVisualCallVideoStageRoute =
+  LovableVisualCallVideoStageRouteImport.update({
+    id: '/lovable/visual/call-video-stage',
+    path: '/lovable/visual/call-video-stage',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksFriendNotifyRoute =
-  ApiPublicHooksFriendNotifyRouteImport.update({
-    id: '/api/public/hooks/friend-notify',
-    path: '/api/public/hooks/friend-notify',
+const LovableVisualChatDeletedRoute =
+  LovableVisualChatDeletedRouteImport.update({
+    id: '/lovable/visual/chat-deleted',
+    path: '/lovable/visual/chat-deleted',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksEmailQueueMonitorRoute =
-  ApiPublicHooksEmailQueueMonitorRouteImport.update({
-    id: '/api/public/hooks/email-queue-monitor',
-    path: '/api/public/hooks/email-queue-monitor',
+const LovableVisualChatQueueNetworkDropRoute =
+  LovableVisualChatQueueNetworkDropRouteImport.update({
+    id: '/lovable/visual/chat-queue-network-drop',
+    path: '/lovable/visual/chat-queue-network-drop',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualDebtSsotConsistencyRoute =
+  LovableVisualDebtSsotConsistencyRouteImport.update({
+    id: '/lovable/visual/debt-ssot-consistency',
+    path: '/lovable/visual/debt-ssot-consistency',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualDeliveryHistoryRoute =
+  LovableVisualDeliveryHistoryRouteImport.update({
+    id: '/lovable/visual/delivery-history',
+    path: '/lovable/visual/delivery-history',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualDesignTokensRoute =
+  LovableVisualDesignTokensRouteImport.update({
+    id: '/lovable/visual/design-tokens',
+    path: '/lovable/visual/design-tokens',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualDialogViewportRoute =
+  LovableVisualDialogViewportRouteImport.update({
+    id: '/lovable/visual/dialog-viewport',
+    path: '/lovable/visual/dialog-viewport',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualEcerReturnFromWaRoute =
+  LovableVisualEcerReturnFromWaRouteImport.update({
+    id: '/lovable/visual/ecer-return-from-wa',
+    path: '/lovable/visual/ecer-return-from-wa',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualFocusPortalStackRoute =
+  LovableVisualFocusPortalStackRouteImport.update({
+    id: '/lovable/visual/focus-portal-stack',
+    path: '/lovable/visual/focus-portal-stack',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualGudangShellRoute =
+  LovableVisualGudangShellRouteImport.update({
+    id: '/lovable/visual/gudang-shell',
+    path: '/lovable/visual/gudang-shell',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualKartonKonversiRoute =
+  LovableVisualKartonKonversiRouteImport.update({
+    id: '/lovable/visual/karton-konversi',
+    path: '/lovable/visual/karton-konversi',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualKemasanBadgeRoute =
+  LovableVisualKemasanBadgeRouteImport.update({
+    id: '/lovable/visual/kemasan-badge',
+    path: '/lovable/visual/kemasan-badge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualKomponenReviewRoute =
+  LovableVisualKomponenReviewRouteImport.update({
+    id: '/lovable/visual/komponen-review',
+    path: '/lovable/visual/komponen-review',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualMenuVariantsRoute =
+  LovableVisualMenuVariantsRouteImport.update({
+    id: '/lovable/visual/menu-variants',
+    path: '/lovable/visual/menu-variants',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualMessageHiddenPersistRoute =
+  LovableVisualMessageHiddenPersistRouteImport.update({
+    id: '/lovable/visual/message-hidden-persist',
+    path: '/lovable/visual/message-hidden-persist',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualMessageHiddenRlsRoute =
+  LovableVisualMessageHiddenRlsRouteImport.update({
+    id: '/lovable/visual/message-hidden-rls',
+    path: '/lovable/visual/message-hidden-rls',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualMinSupportedFormRoute =
+  LovableVisualMinSupportedFormRouteImport.update({
+    id: '/lovable/visual/min-supported-form',
+    path: '/lovable/visual/min-supported-form',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualPhotoEditorRoute =
+  LovableVisualPhotoEditorRouteImport.update({
+    id: '/lovable/visual/photo-editor',
+    path: '/lovable/visual/photo-editor',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualPrepLocButtonsRoute =
+  LovableVisualPrepLocButtonsRouteImport.update({
+    id: '/lovable/visual/prep-loc-buttons',
+    path: '/lovable/visual/prep-loc-buttons',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualPressAuditRoute = LovableVisualPressAuditRouteImport.update({
+  id: '/lovable/visual/press-audit',
+  path: '/lovable/visual/press-audit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableVisualPressScopeRoute = LovableVisualPressScopeRouteImport.update({
+  id: '/lovable/visual/press-scope',
+  path: '/lovable/visual/press-scope',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableVisualProdukListRoute = LovableVisualProdukListRouteImport.update({
+  id: '/lovable/visual/produk-list',
+  path: '/lovable/visual/produk-list',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableVisualReadyBadgesSelectorRoute =
+  LovableVisualReadyBadgesSelectorRouteImport.update({
+    id: '/lovable/visual/ready-badges-selector',
+    path: '/lovable/visual/ready-badges-selector',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualTapTargetsRoute = LovableVisualTapTargetsRouteImport.update({
+  id: '/lovable/visual/tap-targets',
+  path: '/lovable/visual/tap-targets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableVisualToastActionsRoute =
+  LovableVisualToastActionsRouteImport.update({
+    id: '/lovable/visual/toast-actions',
+    path: '/lovable/visual/toast-actions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualToastLayoutRoute =
+  LovableVisualToastLayoutRouteImport.update({
+    id: '/lovable/visual/toast-layout',
+    path: '/lovable/visual/toast-layout',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualTwoUserDraftsRoute =
+  LovableVisualTwoUserDraftsRouteImport.update({
+    id: '/lovable/visual/two-user-drafts',
+    path: '/lovable/visual/two-user-drafts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualVoiceNotePlayerRoute =
+  LovableVisualVoiceNotePlayerRouteImport.update({
+    id: '/lovable/visual/voice-note-player',
+    path: '/lovable/visual/voice-note-player',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualWaPreviewRotateRoute =
+  LovableVisualWaPreviewRotateRouteImport.update({
+    id: '/lovable/visual/wa-preview-rotate',
+    path: '/lovable/visual/wa-preview-rotate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableVisualWorkerShotMarksentRoute =
+  LovableVisualWorkerShotMarksentRouteImport.update({
+    id: '/lovable/visual/worker-shot-marksent',
+    path: '/lovable/visual/worker-shot-marksent',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedGudangPesananIdRoute =
@@ -1109,17 +1011,115 @@ const AuthenticatedGudangPesananIdRoute =
     path: '/pesanan/$id',
     getParentRoute: () => AuthenticatedGudangRoute,
   } as any)
-const AuthenticatedKiosRiwayatKindIdRoute =
-  AuthenticatedKiosRiwayatKindIdRouteImport.update({
-    id: '/$kind/$id',
-    path: '/$kind/$id',
-    getParentRoute: () => AuthenticatedKiosRiwayatRoute,
+const ApiPublicHooksEmailQueueMonitorRoute =
+  ApiPublicHooksEmailQueueMonitorRouteImport.update({
+    id: '/api/public/hooks/email-queue-monitor',
+    path: '/api/public/hooks/email-queue-monitor',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksFriendNotifyRoute =
+  ApiPublicHooksFriendNotifyRouteImport.update({
+    id: '/api/public/hooks/friend-notify',
+    path: '/api/public/hooks/friend-notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksLogPortalErrorRoute =
+  ApiPublicHooksLogPortalErrorRouteImport.update({
+    id: '/api/public/hooks/log-portal-error',
+    path: '/api/public/hooks/log-portal-error',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksOrderEventNotifyRoute =
+  ApiPublicHooksOrderEventNotifyRouteImport.update({
+    id: '/api/public/hooks/order-event-notify',
+    path: '/api/public/hooks/order-event-notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPrepSubmitFailRoute =
+  ApiPublicHooksPrepSubmitFailRouteImport.update({
+    id: '/api/public/hooks/prep-submit-fail',
+    path: '/api/public/hooks/prep-submit-fail',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPrepTaskNotifyRoute =
+  ApiPublicHooksPrepTaskNotifyRouteImport.update({
+    id: '/api/public/hooks/prep-task-notify',
+    path: '/api/public/hooks/prep-task-notify',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSecurityScanDailyRoute =
+  ApiPublicHooksSecurityScanDailyRouteImport.update({
+    id: '/api/public/hooks/security-scan-daily',
+    path: '/api/public/hooks/security-scan-daily',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksShipmentStatusChangeRoute =
+  ApiPublicHooksShipmentStatusChangeRouteImport.update({
+    id: '/api/public/hooks/shipment-status-change',
+    path: '/api/public/hooks/shipment-status-change',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSocialRescrapeRoute =
+  ApiPublicHooksSocialRescrapeRouteImport.update({
+    id: '/api/public/hooks/social-rescrape',
+    path: '/api/public/hooks/social-rescrape',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksWebVitalsMonitorRoute =
+  ApiPublicHooksWebVitalsMonitorRouteImport.update({
+    id: '/api/public/hooks/web-vitals-monitor',
+    path: '/api/public/hooks/web-vitals-monitor',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicImgAvifRoute = ApiPublicImgAvifRouteImport.update({
+  id: '/api/public/img/avif',
+  path: '/api/public/img/avif',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicImgOgRoute = ApiPublicImgOgRouteImport.update({
+  id: '/api/public/img/og',
+  path: '/api/public/img/og',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedGudangPesananIdEditRoute =
   AuthenticatedGudangPesananIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => AuthenticatedGudangPesananIdRoute,
+  } as any)
+const AuthenticatedKiosRiwayatKindIdRoute =
+  AuthenticatedKiosRiwayatKindIdRouteImport.update({
+    id: '/$kind/$id',
+    path: '/$kind/$id',
+    getParentRoute: () => AuthenticatedKiosRiwayatRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -2235,95 +2235,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/trust': {
-      id: '/trust'
-      path: '/trust'
-      fullPath: '/trust'
-      preLoaderRoute: typeof TrustRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/refund': {
-      id: '/refund'
-      path: '/refund'
-      fullPath: '/refund'
-      preLoaderRoute: typeof RefundRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/produk': {
-      id: '/produk'
-      path: '/produk'
-      fullPath: '/produk'
-      preLoaderRoute: typeof ProdukRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pratinjau-tema': {
-      id: '/pratinjau-tema'
-      path: '/pratinjau-tema'
-      fullPath: '/pratinjau-tema'
-      preLoaderRoute: typeof PratinjauTemaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pos-kasir': {
-      id: '/pos-kasir'
-      path: '/pos-kasir'
-      fullPath: '/pos-kasir'
-      preLoaderRoute: typeof PosKasirRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/harga': {
-      id: '/harga'
-      path: '/harga'
-      fullPath: '/harga'
-      preLoaderRoute: typeof HargaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faq': {
-      id: '/faq'
-      path: '/faq'
-      fullPath: '/faq'
-      preLoaderRoute: typeof FaqRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/error': {
-      id: '/error'
-      path: '/error'
-      fullPath: '/error'
-      preLoaderRoute: typeof ErrorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth-callback': {
-      id: '/auth-callback'
-      path: '/auth-callback'
-      fullPath: '/auth-callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -2333,508 +2249,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
+    '/auth-callback': {
+      id: '/auth-callback'
+      path: '/auth-callback'
+      fullPath: '/auth-callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pos-kasir/': {
-      id: '/pos-kasir/'
-      path: '/'
-      fullPath: '/pos-kasir/'
-      preLoaderRoute: typeof PosKasirIndexRouteImport
-      parentRoute: typeof PosKasirRoute
-    }
-    '/download/': {
-      id: '/download/'
-      path: '/download'
-      fullPath: '/download/'
-      preLoaderRoute: typeof DownloadIndexRouteImport
+    '/error': {
+      id: '/error'
+      path: '/error'
+      fullPath: '/error'
+      preLoaderRoute: typeof ErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/t/$token': {
-      id: '/t/$token'
-      path: '/t/$token'
-      fullPath: '/t/$token'
-      preLoaderRoute: typeof TTokenRouteImport
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pos-kasir/ringkasan': {
-      id: '/pos-kasir/ringkasan'
-      path: '/ringkasan'
-      fullPath: '/pos-kasir/ringkasan'
-      preLoaderRoute: typeof PosKasirRingkasanRouteImport
-      parentRoute: typeof PosKasirRoute
-    }
-    '/i/$code': {
-      id: '/i/$code'
-      path: '/i/$code'
-      fullPath: '/i/$code'
-      preLoaderRoute: typeof ICodeRouteImport
+    '/harga': {
+      id: '/harga'
+      path: '/harga'
+      fullPath: '/harga'
+      preLoaderRoute: typeof HargaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/download/$variant': {
-      id: '/download/$variant'
-      path: '/download/$variant'
-      fullPath: '/download/$variant'
-      preLoaderRoute: typeof DownloadVariantRouteImport
+    '/pos-kasir': {
+      id: '/pos-kasir'
+      path: '/pos-kasir'
+      fullPath: '/pos-kasir'
+      preLoaderRoute: typeof PosKasirRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/diagnostik/paket': {
-      id: '/diagnostik/paket'
-      path: '/diagnostik/paket'
-      fullPath: '/diagnostik/paket'
-      preLoaderRoute: typeof DiagnostikPaketRouteImport
+    '/pratinjau-tema': {
+      id: '/pratinjau-tema'
+      path: '/pratinjau-tema'
+      fullPath: '/pratinjau-tema'
+      preLoaderRoute: typeof PratinjauTemaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/version': {
-      id: '/api/version'
-      path: '/api/version'
-      fullPath: '/api/version'
-      preLoaderRoute: typeof ApiVersionRouteImport
+    '/produk': {
+      id: '/produk'
+      path: '/produk'
+      fullPath: '/produk'
+      preLoaderRoute: typeof ProdukRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/undang': {
-      id: '/_authenticated/undang'
-      path: '/undang'
-      fullPath: '/undang'
-      preLoaderRoute: typeof AuthenticatedUndangRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/refund': {
+      id: '/refund'
+      path: '/refund'
+      fullPath: '/refund'
+      preLoaderRoute: typeof RefundRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/tugas-daftar': {
-      id: '/_authenticated/tugas-daftar'
-      path: '/tugas-daftar'
-      fullPath: '/tugas-daftar'
-      preLoaderRoute: typeof AuthenticatedTugasDaftarRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/tugas-baru': {
-      id: '/_authenticated/tugas-baru'
-      path: '/tugas-baru'
-      fullPath: '/tugas-baru'
-      preLoaderRoute: typeof AuthenticatedTugasBaruRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/tugas': {
-      id: '/_authenticated/tugas'
-      path: '/tugas'
-      fullPath: '/tugas'
-      preLoaderRoute: typeof AuthenticatedTugasRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/transaksi-hari-ini': {
-      id: '/_authenticated/transaksi-hari-ini'
-      path: '/transaksi-hari-ini'
-      fullPath: '/transaksi-hari-ini'
-      preLoaderRoute: typeof AuthenticatedTransaksiHariIniRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/status-notifikasi': {
-      id: '/_authenticated/status-notifikasi'
-      path: '/status-notifikasi'
-      fullPath: '/status-notifikasi'
-      preLoaderRoute: typeof AuthenticatedStatusNotifikasiRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/sesi': {
-      id: '/_authenticated/sesi'
-      path: '/sesi'
-      fullPath: '/sesi'
-      preLoaderRoute: typeof AuthenticatedSesiRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/ringkasan': {
-      id: '/_authenticated/ringkasan'
-      path: '/ringkasan'
-      fullPath: '/ringkasan'
-      preLoaderRoute: typeof AuthenticatedRingkasanRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/request': {
-      id: '/_authenticated/request'
-      path: '/request'
-      fullPath: '/request'
-      preLoaderRoute: typeof AuthenticatedRequestRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/rekonsiliasi-piutang': {
-      id: '/_authenticated/rekonsiliasi-piutang'
-      path: '/rekonsiliasi-piutang'
-      fullPath: '/rekonsiliasi-piutang'
-      preLoaderRoute: typeof AuthenticatedRekonsiliasiPiutangRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/rekonsiliasi-kontak': {
-      id: '/_authenticated/rekonsiliasi-kontak'
-      path: '/rekonsiliasi-kontak'
-      fullPath: '/rekonsiliasi-kontak'
-      preLoaderRoute: typeof AuthenticatedRekonsiliasiKontakRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/profil-chat': {
-      id: '/_authenticated/profil-chat'
-      path: '/profil-chat'
-      fullPath: '/profil-chat'
-      preLoaderRoute: typeof AuthenticatedProfilChatRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/profil': {
-      id: '/_authenticated/profil'
-      path: '/profil'
-      fullPath: '/profil'
-      preLoaderRoute: typeof AuthenticatedProfilRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/perf': {
-      id: '/_authenticated/perf'
-      path: '/perf'
-      fullPath: '/perf'
-      preLoaderRoute: typeof AuthenticatedPerfRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-tampilan': {
-      id: '/_authenticated/pengaturan-tampilan'
-      path: '/pengaturan-tampilan'
-      fullPath: '/pengaturan-tampilan'
-      preLoaderRoute: typeof AuthenticatedPengaturanTampilanRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-scroll-guard': {
-      id: '/_authenticated/pengaturan-scroll-guard'
-      path: '/pengaturan-scroll-guard'
-      fullPath: '/pengaturan-scroll-guard'
-      preLoaderRoute: typeof AuthenticatedPengaturanScrollGuardRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-privasi': {
-      id: '/_authenticated/pengaturan-privasi'
-      path: '/pengaturan-privasi'
-      fullPath: '/pengaturan-privasi'
-      preLoaderRoute: typeof AuthenticatedPengaturanPrivasiRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-pesan-wa': {
-      id: '/_authenticated/pengaturan-pesan-wa'
-      path: '/pengaturan-pesan-wa'
-      fullPath: '/pengaturan-pesan-wa'
-      preLoaderRoute: typeof AuthenticatedPengaturanPesanWaRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-penyimpanan': {
-      id: '/_authenticated/pengaturan-penyimpanan'
-      path: '/pengaturan-penyimpanan'
-      fullPath: '/pengaturan-penyimpanan'
-      preLoaderRoute: typeof AuthenticatedPengaturanPenyimpananRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-oauth-google': {
-      id: '/_authenticated/pengaturan-oauth-google'
-      path: '/pengaturan-oauth-google'
-      fullPath: '/pengaturan-oauth-google'
-      preLoaderRoute: typeof AuthenticatedPengaturanOauthGoogleRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-notifikasi-wa': {
-      id: '/_authenticated/pengaturan-notifikasi-wa'
-      path: '/pengaturan-notifikasi-wa'
-      fullPath: '/pengaturan-notifikasi-wa'
-      preLoaderRoute: typeof AuthenticatedPengaturanNotifikasiWaRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-kunci': {
-      id: '/_authenticated/pengaturan-kunci'
-      path: '/pengaturan-kunci'
-      fullPath: '/pengaturan-kunci'
-      preLoaderRoute: typeof AuthenticatedPengaturanKunciRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-integrasi-sosial': {
-      id: '/_authenticated/pengaturan-integrasi-sosial'
-      path: '/pengaturan-integrasi-sosial'
-      fullPath: '/pengaturan-integrasi-sosial'
-      preLoaderRoute: typeof AuthenticatedPengaturanIntegrasiSosialRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-domain': {
-      id: '/_authenticated/pengaturan-domain'
-      path: '/pengaturan-domain'
-      fullPath: '/pengaturan-domain'
-      preLoaderRoute: typeof AuthenticatedPengaturanDomainRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-bahasa': {
-      id: '/_authenticated/pengaturan-bahasa'
-      path: '/pengaturan-bahasa'
-      fullPath: '/pengaturan-bahasa'
-      preLoaderRoute: typeof AuthenticatedPengaturanBahasaRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-app-mode': {
-      id: '/_authenticated/pengaturan-app-mode'
-      path: '/pengaturan-app-mode'
-      fullPath: '/pengaturan-app-mode'
-      preLoaderRoute: typeof AuthenticatedPengaturanAppModeRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-apk': {
-      id: '/_authenticated/pengaturan-apk'
-      path: '/pengaturan-apk'
-      fullPath: '/pengaturan-apk'
-      preLoaderRoute: typeof AuthenticatedPengaturanApkRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan-aksesibilitas': {
-      id: '/_authenticated/pengaturan-aksesibilitas'
-      path: '/pengaturan-aksesibilitas'
-      fullPath: '/pengaturan-aksesibilitas'
-      preLoaderRoute: typeof AuthenticatedPengaturanAksesibilitasRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pengaturan': {
-      id: '/_authenticated/pengaturan'
-      path: '/pengaturan'
-      fullPath: '/pengaturan'
-      preLoaderRoute: typeof AuthenticatedPengaturanRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/pembaruan': {
-      id: '/_authenticated/pembaruan'
-      path: '/pembaruan'
-      fullPath: '/pembaruan'
-      preLoaderRoute: typeof AuthenticatedPembaruanRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/panggilan': {
-      id: '/_authenticated/panggilan'
-      path: '/panggilan'
-      fullPath: '/panggilan'
-      preLoaderRoute: typeof AuthenticatedPanggilanRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/notifikasi': {
-      id: '/_authenticated/notifikasi'
-      path: '/notifikasi'
-      fullPath: '/notifikasi'
-      preLoaderRoute: typeof AuthenticatedNotifikasiRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/metrik-query': {
-      id: '/_authenticated/metrik-query'
-      path: '/metrik-query'
-      fullPath: '/metrik-query'
-      preLoaderRoute: typeof AuthenticatedMetrikQueryRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/link-pegawai': {
-      id: '/_authenticated/link-pegawai'
-      path: '/link-pegawai'
-      fullPath: '/link-pegawai'
-      preLoaderRoute: typeof AuthenticatedLinkPegawaiRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/label-preview': {
-      id: '/_authenticated/label-preview'
-      path: '/label-preview'
-      fullPath: '/label-preview'
-      preLoaderRoute: typeof AuthenticatedLabelPreviewRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/kontak-mapping': {
-      id: '/_authenticated/kontak-mapping'
-      path: '/kontak-mapping'
-      fullPath: '/kontak-mapping'
-      preLoaderRoute: typeof AuthenticatedKontakMappingRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/kontak': {
-      id: '/_authenticated/kontak'
-      path: '/kontak'
-      fullPath: '/kontak'
-      preLoaderRoute: typeof AuthenticatedKontakRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/kios': {
-      id: '/_authenticated/kios'
-      path: '/kios'
-      fullPath: '/kios'
-      preLoaderRoute: typeof AuthenticatedKiosRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/katalog': {
-      id: '/_authenticated/katalog'
-      path: '/katalog'
-      fullPath: '/katalog'
-      preLoaderRoute: typeof AuthenticatedKatalogRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/hutang-piutang': {
-      id: '/_authenticated/hutang-piutang'
-      path: '/hutang-piutang'
-      fullPath: '/hutang-piutang'
-      preLoaderRoute: typeof AuthenticatedHutangPiutangRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/hubungkan-agen': {
-      id: '/_authenticated/hubungkan-agen'
-      path: '/hubungkan-agen'
-      fullPath: '/hubungkan-agen'
-      preLoaderRoute: typeof AuthenticatedHubungkanAgenRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/gudang': {
-      id: '/_authenticated/gudang'
-      path: '/gudang'
-      fullPath: '/gudang'
-      preLoaderRoute: typeof AuthenticatedGudangRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/fitur': {
-      id: '/_authenticated/fitur'
-      path: '/fitur'
-      fullPath: '/fitur'
-      preLoaderRoute: typeof AuthenticatedFiturRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/email-queue': {
-      id: '/_authenticated/email-queue'
-      path: '/email-queue'
-      fullPath: '/email-queue'
-      preLoaderRoute: typeof AuthenticatedEmailQueueRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/ekspor-pesanan': {
-      id: '/_authenticated/ekspor-pesanan'
-      path: '/ekspor-pesanan'
-      fullPath: '/ekspor-pesanan'
-      preLoaderRoute: typeof AuthenticatedEksporPesananRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/ecer': {
-      id: '/_authenticated/ecer'
-      path: '/ecer'
-      fullPath: '/ecer'
-      preLoaderRoute: typeof AuthenticatedEcerRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/diagnostik-viewport': {
-      id: '/_authenticated/diagnostik-viewport'
-      path: '/diagnostik-viewport'
-      fullPath: '/diagnostik-viewport'
-      preLoaderRoute: typeof AuthenticatedDiagnostikViewportRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/diagnostik-list': {
-      id: '/_authenticated/diagnostik-list'
-      path: '/diagnostik-list'
-      fullPath: '/diagnostik-list'
-      preLoaderRoute: typeof AuthenticatedDiagnostikListRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/diagnostics': {
-      id: '/_authenticated/diagnostics'
-      path: '/diagnostics'
-      fullPath: '/diagnostics'
-      preLoaderRoute: typeof AuthenticatedDiagnosticsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/device-verify': {
-      id: '/_authenticated/device-verify'
-      path: '/device-verify'
-      fullPath: '/device-verify'
-      preLoaderRoute: typeof AuthenticatedDeviceVerifyRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/daftar': {
-      id: '/_authenticated/daftar'
-      path: '/daftar'
-      fullPath: '/daftar'
-      preLoaderRoute: typeof AuthenticatedDaftarRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/chat-audit': {
-      id: '/_authenticated/chat-audit'
-      path: '/chat-audit'
-      fullPath: '/chat-audit'
-      preLoaderRoute: typeof AuthenticatedChatAuditRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/chat': {
-      id: '/_authenticated/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof AuthenticatedChatRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/catatan': {
-      id: '/_authenticated/catatan'
-      path: '/catatan'
-      fullPath: '/catatan'
-      preLoaderRoute: typeof AuthenticatedCatatanRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/buku-alamat': {
-      id: '/_authenticated/buku-alamat'
-      path: '/buku-alamat'
-      fullPath: '/buku-alamat'
-      preLoaderRoute: typeof AuthenticatedBukuAlamatRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/balas-cepat': {
-      id: '/_authenticated/balas-cepat'
-      path: '/balas-cepat'
-      fullPath: '/balas-cepat'
-      preLoaderRoute: typeof AuthenticatedBalasCepatRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/audit-saldo': {
-      id: '/_authenticated/audit-saldo'
-      path: '/audit-saldo'
-      fullPath: '/audit-saldo'
-      preLoaderRoute: typeof AuthenticatedAuditSaldoRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/audit': {
-      id: '/_authenticated/audit'
-      path: '/audit'
-      fullPath: '/audit'
-      preLoaderRoute: typeof AuthenticatedAuditRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/admin-denial-log': {
-      id: '/_authenticated/admin-denial-log'
-      path: '/admin-denial-log'
-      fullPath: '/admin-denial-log'
-      preLoaderRoute: typeof AuthenticatedAdminDenialLogRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/list-tools': {
@@ -2844,431 +2347,501 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/katalog/$slug/': {
-      id: '/katalog/$slug/'
-      path: '/katalog/$slug'
-      fullPath: '/katalog/$slug/'
-      preLoaderRoute: typeof KatalogSlugIndexRouteImport
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/kontak/': {
-      id: '/_authenticated/kontak/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
-      fullPath: '/kontak/'
-      preLoaderRoute: typeof AuthenticatedKontakIndexRouteImport
-      parentRoute: typeof AuthenticatedKontakRoute
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/chat/': {
-      id: '/_authenticated/chat/'
+    '/_authenticated/admin-denial-log': {
+      id: '/_authenticated/admin-denial-log'
+      path: '/admin-denial-log'
+      fullPath: '/admin-denial-log'
+      preLoaderRoute: typeof AuthenticatedAdminDenialLogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/audit': {
+      id: '/_authenticated/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuthenticatedAuditRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/audit-saldo': {
+      id: '/_authenticated/audit-saldo'
+      path: '/audit-saldo'
+      fullPath: '/audit-saldo'
+      preLoaderRoute: typeof AuthenticatedAuditSaldoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/balas-cepat': {
+      id: '/_authenticated/balas-cepat'
+      path: '/balas-cepat'
+      fullPath: '/balas-cepat'
+      preLoaderRoute: typeof AuthenticatedBalasCepatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/buku-alamat': {
+      id: '/_authenticated/buku-alamat'
+      path: '/buku-alamat'
+      fullPath: '/buku-alamat'
+      preLoaderRoute: typeof AuthenticatedBukuAlamatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/catatan': {
+      id: '/_authenticated/catatan'
+      path: '/catatan'
+      fullPath: '/catatan'
+      preLoaderRoute: typeof AuthenticatedCatatanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/chat': {
+      id: '/_authenticated/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AuthenticatedChatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/chat-audit': {
+      id: '/_authenticated/chat-audit'
+      path: '/chat-audit'
+      fullPath: '/chat-audit'
+      preLoaderRoute: typeof AuthenticatedChatAuditRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/daftar': {
+      id: '/_authenticated/daftar'
+      path: '/daftar'
+      fullPath: '/daftar'
+      preLoaderRoute: typeof AuthenticatedDaftarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/device-verify': {
+      id: '/_authenticated/device-verify'
+      path: '/device-verify'
+      fullPath: '/device-verify'
+      preLoaderRoute: typeof AuthenticatedDeviceVerifyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/diagnostics': {
+      id: '/_authenticated/diagnostics'
+      path: '/diagnostics'
+      fullPath: '/diagnostics'
+      preLoaderRoute: typeof AuthenticatedDiagnosticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/diagnostik-list': {
+      id: '/_authenticated/diagnostik-list'
+      path: '/diagnostik-list'
+      fullPath: '/diagnostik-list'
+      preLoaderRoute: typeof AuthenticatedDiagnostikListRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/diagnostik-viewport': {
+      id: '/_authenticated/diagnostik-viewport'
+      path: '/diagnostik-viewport'
+      fullPath: '/diagnostik-viewport'
+      preLoaderRoute: typeof AuthenticatedDiagnostikViewportRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ecer': {
+      id: '/_authenticated/ecer'
+      path: '/ecer'
+      fullPath: '/ecer'
+      preLoaderRoute: typeof AuthenticatedEcerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ekspor-pesanan': {
+      id: '/_authenticated/ekspor-pesanan'
+      path: '/ekspor-pesanan'
+      fullPath: '/ekspor-pesanan'
+      preLoaderRoute: typeof AuthenticatedEksporPesananRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/email-queue': {
+      id: '/_authenticated/email-queue'
+      path: '/email-queue'
+      fullPath: '/email-queue'
+      preLoaderRoute: typeof AuthenticatedEmailQueueRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/fitur': {
+      id: '/_authenticated/fitur'
+      path: '/fitur'
+      fullPath: '/fitur'
+      preLoaderRoute: typeof AuthenticatedFiturRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/gudang': {
+      id: '/_authenticated/gudang'
+      path: '/gudang'
+      fullPath: '/gudang'
+      preLoaderRoute: typeof AuthenticatedGudangRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/hubungkan-agen': {
+      id: '/_authenticated/hubungkan-agen'
+      path: '/hubungkan-agen'
+      fullPath: '/hubungkan-agen'
+      preLoaderRoute: typeof AuthenticatedHubungkanAgenRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/hutang-piutang': {
+      id: '/_authenticated/hutang-piutang'
+      path: '/hutang-piutang'
+      fullPath: '/hutang-piutang'
+      preLoaderRoute: typeof AuthenticatedHutangPiutangRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/katalog': {
+      id: '/_authenticated/katalog'
+      path: '/katalog'
+      fullPath: '/katalog'
+      preLoaderRoute: typeof AuthenticatedKatalogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/kios': {
+      id: '/_authenticated/kios'
+      path: '/kios'
+      fullPath: '/kios'
+      preLoaderRoute: typeof AuthenticatedKiosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/kontak': {
+      id: '/_authenticated/kontak'
+      path: '/kontak'
+      fullPath: '/kontak'
+      preLoaderRoute: typeof AuthenticatedKontakRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/kontak-mapping': {
+      id: '/_authenticated/kontak-mapping'
+      path: '/kontak-mapping'
+      fullPath: '/kontak-mapping'
+      preLoaderRoute: typeof AuthenticatedKontakMappingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/label-preview': {
+      id: '/_authenticated/label-preview'
+      path: '/label-preview'
+      fullPath: '/label-preview'
+      preLoaderRoute: typeof AuthenticatedLabelPreviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/link-pegawai': {
+      id: '/_authenticated/link-pegawai'
+      path: '/link-pegawai'
+      fullPath: '/link-pegawai'
+      preLoaderRoute: typeof AuthenticatedLinkPegawaiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/metrik-query': {
+      id: '/_authenticated/metrik-query'
+      path: '/metrik-query'
+      fullPath: '/metrik-query'
+      preLoaderRoute: typeof AuthenticatedMetrikQueryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/notifikasi': {
+      id: '/_authenticated/notifikasi'
+      path: '/notifikasi'
+      fullPath: '/notifikasi'
+      preLoaderRoute: typeof AuthenticatedNotifikasiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/panggilan': {
+      id: '/_authenticated/panggilan'
+      path: '/panggilan'
+      fullPath: '/panggilan'
+      preLoaderRoute: typeof AuthenticatedPanggilanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pembaruan': {
+      id: '/_authenticated/pembaruan'
+      path: '/pembaruan'
+      fullPath: '/pembaruan'
+      preLoaderRoute: typeof AuthenticatedPembaruanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan': {
+      id: '/_authenticated/pengaturan'
+      path: '/pengaturan'
+      fullPath: '/pengaturan'
+      preLoaderRoute: typeof AuthenticatedPengaturanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-aksesibilitas': {
+      id: '/_authenticated/pengaturan-aksesibilitas'
+      path: '/pengaturan-aksesibilitas'
+      fullPath: '/pengaturan-aksesibilitas'
+      preLoaderRoute: typeof AuthenticatedPengaturanAksesibilitasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-apk': {
+      id: '/_authenticated/pengaturan-apk'
+      path: '/pengaturan-apk'
+      fullPath: '/pengaturan-apk'
+      preLoaderRoute: typeof AuthenticatedPengaturanApkRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-app-mode': {
+      id: '/_authenticated/pengaturan-app-mode'
+      path: '/pengaturan-app-mode'
+      fullPath: '/pengaturan-app-mode'
+      preLoaderRoute: typeof AuthenticatedPengaturanAppModeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-bahasa': {
+      id: '/_authenticated/pengaturan-bahasa'
+      path: '/pengaturan-bahasa'
+      fullPath: '/pengaturan-bahasa'
+      preLoaderRoute: typeof AuthenticatedPengaturanBahasaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-domain': {
+      id: '/_authenticated/pengaturan-domain'
+      path: '/pengaturan-domain'
+      fullPath: '/pengaturan-domain'
+      preLoaderRoute: typeof AuthenticatedPengaturanDomainRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-integrasi-sosial': {
+      id: '/_authenticated/pengaturan-integrasi-sosial'
+      path: '/pengaturan-integrasi-sosial'
+      fullPath: '/pengaturan-integrasi-sosial'
+      preLoaderRoute: typeof AuthenticatedPengaturanIntegrasiSosialRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-kunci': {
+      id: '/_authenticated/pengaturan-kunci'
+      path: '/pengaturan-kunci'
+      fullPath: '/pengaturan-kunci'
+      preLoaderRoute: typeof AuthenticatedPengaturanKunciRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-notifikasi-wa': {
+      id: '/_authenticated/pengaturan-notifikasi-wa'
+      path: '/pengaturan-notifikasi-wa'
+      fullPath: '/pengaturan-notifikasi-wa'
+      preLoaderRoute: typeof AuthenticatedPengaturanNotifikasiWaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-oauth-google': {
+      id: '/_authenticated/pengaturan-oauth-google'
+      path: '/pengaturan-oauth-google'
+      fullPath: '/pengaturan-oauth-google'
+      preLoaderRoute: typeof AuthenticatedPengaturanOauthGoogleRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-penyimpanan': {
+      id: '/_authenticated/pengaturan-penyimpanan'
+      path: '/pengaturan-penyimpanan'
+      fullPath: '/pengaturan-penyimpanan'
+      preLoaderRoute: typeof AuthenticatedPengaturanPenyimpananRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-pesan-wa': {
+      id: '/_authenticated/pengaturan-pesan-wa'
+      path: '/pengaturan-pesan-wa'
+      fullPath: '/pengaturan-pesan-wa'
+      preLoaderRoute: typeof AuthenticatedPengaturanPesanWaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-privasi': {
+      id: '/_authenticated/pengaturan-privasi'
+      path: '/pengaturan-privasi'
+      fullPath: '/pengaturan-privasi'
+      preLoaderRoute: typeof AuthenticatedPengaturanPrivasiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-scroll-guard': {
+      id: '/_authenticated/pengaturan-scroll-guard'
+      path: '/pengaturan-scroll-guard'
+      fullPath: '/pengaturan-scroll-guard'
+      preLoaderRoute: typeof AuthenticatedPengaturanScrollGuardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-tampilan': {
+      id: '/_authenticated/pengaturan-tampilan'
+      path: '/pengaturan-tampilan'
+      fullPath: '/pengaturan-tampilan'
+      preLoaderRoute: typeof AuthenticatedPengaturanTampilanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/perf': {
+      id: '/_authenticated/perf'
+      path: '/perf'
+      fullPath: '/perf'
+      preLoaderRoute: typeof AuthenticatedPerfRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/profil': {
+      id: '/_authenticated/profil'
+      path: '/profil'
+      fullPath: '/profil'
+      preLoaderRoute: typeof AuthenticatedProfilRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/profil-chat': {
+      id: '/_authenticated/profil-chat'
+      path: '/profil-chat'
+      fullPath: '/profil-chat'
+      preLoaderRoute: typeof AuthenticatedProfilChatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/rekonsiliasi-kontak': {
+      id: '/_authenticated/rekonsiliasi-kontak'
+      path: '/rekonsiliasi-kontak'
+      fullPath: '/rekonsiliasi-kontak'
+      preLoaderRoute: typeof AuthenticatedRekonsiliasiKontakRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/rekonsiliasi-piutang': {
+      id: '/_authenticated/rekonsiliasi-piutang'
+      path: '/rekonsiliasi-piutang'
+      fullPath: '/rekonsiliasi-piutang'
+      preLoaderRoute: typeof AuthenticatedRekonsiliasiPiutangRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/request': {
+      id: '/_authenticated/request'
+      path: '/request'
+      fullPath: '/request'
+      preLoaderRoute: typeof AuthenticatedRequestRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ringkasan': {
+      id: '/_authenticated/ringkasan'
+      path: '/ringkasan'
+      fullPath: '/ringkasan'
+      preLoaderRoute: typeof AuthenticatedRingkasanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/sesi': {
+      id: '/_authenticated/sesi'
+      path: '/sesi'
+      fullPath: '/sesi'
+      preLoaderRoute: typeof AuthenticatedSesiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/status-notifikasi': {
+      id: '/_authenticated/status-notifikasi'
+      path: '/status-notifikasi'
+      fullPath: '/status-notifikasi'
+      preLoaderRoute: typeof AuthenticatedStatusNotifikasiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/transaksi-hari-ini': {
+      id: '/_authenticated/transaksi-hari-ini'
+      path: '/transaksi-hari-ini'
+      fullPath: '/transaksi-hari-ini'
+      preLoaderRoute: typeof AuthenticatedTransaksiHariIniRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tugas': {
+      id: '/_authenticated/tugas'
+      path: '/tugas'
+      fullPath: '/tugas'
+      preLoaderRoute: typeof AuthenticatedTugasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tugas-baru': {
+      id: '/_authenticated/tugas-baru'
+      path: '/tugas-baru'
+      fullPath: '/tugas-baru'
+      preLoaderRoute: typeof AuthenticatedTugasBaruRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tugas-daftar': {
+      id: '/_authenticated/tugas-daftar'
+      path: '/tugas-daftar'
+      fullPath: '/tugas-daftar'
+      preLoaderRoute: typeof AuthenticatedTugasDaftarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/undang': {
+      id: '/_authenticated/undang'
+      path: '/undang'
+      fullPath: '/undang'
+      preLoaderRoute: typeof AuthenticatedUndangRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/version': {
+      id: '/api/version'
+      path: '/api/version'
+      fullPath: '/api/version'
+      preLoaderRoute: typeof ApiVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagnostik/paket': {
+      id: '/diagnostik/paket'
+      path: '/diagnostik/paket'
+      fullPath: '/diagnostik/paket'
+      preLoaderRoute: typeof DiagnostikPaketRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download/': {
+      id: '/download/'
+      path: '/download'
+      fullPath: '/download/'
+      preLoaderRoute: typeof DownloadIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download/$variant': {
+      id: '/download/$variant'
+      path: '/download/$variant'
+      fullPath: '/download/$variant'
+      preLoaderRoute: typeof DownloadVariantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/i/$code': {
+      id: '/i/$code'
+      path: '/i/$code'
+      fullPath: '/i/$code'
+      preLoaderRoute: typeof ICodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos-kasir/': {
+      id: '/pos-kasir/'
       path: '/'
-      fullPath: '/chat/'
-      preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
-      parentRoute: typeof AuthenticatedChatRoute
+      fullPath: '/pos-kasir/'
+      preLoaderRoute: typeof PosKasirIndexRouteImport
+      parentRoute: typeof PosKasirRoute
     }
-    '/lovable/visual/worker-shot-marksent': {
-      id: '/lovable/visual/worker-shot-marksent'
-      path: '/lovable/visual/worker-shot-marksent'
-      fullPath: '/lovable/visual/worker-shot-marksent'
-      preLoaderRoute: typeof LovableVisualWorkerShotMarksentRouteImport
-      parentRoute: typeof rootRouteImport
+    '/pos-kasir/ringkasan': {
+      id: '/pos-kasir/ringkasan'
+      path: '/ringkasan'
+      fullPath: '/pos-kasir/ringkasan'
+      preLoaderRoute: typeof PosKasirRingkasanRouteImport
+      parentRoute: typeof PosKasirRoute
     }
-    '/lovable/visual/wa-preview-rotate': {
-      id: '/lovable/visual/wa-preview-rotate'
-      path: '/lovable/visual/wa-preview-rotate'
-      fullPath: '/lovable/visual/wa-preview-rotate'
-      preLoaderRoute: typeof LovableVisualWaPreviewRotateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/voice-note-player': {
-      id: '/lovable/visual/voice-note-player'
-      path: '/lovable/visual/voice-note-player'
-      fullPath: '/lovable/visual/voice-note-player'
-      preLoaderRoute: typeof LovableVisualVoiceNotePlayerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/two-user-drafts': {
-      id: '/lovable/visual/two-user-drafts'
-      path: '/lovable/visual/two-user-drafts'
-      fullPath: '/lovable/visual/two-user-drafts'
-      preLoaderRoute: typeof LovableVisualTwoUserDraftsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/toast-layout': {
-      id: '/lovable/visual/toast-layout'
-      path: '/lovable/visual/toast-layout'
-      fullPath: '/lovable/visual/toast-layout'
-      preLoaderRoute: typeof LovableVisualToastLayoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/toast-actions': {
-      id: '/lovable/visual/toast-actions'
-      path: '/lovable/visual/toast-actions'
-      fullPath: '/lovable/visual/toast-actions'
-      preLoaderRoute: typeof LovableVisualToastActionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/tap-targets': {
-      id: '/lovable/visual/tap-targets'
-      path: '/lovable/visual/tap-targets'
-      fullPath: '/lovable/visual/tap-targets'
-      preLoaderRoute: typeof LovableVisualTapTargetsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/ready-badges-selector': {
-      id: '/lovable/visual/ready-badges-selector'
-      path: '/lovable/visual/ready-badges-selector'
-      fullPath: '/lovable/visual/ready-badges-selector'
-      preLoaderRoute: typeof LovableVisualReadyBadgesSelectorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/produk-list': {
-      id: '/lovable/visual/produk-list'
-      path: '/lovable/visual/produk-list'
-      fullPath: '/lovable/visual/produk-list'
-      preLoaderRoute: typeof LovableVisualProdukListRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/press-scope': {
-      id: '/lovable/visual/press-scope'
-      path: '/lovable/visual/press-scope'
-      fullPath: '/lovable/visual/press-scope'
-      preLoaderRoute: typeof LovableVisualPressScopeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/press-audit': {
-      id: '/lovable/visual/press-audit'
-      path: '/lovable/visual/press-audit'
-      fullPath: '/lovable/visual/press-audit'
-      preLoaderRoute: typeof LovableVisualPressAuditRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/prep-loc-buttons': {
-      id: '/lovable/visual/prep-loc-buttons'
-      path: '/lovable/visual/prep-loc-buttons'
-      fullPath: '/lovable/visual/prep-loc-buttons'
-      preLoaderRoute: typeof LovableVisualPrepLocButtonsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/photo-editor': {
-      id: '/lovable/visual/photo-editor'
-      path: '/lovable/visual/photo-editor'
-      fullPath: '/lovable/visual/photo-editor'
-      preLoaderRoute: typeof LovableVisualPhotoEditorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/min-supported-form': {
-      id: '/lovable/visual/min-supported-form'
-      path: '/lovable/visual/min-supported-form'
-      fullPath: '/lovable/visual/min-supported-form'
-      preLoaderRoute: typeof LovableVisualMinSupportedFormRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/message-hidden-rls': {
-      id: '/lovable/visual/message-hidden-rls'
-      path: '/lovable/visual/message-hidden-rls'
-      fullPath: '/lovable/visual/message-hidden-rls'
-      preLoaderRoute: typeof LovableVisualMessageHiddenRlsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/message-hidden-persist': {
-      id: '/lovable/visual/message-hidden-persist'
-      path: '/lovable/visual/message-hidden-persist'
-      fullPath: '/lovable/visual/message-hidden-persist'
-      preLoaderRoute: typeof LovableVisualMessageHiddenPersistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/menu-variants': {
-      id: '/lovable/visual/menu-variants'
-      path: '/lovable/visual/menu-variants'
-      fullPath: '/lovable/visual/menu-variants'
-      preLoaderRoute: typeof LovableVisualMenuVariantsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/komponen-review': {
-      id: '/lovable/visual/komponen-review'
-      path: '/lovable/visual/komponen-review'
-      fullPath: '/lovable/visual/komponen-review'
-      preLoaderRoute: typeof LovableVisualKomponenReviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/kemasan-badge': {
-      id: '/lovable/visual/kemasan-badge'
-      path: '/lovable/visual/kemasan-badge'
-      fullPath: '/lovable/visual/kemasan-badge'
-      preLoaderRoute: typeof LovableVisualKemasanBadgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/karton-konversi': {
-      id: '/lovable/visual/karton-konversi'
-      path: '/lovable/visual/karton-konversi'
-      fullPath: '/lovable/visual/karton-konversi'
-      preLoaderRoute: typeof LovableVisualKartonKonversiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/gudang-shell': {
-      id: '/lovable/visual/gudang-shell'
-      path: '/lovable/visual/gudang-shell'
-      fullPath: '/lovable/visual/gudang-shell'
-      preLoaderRoute: typeof LovableVisualGudangShellRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/focus-portal-stack': {
-      id: '/lovable/visual/focus-portal-stack'
-      path: '/lovable/visual/focus-portal-stack'
-      fullPath: '/lovable/visual/focus-portal-stack'
-      preLoaderRoute: typeof LovableVisualFocusPortalStackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/ecer-return-from-wa': {
-      id: '/lovable/visual/ecer-return-from-wa'
-      path: '/lovable/visual/ecer-return-from-wa'
-      fullPath: '/lovable/visual/ecer-return-from-wa'
-      preLoaderRoute: typeof LovableVisualEcerReturnFromWaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/dialog-viewport': {
-      id: '/lovable/visual/dialog-viewport'
-      path: '/lovable/visual/dialog-viewport'
-      fullPath: '/lovable/visual/dialog-viewport'
-      preLoaderRoute: typeof LovableVisualDialogViewportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/design-tokens': {
-      id: '/lovable/visual/design-tokens'
-      path: '/lovable/visual/design-tokens'
-      fullPath: '/lovable/visual/design-tokens'
-      preLoaderRoute: typeof LovableVisualDesignTokensRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/delivery-history': {
-      id: '/lovable/visual/delivery-history'
-      path: '/lovable/visual/delivery-history'
-      fullPath: '/lovable/visual/delivery-history'
-      preLoaderRoute: typeof LovableVisualDeliveryHistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/debt-ssot-consistency': {
-      id: '/lovable/visual/debt-ssot-consistency'
-      path: '/lovable/visual/debt-ssot-consistency'
-      fullPath: '/lovable/visual/debt-ssot-consistency'
-      preLoaderRoute: typeof LovableVisualDebtSsotConsistencyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/chat-queue-network-drop': {
-      id: '/lovable/visual/chat-queue-network-drop'
-      path: '/lovable/visual/chat-queue-network-drop'
-      fullPath: '/lovable/visual/chat-queue-network-drop'
-      preLoaderRoute: typeof LovableVisualChatQueueNetworkDropRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/chat-deleted': {
-      id: '/lovable/visual/chat-deleted'
-      path: '/lovable/visual/chat-deleted'
-      fullPath: '/lovable/visual/chat-deleted'
-      preLoaderRoute: typeof LovableVisualChatDeletedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/call-video-stage': {
-      id: '/lovable/visual/call-video-stage'
-      path: '/lovable/visual/call-video-stage'
-      fullPath: '/lovable/visual/call-video-stage'
-      preLoaderRoute: typeof LovableVisualCallVideoStageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/bottom-bar-snap': {
-      id: '/lovable/visual/bottom-bar-snap'
-      path: '/lovable/visual/bottom-bar-snap'
-      fullPath: '/lovable/visual/bottom-bar-snap'
-      preLoaderRoute: typeof LovableVisualBottomBarSnapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/auto-send-cancel': {
-      id: '/lovable/visual/auto-send-cancel'
-      path: '/lovable/visual/auto-send-cancel'
-      fullPath: '/lovable/visual/auto-send-cancel'
-      preLoaderRoute: typeof LovableVisualAutoSendCancelRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/attachment-duration-consistency': {
-      id: '/lovable/visual/attachment-duration-consistency'
-      path: '/lovable/visual/attachment-duration-consistency'
-      fullPath: '/lovable/visual/attachment-duration-consistency'
-      preLoaderRoute: typeof LovableVisualAttachmentDurationConsistencyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/appearance-import': {
-      id: '/lovable/visual/appearance-import'
-      path: '/lovable/visual/appearance-import'
-      fullPath: '/lovable/visual/appearance-import'
-      preLoaderRoute: typeof LovableVisualAppearanceImportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/apk-availability-shortcuts': {
-      id: '/lovable/visual/apk-availability-shortcuts'
-      path: '/lovable/visual/apk-availability-shortcuts'
-      fullPath: '/lovable/visual/apk-availability-shortcuts'
-      preLoaderRoute: typeof LovableVisualApkAvailabilityShortcutsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/admin-visibility': {
-      id: '/lovable/visual/admin-visibility'
-      path: '/lovable/visual/admin-visibility'
-      fullPath: '/lovable/visual/admin-visibility'
-      preLoaderRoute: typeof LovableVisualAdminVisibilityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/visual/access-denied-toast': {
-      id: '/lovable/visual/access-denied-toast'
-      path: '/lovable/visual/access-denied-toast'
-      fullPath: '/lovable/visual/access-denied-toast'
-      preLoaderRoute: typeof LovableVisualAccessDeniedToastRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/katalog/$slug/$itemId': {
-      id: '/katalog/$slug/$itemId'
-      path: '/katalog/$slug/$itemId'
-      fullPath: '/katalog/$slug/$itemId'
-      preLoaderRoute: typeof KatalogSlugItemIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/web-vitals': {
-      id: '/api/public/web-vitals'
-      path: '/api/public/web-vitals'
-      fullPath: '/api/public/web-vitals'
-      preLoaderRoute: typeof ApiPublicWebVitalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/push-resubscribe': {
-      id: '/api/public/push-resubscribe'
-      path: '/api/public/push-resubscribe'
-      fullPath: '/api/public/push-resubscribe'
-      preLoaderRoute: typeof ApiPublicPushResubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/prep-realtime-token': {
-      id: '/api/public/prep-realtime-token'
-      path: '/api/public/prep-realtime-token'
-      fullPath: '/api/public/prep-realtime-token'
-      preLoaderRoute: typeof ApiPublicPrepRealtimeTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/apk-download-track': {
-      id: '/api/public/apk-download-track'
-      path: '/api/public/apk-download-track'
-      fullPath: '/api/public/apk-download-track'
-      preLoaderRoute: typeof ApiPublicApkDownloadTrackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/ai-ping': {
-      id: '/api/public/ai-ping'
-      path: '/api/public/ai-ping'
-      fullPath: '/api/public/ai-ping'
-      preLoaderRoute: typeof ApiPublicAiPingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/status/baru': {
-      id: '/_authenticated/status/baru'
-      path: '/status/baru'
-      fullPath: '/status/baru'
-      preLoaderRoute: typeof AuthenticatedStatusBaruRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/status/$id': {
-      id: '/_authenticated/status/$id'
-      path: '/status/$id'
-      fullPath: '/status/$id'
-      preLoaderRoute: typeof AuthenticatedStatusIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/kontak/permintaan': {
-      id: '/_authenticated/kontak/permintaan'
-      path: '/permintaan'
-      fullPath: '/kontak/permintaan'
-      preLoaderRoute: typeof AuthenticatedKontakPermintaanRouteImport
-      parentRoute: typeof AuthenticatedKontakRoute
-    }
-    '/_authenticated/kios/riwayat': {
-      id: '/_authenticated/kios/riwayat'
-      path: '/riwayat'
-      fullPath: '/kios/riwayat'
-      preLoaderRoute: typeof AuthenticatedKiosRiwayatRouteImport
-      parentRoute: typeof AuthenticatedKiosRoute
-    }
-    '/_authenticated/dev/press-audit-demo': {
-      id: '/_authenticated/dev/press-audit-demo'
-      path: '/dev/press-audit-demo'
-      fullPath: '/dev/press-audit-demo'
-      preLoaderRoute: typeof AuthenticatedDevPressAuditDemoRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/dev/press-audit-codes': {
-      id: '/_authenticated/dev/press-audit-codes'
-      path: '/dev/press-audit-codes'
-      fullPath: '/dev/press-audit-codes'
-      preLoaderRoute: typeof AuthenticatedDevPressAuditCodesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/debug/selector': {
-      id: '/_authenticated/debug/selector'
-      path: '/debug/selector'
-      fullPath: '/debug/selector'
-      preLoaderRoute: typeof AuthenticatedDebugSelectorRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/chat/$conversationId': {
-      id: '/_authenticated/chat/$conversationId'
-      path: '/$conversationId'
-      fullPath: '/chat/$conversationId'
-      preLoaderRoute: typeof AuthenticatedChatConversationIdRouteImport
-      parentRoute: typeof AuthenticatedChatRoute
-    }
-    '/_authenticated/admin/worker-portal': {
-      id: '/_authenticated/admin/worker-portal'
-      path: '/admin/worker-portal'
-      fullPath: '/admin/worker-portal'
-      preLoaderRoute: typeof AuthenticatedAdminWorkerPortalRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/admin/web-vitals': {
-      id: '/_authenticated/admin/web-vitals'
-      path: '/admin/web-vitals'
-      fullPath: '/admin/web-vitals'
-      preLoaderRoute: typeof AuthenticatedAdminWebVitalsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/admin/signup-attempts': {
-      id: '/_authenticated/admin/signup-attempts'
-      path: '/admin/signup-attempts'
-      fullPath: '/admin/signup-attempts'
-      preLoaderRoute: typeof AuthenticatedAdminSignupAttemptsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/admin/portal-error-log': {
-      id: '/_authenticated/admin/portal-error-log'
-      path: '/admin/portal-error-log'
-      fullPath: '/admin/portal-error-log'
-      preLoaderRoute: typeof AuthenticatedAdminPortalErrorLogRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/admin/email-status': {
-      id: '/_authenticated/admin/email-status'
-      path: '/admin/email-status'
-      fullPath: '/admin/email-status'
-      preLoaderRoute: typeof AuthenticatedAdminEmailStatusRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+    '/t/$token': {
+      id: '/t/$token'
+      path: '/t/$token'
+      fullPath: '/t/$token'
+      preLoaderRoute: typeof TTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.lovable/oauth/consent': {
@@ -3278,123 +2851,431 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+    '/_authenticated/admin/email-status': {
+      id: '/_authenticated/admin/email-status'
+      path: '/admin/email-status'
+      fullPath: '/admin/email-status'
+      preLoaderRoute: typeof AuthenticatedAdminEmailStatusRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/portal-error-log': {
+      id: '/_authenticated/admin/portal-error-log'
+      path: '/admin/portal-error-log'
+      fullPath: '/admin/portal-error-log'
+      preLoaderRoute: typeof AuthenticatedAdminPortalErrorLogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/signup-attempts': {
+      id: '/_authenticated/admin/signup-attempts'
+      path: '/admin/signup-attempts'
+      fullPath: '/admin/signup-attempts'
+      preLoaderRoute: typeof AuthenticatedAdminSignupAttemptsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/web-vitals': {
+      id: '/_authenticated/admin/web-vitals'
+      path: '/admin/web-vitals'
+      fullPath: '/admin/web-vitals'
+      preLoaderRoute: typeof AuthenticatedAdminWebVitalsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/worker-portal': {
+      id: '/_authenticated/admin/worker-portal'
+      path: '/admin/worker-portal'
+      fullPath: '/admin/worker-portal'
+      preLoaderRoute: typeof AuthenticatedAdminWorkerPortalRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/chat/': {
+      id: '/_authenticated/chat/'
+      path: '/'
+      fullPath: '/chat/'
+      preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
+      parentRoute: typeof AuthenticatedChatRoute
+    }
+    '/_authenticated/chat/$conversationId': {
+      id: '/_authenticated/chat/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/chat/$conversationId'
+      preLoaderRoute: typeof AuthenticatedChatConversationIdRouteImport
+      parentRoute: typeof AuthenticatedChatRoute
+    }
+    '/_authenticated/debug/selector': {
+      id: '/_authenticated/debug/selector'
+      path: '/debug/selector'
+      fullPath: '/debug/selector'
+      preLoaderRoute: typeof AuthenticatedDebugSelectorRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dev/press-audit-codes': {
+      id: '/_authenticated/dev/press-audit-codes'
+      path: '/dev/press-audit-codes'
+      fullPath: '/dev/press-audit-codes'
+      preLoaderRoute: typeof AuthenticatedDevPressAuditCodesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dev/press-audit-demo': {
+      id: '/_authenticated/dev/press-audit-demo'
+      path: '/dev/press-audit-demo'
+      fullPath: '/dev/press-audit-demo'
+      preLoaderRoute: typeof AuthenticatedDevPressAuditDemoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/kios/riwayat': {
+      id: '/_authenticated/kios/riwayat'
+      path: '/riwayat'
+      fullPath: '/kios/riwayat'
+      preLoaderRoute: typeof AuthenticatedKiosRiwayatRouteImport
+      parentRoute: typeof AuthenticatedKiosRoute
+    }
+    '/_authenticated/kontak/': {
+      id: '/_authenticated/kontak/'
+      path: '/'
+      fullPath: '/kontak/'
+      preLoaderRoute: typeof AuthenticatedKontakIndexRouteImport
+      parentRoute: typeof AuthenticatedKontakRoute
+    }
+    '/_authenticated/kontak/permintaan': {
+      id: '/_authenticated/kontak/permintaan'
+      path: '/permintaan'
+      fullPath: '/kontak/permintaan'
+      preLoaderRoute: typeof AuthenticatedKontakPermintaanRouteImport
+      parentRoute: typeof AuthenticatedKontakRoute
+    }
+    '/_authenticated/status/$id': {
+      id: '/_authenticated/status/$id'
+      path: '/status/$id'
+      fullPath: '/status/$id'
+      preLoaderRoute: typeof AuthenticatedStatusIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/status/baru': {
+      id: '/_authenticated/status/baru'
+      path: '/status/baru'
+      fullPath: '/status/baru'
+      preLoaderRoute: typeof AuthenticatedStatusBaruRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/public/ai-ping': {
+      id: '/api/public/ai-ping'
+      path: '/api/public/ai-ping'
+      fullPath: '/api/public/ai-ping'
+      preLoaderRoute: typeof ApiPublicAiPingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+    '/api/public/apk-download-track': {
+      id: '/api/public/apk-download-track'
+      path: '/api/public/apk-download-track'
+      fullPath: '/api/public/apk-download-track'
+      preLoaderRoute: typeof ApiPublicApkDownloadTrackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/auth/webhook': {
-      id: '/lovable/email/auth/webhook'
-      path: '/lovable/email/auth/webhook'
-      fullPath: '/lovable/email/auth/webhook'
-      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+    '/api/public/prep-realtime-token': {
+      id: '/api/public/prep-realtime-token'
+      path: '/api/public/prep-realtime-token'
+      fullPath: '/api/public/prep-realtime-token'
+      preLoaderRoute: typeof ApiPublicPrepRealtimeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+    '/api/public/push-resubscribe': {
+      id: '/api/public/push-resubscribe'
+      path: '/api/public/push-resubscribe'
+      fullPath: '/api/public/push-resubscribe'
+      preLoaderRoute: typeof ApiPublicPushResubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/img/og': {
-      id: '/api/public/img/og'
-      path: '/api/public/img/og'
-      fullPath: '/api/public/img/og'
-      preLoaderRoute: typeof ApiPublicImgOgRouteImport
+    '/api/public/web-vitals': {
+      id: '/api/public/web-vitals'
+      path: '/api/public/web-vitals'
+      fullPath: '/api/public/web-vitals'
+      preLoaderRoute: typeof ApiPublicWebVitalsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/img/avif': {
-      id: '/api/public/img/avif'
-      path: '/api/public/img/avif'
-      fullPath: '/api/public/img/avif'
-      preLoaderRoute: typeof ApiPublicImgAvifRouteImport
+    '/katalog/$slug/': {
+      id: '/katalog/$slug/'
+      path: '/katalog/$slug'
+      fullPath: '/katalog/$slug/'
+      preLoaderRoute: typeof KatalogSlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/web-vitals-monitor': {
-      id: '/api/public/hooks/web-vitals-monitor'
-      path: '/api/public/hooks/web-vitals-monitor'
-      fullPath: '/api/public/hooks/web-vitals-monitor'
-      preLoaderRoute: typeof ApiPublicHooksWebVitalsMonitorRouteImport
+    '/katalog/$slug/$itemId': {
+      id: '/katalog/$slug/$itemId'
+      path: '/katalog/$slug/$itemId'
+      fullPath: '/katalog/$slug/$itemId'
+      preLoaderRoute: typeof KatalogSlugItemIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/social-rescrape': {
-      id: '/api/public/hooks/social-rescrape'
-      path: '/api/public/hooks/social-rescrape'
-      fullPath: '/api/public/hooks/social-rescrape'
-      preLoaderRoute: typeof ApiPublicHooksSocialRescrapeRouteImport
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/shipment-status-change': {
-      id: '/api/public/hooks/shipment-status-change'
-      path: '/api/public/hooks/shipment-status-change'
-      fullPath: '/api/public/hooks/shipment-status-change'
-      preLoaderRoute: typeof ApiPublicHooksShipmentStatusChangeRouteImport
+    '/lovable/visual/access-denied-toast': {
+      id: '/lovable/visual/access-denied-toast'
+      path: '/lovable/visual/access-denied-toast'
+      fullPath: '/lovable/visual/access-denied-toast'
+      preLoaderRoute: typeof LovableVisualAccessDeniedToastRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/security-scan-daily': {
-      id: '/api/public/hooks/security-scan-daily'
-      path: '/api/public/hooks/security-scan-daily'
-      fullPath: '/api/public/hooks/security-scan-daily'
-      preLoaderRoute: typeof ApiPublicHooksSecurityScanDailyRouteImport
+    '/lovable/visual/admin-visibility': {
+      id: '/lovable/visual/admin-visibility'
+      path: '/lovable/visual/admin-visibility'
+      fullPath: '/lovable/visual/admin-visibility'
+      preLoaderRoute: typeof LovableVisualAdminVisibilityRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/prep-task-notify': {
-      id: '/api/public/hooks/prep-task-notify'
-      path: '/api/public/hooks/prep-task-notify'
-      fullPath: '/api/public/hooks/prep-task-notify'
-      preLoaderRoute: typeof ApiPublicHooksPrepTaskNotifyRouteImport
+    '/lovable/visual/apk-availability-shortcuts': {
+      id: '/lovable/visual/apk-availability-shortcuts'
+      path: '/lovable/visual/apk-availability-shortcuts'
+      fullPath: '/lovable/visual/apk-availability-shortcuts'
+      preLoaderRoute: typeof LovableVisualApkAvailabilityShortcutsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/prep-submit-fail': {
-      id: '/api/public/hooks/prep-submit-fail'
-      path: '/api/public/hooks/prep-submit-fail'
-      fullPath: '/api/public/hooks/prep-submit-fail'
-      preLoaderRoute: typeof ApiPublicHooksPrepSubmitFailRouteImport
+    '/lovable/visual/appearance-import': {
+      id: '/lovable/visual/appearance-import'
+      path: '/lovable/visual/appearance-import'
+      fullPath: '/lovable/visual/appearance-import'
+      preLoaderRoute: typeof LovableVisualAppearanceImportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/order-event-notify': {
-      id: '/api/public/hooks/order-event-notify'
-      path: '/api/public/hooks/order-event-notify'
-      fullPath: '/api/public/hooks/order-event-notify'
-      preLoaderRoute: typeof ApiPublicHooksOrderEventNotifyRouteImport
+    '/lovable/visual/attachment-duration-consistency': {
+      id: '/lovable/visual/attachment-duration-consistency'
+      path: '/lovable/visual/attachment-duration-consistency'
+      fullPath: '/lovable/visual/attachment-duration-consistency'
+      preLoaderRoute: typeof LovableVisualAttachmentDurationConsistencyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/log-portal-error': {
-      id: '/api/public/hooks/log-portal-error'
-      path: '/api/public/hooks/log-portal-error'
-      fullPath: '/api/public/hooks/log-portal-error'
-      preLoaderRoute: typeof ApiPublicHooksLogPortalErrorRouteImport
+    '/lovable/visual/auto-send-cancel': {
+      id: '/lovable/visual/auto-send-cancel'
+      path: '/lovable/visual/auto-send-cancel'
+      fullPath: '/lovable/visual/auto-send-cancel'
+      preLoaderRoute: typeof LovableVisualAutoSendCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/friend-notify': {
-      id: '/api/public/hooks/friend-notify'
-      path: '/api/public/hooks/friend-notify'
-      fullPath: '/api/public/hooks/friend-notify'
-      preLoaderRoute: typeof ApiPublicHooksFriendNotifyRouteImport
+    '/lovable/visual/bottom-bar-snap': {
+      id: '/lovable/visual/bottom-bar-snap'
+      path: '/lovable/visual/bottom-bar-snap'
+      fullPath: '/lovable/visual/bottom-bar-snap'
+      preLoaderRoute: typeof LovableVisualBottomBarSnapRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/email-queue-monitor': {
-      id: '/api/public/hooks/email-queue-monitor'
-      path: '/api/public/hooks/email-queue-monitor'
-      fullPath: '/api/public/hooks/email-queue-monitor'
-      preLoaderRoute: typeof ApiPublicHooksEmailQueueMonitorRouteImport
+    '/lovable/visual/call-video-stage': {
+      id: '/lovable/visual/call-video-stage'
+      path: '/lovable/visual/call-video-stage'
+      fullPath: '/lovable/visual/call-video-stage'
+      preLoaderRoute: typeof LovableVisualCallVideoStageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/chat-deleted': {
+      id: '/lovable/visual/chat-deleted'
+      path: '/lovable/visual/chat-deleted'
+      fullPath: '/lovable/visual/chat-deleted'
+      preLoaderRoute: typeof LovableVisualChatDeletedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/chat-queue-network-drop': {
+      id: '/lovable/visual/chat-queue-network-drop'
+      path: '/lovable/visual/chat-queue-network-drop'
+      fullPath: '/lovable/visual/chat-queue-network-drop'
+      preLoaderRoute: typeof LovableVisualChatQueueNetworkDropRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/debt-ssot-consistency': {
+      id: '/lovable/visual/debt-ssot-consistency'
+      path: '/lovable/visual/debt-ssot-consistency'
+      fullPath: '/lovable/visual/debt-ssot-consistency'
+      preLoaderRoute: typeof LovableVisualDebtSsotConsistencyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/delivery-history': {
+      id: '/lovable/visual/delivery-history'
+      path: '/lovable/visual/delivery-history'
+      fullPath: '/lovable/visual/delivery-history'
+      preLoaderRoute: typeof LovableVisualDeliveryHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/design-tokens': {
+      id: '/lovable/visual/design-tokens'
+      path: '/lovable/visual/design-tokens'
+      fullPath: '/lovable/visual/design-tokens'
+      preLoaderRoute: typeof LovableVisualDesignTokensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/dialog-viewport': {
+      id: '/lovable/visual/dialog-viewport'
+      path: '/lovable/visual/dialog-viewport'
+      fullPath: '/lovable/visual/dialog-viewport'
+      preLoaderRoute: typeof LovableVisualDialogViewportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/ecer-return-from-wa': {
+      id: '/lovable/visual/ecer-return-from-wa'
+      path: '/lovable/visual/ecer-return-from-wa'
+      fullPath: '/lovable/visual/ecer-return-from-wa'
+      preLoaderRoute: typeof LovableVisualEcerReturnFromWaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/focus-portal-stack': {
+      id: '/lovable/visual/focus-portal-stack'
+      path: '/lovable/visual/focus-portal-stack'
+      fullPath: '/lovable/visual/focus-portal-stack'
+      preLoaderRoute: typeof LovableVisualFocusPortalStackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/gudang-shell': {
+      id: '/lovable/visual/gudang-shell'
+      path: '/lovable/visual/gudang-shell'
+      fullPath: '/lovable/visual/gudang-shell'
+      preLoaderRoute: typeof LovableVisualGudangShellRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/karton-konversi': {
+      id: '/lovable/visual/karton-konversi'
+      path: '/lovable/visual/karton-konversi'
+      fullPath: '/lovable/visual/karton-konversi'
+      preLoaderRoute: typeof LovableVisualKartonKonversiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/kemasan-badge': {
+      id: '/lovable/visual/kemasan-badge'
+      path: '/lovable/visual/kemasan-badge'
+      fullPath: '/lovable/visual/kemasan-badge'
+      preLoaderRoute: typeof LovableVisualKemasanBadgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/komponen-review': {
+      id: '/lovable/visual/komponen-review'
+      path: '/lovable/visual/komponen-review'
+      fullPath: '/lovable/visual/komponen-review'
+      preLoaderRoute: typeof LovableVisualKomponenReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/menu-variants': {
+      id: '/lovable/visual/menu-variants'
+      path: '/lovable/visual/menu-variants'
+      fullPath: '/lovable/visual/menu-variants'
+      preLoaderRoute: typeof LovableVisualMenuVariantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/message-hidden-persist': {
+      id: '/lovable/visual/message-hidden-persist'
+      path: '/lovable/visual/message-hidden-persist'
+      fullPath: '/lovable/visual/message-hidden-persist'
+      preLoaderRoute: typeof LovableVisualMessageHiddenPersistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/message-hidden-rls': {
+      id: '/lovable/visual/message-hidden-rls'
+      path: '/lovable/visual/message-hidden-rls'
+      fullPath: '/lovable/visual/message-hidden-rls'
+      preLoaderRoute: typeof LovableVisualMessageHiddenRlsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/min-supported-form': {
+      id: '/lovable/visual/min-supported-form'
+      path: '/lovable/visual/min-supported-form'
+      fullPath: '/lovable/visual/min-supported-form'
+      preLoaderRoute: typeof LovableVisualMinSupportedFormRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/photo-editor': {
+      id: '/lovable/visual/photo-editor'
+      path: '/lovable/visual/photo-editor'
+      fullPath: '/lovable/visual/photo-editor'
+      preLoaderRoute: typeof LovableVisualPhotoEditorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/prep-loc-buttons': {
+      id: '/lovable/visual/prep-loc-buttons'
+      path: '/lovable/visual/prep-loc-buttons'
+      fullPath: '/lovable/visual/prep-loc-buttons'
+      preLoaderRoute: typeof LovableVisualPrepLocButtonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/press-audit': {
+      id: '/lovable/visual/press-audit'
+      path: '/lovable/visual/press-audit'
+      fullPath: '/lovable/visual/press-audit'
+      preLoaderRoute: typeof LovableVisualPressAuditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/press-scope': {
+      id: '/lovable/visual/press-scope'
+      path: '/lovable/visual/press-scope'
+      fullPath: '/lovable/visual/press-scope'
+      preLoaderRoute: typeof LovableVisualPressScopeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/produk-list': {
+      id: '/lovable/visual/produk-list'
+      path: '/lovable/visual/produk-list'
+      fullPath: '/lovable/visual/produk-list'
+      preLoaderRoute: typeof LovableVisualProdukListRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/ready-badges-selector': {
+      id: '/lovable/visual/ready-badges-selector'
+      path: '/lovable/visual/ready-badges-selector'
+      fullPath: '/lovable/visual/ready-badges-selector'
+      preLoaderRoute: typeof LovableVisualReadyBadgesSelectorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/tap-targets': {
+      id: '/lovable/visual/tap-targets'
+      path: '/lovable/visual/tap-targets'
+      fullPath: '/lovable/visual/tap-targets'
+      preLoaderRoute: typeof LovableVisualTapTargetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/toast-actions': {
+      id: '/lovable/visual/toast-actions'
+      path: '/lovable/visual/toast-actions'
+      fullPath: '/lovable/visual/toast-actions'
+      preLoaderRoute: typeof LovableVisualToastActionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/toast-layout': {
+      id: '/lovable/visual/toast-layout'
+      path: '/lovable/visual/toast-layout'
+      fullPath: '/lovable/visual/toast-layout'
+      preLoaderRoute: typeof LovableVisualToastLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/two-user-drafts': {
+      id: '/lovable/visual/two-user-drafts'
+      path: '/lovable/visual/two-user-drafts'
+      fullPath: '/lovable/visual/two-user-drafts'
+      preLoaderRoute: typeof LovableVisualTwoUserDraftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/voice-note-player': {
+      id: '/lovable/visual/voice-note-player'
+      path: '/lovable/visual/voice-note-player'
+      fullPath: '/lovable/visual/voice-note-player'
+      preLoaderRoute: typeof LovableVisualVoiceNotePlayerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/wa-preview-rotate': {
+      id: '/lovable/visual/wa-preview-rotate'
+      path: '/lovable/visual/wa-preview-rotate'
+      fullPath: '/lovable/visual/wa-preview-rotate'
+      preLoaderRoute: typeof LovableVisualWaPreviewRotateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/worker-shot-marksent': {
+      id: '/lovable/visual/worker-shot-marksent'
+      path: '/lovable/visual/worker-shot-marksent'
+      fullPath: '/lovable/visual/worker-shot-marksent'
+      preLoaderRoute: typeof LovableVisualWorkerShotMarksentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/gudang/pesanan/$id': {
@@ -3404,12 +3285,124 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGudangPesananIdRouteImport
       parentRoute: typeof AuthenticatedGudangRoute
     }
-    '/_authenticated/kios/riwayat/$kind/$id': {
-      id: '/_authenticated/kios/riwayat/$kind/$id'
-      path: '/$kind/$id'
-      fullPath: '/kios/riwayat/$kind/$id'
-      preLoaderRoute: typeof AuthenticatedKiosRiwayatKindIdRouteImport
-      parentRoute: typeof AuthenticatedKiosRiwayatRoute
+    '/api/public/hooks/email-queue-monitor': {
+      id: '/api/public/hooks/email-queue-monitor'
+      path: '/api/public/hooks/email-queue-monitor'
+      fullPath: '/api/public/hooks/email-queue-monitor'
+      preLoaderRoute: typeof ApiPublicHooksEmailQueueMonitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/friend-notify': {
+      id: '/api/public/hooks/friend-notify'
+      path: '/api/public/hooks/friend-notify'
+      fullPath: '/api/public/hooks/friend-notify'
+      preLoaderRoute: typeof ApiPublicHooksFriendNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/log-portal-error': {
+      id: '/api/public/hooks/log-portal-error'
+      path: '/api/public/hooks/log-portal-error'
+      fullPath: '/api/public/hooks/log-portal-error'
+      preLoaderRoute: typeof ApiPublicHooksLogPortalErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/order-event-notify': {
+      id: '/api/public/hooks/order-event-notify'
+      path: '/api/public/hooks/order-event-notify'
+      fullPath: '/api/public/hooks/order-event-notify'
+      preLoaderRoute: typeof ApiPublicHooksOrderEventNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/prep-submit-fail': {
+      id: '/api/public/hooks/prep-submit-fail'
+      path: '/api/public/hooks/prep-submit-fail'
+      fullPath: '/api/public/hooks/prep-submit-fail'
+      preLoaderRoute: typeof ApiPublicHooksPrepSubmitFailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/prep-task-notify': {
+      id: '/api/public/hooks/prep-task-notify'
+      path: '/api/public/hooks/prep-task-notify'
+      fullPath: '/api/public/hooks/prep-task-notify'
+      preLoaderRoute: typeof ApiPublicHooksPrepTaskNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/security-scan-daily': {
+      id: '/api/public/hooks/security-scan-daily'
+      path: '/api/public/hooks/security-scan-daily'
+      fullPath: '/api/public/hooks/security-scan-daily'
+      preLoaderRoute: typeof ApiPublicHooksSecurityScanDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/shipment-status-change': {
+      id: '/api/public/hooks/shipment-status-change'
+      path: '/api/public/hooks/shipment-status-change'
+      fullPath: '/api/public/hooks/shipment-status-change'
+      preLoaderRoute: typeof ApiPublicHooksShipmentStatusChangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/social-rescrape': {
+      id: '/api/public/hooks/social-rescrape'
+      path: '/api/public/hooks/social-rescrape'
+      fullPath: '/api/public/hooks/social-rescrape'
+      preLoaderRoute: typeof ApiPublicHooksSocialRescrapeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/web-vitals-monitor': {
+      id: '/api/public/hooks/web-vitals-monitor'
+      path: '/api/public/hooks/web-vitals-monitor'
+      fullPath: '/api/public/hooks/web-vitals-monitor'
+      preLoaderRoute: typeof ApiPublicHooksWebVitalsMonitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/img/avif': {
+      id: '/api/public/img/avif'
+      path: '/api/public/img/avif'
+      fullPath: '/api/public/img/avif'
+      preLoaderRoute: typeof ApiPublicImgAvifRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/img/og': {
+      id: '/api/public/img/og'
+      path: '/api/public/img/og'
+      fullPath: '/api/public/img/og'
+      preLoaderRoute: typeof ApiPublicImgOgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/gudang/pesanan/$id/edit': {
       id: '/_authenticated/gudang/pesanan/$id/edit'
@@ -3417,6 +3410,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/gudang/pesanan/$id/edit'
       preLoaderRoute: typeof AuthenticatedGudangPesananIdEditRouteImport
       parentRoute: typeof AuthenticatedGudangPesananIdRoute
+    }
+    '/_authenticated/kios/riwayat/$kind/$id': {
+      id: '/_authenticated/kios/riwayat/$kind/$id'
+      path: '/$kind/$id'
+      fullPath: '/kios/riwayat/$kind/$id'
+      preLoaderRoute: typeof AuthenticatedKiosRiwayatKindIdRouteImport
+      parentRoute: typeof AuthenticatedKiosRiwayatRoute
     }
   }
 }
