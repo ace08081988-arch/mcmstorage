@@ -4272,7 +4272,7 @@ html[data-app-installed="1"] body {
  * yang sama walau komponennya tidak memakai utility `depth-3d` secara
  * eksplisit. `:where()` = spesifisitas 0, jadi `shadow-*`/`depth-*` lokal
  * tetap menang bila sebuah komponen ingin tampilan lain. */
-:where(.bg-card, .bg-popover, .bg-sidebar, .bg-muted\/40, .bg-background\/80) {
+:where([class*="bg-card"][class*="rounded"], [class*="bg-popover"][class*="rounded"], [class*="bg-sidebar"][class*="rounded"], [class*="bg-secondary"][class*="rounded"], [class*="bg-muted"][class*="rounded"]) {
   box-shadow:
     inset 0 1px 0 0 var(--d3-light),
     0 1px 1px -0.5px color-mix(in oklab, var(--d3-dark) calc(60% * var(--d3-strength)), transparent),
