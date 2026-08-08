@@ -15,7 +15,26 @@ else
     echo "   Panduan: docs/dependency-lockfile.md"
     exit 1
   fi
-  node scripts/check-text-lockfile.mjs
+  # Auto-perbaiki: kalau format lockfile belum sesuai, jalankan fix:lockfile lalu
+  # ikutkan hasilnya ke commit ini (lewati dengan SKIP_LOCKFILE_FIX=1).
+  if node scripts/check-text-lockfile.mjs; then
+    :
+  elif [ "$SKIP_LOCKFILE_FIX" = "1" ]; then
+    echo "❌ Lockfile belum sesuai dan auto-fix dilewati (SKIP_LOCKFILE_FIX=1)."
+    echo "   Jalankan: bun run fix:lockfile"
+    exit 1
+  else
+    echo "⚙️  Lockfile belum sesuai — menjalankan \`bun run fix:lockfile\`…"
+    node scripts/fix-lockfile.mjs || {
+      echo "❌ Auto-fix lockfile gagal. Perbaiki manual lalu commit ulang."
+      exit 1
+    }
+    for f in bun.lock bunfig.toml; do
+      [ -f "$f" ] && git add "$f"
+    done
+    git rm --cached -q bun.lockb 2>/dev/null || true
+    echo "✅ Lockfile diperbaiki dan ditambahkan ke commit ini."
+  fi
 fi
 
 # 2) Audit tag head.
