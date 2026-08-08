@@ -27,7 +27,7 @@ import {
 import { displayUnit } from "@/lib/unit-label";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
-import { countActiveByTitle, countActivePreps, withActivePrepsFilter } from "@/lib/prep-active-selector";
+import { countActiveByTitle, countActivePreps, isSentPrep, withActivePrepsFilter } from "@/lib/prep-active-selector";
 import { measureQuery, QueryMetricNames } from "@/lib/query-metrics";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -89,7 +89,7 @@ export function ReadyRequestSection() {
 
     // Rincian produk per paket terkirim (urut terbaru).
     const sent = preps
-      .filter((p) => !!p.sold_at)
+      .filter((p) => isSentPrep(p))
       .sort((a, b) => (b.sold_at ?? "").localeCompare(a.sold_at ?? ""));
     if (sent.length === 0) {
       setPendingSentHistory([]);
