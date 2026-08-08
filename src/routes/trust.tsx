@@ -52,7 +52,7 @@ function TrustPage() {
   return (
     <div className="min-h-screen bg-background">
     <PublicHeader />
-    <main className="mx-auto max-w-3xl px-ms-4 py-10">
+    <main id="konten-utama" tabIndex={-1} className="mx-auto max-w-3xl px-ms-4 py-10">
       <header className="mb-6">
         <h1 className="text-ms-3xl font-extrabold tracking-tight text-foreground">
           Trust &amp; Privacy

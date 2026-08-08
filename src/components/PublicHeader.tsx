@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useOrgName } from "@/lib/org-name";
+import { SkipToContent } from "@/components/SkipToContent";
 
 const NAV = [
   { to: "/produk", label: "Produk" },
@@ -19,6 +20,7 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
       className="app-safe-top app-safe-x sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
       style={{ borderBottomColor: "var(--primary)" }}
     >
+      <SkipToContent />
       <div
         className={`mx-auto flex max-w-3xl items-center gap-ms-2 px-ms-4 ${
           compact ? "py-ms-2" : "py-ms-3"

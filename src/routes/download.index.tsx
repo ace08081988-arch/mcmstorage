@@ -339,7 +339,7 @@ function DownloadPage() {
   return (
     <div data-dl-page className="flex min-h-dvh flex-col bg-background text-foreground">
       <PublicHeader />
-      <main className="mx-auto w-full max-w-md flex-1 px-ms-4 py-8">
+      <main id="konten-utama" tabIndex={-1} className="mx-auto w-full max-w-md flex-1 px-ms-4 py-8">
         <div className="readable-panel flex flex-col gap-ms-4 p-ms-4">
         <div className="text-center">
           <h1 className="text-ms-base font-semibold tracking-tight">Unduh APK</h1>

@@ -59,7 +59,7 @@ function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PublicHeader />
-      <main className="flex flex-1 items-center justify-center px-ms-4">
+      <main id="konten-utama" tabIndex={-1} className="flex flex-1 items-center justify-center px-ms-4">
       <div className="w-full max-w-sm space-ms-6 rounded-2xl border bg-card p-ms-6 shadow-sm">
         <div className="text-center">
           <h1 className="text-ms-lg font-semibold tracking-tight">Atur ulang kata sandi</h1>

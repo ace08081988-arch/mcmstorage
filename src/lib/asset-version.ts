@@ -10,7 +10,7 @@
  * Cara pakai: setiap kali mengganti file di `public/` (logo, kartu OG, ikon),
  * naikkan `BRAND_ASSET_VERSION` ke tanggal rilis (format YYYYMMDD).
  */
-export const BRAND_ASSET_VERSION = "20260807";
+export const BRAND_ASSET_VERSION = "20260808";
 
 /** Buang query/hash yang sudah ada supaya versi tidak bertumpuk. */
 export function stripAssetQuery(url: string): string {

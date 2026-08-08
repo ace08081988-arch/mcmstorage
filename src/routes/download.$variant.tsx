@@ -74,7 +74,7 @@ function DetailPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PublicHeader />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-ms-4 px-ms-4 py-ms-6">
+      <main id="konten-utama" tabIndex={-1} className="mx-auto flex w-full max-w-md flex-1 flex-col gap-ms-4 px-ms-4 py-ms-6">
         <Link
           to="/download"
           className="inline-flex w-fit items-center gap-ms-1 text-ms-xs text-muted-foreground hover:text-foreground"
