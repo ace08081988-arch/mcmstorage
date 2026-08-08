@@ -42,8 +42,15 @@ Aktifkan hook dengan `bun run hooks:install` (otomatis lewat `prepare` saat
 `bun install`).
 
 Workflow **Lockfile Format** (`.github/workflows/lockfile-format.yml`) menjalankan
-`bun run check:lockfile` pada setiap PR ke `main` (dan push ke `main`) sebagai
-status check tersendiri bernama **check:lockfile (format lockfile teks)**.
+pada setiap PR ke `main` (dan push ke `main`), sebagai status check tersendiri
+bernama **check:lockfile (format lockfile teks)**:
+
+1. `bun run check:lockfile` — validasi format.
+2. `bun run fix:lockfile` — regenerasi lockfile di runner.
+3. `git diff -- bun.lock bunfig.toml` — build **gagal** kalau hasil regenerasi
+   berbeda dari yang di-commit (lockfile tidak sinkron dengan `package.json`).
+   Diff-nya ditampilkan di job summary.
+
 Kalau gagal, job summary menampilkan output pemeriksaan plus perintah perbaikan
 (`bun run fix:lockfile`). Jadikan check ini required di branch protection agar PR
 dengan lockfile biner tidak bisa di-merge.
