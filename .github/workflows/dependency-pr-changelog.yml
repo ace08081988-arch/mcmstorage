@@ -60,7 +60,32 @@ jobs:
             --audit-before audit-before.json \
             --audit-after audit-after.json \
             --out dep-changelog.md \
-            --labels-out dep-labels.txt
+            --labels-out dep-labels.txt \
+            --slack-out slack-payload.json \
+            --pr-url "${{ github.event.pull_request.html_url }}" \
+            --pr-title "${{ github.event.pull_request.title }}"
+
+      # Notifikasi Slack hanya saat PR benar-benar menutup advisory keamanan.
+      # Butuh repo secret SLACK_WEBHOOK_URL (Slack Incoming Webhook); tanpa itu step di-skip.
+      - name: Notifikasi Slack (security fix)
+        if: github.event_name == 'pull_request'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ ! -f slack-payload.json ]; then
+            echo "Tidak ada security fix baru — notifikasi Slack dilewati."
+            exit 0
+          fi
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+            echo "::notice::SLACK_WEBHOOK_URL belum diset, notifikasi Slack dilewati."
+            exit 0
+          fi
+          code="$(curl -sS -o /tmp/slack-res.txt -w '%{http_code}' \
+            -X POST -H 'Content-Type: application/json' \
+            --data @slack-payload.json "$SLACK_WEBHOOK_URL")"
+          echo "Slack HTTP $code: $(cat /tmp/slack-res.txt)"
+          [ "$code" = "200" ] || echo "::warning::Gagal kirim notifikasi Slack (HTTP $code)."
 
       - name: Komentari PR
         if: github.event_name == 'pull_request'
