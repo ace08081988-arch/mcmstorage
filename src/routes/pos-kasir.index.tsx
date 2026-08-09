@@ -1504,7 +1504,7 @@ function PosKasirPage() {
         {/* Bilah aksi saat keyboard terbuka: total + Bayar tetap terlihat
             di atas keyboard sehingga user tak perlu menutup keyboard dulu. */}
         {keyboardInset > 0 && (
-          <div className="app-keyboard-action-bar md:hidden border-t border-border bg-background/95 backdrop-blur px-ms-3 py-ms-2 shadow-2xl">
+          <div className="app-keyboard-action-bar md:hidden border-t border-border bg-background/95 backdrop-blur px-ms-3 py-ms-2.5 shadow-2xl">
             <div className="flex items-center gap-ms-3">
               <div className="min-w-0 flex-1">
                 <p className="text-ms-2xs text-muted-foreground truncate">
@@ -1517,7 +1517,7 @@ function PosKasirPage() {
                 onClick={() => {
                   (document.activeElement as HTMLElement | null)?.blur?.();
                 }}
-                className="shrink-0 rounded-lg border border-border bg-card px-ms-3 py-ms-2 text-ms-xs font-semibold text-muted-foreground"
+                className="app-hit-area shrink-0 min-h-12 rounded-lg border border-border bg-card px-ms-4 py-ms-2 text-ms-xs font-semibold text-muted-foreground"
               >
                 Selesai
               </button>
@@ -1525,7 +1525,7 @@ function PosKasirPage() {
                 type="button"
                 onClick={bayar}
                 disabled={!bayarSiap}
-                className="shrink-0 rounded-lg bg-success px-ms-4 py-ms-2 text-ms-sm font-bold text-success-foreground shadow-lg shadow-success/30 disabled:bg-muted disabled:text-muted-foreground"
+                className="app-hit-area shrink-0 min-h-12 rounded-lg bg-success px-ms-5 py-ms-2 text-ms-sm font-bold text-success-foreground shadow-lg shadow-success/30 disabled:bg-muted disabled:text-muted-foreground"
               >
                 💳 Bayar
               </button>

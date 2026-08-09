@@ -2390,6 +2390,16 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
   /* Ruang spacer otomatis: 0px selama tidak ada bar bawah terpasang.
      Diisi tinggi nyata oleh use-bottom-nav-height.ts saat bar mount. */
   --app-bottom-bar-space: 0px;
+  /* Jarak baku elemen mengambang (FAB, action bar) ke tepi layar / bilah
+     bawah. Sedikit lebih lega di HP kecil supaya tidak menabrak gesture
+     bar dan lebih mudah disentuh dengan ibu jari. */
+  --app-fab-gap: 1rem;
+}
+
+@media (max-width: 400px) {
+  :root {
+    --app-fab-gap: 1.125rem;
+  }
 }
 
 /* Spacer otomatis untuk konten halaman: menyesuaikan sendiri dengan ada /
@@ -2415,7 +2425,7 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
     max(
       var(--app-bottom-bar-space, 0px),
       var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
-    ) + var(--app-keyboard-inset, 0px) + 0.75rem
+    ) + var(--app-keyboard-inset, 0px) + var(--app-fab-gap, 1rem)
   );
 }
 
@@ -2424,7 +2434,7 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
     max(
       var(--app-bottom-bar-space, 0px),
       var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
-    ) + var(--app-keyboard-inset, 0px) + 4.75rem
+    ) + var(--app-keyboard-inset, 0px) + var(--app-fab-gap, 1rem) + 4.25rem
   );
 }
 
@@ -2449,8 +2459,28 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
 
 @utility app-fab-right {
   right: calc(
-    var(--app-safe-right, env(safe-area-inset-right, 0px)) + 0.75rem
+    var(--app-safe-right, env(safe-area-inset-right, 0px)) +
+      var(--app-fab-gap, 1rem)
   );
+}
+
+/* Hit area minimum 48px (WCAG 2.5.8 / Material) tanpa mengubah ukuran
+   visual tombol: area sentuh diperluas lewat pseudo-element transparan.
+   Dipakai untuk FAB kecil & item action bar di HP kecil. */
+@utility app-hit-area {
+  position: relative;
+  touch-action: manipulation;
+}
+
+.app-hit-area::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 48px);
+  height: max(100%, 48px);
+  transform: translate(-50%, -50%);
+  border-radius: inherit;
 }
 
 /* Panel mengambang non-kritis (mis. ajakan notifikasi) disembunyikan saat

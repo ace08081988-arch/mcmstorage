@@ -171,13 +171,13 @@ export function AddContactFab() {
         // FAB selalu duduk rapi di atas nav tanpa menghitung safe-area
         // dua kali. Fallback menambahkan safe-area agar tetap aman bila
         // container tidak menyetel variabelnya.
-        className="fixed app-fab-right z-[var(--z-fab)] grid h-11 w-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95 min-[400px]:h-12 min-[400px]:w-12"
+        className="app-hit-area fixed app-fab-right z-[var(--z-fab)] grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95 min-[400px]:h-14 min-[400px]:w-14"
         style={{
           bottom:
-            "calc(max(var(--chat-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom,env(safe-area-inset-bottom,0px))) + 0.75rem)",
+            "calc(max(var(--chat-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom,env(safe-area-inset-bottom,0px))) + var(--app-keyboard-inset, 0px) + var(--app-fab-gap, 1rem))",
         }}
       >
-        <Plus className="h-5 w-5" />
+        <Plus className="h-5 w-5 min-[400px]:h-6 min-[400px]:w-6" />
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
