@@ -66,6 +66,7 @@ const SMOOTH_OPTIONS = [
 
 const SMOOTH_KEY = "app-scroll-perf-smooth";
 const SMOOTH_METHOD_KEY = "app-scroll-perf-smooth-method";
+const CSV_COLUMNS_KEY = "app-scroll-perf-csv-columns";
 
 const SPIKE_KEY = "app-scroll-perf-spike";
 
