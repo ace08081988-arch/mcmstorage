@@ -154,7 +154,9 @@ function PosKasirRingkasanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground p-ms-4 md:p-8">
+    <div
+      className="min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground p-ms-4 md:p-8" style={{ paddingTop: "calc(var(--app-safe-top, 0px) + 1rem)", paddingLeft: "calc(var(--app-safe-left, 0px) + 1rem)", paddingRight: "calc(var(--app-safe-right, 0px) + 1rem)" }}
+    >
       <div className="mx-auto max-w-6xl">
         <header className="mb-6 flex flex-col gap-ms-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -82,8 +82,14 @@ function BottomBarSnapHarness() {
         data-loading={loading ? "true" : "false"}
         data-streaming={streaming ? "true" : "false"}
         className="min-h-screen w-full bg-background text-foreground app-bottom-spacer"
+        style={{
+          paddingLeft: "var(--app-safe-left, 0px)",
+          paddingRight: "var(--app-safe-right, 0px)",
+        }}
       >
-        <header className="app-sticky-header p-ms-4">
+        <header
+          className="app-sticky-header p-ms-4" style={{ paddingTop: "calc(var(--app-safe-top, 0px) + 1rem)", paddingLeft: "calc(var(--app-safe-left, 0px) + 1rem)", paddingRight: "calc(var(--app-safe-right, 0px) + 1rem)" }}
+        >
           <h1 className="text-ms-lg font-bold">Audit Bilah Bawah</h1>
           <p data-testid="page-label" className="text-ms-xs text-muted-foreground">
             Halaman {page} · {total} baris
