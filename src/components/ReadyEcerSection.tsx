@@ -120,6 +120,9 @@ export function ReadyEcerSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [syncing, setSyncing] = useState(false);
+  // Kiriman pegawai yang tidak cocok dengan judul Ecer manapun. Sebelumnya
+  // dilewati diam-diam sehingga admin mengira pegawai belum mengirim.
+  const [unmatched, setUnmatched] = useState<{ count: number; names: string[] }>({ count: 0, names: [] });
   // Cross-tab sync banner: 'pending' while applying, 'synced' briefly after.
   const [crossTabSync, setCrossTabSync] = useState<null | { status: "pending" | "synced"; id: string | null }>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
