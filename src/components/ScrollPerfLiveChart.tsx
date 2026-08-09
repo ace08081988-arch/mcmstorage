@@ -406,7 +406,22 @@ export function ScrollPerfLiveChart() {
               strokeDasharray="3 3"
               strokeWidth={1}
             />
-            <path d={path(series.fps, 120, W, H)} className="stroke-emerald-500" fill="none" strokeWidth={1.5} />
+            <path
+              d={path(series.fps, 120, W, H)}
+              className={smoothing ? "stroke-emerald-500/30" : "stroke-emerald-500"}
+              fill="none"
+              strokeWidth={1.5}
+            />
+            {smoothing ? (
+              <path
+                d={path(fpsSmooth, 120, W, H)}
+                className="stroke-emerald-500"
+                fill="none"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            ) : null}
             {crosshair}
             {hover !== null ? (
               <circle
@@ -457,10 +472,20 @@ export function ScrollPerfLiveChart() {
                   y={H - Math.min(1, v / latMax) * H}
                   width={Math.max(1.5, step * 0.8)}
                   height={Math.min(1, v / latMax) * H}
-                  className={v > 40 ? "fill-red-500" : v > 20 ? "fill-amber-500" : "fill-sky-500"}
+                  className={`${v > 40 ? "fill-red-500" : v > 20 ? "fill-amber-500" : "fill-sky-500"} ${smoothing ? "opacity-40" : ""}`}
                 />
               ) : null,
             )}
+            {smoothing ? (
+              <path
+                d={path(latSmooth, latMax, W, H)}
+                className="stroke-sky-500"
+                fill="none"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            ) : null}
             {crosshair}
           </svg>
         </div>
