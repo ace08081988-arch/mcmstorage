@@ -85,45 +85,50 @@ function ProdukPage() {
   return (
     <div className="min-h-app-vh bg-background">
       <PublicHeader />
-      <main id="konten-utama" tabIndex={-1} className="app-safe-x mx-auto max-w-3xl px-ms-4 py-10">
-        <section className="lux-plate px-ms-5 py-ms-6 text-center shadow-[0_24px_50px_-30px_rgba(0,0,0,0.6)]">
+      <main id="konten-utama" tabIndex={-1} className="app-safe-x mx-auto max-w-6xl px-ms-4 py-10">
+        {/* Hero: satu kolom terpusat di HP, dua kolom di ≥lg supaya layar
+            desktop tidak menyisakan pita kosong lebar di kiri-kanan. */}
+        <section className="lux-plate px-ms-5 py-ms-6 shadow-[0_24px_50px_-30px_rgba(0,0,0,0.6)] sm:px-ms-6 lg:px-ms-8 lg:py-ms-8">
           <div className="lux-plate-sheen" aria-hidden="true" />
-          <div className="relative">
-            <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-ms-2.5 py-1 text-ms-2xs font-bold uppercase leading-none tracking-[0.2em] text-primary-foreground/85 backdrop-blur-sm">
-              Ace Storage
-            </span>
-            <h1 className="mt-ms-3 text-ms-3xl font-extrabold leading-tight tracking-tight">
-              Jalankan seluruh toko Anda dari satu aplikasi
-            </h1>
-            <p className="mx-auto mt-3 max-w-xl text-ms-base text-primary-foreground/85">
-              Ace Storage menyatukan kasir, stok gudang, penyiapan pesanan pegawai,
-              dan catatan hutang-piutang pelanggan — semuanya bisa dijalankan dari
-              HP dan dikirim ke pelanggan lewat WhatsApp.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-ms-3">
-              <Button asChild size="lg" variant="secondary" className="rounded-full px-ms-5 font-semibold shadow-sm">
-                <Link to="/auth">Coba gratis</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="rounded-full border-primary-foreground/35 bg-transparent px-ms-5 font-semibold text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-              >
-                <Link to="/download">Unduh aplikasi</Link>
-              </Button>
+          <div className="relative grid items-center gap-ms-6 text-center lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-ms-8 lg:text-left">
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-ms-1.5 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-ms-2.5 py-1 text-ms-2xs font-bold uppercase leading-none tracking-[0.2em] text-primary-foreground/85 backdrop-blur-sm">
+                Ace Storage
+              </span>
+              <h1 className="mt-ms-3 text-ms-3xl font-extrabold leading-tight tracking-tight text-balance">
+                Jalankan seluruh toko Anda dari satu aplikasi
+              </h1>
+              <p className="mx-auto mt-3 max-w-xl text-ms-base text-primary-foreground/85 lg:mx-0">
+                Ace Storage menyatukan kasir, stok gudang, penyiapan pesanan pegawai,
+                dan catatan hutang-piutang pelanggan — semuanya bisa dijalankan dari
+                HP dan dikirim ke pelanggan lewat WhatsApp.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-ms-3 lg:justify-start">
+                <Button asChild size="lg" variant="secondary" className="rounded-full px-ms-5 font-semibold shadow-sm">
+                  <Link to="/auth">Coba gratis</Link>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="rounded-full border-primary-foreground/35 bg-transparent px-ms-5 font-semibold text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                >
+                  <Link to="/download">Unduh aplikasi</Link>
+                </Button>
+              </div>
+              <p className="mt-3 text-ms-xs text-primary-foreground/75">
+                Semua fitur tersedia gratis untuk saat ini.
+              </p>
+              <ul className="mx-auto mt-5 flex max-w-md flex-wrap items-center justify-center gap-x-4 gap-y-2 text-ms-2xs font-medium text-primary-foreground/80 lg:mx-0 lg:justify-start">
+                {HERO_POINTS.map((h) => (
+                  <li key={h} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {h}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p className="mt-3 text-ms-xs text-primary-foreground/75">
-              Semua fitur tersedia gratis untuk saat ini.
-            </p>
-            <ul className="mx-auto mt-5 flex max-w-md flex-wrap items-center justify-center gap-x-4 gap-y-2 text-ms-2xs font-medium text-primary-foreground/80">
-              {HERO_POINTS.map((h) => (
-                <li key={h} className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  {h}
-                </li>
-              ))}
-            </ul>
+            <HeroFlow />
           </div>
         </section>
 
@@ -133,7 +138,7 @@ function ProdukPage() {
             Apa yang bisa Anda lakukan
           </h2>
           <div className="lux-hairline mt-ms-3" aria-hidden="true" />
-          <div className="mt-4 grid gap-ms-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-ms-3 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <article
                 key={f.title}
@@ -151,10 +156,10 @@ function ProdukPage() {
           </div>
         </section>
 
-        <section className="lux-card mt-10 p-ms-5">
+        <section className="lux-card mt-10 p-ms-5 lg:p-ms-6">
           <p className="lux-eyebrow">Target pengguna</p>
           <h2 className="mt-1.5 text-ms-lg font-semibold text-foreground">Cocok untuk siapa</h2>
-          <ul className="mt-3 space-ms-2 text-ms-sm text-muted-foreground">
+          <ul className="mt-3 grid gap-ms-2 text-ms-sm text-muted-foreground lg:grid-cols-2 lg:gap-x-ms-6">
             {AUDIENCE.map((a) => (
               <li key={a} className="flex items-start gap-ms-2">
                 <CheckCircle2
