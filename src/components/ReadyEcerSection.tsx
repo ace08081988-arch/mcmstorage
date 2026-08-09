@@ -440,9 +440,20 @@ export function ReadyEcerSection() {
 
   useEffect(() => {
     void load();
-    const bump = async () => {
+    // Beberapa foto yang diunggah beruntun menghasilkan banyak event dalam
+    // hitungan detik. Tanpa jeda, seluruh pemuatan (5 tabel + URL foto)
+    // diulang untuk tiap event dan layar terasa berat.
+    let bumpTimer: number | undefined;
+    let bumpRunning = false;
+    const runBump = async () => {
+      if (bumpRunning) return;
+      bumpRunning = true;
       setSyncing(true);
-      try { await load(); } finally { setSyncing(false); }
+      try { await load(); } finally { setSyncing(false); bumpRunning = false; }
+    };
+    const bump = () => {
+      if (bumpTimer) window.clearTimeout(bumpTimer);
+      bumpTimer = window.setTimeout(() => { void runBump(); }, 700);
     };
     const ch = supabase
       .channel("ready-ecer:prep_submissions")
@@ -455,7 +466,10 @@ export function ReadyEcerSection() {
         else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRealtimeStatus("offline");
         else setRealtimeStatus("connecting");
       });
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      if (bumpTimer) window.clearTimeout(bumpTimer);
+      supabase.removeChannel(ch);
+    };
   }, []);
 
   const q = query.trim().toLowerCase();
