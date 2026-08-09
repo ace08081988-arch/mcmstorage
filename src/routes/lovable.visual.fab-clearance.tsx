@@ -84,7 +84,8 @@ function FabClearanceHarness() {
           data-clearance="fab"
           data-testid="fab-tambah"
           aria-label="Tambah data"
-          className="depth-3d fixed z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
+          data-floating-ui="fab"
+          className="depth-3d fixed z-fab flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
           style={{
             bottom: SAFE_BOTTOM,
             right: "calc(var(--app-safe-right, 0px) + 1rem)",
@@ -98,7 +99,8 @@ function FabClearanceHarness() {
           <div
             data-clearance="action-bar"
             data-testid="action-bar"
-            className="fixed z-30 flex items-center gap-ms-2 rounded-xl border border-border bg-card p-ms-2 shadow-lg"
+            data-floating-ui="fab"
+            className="fixed z-fab flex items-center gap-ms-2 rounded-xl border border-border bg-card p-ms-2 shadow-lg"
             style={{
               bottom: SAFE_BOTTOM,
               left: "calc(var(--app-safe-left, 0px) + 1rem)",

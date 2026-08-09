@@ -75,7 +75,7 @@ export function ChatModeSplash() {
       aria-label="Memuat Ace Chat"
       aria-hidden={fading || undefined}
       className={
-        "fixed inset-0 z-[100] flex flex-col items-center justify-center transition-opacity ease-out motion-reduce:transition-none " +
+        "fixed inset-0 z-fullscreen flex flex-col items-center justify-center transition-opacity ease-out motion-reduce:transition-none " +
         (fading ? "opacity-0 pointer-events-none" : "opacity-100")
       }
       style={{

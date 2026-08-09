@@ -20,7 +20,7 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-overlay bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -46,7 +46,7 @@ const AlertDialogContent = React.forwardRef<
         className={cn(
         // Struktur sama dengan `dialog.tsx`: kolom flex, judul menempel di
         // atas, tombol menempel di bawah, hanya isi yang menggulir.
-        "group/alert fixed left-[50%] top-[50%] z-50 flex w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-4 rounded-lg border bg-background p-4 depth-3d-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:w-full sm:p-6",
+        "group/alert fixed left-[50%] top-[50%] z-overlay flex w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-4 rounded-lg border bg-background p-4 depth-3d-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:w-full sm:p-6",
         // Bisa digulir saat keyboard muncul; fokus tidak tersembunyi di balik tepi.
         "max-h-[calc(var(--app-vh-visible,var(--app-vh,100dvh))-max(var(--app-safe-top,var(--app-safe-top,env(safe-area-inset-top,0px))),1rem)-max(var(--app-safe-bottom,var(--app-safe-bottom,env(safe-area-inset-bottom,0px))),1rem))] overflow-y-auto overscroll-contain scroll-pt-20 scroll-pb-6 focus:outline-none",
         className,

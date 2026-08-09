@@ -1010,7 +1010,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
       role="dialog"
       aria-modal="true"
       aria-label="Editor foto"
-      className="fixed inset-0 z-50 flex flex-col text-foreground"
+      className="fixed inset-0 z-fullscreen flex flex-col text-foreground"
       style={{
         background:
           "radial-gradient(120% 80% at 50% 0%, #1a1a1a 0%, #0d0d0d 55%, #050505 100%)",

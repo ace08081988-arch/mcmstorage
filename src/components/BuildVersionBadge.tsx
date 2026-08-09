@@ -81,7 +81,7 @@ export function BuildVersionBadge() {
 
   return (
     <div
-      className="pointer-events-none fixed app-fab-left app-fab-bottom z-[9999] flex flex-col items-start gap-ms-1"
+      className="pointer-events-none fixed app-fab-left app-fab-bottom z-[var(--z-build-badge)] flex flex-col items-start gap-ms-1"
       data-no-press
     >
       {stale && (

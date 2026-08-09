@@ -1427,7 +1427,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
       role="dialog"
       aria-modal="true"
       aria-label="Layar panggilan"
-      className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
+      className="fixed inset-0 z-fullscreen flex flex-col bg-black text-white"
       onPointerDown={resumePlayback}
     >
       {/* Remote video / avatar besar */}

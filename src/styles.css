@@ -2266,16 +2266,51 @@ html[data-reduce-motion="on"] .skeleton-a11y {
    Skala z-index aplikasi (satu sumber kebenaran)
    ------------------------------------------------------------------
    Urutan dari bawah ke atas:
-     konten (0) < FAB (44) < bottom nav (45) < dialog/sheet (50)
+     konten (0) < header lengket (30) < FAB / prompt melayang (44)
+     < bottom nav (45) < dialog & overlay (50) < sheet/drawer (55)
+     < layar penuh, mis. editor foto & panggilan (100)
      < toast & notifikasi (9998) < badge build (9999)
    Bottom nav sengaja DI ATAS FAB dan konten supaya tidak pernah
    tertutup, tapi DI BAWAH dialog/toast agar tidak menutupi pesan.
+   Sheet/drawer sedikit DI ATAS dialog supaya sheet yang dibuka dari
+   dalam dialog tidak tenggelam di belakangnya.
+
+   Pakai token ini (`z-[var(--z-…)]`) — jangan tulis `z-[70]`, `z-50`,
+   dsb. secara ad-hoc, karena itulah sumber tumpang tindih sebelumnya.
 */
 :root {
+  --z-sticky-header: 30;
   --z-fab: 44;
   --z-bottom-nav: 45;
   --z-overlay: 50;
+  --z-sheet: 55;
+  --z-fullscreen: 100;
   --z-toast: 9998;
+  --z-build-badge: 9999;
+}
+
+/* Elemen melayang non-modal (FAB, prompt izin, chip status) — selalu di
+   bawah dialog/sheet supaya tidak menembus overlay di layar kecil. */
+@utility z-fab {
+  z-index: var(--z-fab);
+}
+@utility z-overlay {
+  z-index: var(--z-overlay);
+}
+@utility z-sheet {
+  z-index: var(--z-sheet);
+}
+@utility z-fullscreen {
+  z-index: var(--z-fullscreen);
+}
+
+/* Saat ada dialog/sheet terbuka, elemen melayang non-modal disembunyikan
+   dari interaksi supaya tidak "menempel" di atas overlay di HP kecil. */
+body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
+  [data-floating-ui="fab"] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
 }
 
 /* ------------------------------------------------------------------
@@ -2290,7 +2325,7 @@ html[data-reduce-motion="on"] .skeleton-a11y {
 @utility app-sticky-header {
   position: sticky;
   top: 0;
-  z-index: 30;
+  z-index: var(--z-sticky-header);
   border-bottom: 1px solid color-mix(in oklab, var(--primary) 15%, transparent);
   /* Solid: header transparan membuat konten yang menggulir "tembus" dan
      terlihat seperti judul dobel di perangkat tanpa backdrop-filter. */
@@ -2412,9 +2447,35 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   }
 }
 
-/* Toast Sonner selalu di atas bar bawah, dan menghormati safe area. */
+/* Toast Sonner selalu di atas bar bawah, dan menghormati safe area.
+   Offset bawah mengikuti tinggi bilah bawah + gesture bar supaya toast
+   tidak menutupi bilah navigasi maupun tombol aksi dialog di HP kecil. */
 [data-sonner-toaster] {
   z-index: var(--z-toast) !important;
+}
+[data-sonner-toaster][data-y-position="bottom"] {
+  --offset-bottom: calc(
+    max(
+      var(--app-bottom-bar-space, 0px),
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    ) + 0.75rem
+  );
+}
+[data-sonner-toaster][data-y-position="top"] {
+  --offset-top: calc(
+    var(--app-safe-top, env(safe-area-inset-top, 0px)) + 0.75rem
+  );
+}
+/* Saat dialog/sheet terbuka, toast pindah ke atas layar: di HP kecil
+   toast bawah menutupi footer dialog (tombol Simpan/Batal). */
+body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
+  [data-sonner-toaster][data-y-position="bottom"] {
+  --offset-bottom: calc(
+    max(
+      var(--app-bottom-bar-space, 0px),
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    ) + 5.5rem
+  );
 }
 
 /* ------------------------------------------------------------------
