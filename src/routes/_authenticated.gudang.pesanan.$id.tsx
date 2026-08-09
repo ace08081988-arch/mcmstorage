@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { confirm } from "@/lib/confirm";
 import { fmtItemQty } from "@/lib/stock-format";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ProcessOrderDialog } from "@/components/ProcessOrderDialog";
+import { processOrder } from "@/lib/order-process";
+import type { PaymentMethod } from "@/lib/payment-summary";
 
 export const Route = createFileRoute("/_authenticated/gudang/pesanan/$id")({
   component: PesananDetailPage,
@@ -50,6 +53,7 @@ function PesananDetailPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -75,6 +79,10 @@ function PesananDetailPage() {
 
   async function setStatus(to: Order["status"]) {
     if (!order) return;
+    if (order.status === "selesai") {
+      toast.error("Pesanan sudah selesai — status tidak bisa diubah lagi.");
+      return;
+    }
     setBusy(true);
     const { error } = await supabase.from("order_requests").update({ status: to }).eq("id", order.id);
     setBusy(false);
