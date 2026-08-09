@@ -182,12 +182,30 @@ export function useVisualViewportBox(): VisualViewportBox | null {
  * footer & isinya terpotong. Karena itu titik pusat dijepit supaya seluruh
  * kartu tetap berada di dalam layout viewport.
  */
+/** Baca inset aman nyata (notch / gesture bar) dari CSS variable global. */
+function readSafeInsets(): { top: number; bottom: number } {
+  if (typeof document === "undefined") return { top: 0, bottom: 0 };
+  const cs = getComputedStyle(document.documentElement);
+  const num = (v: string) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+  return {
+    top: num(cs.getPropertyValue("--app-safe-top")),
+    bottom: num(cs.getPropertyValue("--app-safe-bottom")),
+  };
+}
+
 export function visualViewportDialogStyle(
   box: VisualViewportBox | null,
 ): { top: string; maxHeight: string } | undefined {
   if (!box) return undefined;
   const gap = 8;
-  const visible = Math.max(0, box.height);
+  const safe = readSafeInsets();
+  // Area terlihat dipersempit oleh notch/status bar (atas) dan gesture bar
+  // (bawah) supaya judul & tombol tidak pernah tertutup di mode layar penuh.
+  const visible = Math.max(0, box.height - safe.top - safe.bottom);
+  const originTop = box.top + safe.top;
   // Tinggi maksimum: seluruh area terlihat dikurangi celah atas+bawah.
   // Lantai 120px hanya untuk layar ekstrem (mis. keyboard menutup nyaris
   // seluruh layar) supaya dialog tidak menyusut jadi tidak terpakai.
@@ -195,13 +213,13 @@ export function visualViewportDialogStyle(
   const half = maxH / 2;
 
   // 1) Titik pusat ideal = tengah area TERLIHAT.
-  let center = box.top + visible / 2;
+  let center = originTop + visible / 2;
 
   // 2) Jepit ke dalam area terlihat bila kartu memang muat di sana.
   //    Ini yang mencegah dialog "melorot" ke bawah layar di WebView
   //    Android saat toolbar/keyboard membuat layout viewport lebih tinggi.
-  const vMin = box.top + half + gap;
-  const vMax = box.top + visible - half - gap;
+  const vMin = originTop + half + gap;
+  const vMax = originTop + visible - half - gap;
   if (vMax >= vMin) center = Math.min(Math.max(center, vMin), vMax);
 
   // 3) Terakhir, pastikan kartu tetap di dalam layout viewport (acuan
