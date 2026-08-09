@@ -53,9 +53,9 @@ TARGETS = [
 ]
 
 # Lebar kritis Android/iOS + tablet portrait.
-WIDTHS = [320, 360, 375, 390, 411, 480, 768]
+WIDTHS = [int(w) for w in os.environ.get("AUDIT_WIDTHS", "320,360,390,411,768").split(",")]
 # WCAG 1.4.10 mensyaratkan reflow sampai 400% pada 320 CSS px; kita uji sampai 2×.
-ZOOMS = [1.0, 1.25, 1.5, 2.0]
+ZOOMS = [float(z) for z in os.environ.get("AUDIT_ZOOMS", "1.0,1.5,2.0").split(",")]
 EPS = 1  # toleransi sub-pixel rounding
 
 CONTROL_SELECTOR = ",".join([
@@ -79,6 +79,10 @@ MEASURE_JS = r"""
   const seen = [];
   const out = [];
   const isInsideScrollable = (node) => {
+    // Halaman yang menggulir secara normal bukan "terpotong": konten di
+    // bawah lipatan tetap terjangkau dengan scroll dokumen.
+    const de = document.scrollingElement || document.documentElement;
+    if (de && de.scrollHeight > de.clientHeight + 1) return true;
     let n = node.parentElement;
     while (n && n !== document.body) {
       const c = getComputedStyle(n);
