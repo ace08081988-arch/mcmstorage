@@ -33,7 +33,9 @@ export const SCROLL_PERF_ALERT_LOG_KEY = "app-scroll-perf-alert-log";
 const MAX_LOG = 30;
 
 export const DEFAULT_ALERT_PREFS: ScrollPerfAlertPrefs = {
-  enabled: true,
+  // Mati secara bawaan: toast "Scroll terasa berat" mengganggu penggunaan
+  // sehari-hari. Kejadian tetap dicatat & bisa dinyalakan di Diagnostik.
+  enabled: false,
   fpsMin: 45,
   latencyMaxMs: 60,
   cooldownSec: 20,
