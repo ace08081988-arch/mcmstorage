@@ -21,7 +21,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-sheet bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -34,7 +34,7 @@ const sheetVariants = cva(
   // Mobile-first: padding kompak di HP, generous di ≥sm. `overflow-y-auto` +
   // `overscroll-contain` supaya konten panjang bisa discroll tanpa menular
   // ke halaman di belakangnya. Safe-area disuntik lewat variant per-side.
-  "fixed z-50 flex flex-col gap-4 bg-background p-4 depth-3d-lg transition ease-in-out overflow-y-auto overscroll-contain data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out sm:p-6",
+  "fixed z-sheet flex flex-col gap-4 bg-background p-4 depth-3d-lg transition ease-in-out overflow-y-auto overscroll-contain data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out sm:p-6",
   {
     variants: {
       side: {
