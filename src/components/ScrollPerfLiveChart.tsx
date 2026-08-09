@@ -50,6 +50,23 @@ const SMOOTH_OPTIONS = [
 ] as const;
 
 const SMOOTH_KEY = "app-scroll-perf-smooth";
+const SPIKE_KEY = "app-scroll-perf-spike";
+
+/**
+ * Sensitivitas deteksi spike: seberapa jauh data mentah boleh menyimpang dari
+ * garis tren sebelum ditandai. `rel` = selisih relatif terhadap tren,
+ * `absFps` / `absLat` = ambang minimum absolut supaya riak kecil di nilai
+ * rendah tidak ikut tertandai.
+ */
+const SPIKE_OPTIONS = [
+  { v: 0, label: "Mati", hint: "tidak menyorot spike", rel: 0, absFps: 0, absLat: 0 },
+  { v: 1, label: "Longgar", hint: "hanya lonjakan besar", rel: 0.45, absFps: 18, absLat: 25 },
+  { v: 2, label: "Sedang", hint: "lonjakan sedang ke atas", rel: 0.3, absFps: 12, absLat: 15 },
+  { v: 3, label: "Ketat", hint: "sensitif, tandai riak kecil", rel: 0.18, absFps: 7, absLat: 8 },
+] as const;
+
+/** Lebar jendela tren khusus deteksi (independen dari penghalusan tampilan). */
+const SPIKE_WINDOW = 7;
 
 /** Rata-rata bergerak (trailing) — memisahkan tren dari spike sesaat. */
 function rolling(values: number[], window: number): number[] {
@@ -78,6 +95,27 @@ function path(values: number[], max: number, w: number, h: number) {
 }
 
 /**
+ * Tandai indeks yang menyimpang jauh dari garis tren.
+ * FPS hanya dianggap spike saat *turun* (drop) — itu yang terasa sebagai lag;
+ * latensi hanya saat *naik*.
+ */
+function detectSpikes(
+  raw: number[],
+  trend: number[],
+  rel: number,
+  abs: number,
+  dir: "down" | "up",
+): boolean[] {
+  if (rel <= 0) return raw.map(() => false);
+  return raw.map((v, i) => {
+    const t = trend[i] ?? 0;
+    if (t <= 0) return false;
+    const delta = dir === "down" ? t - v : v - t;
+    return delta >= Math.max(abs, t * rel);
+  });
+}
+
+/**
  * Grafik waktu nyata FPS & latensi scroll.
  *
  * FPS diukur langsung dari loop `requestAnimationFrame` komponen ini (hanya
@@ -95,6 +133,8 @@ export function ScrollPerfLiveChart() {
   const [paused, setPaused] = useState(false);
   /** Lebar rolling average aktif (1 = mentah). */
   const [smooth, setSmooth] = useState(1);
+  /** Sensitivitas sorotan spike (0 = mati). */
+  const [spikeLevel, setSpikeLevel] = useState(2);
   /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
   const [hover, setHover] = useState<number | null>(null);
   const frames = useRef(0);
@@ -113,6 +153,26 @@ export function ScrollPerfLiveChart() {
       if (SMOOTH_OPTIONS.some((o) => o.v === raw)) setSmooth(raw);
     } catch {
       /* mode privat → pakai default */
+    }
+  }, []);
+
+  // Pulihkan preferensi sensitivitas spike.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SPIKE_KEY);
+      const n = Number(raw);
+      if (raw !== null && SPIKE_OPTIONS.some((o) => o.v === n)) setSpikeLevel(n);
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+
+  const chooseSpike = useCallback((v: number) => {
+    setSpikeLevel(v);
+    try {
+      localStorage.setItem(SPIKE_KEY, String(v));
+    } catch {
+      /* abaikan */
     }
   }, []);
 
@@ -197,6 +257,28 @@ export function ScrollPerfLiveChart() {
   const latSmooth = rolling(series.lat, smooth);
   const smoothing = smooth > 1;
 
+  // Deteksi spike selalu memakai garis tren sendiri (SPIKE_WINDOW) supaya
+  // tetap bekerja meski tampilan grafik disetel "Mentah".
+  const spikeCfg = SPIKE_OPTIONS.find((o) => o.v === spikeLevel) ?? SPIKE_OPTIONS[0];
+  const fpsTrendRef = rolling(series.fps, SPIKE_WINDOW);
+  const latTrendRef = rolling(series.lat, SPIKE_WINDOW);
+  const fpsSpikes = detectSpikes(
+    series.fps,
+    fpsTrendRef,
+    spikeCfg.rel,
+    spikeCfg.absFps,
+    "down",
+  );
+  const latSpikes = detectSpikes(
+    series.lat,
+    latTrendRef,
+    spikeCfg.rel,
+    spikeCfg.absLat,
+    "up",
+  );
+  const spikeCount =
+    fpsSpikes.filter(Boolean).length + latSpikes.filter(Boolean).length;
+
   const bands: { x: number; w: number }[] = [];
   const step = W / (POINTS - 1);
   let runStart = -1;
@@ -227,6 +309,12 @@ export function ScrollPerfLiveChart() {
   const hoverMarks = hover !== null ? (series.marks[hover] ?? []) : [];
   const hoverFpsTrend = hover !== null ? (fpsSmooth[hover] ?? 0) : 0;
   const hoverLatTrend = hover !== null ? (latSmooth[hover] ?? 0) : 0;
+  const hoverFpsSpike = hover !== null && (fpsSpikes[hover] ?? false);
+  const hoverLatSpike = hover !== null && (latSpikes[hover] ?? false);
+  const hoverFpsDrop =
+    hover !== null ? Math.round((fpsTrendRef[hover] ?? 0) - (series.fps[hover] ?? 0)) : 0;
+  const hoverLatJump =
+    hover !== null ? Math.round((series.lat[hover] ?? 0) - (latTrendRef[hover] ?? 0)) : 0;
   /** Posisi kotak tooltip dalam persen lebar, dijaga agar tidak keluar kartu. */
   const hoverLeft = hover !== null ? Math.min(88, Math.max(2, (hover / (POINTS - 1)) * 100)) : 0;
 
@@ -261,8 +349,40 @@ export function ScrollPerfLiveChart() {
             {hoverMarks.map((k) => MARK_STYLE[k].short).join(" · ")}
           </div>
         ) : null}
+        {(kind === "fps" ? hoverFpsSpike : hoverLatSpike) ? (
+          <div className="font-medium text-red-500 tabular-nums">
+            {kind === "fps"
+              ? `spike: turun ${hoverFpsDrop} fps dari tren`
+              : `spike: naik ${hoverLatJump} ms dari tren`}
+          </div>
+        ) : null}
       </div>
     );
+
+  /** Sorotan spike: pita vertikal + titik merah pada indeks yang menyimpang. */
+  const spikeOverlay = (flags: boolean[], values: number[], max: number) => (
+    <g>
+      {flags.map((on, i) =>
+        on ? (
+          <g key={i}>
+            <rect
+              x={Math.max(0, i * step - step / 2)}
+              y={0}
+              width={Math.max(2, step)}
+              height={H}
+              className="fill-red-500/15"
+            />
+            <circle
+              cx={i * step}
+              cy={H - Math.min(1, (values[i] ?? 0) / max) * H}
+              r={2.6}
+              className="fill-red-500"
+            />
+          </g>
+        ) : null,
+      )}
+    </g>
+  );
 
   /** Penanda kejadian di sepanjang sumbu waktu. */
   const markers = (
@@ -318,11 +438,19 @@ export function ScrollPerfLiveChart() {
               12 detik terakhir. Area berarsir = saat Anda menggulir. Sentuh atau
               arahkan kursor ke grafik untuk membaca nilai persis di titik itu.
               Penghalusan membantu memisahkan tren dari spike sesaat.
+              Titik yang menyimpang jauh dari tren otomatis disorot merah.
             </CardDescription>
           </div>
-          <Badge variant="outline" className="shrink-0 text-muted-foreground">
-            {hover !== null ? "Baca titik" : paused ? "Jeda" : "Live"}
-          </Badge>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge variant="outline" className="text-muted-foreground">
+              {hover !== null ? "Baca titik" : paused ? "Jeda" : "Live"}
+            </Badge>
+            {spikeCount > 0 ? (
+              <Badge variant="outline" className="border-red-500/40 text-red-500">
+                {spikeCount} spike
+              </Badge>
+            ) : null}
+          </div>
         </div>
         <div className="mt-ms-2 flex flex-wrap items-center justify-between gap-ms-2">
           <div
@@ -347,18 +475,40 @@ export function ScrollPerfLiveChart() {
               </button>
             ))}
           </div>
+          <div
+            className="inline-flex rounded-md border p-0.5"
+            role="group"
+            aria-label="Sensitivitas sorotan spike"
+          >
+            {SPIKE_OPTIONS.map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => chooseSpike(o.v)}
+                aria-pressed={spikeLevel === o.v}
+                title={o.hint}
+                className={`rounded-[5px] px-ms-2 py-1 text-ms-2xs transition-colors ${
+                  spikeLevel === o.v
+                    ? "bg-red-500 text-white"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
               const now = Date.now();
               const rows = [
-                "at,seconds_ago,fps,fps_trend,latency_ms,latency_trend,scrolling,events",
+                "at,seconds_ago,fps,fps_trend,fps_spike,latency_ms,latency_trend,latency_spike,scrolling,events",
                 ...series.fps.map((f, i) => {
                   const ago = ((POINTS - 1 - i) * SAMPLE_MS) / 1000;
                   const at = new Date(now - ago * 1000).toISOString();
                   const ev = (series.marks[i] ?? []).join("|");
-                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${series.scroll[i] ? 1 : 0},${ev}`;
+                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${fpsSpikes[i] ? 1 : 0},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${latSpikes[i] ? 1 : 0},${series.scroll[i] ? 1 : 0},${ev}`;
                 }),
               ].join("\r\n");
               downloadCsv(scrollPerfCsvFilename("live"), rows);
@@ -422,6 +572,7 @@ export function ScrollPerfLiveChart() {
                 strokeLinecap="round"
               />
             ) : null}
+            {spikeOverlay(fpsSpikes, series.fps, 120)}
             {crosshair}
             {hover !== null ? (
               <circle
@@ -486,6 +637,7 @@ export function ScrollPerfLiveChart() {
                 strokeLinecap="round"
               />
             ) : null}
+            {spikeOverlay(latSpikes, series.lat, latMax)}
             {crosshair}
           </svg>
         </div>
@@ -499,6 +651,14 @@ export function ScrollPerfLiveChart() {
               {MARK_STYLE[k].label}
             </span>
           ))}
+          {spikeLevel > 0 ? (
+            <span className="inline-flex items-center gap-1 text-red-500">
+              <svg viewBox="0 0 8 8" className="h-2 w-2" aria-hidden>
+                <circle cx={4} cy={4} r={4} className="fill-red-500" />
+              </svg>
+              Spike (menyimpang dari tren)
+            </span>
+          ) : null}
         </div>
       </CardContent>
     </Card>
