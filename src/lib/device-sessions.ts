@@ -180,7 +180,11 @@ export function useDeviceSessionGuard() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        void start(session.user.id, true);
+        // supabase-js kadang memancarkan SIGNED_IN lagi saat token refresh /
+        // tab kembali fokus. Hanya emisi pertama untuk user ini yang dihitung
+        // sebagai login baru, supaya refresh tidak membatalkan pencabutan.
+        const fresh = activeUserId !== session.user.id;
+        void start(session.user.id, fresh);
       } else if (event === "SIGNED_OUT") {
         activeUserId = null;
         stopTimers();
