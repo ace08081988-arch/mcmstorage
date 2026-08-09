@@ -651,6 +651,14 @@ export function ScrollPerfLiveChart() {
               {MARK_STYLE[k].label}
             </span>
           ))}
+          {spikeLevel > 0 ? (
+            <span className="inline-flex items-center gap-1 text-red-500">
+              <svg viewBox="0 0 8 8" className="h-2 w-2" aria-hidden>
+                <circle cx={4} cy={4} r={4} className="fill-red-500" />
+              </svg>
+              Spike (menyimpang dari tren)
+            </span>
+          ) : null}
         </div>
       </CardContent>
     </Card>
