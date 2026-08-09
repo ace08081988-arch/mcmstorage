@@ -1405,6 +1405,29 @@ function PublicPrepPage() {
   async function silentRefresh() {
     if (!pinRef.current || !authed) return;
     if (isWorkerOperationActive()) return;
+    // Guard in-flight: realtime broadcast, heartbeat 15 dtk, dan
+    // visibilitychange bisa memicu bersamaan pada sinyal lemah. Tanpa guard,
+    // beberapa permintaan identik berjalan paralel dan hasil lama bisa
+    // menimpa hasil baru (last-write-wins yang salah).
+    if (refreshInFlightRef.current) {
+      refreshQueuedRef.current = true;
+      return;
+    }
+    refreshInFlightRef.current = true;
+    try {
+      await silentRefreshInner();
+    } finally {
+      refreshInFlightRef.current = false;
+      if (refreshQueuedRef.current) {
+        refreshQueuedRef.current = false;
+        // Satu kali susulan saja — bukan antrean panjang.
+        window.setTimeout(() => void silentRefresh(), 400);
+      }
+    }
+  }
+
+  async function silentRefreshInner() {
+    lastRefreshAtRef.current = Date.now();
     let data: unknown = null;
     try {
       const r = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
