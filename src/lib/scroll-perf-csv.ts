@@ -5,20 +5,46 @@
  * dianalisis di spreadsheet atau alat lain di luar aplikasi.
  */
 import type { ScrollPerfSession } from "./scroll-perf-sessions";
+import {
+  clampSmooth,
+  smoothMethodShort,
+  smoothSeries,
+  type SmoothMethod,
+} from "./scroll-perf-smooth";
 
-const HEADERS = [
+/** Kolom yang ikut diekspor: data mentah, garis tren, atau keduanya. */
+export type CsvColumns = "raw" | "trend" | "both";
+
+export const CSV_COLUMN_OPTIONS: {
+  v: CsvColumns;
+  label: string;
+  hint: string;
+}[] = [
+  { v: "raw", label: "Mentah", hint: "hanya nilai terukur apa adanya" },
+  { v: "trend", label: "Tren", hint: "hanya nilai yang sudah dihaluskan" },
+  { v: "both", label: "Keduanya", hint: "mentah + tren berdampingan" },
+];
+
+export type ScrollPerfCsvOptions = {
+  /** Kolom yang disertakan (default: keduanya). */
+  columns?: CsvColumns;
+  /** Ukuran jendela penghalusan untuk kolom tren. */
+  window?: number;
+  /** Metode penghalusan untuk kolom tren. */
+  method?: SmoothMethod;
+};
+
+const BASE_HEADERS = [
   "session_id",
   "session_started_at",
   "device",
   "sample_index",
   "sample_at",
   "seconds_since_session_start",
-  "fps",
-  "fps_min",
-  "latency_ms",
-  "jank_frames",
-  "peak_speed_px_s",
 ];
+
+const RAW_HEADERS = ["fps", "fps_min", "latency_ms", "jank_frames", "peak_speed_px_s"];
+const TREND_HEADERS = ["fps_trend", "latency_trend", "trend_method", "trend_window"];
 
 function cell(v: string | number): string {
   const s = String(v ?? "");
@@ -34,8 +60,24 @@ function iso(ms: number): string {
 }
 
 /** Susun isi CSV dari satu atau beberapa sesi. */
-export function buildScrollPerfCsv(sessions: ScrollPerfSession[]): string {
-  const rows: string[] = [HEADERS.join(",")];
+export function buildScrollPerfCsv(
+  sessions: ScrollPerfSession[],
+  options: ScrollPerfCsvOptions = {},
+): string {
+  const columns: CsvColumns = options.columns ?? "both";
+  const window = clampSmooth(options.window ?? 5);
+  const method: SmoothMethod = options.method ?? "sma";
+  const withRaw = columns !== "trend";
+  const withTrend = columns !== "raw";
+  const methodLabel = window > 1 ? smoothMethodShort(method) : "raw";
+
+  const rows: string[] = [
+    [
+      ...BASE_HEADERS,
+      ...(withRaw ? RAW_HEADERS : []),
+      ...(withTrend ? TREND_HEADERS : []),
+    ].join(","),
+  ];
   sessions.forEach((s) => {
     const samples = s.samples ?? [];
     if (samples.length === 0) {
@@ -48,17 +90,24 @@ export function buildScrollPerfCsv(sessions: ScrollPerfSession[]): string {
           0,
           iso(s.updatedAt),
           Math.round((s.updatedAt - s.startedAt) / 100) / 10,
-          s.fpsAvg,
-          s.fpsMin,
-          s.latencyAvg,
-          s.jankTotal,
-          s.peakSpeed,
+          ...(withRaw ? [s.fpsAvg, s.fpsMin, s.latencyAvg, s.jankTotal, s.peakSpeed] : []),
+          ...(withTrend ? [s.fpsAvg, s.latencyAvg, methodLabel, window] : []),
         ]
           .map(cell)
           .join(","),
       );
       return;
     }
+    const fpsTrend = smoothSeries(
+      samples.map((p) => p.fps ?? 0),
+      window,
+      method,
+    );
+    const latTrend = smoothSeries(
+      samples.map((p) => p.latencyMs ?? 0),
+      window,
+      method,
+    );
     samples.forEach((p, i) => {
       rows.push(
         [
@@ -68,11 +117,10 @@ export function buildScrollPerfCsv(sessions: ScrollPerfSession[]): string {
           i + 1,
           iso(p.at),
           Math.round((p.at - s.startedAt) / 100) / 10,
-          p.fps,
-          p.fpsMin,
-          p.latencyMs,
-          p.jankFrames,
-          p.peakSpeed,
+          ...(withRaw ? [p.fps, p.fpsMin, p.latencyMs, p.jankFrames, p.peakSpeed] : []),
+          ...(withTrend
+            ? [fpsTrend[i] ?? p.fps, latTrend[i] ?? p.latencyMs, methodLabel, window]
+            : []),
         ]
           .map(cell)
           .join(","),
