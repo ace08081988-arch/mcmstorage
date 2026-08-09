@@ -11,6 +11,7 @@ import { loadGudangProduk, recordSale, refundSale } from "@/lib/pos-kasir-gudang
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 import { NumericTextField } from "@/components/NumericDraftInput";
+import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 // jsPDF + autoTable dimuat lazy (dynamic import) di dalam exportPDF supaya
 // bundle awal halaman POS Kasir tidak membawa ~200KB kode PDF yang hanya
 // dipakai saat user mengekspor.
@@ -1496,6 +1497,38 @@ function PosKasirPage() {
         {toast && (
           <div className="fixed app-fab-bottom left-1/2 -translate-x-1/2 bg-background border border-success/50 rounded-xl px-ms-5 py-ms-3 shadow-2xl text-ms-sm z-50 animate-in fade-in slide-in-from-bottom-4">
             {toast}
+          </div>
+        )}
+
+        {/* Bilah aksi saat keyboard terbuka: total + Bayar tetap terlihat
+            di atas keyboard sehingga user tak perlu menutup keyboard dulu. */}
+        {keyboardInset > 0 && (
+          <div className="app-keyboard-action-bar md:hidden border-t border-border bg-background/95 backdrop-blur px-ms-3 py-ms-2 shadow-2xl">
+            <div className="flex items-center gap-ms-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-ms-2xs text-muted-foreground truncate">
+                  {selected.emoji} {selected.nama} · {berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unit}
+                </p>
+                <p className="text-ms-base font-bold font-mono text-success truncate">{rupiah(total)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  (document.activeElement as HTMLElement | null)?.blur?.();
+                }}
+                className="shrink-0 rounded-lg border border-border bg-card px-ms-3 py-ms-2 text-ms-xs font-semibold text-muted-foreground"
+              >
+                Selesai
+              </button>
+              <button
+                type="button"
+                onClick={bayar}
+                disabled={!bayarSiap}
+                className="shrink-0 rounded-lg bg-success px-ms-4 py-ms-2 text-ms-sm font-bold text-success-foreground shadow-lg shadow-success/30 disabled:bg-muted disabled:text-muted-foreground"
+              >
+                💳 Bayar
+              </button>
+            </div>
           </div>
         )}
 
