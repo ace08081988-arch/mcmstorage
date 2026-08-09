@@ -77,14 +77,12 @@ export function PushPermissionPrompt() {
       role="region"
       aria-label="Aktifkan notifikasi"
       data-floating-ui="fab"
-      className="fixed z-fab overflow-y-auto rounded-xl border bg-card p-ms-3 shadow-lg"
+      className="app-short-viewport-hide fixed z-fab rounded-xl border bg-card p-ms-3 shadow-lg"
       style={{
         bottom:
           "calc(max(var(--app-bottom-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))) + var(--app-keyboard-inset, 0px) + 12px)",
         left: "calc(var(--app-safe-left, env(safe-area-inset-left, 0px)) + 0.75rem)",
         right: "calc(var(--app-safe-right, env(safe-area-inset-right, 0px)) + 0.75rem)",
-        maxHeight:
-          "calc(var(--app-vh, 100dvh) - max(var(--app-bottom-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))) - var(--app-keyboard-inset, 0px) - var(--app-safe-top, env(safe-area-inset-top, 0px)) - 24px)",
       }}
     >
       <div className="flex items-start gap-ms-3">
