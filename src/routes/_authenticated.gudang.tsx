@@ -762,9 +762,12 @@ function GudangPage() {
   const revalidating = !showSkeleton && (loading || (isSecondaryTab && secondaryLoading));
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground md:flex">
-      {/* Sidebar — md+ */}
-      <aside className="sticky top-0 hidden h-app-vh w-56 shrink-0 border-r bg-card/80 backdrop-blur md:flex md:flex-col">
+    <div className="min-h-app-vh bg-gradient-to-b from-background to-muted/20 text-foreground xl:flex">
+      {/* Rail kontekstual Gudang — HANYA xl+.
+          Di bawah xl, AppSidebar global (256px) sudah memakan lebar; rail
+          kedua 224px membuat konten tersisa <300px pada tablet 768px.
+          Navigasi tetap tersedia lewat PillsTabs di PageHeader. */}
+      <aside className="sticky top-0 hidden h-app-vh w-56 shrink-0 border-r bg-card/80 backdrop-blur xl:flex xl:flex-col">
         <div className="border-b p-ms-4">
           <Link to="/" className="text-ms-2xs text-muted-foreground hover:underline">← Beranda</Link>
           <h1 className="mt-1 flex items-center gap-ms-1.5 text-ms-lg font-bold tracking-ms-tight">
@@ -818,7 +821,7 @@ function GudangPage() {
 
         <PageContainer>
         {/* Inventory summary — always visible */}
-        <section aria-label="Ringkasan inventaris" className="grid grid-cols-2 gap-ms-3 md:grid-cols-4">
+        <section aria-label="Ringkasan inventaris" className="grid grid-cols-2 gap-ms-3 xl:grid-cols-4">
           <SummaryCard
             icon={Package}
             label="Total Produk"
