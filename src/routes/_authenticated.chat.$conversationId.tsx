@@ -2427,7 +2427,8 @@ function ChatRoomPage() {
                 );
               })}
             </div>
-          ))
+          ))}
+          </>
         )}
 
         {outbox.length > 0 ? (
