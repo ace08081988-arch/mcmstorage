@@ -4472,52 +4472,22 @@ export type Database = {
         Returns: Json
       }
       prep_submissions_unmark_sent: { Args: { _ids: string[] }; Returns: Json }
-      prep_submit:
-        | {
-            Args: {
-              _gps_lat: number
-              _gps_lng: number
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _pin: string
-              _qty_reported: number
-              _task_item_id: string
-              _token: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _expected_updated_at?: string
-              _gps_lat: number
-              _gps_lng: number
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _pin: string
-              _qty_reported: number
-              _task_item_id: string
-              _token: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _expected_updated_at?: string
-              _gps_lat: number
-              _gps_lng: number
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _photo_paths?: string[]
-              _pin: string
-              _qty_reported: number
-              _task_item_id: string
-              _token: string
-            }
-            Returns: Json
-          }
+      prep_submit: {
+        Args: {
+          _expected_updated_at?: string
+          _gps_lat: number
+          _gps_lng: number
+          _location_url: string
+          _note: string
+          _photo_path: string
+          _photo_paths?: string[]
+          _pin: string
+          _qty_reported: number
+          _task_item_id: string
+          _token: string
+        }
+        Returns: Json
+      }
       prep_task_resolve: {
         Args: { _pin: string; _token: string }
         Returns: Json
@@ -4549,39 +4519,23 @@ export type Database = {
         Args: { _pin: string; _token: string }
         Returns: Json
       }
-      request_submit_via_task:
-        | {
-            Args: {
-              _gps_lat: number
-              _gps_lng: number
-              _items: Json
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _pin: string
-              _prep_task_item_id: string
-              _title_id: string
-              _token: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _gps_lat: number
-              _gps_lng: number
-              _items: Json
-              _location_url: string
-              _location_urls?: string[]
-              _note: string
-              _photo_path: string
-              _photo_paths: string[]
-              _pin: string
-              _prep_task_item_id: string
-              _title_id: string
-              _token: string
-            }
-            Returns: Json
-          }
+      request_submit_via_task: {
+        Args: {
+          _gps_lat: number
+          _gps_lng: number
+          _items: Json
+          _location_url: string
+          _location_urls?: string[]
+          _note: string
+          _photo_path: string
+          _photo_paths: string[]
+          _pin: string
+          _prep_task_item_id: string
+          _title_id: string
+          _token: string
+        }
+        Returns: Json
+      }
       resolve_invite_code: {
         Args: { _code: string }
         Returns: {
@@ -4647,30 +4601,18 @@ export type Database = {
           was_existing: boolean
         }[]
       }
-      send_request_prep_to_customer:
-        | {
-            Args: {
-              _customer_id: string
-              _note: string
-              _party_name: string
-              _payment_method: string
-              _prep_id: string
-              _total_amount: number
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              _customer_id: string
-              _note: string
-              _paid_amount?: number
-              _party_name: string
-              _payment_method: string
-              _prep_id: string
-              _total_amount: number
-            }
-            Returns: string
-          }
+      send_request_prep_to_customer: {
+        Args: {
+          _customer_id: string
+          _note: string
+          _paid_amount?: number
+          _party_name: string
+          _payment_method: string
+          _prep_id: string
+          _total_amount: number
+        }
+        Returns: string
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       start_dm: { Args: { _partner: string }; Returns: string }
