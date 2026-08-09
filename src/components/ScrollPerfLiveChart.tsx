@@ -248,6 +248,14 @@ export function ScrollPerfLiveChart() {
           {hoverAgo === 0 ? "sekarang" : `${hoverAgo.toFixed(1)} dtk lalu`}
           {hoverScroll ? " · menggulir" : ""}
         </div>
+        {smoothing ? (
+          <div className="text-muted-foreground tabular-nums">
+            tren:{" "}
+            {kind === "fps"
+              ? `${hoverFpsTrend.toFixed(1)} fps`
+              : `${hoverLatTrend.toFixed(1)} ms`}
+          </div>
+        ) : null}
         {hoverMarks.length ? (
           <div className="text-muted-foreground">
             {hoverMarks.map((k) => MARK_STYLE[k].short).join(" · ")}
