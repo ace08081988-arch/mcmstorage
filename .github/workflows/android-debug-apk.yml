@@ -1,0 +1,108 @@
+name: Android Debug APK (QA)
+
+# Dry-run build untuk QA: menghasilkan APK debug yang bisa diunduh TANPA
+# keystore release dan TANPA secret apa pun. Tidak pernah upload ke Play,
+# tidak pernah menaikkan versionCode.
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "Varian app"
+        type: choice
+        default: full
+        options: [full, chat]
+  pull_request:
+    paths:
+      - "android/**"
+      - "capacitor.config.ts"
+      - "scripts/build-apk.mjs"
+      - ".github/workflows/android-debug-apk.yml"
+
+concurrency:
+  group: android-debug-${{ github.ref }}-${{ github.event.inputs.variant || 'full' }}
+  cancel-in-progress: true
+
+jobs:
+  debug-apk:
+    name: assembleDebug (${{ github.event.inputs.variant || 'full' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      VARIANT: ${{ github.event.inputs.variant || 'full' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Versi aplikasi (read-only)
+        run: node scripts/read-app-version.mjs
+
+      - name: Typecheck
+        run: bunx tsgo --noEmit
+
+      - name: Build web + cap sync
+        run: bun run apk:${{ env.VARIANT }}
+
+      - name: Gradle assembleDebug
+        working-directory: android
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Kumpulkan APK + checksum
+        id: collect
+        run: |
+          set -euo pipefail
+          mkdir -p dist/qa
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          test -f "$APK"
+          VC=$(node scripts/read-app-version.mjs --field versionCode)
+          VN=$(node scripts/read-app-version.mjs --field versionName)
+          OUT="dist/qa/ace-${VARIANT}-debug-${VN}-${VC}.apk"
+          cp "$APK" "$OUT"
+          sha256sum "$OUT" > dist/qa/SHA256SUMS.txt
+          SIZE=$(du -h "$OUT" | cut -f1)
+          {
+            echo "## 📱 Debug APK siap diunduh (QA)"
+            echo ""
+            echo "| Field | Nilai |"
+            echo "| --- | --- |"
+            echo "| Varian | \`$VARIANT\` |"
+            echo "| versionName | \`$VN\` |"
+            echo "| versionCode | \`$VC\` |"
+            echo "| File | \`$OUT\` |"
+            echo "| Ukuran | $SIZE |"
+            echo ""
+            echo '```'
+            cat dist/qa/SHA256SUMS.txt
+            echo '```'
+            echo ""
+            echo "> Build DEBUG: ditandatangani debug keystore bawaan Android SDK, bukan keystore rilis. Jangan distribusikan ke publik."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk-${{ env.VARIANT }}-${{ github.run_number }}
+          path: |
+            dist/qa/*.apk
+            dist/qa/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

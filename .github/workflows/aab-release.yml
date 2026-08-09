@@ -270,6 +270,34 @@ jobs:
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Checksum artefak rilis (SHA-256)
+        if: always()
+        run: |
+          set -uo pipefail
+          mkdir -p dist/checksums
+          OUT=dist/checksums/SHA256SUMS.txt
+          : > "$OUT"
+          found=0
+          for f in android/app/build/outputs/bundle/release/*.aab \
+                   android/app/build/outputs/apk/release/*.apk \
+                   dist/aab/*.aab; do
+            [ -f "$f" ] || continue
+            found=1
+            sha256sum "$f" >> "$OUT"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "Tidak ada artefak rilis untuk di-checksum." | tee -a "$OUT"
+          fi
+          {
+            echo ""
+            echo "### 🔐 SHA-256 artefak"
+            echo ""
+            echo '```'
+            cat "$OUT"
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload AAB artifact
         if: always()
         id: upload_artifact
@@ -280,6 +308,7 @@ jobs:
             android/app/build/outputs/bundle/release/*.aab
             dist/aab/*.aab
             dist/mapping/*.txt
+            dist/checksums/SHA256SUMS.txt
           if-no-files-found: warn
           retention-days: 30
 
