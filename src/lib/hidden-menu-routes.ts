@@ -33,6 +33,23 @@ export function isHiddenMenuUrl(url: string): boolean {
   return HIDDEN_MENU_URLS.has(url);
 }
 
+/**
+ * Prefiks rute yang bukan halaman produk sama sekali: harness pengujian
+ * visual. Di dev/CI harness harus tetap bisa dibuka apa adanya (dipakai
+ * Playwright), jadi gerbangnya hanya aktif pada build produksi.
+ */
+const TECHNICAL_URL_PREFIXES: readonly string[] = ["/lovable/"];
+
+/**
+ * Dipakai gerbang rute teknis (bukan penyaring menu): mencakup daftar
+ * tersembunyi + prefiks harness yang hanya digerbang di produksi.
+ */
+export function isTechnicalRouteUrl(url: string): boolean {
+  if (HIDDEN_MENU_URLS.has(url)) return true;
+  if (!import.meta.env.PROD) return false;
+  return TECHNICAL_URL_PREFIXES.some((p) => url.startsWith(p));
+}
+
 /** Buang entri menu yang menunjuk ke rute teknis. */
 export function filterHiddenMenuItems<T extends { url: string }>(
   items: ReadonlyArray<T>,
