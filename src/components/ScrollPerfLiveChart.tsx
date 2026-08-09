@@ -133,6 +133,8 @@ export function ScrollPerfLiveChart() {
   const [paused, setPaused] = useState(false);
   /** Lebar rolling average aktif (1 = mentah). */
   const [smooth, setSmooth] = useState(1);
+  /** Sensitivitas sorotan spike (0 = mati). */
+  const [spikeLevel, setSpikeLevel] = useState(2);
   /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
   const [hover, setHover] = useState<number | null>(null);
   const frames = useRef(0);
@@ -151,6 +153,26 @@ export function ScrollPerfLiveChart() {
       if (SMOOTH_OPTIONS.some((o) => o.v === raw)) setSmooth(raw);
     } catch {
       /* mode privat → pakai default */
+    }
+  }, []);
+
+  // Pulihkan preferensi sensitivitas spike.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SPIKE_KEY);
+      const n = Number(raw);
+      if (raw !== null && SPIKE_OPTIONS.some((o) => o.v === n)) setSpikeLevel(n);
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+
+  const chooseSpike = useCallback((v: number) => {
+    setSpikeLevel(v);
+    try {
+      localStorage.setItem(SPIKE_KEY, String(v));
+    } catch {
+      /* abaikan */
     }
   }, []);
 
