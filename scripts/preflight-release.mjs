@@ -42,6 +42,7 @@ import {
   copyFileSync,
 } from "node:fs";
 import { resolve, dirname } from "node:path";
+import { readAppVersion } from "./read-app-version.mjs";
 
 const argv = process.argv.slice(2);
 const args = new Set(argv);
@@ -172,20 +173,35 @@ function runPreBuild() {
     console.log("    (skip; minifyEnabled false)");
   }
 
-  step("7  keystore.properties untuk signing");
+  step("7  Kredensial signing (env var ATAU keystore.properties)");
   const propsPath = resolve(ROOT, "android/keystore.properties");
-  if (existsSync(propsPath)) {
+  const envSigning =
+    process.env.KEYSTORE_FILE &&
+    process.env.KEYSTORE_ALIAS &&
+    process.env.KEYSTORE_STORE_PASS &&
+    process.env.KEYSTORE_KEY_PASS;
+  if (envSigning) {
+    ok("kredensial dari environment (KEYSTORE_FILE/ALIAS/STORE_PASS/KEY_PASS)");
+  } else if (existsSync(propsPath)) {
     ok("android/keystore.properties ada (validator terpisah cek isinya)");
   } else {
     err(
-      "android/keystore.properties tidak ada. Jalankan sekali:\n" +
-        "      bun run aab:setup-keystore",
+      "Kredensial signing tidak ditemukan.\n" +
+        "      CI    : set env KEYSTORE_FILE, KEYSTORE_ALIAS, KEYSTORE_STORE_PASS, KEYSTORE_KEY_PASS.\n" +
+        "      Lokal : jalankan sekali `bun run aab:setup-keystore` (menulis android/keystore.properties).",
     );
   }
 
-  step("8  Cek versionCode monotonic-safe");
-  const vc = /versionCode\s+(\d+)/.exec(src)?.[1];
-  const vn = /versionName\s+"([^"]+)"/.exec(src)?.[1];
+  if (!/version\.properties/.test(src)) {
+    warn(
+      "build.gradle tidak membaca android/version.properties — SSOT versi bisa jadi ganda.",
+    );
+  }
+
+  step("8  Cek versionCode monotonic-safe (SSOT android/version.properties)");
+  const appVersion = readAppVersion();
+  const vc = appVersion ? String(appVersion.versionCode) : null;
+  const vn = appVersion?.versionName ?? null;
   if (vc && vn) {
     ok(`versionCode=${vc}, versionName=${vn}`);
     if (Number(vc) < 100) {
@@ -196,7 +212,10 @@ function runPreBuild() {
       );
     }
   } else {
-    err("versionCode/versionName tidak bisa di-parse dari build.gradle.");
+    err(
+      "versionCode/versionName tidak bisa dibaca. SSOT = android/version.properties\n" +
+        "    (VERSION_CODE / VERSION_NAME). Jalankan `bun run version:check`.",
+    );
   }
 }
 

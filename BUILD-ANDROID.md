@@ -44,46 +44,98 @@ bun run build && bunx cap sync android
 
 lalu rebuild APK di Android Studio.
 
-## Izin yang diminta otomatis
+## Kebijakan izin (per fitur, bukan saat startup)
 
-Saat aplikasi pertama kali dibuka di device native, Ace Storage akan
-meminta empat izin sekaligus: **Notifikasi, Kamera, Lokasi, dan
-Galeri/Foto**. User bisa menolak, dan dialog akan muncul lagi saat fitur
-terkait dipakai.
+Aplikasi **tidak** meminta izin apa pun saat pertama dibuka
+(`src/lib/permission-bootstrap.ts` sengaja no-op). Izin diminta tepat saat
+fiturnya dipakai, dengan alasan yang jelas dan jalan pintas ke Setelan bila
+ditolak permanen:
 
-### Izin tambahan untuk panggilan (Mikrofon + Overlay)
+| Izin | Kapan diminta | Kode |
+|---|---|---|
+| Kamera + galeri | Tombol ambil/pilih foto | `@capacitor/camera` (`src/lib/chat-attachments.ts`, portal pegawai) |
+| Lokasi (coarse + fine) | Tombol GPS pada bukti penyiapan | `src/lib/get-location.ts` |
+| Notifikasi (Android 13+) | Tombol "Aktifkan notifikasi" | `src/lib/native-push.ts` |
+| Kontak | Saat impor buku alamat | `@capacitor-community/contacts` |
+| Bluetooth (Android 12+) | Saat panggilan memakai headset | runtime-guarded |
 
-Fitur Ace Chat butuh dua izin ekstra yang **wajib dideklarasi manual** di
-`android/app/src/main/AndroidManifest.xml` setelah `bunx cap add android`
-atau `bunx cap sync android` (Capacitor tidak menambahkannya sendiri).
+Izin yang **tidak** dideklarasikan karena tidak dipakai:
+`ACCESS_BACKGROUND_LOCATION`, `READ_MEDIA_VIDEO`, `READ_MEDIA_AUDIO`,
+`SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `WRITE_EXTERNAL_STORAGE`.
 
-Tambahkan di dalam `<manifest>` sejajar dengan `<uses-permission>` yang
-sudah ada:
+## Privasi & backup
 
-```xml
-<!-- Mikrofon untuk panggilan audio/video (WebRTC getUserMedia) -->
-<uses-permission android:name="android.permission.RECORD_AUDIO" />
-<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+- `android:allowBackup="false"` — sesi Supabase, PIN AppLock, dan storage
+  WebView tidak boleh ikut ke cloud backup.
+- `@xml/data_extraction_rules` + `@xml/backup_rules` mengecualikan
+  `CapacitorStorage.xml`, database WebView, dan folder `app_webview`
+  (berlaku juga untuk device-to-device transfer Android 12+).
+- `@xml/network_security_config` + `usesCleartextTraffic="false"` melarang
+  HTTP polos dan mixed content.
 
-<!-- Tampilkan di atas aplikasi lain — dipakai untuk floating incoming call
-     dan notifikasi panggilan saat aplikasi di background -->
-<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+## Deep link
+
+Scheme kustom `biz.mcmstorage.app://…` dipertahankan. HTTPS App Links
+terverifikasi untuk `mcmstorage.app` (`/t/`, `/undang`) — pemasangan
+`assetlinks.json` dan fingerprint dijelaskan di
+[docs/ANDROID_APP_LINKS.md](docs/ANDROID_APP_LINKS.md).
+
+## Versi aplikasi (satu SSOT)
+
+`android/version.properties` adalah satu-satunya sumber versi;
+`android/app/build.gradle` hanya membacanya.
+
+```bash
+bun run version:check      # baca saja — aman untuk dry-run/CI/retry
+bun run version:bump       # naikkan versionCode/versionName (eksplisit)
+bun run version:bump:dry   # simulasi
 ```
 
-> `SYSTEM_ALERT_WINDOW` di Android 6+ adalah **special permission**: user
-> harus meng-approve manual lewat Setelan → Aplikasi → Ace Storage →
-> "Tampilkan di atas aplikasi lain". Deklarasi manifest saja tidak cukup —
-> aplikasi harus mengarahkan user ke halaman itu dengan intent
-> `Settings.ACTION_MANAGE_OVERLAY_PERMISSION` saat pertama kali fitur
-> incoming-call overlay dipakai.
+Build/release **tidak pernah** menaikkan versi otomatis. Untuk naik versi
+sekaligus build: `bun run aab:build:release:bump`.
 
-`RECORD_AUDIO` akan diminta otomatis oleh WebView saat `getUserMedia`
-dipanggil pertama kali (di dalam layar panggilan).
+## Build dari CLI
+
+```bash
+bun run apk:build:debug      # assembleDebug — TIDAK butuh keystore release
+bun run apk:build:release    # assembleRelease — butuh keystore
+bun run aab:build:release    # bundleRelease untuk Play Console
+```
+
+## Signing release
+
+Kredensial tidak pernah masuk repo. Dua sumber, prioritas env var:
+
+```bash
+# a) CI / shell
+export KEYSTORE_FILE=/path/ke/ace-release.keystore
+export KEYSTORE_ALIAS=mcm
+export KEYSTORE_STORE_PASS='…'
+export KEYSTORE_KEY_PASS='…'
+
+# b) lokal (ditulis oleh wizard, di-gitignore)
+bun run aab:setup-keystore   # → android/keystore.properties
+bun run aab:validate-keystore
+```
+
+Kalau keystore tidak tersedia, `assembleDebug` tetap jalan normal dan Gradle
+mencetak peringatan bahwa artefak release akan unsigned.
+
+## R8 / ProGuard
+
+Release memakai `minifyEnabled true` + `shrinkResources true` dengan aturan
+Capacitor/plugin/WebView di `android/app/proguard-rules.pro`.
+`scripts/preflight-release.mjs --post` mengarsipkan `mapping.txt` ke
+`dist/mapping/` untuk deobfuscation stacktrace Play Console.
+
+## Push notification
+
+Push baru aktif setelah `android/app/google-services.json` (Firebase)
+tersedia. Selama file itu belum ada, Gradle melewati plugin google-services
+dan aplikasi harus menampilkan status **belum dikonfigurasi** — jangan
+mengklaim push berfungsi.
 
 ## Catatan
 
-- `appId` saat ini: `biz.mcmstorage.app` (ubah di `capacitor.config.ts`
-  kalau perlu).
-- Push notification hanya akan terkirim setelah Firebase Cloud Messaging
-  ditambahkan. Izinnya tetap diminta sekarang supaya siap.
+- `appId`: `biz.mcmstorage.app` (varian chat: `biz.mcmstorage.chat`).
+- Nama aplikasi: `Ace Storage` / `Ace Chat`.

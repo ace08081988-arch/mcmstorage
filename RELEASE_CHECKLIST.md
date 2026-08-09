@@ -21,7 +21,9 @@
 ## Pre-upload Validation
 
 - [ ] Bekerja di branch bersih: `git status` tidak ada file yang belum di-commit.
-- [ ] `bun run version:check` berhasil dan menampilkan versionCode `{{ 5 }}` / versionName `{{ 1.2.3 }}`.
+- [ ] `bun run version:check` berhasil dan menampilkan versionCode `{{ 5 }}` / versionName `{{ 1.2.3 }}` (SSOT: `android/version.properties`).
+- [ ] Bump versi dilakukan eksplisit sekali (`bun run version:bump`) dan sudah di-commit — build/dry-run tidak menaikkan versi.
+- [ ] Debug APK QA hijau: workflow **Android Debug APK (QA)** menghasilkan artifact + SHA-256.
 - [ ] Version code lebih besar dari rilis sebelumnya di Play Console.
 - [ ] Format versionName valid (contoh: `1.2.3`, `1.2.3-beta.1`).
 - [ ] File AAB sudah dibangun: `bun run aab:build:release` → `dist/app-release.aab` ada.
@@ -29,6 +31,9 @@
 - [ ] Changelog / release notes sudah ditulis (lihat bagian Changelog di bawah).
 - [ ] Keystore dan `keystore.properties` sudah diamankan (tidak ikut ke repo).
 - [ ] Tidak mengunggah APK ke Production (AAB wajib untuk production).
+- [ ] `assetlinks.json` terpasang & `adb shell pm get-app-links biz.mcmstorage.app` = `verified` (lihat `docs/ANDROID_APP_LINKS.md`).
+- [ ] SHA-256 artifact dicatat (`dist/checksums/SHA256SUMS.txt` dari workflow).
+- [ ] `mapping.txt` tersimpan di `dist/mapping/` untuk deobfuscation.
 
 ---
 

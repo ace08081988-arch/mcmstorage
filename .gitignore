@@ -44,3 +44,9 @@ test-artifacts/
 
 bundle-report/stats.html
 bun.lockb
+
+# Android signing (JANGAN commit)
+android/keystore.properties
+android/*.keystore
+android/*.jks
+android/google-services.json
