@@ -23,6 +23,7 @@ import {
 } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
+import { getSubmitKey, clearSubmitKey } from "@/lib/submit-idempotency";
 import {
   subscribeDeferredReload,
   recheckBuildVersion,
@@ -3183,6 +3184,8 @@ function ItemCard({
         _note: note || null,
         _qty_reported: null,
         _expected_updated_at: item.updated_at ?? null,
+        // Kunci anti-kirim-ganda: retry/restart memakai kunci yang sama.
+        _client_key: getSubmitKey(`prep:${item.id}`),
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (publicSupabase.rpc as any)("prep_submit", args);
@@ -3226,6 +3229,7 @@ function ItemCard({
       setUploads([]);
       void clearDraftPhotos(draftKey);
       onSubmitted(item.id);
+      clearSubmitKey(`prep:${item.id}`);
     } catch (e) {
       const msg = (e as Error).message || "Gagal kirim";
       try { navigator.vibrate?.([120, 80, 120]); } catch { /* ignore */ }
@@ -4838,6 +4842,8 @@ function RequestForm({
         _gps_lng: gps?.lng ?? null,
         _note: noteClean || null,
         _prep_task_item_id: null,
+        // Kunci anti-kirim-ganda: retry/restart memakai kunci yang sama.
+        _client_key: getSubmitKey(`req:${title.id}`),
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (publicSupabase.rpc as any)("request_submit_via_task", args);
@@ -4875,6 +4881,7 @@ function RequestForm({
       setExtraLocs([]);
       void clearDraftPhotos(draftKey);
       onDone();
+      clearSubmitKey(`req:${title.id}`);
     } catch (e) {
       const raw = (e as Error)?.message ?? "unknown";
       try { navigator.vibrate?.([120, 80, 120]); } catch { /* ignore */ }
