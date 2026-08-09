@@ -929,13 +929,18 @@ html[data-font="editorial"] [data-slot="dialog-title"] {
 }
 @utility wa-chat-bg {
   background-color: var(--wa-chat-bg);
-  background-image:
-    radial-gradient(circle at 20% 30%, color-mix(in oklab, var(--wa-text) 6%, transparent) 0 1px, transparent 2px),
-    radial-gradient(circle at 70% 60%, color-mix(in oklab, var(--wa-text) 5%, transparent) 0 1px, transparent 2px),
-    radial-gradient(circle at 40% 85%, color-mix(in oklab, var(--wa-text) 4%, transparent) 0 1.5px, transparent 3px),
-    radial-gradient(circle at 85% 15%, color-mix(in oklab, var(--wa-text) 5%, transparent) 0 1px, transparent 2px);
-  background-size: 180px 180px, 220px 220px, 260px 260px, 200px 200px;
   color: var(--wa-text);
+  /* Pola tekstur hanya di perangkat penunjuk halus (desktop). Di layar
+     sentuh, gradient bertumpuk ini harus di-repaint tiap frame scroll dan
+     jadi penyebab utama FPS turun di WebView Android. */
+  @media (pointer: fine) {
+    background-image:
+      radial-gradient(circle at 20% 30%, color-mix(in oklab, var(--wa-text) 6%, transparent) 0 1px, transparent 2px),
+      radial-gradient(circle at 70% 60%, color-mix(in oklab, var(--wa-text) 5%, transparent) 0 1px, transparent 2px),
+      radial-gradient(circle at 40% 85%, color-mix(in oklab, var(--wa-text) 4%, transparent) 0 1.5px, transparent 3px),
+      radial-gradient(circle at 85% 15%, color-mix(in oklab, var(--wa-text) 5%, transparent) 0 1px, transparent 2px);
+    background-size: 180px 180px, 220px 220px, 260px 260px, 200px 200px;
+  }
 }
 @utility wa-search {
   background-color: var(--wa-surface-2);
