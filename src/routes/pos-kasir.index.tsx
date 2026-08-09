@@ -588,7 +588,9 @@ function PosKasirPage() {
   // Edge case: user login tapi belum ada barang di gudang.
   if (gudangSynced && produk.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground p-ms-6 flex items-center justify-center">
+      <div
+        className="min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground p-ms-6 flex items-center justify-center" style={{ paddingTop: "calc(var(--app-safe-top, 0px) + 1.5rem)", paddingLeft: "calc(var(--app-safe-left, 0px) + 1.5rem)", paddingRight: "calc(var(--app-safe-right, 0px) + 1.5rem)" }}
+      >
         <div className="max-w-md text-center space-ms-4 bg-card/60 border border-border rounded-2xl p-ms-6">
           <div className="text-ms-4xl">📦</div>
           <h1 className="text-ms-xl font-bold">Belum ada produk di gudang</h1>
@@ -603,7 +605,9 @@ function PosKasirPage() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground md:p-8 ${modeRingkas ? "p-ms-2" : "p-ms-3"}`}>
+    <div
+      className={`min-h-screen bg-gradient-to-br from-background via-card to-background text-foreground md:p-8 ${modeRingkas ? "p-ms-2" : "p-ms-3"}`} style={{ paddingTop: "calc(var(--app-safe-top, 0px) + 0.5rem)", paddingLeft: "calc(var(--app-safe-left, 0px) + 0.5rem)", paddingRight: "calc(var(--app-safe-right, 0px) + 0.5rem)" }}
+    >
       <div className="mx-auto max-w-6xl">
         {/* Mobile header */}
         <header className={`md:hidden grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-ms-2 ${modeRingkas ? "mb-2" : "mb-4"}`}>

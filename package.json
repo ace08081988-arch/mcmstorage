@@ -110,6 +110,7 @@
     "rescrape:social": "bun scripts/social-rescrape.ts",
     "rescrape:social:live": "bun scripts/social-rescrape.ts --base https://mcmstorage.app",
     "test:appearance-import": "node scripts/run-appearance-import-e2e.mjs",
+    "test:safe-area": "playwright test --project=safe-area-notch-e2e",
     "test:audit:scan": "vitest run src/lib/__tests__/audit-scan-options.test.ts",
     "test:auth-setup": "bun -e \"const m = await import('./tests/visual/global-setup.ts'); await m.default({});\"",
     "test:bottom-bar": "playwright test --project=bottom-bar-snap-e2e",

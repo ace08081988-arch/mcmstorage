@@ -1558,5 +1558,15 @@ export default defineConfig({
       testMatch: /focus-portal-stack\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 900 } },
     },
+    {
+      // Skenario : Simulasi notch/status bar (inset --app-safe-*) pada
+      //            ukuran HP 320–411 px dan tablet 768/1024 px. Setiap
+      //            elemen daun yang terlihat harus berada di dalam kotak
+      //            aman viewport. Viewport diatur per-test.
+      name: "safe-area-notch-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /safe-area-notch\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
+    },
   ],
 });

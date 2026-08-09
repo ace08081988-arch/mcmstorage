@@ -106,7 +106,9 @@ function GudangShellFixture() {
         ? ["light"]
         : ["light", "dark"];
   return (
-    <div className="min-h-screen bg-muted/10 p-ms-4">
+    <div
+      className="min-h-screen bg-muted/10 p-ms-4" style={{ paddingTop: "calc(var(--app-safe-top, 0px) + 1rem)", paddingLeft: "calc(var(--app-safe-left, 0px) + 1rem)", paddingRight: "calc(var(--app-safe-right, 0px) + 1rem)" }}
+    >
       <h1 className="mb-ms-4 text-ms-lg font-semibold tracking-tight">
         Gudang shell — loading · empty · data × light/dark × 320/360/390/411/768
       </h1>
