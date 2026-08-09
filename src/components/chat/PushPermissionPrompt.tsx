@@ -76,7 +76,8 @@ export function PushPermissionPrompt() {
     <div
       role="region"
       aria-label="Aktifkan notifikasi"
-      className="fixed z-50 rounded-xl border bg-card p-ms-3 shadow-lg"
+      data-floating-ui="fab"
+      className="fixed z-fab rounded-xl border bg-card p-ms-3 shadow-lg"
       style={{
         bottom:
           "calc(max(var(--app-bottom-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))) + 12px)",

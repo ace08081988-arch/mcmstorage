@@ -19,7 +19,7 @@ type Props = ComponentProps<typeof PhotoEditorV2Type>;
 
 function EditorFallback() {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95">
+    <div className="fixed inset-0 z-fullscreen flex items-center justify-center bg-background/95">
       <div className="flex flex-col items-center gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
         <p className="text-sm text-muted-foreground">Menyiapkan editor foto…</p>

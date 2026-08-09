@@ -1053,7 +1053,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-[100] flex flex-col bg-background text-foreground"
+      className="fixed inset-x-0 top-0 z-fullscreen flex flex-col bg-background text-foreground"
       style={{ bottom: kbInset }}
       // Stop the editor's pointerdown from reaching parent overlays (Sheet /
       // Dialog dismissal, drag-to-close sheets in the shell). MUST be the

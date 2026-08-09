@@ -61,7 +61,7 @@ export function FullscreenExitControl() {
       onClick={exit}
       aria-label="Keluar dari layar penuh"
       title="Keluar dari layar penuh (Esc)"
-      className="depth-3d-sm depth-tap fixed z-[70] flex items-center gap-1.5 rounded-full border border-border/60 bg-background/85 px-3 py-1.5 text-xs font-medium text-foreground shadow-lg backdrop-blur transition-opacity hover:opacity-100 opacity-70"
+      className="depth-3d-sm depth-tap fixed z-fab flex items-center gap-1.5 rounded-full border border-border/60 bg-background/85 px-3 py-1.5 text-xs font-medium text-foreground shadow-lg backdrop-blur transition-opacity hover:opacity-100 opacity-70"
       style={{
         top: "max(0.5rem, calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 0.375rem))",
         right: "max(0.5rem, calc(var(--app-safe-right,env(safe-area-inset-right,0px)) + 0.5rem))",
