@@ -2013,7 +2013,7 @@ function ChatRoomPage() {
         />
       ) : null}
 
-      <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg relative flex-1 overflow-y-auto px-ms-2 py-ms-3 sm:px-ms-4">
+      <div ref={scrollerRef} onScroll={onScrollerScroll} className="wa-chat-bg chat-scroller relative flex-1 overflow-y-auto px-ms-2 py-ms-3 sm:px-ms-4">
         {isLoading ? (
           <ChatMessagesSkeleton bubbles={6} />
         ) : (messages ?? []).length === 0 ? (
