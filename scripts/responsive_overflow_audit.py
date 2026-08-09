@@ -24,13 +24,32 @@ from playwright.async_api import async_playwright
 BASE = os.environ.get("BASE_URL", "http://localhost:8080")
 OUT = Path(os.environ.get("AUDIT_OUT", "/tmp/responsive-audit"))
 
-# Public visual harnesses — tambahkan surface baru di sini.
+# Public visual harnesses (rute teknis) — tambahkan surface baru di sini.
 TARGETS = [
     {"name": "photo-editor",         "path": "/lovable/visual/photo-editor?v=2"},
     {"name": "prep-loc-buttons",     "path": "/lovable/visual/prep-loc-buttons?variant=prep&state=filled"},
     {"name": "prep-loc-buttons-req", "path": "/lovable/visual/prep-loc-buttons?variant=request&state=idle"},
     {"name": "tap-targets",          "path": "/lovable/visual/tap-targets"},
     {"name": "gudang-shell",         "path": "/lovable/visual/gudang-shell"},
+    {"name": "dialog-viewport",      "path": "/lovable/visual/dialog-viewport"},
+    {"name": "komponen-review",      "path": "/lovable/visual/komponen-review"},
+    {"name": "design-tokens",        "path": "/lovable/visual/design-tokens"},
+    {"name": "menu-variants",        "path": "/lovable/visual/menu-variants"},
+    {"name": "bottom-bar-snap",      "path": "/lovable/visual/bottom-bar-snap"},
+    {"name": "toast-layout",         "path": "/lovable/visual/toast-layout"},
+    {"name": "produk-list",          "path": "/lovable/visual/produk-list"},
+    # Rute aplikasi utama yang bisa dibuka tanpa sesi.
+    {"name": "produk",               "path": "/produk"},
+    {"name": "harga",                "path": "/harga"},
+    {"name": "faq",                  "path": "/faq"},
+    {"name": "trust",                "path": "/trust"},
+    {"name": "terms",                "path": "/terms"},
+    {"name": "refund",               "path": "/refund"},
+    {"name": "auth",                 "path": "/auth"},
+    {"name": "reset-password",       "path": "/reset-password"},
+    {"name": "download",             "path": "/download"},
+    {"name": "pos-kasir",            "path": "/pos-kasir"},
+    {"name": "pratinjau-tema",       "path": "/pratinjau-tema"},
 ]
 
 # Lebar kritis Android/iOS + tablet portrait.
