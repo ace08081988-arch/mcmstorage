@@ -86,6 +86,7 @@ function PosKasirPage() {
   const [gudangError, setGudangError] = useState<string | null>(null);
   const [bayarBusy, setBayarBusy] = useState<boolean>(false);
   const [toast, setToast] = useState<string | null>(null);
+  const keyboardInset = useVisualViewportKeyboardInset();
   const [riwayat, setRiwayat] = useState<PosKasirTransaksi[]>(() => getPosKasirRiwayat());
   const [dariTgl, setDariTgl] = useState<string>("");
   const [sampaiTgl, setSampaiTgl] = useState<string>("");
