@@ -85,7 +85,7 @@ function FabClearanceHarness() {
           data-testid="fab-tambah"
           aria-label="Tambah data"
           data-floating-ui="fab"
-          className="depth-3d fixed z-fab flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
+          className="app-hit-area depth-3d fixed z-fab flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
           style={{
             bottom: SAFE_BOTTOM,
             right: "calc(var(--app-safe-right, 0px) + 1rem)",
@@ -100,7 +100,7 @@ function FabClearanceHarness() {
             data-clearance="action-bar"
             data-testid="action-bar"
             data-floating-ui="fab"
-            className="fixed z-fab flex items-center gap-ms-2 rounded-xl border border-border bg-card p-ms-2 shadow-lg"
+            className="fixed z-fab flex items-center gap-ms-3 rounded-xl border border-border bg-card p-ms-2 shadow-lg"
             style={{
               bottom: SAFE_BOTTOM,
               left: "calc(var(--app-safe-left, 0px) + 1rem)",
@@ -110,14 +110,14 @@ function FabClearanceHarness() {
             <button
               type="button"
               data-clearance="action-bar-item"
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary/10 px-ms-3 text-ms-xs"
+              className="app-hit-area flex min-h-12 flex-1 items-center justify-center gap-2 rounded-lg bg-primary/10 px-ms-3 text-ms-xs"
             >
               <Send className="h-4 w-4" aria-hidden="true" /> Kirim
             </button>
             <button
               type="button"
               data-clearance="action-bar-item"
-              className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-destructive/10 px-ms-3 text-ms-xs"
+              className="app-hit-area flex min-h-12 items-center justify-center gap-2 rounded-lg bg-destructive/10 px-ms-3 text-ms-xs"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" /> Hapus
             </button>
