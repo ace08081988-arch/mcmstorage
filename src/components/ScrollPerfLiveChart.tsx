@@ -160,8 +160,11 @@ export function ScrollPerfLiveChart() {
   // Pulihkan preferensi penghalusan.
   useEffect(() => {
     try {
-      const raw = Number(localStorage.getItem(SMOOTH_KEY));
-      if (SMOOTH_OPTIONS.some((o) => o.v === raw)) setSmooth(raw);
+      const stored = localStorage.getItem(SMOOTH_KEY);
+      const raw = Number(stored);
+      if (stored !== null && Number.isFinite(raw) && raw >= SMOOTH_MIN) {
+        setSmooth(clampSmooth(raw));
+      }
     } catch {
       /* mode privat → pakai default */
     }
@@ -188,9 +191,10 @@ export function ScrollPerfLiveChart() {
   }, []);
 
   const chooseSmooth = useCallback((v: number) => {
-    setSmooth(v);
+    const next = clampSmooth(v);
+    setSmooth(next);
     try {
-      localStorage.setItem(SMOOTH_KEY, String(v));
+      localStorage.setItem(SMOOTH_KEY, String(next));
     } catch {
       /* abaikan */
     }
