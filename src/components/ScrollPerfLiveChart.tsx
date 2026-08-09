@@ -309,6 +309,12 @@ export function ScrollPerfLiveChart() {
   const hoverMarks = hover !== null ? (series.marks[hover] ?? []) : [];
   const hoverFpsTrend = hover !== null ? (fpsSmooth[hover] ?? 0) : 0;
   const hoverLatTrend = hover !== null ? (latSmooth[hover] ?? 0) : 0;
+  const hoverFpsSpike = hover !== null && (fpsSpikes[hover] ?? false);
+  const hoverLatSpike = hover !== null && (latSpikes[hover] ?? false);
+  const hoverFpsDrop =
+    hover !== null ? Math.round((fpsTrendRef[hover] ?? 0) - (series.fps[hover] ?? 0)) : 0;
+  const hoverLatJump =
+    hover !== null ? Math.round((series.lat[hover] ?? 0) - (latTrendRef[hover] ?? 0)) : 0;
   /** Posisi kotak tooltip dalam persen lebar, dijaga agar tidak keluar kartu. */
   const hoverLeft = hover !== null ? Math.min(88, Math.max(2, (hover / (POINTS - 1)) * 100)) : 0;
 
@@ -343,8 +349,40 @@ export function ScrollPerfLiveChart() {
             {hoverMarks.map((k) => MARK_STYLE[k].short).join(" · ")}
           </div>
         ) : null}
+        {(kind === "fps" ? hoverFpsSpike : hoverLatSpike) ? (
+          <div className="font-medium text-red-500 tabular-nums">
+            {kind === "fps"
+              ? `spike: turun ${hoverFpsDrop} fps dari tren`
+              : `spike: naik ${hoverLatJump} ms dari tren`}
+          </div>
+        ) : null}
       </div>
     );
+
+  /** Sorotan spike: pita vertikal + titik merah pada indeks yang menyimpang. */
+  const spikeOverlay = (flags: boolean[], values: number[], max: number) => (
+    <g>
+      {flags.map((on, i) =>
+        on ? (
+          <g key={i}>
+            <rect
+              x={Math.max(0, i * step - step / 2)}
+              y={0}
+              width={Math.max(2, step)}
+              height={H}
+              className="fill-red-500/15"
+            />
+            <circle
+              cx={i * step}
+              cy={H - Math.min(1, (values[i] ?? 0) / max) * H}
+              r={2.6}
+              className="fill-red-500"
+            />
+          </g>
+        ) : null,
+      )}
+    </g>
+  );
 
   /** Penanda kejadian di sepanjang sumbu waktu. */
   const markers = (
