@@ -173,14 +173,22 @@ function runPreBuild() {
     console.log("    (skip; minifyEnabled false)");
   }
 
-  step("7  keystore.properties untuk signing");
+  step("7  Kredensial signing (env var ATAU keystore.properties)");
   const propsPath = resolve(ROOT, "android/keystore.properties");
-  if (existsSync(propsPath)) {
+  const envSigning =
+    process.env.KEYSTORE_FILE &&
+    process.env.KEYSTORE_ALIAS &&
+    process.env.KEYSTORE_STORE_PASS &&
+    process.env.KEYSTORE_KEY_PASS;
+  if (envSigning) {
+    ok("kredensial dari environment (KEYSTORE_FILE/ALIAS/STORE_PASS/KEY_PASS)");
+  } else if (existsSync(propsPath)) {
     ok("android/keystore.properties ada (validator terpisah cek isinya)");
   } else {
     err(
-      "android/keystore.properties tidak ada. Jalankan sekali:\n" +
-        "      bun run aab:setup-keystore",
+      "Kredensial signing tidak ditemukan.\n" +
+        "      CI    : set env KEYSTORE_FILE, KEYSTORE_ALIAS, KEYSTORE_STORE_PASS, KEYSTORE_KEY_PASS.\n" +
+        "      Lokal : jalankan sekali `bun run aab:setup-keystore` (menulis android/keystore.properties).",
     );
   }
 
