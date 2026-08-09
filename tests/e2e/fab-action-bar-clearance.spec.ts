@@ -134,7 +134,10 @@ const MEASURE = ({ insets, eps }: { insets: Insets; eps: number }) => {
     if (r.top < -eps || r.right < eps || r.left > vw - eps)
       out.push({ reason: "keluar-viewport", label, rect });
 
-    if (navRect) {
+    // Overlap dengan bilah navigasi hanya relevan untuk FAB/action bar yang
+    // ditandai eksplisit. Overlay global (prompt izin, badge build) punya
+    // aturan tumpuknya sendiri dan diuji spec lain.
+    if (navRect && el.hasAttribute("data-clearance")) {
       const iy =
         Math.min(r.bottom, navRect.bottom) - Math.max(r.top, navRect.top);
       const ix =
