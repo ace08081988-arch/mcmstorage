@@ -2401,7 +2401,7 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
     max(
       var(--app-bottom-bar-space, 0px),
       var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
-    ) + 0.5rem
+    ) + var(--app-keyboard-inset, 0px) + 0.5rem
   );
 }
 
@@ -2415,7 +2415,7 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
     max(
       var(--app-bottom-bar-space, 0px),
       var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
-    ) + 0.75rem
+    ) + var(--app-keyboard-inset, 0px) + 0.75rem
   );
 }
 
@@ -2424,8 +2424,27 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
     max(
       var(--app-bottom-bar-space, 0px),
       var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
-    ) + 4.75rem
+    ) + var(--app-keyboard-inset, 0px) + 4.75rem
   );
+}
+
+/* Bilah aksi lengket yang harus tetap terlihat saat keyboard terbuka.
+   Saat keyboard aktif, bar dinaikkan setinggi keyboard dan bilah bawah
+   diabaikan (nav bawah ikut tertutup keyboard). */
+@utility app-keyboard-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: var(--z-fab, 44);
+  padding-left: var(--app-safe-left, env(safe-area-inset-left, 0px));
+  padding-right: var(--app-safe-right, env(safe-area-inset-right, 0px));
+  bottom: calc(
+    max(
+      var(--app-bottom-bar-space, 0px),
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    ) + var(--app-keyboard-inset, 0px)
+  );
+  transition: bottom 120ms ease-out;
 }
 
 @utility app-fab-right {
