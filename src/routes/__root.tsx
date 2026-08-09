@@ -401,6 +401,10 @@ function RootComponent() {
       installToastWatchdog();
       stop = router.subscribe("onBeforeNavigate", () => dismissAllToasts());
     });
+    // Saring notifikasi teknis/latar supaya hanya yang penting yang tampil.
+    void import("@/lib/toast-noise").then(({ installToastNoiseFilter }) =>
+      installToastNoiseFilter(),
+    );
     return () => stop?.();
   }, [router]);
   // Lacak perangkat tempat login + auto-signOut bila sesi dicabut dari
