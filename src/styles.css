@@ -4197,6 +4197,8 @@ html[data-app-installed="1"] body {
    ========================================================================== */
 :root {
   --app-vh: 100dvh;
+  /* Tinggi area yang benar-benar terlihat (toolbar/keyboard sudah dipotong). */
+  --app-vh-visible: 100dvh;
 }
 
 @utility h-app-vh {
@@ -4209,6 +4211,16 @@ html[data-app-installed="1"] body {
 
 @utility max-h-app-vh {
   max-height: var(--app-vh, 100dvh);
+}
+
+/* Varian "terlihat": dipakai panel layar penuh (chat, dialog) supaya isi
+   tidak tersembunyi di balik toolbar browser atau keyboard. */
+@utility h-app-vh-visible {
+  height: var(--app-vh-visible, var(--app-vh, 100dvh));
+}
+
+@utility max-h-app-vh-visible {
+  max-height: var(--app-vh-visible, var(--app-vh, 100dvh));
 }
 
 /* ==========================================================================
