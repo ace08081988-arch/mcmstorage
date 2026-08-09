@@ -353,7 +353,7 @@ export function ScrollPerfLiveChart() {
         </div>
         {smoothing ? (
           <div className="text-muted-foreground tabular-nums">
-            tren:{" "}
+            tren ({smooth} titik):{" "}
             {kind === "fps"
               ? `${hoverFpsTrend.toFixed(1)} fps`
               : `${hoverLatTrend.toFixed(1)} ms`}
