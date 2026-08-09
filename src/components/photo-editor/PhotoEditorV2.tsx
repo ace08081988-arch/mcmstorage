@@ -1541,7 +1541,15 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         const obj = scene.objects.find((o) => o.id === showText.id && o.kind === "text") as TextObj | undefined;
         if (!obj) return null;
         return (
-          <div className="absolute inset-x-0 bottom-0 z-40 rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in">
+          // Panel ini berisi input teks: saat keyboard terbuka ia harus naik
+          // setinggi keyboard, kalau tidak field-nya persis tertutup.
+          <div
+            style={{
+              bottom: "var(--app-keyboard-inset, 0px)",
+              maxHeight: "calc(var(--app-vh-visible, var(--app-vh, 100dvh)) - 6rem)",
+            }}
+            className="absolute inset-x-0 z-40 overflow-y-auto overscroll-contain rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in"
+          >
             <div className="mb-2 flex items-center justify-between">
               <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Ubah Teks</div>
               <button onClick={() => setShowText(null)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
