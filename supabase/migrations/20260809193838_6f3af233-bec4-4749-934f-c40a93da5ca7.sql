@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS public.worker_submit_idempotency (
   PRIMARY KEY (task_id, client_key)
 );
 
--- Hanya fungsi SECURITY DEFINER di bawah yang menyentuh tabel ini.
+-- Hanya fungsi SECURITY DEFINER yang menyentuh tabel ini.
 REVOKE ALL ON public.worker_submit_idempotency FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.worker_submit_idempotency TO service_role;
 ALTER TABLE public.worker_submit_idempotency ENABLE ROW LEVEL SECURITY;
@@ -129,4 +129,3 @@ $$;
 
 REVOKE ALL ON FUNCTION public.stock_reconcile_v1() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.stock_reconcile_v1() TO authenticated, service_role;
-
