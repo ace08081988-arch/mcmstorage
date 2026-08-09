@@ -19,6 +19,7 @@ import { applyCompactMode } from "@/components/CompactModeToggle";
 import { applyReduceMotion } from "@/components/ReduceMotionToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
+import { TechnicalRouteGate } from "@/components/TechnicalRouteFallback";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
 import { installChunkRecovery } from "@/lib/chunk-recovery";
