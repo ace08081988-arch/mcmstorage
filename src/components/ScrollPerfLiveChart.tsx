@@ -542,6 +542,7 @@ export function ScrollPerfLiveChart() {
                 strokeLinecap="round"
               />
             ) : null}
+            {spikeOverlay(fpsSpikes, series.fps, 120)}
             {crosshair}
             {hover !== null ? (
               <circle
@@ -606,6 +607,7 @@ export function ScrollPerfLiveChart() {
                 strokeLinecap="round"
               />
             ) : null}
+            {spikeOverlay(latSpikes, series.lat, latMax)}
             {crosshair}
           </svg>
         </div>
