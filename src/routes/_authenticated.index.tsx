@@ -2300,7 +2300,10 @@ function Index() {
       </div>
 
       {selectMode && (
-        <div className="sticky bottom-0 z-10 border-t bg-card/95 backdrop-blur">
+        <div
+          className="sticky bottom-0 z-10 border-t bg-card/95 backdrop-blur"
+          style={{ paddingBottom: `calc(max(var(--app-bottom-bar-space, 0px), var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))))` }}
+        >
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-ms-2 px-ms-3 py-ms-2 sm:px-ms-6">
             <button
               onClick={selectAllVisible}

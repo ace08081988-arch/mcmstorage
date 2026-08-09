@@ -454,7 +454,10 @@ function ProfilPage() {
         </Card>
 
         {/* Action bar */}
-        <div className="sticky bottom-2 z-10 flex items-center justify-between gap-ms-3 rounded-xl border bg-background/95 p-ms-3 shadow-sm backdrop-blur">
+        <div
+          className="sticky z-10 flex items-center justify-between gap-ms-3 rounded-xl border bg-background/95 p-ms-3 shadow-sm backdrop-blur"
+          style={{ bottom: `calc(max(var(--app-bottom-bar-space, 0px), var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))) + 0.5rem)` }}
+        >
           <p className="text-ms-xs text-muted-foreground">
             {dirty ? "Ada perubahan belum disimpan." : "Semua perubahan tersimpan."}
           </p>

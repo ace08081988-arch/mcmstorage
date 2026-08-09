@@ -329,7 +329,10 @@ export function ProductEditDrawer(props: Props) {
           </section>
         </div>
 
-        <DrawerFooter className="sticky bottom-0 grid grid-cols-[auto_1fr] gap-ms-2 border-t bg-card/95 pt-3 backdrop-blur">
+        <DrawerFooter
+          className="sticky bottom-0 grid grid-cols-[auto_1fr] gap-ms-2 border-t bg-card/95 pt-3 backdrop-blur"
+          style={{ paddingBottom: `calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 0.5rem)` }}
+        >
           <button
             type="button"
             onClick={kirimWA}

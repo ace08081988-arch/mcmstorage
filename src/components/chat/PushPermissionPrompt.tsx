@@ -76,8 +76,13 @@ export function PushPermissionPrompt() {
     <div
       role="region"
       aria-label="Aktifkan notifikasi"
-      className="fixed inset-x-3 z-50 rounded-xl border bg-card p-ms-3 shadow-lg"
-      style={{ bottom: "calc(var(--app-bottom-nav-h, 0px) + 12px)" }}
+      className="fixed z-50 rounded-xl border bg-card p-ms-3 shadow-lg"
+      style={{
+        bottom:
+          "calc(max(var(--app-bottom-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))) + 12px)",
+        left: "calc(var(--app-safe-left, env(safe-area-inset-left, 0px)) + 0.75rem)",
+        right: "calc(var(--app-safe-right, env(safe-area-inset-right, 0px)) + 0.75rem)",
+      }}
     >
       <div className="flex items-start gap-ms-3">
         <Bell className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
