@@ -232,10 +232,10 @@ function PesananDetailPage() {
               <div className="text-ms-xs font-semibold">⚙️ Aksi</div>
               <div className="flex flex-wrap gap-ms-2">
                 {order.status !== "menunggu" && (
-                  <button disabled={busy} onClick={() => setStatus("menunggu")} className="rounded border px-ms-3 py-1.5 text-ms-xs hover:bg-accent disabled:opacity-50">↩️ Kembalikan ke Menunggu</button>
+                  <button disabled={busy || order.status === "selesai"} onClick={() => setStatus("menunggu")} className="rounded border px-ms-3 py-1.5 text-ms-xs hover:bg-accent disabled:opacity-50">↩️ Kembalikan ke Menunggu</button>
                 )}
                 {order.status !== "siap" && (
-                  <button disabled={busy} onClick={() => setStatus("siap")} className="rounded border px-ms-3 py-1.5 text-ms-xs hover:bg-accent disabled:opacity-50">📦 Tandai Siap</button>
+                  <button disabled={busy || order.status === "selesai"} onClick={() => setStatus("siap")} className="rounded border px-ms-3 py-1.5 text-ms-xs hover:bg-accent disabled:opacity-50">📦 Tandai Siap</button>
                 )}
                 <button disabled={busy || !item || !cukup || order.status === "selesai"} onClick={proses} className="rounded bg-primary px-ms-3 py-1.5 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50">
                   💰 Proses Jadi Penjualan
@@ -248,6 +248,16 @@ function PesananDetailPage() {
           </>
         )}
       </main>
+      {order && item && (
+        <ProcessOrderDialog
+          open={payOpen}
+          onOpenChange={(v) => { if (!busy) setPayOpen(v); }}
+          summary={`${item.name} — ${fmtBase(qtyBase, item.base_unit)} × ${rupiah(perBase)}/${item.base_unit}`}
+          total={orderTotal}
+          busy={busy}
+          onConfirm={confirmProses}
+        />
+      )}
     </div>
   );
 }
