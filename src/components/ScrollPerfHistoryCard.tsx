@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { History, Trash2 } from "lucide-react";
+import { Download, History, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,6 +15,11 @@ import {
   subscribeScrollPerfSessions,
   type ScrollPerfSession,
 } from "@/lib/scroll-perf-sessions";
+import {
+  buildScrollPerfCsv,
+  downloadCsv,
+  scrollPerfCsvFilename,
+} from "@/lib/scroll-perf-csv";
 
 const EMPTY: ScrollPerfSession[] = [];
 
@@ -48,6 +53,10 @@ export function ScrollPerfHistoryCard() {
 
   const best = sessions.reduce((a, s) => Math.max(a, s.fpsAvg), 0);
 
+  const exportSessions = (rows: ScrollPerfSession[], suffix?: string) => {
+    downloadCsv(scrollPerfCsvFilename(suffix), buildScrollPerfCsv(rows));
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -59,7 +68,7 @@ export function ScrollPerfHistoryCard() {
             </CardTitle>
             <CardDescription className="text-ms-xs">
               Ringkasan tiap kali aplikasi dibuka — bandingkan FPS, latensi, dan
-              frame tersendat antar sesi.
+              frame tersendat antar sesi, atau unduh time-series-nya sebagai CSV.
             </CardDescription>
           </div>
           <Badge variant="outline" className="shrink-0 text-muted-foreground">
@@ -95,6 +104,16 @@ export function ScrollPerfHistoryCard() {
                     <span className={`text-ms-base font-semibold tabular-nums ${fpsTone(s.fpsAvg)}`}>
                       {s.fpsAvg || "—"} fps
                     </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => exportSessions([s], "sesi")}
+                      aria-label={`Unduh CSV sesi ${fmtTime(s.startedAt)}`}
+                      title="Unduh CSV sesi ini"
+                    >
+                      <Download className="h-3.5 w-3.5" aria-hidden />
+                    </Button>
                   </div>
                 </div>
                 <dl className="mt-ms-2 grid grid-cols-4 gap-ms-1 text-center">
@@ -115,7 +134,11 @@ export function ScrollPerfHistoryCard() {
           </ul>
         )}
         {sessions.length > 0 ? (
-          <div className="flex justify-end">
+          <div className="flex flex-wrap justify-end gap-ms-2">
+            <Button variant="outline" size="sm" onClick={() => exportSessions(sessions, "semua")}>
+              <Download className="mr-1 h-3.5 w-3.5" aria-hidden />
+              Ekspor CSV
+            </Button>
             <Button variant="outline" size="sm" onClick={() => clearScrollPerfSessions()}>
               <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden />
               Hapus riwayat
