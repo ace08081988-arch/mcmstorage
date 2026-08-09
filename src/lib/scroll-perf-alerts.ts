@@ -33,7 +33,9 @@ export const SCROLL_PERF_ALERT_LOG_KEY = "app-scroll-perf-alert-log";
 const MAX_LOG = 30;
 
 export const DEFAULT_ALERT_PREFS: ScrollPerfAlertPrefs = {
-  enabled: true,
+  // Mati secara bawaan: toast "Scroll terasa berat" mengganggu penggunaan
+  // sehari-hari. Kejadian tetap dicatat & bisa dinyalakan di Diagnostik.
+  enabled: false,
   fpsMin: 45,
   latencyMaxMs: 60,
   cooldownSec: 20,
@@ -59,6 +61,12 @@ export function loadAlertPrefs(): ScrollPerfAlertPrefs {
     const raw = localStorage.getItem(SCROLL_PERF_ALERT_PREFS_KEY);
     const parsed = raw ? (JSON.parse(raw) as Partial<ScrollPerfAlertPrefs>) : {};
     prefsCache = { ...DEFAULT_ALERT_PREFS, ...parsed };
+    // Sekali jalan: matikan peringatan yang terlanjur aktif dari versi lama.
+    if (prefsCache.enabled && localStorage.getItem(`${SCROLL_PERF_ALERT_PREFS_KEY}-off-v2`) !== "1") {
+      prefsCache = { ...prefsCache, enabled: false };
+      localStorage.setItem(`${SCROLL_PERF_ALERT_PREFS_KEY}-off-v2`, "1");
+      localStorage.setItem(SCROLL_PERF_ALERT_PREFS_KEY, JSON.stringify(prefsCache));
+    }
   } catch {
     prefsCache = DEFAULT_ALERT_PREFS;
   }
