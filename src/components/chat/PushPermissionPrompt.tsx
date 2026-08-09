@@ -80,7 +80,7 @@ export function PushPermissionPrompt() {
       className="fixed z-fab rounded-xl border bg-card p-ms-3 shadow-lg"
       style={{
         bottom:
-          "calc(max(var(--app-bottom-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))) + 12px)",
+          "calc(max(var(--app-bottom-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))) + var(--app-keyboard-inset, 0px) + 12px)",
         left: "calc(var(--app-safe-left, env(safe-area-inset-left, 0px)) + 0.75rem)",
         right: "calc(var(--app-safe-right, env(safe-area-inset-right, 0px)) + 0.75rem)",
       }}
