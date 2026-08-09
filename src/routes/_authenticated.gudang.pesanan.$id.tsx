@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { confirm } from "@/lib/confirm";
 import { fmtItemQty } from "@/lib/stock-format";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ProcessOrderDialog } from "@/components/ProcessOrderDialog";
+import { processOrder } from "@/lib/order-process";
+import type { PaymentMethod } from "@/lib/payment-summary";
 
 export const Route = createFileRoute("/_authenticated/gudang/pesanan/$id")({
   component: PesananDetailPage,
@@ -50,6 +53,7 @@ function PesananDetailPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -75,6 +79,10 @@ function PesananDetailPage() {
 
   async function setStatus(to: Order["status"]) {
     if (!order) return;
+    if (order.status === "selesai") {
+      toast.error("Pesanan sudah selesai — status tidak bisa diubah lagi.");
+      return;
+    }
     setBusy(true);
     const { error } = await supabase.from("order_requests").update({ status: to }).eq("id", order.id);
     setBusy(false);
@@ -91,27 +99,26 @@ function PesananDetailPage() {
       return;
     }
     if (qtyBase > item.stock_base) { toast.error("Stok kurang"); return; }
-    const perBase = order.price_per_unit
-      ? (order.qty_mode === "base" ? Number(order.price_per_unit) : Number(order.price_per_unit) / item.package_size)
-      : 0;
-    if (!(await confirm({
-      title: "Catat penjualan?",
-      description: `${fmtBase(qtyBase, item.base_unit)} × ${rupiah(perBase)}/${item.base_unit}`,
-      confirmText: "Catat",
-    }))) return;
+    setPayOpen(true);
+  }
+
+  const perBase = order?.price_per_unit && item
+    ? (order.qty_mode === "base"
+        ? Number(order.price_per_unit)
+        : Number(order.price_per_unit) / item.package_size)
+    : 0;
+  const orderTotal = qtyBase * perBase;
+
+  async function confirmProses(method: PaymentMethod, paid: number | null) {
+    if (!order || busy) return;
     setBusy(true);
-    // H3: total_revenue & cost_at_sale diisi otomatis oleh trigger apply_sale
-    // (SSOT harga & modal). Klien hanya menyerahkan qty & harga per unit
-    // supaya tidak ada risiko drift kalau ke depan formula berubah.
-    const { error } = await supabase.from("sales").insert({
-      user_id: order.user_id, item_id: item.id, qty_base: qtyBase,
-      price_per_base: perBase, total_revenue: 0,
-      note: `Pesanan: ${order.note ?? "-"}`, customer_id: order.customer_id, payment_method: "kas",
-    });
-    if (error) { setBusy(false); toast.error("Gagal catat penjualan"); return; }
-    await supabase.from("order_requests").update({ status: "selesai" }).eq("id", order.id);
+    const res = await processOrder(order.id, method, paid);
     setBusy(false);
-    toast.success("Pesanan diproses jadi penjualan");
+    if (!res.ok) { toast.error(res.message); return; }
+    setPayOpen(false);
+    toast.success(res.alreadyProcessed
+      ? "Pesanan ini sudah diproses sebelumnya."
+      : "Pesanan diproses jadi penjualan");
     load();
   }
 
@@ -225,10 +232,10 @@ function PesananDetailPage() {
               <div className="text-ms-xs font-semibold">⚙️ Aksi</div>
               <div className="flex flex-wrap gap-ms-2">
                 {order.status !== "menunggu" && (
-                  <button disabled={busy} onClick={() => setStatus("menunggu")} className="rounded border px-ms-3 py-1.5 text-ms-xs hover:bg-accent disabled:opacity-50">↩️ Kembalikan ke Menunggu</button>
+                  <button disabled={busy || order.status === "selesai"} onClick={() => setStatus("menunggu")} className="rounded border px-ms-3 py-1.5 text-ms-xs hover:bg-accent disabled:opacity-50">↩️ Kembalikan ke Menunggu</button>
                 )}
                 {order.status !== "siap" && (
-                  <button disabled={busy} onClick={() => setStatus("siap")} className="rounded border px-ms-3 py-1.5 text-ms-xs hover:bg-accent disabled:opacity-50">📦 Tandai Siap</button>
+                  <button disabled={busy || order.status === "selesai"} onClick={() => setStatus("siap")} className="rounded border px-ms-3 py-1.5 text-ms-xs hover:bg-accent disabled:opacity-50">📦 Tandai Siap</button>
                 )}
                 <button disabled={busy || !item || !cukup || order.status === "selesai"} onClick={proses} className="rounded bg-primary px-ms-3 py-1.5 text-ms-xs font-semibold text-primary-foreground disabled:opacity-50">
                   💰 Proses Jadi Penjualan
@@ -241,6 +248,16 @@ function PesananDetailPage() {
           </>
         )}
       </main>
+      {order && item && (
+        <ProcessOrderDialog
+          open={payOpen}
+          onOpenChange={(v) => { if (!busy) setPayOpen(v); }}
+          summary={`${item.name} — ${fmtBase(qtyBase, item.base_unit)} × ${rupiah(perBase)}/${item.base_unit}`}
+          total={orderTotal}
+          busy={busy}
+          onConfirm={confirmProses}
+        />
+      )}
     </div>
   );
 }

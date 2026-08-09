@@ -531,14 +531,17 @@ export function useConversationMessages(conversationId: string | undefined) {
     queryKey: ["chat", "messages", conversationId],
     enabled: !!conversationId,
     queryFn: async (): Promise<MessageRow[]> => {
+      // Ambil 500 pesan TERBARU (DESC) lalu dibalik jadi urutan kronologis.
+      // Kalau diambil ASC, percakapan panjang akan berhenti di pesan lama dan
+      // pesan terbaru tidak pernah muncul.
       const { data, error } = await supabase
         .from("messages")
         .select("*")
         .eq("conversation_id", conversationId!)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data ?? []) as MessageRow[];
+      return ((data ?? []) as MessageRow[]).slice().reverse();
     },
   });
 

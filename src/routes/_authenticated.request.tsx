@@ -972,34 +972,24 @@ function TitleEditorDialog({
     setSaveError(null);
     setBusy(true);
     try {
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u.user?.id;
-      if (!uid) throw new Error("Belum login");
-      let titleId = existing?.id;
-      if (existing) {
-        const { error } = await sb.from("request_titles").update({
-          name: trimmed, note: note.trim() || null,
-        }).eq("id", existing.id);
-        if (error) throw error;
-        // Replace items
-        await sb.from("request_title_items").delete().eq("title_id", existing.id);
-      } else {
-        const { data, error } = await sb.from("request_titles").insert({
-          user_id: uid, name: trimmed, note: note.trim() || null,
-        }).select("id").single();
-        if (error) throw error;
-        titleId = data.id;
-      }
-      const payload = validRows.map((r, idx) => ({
-        title_id: titleId,
+      // Satu RPC atomik: judul + seluruh daftar barang diganti sekaligus.
+      // Kalau ada langkah yang gagal, semuanya di-rollback sehingga paket
+      // tidak pernah tertinggal kosong.
+      const items = validRows.map((r, idx) => ({
         warehouse_item_id: r.warehouse_item_id,
         target_grams: Number(r.target_grams),
         unit_label: canonicalUnitLabel(r.unit_kind, r.unit_custom),
         note: r.note.trim() || null,
         position: idx,
       }));
-      const { error: e2 } = await sb.from("request_title_items").insert(payload);
-      if (e2) throw e2;
+      const { error } = await sb.rpc("request_title_save_v1", {
+        _title_id: existing?.id ?? undefined,
+        _name: trimmed,
+        _note: note.trim() || undefined,
+        _position: existing?.position ?? 0,
+        _items: items,
+      });
+      if (error) throw error;
       toast.success("Judul tersimpan");
       onSaved(); onClose();
     } catch (e) {
@@ -3024,7 +3014,47 @@ function SendPrepToCustomerDialog({
     setSendError(null);
     setBusy(true);
     try {
-      // 1) RPC atomik: hapus prep items (kembalikan stok) + catat sales + piutang.
+      // ── URUTAN: KIRIM DULU, BARU CATAT ────────────────────────────────
+      // Pencatatan penjualan/piutang hanya dijalankan setelah pesan benar-
+      // benar terkirim (atau user memilih lanjut manual). Ini mencegah
+      // "tercatat tapi tidak terkirim" saat share dibatalkan/gagal.
+      const files = await fetchPhotoFiles();
+      const text = buildCaption();
+      let channelSummary: string;
+      if (channel === "chat" && conv) {
+        const shots = files.map((f, i) => ({ id: `${prep.id}:${i}`, file: f }));
+        const res = await shareToChat({
+          conversationId: conv.id,
+          caption: text,
+          locationUrl: primaryLocation || null,
+          shots,
+        });
+        if (res.status !== "shared") {
+          throw new Error(res.error || "Gagal kirim ke Ace Chat");
+        }
+        channelSummary = `Tujuan: Ace Chat → ${conv.title}`;
+      } else {
+        const phone = normalizePhone(resolvedParty.contact) ?? undefined;
+        const res = await shareToWhatsApp({
+          text,
+          title: titleName,
+          files,
+          // Jika ada foto, jangan set phone → biar share sheet muncul & foto ikut.
+          phone: files.length === 0 ? phone : undefined,
+        });
+        notifyShareResult(res);
+        if (res.status === "cancelled") {
+          toast.info("Pengiriman dibatalkan — penjualan BELUM dicatat.");
+          setBusy(false);
+          return;
+        }
+        if (res.status === "failed") {
+          throw new Error(res.error || "Gagal kirim ke WhatsApp");
+        }
+        channelSummary = `Tujuan: WhatsApp${resolvedParty.contact ? ` → ${resolvedParty.contact}` : ""}`;
+      }
+
+      // RPC atomik: hapus prep items (kembalikan stok) + catat sales + piutang.
       const { error: rpcErr } = await sb.rpc("send_request_prep_to_customer", {
         _prep_id: prep.id,
         _customer_id: resolvedParty.id,
@@ -3037,8 +3067,7 @@ function SendPrepToCustomerDialog({
       if (rpcErr) throw rpcErr;
 
       // Sabuk pengaman: broadcast agar ReadyRequestSection / ReadyEcerSection /
-      // panel Piutang di /index refetch tanpa nunggu realtime. Amount = sisa
-      // (0 kalau Lunas) — listener memakainya sebagai sinyal refresh.
+      // panel Piutang di /index refetch tanpa nunggu realtime.
       emitDebtTx({
         kind: "piutang",
         wasCash: payment.method === "kas",
@@ -3047,70 +3076,26 @@ function SendPrepToCustomerDialog({
         at: Date.now(),
       });
 
-      // Toast konfirmasi: penjualan (& piutang bila ada) sudah TERCATAT di
-      // database. Tampilkan ringkasan total + metode bayar SEBELUM foto/pesan
-      // dikirim ke pelanggan — supaya user punya bukti eksplisit bahwa
-      // pencatatan sudah aman meski pengiriman pesan gagal di tengah jalan.
       const methodLabel =
         payment.method === "kas"
           ? "Lunas (kas)"
           : payment.method === "hutang"
             ? `Hutang penuh · piutang ${rupiah(payment.remaining)}`
             : `Dibayar ${rupiah(payment.paid)} · sisa piutang ${rupiah(payment.remaining)}`;
-      const summaryLines = [
-        `Pelanggan: ${resolvedParty.name}`,
-        `Total: ${rupiah(payment.total)}`,
-        `Metode: ${methodLabel}`,
-        channel === "chat" && conv
-          ? `Tujuan: Ace Chat → ${conv.title}`
-          : `Tujuan: WhatsApp${resolvedParty.contact ? ` → ${resolvedParty.contact}` : ""}`,
-      ].join("\n");
       toast.success(
         payment.method === "kas"
-          ? "Penjualan tercatat — menyiapkan pesan…"
-          : "Penjualan & piutang tercatat — menyiapkan pesan…",
-        { description: summaryLines, duration: 6000 },
+          ? "Terkirim — penjualan tercatat, stok gudang tersinkron"
+          : "Terkirim — penjualan & piutang tercatat",
+        {
+          description: [
+            `Pelanggan: ${resolvedParty.name}`,
+            `Total: ${rupiah(payment.total)}`,
+            `Metode: ${methodLabel}`,
+            channelSummary,
+          ].join("\n"),
+          duration: 6000,
+        },
       );
-
-      // 2) Kirim ke kanal terpilih dengan foto asli terlampir.
-      const files = await fetchPhotoFiles();
-      const text = buildCaption();
-      if (channel === "chat" && conv) {
-        const shots = files.map((f, i) => ({ id: `${prep.id}:${i}`, file: f }));
-        const res = await shareToChat({
-          conversationId: conv.id,
-          caption: text,
-          locationUrl: primaryLocation || null,
-          shots,
-        });
-        if (res.status !== "shared") {
-          throw new Error(res.error || "Gagal kirim ke Ace Chat");
-        }
-        toast.success(
-          payment.method === "hutang"
-            ? `Terkirim ke ${conv.title} — penjualan & piutang tercatat`
-            : payment.method === "partial"
-              ? `Terkirim ke ${conv.title} — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
-              : `Terkirim ke ${conv.title} — penjualan tercatat, stok gudang tersinkron`,
-        );
-      } else {
-        const phone = normalizePhone(resolvedParty.contact) ?? undefined;
-        const res = await shareToWhatsApp({
-          text,
-          title: titleName,
-          files,
-          // Jika ada foto, jangan set phone → biar share sheet muncul & foto ikut.
-          phone: files.length === 0 ? phone : undefined,
-        });
-        notifyShareResult(res);
-        toast.success(
-          payment.method === "hutang"
-            ? "Terkirim — penjualan & piutang tercatat"
-            : payment.method === "partial"
-              ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
-              : "Terkirim — penjualan tercatat, stok gudang tersinkron",
-        );
-      }
       onSent();
     } catch (e) {
       const msg = (e as { message?: string })?.message ?? String(e);
