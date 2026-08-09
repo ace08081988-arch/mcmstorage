@@ -4377,6 +4377,7 @@ export type Database = {
       ecer_submit_via_task: {
         Args: {
           _actual_grams: number
+          _client_key?: string
           _gps_lat: number
           _gps_lng: number
           _location_url: string
@@ -4552,13 +4553,14 @@ export type Database = {
       prep_submissions_unmark_sent: { Args: { _ids: string[] }; Returns: Json }
       prep_submit: {
         Args: {
-          _expected_updated_at?: string
+          _client_key?: string
+          _expected_updated_at: string
           _gps_lat: number
           _gps_lng: number
           _location_url: string
           _note: string
           _photo_path: string
-          _photo_paths?: string[]
+          _photo_paths: string[]
           _pin: string
           _qty_reported: number
           _task_item_id: string
@@ -4600,11 +4602,12 @@ export type Database = {
       request_prep_reconcile_report_v1: { Args: never; Returns: Json }
       request_submit_via_task: {
         Args: {
+          _client_key?: string
           _gps_lat: number
           _gps_lng: number
           _items: Json
           _location_url: string
-          _location_urls?: string[]
+          _location_urls: string[]
           _note: string
           _photo_path: string
           _photo_paths: string[]
