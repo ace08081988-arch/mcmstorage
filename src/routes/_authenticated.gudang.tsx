@@ -123,7 +123,7 @@ function AiPingButton() {
   }, [ping]);
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+    <div className="mt-2 flex flex-wrap items-center gap-2 text-ms-2xs">
       <button
         type="button"
         onClick={run}
@@ -384,7 +384,7 @@ function GudangLoadProgress({
     <div
       role="status"
       aria-live="polite"
-      className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs"
+      className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-ms-2xs"
     >
       <span className="relative inline-flex h-2.5 w-2.5 shrink-0">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/50" />
@@ -761,7 +761,7 @@ function GudangPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground md:flex">
       {/* Sidebar — md+ */}
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r bg-card/80 backdrop-blur md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-app-vh w-56 shrink-0 border-r bg-card/80 backdrop-blur md:flex md:flex-col">
         <div className="border-b p-ms-4">
           <Link to="/" className="text-ms-2xs text-muted-foreground hover:underline">← Beranda</Link>
           <h1 className="mt-1 flex items-center gap-ms-1.5 text-ms-lg font-bold tracking-ms-tight">
@@ -855,7 +855,7 @@ function GudangPage() {
         {lastCrash && (
           <div
             role="alert"
-            className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+            className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-ms-2xs text-destructive"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
