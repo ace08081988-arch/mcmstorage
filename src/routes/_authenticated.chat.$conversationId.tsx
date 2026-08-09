@@ -1878,7 +1878,7 @@ function ChatRoomPage() {
       )}
 
       {quickSearchOpen ? (
-        <div className="z-10 shrink-0 border-b bg-background/95 px-ms-2 py-1.5 backdrop-blur">
+        <div className="chat-bar-solid z-10 shrink-0 border-b bg-background/95 px-ms-2 py-1.5 backdrop-blur">
         <div className="flex items-center gap-ms-2">
           <SearchIcon className="ml-1 h-4 w-4 shrink-0 text-muted-foreground" />
           <input
