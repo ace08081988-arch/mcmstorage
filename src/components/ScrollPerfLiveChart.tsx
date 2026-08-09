@@ -42,6 +42,29 @@ const MARK_STYLE: Record<
 
 const MARK_ORDER: ScrollPerfEventKind[] = ["touch", "start", "move", "stop"];
 
+/** Pilihan rolling average (jumlah sampel; 1 = tanpa penghalusan). */
+const SMOOTH_OPTIONS = [
+  { v: 1, label: "Mentah", hint: "tanpa penghalusan" },
+  { v: 3, label: "Halus 3", hint: "rata-rata 0,3 dtk" },
+  { v: 7, label: "Halus 7", hint: "rata-rata 0,7 dtk" },
+] as const;
+
+const SMOOTH_KEY = "app-scroll-perf-smooth";
+
+/** Rata-rata bergerak (trailing) — memisahkan tren dari spike sesaat. */
+function rolling(values: number[], window: number): number[] {
+  if (window <= 1) return values;
+  const out: number[] = [];
+  let sum = 0;
+  for (let i = 0; i < values.length; i++) {
+    sum += values[i] ?? 0;
+    if (i >= window) sum -= values[i - window] ?? 0;
+    const n = Math.min(i + 1, window);
+    out.push(Math.round((sum / n) * 10) / 10);
+  }
+  return out;
+}
+
 function path(values: number[], max: number, w: number, h: number) {
   if (values.length < 2) return "";
   const step = w / (POINTS - 1);
