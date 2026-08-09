@@ -94,6 +94,9 @@ MEASURE_JS = r"""
   for (const el of nodes) {
     const cs = getComputedStyle(el);
     if (cs.visibility === "hidden" || cs.display === "none") continue;
+    // Skip-link & pemberitahuan a11y sengaja diparkir di luar layar sampai
+    // menerima fokus keyboard — bukan komponen terpotong.
+    if (el.closest("[data-skip-link], .sr-only, [aria-live]")) continue;
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
     if (r.right < -eps || r.bottom < -eps) continue; // off-screen (sr-only)
