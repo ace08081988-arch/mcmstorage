@@ -8,6 +8,17 @@
  */
 import type { ScrollPerfMetrics } from "./scroll-perf";
 
+/** Satu titik time-series: hasil satu fase gulir yang selesai. */
+export type ScrollPerfSample = {
+  /** Waktu fase selesai (epoch ms). */
+  at: number;
+  fps: number;
+  fpsMin: number;
+  latencyMs: number;
+  jankFrames: number;
+  peakSpeed: number;
+};
+
 export type ScrollPerfSession = {
   id: string;
   /** Waktu sesi dimulai (epoch ms). */
@@ -30,11 +41,15 @@ export type ScrollPerfSession = {
   peakSpeed: number;
   /** Label perangkat/layar singkat untuk membedakan sesi. */
   device: string;
+  /** Time-series FPS & latensi per fase gulir (untuk ekspor CSV). */
+  samples?: ScrollPerfSample[];
 };
 
 export const SCROLL_PERF_SESSIONS_KEY = "app-scroll-perf-sessions";
 /** Simpan sekian sesi terakhir saja supaya localStorage tetap ramping. */
 const MAX_SESSIONS = 20;
+/** Batas titik time-series per sesi supaya localStorage tetap ramping. */
+const MAX_SAMPLES = 300;
 
 const listeners = new Set<() => void>();
 let cache: ScrollPerfSession[] | null = null;
@@ -124,6 +139,7 @@ export function recordScrollPerfPhase(m: ScrollPerfMetrics): void {
       jankTotal: 0,
       peakSpeed: 0,
       device: deviceLabel(),
+      samples: [],
     };
     rows.unshift(session);
   }
@@ -138,6 +154,16 @@ export function recordScrollPerfPhase(m: ScrollPerfMetrics): void {
   session.jankTotal += m.jankFrames;
   session.peakSpeed = Math.max(session.peakSpeed, m.peakSpeed);
   session.updatedAt = now;
+  const samples = session.samples ?? (session.samples = []);
+  samples.push({
+    at: now,
+    fps: m.fps,
+    fpsMin: m.fpsMin,
+    latencyMs: m.latencyMs,
+    jankFrames: m.jankFrames,
+    peakSpeed: m.peakSpeed,
+  });
+  if (samples.length > MAX_SAMPLES) samples.splice(0, samples.length - MAX_SAMPLES);
 
   write(rows);
   emit();
