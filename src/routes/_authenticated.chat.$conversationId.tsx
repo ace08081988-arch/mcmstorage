@@ -1376,14 +1376,20 @@ function ChatRoomPage() {
   // Group messages by day
   const grouped = useMemo(() => {
     const out: { day: string; items: MessageRow[] }[] = [];
-    for (const m of visibleMessages) {
+    const list =
+      visibleMessages.length > renderCount
+        ? visibleMessages.slice(visibleMessages.length - renderCount)
+        : visibleMessages;
+    for (const m of list) {
       const day = fmtDay(m.created_at);
       const last = out[out.length - 1];
       if (last && last.day === day) last.items.push(m);
       else out.push({ day, items: [m] });
     }
     return out;
-  }, [visibleMessages]);
+  }, [visibleMessages, renderCount]);
+  visibleRef.current = visibleMessages;
+  const hiddenOlderCount = Math.max(0, visibleMessages.length - renderCount);
 
   // Pinned messages (sorted by pinned_at desc, max 3)
   const pinnedMessages = useMemo(() => {
