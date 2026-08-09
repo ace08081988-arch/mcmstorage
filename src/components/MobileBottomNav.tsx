@@ -210,7 +210,7 @@ export function MobileBottomNav() {
           }
           aria-current={menuActive ? "page" : undefined}
           className={cn(
-            "relative flex min-h-[var(--ms-tap)] flex-1 flex-col items-center justify-center gap-ms-1 rounded-xl px-ms-2 py-ms-2 leading-ms-tight tracking-ms-tight text-muted-foreground transition-colors duration-300 depth-tap",
+            "relative flex min-h-[var(--ms-tap)] min-w-0 flex-1 flex-col items-center justify-center gap-ms-1 rounded-xl px-ms-2 py-ms-2 leading-ms-tight tracking-ms-tight text-muted-foreground transition-colors duration-300 depth-tap",
             "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             menuActive && "text-primary",
           )}
@@ -219,7 +219,7 @@ export function MobileBottomNav() {
             aria-hidden
             data-nav-icon
             className={cn(
-              "grid h-8 w-14 place-items-center rounded-full bg-transparent transition-transform duration-300 ease-out",
+              "grid h-8 w-full max-w-14 place-items-center rounded-full bg-transparent transition-transform duration-300 ease-out",
               menuActive ? "-translate-y-0.5 scale-105" : "scale-100",
               "motion-reduce:transform-none motion-reduce:transition-none",
             )}
