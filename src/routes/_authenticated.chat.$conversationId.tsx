@@ -410,10 +410,36 @@ function ChatRoomPage() {
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
   const selectionMode = selectedIds.size > 0;
 
+  // ---- Windowing daftar pesan -------------------------------------------
+  // Percakapan memuat sampai 500 pesan, tapi merender semuanya membuat tiap
+  // re-render (ketik, presence, realtime) menyentuh ratusan node — inilah
+  // penyebab utama scroll tersendat di HP. Kita hanya merender N pesan
+  // terakhir dan menambah jendela saat pengguna minta pesan lama.
+  const RENDER_STEP = 60;
+  const [renderCount, setRenderCount] = useState(RENDER_STEP);
+  const visibleRef = useRef<MessageRow[]>([]);
+  useEffect(() => { setRenderCount(RENDER_STEP); }, [conversationId]);
+
   // Jump-to-message helper (used by pinned banner)
   const jumpToMessage = useCallback((id: string) => {
     const el = document.getElementById(`msg-${id}`);
-    if (!el) return;
+    if (!el) {
+      // Pesan berada di luar jendela render → lebarkan jendela dulu,
+      // lalu coba lompat lagi setelah DOM ter-update.
+      const list = visibleRef.current;
+      const i = list.findIndex((m) => m.id === id);
+      if (i < 0) return;
+      const needed = list.length - i + 10;
+      setRenderCount((prev) => (needed > prev ? needed : prev));
+      requestAnimationFrame(() => {
+        const again = document.getElementById(`msg-${id}`);
+        if (!again) return;
+        again.scrollIntoView({ behavior: "smooth", block: "center" });
+        again.classList.add("ring-2", "ring-warning");
+        setTimeout(() => again.classList.remove("ring-2", "ring-warning"), 1500);
+      });
+      return;
+    }
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     el.classList.add("ring-2", "ring-warning");
     setTimeout(() => el.classList.remove("ring-2", "ring-warning"), 1500);
