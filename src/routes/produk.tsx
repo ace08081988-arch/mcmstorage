@@ -74,6 +74,50 @@ const FEATURES = [
 
 const HERO_POINTS = ["Tanpa biaya", "Jalan di HP", "Kirim lewat WhatsApp"];
 
+/**
+ * Ringkasan alur kerja untuk sisi kanan hero.
+ *
+ * Sengaja BUKAN tangkapan layar palsu atau angka contoh: yang ditampilkan
+ * hanya urutan langkah nyata yang memang ada di aplikasi, supaya calon
+ * pengguna tidak dijanjikan tampilan/data yang tidak mereka temui.
+ */
+const HERO_FLOW = [
+  { step: "1", label: "Pesanan masuk", note: "Dicatat dari kasir atau pesanan pelanggan" },
+  { step: "2", label: "Pegawai menyiapkan", note: "Foto, berat, dan lokasi lewat link" },
+  { step: "3", label: "Kirim ke pelanggan", note: "Rincian dan foto dikirim via WhatsApp" },
+  { step: "4", label: "Stok & piutang ikut", note: "Sisa stok dan saldo hutang otomatis" },
+];
+
+function HeroFlow() {
+  return (
+    <div className="mx-auto w-full max-w-sm rounded-2xl border border-primary-foreground/20 bg-primary-foreground/[0.07] p-ms-4 text-left backdrop-blur-sm lg:mx-0">
+      <p className="text-ms-2xs font-bold uppercase tracking-[0.18em] text-primary-foreground/70">
+        Alur harian
+      </p>
+      <ol className="mt-ms-3 space-ms-3">
+        {HERO_FLOW.map((f) => (
+          <li key={f.step} className="flex items-start gap-ms-3">
+            <span
+              className="grid size-7 shrink-0 place-items-center rounded-full border border-primary-foreground/30 bg-primary-foreground/10 text-ms-2xs font-bold text-primary-foreground"
+              aria-hidden="true"
+            >
+              {f.step}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-ms-sm font-semibold leading-snug text-primary-foreground">
+                {f.label}
+              </span>
+              <span className="block text-ms-xs leading-relaxed text-primary-foreground/75">
+                {f.note}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 const AUDIENCE = [
   "Toko grosir dan sembako yang melayani pesanan harian",
   "Pemilik usaha yang memakai WhatsApp sebagai kanal utama pelanggan",
