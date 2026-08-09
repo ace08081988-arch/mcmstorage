@@ -2453,6 +2453,15 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
   );
 }
 
+/* Panel mengambang non-kritis (mis. ajakan notifikasi) disembunyikan saat
+   tinggi layar sangat pendek — split-screen, jendela kecil, atau keyboard
+   terbuka — supaya tidak menutupi konten atau keluar area aman. */
+@utility app-short-viewport-hide {
+  @media (max-height: 430px) {
+    display: none;
+  }
+}
+
 @utility app-fab-left {
   left: calc(
     var(--app-safe-left, env(safe-area-inset-left, 0px)) + 0.75rem
