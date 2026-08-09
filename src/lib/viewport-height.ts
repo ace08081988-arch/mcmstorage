@@ -14,6 +14,8 @@
 
 export const APP_VH_VAR = "--app-vh";
 export const APP_VH_VISIBLE_VAR = "--app-vh-visible";
+/** Tinggi area bawah yang tertutup soft-keyboard (px). 0 bila tertutup. */
+export const APP_KEYBOARD_VAR = "--app-keyboard-inset";
 
 function measure(): number {
   const vv = window.visualViewport;
@@ -38,6 +40,18 @@ function measureVisible(): number {
   return Math.round(window.innerHeight || 0);
 }
 
+/**
+ * Tinggi keyboard: selisih layout viewport dengan area terlihat.
+ * Ambang 120px memisahkan keyboard dari toolbar browser yang hanya
+ * beberapa puluh piksel, supaya bilah aksi tidak "melompat" saat scroll.
+ */
+function measureKeyboard(): number {
+  const vv = window.visualViewport;
+  if (!vv) return 0;
+  const gap = Math.round(window.innerHeight - vv.height - (vv.offsetTop || 0));
+  return gap > 120 ? gap : 0;
+}
+
 /** Pasang sinkronisasi `--app-vh`; kembalikan fungsi pembersih. */
 export function startViewportHeightSync(): () => void {
   if (typeof window === "undefined") return () => {};
@@ -45,6 +59,7 @@ export function startViewportHeightSync(): () => void {
   let raf = 0;
   let last = -1;
   let lastVisible = -1;
+  let lastKb = -1;
 
   const apply = () => {
     raf = 0;
@@ -57,6 +72,12 @@ export function startViewportHeightSync(): () => void {
     if (v > 0 && v !== lastVisible) {
       lastVisible = v;
       root.style.setProperty(APP_VH_VISIBLE_VAR, `${v}px`);
+    }
+    const kb = measureKeyboard();
+    if (kb !== lastKb) {
+      lastKb = kb;
+      root.style.setProperty(APP_KEYBOARD_VAR, `${kb}px`);
+      root.dataset["keyboard"] = kb > 0 ? "open" : "closed";
     }
   };
   const schedule = () => {
