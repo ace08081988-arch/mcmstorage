@@ -65,8 +65,8 @@ export function ChatBottomNav() {
       // `--chat-nav-h` diwarisi dari container route (lihat masing-masing
       // route chat). Fallback lokal disediakan bila nav dipakai tanpa
       // container yang menyetel variabel tersebut. Nilai sudah mencakup
-      // `env(safe-area-inset-bottom)` untuk notch/home indicator iOS.
-      className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))]"
+      // `var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))` untuk notch/home indicator iOS.
+      className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)))]"
       style={{
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,

@@ -1227,7 +1227,7 @@ function DetailHero({
       {/* Action footer — bar 4 tombol ramah jempol (pill aktif lega) */}
       <div
         className="sticky bottom-0 z-10 -mx-px border-t bg-card/95 px-ms-2 pt-2 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:bg-muted/40 sm:px-ms-5 sm:py-ms-3 sm:shadow-none sm:backdrop-blur-0"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
+        style={{ paddingBottom: "calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 0.5rem)" }}
       >
         <div className="hidden text-ms-2xs uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
           Simpan halaman ini sebagai referensi penyiapan.

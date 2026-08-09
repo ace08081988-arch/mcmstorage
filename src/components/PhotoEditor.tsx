@@ -1349,7 +1349,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         aria-busy={!canvasReady && loadStatus === "ready"}
         className="max-h-[55vh] overflow-y-auto border-t bg-card px-ms-2 py-ms-2 text-ms-xs shadow-sm"
         style={{
-          paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+          paddingBottom: "max(0.5rem, var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)))",
         }}
       >
         {!canvasReady && loadStatus === "ready" && (

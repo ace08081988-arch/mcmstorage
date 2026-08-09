@@ -2,7 +2,7 @@
  * Recalculation safe-area saat rotasi layar.
  *
  * Masalah nyata di Android WebView / Chrome mobile: nilai
- * `env(safe-area-inset-bottom)` TIDAK langsung diperbarui saat perangkat
+ * `var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))` TIDAK langsung diperbarui saat perangkat
  * berpindah portrait <-> landscape. Selama beberapa frame nilainya masih
  * memakai inset orientasi lama, sehingga bar bawah bisa tertutup toolbar
  * browser / gesture bar.
@@ -37,10 +37,10 @@ function ensureProbe(): HTMLDivElement {
     "height:0",
     "pointer-events:none",
     "visibility:hidden",
-    "padding-top:env(safe-area-inset-top,0px)",
-    "padding-bottom:env(safe-area-inset-bottom,0px)",
-    "padding-left:env(safe-area-inset-left,0px)",
-    "padding-right:env(safe-area-inset-right,0px)",
+    "padding-top:var(--app-safe-top, env(safe-area-inset-top, 0px))",
+    "padding-bottom:var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))",
+    "padding-left:var(--app-safe-left, env(safe-area-inset-left, 0px))",
+    "padding-right:var(--app-safe-right, env(safe-area-inset-right, 0px))",
   ].join(";");
   document.body.appendChild(el);
   probe = el;

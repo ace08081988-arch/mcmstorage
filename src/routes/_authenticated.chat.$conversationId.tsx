@@ -1582,7 +1582,7 @@ function ChatRoomPage() {
       ) : (
       <header
         className="wa-header z-20 flex shrink-0 items-center gap-ms-1 border-b px-1.5 py-1 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_8%,transparent)] sm:gap-ms-2 sm:px-ms-2 sm:py-ms-2"
-        style={{ paddingTop: "max(env(safe-area-inset-top), 0.25rem)" }}
+        style={{ paddingTop: "max(var(--app-safe-top, env(safe-area-inset-top, 0px)), 0.25rem)" }}
       >
         <Button
           variant="ghost"
@@ -2530,7 +2530,7 @@ function ChatRoomPage() {
       <form
         onSubmit={onSubmit}
         className="chat-field-scope z-10 shrink-0 border-t bg-background/95 p-ms-2 backdrop-blur"
-        style={{ paddingBottom: `max(env(safe-area-inset-bottom), 0.5rem)` }}
+        style={{ paddingBottom: `max(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)), 0.5rem)` }}
       >
         {editing ? (
           <div className="chat-preview-panel-primary mb-2 flex items-start gap-ms-2 rounded-md border border-primary/40 bg-primary/5 px-ms-2 py-1 text-ms-xs">
