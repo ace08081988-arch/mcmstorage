@@ -433,7 +433,7 @@ export function ScrollPerfLiveChart() {
         </div>
         {smoothing ? (
           <div className="text-muted-foreground tabular-nums">
-            tren ({smooth} titik):{" "}
+            tren {methodCfg.short} ({smooth} titik):{" "}
             {kind === "fps"
               ? `${hoverFpsTrend.toFixed(1)} fps`
               : `${hoverLatTrend.toFixed(1)} ms`}
@@ -585,6 +585,29 @@ export function ScrollPerfLiveChart() {
             />
             <span className="tabular-nums">{smooth} titik</span>
           </label>
+          <div
+            className="inline-flex rounded-md border p-0.5"
+            role="group"
+            aria-label="Metode penghalusan"
+          >
+            {METHOD_OPTIONS.map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => chooseMethod(o.v)}
+                aria-pressed={method === o.v}
+                title={o.hint}
+                disabled={!smoothing}
+                className={`rounded-[5px] px-ms-2 py-1 text-ms-2xs transition-colors disabled:opacity-40 ${
+                  method === o.v
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
           <div
             className="inline-flex rounded-md border p-0.5"
             role="group"
