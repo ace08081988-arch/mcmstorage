@@ -397,9 +397,10 @@ function RootComponent() {
   // selamanya; bersihkan juga sisa toast setiap pindah halaman.
   useEffect(() => {
     let stop: (() => void) | undefined;
-    void import("@/lib/toast-watchdog").then(({ installToastWatchdog, dismissAllToasts }) => {
+    void import("@/lib/toast-watchdog").then(({ installToastWatchdog, dismissStuckToasts }) => {
       installToastWatchdog();
-      stop = router.subscribe("onBeforeNavigate", () => dismissAllToasts());
+      // Hanya toast loading yang dibersihkan; pesan error/aksi tetap tampil.
+      stop = router.subscribe("onBeforeNavigate", () => dismissStuckToasts());
     });
     // Saring notifikasi teknis/latar supaya hanya yang penting yang tampil.
     void import("@/lib/toast-noise").then(({ installToastNoiseFilter }) =>

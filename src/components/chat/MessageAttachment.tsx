@@ -119,11 +119,24 @@ export function MessageAttachment(props: {
         rel="noreferrer"
         className="block"
         onClick={(e) => {
-          // Buka versi full-resolution, bukan thumbnail.
+          // Buka versi full-resolution, bukan thumbnail. Tab dibuka SINKRON
+          // di dalam handler agar tidak diblokir iOS Safari/WebView; URL
+          // full-res diisi setelah tanda tangan selesai.
+          const w = window.open("", "_blank");
+          if (!w) return; // popup diblokir → biarkan anchor membuka thumbnail
           e.preventDefault();
-          void signedChatUrl(props.path, 3600).then((full) => {
-            window.open(full ?? url, "_blank", "noopener");
-          });
+          try {
+            w.opener = null;
+          } catch {
+            /* noop */
+          }
+          void signedChatUrl(props.path, 3600)
+            .then((full) => {
+              w.location.replace(full ?? url);
+            })
+            .catch(() => {
+              w.location.replace(url);
+            });
         }}
       >
         <MediaFrame className={loaded ? "" : "animate-pulse"}>
