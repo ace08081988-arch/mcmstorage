@@ -42,12 +42,23 @@ const MARK_STYLE: Record<
 
 const MARK_ORDER: ScrollPerfEventKind[] = ["touch", "start", "move", "stop"];
 
-/** Pilihan rolling average (jumlah sampel; 1 = tanpa penghalusan). */
+/** Pilihan cepat rolling average (jumlah sampel; 1 = tanpa penghalusan). */
 const SMOOTH_OPTIONS = [
   { v: 1, label: "Mentah", hint: "tanpa penghalusan" },
-  { v: 3, label: "Halus 3", hint: "rata-rata 0,3 dtk" },
-  { v: 7, label: "Halus 7", hint: "rata-rata 0,7 dtk" },
+  { v: 5, label: "5", hint: "rata-rata 5 titik (±0,5 dtk)" },
+  { v: 10, label: "10", hint: "rata-rata 10 titik (±1 dtk)" },
+  { v: 20, label: "20", hint: "rata-rata 20 titik (±2 dtk)" },
 ] as const;
+
+/** Batas ukuran rolling average yang boleh dipilih manual. */
+const SMOOTH_MIN = 1;
+const SMOOTH_MAX = 30;
+
+/** Bulatkan & jepit nilai penghalusan ke rentang yang valid. */
+function clampSmooth(v: number): number {
+  if (!Number.isFinite(v)) return 1;
+  return Math.min(SMOOTH_MAX, Math.max(SMOOTH_MIN, Math.round(v)));
+}
 
 const SMOOTH_KEY = "app-scroll-perf-smooth";
 const SPIKE_KEY = "app-scroll-perf-spike";
@@ -149,8 +160,11 @@ export function ScrollPerfLiveChart() {
   // Pulihkan preferensi penghalusan.
   useEffect(() => {
     try {
-      const raw = Number(localStorage.getItem(SMOOTH_KEY));
-      if (SMOOTH_OPTIONS.some((o) => o.v === raw)) setSmooth(raw);
+      const stored = localStorage.getItem(SMOOTH_KEY);
+      const raw = Number(stored);
+      if (stored !== null && Number.isFinite(raw) && raw >= SMOOTH_MIN) {
+        setSmooth(clampSmooth(raw));
+      }
     } catch {
       /* mode privat → pakai default */
     }
@@ -177,9 +191,10 @@ export function ScrollPerfLiveChart() {
   }, []);
 
   const chooseSmooth = useCallback((v: number) => {
-    setSmooth(v);
+    const next = clampSmooth(v);
+    setSmooth(next);
     try {
-      localStorage.setItem(SMOOTH_KEY, String(v));
+      localStorage.setItem(SMOOTH_KEY, String(next));
     } catch {
       /* abaikan */
     }
@@ -338,7 +353,7 @@ export function ScrollPerfLiveChart() {
         </div>
         {smoothing ? (
           <div className="text-muted-foreground tabular-nums">
-            tren:{" "}
+            tren ({smooth} titik):{" "}
             {kind === "fps"
               ? `${hoverFpsTrend.toFixed(1)} fps`
               : `${hoverLatTrend.toFixed(1)} ms`}
@@ -475,6 +490,21 @@ export function ScrollPerfLiveChart() {
               </button>
             ))}
           </div>
+          <label className="inline-flex items-center gap-ms-2 text-ms-2xs text-muted-foreground">
+            <span className="whitespace-nowrap">Rata-rata</span>
+            <input
+              type="range"
+              min={SMOOTH_MIN}
+              max={SMOOTH_MAX}
+              step={1}
+              value={smooth}
+              onChange={(e) => chooseSmooth(Number(e.target.value))}
+              aria-label="Ukuran rolling average (jumlah titik)"
+              title={`Rata-rata ${smooth} titik`}
+              className="h-1 w-24 cursor-pointer accent-primary"
+            />
+            <span className="tabular-nums">{smooth} titik</span>
+          </label>
           <div
             className="inline-flex rounded-md border p-0.5"
             role="group"
