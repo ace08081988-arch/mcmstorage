@@ -46,7 +46,7 @@ export const Route = createFileRoute("/pratinjau-tema")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ThemePreviewPage,
+  component: ThemePreviewGated,
 });
 
 const TOKEN_GROUPS: Array<{ title: string; tokens: string[] }> = [
@@ -120,6 +120,14 @@ function CopyButton({ value, label, className }: { value: string; label?: string
     >
       {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
     </Button>
+  );
+}
+
+function ThemePreviewGated() {
+  return (
+    <TechnicalRouteGate>
+      <ThemePreviewPage />
+    </TechnicalRouteGate>
   );
 }
 
