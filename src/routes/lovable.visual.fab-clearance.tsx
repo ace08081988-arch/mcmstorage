@@ -33,9 +33,9 @@ export const Route = createFileRoute("/lovable/visual/fab-clearance")({
   component: FabClearanceHarness,
 });
 
-/** Jarak aman bawah standar: gesture bar / bilah navigasi (yang terbesar) + keyboard. */
+/** Jarak aman bawah: gesture bar + bilah navigasi bawah + keyboard + gap FAB. */
 const SAFE_BOTTOM =
-  "calc(max(var(--app-safe-bottom, 0px), var(--app-bottom-bar-space, 0px)) + var(--app-keyboard-inset, 0px) + 1rem)";
+  "calc(var(--app-safe-bottom, 0px) + var(--app-bottom-bar-space, 0px) + var(--app-keyboard-inset, 0px) + var(--app-fab-gap, 1rem))";
 
 function FabClearanceHarness() {
   const { bar = "on", rows = 40 } = Route.useSearch();
