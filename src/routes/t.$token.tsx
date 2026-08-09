@@ -4842,6 +4842,8 @@ function RequestForm({
         _gps_lng: gps?.lng ?? null,
         _note: noteClean || null,
         _prep_task_item_id: null,
+        // Kunci anti-kirim-ganda: retry/restart memakai kunci yang sama.
+        _client_key: getSubmitKey(`req:${title.id}`),
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (publicSupabase.rpc as any)("request_submit_via_task", args);
@@ -4879,6 +4881,7 @@ function RequestForm({
       setExtraLocs([]);
       void clearDraftPhotos(draftKey);
       onDone();
+      clearSubmitKey(`req:${title.id}`);
     } catch (e) {
       const raw = (e as Error)?.message ?? "unknown";
       try { navigator.vibrate?.([120, 80, 120]); } catch { /* ignore */ }
