@@ -18,7 +18,7 @@ export async function processOrder(
   const { data, error } = await supabase.rpc("order_process_v1", {
     _order_id: orderId,
     _payment_method: method,
-    _paid_amount: paidAmount,
+    ...(paidAmount == null ? {} : { _paid_amount: paidAmount }),
   });
   if (error) {
     const raw = error.message ?? "";
