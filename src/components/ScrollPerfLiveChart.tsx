@@ -490,6 +490,21 @@ export function ScrollPerfLiveChart() {
               </button>
             ))}
           </div>
+          <label className="inline-flex items-center gap-ms-2 text-ms-2xs text-muted-foreground">
+            <span className="whitespace-nowrap">Rata-rata</span>
+            <input
+              type="range"
+              min={SMOOTH_MIN}
+              max={SMOOTH_MAX}
+              step={1}
+              value={smooth}
+              onChange={(e) => chooseSmooth(Number(e.target.value))}
+              aria-label="Ukuran rolling average (jumlah titik)"
+              title={`Rata-rata ${smooth} titik`}
+              className="h-1 w-24 cursor-pointer accent-primary"
+            />
+            <span className="tabular-nums">{smooth} titik</span>
+          </label>
           <div
             className="inline-flex rounded-md border p-0.5"
             role="group"
