@@ -1082,7 +1082,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         {/* Header glass — kiri (batal + reset), tengah (title kosong), kanan (undo/redo/layer/simpan). */}
         <header
           className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-ms-2 px-ms-2 py-ms-2"
-          style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
+          style={{ paddingTop: "calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 8px)" }}
         >
           <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <IconPill onClick={onCancel} label="Batal"><ChevronLeft className="h-5 w-5" /></IconPill>
@@ -1106,7 +1106,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         {/* Kolom kiri-tengah: transform (rotate/flip). Vertikal supaya tidak menutupi foto. */}
         <div
           className="pointer-events-none absolute left-ms-2 top-1/2 z-20 -translate-y-1/2"
-          style={{ paddingTop: "env(safe-area-inset-top)" }}
+          style={{ paddingTop: "var(--app-safe-top,env(safe-area-inset-top,0px))" }}
         >
           <div className="pointer-events-auto flex flex-col gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl">
             <IconPill onClick={rotate90} label="Putar 90°"><RotateCw className="h-5 w-5" /></IconPill>
@@ -1132,7 +1132,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         {selectedObj && (
           <div
             className="pointer-events-none absolute left-1/2 right-2 z-30 flex max-w-[min(96vw,720px)] -translate-x-1/2 flex-col items-center gap-ms-2"
-            style={{ top: "calc(env(safe-area-inset-top) + 68px)" }}
+            style={{ top: "calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 68px)" }}
           >
             <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl">
               <IconPill onClick={() => duplicateObject(selectedObj.id)} label="Duplikat"><Copy className="h-4 w-4" /></IconPill>
@@ -1416,7 +1416,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
           dipertahankan agar spec e2e existing tetap hijau. */}
       <nav
         className="relative z-20 shrink-0 border-t border-[#c9a84c]/20 bg-[#0d0d0d]/85 backdrop-blur-xl"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        style={{ paddingBottom: "var(--app-safe-bottom,env(safe-area-inset-bottom,0px))" }}
       >
         <div className="flex items-stretch gap-ms-1 overflow-x-auto px-ms-2 py-ms-2 [scrollbar-width:none]">
           <ToolPill active={tool === "pilih"} onClick={() => { setTool("pilih"); setStylePanelClosed(false); }} label="Pilih" Icon={MousePointer2} testId="photo-editor-tool-pilih" />

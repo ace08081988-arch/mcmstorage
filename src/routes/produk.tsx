@@ -83,9 +83,9 @@ const AUDIENCE = [
 
 function ProdukPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-app-vh bg-background">
       <PublicHeader />
-      <main id="konten-utama" tabIndex={-1} className="mx-auto max-w-3xl px-ms-4 py-10">
+      <main id="konten-utama" tabIndex={-1} className="app-safe-x mx-auto max-w-3xl px-ms-4 py-10">
         <section className="lux-plate px-ms-5 py-ms-6 text-center shadow-[0_24px_50px_-30px_rgba(0,0,0,0.6)]">
           <div className="lux-plate-sheen" aria-hidden="true" />
           <div className="relative">

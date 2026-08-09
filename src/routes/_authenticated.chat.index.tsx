@@ -388,7 +388,7 @@ function ChatListPage() {
       data-industrial="chat"
       // `--chat-nav-h` didefinisikan di container ini supaya SEMUA sibling
       // (nav, FAB, konten) mewarisi nilai yang sama. Nilai sudah termasuk
-      // `env(safe-area-inset-bottom)`, jadi `pb-[var(--chat-nav-h)]`
+      // `var(--app-safe-bottom,env(safe-area-inset-bottom,0px))`, jadi `pb-[var(--chat-nav-h)]`
       // otomatis menyediakan ruang untuk notch/home indicator iOS tanpa
       // menghitung safe-area dua kali.
       // `transition-[height,min-height]` menghaluskan reposisi search bar
@@ -396,7 +396,7 @@ function ChatListPage() {
       // 200ms mendekati kurva animasi keyboard Android/iOS tanpa
       // membuatnya terasa lambat. `motion-reduce:transition-none`
       // menghormati preferensi pengguna.
-      className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+env(safe-area-inset-bottom,0px))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
+      className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
       style={
         kbInset > 0
           ? {
