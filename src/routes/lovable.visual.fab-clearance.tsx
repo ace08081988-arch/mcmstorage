@@ -33,9 +33,10 @@ export const Route = createFileRoute("/lovable/visual/fab-clearance")({
   component: FabClearanceHarness,
 });
 
-/** Jarak aman bawah: gesture bar + bilah navigasi bawah + keyboard + gap FAB. */
+/** Jarak aman bawah: gesture bar + bilah navigasi bawah + keyboard + gap FAB,
+ *  dibatasi agar tidak pernah mendorong elemen keluar layar pendek. */
 const SAFE_BOTTOM =
-  "calc(var(--app-safe-bottom, 0px) + var(--app-bottom-bar-space, 0px) + var(--app-keyboard-inset, 0px) + var(--app-fab-gap, 1rem))";
+  "min(calc(var(--app-safe-bottom, 0px) + var(--app-bottom-bar-space, 0px) + var(--app-keyboard-inset, 0px) + var(--app-fab-gap, 1rem)), calc(var(--app-vh, 100dvh) - 5.5rem))";
 
 function FabClearanceHarness() {
   const { bar = "on", rows = 40 } = Route.useSearch();
