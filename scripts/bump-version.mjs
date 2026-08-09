@@ -38,6 +38,8 @@ function flag(name) {
 }
 
 const ROOT = resolve(process.cwd());
+// SSOT versi = android/version.properties. build.gradle hanya membacanya.
+const VERSION_PROPS = resolve(ROOT, "android/version.properties");
 const GRADLE = resolve(ROOT, "android/app/build.gradle");
 const PKG = resolve(ROOT, "package.json");
 
@@ -46,14 +48,13 @@ const printOnly = args.has("--print");
 const jsonOut = args.has("--json");
 const setBase = flag("--set");
 
-if (!existsSync(GRADLE)) {
+if (!existsSync(VERSION_PROPS) && !existsSync(GRADLE)) {
   fail(
-    `${GRADLE} tidak ada.\nJalankan \`bunx cap add android\` dulu, lalu ulangi.`,
+    `${VERSION_PROPS} tidak ada.\nJalankan \`bunx cap add android\` dulu, lalu ulangi.`,
   );
 }
 
-const src = readFileSync(GRADLE, "utf8");
-const cur = parseGradle(src);
+const cur = readVersion();
 
 if (printOnly) {
   console.log(JSON.stringify(cur, null, 2));
@@ -104,7 +105,7 @@ const nn = String(nextCode - dateBase).padStart(2, "0");
 const nextName = `${base}+${yy}${mm}${dd}.${nn}`;
 
 const plan = {
-  file: "android/app/build.gradle",
+  file: "android/version.properties",
   versionCode: { from: cur.versionCode, to: nextCode },
   versionName: { from: cur.versionName, to: nextName },
   dryRun,
@@ -124,22 +125,36 @@ if (dryRun) {
   process.exit(0);
 }
 
-// ─── Tulis kembali ─────────────────────────────────────────────────────
-const patched = src
-  .replace(/versionCode\s+\d+/, `versionCode ${nextCode}`)
-  .replace(/versionName\s+"[^"]*"/, `versionName "${nextName}"`);
-if (patched === src) {
-  fail(
-    "Regex tidak match — struktur build.gradle mungkin berubah. Cek manual di\n" +
-      "  android/app/build.gradle → defaultConfig { versionCode / versionName }",
-  );
-}
-writeFileSync(GRADLE, patched);
-console.log("\n  ✓ android/app/build.gradle updated");
+// ─── Tulis kembali ke SSOT ─────────────────────────────────────────────
+writeFileSync(
+  VERSION_PROPS,
+  [
+    "# SSOT versi aplikasi Android (dibaca android/app/build.gradle).",
+    "# Jangan edit manual saat rilis — pakai: bun run version:bump",
+    "# Cek nilai saat ini: bun run version:check",
+    `VERSION_CODE=${nextCode}`,
+    `VERSION_NAME=${nextName}`,
+    "",
+  ].join("\n"),
+);
+console.log("\n  ✓ android/version.properties updated (SSOT)");
 
 process.exit(0);
 
 // ─── util ─────────────────────────────────────────────────────────────
+function readVersion() {
+  if (existsSync(VERSION_PROPS)) {
+    const text = readFileSync(VERSION_PROPS, "utf8");
+    const vc = /^VERSION_CODE\s*=\s*(\d+)\s*$/m.exec(text);
+    const vn = /^VERSION_NAME\s*=\s*(.+?)\s*$/m.exec(text);
+    if (vc && vn) return { versionCode: Number(vc[1]), versionName: vn[1] };
+    fail(
+      "android/version.properties ada tapi tidak memuat VERSION_CODE / VERSION_NAME.",
+    );
+  }
+  // Fallback (repo lama): baca dari build.gradle.
+  return parseGradle(readFileSync(GRADLE, "utf8"));
+}
 function parseGradle(text) {
   const vc = /versionCode\s+(\d+)/.exec(text);
   const vn = /versionName\s+"([^"]+)"/.exec(text);
