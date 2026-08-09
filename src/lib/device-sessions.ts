@@ -60,25 +60,37 @@ function describeDevice(): { label: string; userAgent: string; platform: string 
   return { label: `${browser} di ${os}`, userAgent: ua, platform };
 }
 
-export async function registerDeviceSession(userId: string): Promise<void> {
+export type RegisterDeviceSessionOptions = {
+  /**
+   * SPRINT 5 (High): hanya login BARU yang boleh menghidupkan kembali sesi
+   * yang sudah dicabut. Reload halaman / cold start dengan sesi yang masih
+   * tersimpan bukan login baru — kalau tetap mengosongkan `revoked_at`,
+   * perangkat yang baru saja dicabut akan aktif lagi hanya dengan refresh.
+   */
+  clearRevocation?: boolean;
+};
+
+export async function registerDeviceSession(
+  userId: string,
+  opts: RegisterDeviceSessionOptions = {},
+): Promise<void> {
   const deviceId = getOrCreateDeviceId();
   const info = describeDevice();
-  // Upsert: kalau perangkat ini pernah login, perbarui `last_seen_at` +
-  // hapus `revoked_at` (user memang login lagi secara sah).
+  const row: Record<string, unknown> = {
+    user_id: userId,
+    device_id: deviceId,
+    label: info.label,
+    user_agent: info.userAgent,
+    platform: info.platform,
+    last_seen_at: new Date().toISOString(),
+  };
+  // `revoked_at` hanya ikut dikirim saat login baru. Kalau tidak dikirim,
+  // PostgREST tidak menyentuh kolom itu pada konflik → status "dicabut"
+  // bertahan melewati reload.
+  if (opts.clearRevocation) row["revoked_at"] = null;
   await supabase
     .from("device_sessions")
-    .upsert(
-      {
-        user_id: userId,
-        device_id: deviceId,
-        label: info.label,
-        user_agent: info.userAgent,
-        platform: info.platform,
-        last_seen_at: new Date().toISOString(),
-        revoked_at: null,
-      },
-      { onConflict: "user_id,device_id" },
-    );
+    .upsert(row as never, { onConflict: "user_id,device_id" });
 }
 
 async function heartbeatOnce(userId: string): Promise<"ok" | "revoked"> {
