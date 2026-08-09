@@ -3398,6 +3398,47 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_ledger: {
+        Row: {
+          actor: string | null
+          balance_after: number
+          created_at: string
+          delta_base: number
+          id: number
+          reason: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Insert: {
+          actor?: string | null
+          balance_after: number
+          created_at?: string
+          delta_base: number
+          id?: never
+          reason?: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Update: {
+          actor?: string | null
+          balance_after?: number
+          created_at?: string
+          delta_base?: number
+          id?: never
+          reason?: string
+          user_id?: string
+          warehouse_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_ledger_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_events: {
         Row: {
           amount: string | null
@@ -4135,6 +4176,35 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_submit_idempotency: {
+        Row: {
+          client_key: string
+          created_at: string
+          result: Json | null
+          task_id: string
+        }
+        Insert: {
+          client_key: string
+          created_at?: string
+          result?: Json | null
+          task_id: string
+        }
+        Update: {
+          client_key?: string
+          created_at?: string
+          result?: Json | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_submit_idempotency_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       prep_submissions_unrouted: {
@@ -4636,6 +4706,7 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
       start_dm: { Args: { _partner: string }; Returns: string }
       start_pro_trial: { Args: never; Returns: Json }
+      stock_reconcile_v1: { Args: never; Returns: Json }
       storage_upload_within_limits: {
         Args: { _max_bytes?: number; _metadata: Json }
         Returns: boolean
