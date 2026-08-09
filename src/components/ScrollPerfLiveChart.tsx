@@ -61,6 +61,36 @@ function clampSmooth(v: number): number {
 }
 
 const SMOOTH_KEY = "app-scroll-perf-smooth";
+const SMOOTH_METHOD_KEY = "app-scroll-perf-smooth-method";
+
+/** Metode penghalusan garis tren. */
+type SmoothMethod = "sma" | "ema" | "median";
+
+const METHOD_OPTIONS: {
+  v: SmoothMethod;
+  label: string;
+  short: string;
+  hint: string;
+}[] = [
+  {
+    v: "sma",
+    label: "Rata-rata",
+    short: "SMA",
+    hint: "Simple moving average — semua titik dalam jendela berbobot sama",
+  },
+  {
+    v: "ema",
+    label: "EMA",
+    short: "EMA",
+    hint: "Exponential moving average — titik terbaru berbobot lebih besar, reaksi lebih cepat",
+  },
+  {
+    v: "median",
+    label: "Median",
+    short: "Median",
+    hint: "Median bergerak — paling tahan terhadap spike ekstrem",
+  },
+];
 const SPIKE_KEY = "app-scroll-perf-spike";
 
 /**
