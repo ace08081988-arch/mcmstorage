@@ -85,6 +85,34 @@ export function resetScrollPerfMetrics() {
   emit();
 }
 
+/* ── Penanda kejadian (dipakai grafik diagnostik) ─────────────────── */
+
+/**
+ * Kejadian input yang bisa ditandai di grafik:
+ * - `touch`: jari menyentuh layar (sebelum bergerak)
+ * - `start`: fase gulir dimulai (frame pertama setelah input)
+ * - `move` : gulir benar-benar bergerak cepat (geser/flick)
+ * - `stop` : gulir berhenti dan efek berat dipulihkan
+ */
+export type ScrollPerfEventKind = "touch" | "start" | "move" | "stop";
+
+export type ScrollPerfEvent = { kind: ScrollPerfEventKind; at: number };
+
+const eventListeners = new Set<(e: ScrollPerfEvent) => void>();
+
+export function subscribeScrollPerfEvents(
+  cb: (e: ScrollPerfEvent) => void,
+): () => void {
+  eventListeners.add(cb);
+  return () => eventListeners.delete(cb);
+}
+
+function emitEvent(kind: ScrollPerfEventKind) {
+  if (!eventListeners.size) return;
+  const e: ScrollPerfEvent = { kind, at: Date.now() };
+  eventListeners.forEach((l) => l(e));
+}
+
 export function startScrollPerf(): () => void {
   if (typeof window === "undefined") return () => {};
 
@@ -106,6 +134,8 @@ export function startScrollPerf(): () => void {
   let worstFrame = 0;
   let jank = 0;
   let peakV = 0;
+  /** Sudah menandai "geser" pada fase ini? */
+  let movedMarked = false;
 
   const begin = (t: number) => {
     active = true;
@@ -125,6 +155,8 @@ export function startScrollPerf(): () => void {
     metrics.latencyWorstMs = Math.max(metrics.latencyWorstMs, metrics.latencyMs);
     metrics.scrolling = true;
     emit();
+    movedMarked = false;
+    emitEvent("start");
   };
 
   const end = () => {
@@ -148,6 +180,7 @@ export function startScrollPerf(): () => void {
     }
     metrics.scrolling = false;
     emit();
+    emitEvent("stop");
   };
 
   /** Ambang diam berdasar kecepatan terakhir. */
@@ -172,6 +205,10 @@ export function startScrollPerf(): () => void {
       // EMA: responsif terhadap perubahan, tapi tidak gugup pada satu frame anomali.
       velocity = velocity * 0.6 + v * 0.4;
       if (velocity > peakV) peakV = velocity;
+      if (!movedMarked && velocity > 0.3) {
+        movedMarked = true;
+        emitEvent("move");
+      }
       frames += 1;
       if (dt > worstFrame) worstFrame = dt;
       if (dt > 33.4) jank += 1;
@@ -205,6 +242,7 @@ export function startScrollPerf(): () => void {
 
   const onTouchStart = () => {
     touching = true;
+    emitEvent("touch");
     wake();
   };
   const onTouchEnd = () => {
