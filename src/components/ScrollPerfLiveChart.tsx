@@ -123,6 +123,42 @@ function rolling(values: number[], window: number): number[] {
   return out;
 }
 
+/** Exponential moving average; `window` dipetakan ke faktor alpha 2/(N+1). */
+function ema(values: number[], window: number): number[] {
+  if (window <= 1) return values;
+  const alpha = 2 / (window + 1);
+  const out: number[] = [];
+  let prev = values[0] ?? 0;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i] ?? 0;
+    prev = i === 0 ? v : prev + alpha * (v - prev);
+    out.push(Math.round(prev * 10) / 10);
+  }
+  return out;
+}
+
+/** Median bergerak (trailing) — tahan terhadap outlier tunggal. */
+function movingMedian(values: number[], window: number): number[] {
+  if (window <= 1) return values;
+  const out: number[] = [];
+  for (let i = 0; i < values.length; i++) {
+    const slice = values.slice(Math.max(0, i - window + 1), i + 1).sort((a, b) => a - b);
+    const mid = slice.length >> 1;
+    const m =
+      slice.length % 2 ? (slice[mid] ?? 0) : ((slice[mid - 1] ?? 0) + (slice[mid] ?? 0)) / 2;
+    out.push(Math.round(m * 10) / 10);
+  }
+  return out;
+}
+
+/** Terapkan metode penghalusan terpilih. */
+function smoothSeries(values: number[], window: number, method: SmoothMethod): number[] {
+  if (window <= 1) return values;
+  if (method === "ema") return ema(values, window);
+  if (method === "median") return movingMedian(values, window);
+  return rolling(values, window);
+}
+
 function path(values: number[], max: number, w: number, h: number) {
   if (values.length < 2) return "";
   const step = w / (POINTS - 1);
