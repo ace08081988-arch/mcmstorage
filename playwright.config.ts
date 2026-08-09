@@ -1566,7 +1566,23 @@ export default defineConfig({
       name: "safe-area-notch-e2e",
       testDir: "./tests/e2e",
       testMatch: /safe-area-notch\.spec\.ts/,
-      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        ...(process.env.PLAYWRIGHT_CHANNEL
+          ? { channel: process.env.PLAYWRIGHT_CHANNEL }
+          : {}),
+        launchOptions: {
+          ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+          process.env.CHROMIUM_PATH
+            ? {
+                executablePath:
+                  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+                  process.env.CHROMIUM_PATH,
+              }
+            : {}),
+        },
+      },
     },
     {
       // Jarak aman FAB & action bar terhadap gesture bar / home indicator.
@@ -1580,6 +1596,19 @@ export default defineConfig({
         viewport: { width: 390, height: 844 },
         isMobile: false,
         hasTouch: true,
+        ...(process.env.PLAYWRIGHT_CHANNEL
+          ? { channel: process.env.PLAYWRIGHT_CHANNEL }
+          : {}),
+        launchOptions: {
+          ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+          process.env.CHROMIUM_PATH
+            ? {
+                executablePath:
+                  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+                  process.env.CHROMIUM_PATH,
+              }
+            : {}),
+        },
       },
     },
     {
