@@ -49,6 +49,9 @@ import {
 } from "@/components/shell";
 import { MidnightScope } from "@/lib/midnight-preview";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { ProcessOrderDialog } from "@/components/ProcessOrderDialog";
+import { processOrder } from "@/lib/order-process";
+import type { PaymentMethod } from "@/lib/payment-summary";
 import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 import { useFormDraft } from "@/lib/form-draft";
 import { DraftSafetyNotice } from "@/components/DraftSafetyNotice";
