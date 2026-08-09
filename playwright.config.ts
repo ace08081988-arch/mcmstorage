@@ -1582,5 +1582,31 @@ export default defineConfig({
         hasTouch: true,
       },
     },
+    {
+      // Split-screen (tinggi sangat pendek) & jendela browser kecil,
+      // termasuk simulasi keyboard terbuka. Viewport diatur per-test.
+      name: "split-screen-clearance-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /split-screen-clearance\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 412, height: 360 },
+        isMobile: false,
+        hasTouch: true,
+        ...(process.env.PLAYWRIGHT_CHANNEL
+          ? { channel: process.env.PLAYWRIGHT_CHANNEL }
+          : {}),
+        launchOptions: {
+          ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+          process.env.CHROMIUM_PATH
+            ? {
+                executablePath:
+                  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+                  process.env.CHROMIUM_PATH,
+              }
+            : {}),
+        },
+      },
+    },
   ],
 });
