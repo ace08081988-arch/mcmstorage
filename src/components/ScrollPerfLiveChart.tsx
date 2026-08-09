@@ -9,7 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { downloadCsv, scrollPerfCsvFilename } from "@/lib/scroll-perf-csv";
+import {
+  CSV_COLUMN_OPTIONS,
+  downloadCsv,
+  scrollPerfCsvFilename,
+  type CsvColumns,
+} from "@/lib/scroll-perf-csv";
+import {
+  clampSmooth,
+  rollingAverage as rolling,
+  smoothSeries,
+  SMOOTH_MAX,
+  SMOOTH_METHOD_OPTIONS as METHOD_OPTIONS,
+  SMOOTH_MIN,
+  type SmoothMethod,
+} from "@/lib/scroll-perf-smooth";
 import {
   getScrollPerfMetrics,
   subscribeScrollPerf,
