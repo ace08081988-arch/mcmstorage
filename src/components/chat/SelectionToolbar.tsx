@@ -30,7 +30,7 @@ export function SelectionToolbar(p: Props) {
   return (
     <header
       className="z-20 flex shrink-0 items-center gap-ms-1 border-b bg-primary px-ms-2 py-ms-2 text-primary-foreground shadow-sm"
-      style={{ paddingTop: "max(var(--app-safe-top, env(safe-area-inset-top, 0px)), 0.5rem)" }}
+      style={{ paddingTop: "max(var(--app-safe-top,env(safe-area-inset-top,0px)), 0.5rem)" }}
     >
       <Button variant="ghost" size="icon" onClick={p.onClose} aria-label="Keluar mode pilih" className="text-primary-foreground hover:bg-primary-foreground/15">
         <X className="h-5 w-5" />

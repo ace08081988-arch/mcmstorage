@@ -303,7 +303,7 @@ function PembaruanPage() {
     () => haptic(intensity);
 
   return (
-    <div className="mx-auto flex h-dvh max-w-2xl flex-col overflow-hidden bg-background [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)))]">
+    <div className="mx-auto flex h-dvh max-w-2xl flex-col overflow-hidden bg-background [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]">
       {/*
        * Skip-to-content: tersembunyi secara visual, muncul saat menerima
        * fokus keyboard (Tab pertama). Melompatkan fokus ke <main> di bawah

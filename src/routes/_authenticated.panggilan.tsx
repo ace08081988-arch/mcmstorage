@@ -233,10 +233,10 @@ function PanggilanPage() {
     { key: "video", label: "Video" },
   ];
   return (
-    <main className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)))]">
+    <main className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]">
       <header
         className="wa-header sticky top-0 z-10 flex items-center gap-ms-2 border-b px-ms-3 py-ms-3"
-        style={{ paddingTop: "max(var(--app-safe-top, env(safe-area-inset-top, 0px)), 0.75rem)" }}
+        style={{ paddingTop: "max(var(--app-safe-top,env(safe-area-inset-top,0px)), 0.75rem)" }}
       >
         <Button
           asChild
