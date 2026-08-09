@@ -636,12 +636,12 @@ export function ScrollPerfLiveChart() {
             onClick={() => {
               const now = Date.now();
               const rows = [
-                "at,seconds_ago,fps,fps_trend,fps_spike,latency_ms,latency_trend,latency_spike,scrolling,events",
+                "at,seconds_ago,fps,fps_trend,fps_spike,latency_ms,latency_trend,latency_spike,scrolling,events,trend_method,trend_window",
                 ...series.fps.map((f, i) => {
                   const ago = ((POINTS - 1 - i) * SAMPLE_MS) / 1000;
                   const at = new Date(now - ago * 1000).toISOString();
                   const ev = (series.marks[i] ?? []).join("|");
-                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${fpsSpikes[i] ? 1 : 0},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${latSpikes[i] ? 1 : 0},${series.scroll[i] ? 1 : 0},${ev}`;
+                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${fpsSpikes[i] ? 1 : 0},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${latSpikes[i] ? 1 : 0},${series.scroll[i] ? 1 : 0},${ev},${smoothing ? methodCfg.short : "raw"},${smooth}`;
                 }),
               ].join("\r\n");
               downloadCsv(scrollPerfCsvFilename("live"), rows);
