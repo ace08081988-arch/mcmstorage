@@ -42,6 +42,29 @@ const MARK_STYLE: Record<
 
 const MARK_ORDER: ScrollPerfEventKind[] = ["touch", "start", "move", "stop"];
 
+/** Pilihan rolling average (jumlah sampel; 1 = tanpa penghalusan). */
+const SMOOTH_OPTIONS = [
+  { v: 1, label: "Mentah", hint: "tanpa penghalusan" },
+  { v: 3, label: "Halus 3", hint: "rata-rata 0,3 dtk" },
+  { v: 7, label: "Halus 7", hint: "rata-rata 0,7 dtk" },
+] as const;
+
+const SMOOTH_KEY = "app-scroll-perf-smooth";
+
+/** Rata-rata bergerak (trailing) — memisahkan tren dari spike sesaat. */
+function rolling(values: number[], window: number): number[] {
+  if (window <= 1) return values;
+  const out: number[] = [];
+  let sum = 0;
+  for (let i = 0; i < values.length; i++) {
+    sum += values[i] ?? 0;
+    if (i >= window) sum -= values[i - window] ?? 0;
+    const n = Math.min(i + 1, window);
+    out.push(Math.round((sum / n) * 10) / 10);
+  }
+  return out;
+}
+
 function path(values: number[], max: number, w: number, h: number) {
   if (values.length < 2) return "";
   const step = w / (POINTS - 1);
@@ -70,6 +93,8 @@ export function ScrollPerfLiveChart() {
     marks: Array.from({ length: POINTS }, () => [] as ScrollPerfEventKind[]),
   });
   const [paused, setPaused] = useState(false);
+  /** Lebar rolling average aktif (1 = mentah). */
+  const [smooth, setSmooth] = useState(1);
   /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
   const [hover, setHover] = useState<number | null>(null);
   const frames = useRef(0);
@@ -80,6 +105,25 @@ export function ScrollPerfLiveChart() {
   // tidak bergerak di bawah jari/kursor.
   const hoverRef = useRef<number | null>(null);
   hoverRef.current = hover;
+
+  // Pulihkan preferensi penghalusan.
+  useEffect(() => {
+    try {
+      const raw = Number(localStorage.getItem(SMOOTH_KEY));
+      if (SMOOTH_OPTIONS.some((o) => o.v === raw)) setSmooth(raw);
+    } catch {
+      /* mode privat → pakai default */
+    }
+  }, []);
+
+  const chooseSmooth = useCallback((v: number) => {
+    setSmooth(v);
+    try {
+      localStorage.setItem(SMOOTH_KEY, String(v));
+    } catch {
+      /* abaikan */
+    }
+  }, []);
 
   // Tandai fase gulir agar arsiran grafik sinkron dengan interaksi.
   useEffect(() => {
@@ -149,6 +193,9 @@ export function ScrollPerfLiveChart() {
   const fpsNow = series.fps[POINTS - 1] ?? 0;
   const latMax = Math.max(40, ...series.lat);
   const latNow = [...series.lat].reverse().find((v) => v > 0) ?? 0;
+  const fpsSmooth = rolling(series.fps, smooth);
+  const latSmooth = rolling(series.lat, smooth);
+  const smoothing = smooth > 1;
 
   const bands: { x: number; w: number }[] = [];
   const step = W / (POINTS - 1);
@@ -178,6 +225,8 @@ export function ScrollPerfLiveChart() {
   const hoverLat = hover !== null ? (series.lat[hover] ?? 0) : 0;
   const hoverScroll = hover !== null ? (series.scroll[hover] ?? false) : false;
   const hoverMarks = hover !== null ? (series.marks[hover] ?? []) : [];
+  const hoverFpsTrend = hover !== null ? (fpsSmooth[hover] ?? 0) : 0;
+  const hoverLatTrend = hover !== null ? (latSmooth[hover] ?? 0) : 0;
   /** Posisi kotak tooltip dalam persen lebar, dijaga agar tidak keluar kartu. */
   const hoverLeft = hover !== null ? Math.min(88, Math.max(2, (hover / (POINTS - 1)) * 100)) : 0;
 
@@ -199,6 +248,14 @@ export function ScrollPerfLiveChart() {
           {hoverAgo === 0 ? "sekarang" : `${hoverAgo.toFixed(1)} dtk lalu`}
           {hoverScroll ? " · menggulir" : ""}
         </div>
+        {smoothing ? (
+          <div className="text-muted-foreground tabular-nums">
+            tren:{" "}
+            {kind === "fps"
+              ? `${hoverFpsTrend.toFixed(1)} fps`
+              : `${hoverLatTrend.toFixed(1)} ms`}
+          </div>
+        ) : null}
         {hoverMarks.length ? (
           <div className="text-muted-foreground">
             {hoverMarks.map((k) => MARK_STYLE[k].short).join(" · ")}
@@ -260,25 +317,48 @@ export function ScrollPerfLiveChart() {
             <CardDescription className="text-ms-xs">
               12 detik terakhir. Area berarsir = saat Anda menggulir. Sentuh atau
               arahkan kursor ke grafik untuk membaca nilai persis di titik itu.
+              Penghalusan membantu memisahkan tren dari spike sesaat.
             </CardDescription>
           </div>
           <Badge variant="outline" className="shrink-0 text-muted-foreground">
             {hover !== null ? "Baca titik" : paused ? "Jeda" : "Live"}
           </Badge>
         </div>
-        <div className="mt-ms-2 flex justify-end">
+        <div className="mt-ms-2 flex flex-wrap items-center justify-between gap-ms-2">
+          <div
+            className="inline-flex rounded-md border p-0.5"
+            role="group"
+            aria-label="Penghalusan grafik"
+          >
+            {SMOOTH_OPTIONS.map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => chooseSmooth(o.v)}
+                aria-pressed={smooth === o.v}
+                title={o.hint}
+                className={`rounded-[5px] px-ms-2 py-1 text-ms-2xs transition-colors ${
+                  smooth === o.v
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
               const now = Date.now();
               const rows = [
-                "at,seconds_ago,fps,latency_ms,scrolling,events",
+                "at,seconds_ago,fps,fps_trend,latency_ms,latency_trend,scrolling,events",
                 ...series.fps.map((f, i) => {
                   const ago = ((POINTS - 1 - i) * SAMPLE_MS) / 1000;
                   const at = new Date(now - ago * 1000).toISOString();
                   const ev = (series.marks[i] ?? []).join("|");
-                  return `${at},${ago.toFixed(1)},${f},${series.lat[i] ?? 0},${series.scroll[i] ? 1 : 0},${ev}`;
+                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${series.scroll[i] ? 1 : 0},${ev}`;
                 }),
               ].join("\r\n");
               downloadCsv(scrollPerfCsvFilename("live"), rows);
@@ -326,7 +406,22 @@ export function ScrollPerfLiveChart() {
               strokeDasharray="3 3"
               strokeWidth={1}
             />
-            <path d={path(series.fps, 120, W, H)} className="stroke-emerald-500" fill="none" strokeWidth={1.5} />
+            <path
+              d={path(series.fps, 120, W, H)}
+              className={smoothing ? "stroke-emerald-500/30" : "stroke-emerald-500"}
+              fill="none"
+              strokeWidth={1.5}
+            />
+            {smoothing ? (
+              <path
+                d={path(fpsSmooth, 120, W, H)}
+                className="stroke-emerald-500"
+                fill="none"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            ) : null}
             {crosshair}
             {hover !== null ? (
               <circle
@@ -377,10 +472,20 @@ export function ScrollPerfLiveChart() {
                   y={H - Math.min(1, v / latMax) * H}
                   width={Math.max(1.5, step * 0.8)}
                   height={Math.min(1, v / latMax) * H}
-                  className={v > 40 ? "fill-red-500" : v > 20 ? "fill-amber-500" : "fill-sky-500"}
+                  className={`${v > 40 ? "fill-red-500" : v > 20 ? "fill-amber-500" : "fill-sky-500"} ${smoothing ? "opacity-40" : ""}`}
                 />
               ) : null,
             )}
+            {smoothing ? (
+              <path
+                d={path(latSmooth, latMax, W, H)}
+                className="stroke-sky-500"
+                fill="none"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            ) : null}
             {crosshair}
           </svg>
         </div>
