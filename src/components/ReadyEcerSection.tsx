@@ -44,16 +44,27 @@ import { withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supaba
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
+// Cache URL foto per-path selama masa berlaku tanda tangan dikurangi margin.
+// Tanpa ini, setiap pemuatan ulang (realtime, refresh manual) meminta URL
+// satu per satu untuk seluruh foto — beban N+1 yang bikin layar terasa berat.
+const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
 async function resolveShotSignedUrl(
   path: string,
   source: "worker" | "self",
   expiresIn = 60 * 60,
 ): Promise<string | null> {
+  const cacheKey = `${source}:${path}`;
+  const hit = signedUrlCache.get(cacheKey);
+  if (hit && hit.expiresAt > Date.now()) return hit.url;
   const primary = source === "worker" ? signedUrl : ecerSignedUrl;
   const secondary = source === "worker" ? ecerSignedUrl : signedUrl;
-  const a = await primary(path, expiresIn);
-  if (a) return a;
-  return await secondary(path, expiresIn);
+  const url = (await primary(path, expiresIn)) ?? (await secondary(path, expiresIn));
+  if (url) {
+    // Margin 5 menit supaya tidak memakai URL yang hampir kedaluwarsa.
+    signedUrlCache.set(cacheKey, { url, expiresAt: Date.now() + (expiresIn - 300) * 1000 });
+  }
+  return url;
 }
 
 type WorkerShot = {
