@@ -39,6 +39,7 @@
  *   [releaseNotes] → edits.commit.
  */
 import { existsSync, readFileSync, statSync } from "node:fs";
+import { readAppVersion } from "./read-app-version.mjs";
 import { resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
 import { appendFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -123,7 +124,7 @@ console.log(`  ✓ ${aabPath} (${(aabSize / 1024 / 1024).toFixed(1)} MB)`);
 // ─── 2b. Baca versionCode/versionName lokal dari build.gradle ────────
 const local = readLocalVersion();
 console.log(
-  `  ✓ lokal (build.gradle): versionCode=${local.versionCode} versionName=${local.versionName}`,
+  `  ✓ lokal (version.properties): versionCode=${local.versionCode} versionName=${local.versionName}`,
 );
 runSummary.local = local;
 
@@ -329,18 +330,14 @@ async function getAccessToken(sa) {
 }
 
 function readLocalVersion() {
-  const p = resolve(ROOT, "android/app/build.gradle");
-  if (!existsSync(p)) {
+  const v = readAppVersion();
+  if (!v) {
     fail(
-      "android/app/build.gradle tidak ada — tidak bisa baca versionCode lokal.\n" +
-        "Jalankan: bunx cap add android (sekali) lalu build ulang.",
+      "Tidak bisa baca versi lokal dari android/version.properties.\n" +
+        "Jalankan: bunx cap add android (sekali) lalu `bun run version:check`.",
     );
   }
-  const raw = readFileSync(p, "utf8");
-  const vc = /versionCode\s+(\d+)/.exec(raw)?.[1];
-  const vn = /versionName\s+"([^"]+)"/.exec(raw)?.[1];
-  if (!vc) fail("Tidak bisa parse versionCode dari android/app/build.gradle");
-  return { versionCode: Number(vc), versionName: vn ?? null };
+  return { versionCode: v.versionCode, versionName: v.versionName ?? null };
 }
 
 async function collectPlayVersions(accessToken, packageName, editId) {
@@ -487,7 +484,7 @@ function writeStepSummary(s) {
     rows.push("");
     rows.push("| | versionCode | versionName |");
     rows.push("| --- | ---: | --- |");
-    rows.push(`| **Lokal (build.gradle)** | \`${localVc}\` | \`${localVn}\` |`);
+    rows.push(`| **Lokal (version.properties)** | \`${localVc}\` | \`${localVn}\` |`);
     rows.push(`| Play — tertinggi (semua bundle) | \`${playMax}\` | — |`);
     rows.push(`| Play — track \`${s.track}\` | \`${trackVc}\` | \`${trackVn}\` |`);
     if (s.uploaded) {

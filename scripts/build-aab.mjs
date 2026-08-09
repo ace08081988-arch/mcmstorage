@@ -7,6 +7,7 @@
  *   node scripts/build-aab.mjs --variant chat        # varian Ace Chat
  *   node scripts/build-aab.mjs --debug               # bundleDebug (tanpa signing)
  *   node scripts/build-aab.mjs --skip-typecheck      # skip tsgo
+ *   node scripts/build-aab.mjs --bump                # naikkan versi dulu (eksplisit)
  *
  * Alur:
  *   1. Pre-flight: cek folder android/, ANDROID_HOME, JAVA_HOME, gradlew.
@@ -48,7 +49,9 @@ if (!["full", "chat"].includes(variant)) {
 const skipTypecheck = args.has("--skip-typecheck");
 const debugBundle = args.has("--debug");
 const doUpload = args.has("--upload");
-const skipBump = args.has("--skip-bump");
+// Bump versi TIDAK pernah otomatis: dry-run/retry tidak boleh menaikkan
+// versionCode berkali-kali. Pakai `--bump` (atau `bun run version:bump`).
+const doBump = args.has("--bump");
 const uploadTrack = (() => {
   const i = argv.indexOf("--upload-track");
   return i === -1 ? "internal" : argv[i + 1] ?? "internal";
@@ -112,10 +115,16 @@ if (!debugBundle) {
 }
 
 // ─── 1c. Bump versionCode/versionName (khusus release) ────────────────
-if (!debugBundle && !skipBump) {
-  step("1c/4 Bump versionCode/versionName otomatis");
-  run("node", [resolve(ROOT, "scripts/bump-version.mjs")]);
-  console.log("  ✓ version di build.gradle sudah maju");
+if (!debugBundle) {
+  if (doBump) {
+    step("1c/4 Bump versionCode/versionName (--bump eksplisit)");
+    run("node", [resolve(ROOT, "scripts/bump-version.mjs")]);
+    console.log("  ✓ android/version.properties sudah maju");
+  } else {
+    step("1c/4 Versi dipakai apa adanya (tanpa bump otomatis)");
+    run("node", [resolve(ROOT, "scripts/read-app-version.mjs")]);
+    console.log("  ℹ Perlu naik versi? jalankan `bun run version:bump` lalu build ulang.");
+  }
 }
 
 // ─── 1d. Pre-flight minify/proguard/signing ──────────────────────────

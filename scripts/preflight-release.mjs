@@ -42,6 +42,7 @@ import {
   copyFileSync,
 } from "node:fs";
 import { resolve, dirname } from "node:path";
+import { readAppVersion } from "./read-app-version.mjs";
 
 const argv = process.argv.slice(2);
 const args = new Set(argv);
@@ -183,9 +184,16 @@ function runPreBuild() {
     );
   }
 
-  step("8  Cek versionCode monotonic-safe");
-  const vc = /versionCode\s+(\d+)/.exec(src)?.[1];
-  const vn = /versionName\s+"([^"]+)"/.exec(src)?.[1];
+  if (!/version\.properties/.test(src)) {
+    warn(
+      "build.gradle tidak membaca android/version.properties — SSOT versi bisa jadi ganda.",
+    );
+  }
+
+  step("8  Cek versionCode monotonic-safe (SSOT android/version.properties)");
+  const appVersion = readAppVersion();
+  const vc = appVersion ? String(appVersion.versionCode) : null;
+  const vn = appVersion?.versionName ?? null;
   if (vc && vn) {
     ok(`versionCode=${vc}, versionName=${vn}`);
     if (Number(vc) < 100) {
@@ -196,7 +204,10 @@ function runPreBuild() {
       );
     }
   } else {
-    err("versionCode/versionName tidak bisa di-parse dari build.gradle.");
+    err(
+      "versionCode/versionName tidak bisa dibaca. SSOT = android/version.properties\n" +
+        "    (VERSION_CODE / VERSION_NAME). Jalankan `bun run version:check`.",
+    );
   }
 }
 
