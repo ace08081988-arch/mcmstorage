@@ -162,3 +162,29 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
     expect(calls[0].path.startsWith("TOK-abc/item-xyz/")).toBe(true);
   });
 });
+// SPRINT 5 (High) — pagar upload untuk bucket yang bisa ditulis sesi anon.
+describe("uploadPrepPhoto — pagar MIME & ukuran", () => {
+  it("menolak file non-gambar (PDF) tanpa menyentuh storage", async () => {
+    const { client, calls } = makeStorage();
+    const blob = new Blob([new Uint8Array(1024)], { type: "application/pdf" });
+    const path = await uploadPrepPhoto("t", "i", blob, { skipCompress: true }, client);
+    expect(path).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("menerima image/heic karena dinormalisasi ke jpg", async () => {
+    const { client, calls } = makeStorage();
+    const blob = new Blob([new Uint8Array(1024)], { type: "image/heic" });
+    const path = await uploadPrepPhoto("t", "i", blob, { skipCompress: true }, client);
+    expect(path).toMatch(/\.jpg$/);
+    expect(calls).toHaveLength(1);
+  });
+
+  it("menolak gambar > 12 MB yang tidak bisa dikompres", async () => {
+    const { client, calls } = makeStorage();
+    const big = new Blob([new Uint8Array(13 * 1024 * 1024)], { type: "image/jpeg" });
+    const path = await uploadPrepPhoto("t", "i", big, { skipCompress: true }, client);
+    expect(path).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
+});

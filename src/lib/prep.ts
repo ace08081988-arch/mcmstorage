@@ -49,6 +49,12 @@ const UPLOAD_COMPRESS_THRESHOLD = 1.5 * 1024 * 1024;
 const UPLOAD_QUALITY = 0.8;
 const UPLOAD_MAX_DIM = 2048;
 
+// SPRINT 5 (High) — pagar ukuran akhir. Bucket prep-photos bisa ditulis oleh
+// sesi anon (portal pegawai) dan Storage belum punya file_size_limit per
+// bucket, jadi batas keras ditegakkan di sini: apa pun yang lolos kompresi
+// tapi masih > 12 MB ditolak, bukan dikirim ke storage.
+const UPLOAD_HARD_MAX_BYTES = 12 * 1024 * 1024;
+
 // Peta MIME → ekstensi file. Batasi hanya ke format raster yang benar-benar
 // bisa dihasilkan pipeline stageFile / PhotoEditor supaya tidak ada file
 // aneh (mis. HEIC mentah) yang lolos ke storage.
@@ -99,6 +105,19 @@ export async function uploadPrepPhoto(
   const opts: UploadPrepPhotoOptions =
     typeof extOrOpts === "string" ? { ext: extOrOpts } : (extOrOpts ?? {});
 
+  // 0) Tolak lebih awal apa pun yang bukan gambar (PDF, zip, video, dsb).
+  //    MIME gambar non-standar seperti image/heic tetap diterima karena
+  //    dinormalisasi ke JPEG di langkah kompresi/ekstensi di bawah. Blob
+  //    tanpa MIME (kamera native Android) juga diteruskan.
+  const inMime = (blob.type || "").toLowerCase();
+  if (inMime && !inMime.startsWith("image/")) {
+    logStorageError(
+      { bucket: PREP_BUCKET, op: "upload", path: "(pre-check)", source: "uploadPrepPhoto" },
+      new Error(`format tidak didukung: ${inMime}`),
+    );
+    return null;
+  }
+
   // 1) Safety-net kompresi. compressImage() sendiri sudah menerapkan aturan
   //    "skip bila < minBytes / hasil >= asli", jadi aman dipanggil dua
   //    kali (di stageFile & di sini) tanpa risiko re-encode berulang.
@@ -122,6 +141,14 @@ export async function uploadPrepPhoto(
   //    file `.jpg` diupload dengan Content-Type `image/heic`).
   const ext = (opts.ext ?? extFromMime(out.type)).toLowerCase().replace(/^\./, "");
   const contentType = mimeFromExt(ext);
+
+  if (out.size > UPLOAD_HARD_MAX_BYTES) {
+    logStorageError(
+      { bucket: PREP_BUCKET, op: "upload", path: "(pre-check)", source: "uploadPrepPhoto" },
+      new Error(`file terlalu besar: ${out.size} byte`),
+    );
+    return null;
+  }
 
   // 3) Bungkus jadi File dengan nama pasti supaya storage & unduhan owner
   //    tetap punya nama file yang bermakna. `blob` yang datang dari
