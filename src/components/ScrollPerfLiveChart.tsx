@@ -257,6 +257,28 @@ export function ScrollPerfLiveChart() {
   const latSmooth = rolling(series.lat, smooth);
   const smoothing = smooth > 1;
 
+  // Deteksi spike selalu memakai garis tren sendiri (SPIKE_WINDOW) supaya
+  // tetap bekerja meski tampilan grafik disetel "Mentah".
+  const spikeCfg = SPIKE_OPTIONS.find((o) => o.v === spikeLevel) ?? SPIKE_OPTIONS[0];
+  const fpsTrendRef = rolling(series.fps, SPIKE_WINDOW);
+  const latTrendRef = rolling(series.lat, SPIKE_WINDOW);
+  const fpsSpikes = detectSpikes(
+    series.fps,
+    fpsTrendRef,
+    spikeCfg.rel,
+    spikeCfg.absFps,
+    "down",
+  );
+  const latSpikes = detectSpikes(
+    series.lat,
+    latTrendRef,
+    spikeCfg.rel,
+    spikeCfg.absLat,
+    "up",
+  );
+  const spikeCount =
+    fpsSpikes.filter(Boolean).length + latSpikes.filter(Boolean).length;
+
   const bands: { x: number; w: number }[] = [];
   const step = W / (POINTS - 1);
   let runStart = -1;
