@@ -138,6 +138,8 @@ export function ScrollPerfLiveChart() {
   const [smooth, setSmooth] = useState(1);
   /** Metode penghalusan aktif. */
   const [method, setMethod] = useState<SmoothMethod>("sma");
+  /** Kolom yang disertakan saat ekspor CSV. */
+  const [csvColumns, setCsvColumns] = useState<CsvColumns>("both");
   /** Sensitivitas sorotan spike (0 = mati). */
   const [spikeLevel, setSpikeLevel] = useState(2);
   /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
@@ -161,6 +163,8 @@ export function ScrollPerfLiveChart() {
       }
       const m = localStorage.getItem(SMOOTH_METHOD_KEY);
       if (m && METHOD_OPTIONS.some((o) => o.v === m)) setMethod(m as SmoothMethod);
+      const c = localStorage.getItem(CSV_COLUMNS_KEY);
+      if (c && CSV_COLUMN_OPTIONS.some((o) => o.v === c)) setCsvColumns(c as CsvColumns);
     } catch {
       /* mode privat → pakai default */
     }
@@ -200,6 +204,15 @@ export function ScrollPerfLiveChart() {
     setMethod(v);
     try {
       localStorage.setItem(SMOOTH_METHOD_KEY, v);
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+
+  const chooseCsvColumns = useCallback((v: CsvColumns) => {
+    setCsvColumns(v);
+    try {
+      localStorage.setItem(CSV_COLUMNS_KEY, v);
     } catch {
       /* abaikan */
     }
