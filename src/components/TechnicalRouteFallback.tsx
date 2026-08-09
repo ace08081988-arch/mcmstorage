@@ -14,6 +14,25 @@ import { Button } from "@/components/ui/button";
 import { isHiddenMenuUrl } from "@/lib/hidden-menu-routes";
 
 const SESSION_KEY = "ace:technical-route-unlocked";
+const LAST_SAFE_KEY = "ace:last-safe-path";
+
+/** Simpan halaman non-teknis terakhir yang benar-benar dibuka pengguna. */
+export function rememberSafeLocation(href: string) {
+  try {
+    sessionStorage.setItem(LAST_SAFE_KEY, href);
+  } catch { /* ignore */ }
+}
+
+function readSafeLocation(): string | null {
+  try {
+    const v = sessionStorage.getItem(LAST_SAFE_KEY);
+    if (!v || !v.startsWith("/")) return null;
+    if (isHiddenMenuUrl(v.split("?")[0])) return null;
+    return v;
+  } catch {
+    return null;
+  }
+}
 
 function isUnlocked(): boolean {
   if (typeof window === "undefined") return true;
@@ -33,6 +52,17 @@ export function TechnicalRouteNotice({
   onUnlock?: () => void;
 }) {
   const navigate = useNavigate();
+  const [backTarget, setBackTarget] = useState<string | null>(null);
+  useEffect(() => {
+    setBackTarget(readSafeLocation());
+  }, [pathname]);
+  const goBack = () => {
+    if (backTarget) {
+      void navigate({ to: backTarget as never, replace: true });
+      return;
+    }
+    void navigate({ to: "/", replace: true });
+  };
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-lg flex-col items-center justify-center gap-4 px-4 py-10 text-center">
       <div className="depth-3d flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
@@ -46,14 +76,7 @@ export function TechnicalRouteNotice({
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-        <Button
-          variant="default"
-          className="depth-tap"
-          onClick={() => {
-            if (typeof window !== "undefined" && window.history.length > 1) window.history.back();
-            else void navigate({ to: "/" });
-          }}
-        >
+        <Button variant="default" className="depth-tap" onClick={goBack}>
           <ArrowLeft className="size-4" aria-hidden="true" />
           Kembali
         </Button>
@@ -82,11 +105,15 @@ export function TechnicalRouteNotice({
 /** Bungkus konten rute teknis; tampilkan fallback bila belum dibuka sengaja. */
 export function TechnicalRouteGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const href = useRouterState({ select: (s) => s.location.href });
   const [unlocked, setUnlocked] = useState(true);
   useEffect(() => {
     setUnlocked(isUnlocked());
   }, [pathname]);
   const hidden = isHiddenMenuUrl(pathname);
+  useEffect(() => {
+    if (!hidden) rememberSafeLocation(href);
+  }, [hidden, href]);
   if (hidden && !unlocked) {
     return <TechnicalRouteNotice pathname={pathname} onUnlock={() => setUnlocked(true)} />;
   }
