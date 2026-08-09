@@ -1525,6 +1525,14 @@ function PublicPrepPage() {
     });
   }
 
+  // Penjadwal tunggal: semua pemicu (realtime, heartbeat, visibility) lewat
+  // sini supaya ada jeda minimum dan tidak ada permintaan bertumpuk.
+  function scheduleRefresh(minGapMs = 3000) {
+    const since = Date.now() - lastRefreshAtRef.current;
+    if (since < minGapMs) return;
+    void silentRefresh();
+  }
+
   // Realtime broadcast + fallback heartbeat & visibility refresh.
   useEffect(() => {
     if (!authed) return;
@@ -1532,7 +1540,8 @@ function PublicPrepPage() {
     const ch = publicSupabase
       .channel(`prep:${token}`, { config: { broadcast: { self: false } } })
       .on("broadcast", { event: "change" }, () => {
-        void silentRefresh();
+        // Event realtime boleh lebih responsif daripada heartbeat.
+        scheduleRefresh(800);
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") setRtStatus("connected");
@@ -1540,13 +1549,17 @@ function PublicPrepPage() {
           setRtStatus("error");
       });
     const onVis = () => {
-      if (document.visibilityState === "visible") void silentRefresh();
+      if (document.visibilityState === "visible") scheduleRefresh(2000);
     };
     document.addEventListener("visibilitychange", onVis);
     const hb = window.setInterval(() => {
-      if (document.visibilityState === "visible") void silentRefresh();
+      if (document.visibilityState === "visible") scheduleRefresh(12000);
     }, 15000);
-    const tick = window.setInterval(() => setSyncTick((n) => n + 1), 5000);
+    // Timer tampilan saja (label "x dtk lalu") — tidak pernah mengambil data,
+    // dan berhenti bekerja saat layar tidak terlihat agar hemat baterai.
+    const tick = window.setInterval(() => {
+      if (document.visibilityState === "visible") setSyncTick((n) => n + 1);
+    }, 5000);
     return () => {
       publicSupabase.removeChannel(ch);
       document.removeEventListener("visibilitychange", onVis);
