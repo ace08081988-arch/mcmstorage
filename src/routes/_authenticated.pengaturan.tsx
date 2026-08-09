@@ -27,6 +27,7 @@ import {
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { Input } from "@/components/ui/input";
 import { useAdminStatus } from "@/hooks/use-is-admin";
+import { isHiddenMenuUrl } from "@/lib/hidden-menu-routes";
 import { cn } from "@/lib/utils";
 import type { ComponentType, SVGProps } from "react";
 
@@ -274,6 +275,8 @@ function PengaturanHub() {
     const needle = q.trim().toLowerCase();
     return CATEGORIES.map((cat) => {
       const entries = cat.entries.filter((e) => {
+        // Rute teknis tidak pernah tampil di hub Pengaturan.
+        if (isHiddenMenuUrl(e.to)) return false;
         if (e.adminOnly && !isAdmin) return false;
         if (!needle) return true;
         const hay = `${e.title} ${e.description} ${e.keywords ?? ""} ${cat.label}`.toLowerCase();
@@ -286,7 +289,11 @@ function PengaturanHub() {
   const totalCount = useMemo(
     () =>
       CATEGORIES.reduce(
-        (n, c) => n + c.entries.filter((e) => !e.adminOnly || isAdmin).length,
+        (n, c) =>
+          n
+          + c.entries.filter(
+            (e) => !isHiddenMenuUrl(e.to) && (!e.adminOnly || isAdmin),
+          ).length,
         0,
       ),
     [isAdmin],
@@ -306,7 +313,7 @@ function PengaturanHub() {
 
       <div className="mx-auto max-w-3xl px-ms-3 py-ms-3 sm:px-ms-4 sm:py-ms-4">
         {/* Search — sticky di bawah header supaya tetap terlihat saat scroll */}
-        <div className="sticky top-[52px] z-10 -mx-3 mb-3 bg-background/85 px-ms-3 py-ms-2 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:top-[60px] sm:-mx-4 sm:px-ms-4">
+        <div className="bar-solid sticky top-[52px] z-10 -mx-3 mb-3 border-b border-border/50 bg-background/85 px-ms-3 py-ms-2 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:top-[60px] sm:-mx-4 sm:px-ms-4">
           <label htmlFor="pengaturan-search" className="relative block">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"

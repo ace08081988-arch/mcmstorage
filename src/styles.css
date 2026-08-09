@@ -4918,7 +4918,8 @@ html[data-scrolling="1"] [class*="backdrop-blur"] {
      tiap frame scroll. Ganti dengan latar solid. */
   .wa-chat-bg ~ [class*="backdrop-blur"],
   .chat-field-scope[class*="backdrop-blur"],
-  .chat-bar-solid {
+  .chat-bar-solid,
+  .bar-solid {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background-color: var(--background) !important;

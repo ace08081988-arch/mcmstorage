@@ -106,7 +106,6 @@ const SEARCH_ITEMS: { label: string; url: string; group: string; hint?: string }
   { label: "Penyiapan Request", url: "/request", group: "Operasional" },
   { label: "Penyiapan Produk", url: "/tugas", group: "Operasional" },
   { label: "Buat Tugas Manual", url: "/tugas-baru", group: "Operasional" },
-  { label: "Pratinjau Label", url: "/label-preview", group: "Operasional" },
   { label: "Chat", url: "/chat", group: "Komunikasi" },
   { label: "Catatan", url: "/catatan", group: "Komunikasi" },
   { label: "Balas Cepat", url: "/balas-cepat", group: "Komunikasi" },
