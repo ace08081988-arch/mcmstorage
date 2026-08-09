@@ -93,7 +93,10 @@ export async function registerDeviceSession(
     .upsert(row as never, { onConflict: "user_id,device_id" });
 }
 
-async function heartbeatOnce(userId: string): Promise<"ok" | "revoked"> {
+async function heartbeatOnce(
+  userId: string,
+  opts: { touch?: boolean } = {},
+): Promise<"ok" | "revoked"> {
   const deviceId = getOrCreateDeviceId();
   // Periksa status sesi perangkat ini DULU. Kalau sudah dicabut dari tempat
   // lain, jangan menulis `last_seen_at` baru — supaya tidak mengaburkan jejak
@@ -105,6 +108,7 @@ async function heartbeatOnce(userId: string): Promise<"ok" | "revoked"> {
     .eq("device_id", deviceId)
     .maybeSingle();
   if (data?.revoked_at) return "revoked";
+  if (opts.touch === false) return "ok";
   await supabase
     .from("device_sessions")
     .update({ last_seen_at: new Date().toISOString() })
