@@ -2066,11 +2066,11 @@ function ChatRoomPage() {
                   <div
                     key={m.id}
                     id={`msg-${m.id}`}
-                    className={`flex transition-colors duration-200 ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
+                    className={`flex ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
                      <div className={`group relative flex min-w-0 max-w-[86%] items-start gap-ms-1 sm:max-w-[72%] lg:max-w-[60ch] ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
-                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-ms-2 text-ms-sm leading-relaxed transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
+                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-ms-2 text-ms-sm leading-relaxed [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
                             ? `${mine ? "rounded-br-md" : "rounded-bl-md"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
