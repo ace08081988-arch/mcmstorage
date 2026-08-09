@@ -138,6 +138,7 @@ import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovab
 import { Route as LovableVisualDesignTokensRouteImport } from './routes/lovable.visual.design-tokens'
 import { Route as LovableVisualDialogViewportRouteImport } from './routes/lovable.visual.dialog-viewport'
 import { Route as LovableVisualEcerReturnFromWaRouteImport } from './routes/lovable.visual.ecer-return-from-wa'
+import { Route as LovableVisualFabClearanceRouteImport } from './routes/lovable.visual.fab-clearance'
 import { Route as LovableVisualFocusPortalStackRouteImport } from './routes/lovable.visual.focus-portal-stack'
 import { Route as LovableVisualGudangShellRouteImport } from './routes/lovable.visual.gudang-shell'
 import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
@@ -891,6 +892,12 @@ const LovableVisualEcerReturnFromWaRoute =
     path: '/lovable/visual/ecer-return-from-wa',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualFabClearanceRoute =
+  LovableVisualFabClearanceRouteImport.update({
+    id: '/lovable/visual/fab-clearance',
+    path: '/lovable/visual/fab-clearance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualFocusPortalStackRoute =
   LovableVisualFocusPortalStackRouteImport.update({
     id: '/lovable/visual/focus-portal-stack',
@@ -1262,6 +1269,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/dialog-viewport': typeof LovableVisualDialogViewportRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
+  '/lovable/visual/fab-clearance': typeof LovableVisualFabClearanceRoute
   '/lovable/visual/focus-portal-stack': typeof LovableVisualFocusPortalStackRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
@@ -1431,6 +1439,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/dialog-viewport': typeof LovableVisualDialogViewportRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
+  '/lovable/visual/fab-clearance': typeof LovableVisualFabClearanceRoute
   '/lovable/visual/focus-portal-stack': typeof LovableVisualFocusPortalStackRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
@@ -1605,6 +1614,7 @@ export interface FileRoutesById {
   '/lovable/visual/design-tokens': typeof LovableVisualDesignTokensRoute
   '/lovable/visual/dialog-viewport': typeof LovableVisualDialogViewportRoute
   '/lovable/visual/ecer-return-from-wa': typeof LovableVisualEcerReturnFromWaRoute
+  '/lovable/visual/fab-clearance': typeof LovableVisualFabClearanceRoute
   '/lovable/visual/focus-portal-stack': typeof LovableVisualFocusPortalStackRoute
   '/lovable/visual/gudang-shell': typeof LovableVisualGudangShellRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
@@ -1779,6 +1789,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/design-tokens'
     | '/lovable/visual/dialog-viewport'
     | '/lovable/visual/ecer-return-from-wa'
+    | '/lovable/visual/fab-clearance'
     | '/lovable/visual/focus-portal-stack'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
@@ -1948,6 +1959,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/design-tokens'
     | '/lovable/visual/dialog-viewport'
     | '/lovable/visual/ecer-return-from-wa'
+    | '/lovable/visual/fab-clearance'
     | '/lovable/visual/focus-portal-stack'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
@@ -2121,6 +2133,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/design-tokens'
     | '/lovable/visual/dialog-viewport'
     | '/lovable/visual/ecer-return-from-wa'
+    | '/lovable/visual/fab-clearance'
     | '/lovable/visual/focus-portal-stack'
     | '/lovable/visual/gudang-shell'
     | '/lovable/visual/karton-konversi'
@@ -2217,6 +2230,7 @@ export interface RootRouteChildren {
   LovableVisualDesignTokensRoute: typeof LovableVisualDesignTokensRoute
   LovableVisualDialogViewportRoute: typeof LovableVisualDialogViewportRoute
   LovableVisualEcerReturnFromWaRoute: typeof LovableVisualEcerReturnFromWaRoute
+  LovableVisualFabClearanceRoute: typeof LovableVisualFabClearanceRoute
   LovableVisualFocusPortalStackRoute: typeof LovableVisualFocusPortalStackRoute
   LovableVisualGudangShellRoute: typeof LovableVisualGudangShellRoute
   LovableVisualKartonKonversiRoute: typeof LovableVisualKartonKonversiRoute
@@ -3164,6 +3178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualEcerReturnFromWaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/fab-clearance': {
+      id: '/lovable/visual/fab-clearance'
+      path: '/lovable/visual/fab-clearance'
+      fullPath: '/lovable/visual/fab-clearance'
+      preLoaderRoute: typeof LovableVisualFabClearanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/focus-portal-stack': {
       id: '/lovable/visual/focus-portal-stack'
       path: '/lovable/visual/focus-portal-stack'
@@ -3768,6 +3789,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualDesignTokensRoute: LovableVisualDesignTokensRoute,
   LovableVisualDialogViewportRoute: LovableVisualDialogViewportRoute,
   LovableVisualEcerReturnFromWaRoute: LovableVisualEcerReturnFromWaRoute,
+  LovableVisualFabClearanceRoute: LovableVisualFabClearanceRoute,
   LovableVisualFocusPortalStackRoute: LovableVisualFocusPortalStackRoute,
   LovableVisualGudangShellRoute: LovableVisualGudangShellRoute,
   LovableVisualKartonKonversiRoute: LovableVisualKartonKonversiRoute,

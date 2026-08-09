@@ -1568,5 +1568,19 @@ export default defineConfig({
       testMatch: /safe-area-notch\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
     },
+    {
+      // Jarak aman FAB & action bar terhadap gesture bar / home indicator.
+      // Spec mengatur viewport & orientasi sendiri (320–1024, portrait +
+      // landscape), jadi di sini cukup basis Chromium bertouch.
+      name: "fab-clearance-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /fab-action-bar-clearance\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        isMobile: false,
+        hasTouch: true,
+      },
+    },
   ],
 });
