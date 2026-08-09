@@ -2305,6 +2305,31 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   overflow-anchor: none;
 }
 
+/* --------------------------------------------------------------------------
+   Semua bilah lengket (header/footer sticky) wajib buram penuh.
+   --------------------------------------------------------------------------
+   Banyak halaman memakai `bg-card/95 backdrop-blur`. Saat digulir di WebView
+   Android/iOS, konten di belakangnya masih terbaca samar sehingga terlihat
+   seperti "teks dobel", dan lapisan blur menyebabkan kedipan karena harus
+   dicat ulang tiap frame. Aturan di bawah menormalkan semuanya menjadi warna
+   solid tanpa mengubah tiap file komponen.
+   -------------------------------------------------------------------------- */
+:where(.sticky)[class*="bg-background/"] {
+  background-color: var(--background);
+}
+:where(.sticky)[class*="bg-card/"] {
+  background-color: var(--card);
+}
+:where(.sticky)[class*="bg-popover/"] {
+  background-color: var(--popover);
+}
+:where(.sticky)[class*="bg-muted/"] {
+  background-color: var(--muted);
+}
+:where(.sticky)[class*="backdrop-blur"] {
+  backdrop-filter: none;
+}
+
 .app-static-bottom-bar {
   z-index: var(--z-bottom-nav);
   /* Safe area lengkap: bawah (home indicator) + kiri/kanan (notch saat
