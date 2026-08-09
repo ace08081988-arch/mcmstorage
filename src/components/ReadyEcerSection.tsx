@@ -321,6 +321,7 @@ export function ReadyEcerSection() {
       // Track per-title match quality + per-product submission counts
       const matchStats = new Map<string, { strict: number; fallback_grams: number; fallback_wid: number }>();
       const subsPerWid = new Map<string, number>();
+      const unmatchedNames: string[] = [];
       for (const t of list) matchStats.set(t.id, { strict: 0, fallback_grams: 0, fallback_wid: 0 });
       for (const s of subRows) {
         const meta = metaByItemId.get(s.task_item_id);
@@ -351,7 +352,12 @@ export function ReadyEcerSection() {
             // tidak cocok = biarkan panel Request yang menangani.
           }
         }
-        if (!titleId) continue; // require warehouse match — name-only is unreliable
+        if (!titleId) {
+          // Tidak cocok dengan judul Ecer manapun. Kiriman ini ditangani panel
+          // Request; catat agar admin tahu fotonya sudah masuk, bukan hilang.
+          unmatchedNames.push(meta.name || "Tanpa nama");
+          continue; // require warehouse match — name-only is unreliable
+        }
         if (matchKind) {
           const st = matchStats.get(titleId);
           if (st) st[matchKind] += 1;
