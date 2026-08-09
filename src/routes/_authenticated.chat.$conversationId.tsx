@@ -2034,7 +2034,7 @@ function ChatRoomPage() {
             </div>
           ) : null}
           {grouped.map((g) => (
-            <div key={g.day} className="flex flex-col gap-1.5">
+            <div key={g.day} className="chat-day-group flex flex-col gap-1.5">
               <div className="my-2.5 flex justify-center">
                 <span className="rounded-full bg-[var(--wa-header)]/95 px-ms-3 py-1 text-ms-2xs font-medium uppercase tracking-wide wa-muted shadow-sm ring-1 ring-[var(--wa-border)]">{g.day}</span>
               </div>
