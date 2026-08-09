@@ -260,6 +260,7 @@ function StatusDetailPage() {
           onSend();
         }}
         className="sticky bottom-0 flex items-center gap-ms-2 border-t bg-background/95 p-ms-3 backdrop-blur"
+        style={{ paddingBottom: `calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 0.75rem)` }}
       >
         <Input
           value={text}

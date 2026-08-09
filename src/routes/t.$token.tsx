@@ -5230,7 +5230,10 @@ function RequestForm({
             ? 100
             : 0;
         return (
-          <div className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 border-t bg-background/95 px-ms-3 py-ms-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <div
+            className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 border-t bg-background/95 px-ms-3 py-ms-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+            style={{ paddingBottom: `calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 0.5rem)` }}
+          >
             {reason ? (
               <p className="mb-1.5 text-center text-ms-2xs font-medium text-warning dark:text-warning">
                 {reason}
