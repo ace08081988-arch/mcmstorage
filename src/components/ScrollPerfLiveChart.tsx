@@ -42,12 +42,23 @@ const MARK_STYLE: Record<
 
 const MARK_ORDER: ScrollPerfEventKind[] = ["touch", "start", "move", "stop"];
 
-/** Pilihan rolling average (jumlah sampel; 1 = tanpa penghalusan). */
+/** Pilihan cepat rolling average (jumlah sampel; 1 = tanpa penghalusan). */
 const SMOOTH_OPTIONS = [
   { v: 1, label: "Mentah", hint: "tanpa penghalusan" },
-  { v: 3, label: "Halus 3", hint: "rata-rata 0,3 dtk" },
-  { v: 7, label: "Halus 7", hint: "rata-rata 0,7 dtk" },
+  { v: 5, label: "5", hint: "rata-rata 5 titik (±0,5 dtk)" },
+  { v: 10, label: "10", hint: "rata-rata 10 titik (±1 dtk)" },
+  { v: 20, label: "20", hint: "rata-rata 20 titik (±2 dtk)" },
 ] as const;
+
+/** Batas ukuran rolling average yang boleh dipilih manual. */
+const SMOOTH_MIN = 1;
+const SMOOTH_MAX = 30;
+
+/** Bulatkan & jepit nilai penghalusan ke rentang yang valid. */
+function clampSmooth(v: number): number {
+  if (!Number.isFinite(v)) return 1;
+  return Math.min(SMOOTH_MAX, Math.max(SMOOTH_MIN, Math.round(v)));
+}
 
 const SMOOTH_KEY = "app-scroll-perf-smooth";
 const SPIKE_KEY = "app-scroll-perf-spike";
