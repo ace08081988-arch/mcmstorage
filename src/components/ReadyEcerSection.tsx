@@ -681,6 +681,7 @@ export function ReadyEcerSection() {
           </span>
           <Link
             to="/request"
+            search={{ title: undefined, highlight: undefined, send: undefined }}
             className="shrink-0 font-medium underline underline-offset-2"
           >
             Buka Request
