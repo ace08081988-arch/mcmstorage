@@ -404,6 +404,11 @@ export function ReadyEcerSection() {
         new Promise<void>((resolve) => window.setTimeout(resolve, 5_000)),
       ]);
 
+      setUnmatched({
+        count: unmatchedNames.length,
+        names: Array.from(new Set(unmatchedNames)).slice(0, 5),
+      });
+
       setRows(list.map((t) => {
         const shots = shotsByName.get(t.id) ?? [];
         const workerTotal = shots.filter((s) => s.source === "worker").length;
