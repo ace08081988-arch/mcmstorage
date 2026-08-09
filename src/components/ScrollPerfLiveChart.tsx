@@ -210,6 +210,8 @@ export function ScrollPerfLiveChart() {
   const [paused, setPaused] = useState(false);
   /** Lebar rolling average aktif (1 = mentah). */
   const [smooth, setSmooth] = useState(1);
+  /** Metode penghalusan aktif. */
+  const [method, setMethod] = useState<SmoothMethod>("sma");
   /** Sensitivitas sorotan spike (0 = mati). */
   const [spikeLevel, setSpikeLevel] = useState(2);
   /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
@@ -231,6 +233,8 @@ export function ScrollPerfLiveChart() {
       if (stored !== null && Number.isFinite(raw) && raw >= SMOOTH_MIN) {
         setSmooth(clampSmooth(raw));
       }
+      const m = localStorage.getItem(SMOOTH_METHOD_KEY);
+      if (m && METHOD_OPTIONS.some((o) => o.v === m)) setMethod(m as SmoothMethod);
     } catch {
       /* mode privat → pakai default */
     }
