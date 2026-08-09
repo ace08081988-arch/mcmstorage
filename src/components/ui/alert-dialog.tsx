@@ -44,9 +44,11 @@ const AlertDialogContent = React.forwardRef<
         ref={ref}
         style={vvStyle ? { ...vvStyle, ...(style ?? {}) } : style}
         className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 depth-3d-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
+        // Struktur sama dengan `dialog.tsx`: kolom flex, judul menempel di
+        // atas, tombol menempel di bawah, hanya isi yang menggulir.
+        "group/alert fixed left-[50%] top-[50%] z-50 flex w-[calc(100%-1rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] flex-col gap-4 rounded-lg border bg-background p-4 depth-3d-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:w-full sm:p-6",
         // Bisa digulir saat keyboard muncul; fokus tidak tersembunyi di balik tepi.
-        "max-h-[calc(var(--app-vh,100dvh)-2rem)] overflow-y-auto overscroll-contain scroll-pt-6 scroll-pb-6 focus:outline-none",
+        "max-h-[calc(var(--app-vh-visible,var(--app-vh,100dvh))-max(var(--app-safe-top,env(safe-area-inset-top,0px)),1rem)-max(var(--app-safe-bottom,env(safe-area-inset-bottom,0px)),1rem))] overflow-y-auto overscroll-contain scroll-pt-20 scroll-pb-6 focus:outline-none",
         className,
         )}
         {...props}
@@ -57,13 +59,26 @@ const AlertDialogContent = React.forwardRef<
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex min-w-0 flex-col gap-1 text-left", className)} {...props} />
+  <div
+    className={cn(
+      "flex min-w-0 flex-col gap-1 text-left",
+      "sticky top-0 z-10 bg-background pb-2",
+      "before:pointer-events-none before:absolute before:-left-4 before:right-0 before:bottom-full before:h-4 before:bg-background sm:before:-left-6 sm:before:h-6",
+      className,
+    )}
+    {...props}
+  />
 );
 AlertDialogHeader.displayName = "AlertDialogHeader";
 
 const AlertDialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      "sticky bottom-0 z-10 mt-auto bg-background pt-2",
+      "after:pointer-events-none after:absolute after:-left-4 after:right-0 after:top-full after:h-4 after:bg-background sm:after:-left-6 sm:after:h-6",
+      className,
+    )}
     {...props}
   />
 );
