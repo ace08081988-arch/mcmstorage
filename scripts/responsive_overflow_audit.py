@@ -52,6 +52,24 @@ TARGETS = [
     {"name": "pratinjau-tema",       "path": "/pratinjau-tema"},
 ]
 
+# Rute inti yang butuh sesi. Diaudit hanya bila storage state hasil login E2E
+# tersedia (tests/visual/.auth/user.json) — kalau tidak ada, dilewati dengan
+# pesan jelas alih-alih menghasilkan kegagalan palsu di layar login.
+AUTHED_TARGETS = [
+    {"name": "beranda",        "path": "/"},
+    {"name": "gudang",         "path": "/gudang"},
+    {"name": "request",        "path": "/request"},
+    {"name": "ecer",           "path": "/ecer"},
+    {"name": "hutang-piutang", "path": "/hutang-piutang"},
+    {"name": "chat",           "path": "/chat"},
+    {"name": "kios",           "path": "/kios"},
+    {"name": "buku-alamat",    "path": "/buku-alamat"},
+]
+
+AUTH_STATE = Path(
+    os.environ.get("AUDIT_AUTH_STATE", "tests/visual/.auth/user.json")
+)
+
 # Lebar kritis Android/iOS + tablet portrait.
 WIDTHS = [int(w) for w in os.environ.get("AUDIT_WIDTHS", "320,360,390,411,768").split(",")]
 # WCAG 1.4.10 mensyaratkan reflow sampai 400% pada 320 CSS px; kita uji sampai 2×.
@@ -151,8 +169,11 @@ MEASURE_JS = r"""
 """
 
 
-async def audit_one(browser, target, width, zoom):
-    context = await browser.new_context(viewport={"width": width, "height": 900})
+async def audit_one(browser, target, width, zoom, storage_state=None):
+    ctx_kwargs = {"viewport": {"width": width, "height": 900}}
+    if storage_state:
+        ctx_kwargs["storage_state"] = storage_state
+    context = await browser.new_context(**ctx_kwargs)
     page = await context.new_page()
     url = BASE.rstrip("/") + target["path"]
     try:
@@ -179,13 +200,28 @@ async def main():
     OUT.mkdir(parents=True, exist_ok=True)
     report = []
     failed = 0
+
+    storage_state = None
+    if AUTH_STATE.exists() and AUTH_STATE.stat().st_size > 2:
+        storage_state = str(AUTH_STATE)
+        print(f"Sesi ditemukan ({AUTH_STATE}) — rute inti ikut diaudit.")
+    else:
+        print(
+            f"Sesi tidak ditemukan ({AUTH_STATE}) — rute inti dilewati. "
+            "Jalankan setup login E2E dulu untuk mencakupnya.",
+            file=sys.stderr,
+        )
+
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
         try:
-            for target in TARGETS:
+            all_targets = [(t, None) for t in TARGETS]
+            if storage_state:
+                all_targets += [(t, storage_state) for t in AUTHED_TARGETS]
+            for target, state in all_targets:
                 for w in WIDTHS:
                     for z in ZOOMS:
-                        vios = await audit_one(browser, target, w, z)
+                        vios = await audit_one(browser, target, w, z, state)
                         report.append({"target": target["name"], "width": w, "zoom": z, "violations": vios})
                         if vios:
                             failed += len(vios)
