@@ -669,6 +669,25 @@ export function ReadyEcerSection() {
         <LayoutModeToggle mode={layout} onChange={setLayout} />
       </div>
 
+      {unmatched.count > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-wrap items-center justify-between gap-ms-2 rounded-md border border-warning/30 bg-warning/10 px-ms-2 py-1.5 text-ms-2xs text-warning"
+        >
+          <span className="min-w-0">
+            {unmatched.count} kiriman pegawai belum cocok dengan judul eceran
+            {unmatched.names.length > 0 ? ` (${unmatched.names.join(", ")})` : ""} — fotonya tidak hilang, cek panel Request.
+          </span>
+          <Link
+            to="/request"
+            className="shrink-0 font-medium underline underline-offset-2"
+          >
+            Buka Request
+          </Link>
+        </div>
+      )}
+
       {rows && rows.length > 0 && (
         <div className="flex gap-ms-1.5">
           <div className="relative flex-1">
