@@ -4500,40 +4500,42 @@ function PesananTab({
 
   async function setStatus(id: string, status: OrderRequest["status"], opts: { silent?: boolean } = {}) {
     const { error } = await supabase.from("order_requests").update({ status }).eq("id", id);
-    if (error) { notifyError(error); return false; }
+    if (error) {
+      if (/sudah selesai/i.test(error.message ?? "")) {
+        toast.error("Pesanan sudah selesai — status tidak bisa dikembalikan.");
+      } else notifyError(error);
+      return false;
+    }
     if (!opts.silent) toast.success(`Status: ${status}`);
     onChanged();
     return true;
   }
 
-  async function konversiKePenjualan(o: OrderRequest, skipConfirm = false): Promise<boolean> {
-    if (!uid) return false;
-    const it = itemMap[o.item_id]; if (!it) return false;
+  /** Buka dialog pembayaran; proses sebenarnya lewat RPC atomik. */
+  function konversiKePenjualan(o: OrderRequest) {
+    if (!uid) return;
+    const it = itemMap[o.item_id]; if (!it) return;
+    if (o.status === "selesai") {
+      toast.error("Pesanan sudah selesai — tidak bisa diproses ulang.");
+      return;
+    }
     const qBase = o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size;
-    if (qBase > it.stock_base) { toast.error("Stok kurang untuk konversi"); return false; }
-    const perBase = o.price_per_unit
-      ? (o.qty_mode === "base" ? Number(o.price_per_unit) : Number(o.price_per_unit) / it.package_size)
-      : 0;
-    if (
-      !skipConfirm &&
-      !(await confirm({
-        title: "Catat penjualan?",
-        description: `${fmtItemQty(qBase, it)} × ${fmtItemPrice(perBase, it)}`,
-        confirmText: "Catat",
-      }))
-    )
-      return false;
-    // H3: total_revenue & cost_at_sale diisi trigger apply_sale (SSOT).
-    const { error } = await supabase.from("sales").insert({
-      user_id: uid, item_id: it.id, qty_base: qBase,
-      price_per_base: perBase, total_revenue: 0,
-      note: `Pesanan: ${o.note ?? "-"}`, customer_id: o.customer_id, payment_method: "kas",
-    });
-    if (error) { notifyError(error); return false; }
-    await supabase.from("order_requests").update({ status: "selesai" }).eq("id", o.id);
-    if (!skipConfirm) toast.success("Pesanan dijadikan penjualan");
+    if (qBase > it.stock_base) { toast.error("Stok kurang untuk konversi"); return; }
+    setPending(o);
+  }
+
+  async function confirmProses(method: PaymentMethod, paid: number | null) {
+    const o = pending;
+    if (!o || processing) return;
+    setProcessing(true);
+    const res = await processOrder(o.id, method, paid);
+    setProcessing(false);
+    if (!res.ok) { toast.error(res.message); return; }
+    setPending(null);
+    toast.success(res.alreadyProcessed
+      ? "Pesanan ini sudah diproses sebelumnya."
+      : "✅ Pesanan diproses jadi penjualan");
     onChanged();
-    return true;
   }
 
   async function tandaiSiap(o: OrderRequest) {
@@ -4549,12 +4551,7 @@ function PesananTab({
       confirmText: "Lanjut",
     });
     if (pilihan) {
-      const ok = await konversiKePenjualan(o, true);
-      if (ok && it) {
-        toast.success("✅ Pesanan diproses jadi penjualan", {
-          description: `${ringkasan}\nPelanggan: ${labelPelanggan}\nStatus: menunggu → selesai · Stok dikurangi ${fmtItemQty(qBase, it)}`,
-        });
-      }
+      konversiKePenjualan(o);
     } else {
       if (
         await confirm({
