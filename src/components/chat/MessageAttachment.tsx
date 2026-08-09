@@ -41,7 +41,7 @@ function bytes(n: number | null | undefined): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function useSignedUrl(path: string | null | undefined) {
+function useSignedUrl(path: string | null | undefined, thumbWidth?: number) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!path) return;
@@ -50,12 +50,12 @@ function useSignedUrl(path: string | null | undefined) {
     // H16: refresh signed URL sebelum kadaluarsa (TTL 1 jam, refresh ~50 mnt)
     // supaya tab yang lama terbuka tidak menampilkan gambar 403.
     const refresh = () => {
-      signedChatUrl(path, TTL_SEC).then((u) => { if (alive) setUrl(u); }).catch(() => {});
+      signedChatUrl(path, TTL_SEC, thumbWidth).then((u) => { if (alive) setUrl(u); }).catch(() => {});
     };
     refresh();
     const iv = setInterval(refresh, (TTL_SEC - 600) * 1000);
     return () => { alive = false; clearInterval(iv); };
-  }, [path]);
+  }, [path, thumbWidth]);
   return url;
 }
 
