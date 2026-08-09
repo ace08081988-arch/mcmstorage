@@ -3184,6 +3184,8 @@ function ItemCard({
         _note: note || null,
         _qty_reported: null,
         _expected_updated_at: item.updated_at ?? null,
+        // Kunci anti-kirim-ganda: retry/restart memakai kunci yang sama.
+        _client_key: getSubmitKey(`prep:${item.id}`),
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (publicSupabase.rpc as any)("prep_submit", args);
