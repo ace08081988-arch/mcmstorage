@@ -559,7 +559,14 @@ function RootComponent() {
       <FullscreenModeInit />
       <ChatModeSplash />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      {/* Gerbang rute teknis tingkat akar: harness pengujian visual
+          (/lovable/*) bukan halaman produk, jadi di build produksi ia
+          menampilkan halaman "Halaman internal" alih-alih UI mentah.
+          Rute di bawah _authenticated punya gerbangnya sendiri; gerbang
+          ini idempoten sehingga aman bertumpuk. */}
+      <TechnicalRouteGate>
+        <Outlet />
+      </TechnicalRouteGate>
       <PushPermissionPrompt />
       <Toaster
         // Ikuti tema aplikasi (Noir & Gold) — token semantik, bukan putih bawaan.
