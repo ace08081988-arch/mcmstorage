@@ -185,6 +185,13 @@ const CATEGORIES: ReadonlyArray<SettingCategory> = [
         icon: Smartphone,
         keywords: "scroll tap accident inertia",
       },
+      {
+        title: "Notifikasi Performa",
+        description: "Nyalakan/matikan peringatan \u201CScroll terasa berat\u201D.",
+        to: "/pengaturan-performa",
+        icon: Gauge,
+        keywords: "performa fps lag scroll berat peringatan toast",
+      },
     ],
   },
   {
