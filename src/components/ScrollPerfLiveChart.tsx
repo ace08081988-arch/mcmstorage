@@ -317,25 +317,48 @@ export function ScrollPerfLiveChart() {
             <CardDescription className="text-ms-xs">
               12 detik terakhir. Area berarsir = saat Anda menggulir. Sentuh atau
               arahkan kursor ke grafik untuk membaca nilai persis di titik itu.
+              Penghalusan membantu memisahkan tren dari spike sesaat.
             </CardDescription>
           </div>
           <Badge variant="outline" className="shrink-0 text-muted-foreground">
             {hover !== null ? "Baca titik" : paused ? "Jeda" : "Live"}
           </Badge>
         </div>
-        <div className="mt-ms-2 flex justify-end">
+        <div className="mt-ms-2 flex flex-wrap items-center justify-between gap-ms-2">
+          <div
+            className="inline-flex rounded-md border p-0.5"
+            role="group"
+            aria-label="Penghalusan grafik"
+          >
+            {SMOOTH_OPTIONS.map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => chooseSmooth(o.v)}
+                aria-pressed={smooth === o.v}
+                title={o.hint}
+                className={`rounded-[5px] px-ms-2 py-1 text-ms-2xs transition-colors ${
+                  smooth === o.v
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
               const now = Date.now();
               const rows = [
-                "at,seconds_ago,fps,latency_ms,scrolling,events",
+                "at,seconds_ago,fps,fps_trend,latency_ms,latency_trend,scrolling,events",
                 ...series.fps.map((f, i) => {
                   const ago = ((POINTS - 1 - i) * SAMPLE_MS) / 1000;
                   const at = new Date(now - ago * 1000).toISOString();
                   const ev = (series.marks[i] ?? []).join("|");
-                  return `${at},${ago.toFixed(1)},${f},${series.lat[i] ?? 0},${series.scroll[i] ? 1 : 0},${ev}`;
+                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${series.scroll[i] ? 1 : 0},${ev}`;
                 }),
               ].join("\r\n");
               downloadCsv(scrollPerfCsvFilename("live"), rows);
