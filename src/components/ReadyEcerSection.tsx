@@ -44,16 +44,27 @@ import { withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supaba
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
+// Cache URL foto per-path selama masa berlaku tanda tangan dikurangi margin.
+// Tanpa ini, setiap pemuatan ulang (realtime, refresh manual) meminta URL
+// satu per satu untuk seluruh foto — beban N+1 yang bikin layar terasa berat.
+const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
 async function resolveShotSignedUrl(
   path: string,
   source: "worker" | "self",
   expiresIn = 60 * 60,
 ): Promise<string | null> {
+  const cacheKey = `${source}:${path}`;
+  const hit = signedUrlCache.get(cacheKey);
+  if (hit && hit.expiresAt > Date.now()) return hit.url;
   const primary = source === "worker" ? signedUrl : ecerSignedUrl;
   const secondary = source === "worker" ? ecerSignedUrl : signedUrl;
-  const a = await primary(path, expiresIn);
-  if (a) return a;
-  return await secondary(path, expiresIn);
+  const url = (await primary(path, expiresIn)) ?? (await secondary(path, expiresIn));
+  if (url) {
+    // Margin 5 menit supaya tidak memakai URL yang hampir kedaluwarsa.
+    signedUrlCache.set(cacheKey, { url, expiresAt: Date.now() + (expiresIn - 300) * 1000 });
+  }
+  return url;
 }
 
 type WorkerShot = {
@@ -109,6 +120,9 @@ export function ReadyEcerSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [syncing, setSyncing] = useState(false);
+  // Kiriman pegawai yang tidak cocok dengan judul Ecer manapun. Sebelumnya
+  // dilewati diam-diam sehingga admin mengira pegawai belum mengirim.
+  const [unmatched, setUnmatched] = useState<{ count: number; names: string[] }>({ count: 0, names: [] });
   // Cross-tab sync banner: 'pending' while applying, 'synced' briefly after.
   const [crossTabSync, setCrossTabSync] = useState<null | { status: "pending" | "synced"; id: string | null }>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
@@ -307,6 +321,7 @@ export function ReadyEcerSection() {
       // Track per-title match quality + per-product submission counts
       const matchStats = new Map<string, { strict: number; fallback_grams: number; fallback_wid: number }>();
       const subsPerWid = new Map<string, number>();
+      const unmatchedNames: string[] = [];
       for (const t of list) matchStats.set(t.id, { strict: 0, fallback_grams: 0, fallback_wid: 0 });
       for (const s of subRows) {
         const meta = metaByItemId.get(s.task_item_id);
@@ -337,7 +352,12 @@ export function ReadyEcerSection() {
             // tidak cocok = biarkan panel Request yang menangani.
           }
         }
-        if (!titleId) continue; // require warehouse match — name-only is unreliable
+        if (!titleId) {
+          // Tidak cocok dengan judul Ecer manapun. Kiriman ini ditangani panel
+          // Request; catat agar admin tahu fotonya sudah masuk, bukan hilang.
+          unmatchedNames.push(meta.name || "Tanpa nama");
+          continue; // require warehouse match — name-only is unreliable
+        }
         if (matchKind) {
           const st = matchStats.get(titleId);
           if (st) st[matchKind] += 1;
@@ -383,6 +403,11 @@ export function ReadyEcerSection() {
         Promise.allSettled(thumbJobs),
         new Promise<void>((resolve) => window.setTimeout(resolve, 5_000)),
       ]);
+
+      setUnmatched({
+        count: unmatchedNames.length,
+        names: Array.from(new Set(unmatchedNames)).slice(0, 5),
+      });
 
       setRows(list.map((t) => {
         const shots = shotsByName.get(t.id) ?? [];
@@ -440,9 +465,20 @@ export function ReadyEcerSection() {
 
   useEffect(() => {
     void load();
-    const bump = async () => {
+    // Beberapa foto yang diunggah beruntun menghasilkan banyak event dalam
+    // hitungan detik. Tanpa jeda, seluruh pemuatan (5 tabel + URL foto)
+    // diulang untuk tiap event dan layar terasa berat.
+    let bumpTimer: number | undefined;
+    let bumpRunning = false;
+    const runBump = async () => {
+      if (bumpRunning) return;
+      bumpRunning = true;
       setSyncing(true);
-      try { await load(); } finally { setSyncing(false); }
+      try { await load(); } finally { setSyncing(false); bumpRunning = false; }
+    };
+    const bump = () => {
+      if (bumpTimer) window.clearTimeout(bumpTimer);
+      bumpTimer = window.setTimeout(() => { void runBump(); }, 700);
     };
     const ch = supabase
       .channel("ready-ecer:prep_submissions")
@@ -455,7 +491,10 @@ export function ReadyEcerSection() {
         else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRealtimeStatus("offline");
         else setRealtimeStatus("connecting");
       });
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      if (bumpTimer) window.clearTimeout(bumpTimer);
+      supabase.removeChannel(ch);
+    };
   }, []);
 
   const q = query.trim().toLowerCase();
@@ -629,6 +668,26 @@ export function ReadyEcerSection() {
       <div className="hidden justify-end sm:flex">
         <LayoutModeToggle mode={layout} onChange={setLayout} />
       </div>
+
+      {unmatched.count > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-wrap items-center justify-between gap-ms-2 rounded-md border border-warning/30 bg-warning/10 px-ms-2 py-1.5 text-ms-2xs text-warning"
+        >
+          <span className="min-w-0">
+            {unmatched.count} kiriman pegawai belum cocok dengan judul eceran
+            {unmatched.names.length > 0 ? ` (${unmatched.names.join(", ")})` : ""} — fotonya tidak hilang, cek panel Request.
+          </span>
+          <Link
+            to="/request"
+            search={{ title: undefined, highlight: undefined, send: undefined }}
+            className="shrink-0 font-medium underline underline-offset-2"
+          >
+            Buka Request
+          </Link>
+        </div>
+      )}
 
       {rows && rows.length > 0 && (
         <div className="flex gap-ms-1.5">

@@ -2673,10 +2673,13 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
               </a>
             ) : <span className="min-w-0" />}
             {(() => {
-              const btnCls = "inline-flex h-8 w-8 shrink-0 items-center justify-center p-0 leading-none @[200px]/prepactions:h-7 @[200px]/prepactions:w-7";
-              const iconCls = "h-3.5 w-3.5 shrink-0 @[200px]/prepactions:h-3 @[200px]/prepactions:w-3";
+              // Target sentuh tidak boleh mengecil saat ruang sempit — justru
+              // di layar 360px risiko salah tekan paling tinggi. Ukuran visual
+              // tetap 32px, area sentuh efektif diperluas ke 44px via app-hit-area.
+              const btnCls = "app-hit-area inline-flex h-8 w-8 shrink-0 items-center justify-center p-0 leading-none";
+              const iconCls = "h-4 w-4 shrink-0";
               return (
-                <div className="flex shrink-0 items-center justify-end gap-0.5 @[200px]/prepactions:justify-self-end">
+                <div className="flex shrink-0 items-center justify-end gap-1.5 @[200px]/prepactions:justify-self-end">
                   {!readOnly && (
                     <>
                       <Button size="icon" variant="ghost" className={btnCls} aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className={iconCls} /></Button>

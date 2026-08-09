@@ -1245,7 +1245,7 @@ function Index() {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-ms-2">
-            {lockMenu(true, "inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/25 bg-card text-foreground hover:border-primary/60")}
+            {lockMenu(true, "app-hit-area inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/25 bg-card text-foreground hover:border-primary/60")}
             <button
               onClick={signOut}
               className="inline-flex h-8 items-center justify-center rounded-full border border-primary/25 bg-card px-ms-3 text-[0.6875rem] font-medium tracking-wide text-foreground transition-colors hover:border-primary/60 hover:bg-accent"
@@ -1537,7 +1537,7 @@ function Index() {
       )}
       {/* Vertical action rail */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-14 flex-col items-center gap-ms-1.5 border-r bg-card/95 px-1 py-ms-3 backdrop-blur transition-transform duration-200 sm:sticky sm:top-0 sm:z-20 sm:transition-[width,transform] ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-app-vh w-14 flex-col items-center gap-ms-1.5 border-r bg-card/95 px-1 py-ms-3 backdrop-blur transition-transform duration-200 sm:sticky sm:top-0 sm:z-20 sm:transition-[width,transform] ${
           railOpen
             ? "translate-x-0 sm:w-14"
             : "-translate-x-full sm:translate-x-0 sm:w-0 sm:overflow-hidden sm:border-r-0 sm:px-0"
@@ -1550,7 +1550,7 @@ function Index() {
             setSelected(new Set());
             setOpenId(null);
           }}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
+          className="app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Ganti kategori"
           title="Ganti kategori"
         >
@@ -1563,7 +1563,7 @@ function Index() {
           onClick={addProduk}
           title="Tambah produk"
           aria-label="Tambah produk"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-ms-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+          className="app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-ms-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
         >
           +
         </button>
@@ -1574,7 +1574,7 @@ function Index() {
           }}
           title={selectMode ? "Selesai memilih" : "Pilih beberapa"}
           aria-label={selectMode ? "Selesai memilih" : "Pilih beberapa"}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
+          className={`app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             selectMode
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -1586,7 +1586,7 @@ function Index() {
           onClick={resetStatus}
           title="Reset status terkirim"
           aria-label="Reset status terkirim"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
+          className="app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
         >
           ↺
         </button>
@@ -1594,7 +1594,7 @@ function Index() {
           onClick={reset}
           title="Hapus semua"
           aria-label="Hapus semua"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base text-destructive transition-colors hover:bg-destructive/10"
+          className="app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base text-destructive transition-colors hover:bg-destructive/10"
         >
           🗑
         </button>
@@ -1603,7 +1603,7 @@ function Index() {
 
         <button
           onClick={() => setViewMode("list")}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
+          className={`app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             viewMode === "list"
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -1615,7 +1615,7 @@ function Index() {
         </button>
         <button
           onClick={() => setViewMode("grid")}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
+          className={`app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors ${
             viewMode === "grid"
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "hover:bg-accent"
@@ -1632,7 +1632,7 @@ function Index() {
           fallback={
             <span
               aria-hidden
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none text-muted-foreground/40"
+              className="app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none text-muted-foreground/40"
             >
               ⚙
             </span>
@@ -1640,7 +1640,7 @@ function Index() {
         >
           <AppearanceSettings
             compact
-            triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none transition-colors hover:bg-accent"
+            triggerClassName="app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base leading-none transition-colors hover:bg-accent"
           />
         </Suspense>
         <button
@@ -1655,7 +1655,7 @@ function Index() {
             );
             toast.success("Tampilan menu dikembalikan ke default");
           }}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
+          className="app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Reset tampilan menu"
           title="Reset tampilan menu"
         >
@@ -1663,13 +1663,13 @@ function Index() {
         </button>
         {lockMenu(
           true,
-          `inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent ${
+          `app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent ${
             lockCfg ? "bg-accent" : ""
           }`,
         )}
         <button
           onClick={signOut}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
+          className="app-hit-area inline-flex h-9 w-9 items-center justify-center rounded-lg text-ms-base transition-colors hover:bg-accent"
           aria-label="Keluar"
           title="Keluar"
         >

@@ -749,6 +749,11 @@ function PublicPrepPage() {
   // closedReason setelah 2x kegagalan kategori sama agar transient error
   // (DB hiccup, koneksi seluler putus sekejap) tidak menendang user balik.
   const silentFailRef = useRef<{ kind: string | null; count: number }>({ kind: null, count: 0 });
+  // Koordinasi penyegaran: satu permintaan aktif pada satu waktu, plus jeda
+  // minimum agar realtime + heartbeat + visibilitychange tidak saling tumpuk.
+  const refreshInFlightRef = useRef(false);
+  const refreshQueuedRef = useRef(false);
+  const lastRefreshAtRef = useRef(0);
   // Hasil pengecekan otomatis status link saat halaman dibuka (sebelum PIN).
   // Memberi tahu pegawai segera kalau link tidak valid, kedaluwarsa, ditutup,
   // atau aksesnya sedang dikunci karena terlalu banyak salah PIN.
@@ -1405,6 +1410,29 @@ function PublicPrepPage() {
   async function silentRefresh() {
     if (!pinRef.current || !authed) return;
     if (isWorkerOperationActive()) return;
+    // Guard in-flight: realtime broadcast, heartbeat 15 dtk, dan
+    // visibilitychange bisa memicu bersamaan pada sinyal lemah. Tanpa guard,
+    // beberapa permintaan identik berjalan paralel dan hasil lama bisa
+    // menimpa hasil baru (last-write-wins yang salah).
+    if (refreshInFlightRef.current) {
+      refreshQueuedRef.current = true;
+      return;
+    }
+    refreshInFlightRef.current = true;
+    try {
+      await silentRefreshInner();
+    } finally {
+      refreshInFlightRef.current = false;
+      if (refreshQueuedRef.current) {
+        refreshQueuedRef.current = false;
+        // Satu kali susulan saja — bukan antrean panjang.
+        window.setTimeout(() => void silentRefresh(), 400);
+      }
+    }
+  }
+
+  async function silentRefreshInner() {
+    lastRefreshAtRef.current = Date.now();
     let data: unknown = null;
     try {
       const r = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
@@ -1497,6 +1525,14 @@ function PublicPrepPage() {
     });
   }
 
+  // Penjadwal tunggal: semua pemicu (realtime, heartbeat, visibility) lewat
+  // sini supaya ada jeda minimum dan tidak ada permintaan bertumpuk.
+  function scheduleRefresh(minGapMs = 3000) {
+    const since = Date.now() - lastRefreshAtRef.current;
+    if (since < minGapMs) return;
+    void silentRefresh();
+  }
+
   // Realtime broadcast + fallback heartbeat & visibility refresh.
   useEffect(() => {
     if (!authed) return;
@@ -1504,7 +1540,8 @@ function PublicPrepPage() {
     const ch = publicSupabase
       .channel(`prep:${token}`, { config: { broadcast: { self: false } } })
       .on("broadcast", { event: "change" }, () => {
-        void silentRefresh();
+        // Event realtime boleh lebih responsif daripada heartbeat.
+        scheduleRefresh(800);
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") setRtStatus("connected");
@@ -1512,13 +1549,17 @@ function PublicPrepPage() {
           setRtStatus("error");
       });
     const onVis = () => {
-      if (document.visibilityState === "visible") void silentRefresh();
+      if (document.visibilityState === "visible") scheduleRefresh(2000);
     };
     document.addEventListener("visibilitychange", onVis);
     const hb = window.setInterval(() => {
-      if (document.visibilityState === "visible") void silentRefresh();
+      if (document.visibilityState === "visible") scheduleRefresh(12000);
     }, 15000);
-    const tick = window.setInterval(() => setSyncTick((n) => n + 1), 5000);
+    // Timer tampilan saja (label "x dtk lalu") — tidak pernah mengambil data,
+    // dan berhenti bekerja saat layar tidak terlihat agar hemat baterai.
+    const tick = window.setInterval(() => {
+      if (document.visibilityState === "visible") setSyncTick((n) => n + 1);
+    }, 5000);
     return () => {
       publicSupabase.removeChannel(ch);
       document.removeEventListener("visibilitychange", onVis);

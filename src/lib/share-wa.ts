@@ -210,13 +210,23 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
       // pengaman: salin `fullText` ke clipboard SEBELUM share sheet
       // dibuka, sehingga user tinggal tempel di WA jika caption drop.
       let captionCopied = false;
+      let captionCopyError: string | null = null;
       if (hasFiles && fullText.trim()) {
         try {
           const { Clipboard } = await import("@capacitor/clipboard");
           await Clipboard.write({ string: fullText });
           captionCopied = true;
         } catch {
-          try { await navigator.clipboard?.writeText(fullText); captionCopied = true; } catch { /* ignore */ }
+          try {
+            await navigator.clipboard?.writeText(fullText);
+            captionCopied = true;
+          } catch (clipErr) {
+            // Jangan ditelan diam-diam: kalau kedua jalur clipboard gagal,
+            // caption bisa hilang total tanpa jejak bagi pengguna.
+            captionCopyError =
+              (clipErr as { message?: string })?.message || "clipboard_unavailable";
+            console.warn("[share-wa] gagal menyalin caption", clipErr);
+          }
         }
       }
       await Share.share({
@@ -227,6 +237,24 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
       });
       if (captionCopied) {
         toast.message("Foto terkirim. Keterangan + lokasi sudah disalin — tempel di kolom pesan WhatsApp bila caption tidak muncul.", { duration: 9000 });
+      } else if (captionCopyError) {
+        toast.error(
+          "Keterangan pembayaran & lokasi belum tersalin otomatis. Tekan \u201cSalin keterangan\u201d untuk menyalin ulang sebelum menempel di WhatsApp.",
+          {
+            duration: 12000,
+            action: {
+              label: "Salin keterangan",
+              onClick: () => {
+                void navigator.clipboard
+                  ?.writeText(fullText)
+                  .then(() => toast.success("Keterangan tersalin."))
+                  .catch(() =>
+                    toast.error("Perangkat menolak akses papan klip. Salin manual dari pratinjau pesan."),
+                  );
+              },
+            },
+          },
+        );
       }
       return { status: "shared", withFiles: fileUris.length > 0 };
     } catch (err) {
