@@ -8,14 +8,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getScrollPerfMetrics, subscribeScrollPerf } from "@/lib/scroll-perf";
+import {
+  getScrollPerfMetrics,
+  subscribeScrollPerf,
+  subscribeScrollPerfEvents,
+  type ScrollPerfEventKind,
+} from "@/lib/scroll-perf";
 
 /** Jumlah titik pada grafik (≈ 12 detik pada interval 100 ms). */
 const POINTS = 120;
 /** Jarak antar sampel grafik. */
 const SAMPLE_MS = 100;
 
-type Series = { fps: number[]; lat: number[]; scroll: boolean[] };
+type Series = {
+  fps: number[];
+  lat: number[];
+  scroll: boolean[];
+  marks: ScrollPerfEventKind[][];
+};
+
+/** Warna & label penanda kejadian. */
+const MARK_STYLE: Record<
+  ScrollPerfEventKind,
+  { color: string; label: string; short: string }
+> = {
+  touch: { color: "fill-sky-500", label: "Mulai menyentuh", short: "sentuh" },
+  start: { color: "fill-primary", label: "Scroll dimulai", short: "mulai" },
+  move: { color: "fill-amber-500", label: "Menggeser cepat", short: "geser" },
+  stop: { color: "fill-muted-foreground", label: "Scroll berhenti", short: "berhenti" },
+};
+
+const MARK_ORDER: ScrollPerfEventKind[] = ["touch", "start", "move", "stop"];
 
 function path(values: number[], max: number, w: number, h: number) {
   if (values.length < 2) return "";
@@ -42,12 +65,15 @@ export function ScrollPerfLiveChart() {
     fps: Array(POINTS).fill(0),
     lat: Array(POINTS).fill(0),
     scroll: Array(POINTS).fill(false),
+    marks: Array.from({ length: POINTS }, () => [] as ScrollPerfEventKind[]),
   });
   const [paused, setPaused] = useState(false);
   /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
   const [hover, setHover] = useState<number | null>(null);
   const frames = useRef(0);
   const scrolledSinceSample = useRef(false);
+  /** Kejadian yang terkumpul sejak sampel terakhir. */
+  const pendingMarks = useRef<ScrollPerfEventKind[]>([]);
   // Saat menunjuk grafik, hentikan geseran data supaya angka yang dibaca
   // tidak bergerak di bawah jari/kursor.
   const hoverRef = useRef<number | null>(null);
@@ -57,6 +83,15 @@ export function ScrollPerfLiveChart() {
   useEffect(() => {
     return subscribeScrollPerf(() => {
       if (getScrollPerfMetrics().scrolling) scrolledSinceSample.current = true;
+    });
+  }, []);
+
+  // Kumpulkan penanda kejadian input (sentuh / mulai / geser / berhenti).
+  useEffect(() => {
+    return subscribeScrollPerfEvents((e) => {
+      const list = pendingMarks.current;
+      if (!list.includes(e.kind)) list.push(e.kind);
+      if (list.length > 4) list.shift();
     });
   }, []);
 
@@ -83,10 +118,13 @@ export function ScrollPerfLiveChart() {
         timer = window.setTimeout(sample, SAMPLE_MS);
         return;
       }
+      const marks = pendingMarks.current;
+      pendingMarks.current = [];
       setSeries((prev) => ({
         fps: [...prev.fps.slice(1), fps],
         lat: [...prev.lat.slice(1), scrolling ? m.latencyMs : 0],
         scroll: [...prev.scroll.slice(1), scrolling],
+        marks: [...prev.marks.slice(1), marks],
       }));
       timer = window.setTimeout(sample, SAMPLE_MS);
     };
@@ -137,6 +175,7 @@ export function ScrollPerfLiveChart() {
   const hoverFps = hover !== null ? (series.fps[hover] ?? 0) : 0;
   const hoverLat = hover !== null ? (series.lat[hover] ?? 0) : 0;
   const hoverScroll = hover !== null ? (series.scroll[hover] ?? false) : false;
+  const hoverMarks = hover !== null ? (series.marks[hover] ?? []) : [];
   /** Posisi kotak tooltip dalam persen lebar, dijaga agar tidak keluar kartu. */
   const hoverLeft = hover !== null ? Math.min(88, Math.max(2, (hover / (POINTS - 1)) * 100)) : 0;
 
@@ -158,8 +197,41 @@ export function ScrollPerfLiveChart() {
           {hoverAgo === 0 ? "sekarang" : `${hoverAgo.toFixed(1)} dtk lalu`}
           {hoverScroll ? " · menggulir" : ""}
         </div>
+        {hoverMarks.length ? (
+          <div className="text-muted-foreground">
+            {hoverMarks.map((k) => MARK_STYLE[k].short).join(" · ")}
+          </div>
+        ) : null}
       </div>
     );
+
+  /** Penanda kejadian di sepanjang sumbu waktu. */
+  const markers = (
+    <g>
+      {series.marks.map((list, i) =>
+        list.map((k, j) => (
+          <g key={`${i}-${k}`}>
+            <line
+              x1={i * step}
+              x2={i * step}
+              y1={0}
+              y2={H}
+              className={
+                k === "stop" ? "stroke-muted-foreground/30" : "stroke-foreground/20"
+              }
+              strokeWidth={1}
+            />
+            <circle
+              cx={i * step}
+              cy={3 + j * 6}
+              r={2.2}
+              className={MARK_STYLE[k].color}
+            />
+          </g>
+        )),
+      )}
+    </g>
+  );
 
   const crosshair =
     hover === null ? null : (
@@ -219,6 +291,7 @@ export function ScrollPerfLiveChart() {
             {bands.map((b, i) => (
               <rect key={i} x={b.x} y={0} width={b.w} height={H} className="fill-primary/10" />
             ))}
+            {markers}
             {/* Garis acuan 60 fps */}
             <line
               x1={0}
@@ -271,6 +344,7 @@ export function ScrollPerfLiveChart() {
             {bands.map((b, i) => (
               <rect key={i} x={b.x} y={0} width={b.w} height={H} className="fill-primary/10" />
             ))}
+            {markers}
             {series.lat.map((v, i) =>
               v > 0 ? (
                 <rect
@@ -285,6 +359,17 @@ export function ScrollPerfLiveChart() {
             )}
             {crosshair}
           </svg>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-ms-3 gap-y-1 text-ms-2xs text-muted-foreground">
+          {MARK_ORDER.map((k) => (
+            <span key={k} className="inline-flex items-center gap-1">
+              <svg viewBox="0 0 8 8" className="h-2 w-2" aria-hidden>
+                <circle cx={4} cy={4} r={4} className={MARK_STYLE[k].color} />
+              </svg>
+              {MARK_STYLE[k].label}
+            </span>
+          ))}
         </div>
       </CardContent>
     </Card>
