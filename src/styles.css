@@ -2293,6 +2293,41 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   /* Solid: header transparan membuat konten yang menggulir "tembus" dan
      terlihat seperti judul dobel di perangkat tanpa backdrop-filter. */
   background-color: var(--background);
+  /* Konteks tumpukan sendiri: elemen dekoratif (radial glow, kartu) di
+     halaman tidak bisa "menyelinap" di atas header. */
+  isolation: isolate;
+  /* Promosi layer + snap ke pixel: menghindari kedipan/garis geser saat
+     menggulir di Android WebView (header dicat ulang tiap frame bila tidak
+     punya layer sendiri). */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Sticky tidak boleh ikut "ditarik" oleh overscroll bounce iOS. */
+  overflow-anchor: none;
+}
+
+/* --------------------------------------------------------------------------
+   Semua bilah lengket (header/footer sticky) wajib buram penuh.
+   --------------------------------------------------------------------------
+   Banyak halaman memakai `bg-card/95 backdrop-blur`. Saat digulir di WebView
+   Android/iOS, konten di belakangnya masih terbaca samar sehingga terlihat
+   seperti "teks dobel", dan lapisan blur menyebabkan kedipan karena harus
+   dicat ulang tiap frame. Aturan di bawah menormalkan semuanya menjadi warna
+   solid tanpa mengubah tiap file komponen.
+   -------------------------------------------------------------------------- */
+:where(.sticky)[class*="bg-background/"] {
+  background-color: var(--background);
+}
+:where(.sticky)[class*="bg-card/"] {
+  background-color: var(--card);
+}
+:where(.sticky)[class*="bg-popover/"] {
+  background-color: var(--popover);
+}
+:where(.sticky)[class*="bg-muted/"] {
+  background-color: var(--muted);
+}
+:where(.sticky)[class*="backdrop-blur"] {
+  backdrop-filter: none;
 }
 
 .app-static-bottom-bar {

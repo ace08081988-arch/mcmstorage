@@ -880,7 +880,10 @@ function HutangPiutangPage() {
                   <div
                     role="row"
                     aria-hidden="true"
-                    className="sticky z-20 -mx-ms-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-3 rounded-xl border bg-card/95 px-ms-3.5 py-ms-2 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground shadow-xs backdrop-blur supports-[backdrop-filter]:bg-card/80"
+                    /* Solid (tanpa transparansi/blur): baris data yang lewat
+                       di belakangnya sempat terbaca dan terlihat seperti
+                       teks dobel saat menggulir. */
+                    className="sticky z-20 -mx-ms-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-3 rounded-xl border bg-card px-ms-3.5 py-ms-2 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground shadow-xs"
                     style={{ top: "var(--hp-sticky-top, 64px)" }}
                   >
                     <span className="truncate">Kontak / catatan</span>
