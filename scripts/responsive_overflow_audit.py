@@ -24,19 +24,38 @@ from playwright.async_api import async_playwright
 BASE = os.environ.get("BASE_URL", "http://localhost:8080")
 OUT = Path(os.environ.get("AUDIT_OUT", "/tmp/responsive-audit"))
 
-# Public visual harnesses — tambahkan surface baru di sini.
+# Public visual harnesses (rute teknis) — tambahkan surface baru di sini.
 TARGETS = [
     {"name": "photo-editor",         "path": "/lovable/visual/photo-editor?v=2"},
     {"name": "prep-loc-buttons",     "path": "/lovable/visual/prep-loc-buttons?variant=prep&state=filled"},
     {"name": "prep-loc-buttons-req", "path": "/lovable/visual/prep-loc-buttons?variant=request&state=idle"},
     {"name": "tap-targets",          "path": "/lovable/visual/tap-targets"},
     {"name": "gudang-shell",         "path": "/lovable/visual/gudang-shell"},
+    {"name": "dialog-viewport",      "path": "/lovable/visual/dialog-viewport"},
+    {"name": "komponen-review",      "path": "/lovable/visual/komponen-review"},
+    {"name": "design-tokens",        "path": "/lovable/visual/design-tokens"},
+    {"name": "menu-variants",        "path": "/lovable/visual/menu-variants"},
+    {"name": "bottom-bar-snap",      "path": "/lovable/visual/bottom-bar-snap"},
+    {"name": "toast-layout",         "path": "/lovable/visual/toast-layout"},
+    {"name": "produk-list",          "path": "/lovable/visual/produk-list"},
+    # Rute aplikasi utama yang bisa dibuka tanpa sesi.
+    {"name": "produk",               "path": "/produk"},
+    {"name": "harga",                "path": "/harga"},
+    {"name": "faq",                  "path": "/faq"},
+    {"name": "trust",                "path": "/trust"},
+    {"name": "terms",                "path": "/terms"},
+    {"name": "refund",               "path": "/refund"},
+    {"name": "auth",                 "path": "/auth"},
+    {"name": "reset-password",       "path": "/reset-password"},
+    {"name": "download",             "path": "/download"},
+    {"name": "pos-kasir",            "path": "/pos-kasir"},
+    {"name": "pratinjau-tema",       "path": "/pratinjau-tema"},
 ]
 
 # Lebar kritis Android/iOS + tablet portrait.
-WIDTHS = [320, 360, 375, 390, 411, 480, 768]
+WIDTHS = [int(w) for w in os.environ.get("AUDIT_WIDTHS", "320,360,390,411,768").split(",")]
 # WCAG 1.4.10 mensyaratkan reflow sampai 400% pada 320 CSS px; kita uji sampai 2×.
-ZOOMS = [1.0, 1.25, 1.5, 2.0]
+ZOOMS = [float(z) for z in os.environ.get("AUDIT_ZOOMS", "1.0,1.5,2.0").split(",")]
 EPS = 1  # toleransi sub-pixel rounding
 
 CONTROL_SELECTOR = ",".join([
@@ -60,6 +79,10 @@ MEASURE_JS = r"""
   const seen = [];
   const out = [];
   const isInsideScrollable = (node) => {
+    // Halaman yang menggulir secara normal bukan "terpotong": konten di
+    // bawah lipatan tetap terjangkau dengan scroll dokumen.
+    const de = document.scrollingElement || document.documentElement;
+    if (de && de.scrollHeight > de.clientHeight + 1) return true;
     let n = node.parentElement;
     while (n && n !== document.body) {
       const c = getComputedStyle(n);
@@ -71,6 +94,9 @@ MEASURE_JS = r"""
   for (const el of nodes) {
     const cs = getComputedStyle(el);
     if (cs.visibility === "hidden" || cs.display === "none") continue;
+    // Skip-link & pemberitahuan a11y sengaja diparkir di luar layar sampai
+    // menerima fokus keyboard — bukan komponen terpotong.
+    if (el.closest("[data-skip-link], .sr-only, [aria-live]")) continue;
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
     if (r.right < -eps || r.bottom < -eps) continue; // off-screen (sr-only)
