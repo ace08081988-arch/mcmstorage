@@ -41,7 +41,7 @@ function DaftarPage() {
   );
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col bg-background">
+    <main className="mx-auto flex min-h-app-vh max-w-2xl flex-col bg-background">
       <header className="sticky top-0 z-10 flex items-center gap-ms-2 border-b bg-background px-ms-2 py-ms-2">
         <Button
           variant="ghost"
