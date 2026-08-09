@@ -4771,6 +4771,23 @@ function PesananTab({
           })}
         </ul>
       )}
+      {pending && (() => {
+        const it = itemMap[pending.item_id];
+        const qBase = it ? (pending.qty_mode === "base" ? Number(pending.qty) : Number(pending.qty) * it.package_size) : 0;
+        const perBase = pending.price_per_unit != null && it
+          ? (pending.qty_mode === "base" ? Number(pending.price_per_unit) : Number(pending.price_per_unit) / it.package_size)
+          : 0;
+        return (
+          <ProcessOrderDialog
+            open
+            onOpenChange={(v) => { if (!v && !processing) setPending(null); }}
+            summary={it ? `${it.name} — ${fmtItemQty(qBase, it)} × ${fmtItemPrice(perBase, it)}` : "Pesanan"}
+            total={qBase * perBase}
+            busy={processing}
+            onConfirm={confirmProses}
+          />
+        );
+      })()}
     </div>
   );
 }
