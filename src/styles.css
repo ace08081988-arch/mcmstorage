@@ -645,6 +645,20 @@ html:not(.dark) .summary-tone-info    { --tone: color-mix(in oklab, var(--info) 
 @utility space-ms-4 { & > * + * { margin-top: var(--ms-space-4); } }
 @utility space-ms-5 { & > * + * { margin-top: var(--ms-space-5); } }
 @utility space-ms-6 { & > * + * { margin-top: var(--ms-space-6); } }
+/* Alias `space-y-ms-*` / `space-x-ms-*` — banyak komponen memakai nama ini.
+   Tanpa definisi ini kelasnya tidak menghasilkan CSS apa pun sehingga
+   elemen saling menempel (mis. label & slider bertumpuk). */
+@utility space-y-ms-1 { & > * + * { margin-top: var(--ms-space-1); } }
+@utility space-y-ms-2 { & > * + * { margin-top: var(--ms-space-2); } }
+@utility space-y-ms-3 { & > * + * { margin-top: var(--ms-space-3); } }
+@utility space-y-ms-4 { & > * + * { margin-top: var(--ms-space-4); } }
+@utility space-y-ms-5 { & > * + * { margin-top: var(--ms-space-5); } }
+@utility space-y-ms-6 { & > * + * { margin-top: var(--ms-space-6); } }
+@utility space-x-ms-1 { & > * + * { margin-inline-start: var(--ms-space-1); } }
+@utility space-x-ms-2 { & > * + * { margin-inline-start: var(--ms-space-2); } }
+@utility space-x-ms-3 { & > * + * { margin-inline-start: var(--ms-space-3); } }
+@utility space-x-ms-4 { & > * + * { margin-inline-start: var(--ms-space-4); } }
+@utility space-ms-1 { & > * + * { margin-top: var(--ms-space-1); } }
 /* Target sentuh min — dipakai untuk tombol/tab utility di bottom nav & kartu. */
 @utility min-tap { min-height: var(--ms-tap); min-width: var(--ms-tap); }
 @utility rounded-ms-card { border-radius: var(--ms-radius-card); }
