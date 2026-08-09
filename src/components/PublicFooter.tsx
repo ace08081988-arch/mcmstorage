@@ -8,7 +8,7 @@ export function PublicFooter() {
       className="mt-10 border-t bg-muted/30"
       style={{ borderTopColor: "var(--primary)" }}
     >
-      <div className="mx-auto flex max-w-3xl flex-col gap-ms-3 px-ms-4 py-ms-6 text-ms-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex max-w-6xl flex-col gap-ms-3 px-ms-4 py-ms-6 text-ms-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-ms-2">
           {logo ? (
             <img

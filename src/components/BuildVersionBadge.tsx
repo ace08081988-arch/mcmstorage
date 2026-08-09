@@ -7,6 +7,20 @@ const BUILD_ID: string = typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "d
 const BUILD_TIME: string = typeof __BUILD_TIME__ !== "undefined" ? __BUILD_TIME__ : new Date().toISOString();
 
 const STORAGE_HIDE_KEY = "mcm:build-badge:hidden";
+// Badge build adalah alat QA, bukan elemen produk. Di produksi ia hanya
+// muncul bila pengguna mengaktifkan mode diagnostik secara sadar
+// (Pengaturan → Diagnostik menulis kunci ini).
+const STORAGE_DIAGNOSTICS_KEY = "ace:diagnostics";
+
+function diagnosticsEnabled(): boolean {
+  if (!import.meta.env.PROD) return true;
+  try {
+    if (localStorage.getItem(STORAGE_DIAGNOSTICS_KEY) === "1") return true;
+    return new URLSearchParams(window.location.search).get("diag") === "1";
+  } catch {
+    return false;
+  }
+}
 
 function shortId(id: string) {
   return id.length > 12 ? id.slice(0, 12) : id;
@@ -24,11 +38,15 @@ function formatTime(iso: string) {
 
 export function BuildVersionBadge() {
   const [hidden, setHidden] = useState(false);
+  // Default `false` di produksi supaya badge tidak sempat berkedip sebelum
+  // efek pertama berjalan; dev/staging langsung tampil.
+  const [allowed, setAllowed] = useState(!import.meta.env.PROD);
   const [open, setOpen] = useState(false);
   const [stale, setStale] = useState(false);
   const [remoteId, setRemoteId] = useState<string | null>(null);
 
   useEffect(() => {
+    setAllowed(diagnosticsEnabled());
     try {
       setHidden(localStorage.getItem(STORAGE_HIDE_KEY) === "1");
     } catch {
@@ -38,6 +56,7 @@ export function BuildVersionBadge() {
 
   // Cek apakah bundle di server sudah lebih baru dari yang sedang berjalan.
   useEffect(() => {
+    if (!allowed) return;
     let cancelled = false;
     const check = async () => {
       try {
@@ -59,9 +78,9 @@ export function BuildVersionBadge() {
       cancelled = true;
       window.clearInterval(iv);
     };
-  }, []);
+  }, [allowed]);
 
-  if (hidden) return null;
+  if (!allowed || hidden) return null;
 
   const copyAll = async () => {
     const text = `BuildID: ${BUILD_ID}\nBuildTime: ${BUILD_TIME}${remoteId ? `\nServerBuildID: ${remoteId}` : ""}`;

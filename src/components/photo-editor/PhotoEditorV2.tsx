@@ -1112,7 +1112,9 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             <IconPill onClick={rotate90} label="Putar 90°"><RotateCw className="h-5 w-5" /></IconPill>
             <IconPill onClick={flipH} label="Flip horizontal" active={!!scene.flipH}><FlipHorizontal2 className="h-5 w-5" /></IconPill>
             <IconPill onClick={flipV} label="Flip vertikal" active={!!scene.flipV}><FlipVertical2 className="h-5 w-5" /></IconPill>
-            <IconPill onClick={() => setTool("crop")} disabled label="Crop (segera)"><Crop className="h-5 w-5" /></IconPill>
+            {/* Kontrol crop belum berfungsi; menampilkannya sebagai tombol mati
+                hanya menjanjikan fitur yang tidak ada. Disembunyikan sampai
+                implementasinya siap. */}
           </div>
         </div>
 
@@ -1436,9 +1438,12 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         </div>
       </nav>
 
-      {/* Sticker sheet */}
+      {/* Sticker sheet — naik di atas keyboard bila sedang terbuka. */}
       {showStickers && (
-        <div className="absolute inset-x-0 bottom-20 z-30 max-h-[55vh] overflow-y-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right">
+        <div
+          style={{ bottom: "calc(5rem + var(--app-keyboard-inset, 0px))" }}
+          className="absolute inset-x-0 z-30 max-h-[55vh] overflow-y-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right"
+        >
           <div className="mb-2 flex items-center justify-between">
             <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Stiker</div>
             <button onClick={() => setShowStickers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
@@ -1536,7 +1541,15 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         const obj = scene.objects.find((o) => o.id === showText.id && o.kind === "text") as TextObj | undefined;
         if (!obj) return null;
         return (
-          <div className="absolute inset-x-0 bottom-0 z-40 rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in">
+          // Panel ini berisi input teks: saat keyboard terbuka ia harus naik
+          // setinggi keyboard, kalau tidak field-nya persis tertutup.
+          <div
+            style={{
+              bottom: "var(--app-keyboard-inset, 0px)",
+              maxHeight: "calc(var(--app-vh-visible, var(--app-vh, 100dvh)) - 6rem)",
+            }}
+            className="absolute inset-x-0 z-40 overflow-y-auto overscroll-contain rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in"
+          >
             <div className="mb-2 flex items-center justify-between">
               <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Ubah Teks</div>
               <button onClick={() => setShowText(null)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>
@@ -1566,7 +1579,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
       {/* Layers sheet */}
       {showLayers && (
-        <div className="absolute inset-x-0 bottom-20 z-30 max-h-[50vh] overflow-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in">
+        <div
+          style={{ bottom: "calc(5rem + var(--app-keyboard-inset, 0px))" }}
+          className="absolute inset-x-0 z-30 max-h-[50vh] overflow-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in"
+        >
           <div className="mb-2 flex items-center justify-between">
             <div className="text-ms-sm font-medium tracking-wide text-[#f0d78c]">Layer ({scene.objects.length})</div>
             <button onClick={() => setShowLayers(false)} className="grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10"><X className="h-4 w-4" /></button>

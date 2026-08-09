@@ -27,6 +27,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 // AppLockSetup / AppearanceSettings / ProductEditDrawer di-lazy-load agar
 // tidak masuk chunk initial Beranda. Ketiganya hanya benar-benar dibutuhkan
 // setelah user membuka dialog/drawer masing-masing. Sebelum optimisasi:
@@ -1369,59 +1379,55 @@ function Index() {
                 </SortableContext>
               </DndContext>
             )}
-            {renameTarget && (
-              <div
-                role="dialog"
-                aria-label="Ubah nama kategori"
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-ms-4"
-                onClick={() => (!renaming ? setRenameTarget(null) : undefined)}
-              >
-                <div
-                  className="w-full max-w-sm rounded-xl border border-primary/30 bg-card p-ms-4 shadow-xl"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
-                    Ubah nama kategori
-                  </div>
-                  <div className="mb-3 text-[0.78125rem] text-foreground/80">
-                    Kategori lama: <span className="font-medium">{renameTarget.old}</span>
-                  </div>
-                  <input
-                    autoFocus
-                    value={renameTarget.input}
-                    onChange={(e) =>
-                      setRenameTarget((t) => (t ? { ...t, input: e.target.value } : t))
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !renaming) void submitRename();
-                      if (e.key === "Escape" && !renaming) setRenameTarget(null);
-                    }}
-                    data-testid="rename-cat-input"
-                    className="h-10 w-full rounded-lg border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
-                    placeholder="Nama baru…"
-                  />
-                  <div className="mt-3 flex justify-end gap-ms-2">
-                    <button
-                      type="button"
-                      disabled={renaming}
-                      onClick={() => setRenameTarget(null)}
-                      className="h-9 rounded-lg border border-primary/20 bg-background px-ms-3 text-[0.78125rem] text-foreground/80 hover:bg-primary/5 disabled:opacity-60"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="button"
-                      disabled={renaming}
-                      onClick={() => void submitRename()}
-                      data-testid="rename-cat-submit"
-                      className="h-9 rounded-lg bg-primary px-ms-4 text-[0.78125rem] font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-                    >
-                      {renaming ? "Menyimpan…" : "Simpan"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Dialog bersama: ikut fokus-trap, Escape, safe-area, dan
+                kompensasi keyboard yang sama seperti dialog lain. Versi
+                lamanya adalah overlay buatan sendiri tanpa semua itu. */}
+            <Dialog
+              open={renameTarget !== null}
+              onOpenChange={(o) => {
+                if (!o && !renaming) setRenameTarget(null);
+              }}
+            >
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>Ubah nama kategori</DialogTitle>
+                  <DialogDescription>
+                    Kategori lama:{" "}
+                    <span className="font-medium text-foreground">{renameTarget?.old}</span>
+                  </DialogDescription>
+                </DialogHeader>
+                <Input
+                  autoFocus
+                  value={renameTarget?.input ?? ""}
+                  onChange={(e) =>
+                    setRenameTarget((t) => (t ? { ...t, input: e.target.value } : t))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !renaming) void submitRename();
+                  }}
+                  data-testid="rename-cat-input"
+                  placeholder="Nama baru…"
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={renaming}
+                    onClick={() => setRenameTarget(null)}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={renaming}
+                    onClick={() => void submitRename()}
+                    data-testid="rename-cat-submit"
+                  >
+                    {renaming ? "Menyimpan…" : "Simpan"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </section>
 
           {/* Lainnya — dilipat agar tampilan awal hanya inti.

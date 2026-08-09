@@ -6,7 +6,6 @@
   "scope": "/",
   "display": "standalone",
   "display_override": [
-    "fullscreen",
     "standalone",
     "minimal-ui"
   ],

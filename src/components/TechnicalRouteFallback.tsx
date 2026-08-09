@@ -11,7 +11,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ShieldAlert, ArrowLeft, Home, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isHiddenMenuUrl } from "@/lib/hidden-menu-routes";
+import { isHiddenMenuUrl, isTechnicalRouteUrl } from "@/lib/hidden-menu-routes";
 
 const SESSION_KEY = "ace:technical-route-unlocked";
 const LAST_SAFE_KEY = "ace:last-safe-path";
@@ -124,7 +124,7 @@ export function TechnicalRouteGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     setUnlocked(isUnlocked());
   }, [pathname]);
-  const hidden = isHiddenMenuUrl(pathname);
+  const hidden = isTechnicalRouteUrl(pathname);
   useEffect(() => {
     if (!hidden) rememberSafeLocation(href);
   }, [hidden, href]);
