@@ -27,6 +27,7 @@ import {
 } from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
+import { RouteLoadError } from "@/components/RouteLoadError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -80,10 +81,8 @@ export const Route = createFileRoute("/download/")({
     links: [canonical("/download")],
   }),
   component: DownloadPage,
-  errorComponent: () => (
-    <div className="p-ms-6 text-center text-ms-sm text-red-600">
-      Gagal memuat informasi unduhan.
-    </div>
+  errorComponent: ({ error }: { error: unknown }) => (
+    <RouteLoadError error={error} message="Gagal memuat informasi unduhan." />
   ),
   notFoundComponent: () => (
     <div className="p-ms-6 text-center text-ms-sm">Halaman tidak ditemukan.</div>
