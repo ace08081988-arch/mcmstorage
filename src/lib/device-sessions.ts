@@ -142,9 +142,24 @@ export function useDeviceSessionGuard() {
       } catch { /* offline / transient */ }
     };
 
-    const start = async (userId: string) => {
+    const start = async (userId: string, fresh: boolean) => {
       activeUserId = userId;
-      try { await registerDeviceSession(userId); } catch { /* ignore */ }
+      if (!fresh) {
+        // Cold start / reload: periksa dulu. Perangkat yang sudah dicabut
+        // tidak boleh menulis apa pun (termasuk `last_seen_at`) dan langsung
+        // dikeluarkan.
+        try {
+          const status = await heartbeatOnce(userId, { touch: false });
+          if (status === "revoked") {
+            await supabase.auth.signOut();
+            if (typeof window !== "undefined") window.location.replace("/auth?revoked=1");
+            return;
+          }
+        } catch { /* offline: lanjut, poll berikutnya yang menegakkan */ }
+      }
+      try {
+        await registerDeviceSession(userId, { clearRevocation: fresh });
+      } catch { /* ignore */ }
       stopTimers();
       sessionTimer = setInterval(() => { void checkRevocation(); }, SESSION_POLL_MS);
       // Periksa segera setelah register supaya cabut yang terjadi saat tab
@@ -156,12 +171,12 @@ export function useDeviceSessionGuard() {
     void (async () => {
       const user = await getCurrentUser();
       if (cancelled) return;
-      if (user) void start(user.id);
+      if (user) void start(user.id, false);
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        void start(session.user.id);
+        void start(session.user.id, true);
       } else if (event === "SIGNED_OUT") {
         activeUserId = null;
         stopTimers();
