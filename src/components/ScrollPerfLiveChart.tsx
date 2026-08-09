@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LineChart } from "lucide-react";
+import { Download, LineChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { downloadCsv, scrollPerfCsvFilename } from "@/lib/scroll-perf-csv";
 import {
   getScrollPerfMetrics,
   subscribeScrollPerf,
@@ -263,6 +265,28 @@ export function ScrollPerfLiveChart() {
           <Badge variant="outline" className="shrink-0 text-muted-foreground">
             {hover !== null ? "Baca titik" : paused ? "Jeda" : "Live"}
           </Badge>
+        </div>
+        <div className="mt-ms-2 flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const now = Date.now();
+              const rows = [
+                "at,seconds_ago,fps,latency_ms,scrolling,events",
+                ...series.fps.map((f, i) => {
+                  const ago = ((POINTS - 1 - i) * SAMPLE_MS) / 1000;
+                  const at = new Date(now - ago * 1000).toISOString();
+                  const ev = (series.marks[i] ?? []).join("|");
+                  return `${at},${ago.toFixed(1)},${f},${series.lat[i] ?? 0},${series.scroll[i] ? 1 : 0},${ev}`;
+                }),
+              ].join("\r\n");
+              downloadCsv(scrollPerfCsvFilename("live"), rows);
+            }}
+          >
+            <Download className="mr-1 h-3.5 w-3.5" aria-hidden />
+            Ekspor CSV
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-ms-3">
