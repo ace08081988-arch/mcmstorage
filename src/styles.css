@@ -2293,6 +2293,16 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   /* Solid: header transparan membuat konten yang menggulir "tembus" dan
      terlihat seperti judul dobel di perangkat tanpa backdrop-filter. */
   background-color: var(--background);
+  /* Konteks tumpukan sendiri: elemen dekoratif (radial glow, kartu) di
+     halaman tidak bisa "menyelinap" di atas header. */
+  isolation: isolate;
+  /* Promosi layer + snap ke pixel: menghindari kedipan/garis geser saat
+     menggulir di Android WebView (header dicat ulang tiap frame bila tidak
+     punya layer sendiri). */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Sticky tidak boleh ikut "ditarik" oleh overscroll bounce iOS. */
+  overflow-anchor: none;
 }
 
 .app-static-bottom-bar {
