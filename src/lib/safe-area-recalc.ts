@@ -74,10 +74,12 @@ function apply(): boolean {
   const screenH = Math.round(window.screen?.height || 0);
   const occupiesFullScreen =
     screenH > 0 && Math.round(window.innerHeight) >= screenH - 4;
-  // Cutout nyata: sisakan sebagian inset agar konten tidak masuk ke notch,
-  // tapi jangan lebih dari 44px supaya tidak ada pita kosong berlebihan.
+  // Cutout nyata: pakai inset apa adanya agar konten tidak masuk ke notch /
+  // Dynamic Island (iOS melaporkan 47–59px). Batas atas hanya sebagai
+  // pengaman terhadap nilai tidak wajar dari WebView.
+  const MAX_TOP_INSET = 72;
   const top =
-    isFullscreen && !occupiesFullScreen ? 0 : Math.min(rawTop, 44);
+    isFullscreen && !occupiesFullScreen ? 0 : Math.min(rawTop, MAX_TOP_INSET);
   const bottomInset = parseFloat(cs.paddingBottom) || 0;
   const left = Math.round(parseFloat(cs.paddingLeft) || 0);
   const right = Math.round(parseFloat(cs.paddingRight) || 0);
