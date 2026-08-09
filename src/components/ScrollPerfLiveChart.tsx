@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LineChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,8 +44,14 @@ export function ScrollPerfLiveChart() {
     scroll: Array(POINTS).fill(false),
   });
   const [paused, setPaused] = useState(false);
+  /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
+  const [hover, setHover] = useState<number | null>(null);
   const frames = useRef(0);
   const scrolledSinceSample = useRef(false);
+  // Saat menunjuk grafik, hentikan geseran data supaya angka yang dibaca
+  // tidak bergerak di bawah jari/kursor.
+  const hoverRef = useRef<number | null>(null);
+  hoverRef.current = hover;
 
   // Tandai fase gulir agar arsiran grafik sinkron dengan interaksi.
   useEffect(() => {
@@ -73,6 +79,10 @@ export function ScrollPerfLiveChart() {
       const m = getScrollPerfMetrics();
       const scrolling = m.scrolling || scrolledSinceSample.current;
       scrolledSinceSample.current = false;
+      if (hoverRef.current !== null) {
+        timer = window.setTimeout(sample, SAMPLE_MS);
+        return;
+      }
       setSeries((prev) => ({
         fps: [...prev.fps.slice(1), fps],
         lat: [...prev.lat.slice(1), scrolling ? m.latencyMs : 0],
@@ -111,6 +121,59 @@ export function ScrollPerfLiveChart() {
     }
   });
 
+  const pick = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const ratio = (e.clientX - rect.left) / rect.width;
+    const i = Math.round(Math.min(1, Math.max(0, ratio)) * (POINTS - 1));
+    setHover(i);
+  }, []);
+  const clear = useCallback(() => setHover(null), []);
+
+  const hoverX = hover !== null ? hover * step : 0;
+  /** Jarak waktu titik yang ditunjuk terhadap sekarang (detik). */
+  const hoverAgo =
+    hover !== null ? ((POINTS - 1 - hover) * SAMPLE_MS) / 1000 : 0;
+  const hoverFps = hover !== null ? (series.fps[hover] ?? 0) : 0;
+  const hoverLat = hover !== null ? (series.lat[hover] ?? 0) : 0;
+  const hoverScroll = hover !== null ? (series.scroll[hover] ?? false) : false;
+  /** Posisi kotak tooltip dalam persen lebar, dijaga agar tidak keluar kartu. */
+  const hoverLeft = hover !== null ? Math.min(88, Math.max(2, (hover / (POINTS - 1)) * 100)) : 0;
+
+  const tooltip = (kind: "fps" | "lat") =>
+    hover === null ? null : (
+      <div
+        className="pointer-events-none absolute top-1 z-10 rounded-md border bg-popover px-2 py-1 text-[10px] leading-tight text-popover-foreground shadow-md"
+        style={{ left: `${hoverLeft}%` }}
+        role="status"
+      >
+        <div className="font-semibold tabular-nums">
+          {kind === "fps"
+            ? `${hoverFps} fps`
+            : hoverLat > 0
+              ? `${hoverLat} ms`
+              : "tanpa latensi"}
+        </div>
+        <div className="text-muted-foreground tabular-nums">
+          {hoverAgo === 0 ? "sekarang" : `${hoverAgo.toFixed(1)} dtk lalu`}
+          {hoverScroll ? " · menggulir" : ""}
+        </div>
+      </div>
+    );
+
+  const crosshair =
+    hover === null ? null : (
+      <line
+        x1={hoverX}
+        x2={hoverX}
+        y1={0}
+        y2={H}
+        className="stroke-foreground/50"
+        strokeWidth={1}
+        strokeDasharray="2 2"
+      />
+    );
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -121,17 +184,27 @@ export function ScrollPerfLiveChart() {
               Grafik waktu nyata
             </CardTitle>
             <CardDescription className="text-ms-xs">
-              12 detik terakhir. Area berarsir = saat Anda menggulir, jadi lonjakan
-              terlihat langsung terhadap interaksi.
+              12 detik terakhir. Area berarsir = saat Anda menggulir. Sentuh atau
+              arahkan kursor ke grafik untuk membaca nilai persis di titik itu.
             </CardDescription>
           </div>
           <Badge variant="outline" className="shrink-0 text-muted-foreground">
-            {paused ? "Jeda" : "Live"}
+            {hover !== null ? "Baca titik" : paused ? "Jeda" : "Live"}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-ms-3">
-        <div className="rounded-lg border p-ms-2">
+        <div
+          className="relative rounded-lg border p-ms-2 touch-none"
+          onPointerDown={pick}
+          onPointerMove={(e) => {
+            if (e.pointerType === "touch" ? hover !== null : true) pick(e);
+          }}
+          onPointerUp={clear}
+          onPointerLeave={clear}
+          onPointerCancel={clear}
+        >
+          {tooltip("fps")}
           <div className="flex items-baseline justify-between">
             <span className="text-ms-2xs text-muted-foreground">FPS (0–120)</span>
             <span className="text-ms-sm font-semibold tabular-nums">{fpsNow}</span>
@@ -157,10 +230,29 @@ export function ScrollPerfLiveChart() {
               strokeWidth={1}
             />
             <path d={path(series.fps, 120, W, H)} className="stroke-emerald-500" fill="none" strokeWidth={1.5} />
+            {crosshair}
+            {hover !== null ? (
+              <circle
+                cx={hoverX}
+                cy={H - Math.min(1, hoverFps / 120) * H}
+                r={2.5}
+                className="fill-emerald-500"
+              />
+            ) : null}
           </svg>
         </div>
 
-        <div className="rounded-lg border p-ms-2">
+        <div
+          className="relative rounded-lg border p-ms-2 touch-none"
+          onPointerDown={pick}
+          onPointerMove={(e) => {
+            if (e.pointerType === "touch" ? hover !== null : true) pick(e);
+          }}
+          onPointerUp={clear}
+          onPointerLeave={clear}
+          onPointerCancel={clear}
+        >
+          {tooltip("lat")}
           <div className="flex items-baseline justify-between">
             <span className="text-ms-2xs text-muted-foreground">
               Latensi scroll (0–{Math.round(latMax)} ms)
@@ -191,6 +283,7 @@ export function ScrollPerfLiveChart() {
                 />
               ) : null,
             )}
+            {crosshair}
           </svg>
         </div>
       </CardContent>
