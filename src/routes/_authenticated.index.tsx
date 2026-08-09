@@ -27,6 +27,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 // AppLockSetup / AppearanceSettings / ProductEditDrawer di-lazy-load agar
 // tidak masuk chunk initial Beranda. Ketiganya hanya benar-benar dibutuhkan
 // setelah user membuka dialog/drawer masing-masing. Sebelum optimisasi:
