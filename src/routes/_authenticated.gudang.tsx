@@ -4428,6 +4428,8 @@ function PesananTab({
   const [price, setPrice] = useState("");
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"aktif" | "semua">("aktif");
+  const [pending, setPending] = useState<OrderRequest | null>(null);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (!itemId && items[0]) setItemId(items[0].id);
