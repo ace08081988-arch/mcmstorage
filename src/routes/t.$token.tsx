@@ -2062,7 +2062,9 @@ function PublicPrepPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background pb-12">
-      <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
+      {/* `app-safe-top`: di ponsel bernotch/Dynamic Island header portal
+          pegawai sebelumnya tercetak persis di bawah bilah status. */}
+      <header className="app-safe-top sticky top-0 z-sticky border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center gap-ms-2 px-ms-4 py-ms-3">
           <button
             type="button"
