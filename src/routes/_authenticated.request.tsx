@@ -972,34 +972,24 @@ function TitleEditorDialog({
     setSaveError(null);
     setBusy(true);
     try {
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u.user?.id;
-      if (!uid) throw new Error("Belum login");
-      let titleId = existing?.id;
-      if (existing) {
-        const { error } = await sb.from("request_titles").update({
-          name: trimmed, note: note.trim() || null,
-        }).eq("id", existing.id);
-        if (error) throw error;
-        // Replace items
-        await sb.from("request_title_items").delete().eq("title_id", existing.id);
-      } else {
-        const { data, error } = await sb.from("request_titles").insert({
-          user_id: uid, name: trimmed, note: note.trim() || null,
-        }).select("id").single();
-        if (error) throw error;
-        titleId = data.id;
-      }
-      const payload = validRows.map((r, idx) => ({
-        title_id: titleId,
+      // Satu RPC atomik: judul + seluruh daftar barang diganti sekaligus.
+      // Kalau ada langkah yang gagal, semuanya di-rollback sehingga paket
+      // tidak pernah tertinggal kosong.
+      const items = validRows.map((r, idx) => ({
         warehouse_item_id: r.warehouse_item_id,
         target_grams: Number(r.target_grams),
         unit_label: canonicalUnitLabel(r.unit_kind, r.unit_custom),
         note: r.note.trim() || null,
         position: idx,
       }));
-      const { error: e2 } = await sb.from("request_title_items").insert(payload);
-      if (e2) throw e2;
+      const { error } = await sb.rpc("request_title_save_v1", {
+        _title_id: existing?.id ?? undefined,
+        _name: trimmed,
+        _note: note.trim() || undefined,
+        _position: existing?.position ?? 0,
+        _items: items,
+      });
+      if (error) throw error;
       toast.success("Judul tersimpan");
       onSaved(); onClose();
     } catch (e) {
