@@ -2021,7 +2021,19 @@ function ChatRoomPage() {
             Belum ada pesan. Sapa dulu yuk.
           </div>
         ) : (
-          grouped.map((g) => (
+          <>
+          {hiddenOlderCount > 0 ? (
+            <div className="mb-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setRenderCount((p) => p + 60)}
+                className="rounded-full bg-[var(--wa-header)]/95 px-ms-3 py-1.5 text-ms-2xs font-medium wa-muted ring-1 ring-[var(--wa-border)]"
+              >
+                Muat {Math.min(60, hiddenOlderCount)} pesan lama ({hiddenOlderCount} tersisa)
+              </button>
+            </div>
+          ) : null}
+          {grouped.map((g) => (
             <div key={g.day} className="flex flex-col gap-1.5">
               <div className="my-2.5 flex justify-center">
                 <span className="rounded-full bg-[var(--wa-header)]/95 px-ms-3 py-1 text-ms-2xs font-medium uppercase tracking-wide wa-muted shadow-sm ring-1 ring-[var(--wa-border)]">{g.day}</span>
