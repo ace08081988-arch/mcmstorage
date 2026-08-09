@@ -4527,6 +4527,7 @@ export type Database = {
         Args: { _pin: string; _token: string }
         Returns: Json
       }
+      request_prep_reconcile_report_v1: { Args: never; Returns: Json }
       request_submit_via_task: {
         Args: {
           _gps_lat: number
