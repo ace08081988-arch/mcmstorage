@@ -9,7 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { downloadCsv, scrollPerfCsvFilename } from "@/lib/scroll-perf-csv";
+import {
+  CSV_COLUMN_OPTIONS,
+  downloadCsv,
+  scrollPerfCsvFilename,
+  type CsvColumns,
+} from "@/lib/scroll-perf-csv";
+import {
+  clampSmooth,
+  rollingAverage as rolling,
+  smoothSeries,
+  SMOOTH_MAX,
+  SMOOTH_METHOD_OPTIONS as METHOD_OPTIONS,
+  SMOOTH_MIN,
+  type SmoothMethod,
+} from "@/lib/scroll-perf-smooth";
 import {
   getScrollPerfMetrics,
   subscribeScrollPerf,
@@ -50,47 +64,10 @@ const SMOOTH_OPTIONS = [
   { v: 20, label: "20", hint: "rata-rata 20 titik (±2 dtk)" },
 ] as const;
 
-/** Batas ukuran rolling average yang boleh dipilih manual. */
-const SMOOTH_MIN = 1;
-const SMOOTH_MAX = 30;
-
-/** Bulatkan & jepit nilai penghalusan ke rentang yang valid. */
-function clampSmooth(v: number): number {
-  if (!Number.isFinite(v)) return 1;
-  return Math.min(SMOOTH_MAX, Math.max(SMOOTH_MIN, Math.round(v)));
-}
-
 const SMOOTH_KEY = "app-scroll-perf-smooth";
 const SMOOTH_METHOD_KEY = "app-scroll-perf-smooth-method";
+const CSV_COLUMNS_KEY = "app-scroll-perf-csv-columns";
 
-/** Metode penghalusan garis tren. */
-type SmoothMethod = "sma" | "ema" | "median";
-
-const METHOD_OPTIONS: {
-  v: SmoothMethod;
-  label: string;
-  short: string;
-  hint: string;
-}[] = [
-  {
-    v: "sma",
-    label: "Rata-rata",
-    short: "SMA",
-    hint: "Simple moving average — semua titik dalam jendela berbobot sama",
-  },
-  {
-    v: "ema",
-    label: "EMA",
-    short: "EMA",
-    hint: "Exponential moving average — titik terbaru berbobot lebih besar, reaksi lebih cepat",
-  },
-  {
-    v: "median",
-    label: "Median",
-    short: "Median",
-    hint: "Median bergerak — paling tahan terhadap spike ekstrem",
-  },
-];
 const SPIKE_KEY = "app-scroll-perf-spike";
 
 /**
@@ -108,56 +85,6 @@ const SPIKE_OPTIONS = [
 
 /** Lebar jendela tren khusus deteksi (independen dari penghalusan tampilan). */
 const SPIKE_WINDOW = 7;
-
-/** Rata-rata bergerak (trailing) — memisahkan tren dari spike sesaat. */
-function rolling(values: number[], window: number): number[] {
-  if (window <= 1) return values;
-  const out: number[] = [];
-  let sum = 0;
-  for (let i = 0; i < values.length; i++) {
-    sum += values[i] ?? 0;
-    if (i >= window) sum -= values[i - window] ?? 0;
-    const n = Math.min(i + 1, window);
-    out.push(Math.round((sum / n) * 10) / 10);
-  }
-  return out;
-}
-
-/** Exponential moving average; `window` dipetakan ke faktor alpha 2/(N+1). */
-function ema(values: number[], window: number): number[] {
-  if (window <= 1) return values;
-  const alpha = 2 / (window + 1);
-  const out: number[] = [];
-  let prev = values[0] ?? 0;
-  for (let i = 0; i < values.length; i++) {
-    const v = values[i] ?? 0;
-    prev = i === 0 ? v : prev + alpha * (v - prev);
-    out.push(Math.round(prev * 10) / 10);
-  }
-  return out;
-}
-
-/** Median bergerak (trailing) — tahan terhadap outlier tunggal. */
-function movingMedian(values: number[], window: number): number[] {
-  if (window <= 1) return values;
-  const out: number[] = [];
-  for (let i = 0; i < values.length; i++) {
-    const slice = values.slice(Math.max(0, i - window + 1), i + 1).sort((a, b) => a - b);
-    const mid = slice.length >> 1;
-    const m =
-      slice.length % 2 ? (slice[mid] ?? 0) : ((slice[mid - 1] ?? 0) + (slice[mid] ?? 0)) / 2;
-    out.push(Math.round(m * 10) / 10);
-  }
-  return out;
-}
-
-/** Terapkan metode penghalusan terpilih. */
-function smoothSeries(values: number[], window: number, method: SmoothMethod): number[] {
-  if (window <= 1) return values;
-  if (method === "ema") return ema(values, window);
-  if (method === "median") return movingMedian(values, window);
-  return rolling(values, window);
-}
 
 function path(values: number[], max: number, w: number, h: number) {
   if (values.length < 2) return "";
@@ -212,6 +139,8 @@ export function ScrollPerfLiveChart() {
   const [smooth, setSmooth] = useState(1);
   /** Metode penghalusan aktif. */
   const [method, setMethod] = useState<SmoothMethod>("sma");
+  /** Kolom yang disertakan saat ekspor CSV. */
+  const [csvColumns, setCsvColumns] = useState<CsvColumns>("both");
   /** Sensitivitas sorotan spike (0 = mati). */
   const [spikeLevel, setSpikeLevel] = useState(2);
   /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
@@ -235,6 +164,8 @@ export function ScrollPerfLiveChart() {
       }
       const m = localStorage.getItem(SMOOTH_METHOD_KEY);
       if (m && METHOD_OPTIONS.some((o) => o.v === m)) setMethod(m as SmoothMethod);
+      const c = localStorage.getItem(CSV_COLUMNS_KEY);
+      if (c && CSV_COLUMN_OPTIONS.some((o) => o.v === c)) setCsvColumns(c as CsvColumns);
     } catch {
       /* mode privat → pakai default */
     }
@@ -274,6 +205,15 @@ export function ScrollPerfLiveChart() {
     setMethod(v);
     try {
       localStorage.setItem(SMOOTH_METHOD_KEY, v);
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+
+  const chooseCsvColumns = useCallback((v: CsvColumns) => {
+    setCsvColumns(v);
+    try {
+      localStorage.setItem(CSV_COLUMNS_KEY, v);
     } catch {
       /* abaikan */
     }
@@ -630,18 +570,70 @@ export function ScrollPerfLiveChart() {
               </button>
             ))}
           </div>
+          <div
+            className="inline-flex rounded-md border p-0.5"
+            role="group"
+            aria-label="Kolom yang diekspor ke CSV"
+          >
+            {CSV_COLUMN_OPTIONS.map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => chooseCsvColumns(o.v)}
+                aria-pressed={csvColumns === o.v}
+                title={`CSV: ${o.hint}`}
+                className={`rounded-[5px] px-ms-2 py-1 text-ms-2xs transition-colors ${
+                  csvColumns === o.v
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
               const now = Date.now();
+              const withRaw = csvColumns !== "trend";
+              const withTrend = csvColumns !== "raw";
+              const header = [
+                "at",
+                "seconds_ago",
+                ...(withRaw ? ["fps", "latency_ms"] : []),
+                ...(withTrend
+                  ? ["fps_trend", "latency_trend", "trend_method", "trend_window"]
+                  : []),
+                "fps_spike",
+                "latency_spike",
+                "scrolling",
+                "events",
+              ].join(",");
               const rows = [
-                "at,seconds_ago,fps,fps_trend,fps_spike,latency_ms,latency_trend,latency_spike,scrolling,events,trend_method,trend_window",
+                header,
                 ...series.fps.map((f, i) => {
                   const ago = ((POINTS - 1 - i) * SAMPLE_MS) / 1000;
                   const at = new Date(now - ago * 1000).toISOString();
                   const ev = (series.marks[i] ?? []).join("|");
-                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${fpsSpikes[i] ? 1 : 0},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${latSpikes[i] ? 1 : 0},${series.scroll[i] ? 1 : 0},${ev},${smoothing ? methodCfg.short : "raw"},${smooth}`;
+                  return [
+                    at,
+                    ago.toFixed(1),
+                    ...(withRaw ? [f, series.lat[i] ?? 0] : []),
+                    ...(withTrend
+                      ? [
+                          fpsSmooth[i] ?? f,
+                          latSmooth[i] ?? (series.lat[i] ?? 0),
+                          smoothing ? methodCfg.short : "raw",
+                          smooth,
+                        ]
+                      : []),
+                    fpsSpikes[i] ? 1 : 0,
+                    latSpikes[i] ? 1 : 0,
+                    series.scroll[i] ? 1 : 0,
+                    ev,
+                  ].join(",");
                 }),
               ].join("\r\n");
               downloadCsv(scrollPerfCsvFilename("live"), rows);
