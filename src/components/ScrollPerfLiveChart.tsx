@@ -50,6 +50,23 @@ const SMOOTH_OPTIONS = [
 ] as const;
 
 const SMOOTH_KEY = "app-scroll-perf-smooth";
+const SPIKE_KEY = "app-scroll-perf-spike";
+
+/**
+ * Sensitivitas deteksi spike: seberapa jauh data mentah boleh menyimpang dari
+ * garis tren sebelum ditandai. `rel` = selisih relatif terhadap tren,
+ * `absFps` / `absLat` = ambang minimum absolut supaya riak kecil di nilai
+ * rendah tidak ikut tertandai.
+ */
+const SPIKE_OPTIONS = [
+  { v: 0, label: "Mati", hint: "tidak menyorot spike", rel: 0, absFps: 0, absLat: 0 },
+  { v: 1, label: "Longgar", hint: "hanya lonjakan besar", rel: 0.45, absFps: 18, absLat: 25 },
+  { v: 2, label: "Sedang", hint: "lonjakan sedang ke atas", rel: 0.3, absFps: 12, absLat: 15 },
+  { v: 3, label: "Ketat", hint: "sensitif, tandai riak kecil", rel: 0.18, absFps: 7, absLat: 8 },
+] as const;
+
+/** Lebar jendela tren khusus deteksi (independen dari penghalusan tampilan). */
+const SPIKE_WINDOW = 7;
 
 /** Rata-rata bergerak (trailing) — memisahkan tren dari spike sesaat. */
 function rolling(values: number[], window: number): number[] {
@@ -75,6 +92,27 @@ function path(values: number[], max: number, w: number, h: number) {
       return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
+}
+
+/**
+ * Tandai indeks yang menyimpang jauh dari garis tren.
+ * FPS hanya dianggap spike saat *turun* (drop) — itu yang terasa sebagai lag;
+ * latensi hanya saat *naik*.
+ */
+function detectSpikes(
+  raw: number[],
+  trend: number[],
+  rel: number,
+  abs: number,
+  dir: "down" | "up",
+): boolean[] {
+  if (rel <= 0) return raw.map(() => false);
+  return raw.map((v, i) => {
+    const t = trend[i] ?? 0;
+    if (t <= 0) return false;
+    const delta = dir === "down" ? t - v : v - t;
+    return delta >= Math.max(abs, t * rel);
+  });
 }
 
 /**
