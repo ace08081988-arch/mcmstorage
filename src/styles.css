@@ -709,6 +709,8 @@ html:not(.dark) .summary-tone-info    { --tone: color-mix(in oklab, var(--info) 
 .mt-ms-2\.5 { margin-top: var(--ms-space-2_5); }
 .mt-ms-3    { margin-top: var(--ms-space-3); }
 .mt-ms-4    { margin-top: var(--ms-space-4); }
+.mt-ms-5    { margin-top: var(--ms-space-5); }
+.mt-ms-6    { margin-top: var(--ms-space-6); }
 .mb-ms-2    { margin-bottom: var(--ms-space-2); }
 .mb-ms-3    { margin-bottom: var(--ms-space-3); }
 .mb-ms-4    { margin-bottom: var(--ms-space-4); }
