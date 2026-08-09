@@ -64,47 +64,9 @@ const SMOOTH_OPTIONS = [
   { v: 20, label: "20", hint: "rata-rata 20 titik (±2 dtk)" },
 ] as const;
 
-/** Batas ukuran rolling average yang boleh dipilih manual. */
-const SMOOTH_MIN = 1;
-const SMOOTH_MAX = 30;
-
-/** Bulatkan & jepit nilai penghalusan ke rentang yang valid. */
-function clampSmooth(v: number): number {
-  if (!Number.isFinite(v)) return 1;
-  return Math.min(SMOOTH_MAX, Math.max(SMOOTH_MIN, Math.round(v)));
-}
-
 const SMOOTH_KEY = "app-scroll-perf-smooth";
 const SMOOTH_METHOD_KEY = "app-scroll-perf-smooth-method";
 
-/** Metode penghalusan garis tren. */
-type SmoothMethod = "sma" | "ema" | "median";
-
-const METHOD_OPTIONS: {
-  v: SmoothMethod;
-  label: string;
-  short: string;
-  hint: string;
-}[] = [
-  {
-    v: "sma",
-    label: "Rata-rata",
-    short: "SMA",
-    hint: "Simple moving average — semua titik dalam jendela berbobot sama",
-  },
-  {
-    v: "ema",
-    label: "EMA",
-    short: "EMA",
-    hint: "Exponential moving average — titik terbaru berbobot lebih besar, reaksi lebih cepat",
-  },
-  {
-    v: "median",
-    label: "Median",
-    short: "Median",
-    hint: "Median bergerak — paling tahan terhadap spike ekstrem",
-  },
-];
 const SPIKE_KEY = "app-scroll-perf-spike";
 
 /**
@@ -122,56 +84,6 @@ const SPIKE_OPTIONS = [
 
 /** Lebar jendela tren khusus deteksi (independen dari penghalusan tampilan). */
 const SPIKE_WINDOW = 7;
-
-/** Rata-rata bergerak (trailing) — memisahkan tren dari spike sesaat. */
-function rolling(values: number[], window: number): number[] {
-  if (window <= 1) return values;
-  const out: number[] = [];
-  let sum = 0;
-  for (let i = 0; i < values.length; i++) {
-    sum += values[i] ?? 0;
-    if (i >= window) sum -= values[i - window] ?? 0;
-    const n = Math.min(i + 1, window);
-    out.push(Math.round((sum / n) * 10) / 10);
-  }
-  return out;
-}
-
-/** Exponential moving average; `window` dipetakan ke faktor alpha 2/(N+1). */
-function ema(values: number[], window: number): number[] {
-  if (window <= 1) return values;
-  const alpha = 2 / (window + 1);
-  const out: number[] = [];
-  let prev = values[0] ?? 0;
-  for (let i = 0; i < values.length; i++) {
-    const v = values[i] ?? 0;
-    prev = i === 0 ? v : prev + alpha * (v - prev);
-    out.push(Math.round(prev * 10) / 10);
-  }
-  return out;
-}
-
-/** Median bergerak (trailing) — tahan terhadap outlier tunggal. */
-function movingMedian(values: number[], window: number): number[] {
-  if (window <= 1) return values;
-  const out: number[] = [];
-  for (let i = 0; i < values.length; i++) {
-    const slice = values.slice(Math.max(0, i - window + 1), i + 1).sort((a, b) => a - b);
-    const mid = slice.length >> 1;
-    const m =
-      slice.length % 2 ? (slice[mid] ?? 0) : ((slice[mid - 1] ?? 0) + (slice[mid] ?? 0)) / 2;
-    out.push(Math.round(m * 10) / 10);
-  }
-  return out;
-}
-
-/** Terapkan metode penghalusan terpilih. */
-function smoothSeries(values: number[], window: number, method: SmoothMethod): number[] {
-  if (window <= 1) return values;
-  if (method === "ema") return ema(values, window);
-  if (method === "median") return movingMedian(values, window);
-  return rolling(values, window);
-}
 
 function path(values: number[], max: number, w: number, h: number) {
   if (values.length < 2) return "";
